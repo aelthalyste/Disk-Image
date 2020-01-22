@@ -4,6 +4,9 @@
 	AVX and SSE SIMD instructions may lead significant performance boosts. 
 	(32 byte and opreation for AVX, 16 byte for SSE)
 	AVX for architectures after 2016
+
+
+
 */
 
 #include <iostream>
@@ -32,11 +35,33 @@
 #define Megabytes(val) (Kilobytes(1024)*(val))
 #define Gigabytes(val) (Megabytes(1024)*(uint64_t)(val))
 
+#define DI_DEVELOPER 1
 
 #if DI_SLOW
 #define Assert(expression) if(!(expression)) {*((int*)0) = 0;}
 #else
 #define Assert(expression)
+#endif
+
+#if DI_DEVELOPER
+
+LONGLONG GlobalPerfCountFrequency;
+
+inline LARGE_INTEGER
+GetClock() {
+	LARGE_INTEGER Result;
+
+	QueryPerformanceCounter(&Result);
+	return Result;
+}
+
+inline double
+GetMSElapsed(LARGE_INTEGER Start, LARGE_INTEGER End) {
+	Assert(GlobalPerfCountFrequency != 0);
+	double Result = (double)(End.QuadPart - Start.QuadPart) / (double)(GlobalPerfCountFrequency);
+	return Result;
+}
+
 #endif
 
 
@@ -96,6 +121,12 @@ int wmain(int argc, wchar_t **argv) {
 		return 1;
 	}
 	
+
+#if DI_DEVELOPER
+	LARGE_INTEGER PerfCountFreqResult;
+	QueryPerformanceFrequency(&PerfCountFreqResult);
+	GlobalPerfCountFrequency = PerfCountFreqResult.QuadPart;
+#endif
 
 	std::wstring Drive      = argv[2];
 	std::wstring TargetPath = argv[3];
@@ -234,6 +265,11 @@ BackupVolume(std::wstring VolumeName, std::wstring OutputPath) {
 		std::vector<ULONGLONG> ClusterIndices;
 		ClusterIndices.reserve(Kilobytes(1)); // 1024 Elements, not 1KB
 
+		std::ofstream BenchmarkFile("Benchmark.csv", std::ios::binary | std::ios::out);
+		Assert(BenchmarkFile.is_open());
+
+		LARGE_INTEGER BitMaskStart = GetClock();
+
 		while (ClustersRead < MaxClusterCount) {
 			if ((*BitmapIndex & BitmapMask) == BitmapMask) {
 				ClusterIndices.push_back(ClustersRead);
@@ -246,10 +282,16 @@ BackupVolume(std::wstring VolumeName, std::wstring OutputPath) {
 			}
 			ClustersRead++;
 		}
+
+		LARGE_INTEGER BitMaskEnd = GetClock();
+
 		ClusterIndices.shrink_to_fit();
 		free(Bitmap);
 
 		DWORD Last = 0;
+
+
+		LARGE_INTEGER ParseStart = GetClock();
 
 		for (const auto& Iter : ClusterIndices) {
 			if (Iter == (Last + 1)) {
@@ -261,11 +303,22 @@ BackupVolume(std::wstring VolumeName, std::wstring OutputPath) {
 			Last = Iter;
 		}
 		
+		LARGE_INTEGER ParseEnd = GetClock();
+
+		double Elapsed = 0.0;
+		Elapsed = GetMSElapsed(BitMaskStart,BitMaskEnd);
+		BenchmarkFile << "Bitmap mask(ms) ," << Elapsed << "\n";
+		Elapsed = GetMSElapsed(ParseStart,ParseEnd);
+		BenchmarkFile << "Parse(ms) ," << Elapsed << "\n";
+		BenchmarkFile.close();
+
+		std::vector<used_disk_space_info> V;
+		std::cout << UsedDiskInfo.size();
+		std::cout << MaxClusterCount << "\n";
+		return V;
 	} //IF BITMAP
 
 	
-	
-
 	HANDLE OutputHandle = CreateFileW(
 		OutputPath.c_str(),
 		GENERIC_WRITE,
