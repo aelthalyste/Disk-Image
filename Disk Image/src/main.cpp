@@ -1,14 +1,5 @@
 //#define _WIN32_WINNT 0x0501
 
-/*
-	AVX and SSE SIMD instructions may lead significant performance boosts. 
-	(32 byte and opreation for AVX, 16 byte for SSE)
-	AVX for architectures after 2016
-
-
-
-*/
-
 #include <iostream>
 #include <cstdint>
 
@@ -27,7 +18,6 @@
 // VDS includes
 #include <vds.h>
 
-
 // ATL includes
 #include <atlbase.h>
 
@@ -36,6 +26,7 @@
 #define Gigabytes(val) (Megabytes(1024)*(uint64_t)(val))
 
 #define DI_DEVELOPER 1
+
 
 #if DI_SLOW
 #define Assert(expression) if(!(expression)) {*((int*)0) = 0;}
@@ -120,13 +111,16 @@ int wmain(int argc, wchar_t **argv) {
 		std::cout<<"-Restore D:\\ D:\\workspace\\dimage.bin"<<std::endl;
 		return 1;
 	}
-	
+
 
 #if DI_DEVELOPER
 	LARGE_INTEGER PerfCountFreqResult;
 	QueryPerformanceFrequency(&PerfCountFreqResult);
 	GlobalPerfCountFrequency = PerfCountFreqResult.QuadPart;
 #endif
+	
+	std::ios_base::sync_with_stdio(false);
+
 
 	std::wstring Drive      = argv[2];
 	std::wstring TargetPath = argv[3];
@@ -270,7 +264,12 @@ BackupVolume(std::wstring VolumeName, std::wstring OutputPath) {
 
 		LARGE_INTEGER BitMaskStart = GetClock();
 
+		
+		float One = (1 << 20);
+
 		while (ClustersRead < MaxClusterCount) {
+			
+			
 			if ((*BitmapIndex & BitmapMask) == BitmapMask) {
 				ClusterIndices.push_back(ClustersRead);
 				UsedClusterCount++;
@@ -315,7 +314,6 @@ BackupVolume(std::wstring VolumeName, std::wstring OutputPath) {
 		std::vector<used_disk_space_info> V;
 		std::cout << UsedDiskInfo.size();
 		std::cout << MaxClusterCount << "\n";
-		return V;
 	} //IF BITMAP
 
 	
@@ -345,15 +343,15 @@ BackupVolume(std::wstring VolumeName, std::wstring OutputPath) {
 		Assert(false);
 	}
 
-	
-	void* DataBuffer = malloc(Megabytes(64));
+	int64_t FileBufferSize = Megabytes(2);
+	void* DataBuffer = malloc(FileBufferSize);
 
 	for (const auto& Index : UsedDiskInfo) {
 		DWORD BytesTransferred = 0;
 		//TODO use databuffer with 64MB ceil val, rather than constructing it every time
-		if (Index.Len > Megabytes(64)) {
+		if (Index.Len > FileBufferSize) {
 
-			DWORD TempBuffSize = Megabytes(64);
+			DWORD TempBuffSize = FileBufferSize;
 			__int64 TempTotalRead = 0;
 			
 			Result = SetFilePointer(DiskHandle, Index.Offset, NULL, FILE_BEGIN);
@@ -446,15 +444,15 @@ RestoreVolume(std::wstring VolumeName, std::wstring Source, std::vector<used_dis
 		Assert(false);
 	}
 	
-
-	void* DataBuffer = malloc(Megabytes(64));
+	int64_t FileBufferSize = Megabytes(2);
+	void* DataBuffer = malloc(FileBufferSize);
 	
 	for (const auto& Index : ClusterIndices) {
 		DWORD BytesTransferred = 0;
 
-		if (Index.Len > Megabytes(64)) {
+		if (Index.Len > FileBufferSize) {
 
-			DWORD TempBuffSize = Megabytes(64);
+			DWORD TempBuffSize = FileBufferSize;
 			__int64 TempTotalRead = 0;
 			Result = SetFilePointer(RestoreTargetHandle, Index.Offset, NULL, FILE_BEGIN);
 			Assert(Result == Index.Offset);
