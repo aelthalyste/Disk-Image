@@ -1,9 +1,9 @@
 //#define _WIN32_WINNT 0x0501
 
 /*
-AVX and SSE SIMD instructions may lead significant performance boosts. 
-(32 byte and opreation for AVX, 16 byte for SSE)
-AVX for architectures after 2016
+	AVX and SSE SIMD instructions may lead significant performance boosts. 
+	(32 byte and opreation for AVX, 16 byte for SSE)
+	AVX for architectures after 2016
 */
 
 #include <iostream>
@@ -27,9 +27,6 @@ AVX for architectures after 2016
 
 // ATL includes
 #include <atlbase.h>
-
-using namespace std::placeholders;
-
 
 #define Kilobytes(val) ((val)*1024)
 #define Megabytes(val) (Kilobytes(1024)*(val))
