@@ -21,6 +21,14 @@
 // ATL includes
 #include <atlbase.h>
 
+
+#include <fileapi.h>
+#include "DImage.h"
+
+#define XXH_INLINE_ALL
+#include "xxhash.h"
+
+
 #define Kilobytes(val) ((val)*1024)
 #define Megabytes(val) (Kilobytes(1024)*(val))
 #define Gigabytes(val) (Megabytes(1024)*(uint64_t)(val))
@@ -34,8 +42,8 @@
 #define Assert(expression)
 #endif
 
+#define DI_DEVELOPER 1
 #if DI_DEVELOPER
-
 LONGLONG GlobalPerfCountFrequency;
 
 inline LARGE_INTEGER
@@ -52,27 +60,8 @@ GetMSElapsed(LARGE_INTEGER Start, LARGE_INTEGER End) {
 	double Result = (double)(End.QuadPart - Start.QuadPart) / (double)(GlobalPerfCountFrequency);
 	return Result;
 }
-
 #endif
 
-
-struct debug_read_file {
-	ULONGLONG Size;
-	void* Contents;
-};
-
-struct used_disk_space_info{
-	ULONGLONG Offset;
-	ULONGLONG Len;
-};
-
-std::wstring GetShadowPath(std::wstring Drive, CComPtr<IVssBackupComponents>& ptr);
-
-std::vector<used_disk_space_info> BackupVolume(std::wstring VolumeName, std::wstring OutputPath);
-void RestoreVolume(std::wstring VolumeName, std::wstring Source, std::vector<used_disk_space_info> DiskInfo);
-
-bool CreateMetaDataFile(std::vector<used_disk_space_info> DiskInfo, char FilePath[]);
-bool ReadMetaDataFile(std::vector<used_disk_space_info>& DiskInfo, char FilePath[]);
 
 int wmain(int argc, wchar_t **argv) {
 
@@ -120,13 +109,9 @@ int wmain(int argc, wchar_t **argv) {
 #endif
 	
 	std::ios_base::sync_with_stdio(false);
-
-
 	std::wstring Drive      = argv[2];
 	std::wstring TargetPath = argv[3];
 	char MetaDataFilePath[] = "MetaData.bin";
-
-	std::wcout << std::wstring(argv[2]) << "\n";
 
 	if (std::wstring(argv[1]) == L"Backup") {
 		auto GeneratedClusterIndices = BackupVolume(Drive, TargetPath);
@@ -196,8 +181,8 @@ BackupVolume(std::wstring VolumeName, std::wstring OutputPath) {
 	
 	std::wstring Path;
 
-	
 	Path = GetShadowPath(VolumeName,ptr);
+
 	HANDLE DiskHandle = CreateFileW(
 		Path.c_str(),
 		GENERIC_READ,
@@ -207,7 +192,7 @@ BackupVolume(std::wstring VolumeName, std::wstring OutputPath) {
 		0,
 		NULL
 	);
-
+	
 	Assert(DiskHandle != INVALID_HANDLE_VALUE);
 
 
@@ -263,9 +248,6 @@ BackupVolume(std::wstring VolumeName, std::wstring OutputPath) {
 		Assert(BenchmarkFile.is_open());
 
 		LARGE_INTEGER BitMaskStart = GetClock();
-
-		
-		float One = (1 << 20);
 
 		while (ClustersRead < MaxClusterCount) {
 			
@@ -536,4 +518,64 @@ ReadMetaDataFile(std::vector<used_disk_space_info>& UsedDiskInfo, char FilePath[
 	}
 	File.close();
 	return true;
+}
+
+uint32_t crc32_16bytes_prefetch(const void* data, size_t length, uint32_t previousCrc32, size_t prefetchAhead) {
+	// CRC code is identical to crc32_16bytes (including unrolling), only added prefetching   // 256 bytes look-ahead seems to be the sweet spot on Core i7 CPUs   
+	uint32_t crc = ~previousCrc32; // same as previousCrc32 ^ 0xFFFFFFFF   
+	const uint32_t* current = (const uint32_t*)data;   // enabling optimization (at least -O2) automatically unrolls the for-loop   
+	const size_t Unroll = 4;
+	const size_t BytesAtOnce = 16 * Unroll;
+	while (length >= BytesAtOnce + prefetchAhead) {
+		PREFETCH(((const char*)current) + prefetchAhead);
+		for (size_t unrolling = 0; unrolling < Unroll; unrolling++) {
+#if __BYTE_ORDER == __BIG_ENDIAN       
+			uint32_t one = *current++ ^ swap(crc);
+			uint32_t two = *current++;
+			uint32_t three = *current++;
+			uint32_t four = *current++;
+			crc = Crc32Lookup[0][four & 0xFF] ^
+				Crc32Lookup[1][(four >> 8) & 0xFF] ^
+				Crc32Lookup[2][(four >> 16) & 0xFF] ^
+				Crc32Lookup[3][(four >> 24) & 0xFF] ^
+				Crc32Lookup[4][three & 0xFF] ^
+				Crc32Lookup[5][(three >> 8) & 0xFF] ^
+				Crc32Lookup[6][(three >> 16) & 0xFF] ^
+				Crc32Lookup[7][(three >> 24) & 0xFF] ^
+				Crc32Lookup[8][two & 0xFF] ^
+				Crc32Lookup[9][(two >> 8) & 0xFF] ^
+				Crc32Lookup[10][(two >> 16) & 0xFF] ^
+				Crc32Lookup[11][(two >> 24) & 0xFF] ^
+				Crc32Lookup[12][one & 0xFF] ^
+				Crc32Lookup[13][(one >> 8) & 0xFF] ^
+				Crc32Lookup[14][(one >> 16) & 0xFF] ^
+				Crc32Lookup[15][(one >> 24) & 0xFF];
+#else       
+			uint32_t one = *current++ ^ crc;
+			uint32_t two = *current++;
+			uint32_t three = *current++;
+			uint32_t four = *current++
+				crc = Crc32Lookup[0][(four >> 24) & 0xFF] ^
+				Crc32Lookup[1][(four >> 16) & 0xFF] ^
+				Crc32Lookup[2][(four >> 8) & 0xFF] ^
+				Crc32Lookup[3][four & 0xFF] ^
+				Crc32Lookup[4][(three >> 24) & 0xFF] ^
+				Crc32Lookup[5][(three >> 16) & 0xFF] ^
+				Crc32Lookup[6][(three >> 8) & 0xFF] ^
+				Crc32Lookup[7][three & 0xFF] ^
+				Crc32Lookup[8][(two >> 24) & 0xFF] ^
+				Crc32Lookup[9][(two >> 16) & 0xFF] ^
+				Crc32Lookup[10][(two >> 8) & 0xFF] ^
+				Crc32Lookup[11][two & 0xFF] ^
+				Crc32Lookup[12][(one >> 24) & 0xFF] ^
+				Crc32Lookup[13][(one >> 16) & 0xFF] ^
+				Crc32Lookup[14][(one >> 8) & 0xFF] ^
+				Crc32Lookup[15][one & 0xFF];
+#endif     
+		}
+		length -= BytesAtOnce;
+	}
+	const uint8_t* currentChar = (const uint8_t*)current;   // remaining 1 to 63 bytes (standard algorithm)   
+	while (length-- != 0)     crc = (crc >> 8) ^ Crc32Lookup[0][(crc & 0xFF) ^ *currentChar++];
+	return ~crc; // same as crc ^ 0xFFFFFFFF 
 }
