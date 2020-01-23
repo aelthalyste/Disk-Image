@@ -25,10 +25,6 @@
 #include <fileapi.h>
 #include "DImage.h"
 
-#define XXH_INLINE_ALL
-#include "xxhash.h"
-
-
 #define Kilobytes(val) ((val)*1024)
 #define Megabytes(val) (Kilobytes(1024)*(val))
 #define Gigabytes(val) (Megabytes(1024)*(uint64_t)(val))
@@ -101,7 +97,7 @@ int wmain(int argc, wchar_t **argv) {
 		return 1;
 	}
 
-
+	
 #if DI_DEVELOPER
 	LARGE_INTEGER PerfCountFreqResult;
 	QueryPerformanceFrequency(&PerfCountFreqResult);
@@ -111,23 +107,22 @@ int wmain(int argc, wchar_t **argv) {
 	std::ios_base::sync_with_stdio(false);
 	std::wstring Drive      = argv[2];
 	std::wstring TargetPath = argv[3];
-	char MetaDataFilePath[] = "MetaData.bin";
+	char MetaDataFilePath[] = "HashData.bin";
+
+	cluster_hash_map HashMap;
+	ReadMetaDataHash(HashMap, MetaDataFilePath);
+	FindDiff(Drive, HashMap);
+	return 0;
 
 	if (std::wstring(argv[1]) == L"Backup") {
 		auto GeneratedClusterIndices = BackupVolume(Drive, TargetPath);
-		bool Result = CreateMetaDataFile(GeneratedClusterIndices, MetaDataFilePath);
-		Assert(Result == true);
 	}
 	else if (std::wstring(argv[1]) == L"Restore") {
-		std::vector<used_disk_space_info> Metadata;
-		Metadata.reserve(Kilobytes(1)); //1024 elements, not 1KB
-		bool Result = ReadMetaDataFile(Metadata, MetaDataFilePath);
-		Assert(Result == true);
-		RestoreVolume(Drive, TargetPath, Metadata);
+		linear_cluster_map ClusterMap;
+		ReadMetaDataLinear(ClusterMap,MetaDataFilePath);
+		RestoreVolume(Drive, TargetPath, ClusterMap);
 	}
 	
-	//RestoreVolume(var);
-
 	return 1;
 }
 
@@ -172,15 +167,13 @@ GetShadowPath(std::wstring Drive, CComPtr<IVssBackupComponents>& ptr) {
 }
 
 
-std::vector<used_disk_space_info>
+cluster_hash_map
 BackupVolume(std::wstring VolumeName, std::wstring OutputPath) {
 	DWORD BufferSize = Megabytes(64);
 	BOOL Result;
-
 	CComPtr<IVssBackupComponents> ptr;
-	
 	std::wstring Path;
-
+	cluster_hash_map ClusterHashMap;
 	Path = GetShadowPath(VolumeName,ptr);
 
 	HANDLE DiskHandle = CreateFileW(
@@ -234,70 +227,41 @@ BackupVolume(std::wstring VolumeName, std::wstring OutputPath) {
 	DWORD ToMove = BufferSize;
 	std::cout << sizeof(LARGE_INTEGER) << "\n";
 	DWORD ClusterSize = 8 * 512;
-	std::vector<used_disk_space_info> UsedDiskInfo;
-	UsedDiskInfo.reserve(Kilobytes(1));
+	
+	std::vector<uint32_t> ClusterIndices;
+	ClusterIndices.reserve(MaxClusterCount);
+	
+	std::ofstream BenchmarkFile("Benchmark.csv", std::ios::binary | std::ios::out);
+	Assert(BenchmarkFile.is_open());
 
-	{
-		//Bitwise hack to find # of clusters used on the volume
-		//To speed this up, I can use hammingway algorithm to calculate # of bits set in given integer.
-		//Maybe I can find a way to optimise this with SIMD instructions
-		std::vector<ULONGLONG> ClusterIndices;
-		ClusterIndices.reserve(Kilobytes(1)); // 1024 Elements, not 1KB
+	LARGE_INTEGER BitMaskStart = GetClock();
 
-		std::ofstream BenchmarkFile("Benchmark.csv", std::ios::binary | std::ios::out);
-		Assert(BenchmarkFile.is_open());
-
-		LARGE_INTEGER BitMaskStart = GetClock();
-
-		while (ClustersRead < MaxClusterCount) {
-			
-			
-			if ((*BitmapIndex & BitmapMask) == BitmapMask) {
-				ClusterIndices.push_back(ClustersRead);
-				UsedClusterCount++;
-			}
-			BitmapMask <<= 1;
-			if (BitmapMask == 0) {
-				BitmapMask = 1;
-				BitmapIndex++;
-			}
-			ClustersRead++;
+	Assert(MaxClusterCount < UINT32_MAX);
+	while (ClustersRead < MaxClusterCount) {
+		if ((*BitmapIndex & BitmapMask) == BitmapMask) {
+			ClusterIndices.push_back(ClustersRead);
+			UsedClusterCount++;
 		}
-
-		LARGE_INTEGER BitMaskEnd = GetClock();
-
-		ClusterIndices.shrink_to_fit();
-		free(Bitmap);
-
-		DWORD Last = 0;
-
-
-		LARGE_INTEGER ParseStart = GetClock();
-
-		for (const auto& Iter : ClusterIndices) {
-			if (Iter == (Last + 1)) {
-				UsedDiskInfo.back().Len += ClusterSize;
-			}
-			else {
-				UsedDiskInfo.push_back({ Iter * ClusterSize,ClusterSize });
-			}
-			Last = Iter;
+		BitmapMask <<= 1;
+		if (BitmapMask == 0) {
+			BitmapMask = 1;
+			BitmapIndex++;
 		}
+		ClustersRead++;
+	}
 		
-		LARGE_INTEGER ParseEnd = GetClock();
+	LARGE_INTEGER BitMaskEnd = GetClock();
 
-		double Elapsed = 0.0;
-		Elapsed = GetMSElapsed(BitMaskStart,BitMaskEnd);
-		BenchmarkFile << "Bitmap mask(ms) ," << Elapsed << "\n";
-		Elapsed = GetMSElapsed(ParseStart,ParseEnd);
-		BenchmarkFile << "Parse(ms) ," << Elapsed << "\n";
-		BenchmarkFile.close();
+	ClusterIndices.shrink_to_fit();
+	free(Bitmap);
 
-		std::vector<used_disk_space_info> V;
-		std::cout << UsedDiskInfo.size();
-		std::cout << MaxClusterCount << "\n";
-	} //IF BITMAP
+	double Elapsed = 0.0;
+	Elapsed = GetMSElapsed(BitMaskStart,BitMaskEnd);
+	BenchmarkFile << "Bitmap mask(ms) ," << Elapsed << "\n";
+	BenchmarkFile.close();
 
+	std::cout << MaxClusterCount << "\n";
+	
 	
 	HANDLE OutputHandle = CreateFileW(
 		OutputPath.c_str(),
@@ -308,8 +272,18 @@ BackupVolume(std::wstring VolumeName, std::wstring OutputPath) {
 		NULL,
 		NULL
 	);
-
 	Assert(OutputHandle != INVALID_HANDLE_VALUE);
+
+	HANDLE HashFileHandle = CreateFile(
+		"HashData.bin",
+		GENERIC_WRITE,
+		0,
+		NULL,
+		CREATE_ALWAYS,
+		NULL,
+		NULL
+	);
+	Assert(HashFileHandle != INVALID_HANDLE_VALUE);
 
 	if (!DeviceIoControl(
 		DiskHandle,
@@ -325,68 +299,56 @@ BackupVolume(std::wstring VolumeName, std::wstring OutputPath) {
 		Assert(false);
 	}
 
-	int64_t FileBufferSize = Megabytes(2);
+	
+	int64_t FileBufferSize = ClusterSize;
 	void* DataBuffer = malloc(FileBufferSize);
+	DWORD BytesTransferred = 0;
+	
+	LARGE_INTEGER NewFilePointer;
+	NewFilePointer.QuadPart = 0;
 
-	for (const auto& Index : UsedDiskInfo) {
-		DWORD BytesTransferred = 0;
-		//TODO use databuffer with 64MB ceil val, rather than constructing it every time
-		if (Index.Len > FileBufferSize) {
+	char TextBuffer[256];
+	int TBLen = 0;
+	XXH64_hash_t HashResult = 0;
+	for (const auto& Index : ClusterIndices) {
+		LARGE_INTEGER MoveTo;
+		MoveTo.QuadPart = ClusterSize * Index;
 
-			DWORD TempBuffSize = FileBufferSize;
-			__int64 TempTotalRead = 0;
-			
-			Result = SetFilePointer(DiskHandle, Index.Offset, NULL, FILE_BEGIN);
-			Assert(Result == Index.Offset);
+		Result = SetFilePointerEx(DiskHandle, MoveTo, &NewFilePointer, FILE_BEGIN);
+		Assert(Result != FALSE);
+		Assert(NewFilePointer.QuadPart == MoveTo.QuadPart);
 
-			while(TempTotalRead + TempBuffSize < Index.Len) {
-				Result = ReadFile(DiskHandle, DataBuffer, TempBuffSize, &BytesTransferred, 0);
-				Assert(Result == TRUE);
-				Assert(BytesTransferred == TempBuffSize);
+		Result = ReadFile(DiskHandle, DataBuffer, ClusterSize, &BytesTransferred, 0);
+		Assert(Result == TRUE);
+		Assert(BytesTransferred == ClusterSize);
 
-				Result = WriteFile(OutputHandle, DataBuffer, TempBuffSize, &BytesTransferred, 0);
-				Assert(Result == TRUE);
-				Assert(BytesTransferred == TempBuffSize);
+		Result = WriteFile(OutputHandle, DataBuffer, ClusterSize, &BytesTransferred, 0);
+		Assert(Result == TRUE);
+		Assert(BytesTransferred == ClusterSize);
 
-				TempTotalRead += TempBuffSize;
-			}
+		HashResult = XXH3_64bits(DataBuffer, ClusterSize);
+		sprintf(TextBuffer, "%i %llu\n", Index, HashResult);
+		TBLen = strlen(TextBuffer);
+		Result = WriteFile(HashFileHandle, TextBuffer, TBLen, &BytesTransferred, 0);
+		Assert(Result == TRUE);
+		Assert(BytesTransferred == TBLen);
 
-			TempBuffSize = Index.Len - TempTotalRead;
-			
-			Result = ReadFile(DiskHandle, DataBuffer, TempBuffSize, &BytesTransferred, 0);
-			Assert(Result == TRUE);
-			Assert(BytesTransferred == TempBuffSize);
-
-			Result = WriteFile(OutputHandle, DataBuffer, TempBuffSize, &BytesTransferred, 0);
-			Assert(Result == TRUE);
-			Assert(BytesTransferred == TempBuffSize);
-
-		}
-		else {		
-			Result = SetFilePointer(DiskHandle, Index.Offset, NULL, FILE_BEGIN);
-			Assert(Result == Index.Offset);
-
-			Result = ReadFile(DiskHandle, DataBuffer, Index.Len, &BytesTransferred, 0);
-			Assert(Result == TRUE);
-			Assert(BytesTransferred == Index.Len);
-
-			Result = WriteFile(OutputHandle, DataBuffer, Index.Len, &BytesTransferred, 0);
-			Assert(Result == TRUE);
-			Assert(BytesTransferred == Index.Len);
-		}
+		ClusterHashMap[Index] = HashResult;
 	}
-
-
+	
 	CloseHandle(DiskHandle);
 	CloseHandle(OutputHandle);
+	CloseHandle(HashFileHandle);
 	free(DataBuffer);
 	std::cout << GetLastError() << "\n";
 	
-	return UsedDiskInfo;
+	return ClusterHashMap;
 }
 
+
+
 void 
-RestoreVolume(std::wstring VolumeName, std::wstring Source, std::vector<used_disk_space_info> ClusterIndices) {
+RestoreVolume(std::wstring VolumeName, std::wstring Source, const linear_cluster_map& LinearClusterMap) {
 	BOOL Result;
 	std::wstring DumpVolName = L"\\\\.\\" + VolumeName.substr(0, 2);
 	HANDLE RestoreTargetHandle = CreateFileW(
@@ -425,157 +387,242 @@ RestoreVolume(std::wstring VolumeName, std::wstring Source, std::vector<used_dis
 		std::cout << GetLastError() << "\n";
 		Assert(false);
 	}
-	
-	int64_t FileBufferSize = Megabytes(2);
+
+	int64_t FileBufferSize = Kilobytes(4); //TODO may change from disk to disk
+	int ClusterSize = Kilobytes(4);
 	void* DataBuffer = malloc(FileBufferSize);
-	
-	for (const auto& Index : ClusterIndices) {
-		DWORD BytesTransferred = 0;
 
-		if (Index.Len > FileBufferSize) {
+	LARGE_INTEGER OffsetResult;
+	OffsetResult.QuadPart = 0;
+	LARGE_INTEGER NewFilePointerVal;
+	NewFilePointerVal.QuadPart = 0;
+	DWORD BytesTransferred = 0;
 
-			DWORD TempBuffSize = FileBufferSize;
-			__int64 TempTotalRead = 0;
-			Result = SetFilePointer(RestoreTargetHandle, Index.Offset, NULL, FILE_BEGIN);
-			Assert(Result == Index.Offset);
+	for (const auto& [ClusterIndex,HashValue]: LinearClusterMap) {
+		Result = SetFilePointerEx(RestoreTargetHandle, NewFilePointerVal, &OffsetResult, FILE_BEGIN);
+		Assert(Result != FALSE);
+		Assert(OffsetResult.QuadPart == NewFilePointerVal.QuadPart);
 
-			while (TempTotalRead + TempBuffSize < Index.Len) {
-				Result = ReadFile(SourceHandle, DataBuffer, TempBuffSize, &BytesTransferred, 0);
-				Assert(Result == TRUE);
-				Assert(BytesTransferred == TempBuffSize);
+		Result = ReadFile(SourceHandle, DataBuffer, ClusterSize, &BytesTransferred, 0);
+		Assert(Result == TRUE);
+		Assert(BytesTransferred == ClusterSize);
 
-				Result = WriteFile(RestoreTargetHandle, DataBuffer, TempBuffSize, &BytesTransferred, 0);
-				Assert(Result == TRUE);
-				Assert(BytesTransferred == TempBuffSize);
-
-				TempTotalRead += TempBuffSize;
-			}
-
-			TempBuffSize = Index.Len - TempTotalRead;
-			
-			Result = ReadFile(SourceHandle, DataBuffer, TempBuffSize, &BytesTransferred, 0);
-			Assert(Result == TRUE);
-			Assert(BytesTransferred == TempBuffSize);
-
-			Result = WriteFile(RestoreTargetHandle, DataBuffer, TempBuffSize, &BytesTransferred, 0);
-			Assert(Result == TRUE);
-			Assert(BytesTransferred == TempBuffSize);
-		}
-		else {
-
-			Result = SetFilePointer(RestoreTargetHandle, Index.Offset, NULL, FILE_BEGIN);
-			Assert(Result == Index.Offset);
-
-			Result = ReadFile(SourceHandle, DataBuffer, Index.Len, &BytesTransferred, 0);
-			Assert(Result == TRUE);
-			Assert(BytesTransferred == Index.Len);
-
-			Result = WriteFile(RestoreTargetHandle, DataBuffer, Index.Len, &BytesTransferred, 0);
-			Assert(Result == TRUE);
-			Assert(BytesTransferred == Index.Len);
-
-		}
+		Result = ReadFile(RestoreTargetHandle, DataBuffer, ClusterSize, &BytesTransferred, 0);
+		Assert(Result == TRUE);
+		Assert(BytesTransferred == ClusterSize);
 	}
 
 	free(DataBuffer);
+	CloseHandle(RestoreTargetHandle);
+	CloseHandle(SourceHandle);
 
 }
 
-bool 
-CreateMetaDataFile(std::vector<used_disk_space_info> UsedDiskInfo, char FilePath[]) {
-	
-	std::ofstream File(FilePath,std::ios::binary|std::ios::out);
-	
-	if (!File.is_open()) {
-		std::wcout << L"Couldn't create metadatafile ";
-		return false;
-	}
 
-	for (const auto& var : UsedDiskInfo) {
-		File << var.Offset << " " << var.Len << "\n";
-	}
-	File.close();
-
-	return true;
-}
-
-bool
-ReadMetaDataFile(std::vector<used_disk_space_info>& UsedDiskInfo, char FilePath[]){
+void 
+ReadMetaDataLinear(linear_cluster_map& Result, char FilePath[]){
 	std::ifstream File(FilePath,std::ios::binary);
+
 	if (!File.is_open()) {
 		std::wcout << L"Couldn't read metadatafile\n";
-		return false;
+		return;
 	}
 
-	std::string F;
-	while (std::getline(File, F)) {
-		size_t SpacePos = F.find(" ");
+	
+	std::string Dump;
+	Result.reserve(Kilobytes(1024)); // TODO change constant
 
-		ULONGLONG Offset = std::atoll(F.substr(0,SpacePos).c_str());
-		ULONGLONG Len = std::atoll(F.substr(SpacePos + 1, F.size()).c_str());
+	while (std::getline(File, Dump)) {
+		cluster_tuple Tuple;
+		size_t SpacePos = Dump.find(" ");
 
-		UsedDiskInfo.push_back({ Offset,Len });
+		// std::atoll(F.substr(SpacePos + 1, F.size()).c_str())
+		Tuple.Index = std::atol(Dump.substr(0, SpacePos).c_str());
+		Tuple.Hash = std::atoll(Dump.substr(SpacePos + 1, Dump.size()).c_str());
+
+		Result.emplace_back(Tuple);
 	}
+
+	Result.shrink_to_fit();
+	
 	File.close();
-	return true;
 }
 
-uint32_t crc32_16bytes_prefetch(const void* data, size_t length, uint32_t previousCrc32, size_t prefetchAhead) {
-	// CRC code is identical to crc32_16bytes (including unrolling), only added prefetching   // 256 bytes look-ahead seems to be the sweet spot on Core i7 CPUs   
-	uint32_t crc = ~previousCrc32; // same as previousCrc32 ^ 0xFFFFFFFF   
-	const uint32_t* current = (const uint32_t*)data;   // enabling optimization (at least -O2) automatically unrolls the for-loop   
-	const size_t Unroll = 4;
-	const size_t BytesAtOnce = 16 * Unroll;
-	while (length >= BytesAtOnce + prefetchAhead) {
-		PREFETCH(((const char*)current) + prefetchAhead);
-		for (size_t unrolling = 0; unrolling < Unroll; unrolling++) {
-#if __BYTE_ORDER == __BIG_ENDIAN       
-			uint32_t one = *current++ ^ swap(crc);
-			uint32_t two = *current++;
-			uint32_t three = *current++;
-			uint32_t four = *current++;
-			crc = Crc32Lookup[0][four & 0xFF] ^
-				Crc32Lookup[1][(four >> 8) & 0xFF] ^
-				Crc32Lookup[2][(four >> 16) & 0xFF] ^
-				Crc32Lookup[3][(four >> 24) & 0xFF] ^
-				Crc32Lookup[4][three & 0xFF] ^
-				Crc32Lookup[5][(three >> 8) & 0xFF] ^
-				Crc32Lookup[6][(three >> 16) & 0xFF] ^
-				Crc32Lookup[7][(three >> 24) & 0xFF] ^
-				Crc32Lookup[8][two & 0xFF] ^
-				Crc32Lookup[9][(two >> 8) & 0xFF] ^
-				Crc32Lookup[10][(two >> 16) & 0xFF] ^
-				Crc32Lookup[11][(two >> 24) & 0xFF] ^
-				Crc32Lookup[12][one & 0xFF] ^
-				Crc32Lookup[13][(one >> 8) & 0xFF] ^
-				Crc32Lookup[14][(one >> 16) & 0xFF] ^
-				Crc32Lookup[15][(one >> 24) & 0xFF];
-#else       
-			uint32_t one = *current++ ^ crc;
-			uint32_t two = *current++;
-			uint32_t three = *current++;
-			uint32_t four = *current++
-				crc = Crc32Lookup[0][(four >> 24) & 0xFF] ^
-				Crc32Lookup[1][(four >> 16) & 0xFF] ^
-				Crc32Lookup[2][(four >> 8) & 0xFF] ^
-				Crc32Lookup[3][four & 0xFF] ^
-				Crc32Lookup[4][(three >> 24) & 0xFF] ^
-				Crc32Lookup[5][(three >> 16) & 0xFF] ^
-				Crc32Lookup[6][(three >> 8) & 0xFF] ^
-				Crc32Lookup[7][three & 0xFF] ^
-				Crc32Lookup[8][(two >> 24) & 0xFF] ^
-				Crc32Lookup[9][(two >> 16) & 0xFF] ^
-				Crc32Lookup[10][(two >> 8) & 0xFF] ^
-				Crc32Lookup[11][two & 0xFF] ^
-				Crc32Lookup[12][(one >> 24) & 0xFF] ^
-				Crc32Lookup[13][(one >> 16) & 0xFF] ^
-				Crc32Lookup[14][(one >> 8) & 0xFF] ^
-				Crc32Lookup[15][one & 0xFF];
-#endif     
-		}
-		length -= BytesAtOnce;
+void
+ReadMetaDataHash(cluster_hash_map& Result, char FilePath[]) {
+	std::ifstream File(FilePath, std::ios::binary);
+
+	if (!File.is_open()) {
+		std::wcout << L"Couldn't read metadatafile\n";
+		return;
 	}
-	const uint8_t* currentChar = (const uint8_t*)current;   // remaining 1 to 63 bytes (standard algorithm)   
-	while (length-- != 0)     crc = (crc >> 8) ^ Crc32Lookup[0][(crc & 0xFF) ^ *currentChar++];
-	return ~crc; // same as crc ^ 0xFFFFFFFF 
+
+
+	std::string Dump;
+	Result.reserve(Kilobytes(1024)); // TODO change constant
+	uint32_t Index;
+	XXH64_hash_t Hash;
+	while (std::getline(File, Dump)) {
+		cluster_tuple Tuple;
+		size_t SpacePos = Dump.find(" ");
+
+		// std::atoll(F.substr(SpacePos + 1, F.size()).c_str())
+		Index = std::atol(Dump.substr(0, SpacePos).c_str());
+		Hash = std::atoll(Dump.substr(SpacePos + 1, Dump.size()).c_str());
+
+		Result[Index] = Hash;
+	}
+
+	File.close();
+}
+
+cluster_indices
+GetVolumeClusterIndices(std::wstring VolumeName) {
+	DWORD BufferSize = 0;
+	BOOL Result = FALSE;
+
+	HANDLE DiskHandle = CreateFileW(
+		VolumeName.c_str(),
+		GENERIC_READ,
+		FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+		NULL,
+		OPEN_EXISTING,
+		0,
+		NULL
+	);
+	Assert(DiskHandle != INVALID_HANDLE_VALUE);
+	
+	STARTING_LCN_INPUT_BUFFER StartingLCN;
+	VOLUME_BITMAP_BUFFER* Bitmap = NULL;
+	DWORD BytesReturned;
+
+	uint32_t MaxClusterCount;
+	BufferSize = Megabytes(64);
+
+	StartingLCN.StartingLcn.QuadPart = 0;
+	Bitmap = (VOLUME_BITMAP_BUFFER*)malloc(BufferSize);
+	Assert(Bitmap);
+
+	Result = DeviceIoControl(
+		DiskHandle,
+		FSCTL_GET_VOLUME_BITMAP,
+		&StartingLCN,
+		sizeof(StartingLCN),
+		Bitmap,
+		BufferSize,
+		&BytesReturned,
+		NULL
+	);
+	if (Result == FALSE) {
+		DWORD err = GetLastError();
+		std::cout << "Couldn't get bitmap infor, MSDN Error code " << err << "\n";
+		Assert(false);
+	}
+
+	MaxClusterCount = Bitmap->BitmapSize.QuadPart;
+	DWORD ClustersRead = 0;
+
+	unsigned char* BitmapIndex = Bitmap->Buffer;
+
+	unsigned __int64 UsedClusterCount = 0;
+	unsigned char BitmapMask = 1;
+
+	DWORD ToMove = BufferSize;
+	
+	cluster_indices ClusterIndices;
+	ClusterIndices.reserve(MaxClusterCount);
+
+	std::ofstream BenchmarkFile("Benchmark.csv", std::ios::binary | std::ios::out);
+	Assert(BenchmarkFile.is_open());
+
+	Assert(MaxClusterCount < UINT32_MAX);
+	while (ClustersRead < MaxClusterCount) {
+		if ((*BitmapIndex & BitmapMask) == BitmapMask) {
+			ClusterIndices.push_back(ClustersRead);
+			UsedClusterCount++;
+		}
+		BitmapMask <<= 1;
+		if (BitmapMask == 0) {
+			BitmapMask = 1;
+			BitmapIndex++;
+		}
+		ClustersRead++;
+	}
+	
+	ClusterIndices.shrink_to_fit();
+	CloseHandle(DiskHandle);
+
+	free(Bitmap);
+	return ClusterIndices;
+}
+
+
+cluster_indices 
+FindDiff(std::wstring VolumeName, cluster_hash_map &ClusterHashMap) {
+	BOOL Result = FALSE;
+	DWORD BytesTransferred = 0;
+	static auto IsExistsFn = [&](const cluster_hash_map& Map, uint32_t Key) {return (Map.find(Key) != Map.end()); };
+	using namespace std::placeholders;
+	auto Exist = std::bind(IsExistsFn, ClusterHashMap, _1);
+
+	CComPtr<IVssBackupComponents> ptr;
+	std::wstring ShadowPath = GetShadowPath(VolumeName, ptr);
+	cluster_indices CurrentIndices = GetVolumeClusterIndices(ShadowPath);
+	cluster_indices DiffIndices;
+	DiffIndices.reserve(CurrentIndices.size());
+	LARGE_INTEGER NewFilePointer;
+	LARGE_INTEGER DistanceToMove;
+
+	HANDLE DiskHandle = CreateFileW(
+		ShadowPath.c_str(),
+		GENERIC_READ,
+		FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+		NULL,
+		OPEN_EXISTING,
+		0,
+		NULL
+	);
+	Assert(DiskHandle != INVALID_HANDLE_VALUE);
+	
+	DWORD ClusterSize = Kilobytes(4);
+	XXH64_hash_t HashVal = 0;
+	void* DataBuffer = malloc(ClusterSize);
+
+	for (const auto& NewIndex : CurrentIndices) {
+		if (!Exist(NewIndex)) {
+			DiffIndices.push_back(NewIndex);
+			continue;
+		}
+
+		DistanceToMove.QuadPart = ClusterSize * NewIndex;
+
+		Result = SetFilePointerEx(DiskHandle, DistanceToMove, &NewFilePointer, FILE_BEGIN);
+		Assert(Result != FALSE);
+		Assert(DistanceToMove.QuadPart == NewFilePointer.QuadPart);
+		
+		Result = ReadFile(DiskHandle, DataBuffer, ClusterSize, &BytesTransferred, 0);
+		Assert(Result == TRUE);
+		Assert(BytesTransferred == ClusterSize);
+
+		HashVal = XXH3_64bits(DataBuffer, ClusterSize);
+		if (HashVal != ClusterHashMap[NewIndex]) {
+			DiffIndices.push_back(NewIndex);
+		}
+	}
+	
+	free(DataBuffer);
+	CloseHandle(DiskHandle);
+	return DiffIndices;
+}
+
+
+inline cluster_hash_map 
+ClusterLinearToHashMap(const linear_cluster_map& LinearClusters) {
+	cluster_hash_map Result;
+	Result.reserve(LinearClusters.size());
+
+	for (const auto& Indx : LinearClusters) {
+		Result[Indx.Index] = Indx.Hash;
+	}
+	return Result;
 }

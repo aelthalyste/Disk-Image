@@ -5,17 +5,14 @@
 #include <xmmintrin.h>
 #include <Windows.h>
 
+#include <unordered_map>
+
+#define XXH_INLINE_ALL
+#include "xxhash.h"
+
 
 #define PREFETCH(location) _mm_prefetch(location,_MM_HINT_T0)
 
-#if __BYTE_ORDER == __BIG_ENDIAN
-inline uint32_t swap(uint32_t x) {
-	return (x >> 24) |
-		((x >> 8) & 0x0000FF00) |
-		((x << 8) & 0x00FF0000) |
-		(x << 24);
-}
-#endif
 
 struct debug_read_file {
 	ULONGLONG Size;
@@ -27,15 +24,33 @@ struct used_disk_space_info {
 	ULONGLONG Len;
 };
 
+struct cluster_tuple {
+	uint32_t Index;
+	XXH64_hash_t Hash;
+};
+
+enum load_type {
+	HashMap,
+	Linear
+};
+
+typedef std::unordered_map<uint32_t, XXH64_hash_t> cluster_hash_map; // # of cluster and it's hash value
+typedef std::vector<cluster_tuple> linear_cluster_map; // cpu loves cache ops 
+typedef std::vector<uint32_t> cluster_indices;
+
 std::wstring GetShadowPath(std::wstring Drive, CComPtr<IVssBackupComponents>& ptr);
 
-std::vector<used_disk_space_info> BackupVolume(std::wstring VolumeName, std::wstring OutputPath);
-void RestoreVolume(std::wstring VolumeName, std::wstring Source, std::vector<used_disk_space_info> DiskInfo);
+cluster_hash_map BackupVolume(std::wstring VolumeName, std::wstring OutputPath);
+void RestoreVolume(std::wstring VolumeName, std::wstring Source, const linear_cluster_map &DiskInfo);
+void ReadMetaDataLinear(linear_cluster_map &LinearMap, char FilePath[]);
+void ReadMetaDataHash(cluster_hash_map& Result, char FilePath[]);
 
-bool CreateMetaDataFile(std::vector<used_disk_space_info> DiskInfo, char FilePath[]);
-bool ReadMetaDataFile(std::vector<used_disk_space_info>& DiskInfo, char FilePath[]);
+cluster_indices GetVolumeClusterIndices(std::wstring VolumeName);
+cluster_indices FindDiff(std::wstring VolumeName, cluster_hash_map &ClusterHashMap);
 
-uint32_t crc32_16bytes_prefetch(const void* data, size_t length, uint32_t previousCrc32 = 0, size_t prefetchAhead = 256);
+inline cluster_hash_map ClusterLinearToHashMap(const linear_cluster_map&);
+
+
 
 const uint32_t Crc32Lookup[16][256] =
 {
