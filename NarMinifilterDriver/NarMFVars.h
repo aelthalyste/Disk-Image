@@ -12,7 +12,6 @@
 #define MAX_NAR_SINGLE_LOG_COUNT 64
 PVOID GlobalNarBuffer;
 
-
 enum FLAGS {
   NO_ERR,
   BUFFER_OVERFLOW,
@@ -24,6 +23,7 @@ typedef struct _nar_connection_data {
   PFLT_FILTER FilterHandle;
   PFLT_PORT ServerPort;
   PFLT_PORT ClientPort;
+  KSPIN_LOCK SpinLock;
 }nar_connection_data; nar_connection_data GlobalNarConnectionData;
 
 typedef struct _nar_record {

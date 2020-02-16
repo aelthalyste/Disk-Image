@@ -396,10 +396,10 @@ VOID
 PushFsRecordToLog(
   nar_record* Record
 );
-
+/*
 VOID
 NarSendMessage();
-
+*/
 NTSTATUS
 NarMinifilterDriverInstanceSetup (
     _In_ PCFLT_RELATED_OBJECTS FltObjects,
@@ -609,6 +609,8 @@ Return Value:
       leave;
     }
    
+    KeInitializeSpinLock(&GlobalNarConnectionData.SpinLock);
+
     //
     //  Register with FltMgr to tell it our callback routines
     //
@@ -787,48 +789,82 @@ Return Value:
         }
     }
     */
-
-    //FLT_ASSERT(Data->Iopb->MajorFunction == IRP_MJ_WRITE);
     
+#if 1
     
-    GlobalNarFsRecord.Start = 123;
-    GlobalNarFsRecord.OperationSize = 321;
-    PushFsRecordToLog(&GlobalNarFsRecord);
+    STARTING_VCN_INPUT_BUFFER StartingInputVCNBuffer;
+    RETRIEVAL_POINTERS_BUFFER ClusterMapBuffer;
+    ClusterMapBuffer.StartingVcn.QuadPart = 0;
+    StartingInputVCNBuffer.StartingVcn.QuadPart = 0;
 
-
-    return FLT_PREOP_SUCCESS_WITH_CALLBACK;
-    
-#if 0
     ULONG BytesReturned = 0;
-    status = FltFsControlFile(
-      FltObjects->Instance,
-      FltObjects->FileObject,
-      FSCTL_GET_RETRIEVAL_POINTERS,
-      0,
-      0,
-      GlobalNarBuffer,
-      MAX_NAR_BUFFER_SIZE,
-      &BytesReturned
-    );
-    if (!NT_SUCCESS(status)) {
-      return FLT_PREOP_SUCCESS_NO_CALLBACK;
+
+    ULONGLONG RegionLen = 0;
+
+    LARGE_INTEGER WriteOffsetLargeInt = Data->Iopb->Parameters.Write.ByteOffset;
+    ULONG WriteLen = Data->Iopb->Parameters.Write.Length;
+    ULONG NClustersToWrite = WriteLen % (4096); //TODO make this parametric
+
+    LONGLONG ClusterWriteStartOffset = WriteOffsetLargeInt.QuadPart % (4096); //TODO make this parametric
+    LONGLONG ClusterWriteEndOffset = ClusterWriteStartOffset + NClustersToWrite;
+
+
+    for (;;) {
+      
+      status = FltFsControlFile(
+        FltObjects->Instance,
+        FltObjects->FileObject,
+        FSCTL_GET_RETRIEVAL_POINTERS,
+        &StartingInputVCNBuffer,
+        sizeof(StartingInputVCNBuffer),
+        &ClusterMapBuffer,
+        sizeof(ClusterMapBuffer),
+        &BytesReturned
+      );
+      if (status != STATUS_BUFFER_OVERFLOW) {
+        break;
+      }
+
+      if (ClusterWriteStartOffset > StartingInputVCNBuffer.StartingVcn.QuadPart) {
+        RegionLen = (ClusterMapBuffer.Extents[0].NextVcn.QuadPart - ClusterMapBuffer.StartingVcn.QuadPart);
+        if ((LONGLONG)((LONGLONG)NClustersToWrite - RegionLen) > 0) {
+          GlobalNarFsRecord.OperationSize = RegionLen;
+          GlobalNarFsRecord.Start = ClusterMapBuffer.Extents[0].Lcn.QuadPart;
+          PushFsRecordToLog(&GlobalNarFsRecord);
+          NClustersToWrite -= RegionLen;
+        }
+        else {
+          break;
+        }
+
+        if (NClustersToWrite == 0) {
+          break;
+        }
+      }
+
+      
+      StartingInputVCNBuffer.StartingVcn = ClusterMapBuffer.StartingVcn;
     }
     
     //PRETRIEVAL_POINTERS_BUFFER ClusterMapBuffer = (PRETRIEVAL_POINTERS_BUFFER)GlobalNarBuffer;
     //TODO send impossible log operation
 
-    LARGE_INTEGER WriteOffsetLargeInt = Data->Iopb->Parameters.Write.ByteOffset;
-    ULONG WriteLen = Data->Iopb->Parameters.Write.Length;
-    ULONG NClustersToWrite = WriteLen % (4096); //TODO make this parametric
-    
-    LONGLONG ClusterWriteStartOffset = WriteOffsetLargeInt.QuadPart % (4096); //TODO make this parametric
-    //LONGLONG ClusterWriteEndOffset = ClusterWriteStartOffset + NClustersToWrite;
     
     //check if operation falls in JUST ONE cluster region
     GlobalNarFsRecord.Start = ClusterWriteStartOffset;
     GlobalNarFsRecord.OperationSize = NClustersToWrite;
+    
+    
+    //KIRQL oldIrql;
+// NARSPINLOCK
+//KeAcquireSpinLock(&MiniSpyData.OutputBufferLock, &oldIrql);
+//InsertTailList(&MiniSpyData.OutputBufferList, &RecordList->List);
+//KeReleaseSpinLock(&MiniSpyData.OutputBufferLock, oldIrql);
+    //KIRQL OldIrql;
+    //KeAcquireSpinLock(&GlobalNarConnectionData.SpinLock, &OldIrql);
     PushFsRecordToLog(&GlobalNarFsRecord);
-    return FLT_PREOP_SUCCESS_WITH_CALLBACK;
+    //KeReleaseSpinLock(&GlobalNarConnectionData.SpinLock, OldIrql);
+
 #endif
 
 #if 0
@@ -882,7 +918,9 @@ Return Value:
         Indx++;
       }
     }
+    
 #endif
+    return FLT_PREOP_SUCCESS_WITH_CALLBACK;
     
     /*
       Data->Iopb->Parameters.Write.Length;
@@ -890,7 +928,7 @@ Return Value:
     */
 
     
-    
+
 }
 
 
@@ -1148,34 +1186,33 @@ NarUserMessageCallback(
 
   //TODO check input buffer
 
-  BOOLEAN Status = FALSE;
-  UNREFERENCED_PARAMETER(Status);
   
 #if 1
+  * ReturnOutputBufferLength = 0;
   __try {
-    if (GlobalFileLog.Count < 5) {
-      __leave;
-    }
     ProbeForWrite(OutputBuffer, OutputBufferSize, 1);
 
-    // Void pointer size changes from architecture to architecture. 
-    // Rather than casting ULONGLONG, cast something reliable since ULONGLONG is expected to be 64 bits always ? Check this information
     nar_log* Log = OutputBuffer; //Offset to records array
-
+    
+    //KIRQL OldIrql;
+    //KeAcquireSpinLock(&GlobalNarConnectionData.SpinLock, &OldIrql);
+    
     for (UINT32 Indx = 0; Indx < GlobalFileLog.Count; Indx++) {
       Log->Record[Indx].Start =  GlobalFileLog.Record[Indx].Start;
       Log->Record[Indx].OperationSize =  GlobalFileLog.Record[Indx].OperationSize;
     }
 
+    *ReturnOutputBufferLength += GlobalFileLog.Count * (sizeof(ULONGLONG) * 2);
+    *ReturnOutputBufferLength += sizeof(Log->Count);
+
     Log->Count = GlobalFileLog.Count;
     GlobalFileLog.Count = 0;
-
-    Status = TRUE;
+    
+    //KeReleaseSpinLock(&GlobalNarConnectionData.SpinLock, OldIrql);
+    
   }
   __finally {
-    if (Status == FALSE) {
-      //FLT_ASSERT(FALSE);  // write error;
-    }
+
   }
 #endif 
 
@@ -1202,6 +1239,7 @@ PopFsRecord() {
   }
 }
 
+/*
 VOID
 NarSendMessage() {
 
@@ -1223,3 +1261,4 @@ NarSendMessage() {
   
   GlobalFileLog.Count = 0;
 }
+*/

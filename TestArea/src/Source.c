@@ -27,10 +27,9 @@ typedef struct _nar_record {
 	ULONGLONG OperationSize; // End of operation, in LCN //TODO change variable name
 }nar_record; nar_record GlobalNarFsRecord;
 
-typedef struct _nar_log {
-	INT Count;
-	WCHAR FileName[512]; // verify this usage, absolute path of the file.
-	nar_record Record[128];
+typedef struct _nar_log { // Align 64byte? 
+	UINT32 Count; //leftmost bit is used for overflow flag
+	nar_record Record[64];
 }nar_log; nar_log GlobalFileLog;
 
 inline void
@@ -39,6 +38,8 @@ PrintLastError() {
 	printf("Last error was %d\n", Err);
 }
 
+BOOL GlobalShouldCleanup = FALSE;
+HANDLE GlobalSemaphore;
 
 int _cdecl
 main(_In_ int argc,
@@ -46,7 +47,6 @@ main(_In_ int argc,
 ) {
 	HANDLE ConnectionPort = INVALID_HANDLE_VALUE;
 	HRESULT Result = 0;
-	HANDLE Shutdown = 0;
 	WCHAR instanceName[INSTANCE_NAME_MAX_CHARS + 1];
 	HANDLE Thread = 0;
 	ULONG ThreadID = 0;
@@ -92,6 +92,17 @@ main(_In_ int argc,
 		}
 	}
 
+	GlobalSemaphore = CreateSemaphore(
+		NULL,
+		0,
+		1,
+		L"NarFilter"
+	);
+	if (GlobalSemaphore == NULL) {
+		printf("Couldn't initialize semaphore!\n");
+		goto MainCleanup;
+	}
+
 	Thread = CreateThread(
 		NULL,
 		0,
@@ -118,7 +129,13 @@ main(_In_ int argc,
 MainCleanup:
 	printf("Cleaning up..\n");
 	//TODO clean things
-	
+	GlobalShouldCleanup = TRUE;
+
+	if (GlobalSemaphore) {
+		WaitForSingleObject(GlobalSemaphore, INFINITE);
+		CloseHandle(GlobalSemaphore);
+	}
+
 	//Clean thread
 	if (Thread) {
 		CloseHandle(Thread);
@@ -146,25 +163,36 @@ LogRecords(LPVOID Parameters) {
 	nar_log* Data = (nar_log*)OutBuffer;
 
 	for (;;) {
-		Result = FilterSendMessage(Port, Port, sizeof(LPVOID), OutBuffer, OutBufferSize, &BytesReturned);
-		printf("\r                                                                                              ");
-		if (BytesReturned == 0) {
-			printf("\rSendMessage BytesReturned = 0!");
-		}
+		Result = FilterSendMessage(Port, Port, sizeof(PVOID), OutBuffer, OutBufferSize, &BytesReturned);
+		
 		if (!SUCCEEDED(Result)) {
-			printf("\rFailed filtermessage function -> %d",Result);
+			printf("Failed filtermessage function -> %d",Result);
 			break;
 		}
 		
-		if (Data->Count > 0) {
-			printf("\r%d\t%I64d\t%I64d (0th Element)", Data->Count, Data->Record->Start, Data->Record->OperationSize);
+		if (BytesReturned > 0) {
+			if (Data->Count != 0) {
+				for (int i = 0; i < Data->Count; i++) {
+					if (Data->Record[i].OperationSize == 920) {
+						printf("Errorcode -> %p\n", (LPVOID)Data->Record[i].Start);
+					}
+				}
+				//printf("%d\t%I64d\t%I64d (0th Element)\n", Data->Count, Data->Record[0].Start, Data->Record[0].OperationSize);
+			}
 		}
 		else {
-			printf("\rData count is zero or lower");
+			printf("Bytes returned was zero \n", Data->Count);
 		}
-		Sleep(250);
+
+		if (GlobalShouldCleanup) {
+			break;
+		}
+		Sleep(125);
+	
 	}
 	
+	ReleaseSemaphore(GlobalSemaphore, 1, NULL);
+
 	printf("\nExiting logrecords thread..\n");
 	return 0;
 }
