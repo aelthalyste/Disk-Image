@@ -20,17 +20,10 @@
 #define PORT_NAME L"\\NarMiniFilterPort"
 #define FILTER_NAME L"NarMinifilterDriver"
 
+#include "NarMFVars.h"
+
 DWORD LogRecords(LPVOID Parameters);
 
-typedef struct _nar_record {
-	ULONGLONG Start; //start of the operation in context of LCN
-	ULONGLONG OperationSize; // End of operation, in LCN //TODO change variable name
-}nar_record; nar_record GlobalNarFsRecord;
-
-typedef struct _nar_log { // Align 64byte? 
-	UINT32 Count; //leftmost bit is used for overflow flag
-	nar_record Record[64];
-}nar_log; nar_log GlobalFileLog;
 
 inline void
 PrintLastError() {
@@ -41,10 +34,68 @@ PrintLastError() {
 BOOL GlobalShouldCleanup = FALSE;
 HANDLE GlobalSemaphore;
 
-int _cdecl
-main(_In_ int argc,
-	_In_reads_(argc) char *argv[]
-) {
+LPVOID
+DEBUGReadEntireFile(char* Filename) {
+
+	HANDLE Filehandle = CreateFileA(Filename,
+		GENERIC_READ,
+		FILE_SHARE_READ,
+		0,
+		OPEN_EXISTING,
+		0,
+		0);
+
+	LPVOID Result = 0;
+	ASSERT(Filehandle != INVALID_HANDLE_VALUE);
+
+	if (Filehandle != INVALID_HANDLE_VALUE) {
+
+		LARGE_INTEGER FileSize = { 0 };
+
+		if (GetFileSizeEx(Filehandle, &FileSize)) {
+
+			DWORD BytesRead = 0;
+
+			Result = VirtualAlloc(0, FileSize.QuadPart, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+
+			if (ReadFile(Filehandle, Result, FileSize.QuadPart, &BytesRead, NULL)
+				&& (BytesRead == FileSize.QuadPart)) {
+
+
+				// NOTE(Batuhan G.): File read successfully;
+
+			}
+		}
+		else {// Couldn't get filesize
+				// TODO(Batuhan G.): Log
+		}
+		CloseHandle(Filehandle);
+	}
+	else { //Couldn't open file
+			// TODO(Batuhan G.): Log
+	}
+
+	return Result;
+}
+
+
+
+
+
+int
+main() {
+
+	nar_record *R = DEBUGReadEntireFile("OutputFile.txt");
+	nar_record StackR[5664 / sizeof(nar_record)] = { 0 };
+	int a = 0;
+	for (int i = 0; i < (5664 / sizeof(nar_record)); i++) {
+		StackR[i] = R[i];
+		if (StackR[i].Type == NarError) {
+			printf("ErrIndex -> %d, ErrVal-> %I64d\n", i, StackR->Err);
+		}
+	}
+	
+
 	HANDLE ConnectionPort = INVALID_HANDLE_VALUE;
 	HRESULT Result = 0;
 	WCHAR instanceName[INSTANCE_NAME_MAX_CHARS + 1];
@@ -92,7 +143,7 @@ main(_In_ int argc,
 		}
 	}
 
-	GlobalSemaphore = CreateSemaphore(
+	GlobalSemaphore = CreateSemaphoreW(
 		NULL,
 		0,
 		1,
@@ -122,7 +173,6 @@ main(_In_ int argc,
 		if (inputChar == 'q' || inputChar == 'Q') {
 			goto MainCleanup;
 		}
-		Sleep(100);
 	}
 
 
@@ -149,51 +199,92 @@ MainCleanup:
 	return 0;
 }
 
+
 DWORD
 LogRecords(LPVOID Parameters) {
-	
+
 	HANDLE Port = Parameters;
 	HRESULT Result = 0;
 
-	
-	DWORD OutBufferSize = 8 * 1024;
-	LPVOID OutBuffer = malloc(OutBufferSize);
+	DWORD OutBufferSize = 16 * 1024;
+	nar_log* Data = (nar_log*)malloc(OutBufferSize);
 	DWORD BytesReturned = 0;
 
-	nar_log* Data = (nar_log*)OutBuffer;
+	UINT32 MaxEntryCount = 256;
+	UINT32 CurrentEntryCount = 0;
+	nar_record* AllRecords = (nar_record*)malloc(sizeof(nar_record) * MaxEntryCount);
+	
+	HANDLE OutputFile = CreateFile(
+		"OutputFile.txt",
+		GENERIC_WRITE,
+		FILE_SHARE_READ,
+		0,
+		CREATE_ALWAYS,
+		0,
+		0
+	);
+	if (OutputFile == INVALID_HANDLE_VALUE) {
+		printf("Couldn't create log file.. Terminating thread!");
+		goto Cleanup;
+	}
 
 	for (;;) {
-		Result = FilterSendMessage(Port, Port, sizeof(PVOID), OutBuffer, OutBufferSize, &BytesReturned);
+		memset(Data, 0, OutBufferSize);
+
+		Result = FilterSendMessage(Port, Port, sizeof(PVOID), Data, OutBufferSize, &BytesReturned);
 		
 		if (!SUCCEEDED(Result)) {
 			printf("Failed filtermessage function -> %d",Result);
 			break;
 		}
 		
-		if (BytesReturned > 0) {
-			if (Data->Count != 0) {
-				for (int i = 0; i < Data->Count; i++) {
-					if (Data->Record[i].OperationSize == 920) {
-						printf("Errorcode -> %p\n", (LPVOID)Data->Record[i].Start);
-					}
+		if (BytesReturned > 0 && Data->Count > 0) {
+			printf("\r%d                       ", CurrentEntryCount);
+			BOOL Result = FALSE;
+
+			if (Data->Count + CurrentEntryCount > MaxEntryCount) {
+				DWORD BytesWritten = 0;
+				Result = WriteFile(OutputFile, AllRecords, sizeof(nar_record) * CurrentEntryCount, BytesWritten, 0);
+				if (Result != TRUE) {
+					printf("WriteFile error!\n");
+					PrintLastError();
+					goto Cleanup;
 				}
-				//printf("%d\t%I64d\t%I64d (0th Element)\n", Data->Count, Data->Record[0].Start, Data->Record[0].OperationSize);
+				printf("Flushed all logs. Terminating thread...\n");
+				goto Cleanup;
+			}
+
+			for (UINT32 Indx = 0; Indx < Data->Count; Indx++) {
+				AllRecords[CurrentEntryCount].Start = Data->Record[Indx].Start;
+				AllRecords[CurrentEntryCount].OperationSize = Data->Record[Indx].OperationSize;
+				AllRecords[CurrentEntryCount].Type = Data->Record[Indx].OperationSize;
+				CurrentEntryCount++;
 			}
 		}
 		else {
-			printf("Bytes returned was zero \n", Data->Count);
+			printf("\rBytes returned was zero -- %d",CurrentEntryCount);
 		}
-
+		
 		if (GlobalShouldCleanup) {
 			break;
 		}
-		Sleep(125);
-	
+
+		Sleep(50);
 	}
 	
-	ReleaseSemaphore(GlobalSemaphore, 1, NULL);
+Cleanup:
+	CloseHandle(OutputFile);
+	
+	if (Data) {
+		free(Data);
+	}
+	if (AllRecords) {
+		free(AllRecords);
+	}
 
+	ReleaseSemaphore(GlobalSemaphore, 1, NULL);
 	printf("\nExiting logrecords thread..\n");
+
 	return 0;
 }
 
