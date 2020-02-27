@@ -396,7 +396,7 @@ NarUserMessageCallback(
 											 );
 
 VOID
-PushFsRecordToLog(
+PushFsRecord(
 									nar_record* Record
 									);
 /*
@@ -606,6 +606,7 @@ Return Value:
 		
 		try
 		{
+
 				KeInitializeSpinLock(&GlobalNarConnectionData.SpinLock);
 				
 				//
@@ -674,7 +675,7 @@ Return Value:
 						if (GlobalNarConnectionData.FilterHandle != NULL) {
 								FltUnregisterFilter(GlobalNarConnectionData.FilterHandle);
 						}
-						FLT_ASSERT(FALSE); // that shouldn't happen
+						//FLT_ASSERT(FALSE); // that shouldn't happen
 				}
 				
 		}
@@ -770,135 +771,215 @@ Return Value:
 		}
 
 #if 1
-		
-    STARTING_VCN_INPUT_BUFFER StartingInputVCNBuffer;
-    RETRIEVAL_POINTERS_BUFFER ClusterMapBuffer;
-    ClusterMapBuffer.StartingVcn.QuadPart = 0;
-    StartingInputVCNBuffer.StartingVcn.QuadPart = 0;
-		
-    ULONG BytesReturned = 0;
-		
-    ULONGLONG RegionLen = 0;
-		
-    LARGE_INTEGER WriteOffsetLargeInt = Data->Iopb->Parameters.Write.ByteOffset;
-    ULONG WriteLen = Data->Iopb->Parameters.Write.Length;
-    ULONGLONG NClustersToWrite = WriteLen % (4096) + 1; //TODO make this parametric
-		
-    LONGLONG ClusterWriteStartOffset = WriteOffsetLargeInt.QuadPart % (4096); //TODO make this parametric
-    
-    BOOLEAN HeadFound = FALSE;
+		STARTING_VCN_INPUT_BUFFER StartingInputVCNBuffer;
+		RETRIEVAL_POINTERS_BUFFER ClusterMapBuffer;
+		ClusterMapBuffer.StartingVcn.QuadPart = 0;
+		StartingInputVCNBuffer.StartingVcn.QuadPart = 0;
+
+		ULONG BytesReturned = 0;
+
+		ULONGLONG RegionLen = 0;
+
+		LARGE_INTEGER WriteOffsetLargeInt = Data->Iopb->Parameters.Write.ByteOffset;
+		ULONG WriteLen = Data->Iopb->Parameters.Write.Length;
+		LONGLONG NClustersToWrite = WriteLen % (4096) + 1; //TODO make this parametric
+
+		LONGLONG ClusterWriteStartOffset = WriteOffsetLargeInt.QuadPart % (4096); //TODO make this parametric
+
+		BOOLEAN HeadFound = FALSE;
 		BOOLEAN CeilTest = FALSE;
 
 		UINT32 MaxIteration = 0;
-
-    for (;;) {
-				MaxIteration++;
-				if (MaxIteration > 150) {
-					FLT_ASSERT(FALSE); //That shouldnt happen
-					break;
-				}
-				KIRQL OldIrql;
-				GlobalNarFsRecord.Start = 0;
-				GlobalNarFsRecord.OperationSize = 0;
-				GlobalNarFsRecord.Type = NarInf;
-
-				status = FltFsControlFile(
-					FltObjects->Instance,
-					Data->Iopb->TargetFileObject,
-					FSCTL_GET_RETRIEVAL_POINTERS,
-					&StartingInputVCNBuffer,
-					sizeof(StartingInputVCNBuffer),
-					&ClusterMapBuffer,
-					sizeof(ClusterMapBuffer),
-					&BytesReturned
-					);
-
-				if (status != STATUS_BUFFER_OVERFLOW
-					&& status != STATUS_SUCCESS
-					&& status != STATUS_END_OF_FILE) {
-
-					GlobalNarFsRecord.Type = NarError;
-					GlobalNarFsRecord.Err = status;
-					GlobalNarFsRecord.Reserved = NE_RETRIEVAL_POINTERS;
-
-					KeAcquireSpinLock(&GlobalNarConnectionData.SpinLock, &OldIrql);
-					PushFsRecordToLog(&GlobalNarFsRecord);
-					KeReleaseSpinLock(&GlobalNarConnectionData.SpinLock, OldIrql);
-
-					break;
-				}
-				if (status == STATUS_END_OF_FILE) {
-					break;
-				}
-				
-				if (!HeadFound) {
-					CeilTest = (ClusterWriteStartOffset < ClusterMapBuffer.Extents[0].NextVcn.QuadPart);
-				}
-				else {
-					CeilTest = TRUE;
-				}
-
-
-				if (ClusterWriteStartOffset >= StartingInputVCNBuffer.StartingVcn.QuadPart && CeilTest) {
-
-						RegionLen = (ClusterMapBuffer.Extents[0].NextVcn.QuadPart - ClusterMapBuffer.StartingVcn.QuadPart);
-						
-						if (!HeadFound){
-								//Start position of the write operation
-								ULONGLONG OffsetFromStart = (ClusterWriteStartOffset - StartingInputVCNBuffer.StartingVcn.QuadPart);
-								GlobalNarFsRecord.Start = ClusterMapBuffer.Extents[0].Lcn.QuadPart 
-										+ OffsetFromStart;
-								
-								if (RegionLen - OffsetFromStart >= NClustersToWrite) {
-									GlobalNarFsRecord.OperationSize = NClustersToWrite;
-									NClustersToWrite = 0;
-								}
-								else {
-									GlobalNarFsRecord.OperationSize = RegionLen - OffsetFromStart;
-									NClustersToWrite = RegionLen - OffsetFromStart;
-								}
-									
-								KeAcquireSpinLock(&GlobalNarConnectionData.SpinLock, &OldIrql);
-								PushFsRecordToLog(&GlobalNarFsRecord);
-								KeReleaseSpinLock(&GlobalNarConnectionData.SpinLock, OldIrql);
-
-								HeadFound = TRUE;
-								if (NClustersToWrite <= 0) {
-										break;
-								}
-								
-						}
-						else { // HeadFound
-								//Write operation falls over other region(0)
-								if ((NClustersToWrite - RegionLen) > 0) {
-										//write operation does not fit this region
-										GlobalNarFsRecord.Start = ClusterMapBuffer.Extents->Lcn.QuadPart;
-										GlobalNarFsRecord.OperationSize = RegionLen;
-										KeAcquireSpinLock(&GlobalNarConnectionData.SpinLock, &OldIrql);
-										PushFsRecordToLog(&GlobalNarFsRecord);
-										KeReleaseSpinLock(&GlobalNarConnectionData.SpinLock, OldIrql);
-										NClustersToWrite -= RegionLen;
-								}
-								else {
-										GlobalNarFsRecord.Start = ClusterMapBuffer.Extents->Lcn.QuadPart;
-										GlobalNarFsRecord.OperationSize = NClustersToWrite;
-										KeAcquireSpinLock(&GlobalNarConnectionData.SpinLock, &OldIrql);
-										PushFsRecordToLog(&GlobalNarFsRecord);
-										KeReleaseSpinLock(&GlobalNarConnectionData.SpinLock, OldIrql);
-										NClustersToWrite = 0;
-										break;
-								}
-								
-								if (NClustersToWrite <= 0) {
-										break;
-								}
-								
-						}
-						
-				}
-			StartingInputVCNBuffer.StartingVcn = ClusterMapBuffer.Extents->NextVcn;
-    }
 		
+		nar_record NarFsRecord;
+		
+		
+		/*
+		ANSI_STRING F1;
+		RtlInitAnsiString(&F1, "pagefile.sys");
+		
+		UNICODE_STRING UString;
+		status = RtlAnsiStringToUnicodeString(&UString,&F1,FALSE);
+		if (!NT_SUCCESS(status)) {
+			KIRQL OldIrql;
+
+			NarFsRecord.Type = NarError;
+			NarFsRecord.Err = NE_ANSI_UNICODE_CONVERSION;
+			NarFsRecord.Reserved = NE_ANSI_UNICODE_CONVERSION;
+
+			PushFsRecordToLog(&NarFsRecord);
+		}
+		
+		PFLT_FILE_NAME_INFORMATION Inf;
+		status = FltGetFileNameInformation(Data, FLT_FILE_NAME_NORMALIZED | FLT_FILE_NAME_QUERY_DEFAULT, &Inf);
+		if (!NT_SUCCESS(status)) {
+			KIRQL OldIrql;
+
+			NarFsRecord.Type = NarError;
+			NarFsRecord.Err = NE_GETFILENAMEINF_FUNC_FAILED;
+			NarFsRecord.Reserved = NE_GETFILENAMEINF_FUNC_FAILED;
+
+			PushFsRecordToLog(&NarFsRecord);
+		}
+
+		status = RtlCompareUnicodeString(&Inf->Name, &UString, TRUE);
+		if (status == 0) {
+			KIRQL OldIrql;
+
+			NarFsRecord.Type = NarError;
+			NarFsRecord.Err = NE_PAGEFILE_FOUND;
+			NarFsRecord.Reserved = NE_PAGEFILE_FOUND;
+
+			PushFsRecordToLog(&NarFsRecord);
+			return FLT_PREOP_SUCCESS_WITH_CALLBACK;
+		}
+		*/
+
+		for (;;) {
+			MaxIteration++;
+			if (MaxIteration > 50) {
+				//TODO That shouldnt happen
+				break;
+			}
+			NarFsRecord.Start = 0;
+			NarFsRecord.OperationSize = 0;
+			NarFsRecord.Type = NarInf;
+
+			status = FltFsControlFile(
+				FltObjects->Instance,
+				Data->Iopb->TargetFileObject,
+				FSCTL_GET_RETRIEVAL_POINTERS,
+				&StartingInputVCNBuffer,
+				sizeof(StartingInputVCNBuffer),
+				&ClusterMapBuffer,
+				sizeof(ClusterMapBuffer),
+				&BytesReturned
+			);
+
+			if (status != STATUS_BUFFER_OVERFLOW
+				&& status != STATUS_SUCCESS
+				&& status != STATUS_END_OF_FILE) {
+
+				NarFsRecord.Type = NarError;
+				NarFsRecord.Err = NE_RETRIEVAL_POINTERS;
+				NarFsRecord.Reserved = status;
+
+				UNICODE_STRING UString;
+				UString.MaximumLength = MAX_NAME_CHAR_COUNT;
+
+				PFLT_FILE_NAME_INFORMATION inf = NULL;
+				status = FltGetFileNameInformation(Data, FLT_FILE_NAME_NORMALIZED | FLT_FILE_NAME_QUERY_DEFAULT, &inf);
+				if (!NT_SUCCESS(status)) {
+					NarFsRecord.Err = NE_UNDEFINED;
+					NarFsRecord.Reserved = status;
+					break;
+				}
+				wcsncpy(NarFsRecord.Name, inf->Name.Buffer, MAX_NAME_CHAR_COUNT);
+
+				PushFsRecordToLog(&NarFsRecord);
+
+				break;
+			}
+			if (status == STATUS_END_OF_FILE) {
+				if (!HeadFound) {
+					NarFsRecord.Type = NarError;
+					NarFsRecord.Reserved = NE_BREAK_WITHOUT_LOG;
+					NarFsRecord.Err = NE_BREAK_WITHOUT_LOG;
+
+					//PFLT_FILE_NAME_INFORMATION inf;
+					//FltGetFileNameInformation(Data, FLT_FILE_NAME_NORMALIZED | FLT_FILE_NAME_QUERY_DEFAULT, &inf);
+					UNICODE_STRING UString;
+					UString.MaximumLength = MAX_NAME_CHAR_COUNT;
+					
+					PFLT_FILE_NAME_INFORMATION inf = NULL;
+					status = FltGetFileNameInformation(Data, FLT_FILE_NAME_NORMALIZED | FLT_FILE_NAME_QUERY_DEFAULT, &inf);
+					if (!NT_SUCCESS(status)) {
+						NarFsRecord.Err = status;
+						NarFsRecord.Reserved = NE_UNDEFINED;
+						break;
+					}
+
+					wcsncpy(NarFsRecord.Name, inf->Name.Buffer, MAX_NAME_CHAR_COUNT);
+
+					PushFsRecordToLog(&NarFsRecord);
+				}
+				break;
+			}
+
+			if (!HeadFound) {
+				CeilTest = (ClusterWriteStartOffset < ClusterMapBuffer.Extents[0].NextVcn.QuadPart);
+			}
+			else {
+				CeilTest = TRUE;
+			}
+
+
+			if (ClusterWriteStartOffset >= StartingInputVCNBuffer.StartingVcn.QuadPart && CeilTest) {
+
+				RegionLen = (ClusterMapBuffer.Extents[0].NextVcn.QuadPart - ClusterMapBuffer.StartingVcn.QuadPart);
+
+				if (!HeadFound) {
+					//Start position of the write operation
+					ULONGLONG OffsetFromStart = (ClusterWriteStartOffset - StartingInputVCNBuffer.StartingVcn.QuadPart);
+					NarFsRecord.Start = ClusterMapBuffer.Extents[0].Lcn.QuadPart
+						+ OffsetFromStart;
+
+					if (RegionLen - OffsetFromStart >= (ULONGLONG)NClustersToWrite) {
+						NarFsRecord.OperationSize = NClustersToWrite;
+						NClustersToWrite = 0;
+					}
+					else {
+						NarFsRecord.OperationSize = RegionLen - OffsetFromStart;
+						NClustersToWrite = RegionLen - OffsetFromStart;
+					}
+
+					PushFsRecordToLog(&NarFsRecord);
+
+					HeadFound = TRUE;
+					if (NClustersToWrite <= 0) {
+						break;
+					}
+
+				}
+				else { // HeadFound
+					FLT_ASSERT(FALSE);
+					NarFsRecord.Err = NE_REGION_OVERFLOW;
+					NarFsRecord.Type = NarError;
+					PushFsRecordToLog(&NarFsRecord);
+					break;
+
+					////Write operation falls over other region(0)
+					//if ((NClustersToWrite - RegionLen) > 0) {
+					//		//write operation does not fit this region
+					//		NarFsRecord.Start = ClusterMapBuffer.Extents->Lcn.QuadPart;
+					//		NarFsRecord.OperationSize = RegionLen;
+					//		PushFsRecordToLog(&NarFsRecord);
+					//		NClustersToWrite -= RegionLen;
+					//}
+					//else {
+					//		NarFsRecord.Start = ClusterMapBuffer.Extents->Lcn.QuadPart;
+					//		NarFsRecord.OperationSize = NClustersToWrite;
+					//		PushFsRecordToLog(&NarFsRecord);
+					//		NClustersToWrite = 0;
+					//		break;
+					//}
+					//
+					//if (NClustersToWrite <= 0) {
+					//		break;
+					//}
+
+				}
+
+			}
+			if (NClustersToWrite <= 0) {
+				break;
+			}
+			StartingInputVCNBuffer.StartingVcn = ClusterMapBuffer.Extents->NextVcn;
+
+
+
+		}
+    
 		//KIRQL oldIrql;
 		// NARSPINLOCK
 		//KeAcquireSpinLock(&MiniSpyData.OutputBufferLock, &oldIrql);
@@ -911,12 +992,7 @@ Return Value:
 #endif
 		
 		return FLT_PREOP_SUCCESS_WITH_CALLBACK;
-		
-    /*
-      Data->Iopb->Parameters.Write.Length;
-      Data->Iopb->Parameters.Write.ByteOffset;
-    */
-		
+
 }
 
 
@@ -1021,7 +1097,7 @@ Return Value:
     if ((Data->IoStatus.Status == STATUS_SUCCESS)) {
 				
 				UNREFERENCED_PARAMETER(GlobalFileLog);
-				
+
     }
 		
     return FLT_POSTOP_FINISHED_PROCESSING;
@@ -1180,28 +1256,25 @@ NarUserMessageCallback(
 		__try {
 				ProbeForWrite(OutputBuffer, OutputBufferSize, 1);
 				
-				nar_log* Log = OutputBuffer; //Offset to records array
+				nar_record* Log = OutputBuffer; //Offset to records array
 				
 				KeAcquireSpinLock(&GlobalNarConnectionData.SpinLock, &OldIrql);
 				
 				for (UINT32 Indx = 0; Indx < GlobalFileLog.Count; Indx++) {
-						Log->Record[Indx].Start =  GlobalFileLog.Record[Indx].Start;
-						Log->Record[Indx].OperationSize =  GlobalFileLog.Record[Indx].OperationSize;
-						Log->Record[Indx].Type = GlobalFileLog.Record[Indx].Type;
+						Log[Indx].Start =  GlobalFileLog.Record[Indx].Start;
+						Log[Indx].OperationSize =  GlobalFileLog.Record[Indx].OperationSize;
+						Log[Indx].Type = GlobalFileLog.Record[Indx].Type;
+						wcsncpy(Log[Indx].Name, GlobalFileLog.Record[Indx].Name, MAX_NAME_CHAR_COUNT);
 				}
 				
-				Log->Count = GlobalFileLog.Count;
 				(*ReturnOutputBufferLength) += GlobalFileLog.Count * (sizeof(nar_record));
-				(*ReturnOutputBufferLength) += sizeof(GlobalFileLog.Count);
 				
 				GlobalFileLog.Count = 0;
 				ErrorOccured = FALSE;
 		}
 		__finally {
 			KeReleaseSpinLock(&GlobalNarConnectionData.SpinLock, OldIrql);
-			if (ErrorOccured) {
-				FLT_ASSERT(FALSE);//this shouldnt happen
-			}
+
 		}
 #endif 
 		
@@ -1209,24 +1282,18 @@ NarUserMessageCallback(
 }
 
 VOID
-PushFsRecordToLog(
-									nar_record* Record
-									) {
-		if (GlobalFileLog.Count >= 126) {
-				GlobalFileLog.Count = 125; //TODO warn user-mode about overflow
-		}
-		GlobalFileLog.Record[GlobalFileLog.Count].Start = Record->Start;
-		GlobalFileLog.Record[GlobalFileLog.Count].OperationSize = Record->OperationSize;
-		GlobalFileLog.Record[GlobalFileLog.Count].Type = Record->Type;
-		GlobalFileLog.Count++;
-}
+PushFsRecord(
+	nar_record* Record
+) {
+	if (GlobalFileLog.Count >= 126) {
+		GlobalFileLog.Count = 125; //TODO warn user-mode about overflow
+	}
+	GlobalFileLog.Record[GlobalFileLog.Count].Start = Record->Start;
+	GlobalFileLog.Record[GlobalFileLog.Count].OperationSize = Record->OperationSize;
+	GlobalFileLog.Record[GlobalFileLog.Count].Type = Record->Type;
+	wcsncpy(GlobalFileLog.Record[GlobalFileLog.Count].Name, Record->Name, MAX_NAME_CHAR_COUNT);
 
-VOID
-PopFsRecord() {
-		GlobalFileLog.Count--;
-		if (GlobalFileLog.Count > MAX_NAR_SINGLE_LOG_COUNT) {
-				GlobalFileLog.Count = 0;
-		}
+	GlobalFileLog.Count++;
 }
 
 

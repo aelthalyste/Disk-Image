@@ -10,15 +10,29 @@
 
 #define MAX_NAR_SINGLE_LOG_COUNT 128
 
+#define MAX_NAME_CHAR_COUNT 128
+
+
 enum ERRORS {
   NE_KERNEL_NO_MEMORY,
   NE_OUTPUT_BUFFER_NO_SIZE,
   NE_RETRIEVAL_POINTERS,
+  NE_REGION_OVERFLOW,
+  NE_BREAK_WITHOUT_LOG,
+  NE_ANSI_UNICODE_CONVERSION,
+  NE_GETFILENAMEINF_FUNC_FAILED,
+  NE_COMPARE_FUNC_FAILED,
+  NE_PAGEFILE_FOUND,
   NE_UNDEFINED
 };
 
 
 #ifdef _NAR_KERNEL
+#define PushFsRecordToLog(Log) { KIRQL OldIrql; KeAcquireSpinLock(&GlobalNarConnectionData.SpinLock, &OldIrql); \
+PushFsRecord((Log)); \
+KeReleaseSpinLock(&GlobalNarConnectionData.SpinLock, OldIrql); \
+} 
+
 typedef struct _nar_connection_data {
   PFLT_FILTER FilterHandle;
   PFLT_PORT ServerPort;
@@ -36,12 +50,12 @@ enum OpStatus {
 /*
  Prefetch operation info @preoperation callback, then @postoperation check if operation succeeded, if yes 
  mark it or? move it to the _record_to_send_buffer_
-
+ 
  I may need to store file_id and it's position at the prefetched array.
 */
 
 enum BufferType {
-  NarInf,
+  NarInf ,
   NarError
 };
 
@@ -59,9 +73,9 @@ typedef struct _nar_record {
       ULONGLONG Reserved;
     };
   };
-  
+  WCHAR Name[MAX_NAME_CHAR_COUNT];
   enum BufferType Type; //Error or information
-} nar_record; nar_record GlobalNarFsRecord;
+} nar_record;
 #pragma warning(pop)
 
 

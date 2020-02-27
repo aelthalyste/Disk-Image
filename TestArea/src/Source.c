@@ -80,21 +80,15 @@ DEBUGReadEntireFile(char* Filename) {
 
 
 
+void ListDevices();
 
+ULONG
+IsAttachedToVolume(
+	LPCWSTR VolumeName
+);
 
 int
 main() {
-
-	nar_record *R = DEBUGReadEntireFile("OutputFile.txt");
-	nar_record StackR[5664 / sizeof(nar_record)] = { 0 };
-	int a = 0;
-	for (int i = 0; i < (5664 / sizeof(nar_record)); i++) {
-		StackR[i] = R[i];
-		if (StackR[i].Type == NarError) {
-			printf("ErrIndex -> %d, ErrVal-> %I64d\n", i, StackR->Err);
-		}
-	}
-	
 
 	HANDLE ConnectionPort = INVALID_HANDLE_VALUE;
 	HRESULT Result = 0;
@@ -118,9 +112,10 @@ main() {
 		goto MainCleanup;
 	}
 	
+	
 	Result = FilterAttach(
 		FILTER_NAME,
-		L"C:",
+		L"E:",
 		NULL,
 		sizeof(instanceName),
 		instanceName
@@ -142,6 +137,17 @@ main() {
 			goto MainCleanup;
 		}
 	}
+
+	ListDevices();
+	FilterDetach(
+		FILTER_NAME,
+		"C:\\",
+		NULL
+	);
+
+	printf("Instance name -> %S\n", instanceName);
+
+	ListDevices();
 
 	GlobalSemaphore = CreateSemaphoreW(
 		NULL,
@@ -206,11 +212,11 @@ LogRecords(LPVOID Parameters) {
 	HANDLE Port = Parameters;
 	HRESULT Result = 0;
 
-	DWORD OutBufferSize = 16 * 1024;
-	nar_log* Data = (nar_log*)malloc(OutBufferSize);
+	DWORD OutBufferSize = sizeof(nar_record) * 128;
+	nar_record* Data = (nar_log*)malloc(OutBufferSize);
 	DWORD BytesReturned = 0;
 
-	UINT32 MaxEntryCount = 256;
+	UINT32 MaxEntryCount = 1024*4;
 	UINT32 CurrentEntryCount = 0;
 	nar_record* AllRecords = (nar_record*)malloc(sizeof(nar_record) * MaxEntryCount);
 	
@@ -238,11 +244,11 @@ LogRecords(LPVOID Parameters) {
 			break;
 		}
 		
-		if (BytesReturned > 0 && Data->Count > 0) {
-			printf("\r%d                       ", CurrentEntryCount);
+		if (BytesReturned > 0) {
 			BOOL Result = FALSE;
+			UINT32 Count = BytesReturned / sizeof(nar_record);
 
-			if (Data->Count + CurrentEntryCount > MaxEntryCount) {
+			if (Count + CurrentEntryCount > MaxEntryCount) {
 				DWORD BytesWritten = 0;
 				Result = WriteFile(OutputFile, AllRecords, sizeof(nar_record) * CurrentEntryCount, BytesWritten, 0);
 				if (Result != TRUE) {
@@ -254,22 +260,55 @@ LogRecords(LPVOID Parameters) {
 				goto Cleanup;
 			}
 
-			for (UINT32 Indx = 0; Indx < Data->Count; Indx++) {
-				AllRecords[CurrentEntryCount].Start = Data->Record[Indx].Start;
-				AllRecords[CurrentEntryCount].OperationSize = Data->Record[Indx].OperationSize;
-				AllRecords[CurrentEntryCount].Type = Data->Record[Indx].OperationSize;
+			for (UINT32 Indx = 0; Indx < Count; Indx++) {
+				AllRecords[CurrentEntryCount].Start = Data[Indx].Start;
+				AllRecords[CurrentEntryCount].OperationSize = Data[Indx].OperationSize;
+				AllRecords[CurrentEntryCount].Type = Data[Indx].Type;
+
+				if (Data[Indx].Type == NarError) {
+					if (Data[Indx].Err == NE_REGION_OVERFLOW) {
+						printf("Region overflow! ");
+					}
+					if (Data[Indx].Err == NE_BREAK_WITHOUT_LOG) {
+						printf("NE_BREAK_WITHOUT_LOG ");
+						printf("Name-> %S ", Data[Indx].Name);
+					}
+					if (Data[Indx].Err == 0) {
+						printf("SUCCESS CALLBACK! ");
+					}
+					if (Data[Indx].Err == NE_ANSI_UNICODE_CONVERSION) {
+
+					}
+					if (Data[Indx].Err == NE_GETFILENAMEINF_FUNC_FAILED) {
+
+					}
+					if (Data[Indx].Err == NE_PAGEFILE_FOUND) {
+
+					}
+
+					if (Data[Indx].Err == NE_UNDEFINED) {
+						printf("Undefined error-> %I64d \n", Data[Indx].Reserved);
+						printf("Name-> %S ", Data[Indx].Name);
+					}
+					
+					
+					printf("\n");
+				}
+
+				//else {
+				//	printf("--> %I64d\t%I64d\n", Data[Indx].Start, Data[Indx].OperationSize);
+				//}
+				
 				CurrentEntryCount++;
 			}
 		}
-		else {
-			printf("\rBytes returned was zero -- %d",CurrentEntryCount);
-		}
+
 		
 		if (GlobalShouldCleanup) {
 			break;
 		}
 
-		Sleep(50);
+		Sleep(25);
 	}
 	
 Cleanup:
@@ -286,6 +325,195 @@ Cleanup:
 	printf("\nExiting logrecords thread..\n");
 
 	return 0;
+}
+
+ULONG
+IsAttachedToVolume(
+	_In_ LPCWSTR VolumeName
+)
+/*++
+Routine Description:
+		Determine if our filter is attached to this volume
+Arguments:
+		VolumeName - The volume we are checking
+Return Value:
+		TRUE - we are attached
+		FALSE - we are not attached (or we couldn't tell)
+--*/
+{
+	PWCHAR filtername;
+	CHAR buffer[1024];
+	PINSTANCE_FULL_INFORMATION data = (PINSTANCE_FULL_INFORMATION)buffer;
+	HANDLE volumeIterator = INVALID_HANDLE_VALUE;
+	ULONG bytesReturned;
+	ULONG instanceCount = 0;
+	HRESULT hResult;
+
+	//
+	//  Enumerate all instances on this volume
+	//
+
+	hResult = FilterVolumeInstanceFindFirst(VolumeName,
+		InstanceFullInformation,
+		data,
+		sizeof(buffer) - sizeof(WCHAR),
+		&bytesReturned,
+		&volumeIterator);
+
+	if (IS_ERROR(hResult)) {
+
+		return instanceCount;
+	}
+
+	do {
+
+		assert((data->FilterNameBufferOffset + data->FilterNameLength) <= (sizeof(buffer) - sizeof(WCHAR)));
+		_Analysis_assume_((data->FilterNameBufferOffset + data->FilterNameLength) <= (sizeof(buffer) - sizeof(WCHAR)));
+
+		//
+		//  Get the name.  Note that we are NULL terminating the buffer
+		//  in place.  We can do this because we don't care about the other
+		//  information and we have guaranteed that there is room for a NULL
+		//  at the end of the buffer.
+		//
+
+#define Add2Ptr(P,I) ((PVOID)((PUCHAR)(P) + (I)))
+		filtername = Add2Ptr(data, data->FilterNameBufferOffset);
+		filtername[data->FilterNameLength / sizeof(WCHAR)] = L'\0';
+
+		//
+		//  Bump the instance count when we find a match
+		//
+
+		if (_wcsicmp(filtername, FILTER_NAME) == 0) {
+
+			instanceCount++;
+		}
+
+	} while (SUCCEEDED(FilterVolumeInstanceFindNext(volumeIterator,
+		InstanceFullInformation,
+		data,
+		sizeof(buffer) - sizeof(WCHAR),
+		&bytesReturned)));
+
+	//
+	//  Close the handle
+	//
+
+	FilterVolumeInstanceFindClose(volumeIterator);
+	return instanceCount;
+}
+
+void
+ListDevices(
+	VOID
+)
+/*++
+Routine Description:
+		Display the volumes we are attached to
+Arguments:
+Return Value:
+--*/
+{
+	UCHAR buffer[1024];
+	PFILTER_VOLUME_BASIC_INFORMATION volumeBuffer = (PFILTER_VOLUME_BASIC_INFORMATION)buffer;
+	HANDLE volumeIterator = INVALID_HANDLE_VALUE;
+	ULONG volumeBytesReturned;
+	HRESULT hResult = S_OK;
+	WCHAR driveLetter[15] = { 0 };
+	ULONG instanceCount;
+
+	__try {
+
+		//
+		//  Find out size of buffer needed
+		//
+
+		hResult = FilterVolumeFindFirst(FilterVolumeBasicInformation,
+			volumeBuffer,
+			sizeof(buffer) - sizeof(WCHAR),   //save space to null terminate name
+			&volumeBytesReturned,
+			&volumeIterator);
+
+		if (IS_ERROR(hResult)) {
+
+			__leave;
+		}
+
+		assert(INVALID_HANDLE_VALUE != volumeIterator);
+
+		//
+		//  Output the header
+		//
+
+		printf("\n"
+			"Dos Name        Volume Name                            Status \n"
+			"--------------  ------------------------------------  --------\n");
+
+		//
+		//  Loop through all of the filters, displaying instance information
+		//
+
+		do {
+
+			assert((FIELD_OFFSET(FILTER_VOLUME_BASIC_INFORMATION, FilterVolumeName) + volumeBuffer->FilterVolumeNameLength) <= (sizeof(buffer) - sizeof(WCHAR)));
+			_Analysis_assume_((FIELD_OFFSET(FILTER_VOLUME_BASIC_INFORMATION, FilterVolumeName) + volumeBuffer->FilterVolumeNameLength) <= (sizeof(buffer) - sizeof(WCHAR)));
+
+			volumeBuffer->FilterVolumeName[volumeBuffer->FilterVolumeNameLength / sizeof(WCHAR)] = UNICODE_NULL;
+
+			instanceCount = IsAttachedToVolume(volumeBuffer->FilterVolumeName);
+
+			printf("%-14ws  %-36ws  %s",
+				(SUCCEEDED(FilterGetDosName(
+					volumeBuffer->FilterVolumeName,
+					driveLetter,
+					sizeof(driveLetter) / sizeof(WCHAR))) ? driveLetter : L""),
+				volumeBuffer->FilterVolumeName,
+				(instanceCount > 0) ? "Attached" : "");
+
+			if (instanceCount > 1) {
+
+				printf(" (%d)\n", instanceCount);
+
+			}
+			else {
+
+				printf("\n");
+			}
+
+		} while (SUCCEEDED(hResult = FilterVolumeFindNext(volumeIterator,
+			FilterVolumeBasicInformation,
+			volumeBuffer,
+			sizeof(buffer) - sizeof(WCHAR),    //save space to null terminate name
+			&volumeBytesReturned)));
+
+		if (HRESULT_FROM_WIN32(ERROR_NO_MORE_ITEMS) == hResult) {
+
+			hResult = S_OK;
+		}
+
+	}
+	__finally {
+
+		if (INVALID_HANDLE_VALUE != volumeIterator) {
+
+			FilterVolumeFindClose(volumeIterator);
+		}
+
+		if (IS_ERROR(hResult)) {
+
+			if (HRESULT_FROM_WIN32(ERROR_NO_MORE_ITEMS) == hResult) {
+
+				printf("No volumes found.\n");
+
+			}
+			else {
+
+				printf("Volume listing failed with error: 0x%08x\n",
+					hResult);
+			}
+		}
+	}
 }
 
 /*
