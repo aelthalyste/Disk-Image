@@ -2,9 +2,11 @@
 #include <winioctl.h>
 #include <ntddvol.h>
 
-#if _DEBUG
+
+#if 1
 #define ASSERT(expression) if(!(expression)) {*(int*)0=0;}
 #define Assert(expression) ASSERT(expression)
+#define ASSERT_VSS(expression) if(!(expression)) {printf("Err @ %d",__LINE__);*(int*)0=0; }
 #else //WUMBO_SLOW 
 #define ASSERT(expression)
 #endif //WUMBO_SLOW
@@ -17,6 +19,22 @@
 #include <windows.h>
 #include <assert.h>
 
+#include <vss.h>
+#include <vswriter.h>
+#include <vsbackup.h>
+#include <vsmgmt.h>
+
+// VDS includes
+#include <vds.h>
+
+// ATL includes
+#include <atlbase.h>
+
+
+#include <fileapi.h>
+
+#include <string>
+
 #define PORT_NAME L"\\NarMiniFilterPort"
 #define FILTER_NAME L"NarMinifilterDriver"
 
@@ -24,6 +42,61 @@
 
 DWORD LogRecords(LPVOID Parameters);
 
+int CompareRecords(const void * R1, const void * R2) {
+	int Result = 0;
+	nar_record * T1 = (nar_record*)R1;
+	nar_record* T2 = (nar_record*)R2;
+
+	Result == T1->OperationSize > T2->OperationSize;
+	if (T1->Start == T2->Start) {
+		Result = T1->OperationSize > T2->OperationSize;
+	}
+	return Result;
+}
+
+
+bool
+DEBUGWriteEntireFile(const char* Filename, UINT32 BufferSize, void* Buffer) {
+	HANDLE Filehandle = CreateFileA(Filename,
+		GENERIC_WRITE,
+		0,
+		0,
+		CREATE_ALWAYS,
+		0,
+		0
+	);
+	ASSERT(Filehandle != INVALID_HANDLE_VALUE);
+	bool Result = FALSE;
+
+	if (Filehandle != INVALID_HANDLE_VALUE) {
+		DWORD BytesWritten = 0;
+
+		if (WriteFile(Filehandle, Buffer, BufferSize, &BytesWritten, 0)
+			&& (BytesWritten == BufferSize)) {
+			Result = true;
+			// NOTE(Batuhan G.): Success
+		}
+		else {
+			// TODO(Batuhan G.): Log
+		}
+
+		CloseHandle(Filehandle);
+	}
+	else {
+		// TODO(Batuhan G.): Log
+	}
+
+	return Result;
+}
+
+
+
+struct thread_parameters {
+	HANDLE ConnectionPort;
+	nar_record *Data;
+	UINT32 DataCount;
+	UINT32 MaxDataCount;
+};
 
 inline void
 PrintLastError() {
@@ -36,6 +109,8 @@ HANDLE GlobalSemaphore;
 
 LPVOID
 DEBUGReadEntireFile(char* Filename) {
+
+	
 
 	HANDLE Filehandle = CreateFileA(Filename,
 		GENERIC_READ,
@@ -87,15 +162,39 @@ IsAttachedToVolume(
 	LPCWSTR VolumeName
 );
 
+std::wstring
+GetShadowPath(std::wstring Drive, CComPtr<IVssBackupComponents>& ptr);
+
 int
 main() {
 
-	HANDLE ConnectionPort = INVALID_HANDLE_VALUE;
+	
+	
 	HRESULT Result = 0;
 	WCHAR instanceName[INSTANCE_NAME_MAX_CHARS + 1];
 	HANDLE Thread = 0;
 	ULONG ThreadID = 0;
+	
+	Result = CoInitialize(NULL);
 
+	Result = CoInitializeSecurity(
+		NULL,                           //  Allow *all* VSS writers to communicate back!
+		-1,                             //  Default COM authentication service
+		NULL,                           //  Default COM authorization service
+		NULL,                           //  reserved parameter
+		RPC_C_AUTHN_LEVEL_PKT_PRIVACY,  //  Strongest COM authentication level
+		RPC_C_IMP_LEVEL_IMPERSONATE,    //  Minimal impersonation abilities
+		NULL,                           //  Default COM authentication settings
+		EOAC_DYNAMIC_CLOAKING,          //  Cloaking
+		NULL                            //  Reserved parameter
+	);
+	
+	thread_parameters ThreadParameters;
+	ThreadParameters.ConnectionPort = INVALID_HANDLE_VALUE;
+	ThreadParameters.MaxDataCount = 1024 * 4;
+	ThreadParameters.Data = (nar_record*)malloc(sizeof(nar_record) * ThreadParameters.MaxDataCount);
+	ThreadParameters.DataCount = 0;
+	
 	printf("User mode started!\n");
 
 	Result = FilterConnectCommunicationPort(
@@ -104,18 +203,17 @@ main() {
 		NULL,
 		0,
 		NULL,
-		&ConnectionPort
+		&ThreadParameters.ConnectionPort
 	);
 	if (IS_ERROR(Result)) {
 		printf("FilterConnectCommunicationPort failed! %d\n", Result);
 		PrintLastError();
 		goto MainCleanup;
 	}
-	
-	
+
 	Result = FilterAttach(
 		FILTER_NAME,
-		L"E:",
+		L"C:\\",
 		NULL,
 		sizeof(instanceName),
 		instanceName
@@ -137,17 +235,8 @@ main() {
 			goto MainCleanup;
 		}
 	}
+	FilterDetach(FILTER_NAME, L"E:\\", 0);
 
-	ListDevices();
-	FilterDetach(
-		FILTER_NAME,
-		"C:\\",
-		NULL
-	);
-
-	printf("Instance name -> %S\n", instanceName);
-
-	ListDevices();
 
 	GlobalSemaphore = CreateSemaphoreW(
 		NULL,
@@ -164,7 +253,7 @@ main() {
 		NULL,
 		0,
 		LogRecords,
-		ConnectionPort, //Parameters to pass
+		&ThreadParameters, //Parameters to pass
 		0,
 		&ThreadID
 	);
@@ -173,18 +262,50 @@ main() {
 		PrintLastError();
 		goto MainCleanup;
 	}
-
+	
 	CHAR inputChar;
+	DWORD MsgVal;
+	DWORD Temp;
+	
 	while (inputChar = (CHAR)getchar()) {
 		if (inputChar == 'q' || inputChar == 'Q') {
 			goto MainCleanup;
 		}
+		if (inputChar == 's' || inputChar == 'S') {
+			MsgVal = STOP_FILTERING;
+			//save the diff disk state
+			Result = FilterSendMessage(ThreadParameters.ConnectionPort, &MsgVal, sizeof(MsgVal), 0, 0, &Temp);
+			if (!SUCCEEDED(Result)) {
+				printf("STOP_FILTERING failed!");
+				goto MainCleanup;
+			}
+			GlobalShouldCleanup = TRUE;
+			WaitForSingleObject(GlobalSemaphore, INFINITE);
+		
+			printf("Waiting shadowpath func!\n");
+			CComPtr<IVssBackupComponents> ptr;
+			FilterDetach(FILTER_NAME, L"E:\\", 0);
+			std::wstring ShadowPath = GetShadowPath(L"E:\\", ptr);
+			printf("%S", ShadowPath.c_str());
+
+			if (DEBUGWriteEntireFile("unsorted", ThreadParameters.DataCount * sizeof(nar_record), ThreadParameters.Data)) {
+				printf("Write entirefile failed!\n");
+			}
+			qsort(ThreadParameters.Data, ThreadParameters.DataCount, sizeof(nar_record), CompareRecords);
+			if (DEBUGWriteEntireFile("sortedoutput", ThreadParameters.DataCount * sizeof(nar_record), ThreadParameters.Data)) {
+				printf("Write entirefile failed!\n");
+			}
+
+			CloseHandle(ThreadParameters.ConnectionPort);
+			getchar();
+			return 0;
+		}
+
 	}
-
-
+	
 MainCleanup:
 	printf("Cleaning up..\n");
-	//TODO clean things
+	
 	GlobalShouldCleanup = TRUE;
 
 	if (GlobalSemaphore) {
@@ -197,10 +318,9 @@ MainCleanup:
 		CloseHandle(Thread);
 	}
 
-	if (ConnectionPort != INVALID_HANDLE_VALUE) {
-		CloseHandle(ConnectionPort);
+	if (ThreadParameters.ConnectionPort != INVALID_HANDLE_VALUE) {
+		CloseHandle(ThreadParameters.ConnectionPort);
 	}
-
 
 	return 0;
 }
@@ -209,17 +329,16 @@ MainCleanup:
 DWORD
 LogRecords(LPVOID Parameters) {
 
-	HANDLE Port = Parameters;
+	thread_parameters* ThreadParameters = (thread_parameters*)Parameters;
 	HRESULT Result = 0;
 
-	DWORD OutBufferSize = sizeof(nar_record) * 128;
-	nar_record* Data = (nar_log*)malloc(OutBufferSize);
+	DWORD OutBufferSize = sizeof(nar_record) * 32;
+	nar_record* Data = (nar_record*)malloc(OutBufferSize);
 	DWORD BytesReturned = 0;
 
-	UINT32 MaxEntryCount = 1024*4;
 	UINT32 CurrentEntryCount = 0;
-	nar_record* AllRecords = (nar_record*)malloc(sizeof(nar_record) * MaxEntryCount);
-	
+	UINT32 MsgValue = GET_RECORDS;
+
 	HANDLE OutputFile = CreateFile(
 		"OutputFile.txt",
 		GENERIC_WRITE,
@@ -237,20 +356,24 @@ LogRecords(LPVOID Parameters) {
 	for (;;) {
 		memset(Data, 0, OutBufferSize);
 
-		Result = FilterSendMessage(Port, Port, sizeof(PVOID), Data, OutBufferSize, &BytesReturned);
-		
+		/*
+		For now, I don't need to send any message tho, but API doesnt allow NULL messages so I 
+		send garbage message like port pointer. It really doesnt make any sense but that's how it works
+		*/
+		Result = FilterSendMessage(ThreadParameters->ConnectionPort, &MsgValue, sizeof(MsgValue), Data, OutBufferSize, &BytesReturned);
+
 		if (!SUCCEEDED(Result)) {
-			printf("Failed filtermessage function -> %d",Result);
+			printf("Failed filtermessage function -> %d", Result);
 			break;
 		}
-		
-		if (BytesReturned > 0) {
+
+		if (BytesReturned > 0 && BytesReturned < sizeof(nar_log)*32 + 1) {//TODO For some reason, I can't use defines in NarMFVars.h.. this is hardcoded be careful
 			BOOL Result = FALSE;
 			UINT32 Count = BytesReturned / sizeof(nar_record);
 
-			if (Count + CurrentEntryCount > MaxEntryCount) {
+			if (Count + CurrentEntryCount > ThreadParameters->MaxDataCount) {
 				DWORD BytesWritten = 0;
-				Result = WriteFile(OutputFile, AllRecords, sizeof(nar_record) * CurrentEntryCount, BytesWritten, 0);
+				Result = WriteFile(OutputFile, ThreadParameters->Data, sizeof(nar_record) * CurrentEntryCount, &BytesWritten, 0);
 				if (Result != TRUE) {
 					printf("WriteFile error!\n");
 					PrintLastError();
@@ -261,72 +384,124 @@ LogRecords(LPVOID Parameters) {
 			}
 
 			for (UINT32 Indx = 0; Indx < Count; Indx++) {
-				AllRecords[CurrentEntryCount].Start = Data[Indx].Start;
-				AllRecords[CurrentEntryCount].OperationSize = Data[Indx].OperationSize;
-				AllRecords[CurrentEntryCount].Type = Data[Indx].Type;
+				memcpy(&ThreadParameters->Data[CurrentEntryCount], &Data[Indx], sizeof(nar_record));
 
 				if (Data[Indx].Type == NarError) {
 					if (Data[Indx].Err == NE_REGION_OVERFLOW) {
 						printf("Region overflow! ");
 					}
-					if (Data[Indx].Err == NE_BREAK_WITHOUT_LOG) {
+					else if (Data[Indx].Err == NE_BREAK_WITHOUT_LOG) {
 						printf("NE_BREAK_WITHOUT_LOG ");
+					}
+					else if (Data[Indx].Err == NE_ANSI_UNICODE_CONVERSION) {
+						printf("Error ANSI_UNICODE_CONVERSION");
+					}
+					else if (Data[Indx].Err == NE_GETFILENAMEINF_FUNC_FAILED) {
+						printf("Error NE_GETFILENAMEINF_FUNC_FAILED");
+					}
+					else if (Data[Indx].Err == NE_PAGEFILE_FOUND) {
+						printf("Error NE_PAGEFILE_FOUND");
+					}
+					else if (Data[Indx].Err == NE_UNDEFINED) {
+						printf("Undefined error-> %I64u \n", Data[Indx].Reserved);
 						printf("Name-> %S ", Data[Indx].Name);
 					}
-					if (Data[Indx].Err == 0) {
-						printf("SUCCESS CALLBACK! ");
+					else if (Data[Indx].Err == NE_MAX_ITER_EXCEEDED) {
+						printf("Max iter exceeded, terminating now!\n");
+						goto Cleanup;
 					}
-					if (Data[Indx].Err == NE_ANSI_UNICODE_CONVERSION) {
+					else if (Data[Indx].Err == NE_RETRIEVAL_POINTERS) {
+						printf("Error NE_RETRIEVAL_POINTERS");
+					}
+					else {
+						//Chaos
+						printf("ERROR ==> %I64u Res -> %I64u Name -> %S", Data[Indx].Err, Data[Indx].Reserved, Data[Indx].Name);
+					}
 
-					}
-					if (Data[Indx].Err == NE_GETFILENAMEINF_FUNC_FAILED) {
-
-					}
-					if (Data[Indx].Err == NE_PAGEFILE_FOUND) {
-
-					}
-
-					if (Data[Indx].Err == NE_UNDEFINED) {
-						printf("Undefined error-> %I64d \n", Data[Indx].Reserved);
-						printf("Name-> %S ", Data[Indx].Name);
-					}
-					
-					
 					printf("\n");
 				}
-
-				//else {
-				//	printf("--> %I64d\t%I64d\n", Data[Indx].Start, Data[Indx].OperationSize);
-				//}
-				
+				else {  //Operation succeeded
+					if (Data[Indx].OperationSize == 0) {
+						continue;
+					}
+					printf("Success inf => %I64u %I64u  Name->%S T1->%I64u T2->%I64u T3-> %I64u T4-> %I64u\n",
+						Data[Indx].Start,
+						Data[Indx].OperationSize,
+						Data[Indx].Name,
+						Data[Indx].Temp[0], Data[Indx].Temp[1], Data[Indx].Temp[2], Data[Indx].Temp[3]);
+				}
+				fflush(stdout);
 				CurrentEntryCount++;
 			}
 		}
+		else if (BytesReturned > 32 * sizeof(nar_record)) {
+			//Buffer overflow at kernel side. This MUST be reported to app-user or whatsoever
+			printf("Kernel buffer overflow ! Terminating now...\n");
+			goto Cleanup;
+		}
 
-		
 		if (GlobalShouldCleanup) {
 			break;
 		}
 
-		Sleep(25);
+		Sleep(10);
 	}
-	
+
 Cleanup:
+	ThreadParameters->DataCount = CurrentEntryCount;
 	CloseHandle(OutputFile);
-	
+
 	if (Data) {
 		free(Data);
 	}
-	if (AllRecords) {
-		free(AllRecords);
-	}
-
+	
 	ReleaseSemaphore(GlobalSemaphore, 1, NULL);
 	printf("\nExiting logrecords thread..\n");
 
 	return 0;
 }
 
+std::wstring
+GetShadowPath(std::wstring Drive, CComPtr<IVssBackupComponents>& ptr) {
+	VSS_ID sid;
+	HRESULT res;
+
+	res = CreateVssBackupComponents(&ptr);
+
+	res = ptr->InitializeForBackup();
+	ASSERT_VSS(res == S_OK);
+	res = ptr->SetContext(VSS_CTX_BACKUP);
+	ASSERT_VSS(res == S_OK);
+	res = ptr->StartSnapshotSet(&sid);
+	ASSERT_VSS(res == S_OK);
+	res = ptr->SetBackupState(false, false, VSS_BACKUP_TYPE::VSS_BT_FULL, false);
+	ASSERT_VSS(res == S_OK);
+	res = ptr->AddToSnapshotSet((LPWSTR)Drive.c_str(), GUID_NULL, &sid); // C:\\ ex
+	ASSERT_VSS(res == S_OK);
+
+	{
+		CComPtr<IVssAsync> Async;
+		res = ptr->PrepareForBackup(&Async);
+		ASSERT_VSS(res == S_OK);
+		Async->Wait();
+	}
+
+	{
+		CComPtr<IVssAsync> Async;
+		res = ptr->DoSnapshotSet(&Async);
+		ASSERT_VSS(res == S_OK);
+		Async->Wait();
+	}
+
+	VSS_SNAPSHOT_PROP SnapshotProp;
+	ptr->GetSnapshotProperties(sid, &SnapshotProp);
+	std::wstring ShadowPath = std::wstring(SnapshotProp.m_pwszSnapshotDeviceObject);
+
+	return ShadowPath;
+}
+
+
+#if 0
 ULONG
 IsAttachedToVolume(
 	_In_ LPCWSTR VolumeName
@@ -515,7 +690,7 @@ Return Value:
 		}
 	}
 }
-
+#endif
 /*
 	HANDLE Filehandle = CreateFileA(
 		"N:\\test - Copy.txt",
