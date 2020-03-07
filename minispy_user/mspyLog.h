@@ -41,9 +41,9 @@ typedef struct _LOG_CONTEXT {
     HANDLE Port;
     BOOLEAN LogToScreen;
     BOOLEAN LogToFile;
-    FILE   *OutputFile;
+    HANDLE OutputFile;
 
-    BOOLEAN NextLogToScreen;
+    BOOLEAN ShouldFilter;
 
     //
     // For synchronizing shutting down of both threads
@@ -68,7 +68,7 @@ FileDump (
     _In_ ULONG SequenceNumber,
     _In_ WCHAR CONST *Name,
     _In_ PRECORD_DATA RecordData,
-    _In_ HANDLE *File
+    _In_ HANDLE File
     );
 
 VOID

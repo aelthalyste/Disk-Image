@@ -238,7 +238,7 @@ Return Value:
 				}
 			}
 
-			if (context->LogToScreen && pRecordData->Arg5 != NAR_ERR_TRINITY) {
+			if (context->LogToScreen && pRecordData->Arg5 != NAR_ERR_TRINITY && context->ShouldFilter) {
 				if (pRecordData->Arg5 != 0) {
 					printf("Err incomin ");
 				}
@@ -247,8 +247,8 @@ Return Value:
 					pRecordData);
 			}
 
-			if (context->LogToFile && pRecordData->Arg5 == 0) {
-				
+			if (context->LogToFile && pRecordData->Arg5 == 0 && context->ShouldFilter) {
+
 				BOOL r = FileDump(pLogRecord->SequenceNumber,
 					pLogRecord->Name,
 					pRecordData,
@@ -275,8 +275,8 @@ Return Value:
 			}
 			else if (FlagOn(pLogRecord->RecordType, RECORD_TYPE_FLAG_EXCEED_MEMORY_ALLOWANCE)) {
 
-				printf("Exceeded Mamimum Allowed Memory Buffers! This is an fatal error!\n",pLogRecord->SequenceNumber);
-				
+				printf("Exceeded Mamimum Allowed Memory Buffers! This is an fatal error!\n", pLogRecord->SequenceNumber);
+
 				break;
 			}
 
@@ -296,7 +296,7 @@ Return Value:
 			Sleep(POLL_INTERVAL);
 		}
 
-		
+
 	}
 
 	printf("Log: Shutting down\n");
@@ -360,7 +360,7 @@ FileDump(
 	_In_ ULONG SequenceNumber,
 	_In_ WCHAR CONST* Name,
 	_In_ PRECORD_DATA RecordData,
-	_In_ HANDLE* File
+	_In_ HANDLE File
 )
 /*++
 Routine Description:
@@ -392,10 +392,10 @@ Return Value:
 	if (RecordData->Arg3 != 0 && RecordData->Arg5 != 0) {
 		BytesToWrite = 4 * sizeof(ULONGLONG);
 	}
-	Result = WriteFile(File, &RecordData->Arg1, BytesToWrite, BytesWritten, 0);
+	Result = WriteFile(File, &RecordData->Arg1, BytesToWrite, &BytesWritten, 0);
 	if (Result != TRUE) {
 		printf("Error occured!\n");
-	}	
+	}
 
 	return Result;
 }
@@ -449,7 +449,7 @@ Return Value:
 	printf( "%08X ", SequenceNumber );
 
 	*/
-	
+
 	if (RecordData->CallbackMajorId == IRP_MJ_WRITE) {
 
 		printf("%S\t", Name);

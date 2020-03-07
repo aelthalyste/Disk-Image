@@ -177,8 +177,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="mspyLog.c" />
-    <ClCompile Include="mspyUser.c" />
+    <ClCompile Include="mspyLog.cpp" />
+    <ClCompile Include="mspyUser.cpp" />
     <ResourceCompile Include="mspyUser.rc" />
   </ItemGroup>
   <ItemGroup>

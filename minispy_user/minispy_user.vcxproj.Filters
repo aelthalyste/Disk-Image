@@ -15,10 +15,10 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="mspyLog.c">
+    <ClCompile Include="mspyLog.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="mspyUser.c">
+    <ClCompile Include="mspyUser.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
