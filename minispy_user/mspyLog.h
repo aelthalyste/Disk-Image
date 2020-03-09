@@ -30,6 +30,12 @@ Environment:
 #define NAR_ERR_ALIGN 6
 #define NAR_ERR_MAX_ITER 7
 
+typedef struct _record {
+  ULONGLONG StartPos;
+  ULONGLONG Len;
+}nar_record, bitmap_region;
+
+
 #define BUFFER_SIZE     4096
 
 //

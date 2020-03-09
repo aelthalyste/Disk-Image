@@ -110,7 +110,7 @@
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(IFSKIT_INC_PATH);$(DDK_INC_PATH);..\inc</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>%(AdditionalDependencies);fltLib.lib</AdditionalDependencies>
+      <AdditionalDependencies>%(AdditionalDependencies);fltLib.lib;vssapi.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -131,7 +131,7 @@
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(IFSKIT_INC_PATH);$(DDK_INC_PATH);..\inc</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>%(AdditionalDependencies);fltLib.lib</AdditionalDependencies>
+      <AdditionalDependencies>%(AdditionalDependencies);fltLib.lib;vssapi.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -152,7 +152,7 @@
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(IFSKIT_INC_PATH);$(DDK_INC_PATH);..\inc</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>%(AdditionalDependencies);fltLib.lib</AdditionalDependencies>
+      <AdditionalDependencies>%(AdditionalDependencies);fltLib.lib;vssapi.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -173,7 +173,7 @@
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(IFSKIT_INC_PATH);$(DDK_INC_PATH);..\inc</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>%(AdditionalDependencies);fltLib.lib</AdditionalDependencies>
+      <AdditionalDependencies>%(AdditionalDependencies);fltLib.lib;vssapi.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>

@@ -115,7 +115,7 @@ int wmain(int argc, wchar_t **argv) {
 	return 0;
 
 	if (std::wstring(argv[1]) == L"Backup") {
-		auto GeneratedClusterIndices = BackupVolume(Drive, TargetPath);
+		cluster_hash_map GeneratedClusterIndices = BackupVolume(Drive, TargetPath);
 	}
 	else if (std::wstring(argv[1]) == L"Restore") {
 		linear_cluster_map ClusterMap;

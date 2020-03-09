@@ -32,7 +32,7 @@ _Analysis_mode_(_Analysis_code_type_user_code_)
 #define TIME_BUFFER_LENGTH 20
 #define TIME_ERROR         "time error"
 
-#define POLL_INTERVAL   25     // 200 milliseconds
+#define POLL_INTERVAL   10     // 10 milliseconds
 
 BOOLEAN
 TranslateFileTag(
@@ -172,7 +172,7 @@ Return Value:
 
 					printf("UNEXPECTED ERROR received: %x\n", hResult);
 				}
-
+				
 				Sleep(POLL_INTERVAL);
 			}
 
@@ -242,12 +242,16 @@ Return Value:
 				if (pRecordData->Arg5 != 0) {
 					printf("Err incomin ");
 				}
+				printf("Hell");
 				ScreenDump(pLogRecord->SequenceNumber,
 					pLogRecord->Name,
 					pRecordData);
 			}
 
-			if (context->LogToFile && pRecordData->Arg5 == 0 && context->ShouldFilter) {
+			if (context->LogToFile 
+				&& pRecordData->Arg5 == 0 
+				&& context->ShouldFilter
+				&& pRecordData->Arg1 != 0) {
 
 				BOOL r = FileDump(pLogRecord->SequenceNumber,
 					pLogRecord->Name,
@@ -389,11 +393,11 @@ Return Value:
 	DWORD BytesWritten = 0;
 	BOOL Result = 0;
 	DWORD BytesToWrite = sizeof(ULONGLONG) * 2;
-	if (RecordData->Arg3 != 0 && RecordData->Arg5 != 0) {
+	if (RecordData->Arg3 != 0 && RecordData->Arg4 != 0) {
 		BytesToWrite = 4 * sizeof(ULONGLONG);
 	}
 	Result = WriteFile(File, &RecordData->Arg1, BytesToWrite, &BytesWritten, 0);
-	if (Result != TRUE) {
+	if (!SUCCEEDED(Result) || BytesWritten != BytesToWrite) {
 		printf("Error occured!\n");
 	}
 
