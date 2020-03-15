@@ -4,16 +4,16 @@ Copyright (c) 1989-2002  Microsoft Corporation
 
 Module Name:
 
-    mspyLog.h
+		mspyLog.h
 
 Abstract:
 
-    This module contains the structures and prototypes used by the user
-    program to retrieve and see the log records recorded by MiniSpy.sys.
+		This module contains the structures and prototypes used by the user
+		program to retrieve and see the log records recorded by MiniSpy.sys.
 
 Environment:
 
-    User mode
+		User mode
 
 --*/
 #ifndef __MSPYLOG_H__
@@ -31,9 +31,16 @@ Environment:
 #define NAR_ERR_MAX_ITER 7
 
 typedef struct _record {
-  ULONGLONG StartPos;
-  ULONGLONG Len;
+	ULONGLONG StartPos;
+	ULONGLONG Len;
 }nar_record, bitmap_region;
+
+template<typename DATA_TYPE>
+struct data_array {
+	DATA_TYPE* Data;
+	UINT Count;
+};
+
 
 
 #define BUFFER_SIZE     4096
@@ -44,21 +51,21 @@ typedef struct _record {
 
 typedef struct _LOG_CONTEXT {
 
-    HANDLE Port;
-    BOOLEAN LogToScreen;
-    BOOLEAN LogToFile;
-    HANDLE OutputFile;
+	HANDLE Port;
+	BOOLEAN LogToScreen;
+	BOOLEAN LogToFile;
+	HANDLE OutputFile;
 
-    BOOLEAN ShouldFilter;
+	BOOLEAN ShouldFilter;
 
-    //
-    // For synchronizing shutting down of both threads
-    //
+	//
+	// For synchronizing shutting down of both threads
+	//
 
-    BOOLEAN CleaningUp;
-    HANDLE  ShutDown;
+	BOOLEAN CleaningUp;
+	HANDLE  ShutDown;
 
-} LOG_CONTEXT, *PLOG_CONTEXT;
+} LOG_CONTEXT, * PLOG_CONTEXT;
 
 //
 //  Function prototypes
@@ -66,23 +73,23 @@ typedef struct _LOG_CONTEXT {
 
 DWORD WINAPI
 RetrieveLogRecords(
-    _In_ LPVOID lpParameter
-    );
+	_In_ LPVOID lpParameter
+);
 
 BOOL
-FileDump (
-    _In_ ULONG SequenceNumber,
-    _In_ WCHAR CONST *Name,
-    _In_ PRECORD_DATA RecordData,
-    _In_ HANDLE File
-    );
+FileDump(
+	_In_ ULONG SequenceNumber,
+	_In_ WCHAR CONST* Name,
+	_In_ PRECORD_DATA RecordData,
+	_In_ HANDLE File
+);
 
 VOID
 ScreenDump(
-    _In_ ULONG SequenceNumber,
-    _In_ WCHAR CONST *Name,
-    _In_ PRECORD_DATA RecordData
-    );
+	_In_ ULONG SequenceNumber,
+	_In_ WCHAR CONST* Name,
+	_In_ PRECORD_DATA RecordData
+);
 
 //
 //  Values set for the Flags field in a RECORD_DATA structure.
@@ -268,26 +275,26 @@ ScreenDump(
 
 
 typedef enum {
-    TRANSACTION_NOTIFY_PREPREPARE_CODE = 1,
-    TRANSACTION_NOTIFY_PREPARE_CODE,
-    TRANSACTION_NOTIFY_COMMIT_CODE,
-    TRANSACTION_NOTIFY_ROLLBACK_CODE,
-    TRANSACTION_NOTIFY_PREPREPARE_COMPLETE_CODE,
-    TRANSACTION_NOTIFY_PREPARE_COMPLETE_CODE,
-    TRANSACTION_NOTIFY_COMMIT_COMPLETE_CODE,
-    TRANSACTION_NOTIFY_ROLLBACK_COMPLETE_CODE,
-    TRANSACTION_NOTIFY_RECOVER_CODE,
-    TRANSACTION_NOTIFY_SINGLE_PHASE_COMMIT_CODE,
-    TRANSACTION_NOTIFY_DELEGATE_COMMIT_CODE,
-    TRANSACTION_NOTIFY_RECOVER_QUERY_CODE,
-    TRANSACTION_NOTIFY_ENLIST_PREPREPARE_CODE,
-    TRANSACTION_NOTIFY_LAST_RECOVER_CODE,
-    TRANSACTION_NOTIFY_INDOUBT_CODE,
-    TRANSACTION_NOTIFY_PROPAGATE_PULL_CODE,
-    TRANSACTION_NOTIFY_PROPAGATE_PUSH_CODE,
-    TRANSACTION_NOTIFY_MARSHAL_CODE,
-    TRANSACTION_NOTIFY_ENLIST_MASK_CODE,
-    TRANSACTION_NOTIFY_COMMIT_FINALIZE_CODE = 31
+	TRANSACTION_NOTIFY_PREPREPARE_CODE = 1,
+	TRANSACTION_NOTIFY_PREPARE_CODE,
+	TRANSACTION_NOTIFY_COMMIT_CODE,
+	TRANSACTION_NOTIFY_ROLLBACK_CODE,
+	TRANSACTION_NOTIFY_PREPREPARE_COMPLETE_CODE,
+	TRANSACTION_NOTIFY_PREPARE_COMPLETE_CODE,
+	TRANSACTION_NOTIFY_COMMIT_COMPLETE_CODE,
+	TRANSACTION_NOTIFY_ROLLBACK_COMPLETE_CODE,
+	TRANSACTION_NOTIFY_RECOVER_CODE,
+	TRANSACTION_NOTIFY_SINGLE_PHASE_COMMIT_CODE,
+	TRANSACTION_NOTIFY_DELEGATE_COMMIT_CODE,
+	TRANSACTION_NOTIFY_RECOVER_QUERY_CODE,
+	TRANSACTION_NOTIFY_ENLIST_PREPREPARE_CODE,
+	TRANSACTION_NOTIFY_LAST_RECOVER_CODE,
+	TRANSACTION_NOTIFY_INDOUBT_CODE,
+	TRANSACTION_NOTIFY_PROPAGATE_PULL_CODE,
+	TRANSACTION_NOTIFY_PROPAGATE_PUSH_CODE,
+	TRANSACTION_NOTIFY_MARSHAL_CODE,
+	TRANSACTION_NOTIFY_ENLIST_MASK_CODE,
+	TRANSACTION_NOTIFY_COMMIT_FINALIZE_CODE = 31
 } TRANSACTION_NOTIFICATION_CODES;
 
 //
@@ -404,33 +411,33 @@ typedef enum {
 #pragma warning(disable:4201) // nonstandard extension used : nameless struct/union
 
 typedef struct _FLT_TAG_DATA_BUFFER {
-    ULONG FileTag;
-    USHORT TagDataLength;
-    USHORT UnparsedNameLength;
-    union {
-        GUID TagGuid;
-        struct {
-            USHORT SubstituteNameOffset;
-            USHORT SubstituteNameLength;
-            USHORT PrintNameOffset;
-            USHORT PrintNameLength;
-            ULONG  Flags;
-            WCHAR PathBuffer[1];
-        } SymbolicLinkReparseBuffer;
+	ULONG FileTag;
+	USHORT TagDataLength;
+	USHORT UnparsedNameLength;
+	union {
+		GUID TagGuid;
+		struct {
+			USHORT SubstituteNameOffset;
+			USHORT SubstituteNameLength;
+			USHORT PrintNameOffset;
+			USHORT PrintNameLength;
+			ULONG  Flags;
+			WCHAR PathBuffer[1];
+		} SymbolicLinkReparseBuffer;
 
-        struct {
-            USHORT SubstituteNameOffset;
-            USHORT SubstituteNameLength;
-            USHORT PrintNameOffset;
-            USHORT PrintNameLength;
-            WCHAR PathBuffer[1];
-        } MountPointReparseBuffer;
+		struct {
+			USHORT SubstituteNameOffset;
+			USHORT SubstituteNameLength;
+			USHORT PrintNameOffset;
+			USHORT PrintNameLength;
+			WCHAR PathBuffer[1];
+		} MountPointReparseBuffer;
 
-        struct {
-            UCHAR  DataBuffer[1];
-        } GenericReparseBuffer;
-    };
-} FLT_TAG_DATA_BUFFER, *PFLT_TAG_DATA_BUFFER;
+		struct {
+			UCHAR  DataBuffer[1];
+		} GenericReparseBuffer;
+	};
+} FLT_TAG_DATA_BUFFER, * PFLT_TAG_DATA_BUFFER;
 
 #pragma warning(pop)
 
