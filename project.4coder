@@ -1,0 +1,62 @@
+version(1);
+project_name = "Disk Backup";
+
+patterns = {
+"*.cpp",
+"*.c",
+"*.h",
+"*.4coder",
+"*.sh",
+"*.bat"
+};
+
+blacklist_patterns={
+"*.",
+"*.xml",
+"*.txt"
+};
+
+lp = {
+{".",.recursive=false},
+{"/src"},
+{"/minispy_user/",.recursive=false},
+{"/TestArea/src/",.recursive=false},
+{"/Disk Image/src/",.recursive=false},
+{"/TestArea/include/",.recursive=false},
+};
+
+load_paths = {
+{lp,.os="win"},
+};
+
+command_list = {
+{
+.name="build",
+.out="compilation", 
+.footer_panel = true,
+.save_dirty_files = false,
+.cursor_at_end = true,
+.cmd = {{"build.bat",.os = "win"}}
+},
+{
+.name="run",
+.out="run", 
+.footer_panel = true,
+.save_dirty_files = false,
+.cursor_at_end = true,
+.cmd = {{"run.bat",.os = "win"}}
+},
+{
+.name="build_large",
+.out="compilation_large", 
+.footer_panel = false,
+.save_dirty_files = false,
+.cursor_at_end = false,
+.cmd = {{"build.bat",.os = "win"}}
+}
+};
+
+fkey_command[3] = "build";
+fkey_command[2] = "run";
+fkey_command[1] = "build_large";
+
