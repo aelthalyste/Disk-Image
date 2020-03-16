@@ -42,7 +42,6 @@ struct data_array {
 };
 
 
-
 #define BUFFER_SIZE     4096
 
 //

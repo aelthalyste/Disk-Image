@@ -24,6 +24,7 @@ _Analysis_mode_(_Analysis_code_type_user_code_)
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <cstdio>
 #include <windows.h>
 #include <assert.h>
 #include "mspyLog.h"
@@ -54,10 +55,10 @@ _Analysis_mode_(_Analysis_code_type_user_code_)
 #define MINISPY_NAME  L"MiniSpy"
 
 #define FB_FILE_NAME "FullBackupDisk.nar"
-#define DB_FILE_NAME "DiffBackupDisk.nar"
+#define DB_FILE_NAME "DiffBackupDisk_"
 
 #define FB_METADATA_FILE_NAME "FMetadata"
-#define DB_METADATA_FILE_NAME "DMetadata"
+#define DB_METADATA_FILE_NAME "DMetadata_"
 
 #define DB_MFT_FILE_NAME "MFTDATA"
 
@@ -212,6 +213,90 @@ NarCreateThreadCom(
 	return Result;
 }
 
+
+std::string 
+NarExecuteCommand(const char* cmd) {
+	//TODO return char* instead of std::string
+
+	char buffer[128];
+	std::string result = "";
+	FILE* pipe = _popen(cmd, "r");
+	if (pipe) {
+		while (fgets(buffer, sizeof buffer, pipe) != NULL) {
+			result += buffer;
+		}
+
+		_pclose(pipe);
+	}
+	else {
+		printf("popen() failed!\n");
+	}
+
+	return result;
+}
+
+/*
+Pass by value, might be slow if input str is too big ?? 
+*/
+std::vector<std::string>
+Split(std::string str, std::string delimiter) {
+	UINT SizeAssumed = 100;
+
+	std::vector<std::string> Result;	
+	Result.reserve(SizeAssumed);
+
+	size_t pos = 0;
+	std::string token;
+	while ((pos = str.find(delimiter)) != std::string::npos) {
+		token = str.substr(0, pos);
+		str.erase(0, pos + delimiter.length());
+		Result.emplace_back(std::move(token));
+	}
+	if (str.length() > 0) Result.emplace_back(std::move(str));
+	Result.shrink_to_fit();
+
+	return Result;
+}
+
+data_array<nar_record>
+GetMFTLCN(char VolumeLetter) {
+	//TODO check if input falls in a-z || A-Z
+	data_array<nar_record> Result = { 0,0 };
+	UINT SizeAssumed = 256;
+	Result.Data = (nar_record*)malloc(sizeof(nar_record) * 256);
+	Result.Count = 0;
+
+	static char Command[] = "fsutil file queryextents C:\\$mft csv";
+	Command[25] = VolumeLetter;
+
+	std::string Answer = NarExecuteCommand(Command);
+	
+	if (Answer[0] == '\n') Answer[0] = '#';
+	printf("%s\n", Answer.c_str());
+	Answer = Answer.substr(Answer.find("\n") + 1, Answer.size());
+	printf("%s\n", Answer.c_str());
+
+	size_t NewLinePos = 0;
+	
+	auto Rows = Split(Answer, "\n");
+	
+	for (const auto& Iter : Rows) {
+		auto Vals = Split(Iter, ",");
+
+		Result.Data[Result.Count].StartPos = std::stoull(Vals[2], 0, 16);
+		Result.Data[Result.Count].Len = std::stoull(Vals[1], 0, 16);
+		Result.Count++;
+		if (Result.Count == SizeAssumed) {
+			SizeAssumed *= 2;
+			realloc(Result.Data, sizeof(Result.Data[0]) * SizeAssumed);
+		}
+	}
+
+	realloc(Result.Data, sizeof(Result.Data[0]) * Result.Count);
+	
+	return Result;
+}
+
 //
 //  Main uses a loop which has an assignment in the while 
 //  conditional statement. Suppress the compiler's warning.
@@ -226,6 +311,8 @@ wmain(
 	_In_reads_(argc) WCHAR* argv[]
 ) {
 
+
+
 	/*
 	minispy.exe -From -To  one letter
 
@@ -233,6 +320,7 @@ ex usage:
 minispy.exe D E
 track D: volume, restore to E: volume if requested
 */
+	/*
 	WCHAR FromVolLetter = 0;
 	WCHAR ToVolLetter = 0;
 	if (argc == 3) {
@@ -273,13 +361,17 @@ track D: volume, restore to E: volume if requested
 		printf("Invalid usage!\n");
 		return 0;
 	}
-
 	WCHAR TrackedVolumeName[] = L" :\\";
 	WCHAR RestoreVolumeName[] = L" :\\";
 	TrackedVolumeName[0] = FromVolLetter;
 	RestoreVolumeName[0] = ToVolLetter;
 	printf("Programm will backup volume %S, and restore it to %S if requested\n", TrackedVolumeName, RestoreVolumeName);
 
+	*/
+	WCHAR TrackedVolumeName[] = L"ASDFASF";
+	WCHAR RestoreVolumeName[] = L"ASDFASDFAS";
+
+	
 	HANDLE port = INVALID_HANDLE_VALUE;
 	HRESULT hResult = S_OK;
 	DWORD result;
@@ -293,7 +385,7 @@ track D: volume, restore to E: volume if requested
 	if (!SUCCEEDED(hResult)) {
 		printf("Failed CoInitialize function \n");
 		DisplayError(GetLastError());
-		goto Main_Exit;
+		//goto Main_Exit;
 	}
 	hResult = CoInitializeSecurity(
 		NULL,                           //  Allow *all* VSS writers to communicate back!
@@ -306,12 +398,39 @@ track D: volume, restore to E: volume if requested
 		EOAC_DYNAMIC_CLOAKING,          //  Cloaking
 		NULL                            //  Reserved parameter
 	);
+	
 	if (!SUCCEEDED(hResult)) {
 		printf("Failed CoInitializeSecurity function \n");
 		DisplayError(GetLastError());
-		goto Main_Exit;
+		//goto Main_Exit;
 	}
 
+
+
+	//HANDLE VolHandle = CreateFileA(
+	//	"\\\\.\\N:",
+	//	GENERIC_READ | GENERIC_WRITE,
+	//	FILE_SHARE_READ, 0,
+	//	OPEN_EXISTING,
+	//	0, 0
+	//);
+	//if (VolHandle == INVALID_HANDLE_VALUE) {
+	//	printf("ERR1923");
+	//	DisplayError(GetLastError());
+	//	return 0;
+	//}
+	//
+	//if (!DeviceIoControl(VolHandle, FSCTL_LOCK_VOLUME, 0, 0, 0, 0, 0, 0)) {
+	//	printf("Cant lock volume\n");
+	//}
+	
+	GetMFTLCN('C');
+
+	//if (!DeviceIoControl(VolHandle, FSCTL_UNLOCK_VOLUME, 0, 0, 0, 0, 0, 0)) {
+	//	printf("Cant lock volume\n");
+	//}
+
+	return 0;
 
 	//
 	//  Initialize handle in case of error
@@ -364,6 +483,8 @@ track D: volume, restore to E: volume if requested
 
 #pragma endregion
 #endif 
+	UINT NDiffBackedUp = 0;
+
 	printf("Press [q] to quit\n");
 	printf("Press [f] to get full backup of the volume, [d] to diff, [r] to restore\n");
 	while (inputChar = (CHAR)getchar()) {
@@ -454,39 +575,43 @@ track D: volume, restore to E: volume if requested
 			/*
 possible implementation of algorithm above
 */
-			UINT32 BufferSize = UINT32((float)NRecords * (0.78f) + 1) * sizeof(nar_record);
-			nar_record* MergedDiffRecords = malloc(BufferSize);
-
+			
+			data_array<nar_record> MergedDiffRecords = { 0,0 };
+			MergedDiffRecords.Data = (nar_record*)malloc(DiffRecords.Count * sizeof(nar_record));
+			
 			UINT32 MergedRecordsIndex = 0;
 			UINT32 CurrentIter = 0;
 
 			for (;;) {
-				if (CurrentIter == NRecords - 1) {
+				if (CurrentIter == DiffRecords.Count - 1) {
 					//last record in the array
 					break;
 				}
 
-				MergedDiffRecords[MergedRecordsIndex].StartPos = DiffRecords[CurrentIter].StartPos;
+				MergedDiffRecords.Data[MergedRecordsIndex].StartPos = DiffRecords[CurrentIter].StartPos;
 
 				ULONGLONG EndPointTemp = 0;
 
-				while (DiffRecords[CurrentIter].StartPos == DiffRecords[CurrentIter + 1].StartPos
-					|| IsRegionsCollide(&DiffRecords[CurrentIter], &DiffRecords[CurrentIter + 1])) {
-					ULONGLONG EP1 = DiffRecords[CurrentIter].StartPos + DiffRecords[CurrentIter].Len;
-					ULONGLONG EP2 = DiffRecords[CurrentIter + 1].StartPos + DiffRecords[CurrentIter + 1].Len;
+				while (DiffRecords.Data[CurrentIter].StartPos == DiffRecords.Data[CurrentIter + 1].StartPos
+					|| IsRegionsCollide(&DiffRecords.Data[CurrentIter], &DiffRecords.Data[CurrentIter + 1])) {
+					ULONGLONG EP1 = DiffRecords.Data[CurrentIter].StartPos + DiffRecords.Data[CurrentIter].Len;
+					ULONGLONG EP2 = DiffRecords.Data[CurrentIter + 1].StartPos + DiffRecords.Data[CurrentIter + 1].Len;
 
 					EndPointTemp = MAX(EP1, EP2);
 
 					CurrentIter++;
 				}
 
-				MergedDiffRecords[MergedRecordsIndex].Len = EndPointTemp - MergedDiffRecords[MergedRecordsIndex].StartPos;
+				MergedDiffRecords.Data[MergedRecordsIndex].Len = EndPointTemp - MergedDiffRecords.Data[MergedRecordsIndex].StartPos;
 				MergedRecordsIndex++;
-
+				CurrentIter++;
 			}
-
+			
+			MergedDiffRecords.Count = MergedRecordsIndex;
+			realloc(MergedDiffRecords.Data, MergedDiffRecords.Count * sizeof(MergedDiffRecords.Data[0]));
 
 #endif
+			
 
 			ShadowHandle = CreateFileW(
 				ShadowPath.c_str(),
