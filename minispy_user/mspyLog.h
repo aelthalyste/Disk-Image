@@ -39,24 +39,74 @@ template<typename DATA_TYPE>
 struct data_array {
 	DATA_TYPE* Data;
 	UINT Count;
+
+	inline void	Insert(DATA_TYPE Val) {
+		Data = realloc(Data, sizeof(DATA_TYPE) * (Count + 1));
+		Data[Count] = Val;
+		Count++;
+	}
 };
 
 
 #define BUFFER_SIZE     4096
 
+
+#define MAX(v1,v2) ((v1)>(v2) ? (v1) : (v2))
+#define MIN(v1,v2) ((v1)<(v2) ? (v1) : (v2))
+
+#define CLEANHANDLE(handle) if((handle)!=NULL) CloseHandle(handle);
+#define CLEANMEMORY(memory) if((memory)!=NULL) free(memory);
+
+#define MINISPY_NAME  L"MiniSpy"
+
+#define FB_FILE_NAME L"FullBackupDisk_"
+#define DB_FILE_NAME L"DiffBackupDisk_"
+
+#define FB_METADATA_FILE_NAME L"FMetadata_"
+#define DB_METADATA_FILE_NAME L"DMetadata_"
+
+#define DB_MFT_LCN_FILE_NAME L"DMFTLCN_"
+#define DB_MFT_FILE_NAME L"DBMFT_BINARY_"
+
+#define MAKE_W_STR(arg) L#arg
+
+#define Assert(expression) if(!(expression)) {*(int*)0 = 0;}
+#define ASSERT_VSS(expression) if(FAILED(expression)) {printf("Err @ %d\n",__LINE__);*(int*)0=0; }
+
+
+BOOLEAN
+IsSameVolumes(const WCHAR* OpName, const WCHAR VolumeLetter);
+
+typedef struct _volume_inf {
+	wchar_t Letter;
+	BOOLEAN IsActive; //Is volume's changes are reported
+	BOOLEAN FullBackupExists;
+	UINT DiffBackupCount;
+	
+	//these are going to be fully backed up, 
+	//since driver does not support them
+	data_array<CHAR> ExtraPartitions;
+	
+	/*
+	Index @ context's Volumes array, this parameter has no meaning
+	if we reload program from file.
+	*/
+	UINT ContextIndex; 
+	HANDLE LogHandle; //Handle to file that is logging volume's changes.
+	ULONGLONG ChangeCount;
+}volume_backup_inf;
+
 //
 //  Structure for managing current state.
 //
-
 typedef struct _LOG_CONTEXT {
 
 	HANDLE Port;
+	HANDLE Thread;
 	BOOLEAN LogToScreen;
-	BOOLEAN LogToFile;
-	HANDLE OutputFile;
 
-	BOOLEAN ShouldFilter;
-
+	data_array<volume_backup_inf> Volumes;
+	
 	//
 	// For synchronizing shutting down of both threads
 	//
@@ -77,8 +127,6 @@ RetrieveLogRecords(
 
 BOOL
 FileDump(
-	_In_ ULONG SequenceNumber,
-	_In_ WCHAR CONST* Name,
 	_In_ PRECORD_DATA RecordData,
 	_In_ HANDLE File
 );

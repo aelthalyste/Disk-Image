@@ -132,7 +132,7 @@ Return Value:
 
 #pragma warning(push)
 #pragma warning(disable:4127) // conditional expression is constant
-
+	printf("Thread started!\n");
 	while (TRUE) {
 
 #pragma warning(pop)
@@ -238,31 +238,36 @@ Return Value:
 				}
 			}
 
-			if (context->LogToScreen && pRecordData->Arg5 != NAR_ERR_TRINITY && context->ShouldFilter) {
-				if (pRecordData->Arg5 != 0) {
-					printf("Err incomin ");
+
+			if (pRecordData->Arg1 != 0 && pRecordData->Arg5 == 0) {
+				for (UINT i = 0; i < context->Volumes.Count; i++) {
+
+					if (pRecordData->Arg5 != NAR_ERR_TRINITY
+						&& IsSameVolumes(pLogRecord->Name, context->Volumes.Data[i].Letter)) {
+
+						if (!context->Volumes.Data[i].IsActive) {
+							printf("Volume isnt active, breaking now\n");
+							break;
+						}
+						if (FileDump(pRecordData, context->Volumes.Data[i].LogHandle)) {
+							context->Volumes.Data[i].ChangeCount++;
+							ScreenDump(0, pLogRecord->Name, pRecordData);
+							break;
+						} {
+							printf("## Error occured while writing log to file. FERROR!!\n");
+							//TODO log, failed to log volume change.
+						}
+
+					}
+					else { printf("THAT SHOULDN'T HAPPEN\n"); }
 				}
-				printf("Hell");
-				ScreenDump(pLogRecord->SequenceNumber,
-					pLogRecord->Name,
-					pRecordData);
+			}
+			else {
+				printf("Error occured at file %S\n",pLogRecord->Name);
 			}
 
-			if (context->LogToFile
-				&& pRecordData->Arg5 == 0
-				&& context->ShouldFilter
-				&& pRecordData->Arg1 != 0) {
-
-				BOOL r = FileDump(pLogRecord->SequenceNumber,
-					pLogRecord->Name,
-					pRecordData,
-					context->OutputFile);
-				if (r == FALSE) {
-					printf("Error occured while writing new record to the file. \nPlease restart the program\n");
-					break;
-				}
-			}
-
+			
+			
 			//
 			//  The RecordType could also designate that we are out of memory
 			//  or hit our program defined memory limit, so check for these
@@ -362,8 +367,6 @@ Return Value:
 
 BOOL
 FileDump(
-	_In_ ULONG SequenceNumber,
-	_In_ WCHAR CONST* Name,
 	_In_ PRECORD_DATA RecordData,
 	_In_ HANDLE File
 )
@@ -377,11 +380,8 @@ Routine Description:
 		Flags, NoCache, Paging I/O, Synchronous, Synchronous paging, FileName,
 		ReturnStatus, FileName
 
-
 Arguments:
 
-		SequenceNumber - the sequence number for this log record
-		Name - the name of the file that this Irp relates to
 		RecordData - the Data record to print
 		File - the file to print to
 
