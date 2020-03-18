@@ -77,27 +77,32 @@ struct data_array {
 BOOLEAN
 IsSameVolumes(const WCHAR* OpName, const WCHAR VolumeLetter);
 
+struct restore_target_inf;
+struct restore_inf;
+struct volume_backup_inf;
 
-typedef struct _restore_target_inf {
+
+struct restore_target_inf{
 	wchar_t Letter;
 	DWORD ClusterCount;
 	DWORD ClusterSize;
-}restore_target_inf;
+};
 
-typedef struct _restore_inf {
-	restore_target_inf Target;
-	volume_backup_inf Src;
-	
-	BOOL ToFull;
-	UINT DiffVersion;
-
-} restore_inf;
-
-typedef struct _volume_inf {
+struct volume_backup_inf {
+	//TODO add partition name of the volume to this structure.
 	wchar_t Letter;
 	BOOLEAN IsActive; //Is volume's changes are reported
 	BOOLEAN FullBackupExists;
-	UINT DiffBackupCount;
+	BOOLEAN IsUnderProcess; //Is any process being done to the volume. such as restore, full backup
+
+	/*
+	Difference between these two is, LastCompletedDiffIndex is successfull diff backup count, as it name says,
+	CurrentLogIndex might be equal to it, 
+	but might not be if some kind of error occured during backup phase or logging state, so we can delete any information belong to currentbackupindex.
+	this provides us to generate file names more safely and track overall system state.
+	*/
+	int LastCompletedDiffIndex;
+	int CurrentLogIndex;
 
 	DWORD ClusterCount;
 	DWORD ClusterSize;
@@ -107,7 +112,7 @@ typedef struct _volume_inf {
 	//these are going to be fully backed up, 
 	//since driver does not support them
 	
-	data_array<int> ExtraPartitions; //TODO this is temp
+	data_array<int> ExtraPartitions; //TODO this is placeholder
 	
 	/*
 	Index @ context's Volumes array, this parameter has no meaning
@@ -116,7 +121,16 @@ typedef struct _volume_inf {
 	int ContextIndex; 
 	HANDLE LogHandle; //Handle to file that is logging volume's changes.
 	ULONGLONG ChangeCount;
-}volume_backup_inf;
+};
+
+struct restore_inf {
+	restore_target_inf Target;
+	volume_backup_inf Src;
+
+	BOOL ToFull;
+	UINT DiffVersion;
+
+};
 
 //
 //  Structure for managing current state.
