@@ -53,8 +53,96 @@ _Analysis_mode_(_Analysis_code_type_user_code_)
 	);
 
 BOOLEAN
+InitRestoreTargetInf(restore_target_inf* Inf, wchar_t Letter) {
+	Assert(Inf != NULL);
+	WCHAR Temp[] = L"!:\\";
+	Temp[0] = Letter;
+	DWORD BytesPerSector = 0;
+	DWORD SectorsPerCluster = 0;
+
+	if (!GetDiskFreeSpaceW(Temp, &SectorsPerCluster, &BytesPerSector, 0, &Inf->ClusterCount)) {
+		Inf->ClusterCount = 0;
+		Inf->ClusterSize = 0;
+	}
+	Inf->ClusterSize = BytesPerSector * SectorsPerCluster;
+}
+
+BOOLEAN
+InitVolumeInf(volume_backup_inf *VolInf, const wchar_t *Filepath) {
+	BOOLEAN Return = FALSE;
+
+	HANDLE Handle = CreateFileW(Filepath, GENERIC_READ, 0, 0, OPEN_ALWAYS, 0, 0);
+	if (Handle != INVALID_HANDLE_VALUE) {
+		DWORD FileSize = GetFileSize(Handle, 0);
+		if (FileSize != 0) {
+			DWORD BytesRead = 0;
+			if (ReadFile(Handle, VolInf, sizeof(volume_backup_inf), &BytesRead, 0)) {
+				Return = TRUE;
+			}
+			else {
+				//TODO log
+			}
+		}
+		else {
+			//TODO Log
+		}
+	}
+	else {
+		//TODO log
+	}
+
+}
+
+void InitVolumeInf(volume_backup_inf* VolInf, wchar_t Letter) {
+	
+	Assert(VolInf != NULL);
+	VolInf->Letter = Letter;
+	VolInf->IsActive = FALSE;
+	VolInf->FullBackupExists = FALSE;
+	VolInf->DiffBackupCount = 0;
+	
+	wchar_t Temp[] = L"!:\\";
+	Temp[0] = VolInf->Letter;
+
+	DWORD BytesPerSector = 0;
+	DWORD SectorsPerCluster = 0;
+	DWORD ClusterCount = 0;
+	
+	if (GetDiskFreeSpaceW(Temp, &SectorsPerCluster, &BytesPerSector, 0, &ClusterCount)) {
+		if (SectorsPerCluster == 0 || BytesPerSector == 0) {
+			VolInf->ClusterCount = ClusterCount;
+			VolInf->ClusterSize = SectorsPerCluster * BytesPerSector;
+		}
+		else {
+			printf("either sectors per cluster or bytes per sector is zero\n");
+			printf("Sectors percluster-> %d, BytesPersector -> %d\n", SectorsPerCluster, BytesPerSector);
+			VolInf->ClusterCount = 0;
+			VolInf->ClusterSize = 0;
+		}
+	}
+	else {
+		//Failed
+		VolInf->ClusterCount = 0;
+		VolInf->ClusterSize = 0;
+	}
+
+	VolInf->ExtraPartitions = { 0,0 };
+	VolInf->PartitionName = { 0,0 };
+	VolInf->ContextIndex = 0;
+	VolInf->ContextIndex = -1; //Access violation if tried to use volume without adding it to tracklist
+	VolInf->LogHandle = 0;
+	VolInf->ChangeCount = 0;
+
+	//TODO link letter name and full name 
+	//TODO HANDLE EXTRA PARTITIONS, SUCH AS BOOT AND RECOVERY
+
+}
+
+
+
+BOOLEAN
 IsSameVolumes(const WCHAR* OpName, const WCHAR VolumeLetter) {
-	return TRUE;
+	return TRUE;//TODO
 }
 
 BOOL CompareNarRecords(const void* v1, const void* v2) {
@@ -393,11 +481,11 @@ AttachVolume(PLOG_CONTEXT Context, UINT VolInfIndex) {
 	BOOLEAN Return = FALSE;
 	HRESULT Result = 0;
 
-	std::wstring Temp = L"!:\\";
+	WCHAR Temp[] = L"!:\\";
 	Temp[0] = Context->Volumes.Data[VolInfIndex].Letter;
 	volume_backup_inf* VolInf = &Context->Volumes.Data[VolInfIndex];
 
-	Result = FilterAttach(MINISPY_NAME, Temp.c_str(), 0, 0, 0);
+	Result = FilterAttach(MINISPY_NAME, Temp, 0, 0, 0);
 	if (SUCCEEDED(Result) || Result == ERROR_FLT_INSTANCE_NAME_COLLISION) {
 		std::wstring FileName = GenerateMetadataFileName(VolInf);
 		VolInf->LogHandle = CreateFileW(FileName.c_str(), GENERIC_WRITE|GENERIC_READ, 0, 0, CREATE_ALWAYS, 0, 0);
@@ -425,7 +513,7 @@ DiffBackupVolume(PLOG_CONTEXT Context, UINT VolInfIndex) {
 	/*
 	TODO eğer diffbackup başarılı olmazsa, oluşturulan dosyaları sil ve diffbackup sayısını bir düşür?
 	*/
-	BOOLEAN Return = FALSE;
+	BOOLEAN ErrorOccured = FALSE;
 
 	data_array<nar_record> DiffRecords = { 0,0 };
 	void* Buffer = 0;
@@ -451,7 +539,7 @@ DiffBackupVolume(PLOG_CONTEXT Context, UINT VolInfIndex) {
 	DiffRecords.Data = (nar_record*)malloc(FileSize);
 	DiffRecords.Count = FileSize / sizeof(nar_record);
 
-	Result = SetFilePointer(VolInf->LogHandle, 0, 0, FILE_BEGIN);
+	SetFilePointer(VolInf->LogHandle, 0, 0, FILE_BEGIN);
 
 	Result = ReadFile(VolInf->LogHandle, DiffRecords.Data, FileSize, &BytesOperated, 0);
 	if (!SUCCEEDED(Result) || FileSize != BytesOperated) {
@@ -658,7 +746,7 @@ possible implementation of algorithm above
 	//	goto Main_Cleanup;
 	//}
 	printf("Completed diff \n");
-	Return = TRUE;
+	ErrorOccured = TRUE;
 D_Cleanup:
 	CLEANMEMORY(Buffer);
 	CLEANMEMORY(DiffRecords.Data);
@@ -668,7 +756,7 @@ D_Cleanup:
 	CLEANHANDLE(MftOutput);
 	CLEANHANDLE(MftHandle);
 	
-	return Return;
+	return ErrorOccured;
 }
 
 BOOLEAN

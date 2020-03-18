@@ -77,21 +77,43 @@ struct data_array {
 BOOLEAN
 IsSameVolumes(const WCHAR* OpName, const WCHAR VolumeLetter);
 
+
+typedef struct _restore_target_inf {
+	wchar_t Letter;
+	DWORD ClusterCount;
+	DWORD ClusterSize;
+}restore_target_inf;
+
+typedef struct _restore_inf {
+	restore_target_inf Target;
+	volume_backup_inf Src;
+	
+	BOOL ToFull;
+	UINT DiffVersion;
+
+} restore_inf;
+
 typedef struct _volume_inf {
 	wchar_t Letter;
 	BOOLEAN IsActive; //Is volume's changes are reported
 	BOOLEAN FullBackupExists;
 	UINT DiffBackupCount;
-	
+
+	DWORD ClusterCount;
+	DWORD ClusterSize;
+
+	data_array<WCHAR> PartitionName;
+
 	//these are going to be fully backed up, 
 	//since driver does not support them
-	data_array<CHAR> ExtraPartitions;
+	
+	data_array<int> ExtraPartitions; //TODO this is temp
 	
 	/*
 	Index @ context's Volumes array, this parameter has no meaning
 	if we reload program from file.
 	*/
-	UINT ContextIndex; 
+	int ContextIndex; 
 	HANDLE LogHandle; //Handle to file that is logging volume's changes.
 	ULONGLONG ChangeCount;
 }volume_backup_inf;
