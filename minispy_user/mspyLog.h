@@ -82,6 +82,28 @@ struct restore_inf;
 struct volume_backup_inf;
 
 
+/*
+structs for algorithm that minimizes restore operation
+that struct generated at run-time, it is safe to std libraries
+only valid for diff restore, since fullbackup just copies raw data once
+*/
+struct restore_record {
+	DWORD Index; //Record's index at it's original metadata file, so we can offset to it's file accurately.
+	nar_record Record; //Actual record
+};
+
+
+
+/*
+Used for Getfilename functions, this structure will change completely.
+temp structure for mft backups
+*/
+typedef struct fn_req_inf {
+	wchar_t Letter;
+	int ID;
+}fn_gen_inf;
+
+
 struct restore_target_inf{
 	wchar_t Letter;
 	DWORD ClusterCount;
@@ -101,7 +123,7 @@ struct volume_backup_inf {
 	but might not be if some kind of error occured during backup phase or logging state, so we can delete any information belong to currentbackupindex.
 	this provides us to generate file names more safely and track overall system state.
 	*/
-	int LastCompletedDiffIndex;
+	int LastCompletedLogIndex;
 	int CurrentLogIndex;
 
 	DWORD ClusterCount;
@@ -123,13 +145,12 @@ struct volume_backup_inf {
 	ULONGLONG ChangeCount;
 };
 
+
 struct restore_inf {
 	restore_target_inf Target;
-	volume_backup_inf Src;
-
-	BOOL ToFull;
-	UINT DiffVersion;
-
+	wchar_t SrcLetter;
+	BOOLEAN ToFull;
+	BOOLEAN DiffVersion;
 };
 
 //
@@ -174,6 +195,96 @@ ScreenDump(
 	_In_ PRECORD_DATA RecordData
 );
 
+
+/*
+Function declerations
+*/
+#include <string>
+#include <vector>
+#include <atlbase.h>
+
+#include <vss.h>
+#include <vswriter.h>
+#include <vsbackup.h>
+#include <vsmgmt.h>
+
+
+std::wstring
+GenerateMFTFileName(wchar_t Letter, int ID);
+
+std::wstring
+GenerateMFTMetadataFileName(wchar_t Letter, int ID);
+
+/*Used for diff*/
+std::wstring
+GenerateDBMetadataFileName(wchar_t Letter, int ID);
+
+std::wstring
+GenerateDBFileName(wchar_t Letter, int ID);
+
+
+std::wstring
+GenerateFBFileName(wchar_t Letter);
+
+std::wstring
+GenerateFBMetadataFileName(wchar_t Letter);
+
+
+
+BOOLEAN
+SaveMFT(volume_backup_inf* VolInf, fn_req_inf F, HANDLE VSSHandle, data_array<nar_record> *LCN);
+
+BOOLEAN
+RestoreMFT(restore_inf* R, fn_req_inf F, HANDLE VolumeHandle);
+
+BOOLEAN
+InitRestoreTargetInf(restore_target_inf* Inf, wchar_t Letter);
+
+BOOLEAN
+InitVolumeInf(volume_backup_inf* VolInf, const wchar_t* Filepath);
+
+BOOLEAN
+InitVolumeInf(volume_backup_inf* VolInf, wchar_t Letter);
+
+BOOLEAN
+IsSameVolumes(const WCHAR* OpName, const WCHAR VolumeLetter);
+
+BOOL 
+CompareNarRecords(const void* v1, const void* v2);
+
+std::wstring
+GetShadowPath(std::wstring Drive, CComPtr<IVssBackupComponents>& ptr);
+
+BOOL
+IsRegionsCollide(nar_record* R1, nar_record* R2);
+
+VOID
+NarCloseThreadCom(PLOG_CONTEXT Context);
+
+BOOL
+NarCreateThreadCom(PLOG_CONTEXT Context);
+
+std::string
+NarExecuteCommand(const char* cmd, std::string FileName);
+
+/*Make these function generated from safe template*/
+std::vector<std::string>
+Split(std::string str, std::string delimiter);
+
+std::vector<std::wstring>
+Split(std::wstring str, std::wstring delimiter);
+
+data_array<nar_record>
+GetMFTLCN(char VolumeLetter);
+
+BOOLEAN
+AddVolumeToTrack(PLOG_CONTEXT Context, wchar_t Letter);
+
+BOOLEAN
+DetachVolume(PLOG_CONTEXT Context, UINT VolInfIndex);
+
+BOOLEAN
+AttachVolume(PLOG_CONTEXT Context, UINT VolInfIndex);
 //
 //  Values set for the Flags field in a RECORD_DATA structure.
 //  These flags come from the FLT_CALLBACK_DATA structure.
