@@ -75,6 +75,61 @@ incremental backup just need to create files, so use generatefilename functions
 */
 
 
+BOOLEAN
+CopyData(HANDLE S, HANDLE D, DWORD Len, DWORD BufSize) {
+	BOOLEAN Return = TRUE;
+	if (BufSize == 0) {
+		//TODO
+	}
+
+	void* Buffer = malloc(BufSize);
+	if (Buffer != NULL) {
+		DWORD BytesRemaining = Len;
+		DWORD BytesOperated = 0;
+		if (BytesRemaining > BufSize) {
+
+			while (BytesRemaining > BufSize) {
+				if (ReadFile(S, Buffer, BufSize, &BytesOperated, 0)) {
+					if (!WriteFile(D, Buffer, BufSize, &BytesOperated, 0) || BytesOperated != BufSize) {
+						printf("Writefile failed\n");
+						printf("Bytes written -> %d\n", BytesOperated);
+						DisplayError(GetLastError());
+						Return = FALSE;
+						break;
+					}
+					BytesRemaining -= BufSize;
+				}
+				else {
+					Return = FALSE;
+					//if readfile failed
+					break;
+				}
+				
+			}
+		}
+		
+		if (BytesRemaining > 0) {
+			if (ReadFile(S, Buffer, BytesRemaining, &BytesOperated, 0) && BytesOperated == BytesRemaining) {
+				if (!WriteFile(D, Buffer, BytesRemaining, &BytesOperated, 0) || BytesOperated != BytesRemaining) {
+					printf("Writefile failed\n");
+					printf("Bytes written -> %d\n", BytesOperated);
+					DisplayError(GetLastError());
+					Return = FALSE;
+				}
+			}
+		}
+
+			
+	}//If Buffer != NULL
+	else {
+		printf("Can't allocate memory for buffer\n");
+		Return = FALSE;
+	}
+
+	CLEANMEMORY(Buffer);
+	return Return;
+}
+
 std::wstring
 GenerateMFTFileName(wchar_t Letter, int ID) {
 	std::wstring Return = DB_MFT_FILE_NAME;
@@ -189,13 +244,18 @@ SaveMFT(volume_backup_inf* VolInf, HANDLE VSSHandle, data_array<nar_record> *MFT
 			Result = SetFilePointerEx(VSSHandle, MoveTo, &NewFilePointer, FILE_BEGIN);
 			if (!SUCCEEDED(Result) || MoveTo.QuadPart != NewFilePointer.QuadPart) {
 				printf("Set file pointer failed\n");
-				printf("Tried to set pointer -> %I64d\n",MoveTo.QuadPart);
-				printf("Instead, moved to -> %I64d\n",NewFilePointer.QuadPart);
+				printf("Tried to set pointer -> %I64d\n", MoveTo.QuadPart);
+				printf("Instead, moved to -> %I64d\n", NewFilePointer.QuadPart);
 				DisplayError(GetLastError());
 				goto Exit;
 			}
 
-		
+			if (!CopyData(VSSHandle, MFTSaveFile, MFTLCN->Data[i].Len * VolInf->ClusterSize)) {
+				printf("Error occured while copying MFT file\n");
+				goto Exit;
+			}
+
+#if 0
 			for (int j = 0; j < MFTLCN->Data[i].Len; j++) {
 				Result = ReadFile(VSSHandle, Buffer, BufferSize, &BytesOperated, 0);
 				if (!SUCCEEDED(Result) || BytesOperated != BufferSize) {
@@ -213,7 +273,8 @@ SaveMFT(volume_backup_inf* VolInf, HANDLE VSSHandle, data_array<nar_record> *MFT
 					goto Exit;
 				}
 			}
-			
+#endif 
+
 		}
 
 		Result = WriteFile(MFTMDFile, MFTLCN->Data, MFTLCN->Count * sizeof(nar_record), &BytesOperated, 0);
@@ -297,6 +358,11 @@ RestoreMFT(restore_inf *R,HANDLE VolumeHandle) {
 						goto Exit;
 					}
 					
+					if (!CopyData(MFTHandle, VolumeHandle, Metadata.Data[i].Len * R->ClusterSize)) {
+						goto Exit;
+					}
+
+#if 0
 					for (int j = 0; j < Metadata.Data[i].Len; j++) {
 						DWORD BytesOperated = 0;
 						Result = ReadFile(MFTHandle, Buffer, BufferSize, &BytesOperated, 0);
@@ -315,8 +381,8 @@ RestoreMFT(restore_inf *R,HANDLE VolumeHandle) {
 							DisplayError(GetLastError());
 							goto Exit;
 						}
-
 					}
+#endif 
 
 				} //End of mft-copy operation
 				Return = TRUE;
@@ -341,7 +407,7 @@ Exit:
 }
 
 BOOLEAN
-InitRestoreTargetInf(restore_target_inf* Inf, wchar_t Letter) {
+InitRestoreTargetInf(restore_inf *Inf, wchar_t Letter) {
 	
 	Assert(Inf != NULL);
 	BOOLEAN Return = FALSE;
@@ -350,14 +416,14 @@ InitRestoreTargetInf(restore_target_inf* Inf, wchar_t Letter) {
 	DWORD BytesPerSector = 0;
 	DWORD SectorsPerCluster = 0;
 
-	if (!GetDiskFreeSpaceW(Temp, &SectorsPerCluster, &BytesPerSector, 0, &Inf->ClusterCount)) {
-		Inf->ClusterCount = 0;
+	if (!GetDiskFreeSpaceW(Temp, &SectorsPerCluster, &BytesPerSector, 0, 0)) {
 		Inf->ClusterSize = 0;
 	}
 	else {
 		Return = TRUE;
 	}
 	Inf->ClusterSize = BytesPerSector * SectorsPerCluster;
+	
 	
 	return Return;
 }
@@ -1249,7 +1315,7 @@ RestoreVolume(PLOG_CONTEXT Context, restore_inf* RestoreInf) {
 	HANDLE DBackupMDFile = 0; //metadata for diff backup
 	HANDLE VolumeToRestore = 0;
 	DWORD BufferSize = 1024 * 1024 * 128; //128MB
-	DWORD ClusterSize = RestoreInf->Target.ClusterSize;
+	DWORD ClusterSize = RestoreInf->ClusterSize;
 	DWORD BytesOperated = 0;
 	DWORD FileSize = 0;
 	data_array<UINT> FBClusterIndices = { 0,0 };
@@ -1329,7 +1395,7 @@ RestoreVolume(PLOG_CONTEXT Context, restore_inf* RestoreInf) {
 	}
 
 	WCHAR VTRNameTemp[] = L"\\\\.\\ :";
-	VTRNameTemp[lstrlenW(VTRNameTemp) - 2] = RestoreInf->Target.Letter;
+	VTRNameTemp[lstrlenW(VTRNameTemp) - 2] = RestoreInf->TargetLetter;
 
 	VolumeToRestore = CreateFileW(
 		VTRNameTemp,
@@ -1418,33 +1484,38 @@ RestoreVolume(PLOG_CONTEXT Context, restore_inf* RestoreInf) {
 	printf("DBMT Count -> %d\n", DBRecords.Count);
 
 	for (UINT i = 0; i < DBRecords.Count; i++) {
+		
 		MoveTo.QuadPart = DBRecords.Data[i].StartPos * ClusterSize;
 		Result = SetFilePointerEx(VolumeToRestore, MoveTo, &NewFilePointer, FILE_BEGIN);
 		if (!SUCCEEDED(Result) || NewFilePointer.QuadPart != MoveTo.QuadPart) {
 			printf("SetFilePointerEx failed\n");
 			printf("Iter was -> %i\n", i);
 			DisplayError(GetLastError());
+			//goto R_Cleanup;
+		}
+
+		if (!CopyData(DBackupFile, VolumeToRestore, RestoreInf->ClusterSize * DBRecords.Data[i].Len)) {
+			printf("Cant restore incremental parts\n");
 			goto R_Cleanup;
 		}
 
-		DWORD ReadSize = DBRecords.Data[i].Len * ClusterSize;
-		Result = ReadFile(DBackupFile, Buffer, ReadSize, &BytesOperated, 0);
-		if (!SUCCEEDED(Result) || BytesOperated != ReadSize) {
-			printf("ReadFile failed\n");
-			printf("Bytes operated -> %d\n", BytesOperated);
-			printf("Readsize %d\n", ReadSize);
-			printf("Len of record -> %I64d\n", DBRecords.Data[i].Len);
-			printf("Iter was %d\n", i);
-			DisplayError(GetLastError());
-			goto R_Cleanup;
-		}
+		//DWORD ReadSize = DBRecords.Data[i].Len * ClusterSize;
+		//Result = ReadFile(DBackupFile, Buffer, ReadSize, &BytesOperated, 0);
+		//if (!SUCCEEDED(Result) || BytesOperated != ReadSize) {
+		//	printf("ReadFile failed\n");
+		//	printf("Bytes operated -> %d\n", BytesOperated);
+		//	printf("Readsize %d\n", ReadSize);
+		//	DisplayError(GetLastError());
+		//	//goto R_Cleanup;
+		//}
+		//
+		//Result = WriteFile(VolumeToRestore, Buffer, ReadSize, &BytesOperated, 0);
+		//if (!SUCCEEDED(Result) || BytesOperated != ReadSize) {
+		//	printf("WriteFile failed!\n");
+		//	DisplayError(GetLastError());
+		//	//goto R_Cleanup;
+		//}
 
-		Result = WriteFile(VolumeToRestore, Buffer, ReadSize, &BytesOperated, 0);
-		if (!SUCCEEDED(Result) || BytesOperated != ReadSize) {
-			printf("WriteFile failed!\n");
-			DisplayError(GetLastError());
-			goto R_Cleanup;
-		}
 	}
 
 	
@@ -1561,7 +1632,7 @@ track D: volume, restore to E: volume if requested
 	DWORD result;
 	LOG_CONTEXT context = { 0 };
 
-
+	
 	hResult = CoInitialize(NULL);
 	if (!SUCCEEDED(hResult)) {
 		printf("Failed CoInitialize function \n");
@@ -1684,8 +1755,8 @@ track D: volume, restore to E: volume if requested
 
 			restore_inf RestoreInf;
 			RestoreInf.SrcLetter = SrcLetter;
-			RestoreInf.Target.ClusterSize = 4096;
-			RestoreInf.Target.Letter = RestoreTarget;
+			RestoreInf.ClusterSize = 4096;
+			RestoreInf.TargetLetter = RestoreTarget;
 			RestoreInf.DiffVersion = DiffIndex;
 			RestoreInf.ToFull = FALSE;
 

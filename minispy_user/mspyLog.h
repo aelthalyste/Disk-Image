@@ -105,12 +105,6 @@ typedef struct fn_req_inf {
 }fn_gen_inf;
 
 
-struct restore_target_inf{
-	wchar_t Letter;
-	DWORD ClusterCount;
-	DWORD ClusterSize;
-};
-
 
 #include <mutex>
 struct volume_backup_inf {
@@ -147,8 +141,9 @@ struct volume_backup_inf {
 
 
 struct restore_inf {
-	restore_target_inf Target;
+	wchar_t TargetLetter;
 	wchar_t SrcLetter;
+	DWORD ClusterSize;
 	BOOLEAN ToFull;
 	BOOLEAN DiffVersion;
 };
@@ -207,6 +202,12 @@ Function declerations
 #include <vswriter.h>
 #include <vsbackup.h>
 #include <vsmgmt.h>
+
+#define Kilobyte(val) (val)*1024LL
+#define Megabyte(val) Kilobyte(val)*1024LL
+
+BOOLEAN
+CopyData(HANDLE S, HANDLE D, DWORD Len, DWORD BufSize = Megabyte(1));
 
 
 std::wstring
