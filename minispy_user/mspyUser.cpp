@@ -121,6 +121,23 @@ GenerateFBMetadataFileName(wchar_t Letter) {
 	return Return;
 }
 
+BOOLEAN
+InitNewLogFile(volume_backup_inf* V) {
+	BOOLEAN Return = FALSE;
+	CloseHandle(V->LogHandle);
+	
+	V->LogHandle = CreateFileW(
+		GenerateDBMetadataFileName(V->Letter, V->CurrentLogIndex).c_str(),
+		GENERIC_READ | GENERIC_WRITE, 0, 0,
+		CREATE_ALWAYS, 0, 0
+	);
+	if (V->LogHandle != INVALID_HANDLE_VALUE) {
+		V->IncChangeCount = 0;
+		Return = TRUE;
+	}
+
+	return Return;
+}
 
 BOOLEAN
 SaveMFT(volume_backup_inf* VolInf, HANDLE VSSHandle, data_array<nar_record> *MFTLCN) {
@@ -143,14 +160,14 @@ SaveMFT(volume_backup_inf* VolInf, HANDLE VSSHandle, data_array<nar_record> *MFT
 	IMPORTANT
 	This function(SaveMFT), MUST be called last in the diff backup
 	*/
-	std::wstring MFTFileName = GenerateMFTFileName(VolInf->Letter,VolInf->LastCompletedLogIndex);
+	std::wstring MFTFileName = GenerateMFTFileName(VolInf->Letter,VolInf->CurrentLogIndex);
 	HANDLE MFTSaveFile = CreateFileW(
 		MFTFileName.c_str(),
 		GENERIC_WRITE, 0, 0,
 		CREATE_ALWAYS, 0, 0
 	);
 
-	std::wstring MFTMetadataFName = GenerateMFTMetadataFileName(VolInf->Letter,VolInf->LastCompletedLogIndex);
+	std::wstring MFTMetadataFName = GenerateMFTMetadataFileName(VolInf->Letter,VolInf->CurrentLogIndex);
 	HANDLE MFTMDFile = CreateFileW(
 		MFTMetadataFName.c_str(),
 		GENERIC_WRITE, 0, 0,
@@ -244,7 +261,7 @@ RestoreMFT(restore_inf *R,HANDLE VolumeHandle) {
 		GENERIC_READ, 0, 0,
 		OPEN_EXISTING, 0, 0
 	);
-	printf("Restoring with MFT %S\n", MFTFileName.c_str());
+	printf("Restoring MFT with file %S\n", MFTFileName.c_str());
 
 	if (MFTHandle != INVALID_HANDLE_VALUE) {
 		std::wstring MFTMDFileName = GenerateMFTMetadataFileName(R->SrcLetter,R->DiffVersion);
@@ -253,8 +270,7 @@ RestoreMFT(restore_inf *R,HANDLE VolumeHandle) {
 			GENERIC_READ, 0, 0,
 			OPEN_EXISTING, 0, 0
 		);
-		printf("MFT METADATA -> %S\n", MFTMDFileName.c_str());
-
+		
 		if (MFTMDHandle != INVALID_HANDLE_VALUE) {
 			DWORD FileSize = GetFileSize(MFTMDHandle, 0);
 			data_array<nar_record> Metadata = { 0,0 };
@@ -264,8 +280,6 @@ RestoreMFT(restore_inf *R,HANDLE VolumeHandle) {
 				
 				//Read Metadata, continue to copy operation
 				Metadata.Count = FileSize / sizeof(nar_record);
-				printf("Filesize -> %d\n", FileSize);
-				printf("Metadata Count-> %d\n", Metadata.Count);
 				
 				LARGE_INTEGER MoveTo = { 0 };
 				LARGE_INTEGER NewFilePointer = { 0 };
@@ -274,9 +288,6 @@ RestoreMFT(restore_inf *R,HANDLE VolumeHandle) {
 					HRESULT Result = 0;
 					MoveTo.QuadPart = Metadata.Data[i].StartPos * 4096LL;
 					
-					printf("Metadata StartPos -> %I64d\n", Metadata.Data[i].StartPos);
-					printf("Metadata Len -> %I64d\n", Metadata.Data[i].Len);
-
 					Result = SetFilePointerEx(VolumeHandle, MoveTo, &NewFilePointer, FILE_BEGIN);
 					if (!SUCCEEDED(Result) || MoveTo.QuadPart != NewFilePointer.QuadPart) {
 						printf("Set file pointer failed\n");
@@ -368,6 +379,8 @@ InitVolumeInf(volume_backup_inf *VolInf, const wchar_t *Filepath) {
 			if (ReadFile(Handle, VolInf, sizeof(volume_backup_inf), &BytesRead, 0)) {
 				Return = TRUE;
 				//first part read, rest of it is array values
+				
+				
 			}
 			else {
 				//TODO log
@@ -396,11 +409,12 @@ InitVolumeInf(volume_backup_inf* VolInf, wchar_t Letter) {
 	VolInf->Letter = Letter;
 	VolInf->IsActive = FALSE;
 	VolInf->FullBackupExists = FALSE;
-	VolInf->LastCompletedLogIndex = -1;
-	VolInf->CurrentLogIndex = -1;
+	VolInf->SaveToFile = TRUE;
+	VolInf->CurrentLogIndex = 0;
 	VolInf->ClusterCount = 0;
 	VolInf->ClusterSize = 0;
-
+	VolInf->RecordsMem.reserve(2 << 8);
+	
 	wchar_t Temp[] = L"!:\\";
 	Temp[0] = VolInf->Letter;
 
@@ -408,6 +422,7 @@ InitVolumeInf(volume_backup_inf* VolInf, wchar_t Letter) {
 	DWORD SectorsPerCluster = 0;
 	DWORD ClusterCount = 0;
 	
+
 	if (GetDiskFreeSpaceW(Temp, &SectorsPerCluster, &BytesPerSector, 0, &ClusterCount)) {
 		VolInf->ClusterCount = ClusterCount;
 		VolInf->ClusterSize = SectorsPerCluster * BytesPerSector;
@@ -417,13 +432,12 @@ InitVolumeInf(volume_backup_inf* VolInf, wchar_t Letter) {
 		//Failed
 		//TODO LOG
 	}
-
+	
 	VolInf->ExtraPartitions = { 0,0 };
-	VolInf->PartitionName = { 0,0 };
 	VolInf->ContextIndex = 0;
 	VolInf->ContextIndex = -1; //Access violation if tried to use volume without adding it to tracklist
 	VolInf->LogHandle = INVALID_HANDLE_VALUE;
-	VolInf->ChangeCount = 0;
+	VolInf->IncChangeCount = 0;
 
 	//TODO link letter name and full name 
 	//TODO HANDLE EXTRA PARTITIONS, SUCH AS BOOT AND RECOVERY
@@ -574,19 +588,6 @@ NarExecuteCommand(const char* cmd, std::string FileName) {
 	std::stringstream buffer;
 	buffer << t.rdbuf();
 	result = buffer.str();
-
-	//char buffer[128];
-	//FILE* pipe = _popen(cmd, "r");
-	//if (pipe) {
-	//	while (fgets(buffer, sizeof (buffer), pipe) != NULL) {
-	//		result += buffer;
-	//	}
-	//
-	//	_pclose(pipe);
-	//}
-	//else {
-	//	printf("popen() failed!\n");
-	//}
 
 	return result;
 }
@@ -742,12 +743,8 @@ DetachVolume(PLOG_CONTEXT Context, UINT VolInfIndex) {
 	
 	Result = FilterDetach(MINISPY_NAME, Temp.c_str(), 0);
 	if (SUCCEEDED(Result)) {
-		VolInf->ChangeCount = 0;
 		VolInf->IsActive = FALSE;
-		if (CloseHandle(VolInf->LogHandle)) {
-			printf("VOLUME DETACH FUN SUCCESS\n");
-			Return = TRUE;
-		}
+		Return = TRUE;
 	}
 	else {
 		printf("Can't detach filter\n");
@@ -771,19 +768,8 @@ AttachVolume(PLOG_CONTEXT Context, UINT VolInfIndex) {
 	
 	Result = FilterAttach(MINISPY_NAME, Temp, 0, 0, 0);
 	if (SUCCEEDED(Result)) {
-		VolInf->CurrentLogIndex++;
-		std::wstring FileName = GenerateDBMetadataFileName(VolInf->Letter,VolInf->CurrentLogIndex);
-		VolInf->LogHandle = CreateFileW(FileName.c_str(), GENERIC_WRITE|GENERIC_READ, 0, 0, CREATE_ALWAYS, 0, 0);
-		if (VolInf->LogHandle != INVALID_HANDLE_VALUE) {
-			printf("File named %S created\n", FileName.c_str());
-			VolInf->IsActive = TRUE;
-			Return = TRUE;
-		}
-		else {
-			printf("Can't create file to log volume changes\n");
-			DisplayError(GetLastError());
-		}
-
+		VolInf->IsActive = TRUE;
+		Return = TRUE;
 	}
 	else {
 		printf("Can't attach filter\n");
@@ -793,13 +779,15 @@ AttachVolume(PLOG_CONTEXT Context, UINT VolInfIndex) {
 	return Return;
 }
 
+
+
 BOOLEAN
 DiffBackupVolume(PLOG_CONTEXT Context, UINT VolInfIndex) {
 	/*
 	TODO eğer diffbackup başarılı olmazsa, oluşturulan dosyaları sil ve diffbackup sayısını bir düşür?
 	*/
 	BOOLEAN ErrorOccured = FALSE;
-	
+
 	data_array<nar_record> DiffRecords = { 0,0 };
 	void* Buffer = 0;
 	DWORD FileSize = 0;
@@ -819,16 +807,34 @@ DiffBackupVolume(PLOG_CONTEXT Context, UINT VolInfIndex) {
 	data_array<nar_record> MFTLCN;
 
 	VolInf = &Context->Volumes.Data[VolInfIndex];
-	VolInf->LastCompletedLogIndex = VolInf->CurrentLogIndex;
-
 	MFTLCN = GetMFTLCN(VolInf->Letter);
 
-	
-	VolInf->IsActive = FALSE;
-	FileSize = VolInf->ChangeCount * sizeof(nar_record);
+	printf("Detaching the  volume\n");
+	if (!DetachVolume(Context, VolInfIndex)) {
+		printf("Detach volume failed\n");
+		goto D_Cleanup;
+	}
+	printf("Volume detached !\n");
+
+	FileSize = VolInf->IncChangeCount * sizeof(nar_record);
+	VolInf->SaveToFile = FALSE;
+	VolInf->IsActive = TRUE;
+
+	{
+		WCHAR Temp[] = L"!:\\";
+		Temp[0] = Context->Volumes.Data[VolInfIndex].Letter;
+		ShadowPath = GetShadowPath(Temp, ptr);
+	}
+
+	if (!AttachVolume(Context, VolInfIndex)) {
+		printf("Cant attach volume\n");
+		goto D_Cleanup;
+	}
+	printf("Filtering started again!\n");
+
 	DiffRecords.Data = (nar_record*)malloc(FileSize);
 	DiffRecords.Count = FileSize / sizeof(nar_record);
-	
+
 	if (SetFilePointer(VolInf->LogHandle, 0, 0, FILE_BEGIN) != 0) {
 		printf("Failed to set file pointer to beginning of the file\n");
 		DisplayError(GetLastError());
@@ -842,20 +848,9 @@ DiffBackupVolume(PLOG_CONTEXT Context, UINT VolInfIndex) {
 		DisplayError(GetLastError());
 		goto D_Cleanup;
 	}
-
-	printf("Detaching the  volume\n");
-	if (!DetachVolume(Context, VolInfIndex)) {
-		printf("Detach volume failed\n");
-		goto D_Cleanup;
-	}
-	printf("Volume detached !\n");
+	 	
 	
-	WCHAR Temp[] = L"!:\\";
-	Temp[0] = Context->Volumes.Data[VolInfIndex].Letter;
-
-	ShadowPath = GetShadowPath(Temp, ptr);
-
-	dbfname = GenerateDBFileName(VolInf->Letter,VolInf->LastCompletedLogIndex);
+	dbfname = GenerateDBFileName(VolInf->Letter, VolInf->CurrentLogIndex);
 	DiffDataFile = CreateFileW(
 		dbfname.c_str(),
 		GENERIC_WRITE,
@@ -867,14 +862,10 @@ DiffBackupVolume(PLOG_CONTEXT Context, UINT VolInfIndex) {
 		DisplayError(GetLastError());
 		goto D_Cleanup;
 	}
-	printf("File named %S created\n", dbfname.c_str());
-
-	if (!AttachVolume(Context, VolInfIndex)) {
-		printf("Cant attach volume\n");
-		goto D_Cleanup;
-	}
 	
-	printf("Filtering started again!\n");
+	VolInf->SaveToFile = FALSE;
+	VolInf->FlushToFile = FALSE;
+
 	
 
 	/*
@@ -1006,29 +997,27 @@ possible implementation of algorithm above
 	}
 
 
-	printf("Saved diff state!\n");
-
-	//Result = SetFilePointer(MetadataHandle, 0, 0, FILE_BEGIN);
-	//if (Result != 0) {
-	//	printf("Cant set metadata file pointer\n");
-	//	DisplayError(GetLastError());
-	//	goto Main_Cleanup;
-	//}
-	//
-	//Result = WriteFile(MetadataHandle, DiffRecords, FileSize, &BytesOperated, 0);
-	//if (!SUCCEEDED(Result) || BytesOperated != FileSize) {
-	//	printf("Cant write new metadata file\n");
-	//	printf("BytesOperated => %d\n",BytesOperated);
-	//	DisplayError(GetLastError());
-	//	goto Main_Cleanup;
-	//}
 	printf("Completed diff \n");
 	ErrorOccured = FALSE;
 D_Cleanup:
-	if (ErrorOccured) {
-		//TODO Clean all operations;
+	//If operation succeeded, save all logs that are in RAM to new file, if op failed
+	//do not close old handle.
+	if (!ErrorOccured) {
+		VolInf->CurrentLogIndex++;
+
+		if (!InitNewLogFile(VolInf)) {
+			printf("Couldn't create metadata file, this is fatal error\n");
+			printf("Please restart application\n");
+			DisplayError(GetLastError());
+		}
 
 	}
+	else {
+		DeleteFileW(GenerateDBFileName(VolInf->Letter,VolInf->CurrentLogIndex).c_str());
+	}
+
+	VolInf->SaveToFile = TRUE;
+	VolInf->FlushToFile = TRUE;
 
 	CLEANMEMORY(Buffer);
 	CLEANMEMORY(DiffRecords.Data);
@@ -1062,12 +1051,18 @@ FullBackupVolume(PLOG_CONTEXT Context, UINT VolInfIndex) {
 	ShadowPath[0] = Context->Volumes.Data[VolInfIndex].Letter;
 
 	ShadowPath = GetShadowPath(ShadowPath.c_str(), ptr);
-	
+
+	if (!InitNewLogFile(&Context->Volumes.Data[VolInfIndex])) {
+		printf("Cant create log file for inc operation\n");
+		goto F_Cleanup;
+	}
+
+
 	if (!AttachVolume(Context, VolInfIndex)) {
 		printf("Attach volume failed\n");
 		goto F_Cleanup;
 	}
-
+	
 	printf("Minifilter started!\n");
 
 	printf("%S\n", ShadowPath.c_str());
@@ -1454,7 +1449,7 @@ RestoreVolume(PLOG_CONTEXT Context, restore_inf* RestoreInf) {
 
 	
 	if (!RestoreMFT(RestoreInf, VolumeToRestore)) {
-		printf("Couldnt restore mft file\n");
+		printf("Couldnt restore MFT file\n");
 	}
 
 	printf("Restored to diff\n");

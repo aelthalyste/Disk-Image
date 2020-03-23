@@ -239,27 +239,50 @@ Return Value:
 			}
 
 
+			
 			if (pRecordData->Arg1 != 0 && pRecordData->Arg5 == 0) {
 				for (UINT i = 0; i < context->Volumes.Count; i++) {
 
-					if (pRecordData->Arg5 != NAR_ERR_TRINITY
-						&& IsSameVolumes(pLogRecord->Name, context->Volumes.Data[i].Letter)) {
+					volume_backup_inf* V = &context->Volumes.Data[i];
+					if (V->FlushToFile && V->RecordsMem.size() != 0) {
+						HRESULT Result;
+						DWORD BytesWritten = 0;
+						DWORD BufferSize = V->RecordsMem.size() * sizeof(nar_record);
+						Result = WriteFile(V->LogHandle, V->RecordsMem.data(), BufferSize, &BytesWritten, 0);
+						if (!SUCCEEDED(Result) || BytesWritten != BufferSize) {
+							//TODO log error
+						}
+						else {
+							V->IncChangeCount += V->RecordsMem.size();
+							V->SaveToFile = TRUE;
+							V->RecordsMem.clear();
+						}
+					}
 
-						if (!context->Volumes.Data[i].IsActive) {
+					if (pRecordData->Arg5 != NAR_ERR_TRINITY
+						&& IsSameVolumes(pLogRecord->Name, V->Letter)) {
+						
+						if (!V->IsActive) {
 							printf("Volume isnt active, breaking now\n");
 							break;
 						}
-						if (FileDump(pRecordData, context->Volumes.Data[i].LogHandle)) {
-							context->Volumes.Data[i].ChangeCount++;
-							ScreenDump(0, pLogRecord->Name, pRecordData);
-							break;
-						} {
-							printf("## Error occured while writing log to file. FERROR!!\n");
-							//TODO log, failed to log volume change.
+						if (V->SaveToFile) {
+							if (FileDump(pRecordData, V->LogHandle)) {
+								V->IncChangeCount++;
+								ScreenDump(0, pLogRecord->Name, pRecordData);
+								break;
+							} {
+								printf("## Error occured while writing log to file. FERROR!!\n");
+								//TODO log, failed to log volume change.
+							}
+						}
+						else{
+							V->RecordsMem.emplace_back(nar_record{ pRecordData->Arg1,pRecordData->Arg2 });
 						}
 
 					}
 					else { printf("THAT SHOULDN'T HAPPEN\n"); }
+
 				}
 			}
 			else {

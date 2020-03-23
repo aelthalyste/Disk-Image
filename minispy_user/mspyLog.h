@@ -22,6 +22,7 @@ Environment:
 #include <stdio.h>
 #include <fltUser.h>
 #include "minispy.h"
+#include <vector>
 
 
 #define NAR_ERR_TRINITY 3
@@ -110,26 +111,24 @@ struct restore_target_inf{
 	DWORD ClusterSize;
 };
 
+
+#include <mutex>
 struct volume_backup_inf {
 	//TODO add partition name of the volume to this structure.
 	wchar_t Letter;
-	BOOLEAN IsActive; //Is volume's changes are reported
+	BOOLEAN IsActive;
 	BOOLEAN FullBackupExists;
-	BOOLEAN IsUnderProcess; //Is any process being done to the volume. such as restore, full backup
+	
+	
+	BOOLEAN SaveToFile; //If false, records will be saved to memory, RecordsMem
+	BOOLEAN FlushToFile; //If this is set, all memory will be flushed to file
 
-	/*
-	Difference between these two is, LastCompletedDiffIndex is successfull diff backup count, as it name says,
-	CurrentLogIndex might be equal to it, 
-	but might not be if some kind of error occured during backup phase or logging state, so we can delete any information belong to currentbackupindex.
-	this provides us to generate file names more safely and track overall system state.
-	*/
-	int LastCompletedLogIndex;
 	int CurrentLogIndex;
 
 	DWORD ClusterCount;
 	DWORD ClusterSize;
 
-	data_array<WCHAR> PartitionName;
+	std::vector<nar_record> RecordsMem;
 
 	//these are going to be fully backed up, 
 	//since driver does not support them
@@ -142,7 +141,8 @@ struct volume_backup_inf {
 	*/
 	int ContextIndex; 
 	HANDLE LogHandle; //Handle to file that is logging volume's changes.
-	ULONGLONG ChangeCount;
+	ULONGLONG IncChangeCount; //Incremental change count of the volume, this value is will be reseted after every SUCCESSFUL backup operation
+
 };
 
 
@@ -228,7 +228,6 @@ GenerateFBFileName(wchar_t Letter);
 
 std::wstring
 GenerateFBMetadataFileName(wchar_t Letter);
-
 
 
 BOOLEAN
