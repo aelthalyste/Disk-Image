@@ -187,7 +187,7 @@ InitNewLogFile(volume_backup_inf* V) {
 		CREATE_ALWAYS, 0, 0
 	);
 	if (V->LogHandle != INVALID_HANDLE_VALUE) {
-		V->IncChangeCount = 0;
+		V->IncRecordCount = 0;
 		Return = TRUE;
 	}
 
@@ -201,12 +201,6 @@ SaveMFT(volume_backup_inf* VolInf, HANDLE VSSHandle, data_array<nar_record> *MFT
 	char LetterANSII = 0;
 	wctomb(&LetterANSII, VolInf->Letter);
 	
-	printf("length of LCN array -> %d\n", MFTLCN->Count);
-	for (int i = 0; i < MFTLCN->Count; i++) {
-		printf("Sp = %I64d\n", MFTLCN->Data[i].StartPos);
-		printf("ln = %I64d\n", MFTLCN->Data[i].Len);
-	}
-
 	DWORD BufferSize = VolInf->ClusterSize;
 	void* Buffer = malloc(BufferSize);
 
@@ -503,7 +497,7 @@ InitVolumeInf(volume_backup_inf* VolInf, wchar_t Letter) {
 	VolInf->ContextIndex = 0;
 	VolInf->ContextIndex = -1; //Access violation if tried to use volume without adding it to tracklist
 	VolInf->LogHandle = INVALID_HANDLE_VALUE;
-	VolInf->IncChangeCount = 0;
+	VolInf->IncRecordCount = 0;
 
 	//TODO link letter name and full name 
 	//TODO HANDLE EXTRA PARTITIONS, SUCH AS BOOT AND RECOVERY
@@ -884,7 +878,7 @@ DiffBackupVolume(PLOG_CONTEXT Context, UINT VolInfIndex) {
 	}
 	printf("Volume detached !\n");
 
-	FileSize = VolInf->IncChangeCount * sizeof(nar_record);
+	FileSize = VolInf->IncRecordCount * sizeof(nar_record);
 	VolInf->SaveToFile = FALSE;
 	VolInf->IsActive = TRUE;
 
@@ -955,10 +949,12 @@ DiffBackupVolume(PLOG_CONTEXT Context, UINT VolInfIndex) {
 	/*
 possible implementation of algorithm above
 */
+	
 	qsort(DiffRecords.Data, DiffRecords.Count, sizeof(nar_record), CompareNarRecords);
 	
-	UINT32 CurrentIter = 0;
+	
 	UINT32 MergedRecordsIndex = 0;
+	UINT32 CurrentIter = 0;
 
 	for (;;) {
 		if (CurrentIter == DiffRecords.Count - 1) {
@@ -969,7 +965,7 @@ possible implementation of algorithm above
 			}
 			break;
 		}
-		
+		if (CurrentIter >= DiffRecords.Count) break;
 
 		DiffRecords.Data[MergedRecordsIndex].StartPos = DiffRecords.Data[CurrentIter].StartPos;
 		DiffRecords.Data[MergedRecordsIndex].Len = DiffRecords.Data[CurrentIter].Len;
@@ -996,9 +992,10 @@ possible implementation of algorithm above
 		}
 
 	}
+
 	DiffRecords.Count = MergedRecordsIndex;
 	realloc(DiffRecords.Data, DiffRecords.Count * sizeof(DiffRecords.Data[0]));
-
+	
 #endif
 
 
@@ -1039,6 +1036,8 @@ possible implementation of algorithm above
 			goto D_Cleanup;
 		}
 
+		CopyData(ShadowHandle, DiffDataFile, DiffRecords.Data[i].Len * VolInf->ClusterSize);
+		/*
 		if (DiffRecords.Data[i].Len > BufferSize / ClusterSize) {
 			printf("Operation length is bigger than buffer size, program can not execute this for demo (OperationLen in # clusters => %I64d)..\n", DiffRecords.Data[i].Len);
 			goto D_Cleanup;
@@ -1063,7 +1062,7 @@ possible implementation of algorithm above
 			DisplayError(GetLastError());
 			goto D_Cleanup;
 		}
-
+		*/
 	}
 
 	printf("MFT will be saved to seperate file\n");
@@ -1079,6 +1078,12 @@ D_Cleanup:
 	//If operation succeeded, save all logs that are in RAM to new file, if op failed
 	//do not close old handle.
 	if (!ErrorOccured) {
+		/*Since merge algorithm may have change size of the record buffer, 
+		we should overwrite and truncate it*/
+		SetFilePointer(VolInf->LogHandle, 0, 0, FILE_BEGIN);
+		WriteFile(VolInf->LogHandle, DiffRecords.Data, DiffRecords.Count * sizeof(nar_record), 0, 0);
+		SetEndOfFile(VolInf->LogHandle);
+
 		VolInf->CurrentLogIndex++;
 
 		if (!InitNewLogFile(VolInf)) {
@@ -1578,7 +1583,7 @@ wmain(
 	WCHAR* argv[]
 ) {
 	
-#if 1
+#if 0
 	data_array<nar_record> Test = { 0,0 };
 	Test.Data = (nar_record*)malloc(sizeof(nar_record) * 11);
 	Test.Data[0] = nar_record{ 0,112 };
@@ -1591,7 +1596,7 @@ wmain(
 	Test.Data[7] = nar_record{ 500,80 };
 	Test.Data[8] = nar_record{ 110,5 };
 	Test.Data[9] = nar_record{ 8200,40 };
-	Test.Data[10] = nar_record{ 60,95 };
+	Test.Data[10] = nar_record{ 170,50 };
 	Test.Count = 11;
 
 	qsort(Test.Data, Test.Count, sizeof(nar_record), CompareNarRecords);

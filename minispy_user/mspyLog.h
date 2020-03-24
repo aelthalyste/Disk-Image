@@ -47,7 +47,6 @@ struct data_array {
 		Count++;
 	}
 
-
 };
 
 inline BOOLEAN
@@ -56,7 +55,7 @@ RecordEqual(nar_record* N1, nar_record* N2) {
 }
 
 
-#define printf(format,...) LogF((format),__VA_ARGS__)
+//#define printf(format,...) LogF((format),__VA_ARGS__)
 
 inline void
 LogF(const char* fmt, ...) {
@@ -155,7 +154,7 @@ struct volume_backup_inf {
 	*/
 	int ContextIndex; 
 	HANDLE LogHandle; //Handle to file that is logging volume's changes.
-	ULONGLONG IncChangeCount; //Incremental change count of the volume, this value is will be reseted after every SUCCESSFUL backup operation
+	ULONGLONG IncRecordCount; //Incremental change count of the volume, this value is will be reseted after every SUCCESSFUL backup operation
 
 };
 

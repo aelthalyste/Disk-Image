@@ -253,7 +253,7 @@ Return Value:
 							//TODO log error
 						}
 						else {
-							V->IncChangeCount += V->RecordsMem.size();
+							V->IncRecordCount += V->RecordsMem.size();
 							V->SaveToFile = TRUE;
 							V->RecordsMem.clear();
 						}
@@ -268,7 +268,8 @@ Return Value:
 						}
 						if (V->SaveToFile) {
 							if (FileDump(pRecordData, V->LogHandle)) {
-								V->IncChangeCount++;
+								V->IncRecordCount++;
+								if (pRecordData->Arg3 != 0) V->IncRecordCount++;
 								ScreenDump(0, pLogRecord->Name, pRecordData);
 								break;
 							} {
@@ -416,10 +417,15 @@ Return Value:
 {
 	DWORD BytesWritten = 0;
 	BOOL Result = 0;
-	DWORD BytesToWrite = sizeof(ULONGLONG) * 2;
+	DWORD BytesToWrite = sizeof(nar_record);
 	if (RecordData->Arg3 != 0 && RecordData->Arg4 != 0) {
-		BytesToWrite = 4 * sizeof(ULONGLONG);
+		printf("2\t");
+		BytesToWrite = 2 * sizeof(nar_record);
 	}
+	else {
+		printf("1\t");
+	}
+
 	Result = WriteFile(File, &RecordData->Arg1, BytesToWrite, &BytesWritten, 0);
 	if (!SUCCEEDED(Result) || BytesWritten != BytesToWrite) {
 		printf("Error occured!\n");
