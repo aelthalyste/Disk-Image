@@ -46,7 +46,14 @@ struct data_array {
 		Data[Count] = Val;
 		Count++;
 	}
+
+
 };
+
+inline BOOLEAN
+RecordEqual(nar_record* N1, nar_record* N2) {
+	return N1->Len == N2->Len && N1->StartPos == N2->StartPos;
+}
 
 
 #define printf(format,...) LogF((format),__VA_ARGS__)
@@ -88,7 +95,7 @@ LogF(const char* fmt, ...) {
 #define ASSERT_VSS(expression) if(FAILED(expression)) {printf("Err @ %d\n",__LINE__);*(int*)0=0; }
 
 
-BOOLEAN
+inline BOOLEAN
 IsSameVolumes(const WCHAR* OpName, const WCHAR VolumeLetter);
 
 struct restore_target_inf;
@@ -223,24 +230,24 @@ BOOLEAN
 CopyData(HANDLE S, HANDLE D, DWORD Len, DWORD BufSize = Megabyte(1));
 
 
-std::wstring
+inline std::wstring
 GenerateMFTFileName(wchar_t Letter, int ID);
 
-std::wstring
+inline std::wstring
 GenerateMFTMetadataFileName(wchar_t Letter, int ID);
 
 /*Used for diff*/
-std::wstring
+inline std::wstring
 GenerateDBMetadataFileName(wchar_t Letter, int ID);
 
-std::wstring
+inline std::wstring
 GenerateDBFileName(wchar_t Letter, int ID);
 
 
-std::wstring
+inline std::wstring
 GenerateFBFileName(wchar_t Letter);
 
-std::wstring
+inline std::wstring
 GenerateFBMetadataFileName(wchar_t Letter);
 
 
@@ -253,13 +260,13 @@ RestoreMFT(restore_inf* R, fn_req_inf F, HANDLE VolumeHandle);
 BOOLEAN
 InitRestoreTargetInf(restore_target_inf* Inf, wchar_t Letter);
 
-BOOLEAN
+inline BOOLEAN
 InitVolumeInf(volume_backup_inf* VolInf, const wchar_t* Filepath);
 
-BOOLEAN
+inline BOOLEAN
 InitVolumeInf(volume_backup_inf* VolInf, wchar_t Letter);
 
-BOOLEAN
+inline BOOLEAN
 IsSameVolumes(const WCHAR* OpName, const WCHAR VolumeLetter);
 
 BOOL 
@@ -268,23 +275,23 @@ CompareNarRecords(const void* v1, const void* v2);
 std::wstring
 GetShadowPath(std::wstring Drive, CComPtr<IVssBackupComponents>& ptr);
 
-BOOL
+inline BOOL
 IsRegionsCollide(nar_record* R1, nar_record* R2);
 
-VOID
+inline VOID
 NarCloseThreadCom(PLOG_CONTEXT Context);
 
-BOOL
+inline BOOL
 NarCreateThreadCom(PLOG_CONTEXT Context);
 
 std::string
 NarExecuteCommand(const char* cmd, std::string FileName);
 
 /*Make these function generated from safe template*/
-std::vector<std::string>
+inline std::vector<std::string>
 Split(std::string str, std::string delimiter);
 
-std::vector<std::wstring>
+inline std::vector<std::wstring>
 Split(std::wstring str, std::wstring delimiter);
 
 data_array<nar_record>

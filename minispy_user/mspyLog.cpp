@@ -260,7 +260,7 @@ Return Value:
 					}
 
 					if (pRecordData->Arg5 != NAR_ERR_TRINITY
-						&& IsSameVolumes(pLogRecord->Name, V->Letter)) {
+						&& TRUE /*IsSameVolumes*/) {
 						
 						if (!V->IsActive) {
 							printf("Volume isnt active, breaking now\n");

@@ -130,7 +130,7 @@ CopyData(HANDLE S, HANDLE D, DWORD Len, DWORD BufSize) {
 	return Return;
 }
 
-std::wstring
+inline std::wstring
 GenerateMFTFileName(wchar_t Letter, int ID) {
 	std::wstring Return = DB_MFT_FILE_NAME;
 	Return += Letter;
@@ -138,7 +138,7 @@ GenerateMFTFileName(wchar_t Letter, int ID) {
 	return Return;
 }
 
-std::wstring
+inline std::wstring
 GenerateMFTMetadataFileName(wchar_t Letter, int ID) {
 	std::wstring Return = DB_MFT_LCN_FILE_NAME;
 	Return += Letter;
@@ -146,7 +146,7 @@ GenerateMFTMetadataFileName(wchar_t Letter, int ID) {
 	return Return;
 }
 
-std::wstring
+inline std::wstring
 GenerateDBMetadataFileName(wchar_t Letter, int ID) {
 	std::wstring Result = (DB_METADATA_FILE_NAME);
 	Result += Letter;
@@ -154,7 +154,7 @@ GenerateDBMetadataFileName(wchar_t Letter, int ID) {
 	return Result;
 }
 
-std::wstring
+inline std::wstring
 GenerateDBFileName(wchar_t Letter, int ID) {
 	std::wstring Return = DB_FILE_NAME;
 	Return += Letter;
@@ -162,21 +162,21 @@ GenerateDBFileName(wchar_t Letter, int ID) {
 	return Return;
 }
 
-std::wstring
+inline std::wstring
 GenerateFBFileName(wchar_t Letter) {
 	std::wstring Return = FB_FILE_NAME;
 	Return += Letter;
 	return Return;
 }
 
-std::wstring
+inline std::wstring
 GenerateFBMetadataFileName(wchar_t Letter) {
 	std::wstring Return = FB_METADATA_FILE_NAME;
 	Return += Letter;
 	return Return;
 }
 
-BOOLEAN
+inline BOOLEAN
 InitNewLogFile(volume_backup_inf* V) {
 	BOOLEAN Return = FALSE;
 	CloseHandle(V->LogHandle);
@@ -406,7 +406,7 @@ Exit:
 	return Return;
 }
 
-BOOLEAN
+inline BOOLEAN
 InitRestoreTargetInf(restore_inf *Inf, wchar_t Letter) {
 	
 	Assert(Inf != NULL);
@@ -433,7 +433,7 @@ Initialize structure from binary file.
 first sizeof(volume_backup_inf)  bytes contains stack variables(arrays and their old pointed values are stored too, since this information copied with memcpy operation), 
 rest of it is heap variables, array's values, variable order is, which order they written in structure.
 */
-BOOLEAN
+inline BOOLEAN
 InitVolumeInf(volume_backup_inf *VolInf, const wchar_t *Filepath) {
 	BOOLEAN Return = FALSE;
 	//TODO complete
@@ -466,7 +466,7 @@ InitVolumeInf(volume_backup_inf *VolInf, const wchar_t *Filepath) {
 /*
 Initialize structure from scratch, just with it's letter
 */
-BOOLEAN
+inline BOOLEAN
 InitVolumeInf(volume_backup_inf* VolInf, wchar_t Letter) {
 	//TODO, initialize VolInf->PartitionName
 
@@ -519,12 +519,18 @@ IsSameVolumes(const WCHAR* OpName, const WCHAR VolumeLetter) {
 
 BOOL 
 CompareNarRecords(const void* v1, const void* v2) {
+	
 	nar_record* n1 = (nar_record*)v1;
 	nar_record* n2 = (nar_record*)v2;
-	if (n1->StartPos == n2->StartPos) {
-		return n1->Len > n2->Len;
+	if (n1->StartPos == n2->StartPos && n2->Len < n1->Len) {
+		return 1;
 	}
-	return n1->StartPos > n2->StartPos;
+	
+	if (n1->StartPos > n2->StartPos) {
+		return 1;
+	}
+	return -1;
+
 }
 
 std::wstring
@@ -583,7 +589,7 @@ IsRegionsCollide(nar_record* R1, nar_record* R2) {
 	return Result;
 }
 
-VOID
+inline VOID
 NarCloseThreadCom(
 	PLOG_CONTEXT Context
 ) {
@@ -599,7 +605,7 @@ NarCloseThreadCom(
 	Context->ShutDown = NULL;
 }
 
-BOOL
+inline BOOL
 NarCreateThreadCom(
 	PLOG_CONTEXT Context
 ) {
@@ -662,7 +668,7 @@ NarExecuteCommand(const char* cmd, std::string FileName) {
 /*
 Pass by value, might be slow if input str is too big ?? 
 */
-std::vector<std::string>
+inline std::vector<std::string>
 Split(std::string str, std::string delimiter) {
 	UINT SizeAssumed = 100;
 
@@ -682,7 +688,7 @@ Split(std::string str, std::string delimiter) {
 	return Result;
 }
 
-std::vector<std::wstring>
+inline std::vector<std::wstring>
 Split(std::wstring str, std::wstring delimiter) {
 	UINT SizeAssumed = 100;
 
@@ -715,11 +721,6 @@ GetMFTLCN(char VolumeLetter) {
 	Command[25] = VolumeLetter;
 
 	std::string Answer = NarExecuteCommand(Command, "TempTestFile");
-	
-	printf("Command was %s\n", Command);
-	printf("\n");
-	printf("ANSWER WAS %s\n", Answer.c_str());
-	printf("\n");
 
 	if (Answer[0] == '\n') Answer[0] = '#';
 	Answer = Answer.substr(Answer.find("\n") + 1, Answer.size());
@@ -955,48 +956,48 @@ DiffBackupVolume(PLOG_CONTEXT Context, UINT VolInfIndex) {
 possible implementation of algorithm above
 */
 	qsort(DiffRecords.Data, DiffRecords.Count, sizeof(nar_record), CompareNarRecords);
-
-	data_array<nar_record> MergedDiffRecords = { 0,0 };
-	MergedDiffRecords.Data = (nar_record*)malloc(DiffRecords.Count * sizeof(nar_record));
-
-	UINT32 MergedRecordsIndex = 0;
+	
 	UINT32 CurrentIter = 0;
+	UINT32 MergedRecordsIndex = 0;
 
 	for (;;) {
 		if (CurrentIter == DiffRecords.Count - 1) {
 			//Special case for the last element in the array
-			if (!IsRegionsCollide(&DiffRecords.Data[CurrentIter], &MergedDiffRecords.Data[MergedRecordsIndex - 1])) {
-				MergedDiffRecords.Data[MergedRecordsIndex] = DiffRecords.Data[CurrentIter];
+			if (!IsRegionsCollide(&DiffRecords.Data[CurrentIter], &DiffRecords.Data[MergedRecordsIndex - 1])) {
+				DiffRecords.Data[MergedRecordsIndex] = DiffRecords.Data[CurrentIter];
 				MergedRecordsIndex++;
 			}
 			break;
 		}
-		if (CurrentIter >= DiffRecords.Count) break;
+		
 
-		MergedDiffRecords.Data[MergedRecordsIndex].StartPos = DiffRecords.Data[CurrentIter].StartPos;
-		MergedDiffRecords.Data[MergedRecordsIndex].Len = DiffRecords.Data[CurrentIter].Len;
+		DiffRecords.Data[MergedRecordsIndex].StartPos = DiffRecords.Data[CurrentIter].StartPos;
+		DiffRecords.Data[MergedRecordsIndex].Len = DiffRecords.Data[CurrentIter].Len;
 
 		ULONGLONG EndPointTemp = DiffRecords.Data[CurrentIter].StartPos + DiffRecords.Data[CurrentIter].Len;
 
-		while (DiffRecords.Data[CurrentIter].StartPos == DiffRecords.Data[CurrentIter + 1].StartPos
-			|| IsRegionsCollide(&DiffRecords.Data[CurrentIter], &DiffRecords.Data[CurrentIter + 1])) {
+		while (DiffRecords.Data[MergedRecordsIndex].StartPos == DiffRecords.Data[CurrentIter].StartPos
+			|| IsRegionsCollide(&DiffRecords.Data[MergedRecordsIndex], &DiffRecords.Data[CurrentIter])) {
 
 			ULONGLONG EP1 = DiffRecords.Data[CurrentIter].StartPos + DiffRecords.Data[CurrentIter].Len;
-			ULONGLONG EP2 = DiffRecords.Data[CurrentIter + 1].StartPos + DiffRecords.Data[CurrentIter + 1].Len;
+			ULONGLONG EP2 = DiffRecords.Data[MergedRecordsIndex].StartPos + DiffRecords.Data[MergedRecordsIndex].Len;
 
 			EndPointTemp = MAX(EP1, EP2);
+			DiffRecords.Data[MergedRecordsIndex].Len = EndPointTemp - DiffRecords.Data[MergedRecordsIndex].StartPos;
 
+			CurrentIter++;
+
+		}
+
+		DiffRecords.Data[MergedRecordsIndex].Len = EndPointTemp - DiffRecords.Data[MergedRecordsIndex].StartPos;
+		MergedRecordsIndex++;
+		if (RecordEqual(&DiffRecords.Data[MergedRecordsIndex], &DiffRecords.Data[CurrentIter])) {
 			CurrentIter++;
 		}
 
-		MergedDiffRecords.Data[MergedRecordsIndex].Len = EndPointTemp - MergedDiffRecords.Data[MergedRecordsIndex].StartPos;
-		MergedRecordsIndex++;
-		CurrentIter++;
-
 	}
-
-	MergedDiffRecords.Count = MergedRecordsIndex;
-	realloc(MergedDiffRecords.Data, MergedDiffRecords.Count * sizeof(MergedDiffRecords.Data[0]));
+	DiffRecords.Count = MergedRecordsIndex;
+	realloc(DiffRecords.Data, DiffRecords.Count * sizeof(DiffRecords.Data[0]));
 
 #endif
 
@@ -1577,134 +1578,80 @@ wmain(
 	WCHAR* argv[]
 ) {
 	
+#if 1
 	data_array<nar_record> Test = { 0,0 };
-	Test.Data = (nar_record*)malloc(sizeof(nar_record) * 10);
-	Test.Data[0] = { 0,112 };
-	Test.Data[1] = { 56,42 };
-	Test.Data[2] = { 900,94 };
-	Test.Data[3] = { 728,2 };
-	Test.Data[4] = { 311,230 };
-	Test.Data[5] = { 700,465 };
-	Test.Data[6] = { 500,80 };
-	Test.Data[7] = { 110,5 };
-	Test.Data[8] = { 110,20 };
-	Test.Data[9] = { 110,40 };
-	Test.Count = 10;
-	qsort(Test.Data, 10, sizeof(nar_record), CompareNarRecords);
+	Test.Data = (nar_record*)malloc(sizeof(nar_record) * 11);
+	Test.Data[0] = nar_record{ 0,112 };
+	Test.Data[1] = nar_record{ 56,42 };
+	Test.Data[2] = nar_record{ 900,94 };
+	Test.Data[3] = nar_record{ 728,2 };
+	Test.Data[4] = nar_record{ 300,230 };
+	Test.Data[5] = nar_record{ 110,20 };
+	Test.Data[6] = nar_record{ 700,465 };
+	Test.Data[7] = nar_record{ 500,80 };
+	Test.Data[8] = nar_record{ 110,5 };
+	Test.Data[9] = nar_record{ 8200,40 };
+	Test.Data[10] = nar_record{ 60,95 };
+	Test.Count = 11;
+
+	qsort(Test.Data, Test.Count, sizeof(nar_record), CompareNarRecords);
 	
 	for (int i = 0; i < Test.Count; i++) {
 		printf("%I64d\t%I64d\n", Test.Data[i].StartPos, Test.Data[i].Len);
 	}
 
-	data_array<nar_record> MergedDiffRecords = { 0,0 };
-	MergedDiffRecords.Data = (nar_record*)malloc(Test.Count * sizeof(nar_record));
-
+	
 	UINT32 MergedRecordsIndex = 0;
 	UINT32 CurrentIter = 0;
 
 	for (;;) {
 		if (CurrentIter == Test.Count - 1) {
 			//Special case for the last element in the array
-			if (!IsRegionsCollide(&Test.Data[CurrentIter], &MergedDiffRecords.Data[MergedRecordsIndex-1])) {
-				MergedDiffRecords.Data[MergedRecordsIndex] = Test.Data[CurrentIter];
+			if (!IsRegionsCollide(&Test.Data[CurrentIter], &Test.Data[MergedRecordsIndex - 1])) {
+				Test.Data[MergedRecordsIndex] = Test.Data[CurrentIter];
 				MergedRecordsIndex++;
 			}
 			break;
 		}
 		if (CurrentIter >= Test.Count) break;
 
-		MergedDiffRecords.Data[MergedRecordsIndex].StartPos = Test.Data[CurrentIter].StartPos;
-		MergedDiffRecords.Data[MergedRecordsIndex].Len = Test.Data[CurrentIter].Len;
-		
-		ULONGLONG EndPointTemp = Test.Data[CurrentIter].StartPos + Test.Data[CurrentIter].Len;
+		Test.Data[MergedRecordsIndex].StartPos = Test.Data[CurrentIter].StartPos;
+		Test.Data[MergedRecordsIndex].Len = Test.Data[CurrentIter].Len;
 
-		while (Test.Data[CurrentIter].StartPos == Test.Data[CurrentIter + 1].StartPos
-			|| IsRegionsCollide(&Test.Data[CurrentIter], &Test.Data[CurrentIter + 1])) {
-			
+		ULONGLONG EndPointTemp = Test.Data[CurrentIter].StartPos + Test.Data[CurrentIter].Len;
+		
+		while (Test.Data[MergedRecordsIndex].StartPos == Test.Data[CurrentIter].StartPos
+			|| IsRegionsCollide(&Test.Data[MergedRecordsIndex], &Test.Data[CurrentIter])) {
+
 			ULONGLONG EP1 = Test.Data[CurrentIter].StartPos + Test.Data[CurrentIter].Len;
-			ULONGLONG EP2 = Test.Data[CurrentIter + 1].StartPos + Test.Data[CurrentIter + 1].Len;
+			ULONGLONG EP2 = Test.Data[MergedRecordsIndex].StartPos + Test.Data[MergedRecordsIndex].Len;
 
 			EndPointTemp = MAX(EP1, EP2);
+			Test.Data[MergedRecordsIndex].Len = EndPointTemp - Test.Data[MergedRecordsIndex].StartPos;
 
 			CurrentIter++;
-		}
 
-		MergedDiffRecords.Data[MergedRecordsIndex].Len = EndPointTemp - MergedDiffRecords.Data[MergedRecordsIndex].StartPos;
+		}
+		
+		Test.Data[MergedRecordsIndex].Len = EndPointTemp - Test.Data[MergedRecordsIndex].StartPos;
 		MergedRecordsIndex++;
-		CurrentIter++;
+		if (RecordEqual(&Test.Data[MergedRecordsIndex],&Test.Data[CurrentIter])) { 
+			CurrentIter++; 
+		}
 
 	}
 
-	MergedDiffRecords.Count = MergedRecordsIndex;
-	realloc(MergedDiffRecords.Data, MergedDiffRecords.Count * sizeof(MergedDiffRecords.Data[0]));
+	Test.Count = MergedRecordsIndex;
+	realloc(Test.Data, Test.Count * sizeof(Test.Data[0]));
 	printf("\n\n\n");
 	for (int i = 0; i < Test.Count; i++) {
-		printf("%I64d\t%I64d\t\t", Test.Data[i].StartPos, Test.Data[i].Len);
-		if (i < MergedDiffRecords.Count) {
-			printf("%I64d\t%I64d\n", MergedDiffRecords.Data[i].StartPos, MergedDiffRecords.Data[i].Len);
-		}
-		else {
-			printf("\n");
-		}
+		printf("%I64d\t%I64d\n", Test.Data[i].StartPos, Test.Data[i].Len);
 	}
 
 	return 0;
+#endif 
 	
-	/*
-	minispy.exe -From -To  one letter
-
-ex usage:
-minispy.exe D E
-track D: volume, restore to E: volume if requested
-*/
-	/*
-	WCHAR FromVolLetter = 0;
-	WCHAR ToVolLetter = 0;
-	if (argc == 3) {
-		FromVolLetter = argv[1][0];
-		ToVolLetter = argv[2][0];
-	}
-	else if (argc == 2) {
-		printf("Connecting to filter's port...\n");
-		HANDLE Port;
-
-		HRESULT Result = FilterConnectCommunicationPort(MINISPY_PORT_NAME,
-			0,
-			NULL,
-			0,
-			NULL,
-			&Port);
-
-		if (!SUCCEEDED(Result)) {
-			printf("Cant create communication port\n");
-			DisplayError(GetLastError());
-			goto Arg_Cleanup;
-		}
-
-		WCHAR TempV[] = L" :\\";
-		TempV[0] = argv[1][0];
-		Result = FilterDetach(MINISPY_NAME, TempV, 0);
-		if (!SUCCEEDED(Result)) {
-			printf("Cant detach volume %S\n", TempV);
-			DisplayError(GetLastError());
-			goto Arg_Cleanup;
-		}
-
-	Arg_Cleanup:
-		CLEANHANDLE(Port);
-
-	}
-	else {
-		printf("Invalid usage!\n");
-		return 0;
-	}
-	WCHAR TrackedVolumeName[] = L" :\\";
-	WCHAR RestoreVolumeName[] = L" :\\";
-	TrackedVolumeName[0] = FromVolLetter;
-	RestoreVolumeName[0] = ToVolLetter;
-	printf("Programm will backup volume %S, and restore it to %S if requested\n", TrackedVolumeName, RestoreVolumeName);
-
-	*/
+	
 	WCHAR TrackedVolumeName[] = L"ASDFASF";
 	WCHAR RestoreVolumeName[] = L"ASDFASDFAS";
 
@@ -1790,8 +1737,6 @@ track D: volume, restore to E: volume if requested
 #endif 
 	UINT NDiffBackedUp = 0;
 	
-	printf("Press [q] to quit\n");
-	printf("Press [f] to get full backup of the volume, [d] to diff, [r] to restore\n");
 	for (;;) {
 		std::wstring Input;
 		std::wcin >> Input;
@@ -1816,7 +1761,7 @@ track D: volume, restore to E: volume if requested
 			printf("INDEX AT LIST %d\n", Index);
 			DiffBackupVolume(&context, Index); //Hard coded
 		}
-		else if (Answer[0] == L"full" ) {
+		else if (Answer[0] == L"full") {
 			wchar_t ReqLetter = Answer[1][0];
 			int Index = -1;
 			AddVolumeToTrack(&context, ReqLetter);
@@ -1853,8 +1798,7 @@ track D: volume, restore to E: volume if requested
 
 		}
 		else {
-			printf("Press [f] to get full backup of the volume, [d] to diff, [r] to restore\n");
-			printf("Press [q] to quit\n");
+			//TODO
 		}
 
 		Sleep(50);
