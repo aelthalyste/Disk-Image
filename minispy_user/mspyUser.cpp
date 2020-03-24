@@ -517,13 +517,14 @@ IsSameVolumes(const WCHAR* OpName, const WCHAR VolumeLetter) {
 	return TRUE;//TODO
 }
 
-BOOL CompareNarRecords(const void* v1, const void* v2) {
+BOOL 
+CompareNarRecords(const void* v1, const void* v2) {
 	nar_record* n1 = (nar_record*)v1;
 	nar_record* n2 = (nar_record*)v2;
 	if (n1->StartPos == n2->StartPos) {
-		return n1->Len < n2->Len;
+		return n1->Len > n2->Len;
 	}
-	return n1->StartPos < n2->StartPos;
+	return n1->StartPos > n2->StartPos;
 }
 
 std::wstring
@@ -933,7 +934,6 @@ DiffBackupVolume(PLOG_CONTEXT Context, UINT VolInfIndex) {
 	VolInf->FlushToFile = FALSE;
 
 	
-
 	/*
 	NOT IMPLEMENTED
 		So problem is, which I can not describe properly but at least can show it
@@ -950,10 +950,11 @@ DiffBackupVolume(PLOG_CONTEXT Context, UINT VolInfIndex) {
 		But in order to process that, list MUST be sorted so we can compare consequent list elements
 	NOT IMPLEMENTED
 	*/
-#if 0
+#if 1
 	/*
 possible implementation of algorithm above
 */
+	qsort(DiffRecords.Data, DiffRecords.Count, sizeof(nar_record), CompareNarRecords);
 
 	data_array<nar_record> MergedDiffRecords = { 0,0 };
 	MergedDiffRecords.Data = (nar_record*)malloc(DiffRecords.Count * sizeof(nar_record));
@@ -963,16 +964,23 @@ possible implementation of algorithm above
 
 	for (;;) {
 		if (CurrentIter == DiffRecords.Count - 1) {
-			//last record in the array
+			//Special case for the last element in the array
+			if (!IsRegionsCollide(&DiffRecords.Data[CurrentIter], &MergedDiffRecords.Data[MergedRecordsIndex - 1])) {
+				MergedDiffRecords.Data[MergedRecordsIndex] = DiffRecords.Data[CurrentIter];
+				MergedRecordsIndex++;
+			}
 			break;
 		}
+		if (CurrentIter >= DiffRecords.Count) break;
 
-		MergedDiffRecords.Data[MergedRecordsIndex].StartPos = DiffRecords[CurrentIter].StartPos;
+		MergedDiffRecords.Data[MergedRecordsIndex].StartPos = DiffRecords.Data[CurrentIter].StartPos;
+		MergedDiffRecords.Data[MergedRecordsIndex].Len = DiffRecords.Data[CurrentIter].Len;
 
-		ULONGLONG EndPointTemp = 0;
+		ULONGLONG EndPointTemp = DiffRecords.Data[CurrentIter].StartPos + DiffRecords.Data[CurrentIter].Len;
 
 		while (DiffRecords.Data[CurrentIter].StartPos == DiffRecords.Data[CurrentIter + 1].StartPos
 			|| IsRegionsCollide(&DiffRecords.Data[CurrentIter], &DiffRecords.Data[CurrentIter + 1])) {
+
 			ULONGLONG EP1 = DiffRecords.Data[CurrentIter].StartPos + DiffRecords.Data[CurrentIter].Len;
 			ULONGLONG EP2 = DiffRecords.Data[CurrentIter + 1].StartPos + DiffRecords.Data[CurrentIter + 1].Len;
 
@@ -984,6 +992,7 @@ possible implementation of algorithm above
 		MergedDiffRecords.Data[MergedRecordsIndex].Len = EndPointTemp - MergedDiffRecords.Data[MergedRecordsIndex].StartPos;
 		MergedRecordsIndex++;
 		CurrentIter++;
+
 	}
 
 	MergedDiffRecords.Count = MergedRecordsIndex;
@@ -1567,7 +1576,80 @@ wmain(
 	int argc,
 	WCHAR* argv[]
 ) {
+	
+	data_array<nar_record> Test = { 0,0 };
+	Test.Data = (nar_record*)malloc(sizeof(nar_record) * 10);
+	Test.Data[0] = { 0,112 };
+	Test.Data[1] = { 56,42 };
+	Test.Data[2] = { 900,94 };
+	Test.Data[3] = { 728,2 };
+	Test.Data[4] = { 311,230 };
+	Test.Data[5] = { 700,465 };
+	Test.Data[6] = { 500,80 };
+	Test.Data[7] = { 110,5 };
+	Test.Data[8] = { 110,20 };
+	Test.Data[9] = { 110,40 };
+	Test.Count = 10;
+	qsort(Test.Data, 10, sizeof(nar_record), CompareNarRecords);
+	
+	for (int i = 0; i < Test.Count; i++) {
+		printf("%I64d\t%I64d\n", Test.Data[i].StartPos, Test.Data[i].Len);
+	}
 
+	data_array<nar_record> MergedDiffRecords = { 0,0 };
+	MergedDiffRecords.Data = (nar_record*)malloc(Test.Count * sizeof(nar_record));
+
+	UINT32 MergedRecordsIndex = 0;
+	UINT32 CurrentIter = 0;
+
+	for (;;) {
+		if (CurrentIter == Test.Count - 1) {
+			//Special case for the last element in the array
+			if (!IsRegionsCollide(&Test.Data[CurrentIter], &MergedDiffRecords.Data[MergedRecordsIndex-1])) {
+				MergedDiffRecords.Data[MergedRecordsIndex] = Test.Data[CurrentIter];
+				MergedRecordsIndex++;
+			}
+			break;
+		}
+		if (CurrentIter >= Test.Count) break;
+
+		MergedDiffRecords.Data[MergedRecordsIndex].StartPos = Test.Data[CurrentIter].StartPos;
+		MergedDiffRecords.Data[MergedRecordsIndex].Len = Test.Data[CurrentIter].Len;
+		
+		ULONGLONG EndPointTemp = Test.Data[CurrentIter].StartPos + Test.Data[CurrentIter].Len;
+
+		while (Test.Data[CurrentIter].StartPos == Test.Data[CurrentIter + 1].StartPos
+			|| IsRegionsCollide(&Test.Data[CurrentIter], &Test.Data[CurrentIter + 1])) {
+			
+			ULONGLONG EP1 = Test.Data[CurrentIter].StartPos + Test.Data[CurrentIter].Len;
+			ULONGLONG EP2 = Test.Data[CurrentIter + 1].StartPos + Test.Data[CurrentIter + 1].Len;
+
+			EndPointTemp = MAX(EP1, EP2);
+
+			CurrentIter++;
+		}
+
+		MergedDiffRecords.Data[MergedRecordsIndex].Len = EndPointTemp - MergedDiffRecords.Data[MergedRecordsIndex].StartPos;
+		MergedRecordsIndex++;
+		CurrentIter++;
+
+	}
+
+	MergedDiffRecords.Count = MergedRecordsIndex;
+	realloc(MergedDiffRecords.Data, MergedDiffRecords.Count * sizeof(MergedDiffRecords.Data[0]));
+	printf("\n\n\n");
+	for (int i = 0; i < Test.Count; i++) {
+		printf("%I64d\t%I64d\t\t", Test.Data[i].StartPos, Test.Data[i].Len);
+		if (i < MergedDiffRecords.Count) {
+			printf("%I64d\t%I64d\n", MergedDiffRecords.Data[i].StartPos, MergedDiffRecords.Data[i].Len);
+		}
+		else {
+			printf("\n");
+		}
+	}
+
+	return 0;
+	
 	/*
 	minispy.exe -From -To  one letter
 
