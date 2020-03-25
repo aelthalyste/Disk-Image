@@ -35,6 +35,8 @@ enum rec_or {
 	LEFT = 0,
 	RIGHT = 1,
 	COLLISION = 2,
+	OVERRUN = 3,
+	SPLIT = 4,
 };
 
 typedef struct _record {

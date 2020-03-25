@@ -140,25 +140,36 @@ GetListHead(region_chain Any) {
 
 /*
 Return:
-LEFT if R1 endpoint < R2.start, R1 falls left side of the R2
-RIGHT if R1 start > R2 endpoint, R1 falls right side of the R2
-COLLISION if two regions collide, R1 and R2 collides
+S: Shadow region
+M: Metadata reion
+
+LEFT if M endpoint < S.start, M falls left side of the S
+RIGHT if M start > S endpoint, M falls right side of the S
+COLLISION if two regions collide, M and S collides
+OVERRUNS, if S overruns M
+SPLIT, if S splits M
 
 Do not use this function to check region collisions,
 instead use IsRegionsCollide.
 */
 rec_or
-GetOrientation(nar_record *R1, nar_record *R2) {
+GetOrientation(nar_record *M, nar_record *S) {
 	rec_or Return = (rec_or)0;
 
-	ULONGLONG R1EP = R1->StartPos + R1->Len;
-	ULONGLONG R2EP = R2->StartPos + R2->Len;
+	ULONGLONG MEP = M->StartPos + M->Len;
+	ULONGLONG SEP = S->StartPos + S->Len;
 	
-	if (R1EP < R2->StartPos) {
+	if (MEP <= S->StartPos) {
 		Return = rec_or::LEFT;
 	}
-	else if (R1->StartPos > R2EP) {
+	else if (M->StartPos >= SEP) {
 		Return = rec_or::RIGHT;
+	}
+	else if (SEP >= MEP && S->StartPos <= M->StartPos) {
+		Return = rec_or::OVERRUN;
+	}
+	else if ((SEP < MEP && M->StartPos < S->StartPos)) { 
+		Return = rec_or::SPLIT;
 	}
 	else {
 		Return = rec_or::COLLISION;
@@ -166,23 +177,6 @@ GetOrientation(nar_record *R1, nar_record *R2) {
 	
 	return Return;
 }
-/*
-So thing about generate file name and getfilename functions,
-generate file names ALWAYS used to create files, most of them used when
-incremental backup requested by application, if operation succeeds, then they are
-valid. If not, they will be deleted anyway.
-Problem is, there MUST be always a log file to keep track of changes on the volume, if operation fails, we must not delete what we just created, or any other file that created after request.
-volume_backup_inf contains LastCompletedDiffIndex and CurrentLogIndex to seperate two concepts. For now it is vague that we might not need such concepts.
-Because no matter what happens on the volume, we must keep tracking it, and incremental index counter might not be good idea, if anything fails, whole chain might be broken. 
-
-TLDR for myself
-use generatefilename to create files with those names,
-use getfilename to read files that are valid
-
-restore operation must use getfilename, because we need valid file names,
-incremental backup just need to create files, so use generatefilename functions
-*/
-
 
 
 
@@ -210,8 +204,6 @@ RemoveDuplicates(region_chain** Metadatas,
 			break;
 		}
 
-		UINT32 Count = 0;
-		
 		rec_or Ori = GetOrientation(&MReg->Rec,&MDShadow->Data[SIndex]);
 
 		if (Ori == LEFT) {
@@ -220,21 +212,21 @@ RemoveDuplicates(region_chain** Metadatas,
 		else if (Ori == RIGHT) {
 			SIndex++;
 		}
-		else if (Ori == COLLISION) {
+		else if (Ori == COLLISION || Ori == OVERRUN || Ori == SPLIT) {
 			
 			while (TRUE) {
 				if (MReg == NULL || SIndex == MDShadow->Count) break;
 
-				Count = IsRegionsCollide(&MReg->Rec, &MDShadow->Data[SIndex]);
-				if (Count == 0) {
+				Ori = GetOrientation(&MReg->Rec, &MDShadow->Data[SIndex]);
+				if (Ori != OVERRUN && Ori != COLLISION && Ori != SPLIT) {
 					MReg = MReg->Next;
 					break;
 				}
 
 				/*Region's shadow, splits record into two*/
-				if (Count == 2) {
+				if (Ori == OVERRUN || Ori == SPLIT) {
 
-					if (MDShadow->Data[SIndex].StartPos < MReg->Rec.StartPos) {
+					if (Ori == OVERRUN) {
 						RemoveFromList(MReg);
 						MReg = MReg->Next;
 
@@ -247,7 +239,8 @@ RemoveDuplicates(region_chain** Metadatas,
 						*/
 
 					}
-					else {
+					else{ 
+						//Ori == SPLIT
 						/*
 						Shadow splits region into two block
 						*/
@@ -269,7 +262,6 @@ RemoveDuplicates(region_chain** Metadatas,
 						RightReg.StartPos = SREP;
 						RightReg.Len = MREP - SREP;
 						InsertToList(MReg->Next, RightReg);
-						PrintList(Metadatas[ID]);
 						RemoveFromList(MReg);
 						/*
 						Since MReg is split into two, It can't be used anymore,
@@ -283,7 +275,8 @@ RemoveDuplicates(region_chain** Metadatas,
 					}//End of if shadow overruns region
 
 				}//End of if Count == 2
-				else {
+				else if(Ori == COLLISION){
+
 					/*Regions collide default way*/
 
 					//End point of metadata
@@ -291,7 +284,7 @@ RemoveDuplicates(region_chain** Metadatas,
 					//End point of shadow 
 					ULONGLONG SEP = MDShadow->Data[SIndex].StartPos + MDShadow->Data[SIndex].Len;
 
-					if (SEP > MEP) {
+					if (SEP >= MEP) {
 						/*
 						Collision deleted right side of the metadata
 						*/
@@ -299,7 +292,6 @@ RemoveDuplicates(region_chain** Metadatas,
 						New.StartPos = MReg->Rec.StartPos;
 						New.Len = MDShadow->Data[SIndex].StartPos - MReg->Rec.StartPos;
 						InsertToList(MReg, New);
-						PrintList(Metadatas[ID]);
 						RemoveFromList(MReg); //This does not clear MReg's pointers, so we can keep on iterating
 						//This means MReg->Next->Back != MReg, rather equal to MReg->Back
 						/*
@@ -336,7 +328,6 @@ RemoveDuplicates(region_chain** Metadatas,
 						RemoveFromList(MReg);
 
 						MReg = MReg->Next;
-						PrintList(Metadatas[ID]);
 						SIndex++;
 					}
 
@@ -353,12 +344,17 @@ RemoveDuplicates(region_chain** Metadatas,
 
 	}
 
+	
 	/*
 		Special case: If list's head is removed, then Metadata[ID] need to be updated
 	*/
-	Metadatas[ID] = GetListHead(*MReg);
+
+	//Metadatas[ID] = GetListHead(*Metadatas[ID]);
 
 	PrintList(Metadatas[ID]);
+
+	RemoveDuplicates(Metadatas, MDShadow, ID - 1);
+
 
 #if 0
 	MReg = Metadatas[ID];
@@ -865,6 +861,7 @@ GetShadowPath(std::wstring Drive, CComPtr<IVssBackupComponents>& ptr) {
 		return ShadowPath;
 }
 
+
 BOOL
 IsRegionsCollide(nar_record* R1, nar_record* R2) {
 		BOOL Result = FALSE;
@@ -874,13 +871,16 @@ IsRegionsCollide(nar_record* R1, nar_record* R2) {
 		if(R1EndPoint < R2EndPoint && R1->StartPos > R2->StartPos){
 				return 2; /*Collision splits region into two block*/
 		}
-		if(R2EndPoint < R1EndPoint && R2->StartPos > R1->StartPos){
+		else if(R2EndPoint < R1EndPoint && R2->StartPos > R1->StartPos){
 				return 2; /*Collision splits region into two block*/
 		}
-		
-		if ((R1EndPoint < R2EndPoint
+		else if (R2EndPoint == R1EndPoint && R2->StartPos == R1->StartPos) {
+			return 2;
+		}
+
+		if ((R1EndPoint <= R2EndPoint
 				 && R1EndPoint >= R2->StartPos)
-				|| (R2EndPoint < R1EndPoint
+				|| (R2EndPoint <= R1EndPoint
 						&& R2EndPoint >= R1->StartPos)
 				) {
 				Result = TRUE;
@@ -1238,14 +1238,14 @@ DiffBackupVolume(PLOG_CONTEXT Context, UINT VolInfIndex) {
 		/*
 		NOT IMPLEMENTED
 			So problem is, which I can not describe properly but at least can show it
-			Let Rn be the record with at the index of N, so R0 becomes first record, R1 second and so on
+			Let Rn be the record with at the index of N, so R0 becomes first record, M second and so on
 	 
 			Let assume there are three records, at least one is overlapping with other records regions
 	 
-			R1 =>                      |-----------------|
-			R2 =>         |--------------|
+			M =>                      |-----------------|
+			S =>         |--------------|
 			R3 =>                                |------------------|
-			We can shrink that information such that, only storing new record like start => R2.start and len = R3.Len + R3.Start
+			We can shrink that information such that, only storing new record like start => S.start and len = R3.Len + R3.Start
 	 
 			If such collisions ever occurs, we can shrink them. Algorithm below does that.
 			But in order to process that, list MUST be sorted so we can compare consequent list elements
@@ -1343,31 +1343,7 @@ DiffBackupVolume(PLOG_CONTEXT Context, UINT VolInfIndex) {
 				}
 				
 				CopyData(ShadowHandle, DiffDataFile, DiffRecords.Data[i].Len * VolInf->ClusterSize);
-				/*
-				if (DiffRecords.Data[i].Len > BufferSize / ClusterSize) {
-					printf("Operation length is bigger than buffer size, program can not execute this for demo (OperationLen in # clusters => %I64d)..\n", DiffRecords.Data[i].Len);
-					goto D_Cleanup;
-				}
-		 
-		 
-				Result = ReadFile(ShadowHandle, Buffer, OperationSize, &BytesOperated, 0);
-				if (!SUCCEEDED(Result) || BytesOperated != OperationSize) {
-					printf("Could not read from shadow path.\n");
-					printf("BytesReturned => %I64d\n", BytesOperated);
-					printf("IterLen*ClusterSize => %I64d\n", OperationSize);
-					DisplayError(GetLastError());
-					goto D_Cleanup;
-				}
-		 
-				Result = WriteFile(DiffDataFile, Buffer, OperationSize, &BytesOperated, 0);
-				if (!SUCCEEDED(Result) || BytesOperated != OperationSize) {
-					printf("Error occured while writing data to file\n");
-					printf("BytesReturned => %I64d\n", BytesOperated);
-					printf("IterLen*ClusterSize => %I64d\n", OperationSize);
-					DisplayError(GetLastError());
-					goto D_Cleanup;
-				}
-				*/
+				
 		}
 		
 		printf("MFT will be saved to seperate file\n");
@@ -1867,9 +1843,9 @@ RestoreVolume(PLOG_CONTEXT Context, restore_inf* RestoreInf) {
 
 int
 wmain(
-			int argc,
-			WCHAR* argv[]
-			) {
+	int argc,
+	WCHAR* argv[]
+) {
 
 	//region_chain* C = new region_chain;
 	//
@@ -1877,26 +1853,47 @@ wmain(
 	//InsertToList(C, { 20,20 });
 	//InsertToList(C, { 30,30 });
 	//RemoveFromList(C);
-	
+
 #if 1
 	region_chain** Chain = (region_chain**)malloc(sizeof(region_chain*));
 	Chain[0] = (region_chain*)malloc(sizeof(region_chain));
 	region_chain* C = Chain[0];
-	
-	C->Rec =        { 0  , 100};
+
+	C->Rec = { 0  , 100 };
 	C->Next = 0;
 	C->Back = 0;
-	AppendToList(C, { 240, 80 });
-	AppendToList(C, { 400, 70 });
 
+	AppendToList(C, { 200, 100 });
+	AppendToList(C, { 400, 100});
+	AppendToList(C, { 600, 100 });
+	AppendToList(C, { 800, 70 });
+	AppendToList(C, { 900, 150 });
+	AppendToList(C, { 1500, 100 });
+	AppendToList(C, { 1600,120 });
 
 	data_array<nar_record> d;
-	d.Data = (nar_record*)malloc(sizeof(nar_record)*3);
-	d.Data[0] = { 120,50 };
-	d.Data[1] = { 200,100 };
-	d.Data[2] = { 450,50 };
-	d.Count = 3;
+	d.Data = (nar_record*)malloc(sizeof(nar_record)*14);
+	d.Data[0] = { 30, 20 };
+	d.Data[1] = { 80, 70 };
+	d.Data[2] = { 180, 40 };
+	d.Data[3] = { 240, 20 };
+	d.Data[4] = { 350,200 };
+
+	d.Data[5] = { 600,10 };
+	d.Data[6] = { 620,10 };
+	d.Data[7] = { 640,10 };
+	
+	d.Data[8] = { 770,100 };
+	d.Data[9] = { 880,50 };
+	d.Data[10] = { 950,10 };
+	d.Data[11] = { 970,140 };
+	d.Data[12] = { 1500,50 };
+	d.Data[13] = { 1550,50 };
+
+
+	d.Count = 14;
 	RemoveDuplicates(Chain, &d, 0);
+
 #endif 
 
 #if 0
