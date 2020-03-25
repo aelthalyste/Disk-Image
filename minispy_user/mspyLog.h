@@ -31,27 +31,33 @@ Environment:
 #define NAR_ERR_ALIGN 6
 #define NAR_ERR_MAX_ITER 7
 
+enum rec_or {
+	LEFT = 0,
+	RIGHT = 1,
+	COLLISION = 2,
+};
+
 typedef struct _record {
-	ULONGLONG StartPos;
-	ULONGLONG Len;
+		ULONGLONG StartPos;
+		ULONGLONG Len;
 }nar_record, bitmap_region;
 
 template<typename DATA_TYPE>
 struct data_array {
-	DATA_TYPE* Data;
-	UINT Count;
-
-	inline void	Insert(DATA_TYPE Val) {
-		Data = realloc(Data, sizeof(DATA_TYPE) * (Count + 1));
-		Data[Count] = Val;
-		Count++;
-	}
-
+		DATA_TYPE* Data;
+		UINT Count;
+		
+		inline void	Insert(DATA_TYPE Val) {
+				Data = (DATA_TYPE*)realloc(Data, sizeof(DATA_TYPE) * (Count + 1));
+				Data[Count] = Val;
+				Count++;
+		}
+		
 };
 
 inline BOOLEAN
 RecordEqual(nar_record* N1, nar_record* N2) {
-	return N1->Len == N2->Len && N1->StartPos == N2->StartPos;
+		return N1->Len == N2->Len && N1->StartPos == N2->StartPos;
 }
 
 
@@ -59,13 +65,13 @@ RecordEqual(nar_record* N1, nar_record* N2) {
 
 inline void
 LogF(const char* fmt, ...) {
-	//TODO add time
-	va_list args;
-	va_start(args, fmt);
-	vprintf(fmt, args);
-	va_end(args);
-	
-	return;
+		//TODO add time
+		va_list args;
+		va_start(args, fmt);
+		vprintf(fmt, args);
+		va_end(args);
+		
+		return;
 }
 
 #define BUFFER_SIZE     4096
@@ -107,84 +113,99 @@ structs for algorithm that minimizes restore operation
 that struct generated at run-time, it is safe to std libraries
 only valid for diff restore, since fullbackup just copies raw data once
 */
-struct restore_record {
-	DWORD Index; //Record's index at it's original metadata file, so we can offset to it's file accurately.
-	nar_record Record; //Actual record
+struct region_chain {
+		nar_record Rec;
+		region_chain *Next;
+		region_chain *Back; /*Fixed root point*/
 };
 
+/*Inserts element to given chain*/
+void
+InsertToList(region_chain* Root, nar_record Rec);
 
+/*Append to end of the list*/
+void
+AppendToList(region_chain* AnyPoint, nar_record Rec);
+
+void
+RemoveFromList(region_chain* R);
+
+void
+PrintList(region_chain* Temp);
+
+void
+PrintListReverse(region_chain* Temp);
 
 /*
 Used for Getfilename functions, this structure will change completely.
 temp structure for mft backups
 */
 typedef struct fn_req_inf {
-	wchar_t Letter;
-	int ID;
+		wchar_t Letter;
+		int ID;
 }fn_gen_inf;
 
 
 
-#include <mutex>
 struct volume_backup_inf {
-	//TODO add partition name of the volume to this structure.
-	wchar_t Letter;
-	BOOLEAN IsActive;
-	BOOLEAN FullBackupExists;
-	
-	
-	BOOLEAN SaveToFile; //If false, records will be saved to memory, RecordsMem
-	BOOLEAN FlushToFile; //If this is set, all memory will be flushed to file
-
-	int CurrentLogIndex;
-
-	DWORD ClusterCount;
-	DWORD ClusterSize;
-
-	std::vector<nar_record> RecordsMem;
-
-	//these are going to be fully backed up, 
-	//since driver does not support them
-	
-	data_array<int> ExtraPartitions; //TODO this is placeholder
-	
-	/*
-	Index @ context's Volumes array, this parameter has no meaning
-	if we reload program from file.
-	*/
-	int ContextIndex; 
-	HANDLE LogHandle; //Handle to file that is logging volume's changes.
-	ULONGLONG IncRecordCount; //Incremental change count of the volume, this value is will be reseted after every SUCCESSFUL backup operation
-
+		//TODO add partition name of the volume to this structure.
+		wchar_t Letter;
+		BOOLEAN IsActive;
+		BOOLEAN FullBackupExists;
+		
+		
+		BOOLEAN SaveToFile; //If false, records will be saved to memory, RecordsMem
+		BOOLEAN FlushToFile; //If this is set, all memory will be flushed to file
+		
+		int CurrentLogIndex;
+		
+		DWORD ClusterCount;
+		DWORD ClusterSize;
+		
+		std::vector<nar_record> RecordsMem;
+		
+		//these are going to be fully backed up, 
+		//since driver does not support them
+		
+		data_array<int> ExtraPartitions; //TODO this is placeholder
+		
+		/*
+		Index @ context's Volumes array, this parameter has no meaning
+		if we reload program from file.
+		*/
+		int ContextIndex; 
+		HANDLE LogHandle; //Handle to file that is logging volume's changes.
+		ULONGLONG IncRecordCount; //Incremental change count of the volume, this value is will be reseted after every SUCCESSFUL backup operation
+		
 };
 
 
 struct restore_inf {
-	wchar_t TargetLetter;
-	wchar_t SrcLetter;
-	DWORD ClusterSize;
-	BOOLEAN ToFull;
-	BOOLEAN DiffVersion;
+		wchar_t TargetLetter;
+		wchar_t SrcLetter;
+		DWORD ClusterSize;
+		BOOLEAN ToFull;
+		BOOLEAN DiffVersion;
 };
 
 //
 //  Structure for managing current state.
 //
 typedef struct _LOG_CONTEXT {
-
-	HANDLE Port;
-	HANDLE Thread;
-	BOOLEAN LogToScreen;
-
-	data_array<volume_backup_inf> Volumes;
-	
-	//
-	// For synchronizing shutting down of both threads
-	//
-
-	BOOLEAN CleaningUp;
-	HANDLE  ShutDown;
-
+		
+		HANDLE Port;
+		HANDLE Thread;
+		BOOLEAN LogToScreen;
+		
+		data_array<volume_backup_inf> Volumes;
+		
+		//
+		// For synchronizing shutting down of both threads
+		//
+		
+		BOOLEAN CleaningUp;
+		HANDLE  ShutDown;
+		
 } LOG_CONTEXT, * PLOG_CONTEXT;
 
 //
@@ -193,21 +214,21 @@ typedef struct _LOG_CONTEXT {
 
 DWORD WINAPI
 RetrieveLogRecords(
-	_In_ LPVOID lpParameter
-);
+									 _In_ LPVOID lpParameter
+									 );
 
 BOOL
 FileDump(
-	_In_ PRECORD_DATA RecordData,
-	_In_ HANDLE File
-);
+				 _In_ PRECORD_DATA RecordData,
+				 _In_ HANDLE File
+				 );
 
 VOID
 ScreenDump(
-	_In_ ULONG SequenceNumber,
-	_In_ WCHAR CONST* Name,
-	_In_ PRECORD_DATA RecordData
-);
+					 _In_ ULONG SequenceNumber,
+					 _In_ WCHAR CONST* Name,
+					 _In_ PRECORD_DATA RecordData
+					 );
 
 
 /*
@@ -488,26 +509,26 @@ AttachVolume(PLOG_CONTEXT Context, UINT VolInfIndex);
 
 
 typedef enum {
-	TRANSACTION_NOTIFY_PREPREPARE_CODE = 1,
-	TRANSACTION_NOTIFY_PREPARE_CODE,
-	TRANSACTION_NOTIFY_COMMIT_CODE,
-	TRANSACTION_NOTIFY_ROLLBACK_CODE,
-	TRANSACTION_NOTIFY_PREPREPARE_COMPLETE_CODE,
-	TRANSACTION_NOTIFY_PREPARE_COMPLETE_CODE,
-	TRANSACTION_NOTIFY_COMMIT_COMPLETE_CODE,
-	TRANSACTION_NOTIFY_ROLLBACK_COMPLETE_CODE,
-	TRANSACTION_NOTIFY_RECOVER_CODE,
-	TRANSACTION_NOTIFY_SINGLE_PHASE_COMMIT_CODE,
-	TRANSACTION_NOTIFY_DELEGATE_COMMIT_CODE,
-	TRANSACTION_NOTIFY_RECOVER_QUERY_CODE,
-	TRANSACTION_NOTIFY_ENLIST_PREPREPARE_CODE,
-	TRANSACTION_NOTIFY_LAST_RECOVER_CODE,
-	TRANSACTION_NOTIFY_INDOUBT_CODE,
-	TRANSACTION_NOTIFY_PROPAGATE_PULL_CODE,
-	TRANSACTION_NOTIFY_PROPAGATE_PUSH_CODE,
-	TRANSACTION_NOTIFY_MARSHAL_CODE,
-	TRANSACTION_NOTIFY_ENLIST_MASK_CODE,
-	TRANSACTION_NOTIFY_COMMIT_FINALIZE_CODE = 31
+		TRANSACTION_NOTIFY_PREPREPARE_CODE = 1,
+		TRANSACTION_NOTIFY_PREPARE_CODE,
+		TRANSACTION_NOTIFY_COMMIT_CODE,
+		TRANSACTION_NOTIFY_ROLLBACK_CODE,
+		TRANSACTION_NOTIFY_PREPREPARE_COMPLETE_CODE,
+		TRANSACTION_NOTIFY_PREPARE_COMPLETE_CODE,
+		TRANSACTION_NOTIFY_COMMIT_COMPLETE_CODE,
+		TRANSACTION_NOTIFY_ROLLBACK_COMPLETE_CODE,
+		TRANSACTION_NOTIFY_RECOVER_CODE,
+		TRANSACTION_NOTIFY_SINGLE_PHASE_COMMIT_CODE,
+		TRANSACTION_NOTIFY_DELEGATE_COMMIT_CODE,
+		TRANSACTION_NOTIFY_RECOVER_QUERY_CODE,
+		TRANSACTION_NOTIFY_ENLIST_PREPREPARE_CODE,
+		TRANSACTION_NOTIFY_LAST_RECOVER_CODE,
+		TRANSACTION_NOTIFY_INDOUBT_CODE,
+		TRANSACTION_NOTIFY_PROPAGATE_PULL_CODE,
+		TRANSACTION_NOTIFY_PROPAGATE_PUSH_CODE,
+		TRANSACTION_NOTIFY_MARSHAL_CODE,
+		TRANSACTION_NOTIFY_ENLIST_MASK_CODE,
+		TRANSACTION_NOTIFY_COMMIT_FINALIZE_CODE = 31
 } TRANSACTION_NOTIFICATION_CODES;
 
 //
@@ -624,32 +645,32 @@ typedef enum {
 #pragma warning(disable:4201) // nonstandard extension used : nameless struct/union
 
 typedef struct _FLT_TAG_DATA_BUFFER {
-	ULONG FileTag;
-	USHORT TagDataLength;
-	USHORT UnparsedNameLength;
-	union {
-		GUID TagGuid;
-		struct {
-			USHORT SubstituteNameOffset;
-			USHORT SubstituteNameLength;
-			USHORT PrintNameOffset;
-			USHORT PrintNameLength;
-			ULONG  Flags;
-			WCHAR PathBuffer[1];
-		} SymbolicLinkReparseBuffer;
-
-		struct {
-			USHORT SubstituteNameOffset;
-			USHORT SubstituteNameLength;
-			USHORT PrintNameOffset;
-			USHORT PrintNameLength;
-			WCHAR PathBuffer[1];
-		} MountPointReparseBuffer;
-
-		struct {
-			UCHAR  DataBuffer[1];
-		} GenericReparseBuffer;
-	};
+		ULONG FileTag;
+		USHORT TagDataLength;
+		USHORT UnparsedNameLength;
+		union {
+				GUID TagGuid;
+				struct {
+						USHORT SubstituteNameOffset;
+						USHORT SubstituteNameLength;
+						USHORT PrintNameOffset;
+						USHORT PrintNameLength;
+						ULONG  Flags;
+						WCHAR PathBuffer[1];
+				} SymbolicLinkReparseBuffer;
+				
+				struct {
+						USHORT SubstituteNameOffset;
+						USHORT SubstituteNameLength;
+						USHORT PrintNameOffset;
+						USHORT PrintNameLength;
+						WCHAR PathBuffer[1];
+				} MountPointReparseBuffer;
+				
+				struct {
+						UCHAR  DataBuffer[1];
+				} GenericReparseBuffer;
+		};
 } FLT_TAG_DATA_BUFFER, * PFLT_TAG_DATA_BUFFER;
 
 #pragma warning(pop)
