@@ -60,72 +60,72 @@ DisplayError(
 /*Inserts element to given chain*/
 void
 InsertToList(region_chain* Root, nar_record Rec) {
-
-	region_chain* New = new region_chain;
-
-	{
-
-		if (Root->Next == NULL) {
-			New->Back = Root;
-			New->Next = NULL;
-			New->Back->Next = New;
+		
+		region_chain* New = new region_chain;
+		
+		{
+				
+				if (Root->Next == NULL) {
+						New->Back = Root;
+						New->Next = NULL;
+						New->Back->Next = New;
+				}
+				else {
+						New->Back = Root;
+						New->Next = Root->Next;
+						
+						New->Back->Next = New;
+						New->Next->Back = New;
+				}
+				
+				New->Rec = Rec;
+				
 		}
-		else {
-			New->Back = Root;
-			New->Next = Root->Next;
-
-			New->Back->Next = New;
-			New->Next->Back = New;
-		}
-
-		New->Rec = Rec;
-
-	}
-
-	/*Not checking Root->Back since it is impossible to replace head with Insert*/
-
+		
+		/*Not checking Root->Back since it is impossible to replace head with Insert*/
+		
 }
 
 void
 AppendToList(region_chain* AnyPoint, nar_record Rec) {
-	/*Find tail of the list*/
-	while (AnyPoint->Next) AnyPoint = AnyPoint->Next;
-	//Append new data
-	AnyPoint->Next = new region_chain;
-	AnyPoint->Next->Back = AnyPoint;
-	AnyPoint->Next->Next = 0;
-	AnyPoint->Next->Rec = Rec;
+		/*Find tail of the list*/
+		while (AnyPoint->Next) AnyPoint = AnyPoint->Next;
+		//Append new data
+		AnyPoint->Next = new region_chain;
+		AnyPoint->Next->Back = AnyPoint;
+		AnyPoint->Next->Next = 0;
+		AnyPoint->Next->Rec = Rec;
 }
 
 void
 RemoveFromList(region_chain* R) {
-	if (R->Next != NULL) {
-		R->Next->Back = R->Back;
-	}
-	if (R->Back != NULL) {
-		R->Back->Next = R->Next;
-	}
-
-	//CLEANMEMORY(R); //TODO maybe not clean memory here ?
+		if (R->Next != NULL) {
+				R->Next->Back = R->Back;
+		}
+		if (R->Back != NULL) {
+				R->Back->Next = R->Next;
+		}
+		
+		//CLEANMEMORY(R); //TODO maybe not clean memory here ?
 }
 
 void
 PrintList(region_chain* Temp) {
-	printf("######\n");
-	while (Temp->Back) Temp = Temp->Back; //Go to start of the list
-	while (Temp != NULL) {
-		printf("%I64d\t%I64d\n", Temp->Rec.StartPos, Temp->Rec.Len);
-		Temp = Temp->Next;
-	}
-	printf("######");
+		printf("######\n");
+		while (Temp->Back) Temp = Temp->Back; //Go to start of the list
+		while (Temp != NULL) {
+				printf("%I64d\t%I64d\n", Temp->Rec.StartPos, Temp->Rec.Len);
+				Temp = Temp->Next;
+		}
+		printf("######");
 }
 
 void
 PrintListReverse(region_chain* Temp) {
-	do {
-		printf("%I64d\t%I64d\n", Temp->Rec.StartPos, Temp->Rec.Len);
-		Temp = Temp->Back;
-	} while (Temp != NULL);
+		do {
+				printf("%I64d\t%I64d\n", Temp->Rec.StartPos, Temp->Rec.Len);
+				Temp = Temp->Back;
+		} while (Temp != NULL);
 }
 
 /*
@@ -134,8 +134,9 @@ PrintListReverse(region_chain* Temp) {
 */
 region_chain*
 GetListHead(region_chain Any) {
-	while (Any.Back) Any = *Any.Back;
-	return Any.Next->Back; 
+		while (Any.Back) Any = *Any.Back;
+		if (Any.Next->Back == NULL) return Any.Next;
+		return Any.Next->Back; 
 }
 
 /*
@@ -154,28 +155,28 @@ instead use IsRegionsCollide.
 */
 rec_or
 GetOrientation(nar_record *M, nar_record *S) {
-	rec_or Return = (rec_or)0;
-
-	ULONGLONG MEP = M->StartPos + M->Len;
-	ULONGLONG SEP = S->StartPos + S->Len;
-	
-	if (MEP <= S->StartPos) {
-		Return = rec_or::LEFT;
-	}
-	else if (M->StartPos >= SEP) {
-		Return = rec_or::RIGHT;
-	}
-	else if (SEP >= MEP && S->StartPos <= M->StartPos) {
-		Return = rec_or::OVERRUN;
-	}
-	else if ((SEP < MEP && M->StartPos < S->StartPos)) { 
-		Return = rec_or::SPLIT;
-	}
-	else {
-		Return = rec_or::COLLISION;
-	}
-	
-	return Return;
+		rec_or Return = (rec_or)0;
+		
+		ULONGLONG MEP = M->StartPos + M->Len;
+		ULONGLONG SEP = S->StartPos + S->Len;
+		
+		if (MEP <= S->StartPos) {
+				Return = rec_or::LEFT;
+		}
+		else if (M->StartPos >= SEP) {
+				Return = rec_or::RIGHT;
+		}
+		else if (SEP >= MEP && S->StartPos <= M->StartPos) {
+				Return = rec_or::OVERRUN;
+		}
+		else if ((SEP < MEP && M->StartPos < S->StartPos)) { 
+				Return = rec_or::SPLIT;
+		}
+		else {
+				Return = rec_or::COLLISION;
+		}
+		
+		return Return;
 }
 
 
@@ -190,181 +191,224 @@ Since we are iterating back, no need to use data_array, just check ID > 0
 
 void
 RemoveDuplicates(region_chain** Metadatas,
-	data_array<nar_record>* MDShadow, int ID) {
-
-	if (ID == -1) return; //End of recursion
-
-	UINT32 SIndex = 0;
-
-	region_chain* MReg = Metadatas[ID];
-
-	for (;;) {
-		//TODO Condition
-		if (MReg == NULL || SIndex >= MDShadow->Count) {
-			break;
-		}
-
-		rec_or Ori = GetOrientation(&MReg->Rec,&MDShadow->Data[SIndex]);
-
-		if (Ori == LEFT) {
-			MReg = MReg->Next;
-		}
-		else if (Ori == RIGHT) {
-			SIndex++;
-		}
-		else if (Ori == COLLISION || Ori == OVERRUN || Ori == SPLIT) {
-			
-			while (TRUE) {
-				if (MReg == NULL || SIndex == MDShadow->Count) break;
-
-				Ori = GetOrientation(&MReg->Rec, &MDShadow->Data[SIndex]);
-				if (Ori != OVERRUN && Ori != COLLISION && Ori != SPLIT) {
-					MReg = MReg->Next;
-					break;
-				}
-
-				/*Region's shadow, splits record into two*/
-				if (Ori == OVERRUN || Ori == SPLIT) {
-
-					if (Ori == OVERRUN) {
-						RemoveFromList(MReg);
-						MReg = MReg->Next;
-
+								 region_chain* MDShadow, int ID) {
+		
+		if (ID == -1) return; //End of recursion
+		
+		region_chain* MReg = Metadatas[ID];
+		region_chain* SReg = MDShadow;
+		
+		for (;;) {
+				//TODO Condition
+				if (MReg == NULL || SReg == NULL) {
 						break;
-						/*
-						Shadow completelty overruns the region
-
-						From this moment MReg->Next->Back != MReg, since we removed
-						it from the region, but keep it's pointer to iterate one more time
-						*/
-
-					}
-					else{ 
-						//Ori == SPLIT
-						/*
-						Shadow splits region into two block
-						*/
-						ULONGLONG MinStart = MIN(MReg->Rec.StartPos, MDShadow->Data[SIndex].StartPos);
-
-						nar_record LeftReg = { 0,0 };
-						LeftReg.StartPos = MReg->Rec.StartPos;
-						LeftReg.Len = MDShadow->Data[SIndex].StartPos - MReg->Rec.StartPos;
-						InsertToList(MReg, LeftReg);
-
-						nar_record RightReg = { 0,0 };
-
-						//End of shadow region
-						ULONGLONG SREP = MDShadow->Data[SIndex].StartPos + MDShadow->Data[SIndex].Len;
-
-						//End of metadata region
-						ULONGLONG MREP = MReg->Rec.StartPos + MReg->Rec.Len;
-
-						RightReg.StartPos = SREP;
-						RightReg.Len = MREP - SREP;
-						InsertToList(MReg->Next, RightReg);
-						RemoveFromList(MReg);
-						/*
-						Since MReg is split into two, It can't be used anymore,
-						remove it and iterate to next one, left region we just split,
-						which is completed it's operation, but right one might be colliding
-						next with MDShadow element, so iterate to next one and check them
-						*/
-						MReg = MReg->Next->Next; //Right region
-						SIndex++;
-
-					}//End of if shadow overruns region
-
-				}//End of if Count == 2
-				else if(Ori == COLLISION){
-
-					/*Regions collide default way*/
-
-					//End point of metadata
-					ULONGLONG MEP = MReg->Rec.StartPos + MReg->Rec.Len;
-					//End point of shadow 
-					ULONGLONG SEP = MDShadow->Data[SIndex].StartPos + MDShadow->Data[SIndex].Len;
-
-					if (SEP >= MEP) {
-						/*
-						Collision deleted right side of the metadata
-						*/
-						nar_record New = { 0,0 };
-						New.StartPos = MReg->Rec.StartPos;
-						New.Len = MDShadow->Data[SIndex].StartPos - MReg->Rec.StartPos;
-						InsertToList(MReg, New);
-						RemoveFromList(MReg); //This does not clear MReg's pointers, so we can keep on iterating
-						//This means MReg->Next->Back != MReg, rather equal to MReg->Back
-						/*
-						It is impossible to new region to collide with next one
-						OLD          |-------*******| stars will be deleted
-						SHADOW               |----------|  |--------|
-																		^             ^
-																		|             | this is next region queued up
-																		this is region we are checking
-
-						new status   |-------|
-						shadow               |----------|  |--------|
-						
-						SIndex can be incremented safely,
-						Since MReg->Next is region we just created, and we know it is non-colliding, we should
-						iterate one more.
-						*/
-						MReg = MReg->Next->Next;
-						SIndex++;
-					}
-					else {
-						/*
-						OLD                        |*****-----| stars will be deleted
-						SHADOW               |----------|  |--------|
-						Collision deleted left side of the metadata,
-						since there MAY be another region colliding with metadata,
-						we should break here, then check for another collision with new region
-						*/
-						nar_record New = { 0,0 };
-						New.StartPos = MDShadow->Data[SIndex].StartPos + MDShadow->Data[SIndex].Len;
-						New.Len = MEP - New.StartPos;
-						/*Collision deleted left side of the metadata*/
-						InsertToList(MReg, New);
-						RemoveFromList(MReg);
-
-						MReg = MReg->Next;
-						SIndex++;
-					}
-
-					
-					break;
 				}
-
-
-
-			}//End of while
-
-		}//End of IF COLLISION
-
-
-	}
-
-	
-	/*
-		Special case: If list's head is removed, then Metadata[ID] need to be updated
-	*/
-
-	//Metadatas[ID] = GetListHead(*Metadatas[ID]);
-
-	PrintList(Metadatas[ID]);
-
-	RemoveDuplicates(Metadatas, MDShadow, ID - 1);
-
-
-#if 0
-	MReg = Metadatas[ID];
-	while (MReg != NULL) {
+				
+				rec_or Ori = GetOrientation(&MReg->Rec,&SReg->Rec);
+				
+				if (Ori == LEFT) {
+						MReg = MReg->Next;
+				}
+				else if (Ori == RIGHT) {
+						SReg = SReg->Next;
+				}
+				else if (Ori == COLLISION || Ori == OVERRUN || Ori == SPLIT) {
+						
+						while (TRUE) {
+								
+								if (MReg == NULL || SReg == NULL) break;
+								
+								Ori = GetOrientation(&MReg->Rec, &SReg->Rec);
+								if (Ori != OVERRUN && Ori != COLLISION && Ori != SPLIT) {
+										MReg = MReg->Next;
+										break;
+								}
+								
+								/*Region's shadow, splits record into two*/
+								if (Ori == OVERRUN || Ori == SPLIT) {
+										
+										if (Ori == OVERRUN) {
+												RemoveFromList(MReg);
+												MReg = MReg->Next;
+												
+												break;
+												/*
+												Shadow completelty overruns the region
+						 
+												From this moment MReg->Next->Back != MReg, since we removed
+												it from the region, but keep it's pointer to iterate one more time
+												*/
+												
+										}
+										else{ 
+												//Ori == SPLIT
+												/*
+												Shadow splits region into two block
+												*/
+												ULONGLONG MinStart = MIN(MReg->Rec.StartPos, SReg->Rec.StartPos);
+												
+												nar_record LeftReg = { 0,0 };
+												LeftReg.StartPos = MReg->Rec.StartPos;
+												LeftReg.Len = SReg->Rec.StartPos - MReg->Rec.StartPos;
+												InsertToList(MReg, LeftReg);
+												
+												nar_record RightReg = { 0,0 };
+												
+												//End of shadow region
+												ULONGLONG SREP = SReg->Rec.StartPos + SReg->Rec.Len;
+												
+												//End of metadata region
+												ULONGLONG MREP = MReg->Rec.StartPos + MReg->Rec.Len;
+												
+												RightReg.StartPos = SREP;
+												RightReg.Len = MREP - SREP;
+												InsertToList(MReg->Next, RightReg);
+												RemoveFromList(MReg);
+												/*
+												Since MReg is split into two, It can't be used anymore,
+												remove it and iterate to next one, left region we just split,
+												which is completed it's operation, but right one might be colliding
+												next with MDShadow element, so iterate to next one and check them
+												*/
+												MReg = MReg->Next->Next; //Right region
+												SReg = SReg->Next;
+												
+										}//End of if shadow overruns region
+										
+								}//End of if Count == 2
+								else if(Ori == COLLISION){
+										
+										/*Regions collide default way*/
+										
+										//End point of metadata
+										UINT32 MEP = MReg->Rec.StartPos + MReg->Rec.Len;
+										//End point of shadow 
+										UINT32 SEP = SReg->Rec.StartPos + SReg->Rec.Len;
+										
+										if (SEP >= MEP) {
+												/*
+												Collision deleted right side of the metadata
+												*/
+												nar_record New = { 0,0 };
+												New.StartPos = MReg->Rec.StartPos;
+												New.Len = SReg->Rec.StartPos - MReg->Rec.StartPos;
+												InsertToList(MReg, New);
+												RemoveFromList(MReg); //This does not clear MReg's pointers, so we can keep on iterating
+												//This means MReg->Next->Back != MReg, rather equal to MReg->Back
+												/*
+												It is impossible to new region to collide with next one
+												OLD          |-------*******| stars will be deleted
+												SHADOW               |----------|  |--------|
+																								^             ^
+																								|             | this is next region queued up
+																								this is region we are checking
+						 
+												new status   |-------|
+												shadow               |----------|  |--------|
+												 
+												Since MReg->Next is region we just created, and we know it is non-colliding, we should
+												iterate one more.
+												SReg may be colliding with next region, better keep it unchanged.
+*/
+												MReg = MReg->Next->Next;
+												
+										}
+										else {
+												/*Collision will delete left side of the metadata*/
+												
+												/*
+																								OLD                        |*****-----| stars will be deleted
+																								SHADOW               |----------|  |--------|
+																								Collision deleted left side of the metadata,
+																								since there MAY be another region colliding with metadata,
+																								we should break here, then check for another collision with new region
+																								*/
+												nar_record New = { 0,0 };
+												New.StartPos = SReg->Rec.StartPos + SReg->Rec.Len;
+												New.Len = MEP - New.StartPos;
+												InsertToList(MReg, New);
+												RemoveFromList(MReg);
+												
+												MReg = MReg->Next;
+												SReg = SReg->Next;
+												
+										}
+										
+										
+										break;
+								}
+								
+								
+								
+						}//End of while
+						
+				}//End of IF COLLISION
+				
+				
+		}
+		
+		
 		/*
-		TODO update MDShadow
+			Special case: If list's head is removed, then Metadata[ID] need to be updated
 		*/
-	}
+		
+		Metadatas[ID] = GetListHead(*Metadatas[ID]);
+		PrintList(Metadatas[ID]);
+		
+#if 1		
+		/*Update shadow*/
+		MReg = Metadatas[ID];
+		SReg = MDShadow;
+		
+		for (;;) {
+				if(MReg==NULL || SReg == NULL) break;
+				
+				DWORD MEP = MReg->Rec.StartPos + MReg->Rec.Len;
+				DWORD SEP = SReg->Rec.StartPos + SReg->Rec.Len;
+				/*These conditions checks if shadow needs to be updated */
+				
+				if(SEP < MReg->Rec.StartPos) SReg = SReg->Next;
+				else if(MEP < SReg->Rec.StartPos) MReg = MReg->Next;
+				else{//Regions need to be merged
+						
+						for(;;){
+								
+								if(MReg == NULL || SReg == NULL) break;
+								
+								if(MEP == SReg->Rec.StartPos){
+										/*Join shadow from left side*/
+										SReg->Rec.StartPos = MReg->Rec.StartPos;
+										SReg->Rec.Len += MReg->Rec.Len;
+										MReg = MReg->Next;
+								}
+								else if(SEP == MReg->Rec.StartPos){
+										/*
+Join shadow from right side
+										Since shadow is extended, it may touch next region too.
+												Iterate one more time to find out
+*/
+										SReg->Rec.Len += MReg->Rec.Len;
+										MReg = MReg->Next;
+								}
+								else{
+										/*
+IF none of the above happened, no regions in contact, 
+keep iterating at upper level for
+*/  
+										break;
+								}
+								//Else 
+								
+						}
+						
+				}
+				
+		}
 #endif
-
+		PrintList(MDShadow);
+		
+		RemoveDuplicates(Metadatas, MDShadow, ID - 1);
+		
 }
 
 
@@ -372,57 +416,57 @@ RemoveDuplicates(region_chain** Metadatas,
 
 BOOLEAN
 CopyData(HANDLE S, HANDLE D, DWORD Len, DWORD BufSize) {
-	BOOLEAN Return = TRUE;
-	if (BufSize == 0) {
-		//TODO
-	}
-
-	void* Buffer = malloc(BufSize);
-	if (Buffer != NULL) {
-		DWORD BytesRemaining = Len;
-		DWORD BytesOperated = 0;
-		if (BytesRemaining > BufSize) {
-
-			while (BytesRemaining > BufSize) {
-				if (ReadFile(S, Buffer, BufSize, &BytesOperated, 0)) {
-					if (!WriteFile(D, Buffer, BufSize, &BytesOperated, 0) || BytesOperated != BufSize) {
-						printf("Writefile failed\n");
-						printf("Bytes written -> %d\n", BytesOperated);
-						DisplayError(GetLastError());
-						Return = FALSE;
-						break;
-					}
-					BytesRemaining -= BufSize;
-				}
-				else {
-					Return = FALSE;
-					//if readfile failed
-					break;
-				}
-
-			}
+		BOOLEAN Return = TRUE;
+		if (BufSize == 0) {
+				//TODO
 		}
-
-		if (BytesRemaining > 0) {
-			if (ReadFile(S, Buffer, BytesRemaining, &BytesOperated, 0) && BytesOperated == BytesRemaining) {
-				if (!WriteFile(D, Buffer, BytesRemaining, &BytesOperated, 0) || BytesOperated != BytesRemaining) {
-					printf("Writefile failed\n");
-					printf("Bytes written -> %d\n", BytesOperated);
-					DisplayError(GetLastError());
-					Return = FALSE;
+		
+		void* Buffer = malloc(BufSize);
+		if (Buffer != NULL) {
+				DWORD BytesRemaining = Len;
+				DWORD BytesOperated = 0;
+				if (BytesRemaining > BufSize) {
+						
+						while (BytesRemaining > BufSize) {
+								if (ReadFile(S, Buffer, BufSize, &BytesOperated, 0)) {
+										if (!WriteFile(D, Buffer, BufSize, &BytesOperated, 0) || BytesOperated != BufSize) {
+												printf("Writefile failed\n");
+												printf("Bytes written -> %d\n", BytesOperated);
+												DisplayError(GetLastError());
+												Return = FALSE;
+												break;
+										}
+										BytesRemaining -= BufSize;
+								}
+								else {
+										Return = FALSE;
+										//if readfile failed
+										break;
+								}
+								
+						}
 				}
-			}
+				
+				if (BytesRemaining > 0) {
+						if (ReadFile(S, Buffer, BytesRemaining, &BytesOperated, 0) && BytesOperated == BytesRemaining) {
+								if (!WriteFile(D, Buffer, BytesRemaining, &BytesOperated, 0) || BytesOperated != BytesRemaining) {
+										printf("Writefile failed\n");
+										printf("Bytes written -> %d\n", BytesOperated);
+										DisplayError(GetLastError());
+										Return = FALSE;
+								}
+						}
+				}
+				
+				
+		}//If Buffer != NULL
+		else {
+				printf("Can't allocate memory for buffer\n");
+				Return = FALSE;
 		}
-
-
-	}//If Buffer != NULL
-	else {
-		printf("Can't allocate memory for buffer\n");
-		Return = FALSE;
-	}
-
-	CLEANMEMORY(Buffer);
-	return Return;
+		
+		CLEANMEMORY(Buffer);
+		return Return;
 }
 
 inline std::wstring
@@ -875,9 +919,9 @@ IsRegionsCollide(nar_record* R1, nar_record* R2) {
 				return 2; /*Collision splits region into two block*/
 		}
 		else if (R2EndPoint == R1EndPoint && R2->StartPos == R1->StartPos) {
-			return 2;
+				return 2;
 		}
-
+		
 		if ((R1EndPoint <= R2EndPoint
 				 && R1EndPoint >= R2->StartPos)
 				|| (R2EndPoint <= R1EndPoint
@@ -1843,59 +1887,57 @@ RestoreVolume(PLOG_CONTEXT Context, restore_inf* RestoreInf) {
 
 int
 wmain(
-	int argc,
-	WCHAR* argv[]
-) {
-
-	//region_chain* C = new region_chain;
-	//
-	//C->Rec = { 100,200 };
-	//InsertToList(C, { 20,20 });
-	//InsertToList(C, { 30,30 });
-	//RemoveFromList(C);
-
+			int argc,
+			WCHAR* argv[]
+			) {
+		
 #if 1
-	region_chain** Chain = (region_chain**)malloc(sizeof(region_chain*));
-	Chain[0] = (region_chain*)malloc(sizeof(region_chain));
-	region_chain* C = Chain[0];
-
-	C->Rec = { 0  , 100 };
-	C->Next = 0;
-	C->Back = 0;
-
-	AppendToList(C, { 200, 100 });
-	AppendToList(C, { 400, 100});
-	AppendToList(C, { 600, 100 });
-	AppendToList(C, { 800, 70 });
-	AppendToList(C, { 900, 150 });
-	AppendToList(C, { 1500, 100 });
-	AppendToList(C, { 1600,120 });
-
-	data_array<nar_record> d;
-	d.Data = (nar_record*)malloc(sizeof(nar_record)*14);
-	d.Data[0] = { 30, 20 };
-	d.Data[1] = { 80, 70 };
-	d.Data[2] = { 180, 40 };
-	d.Data[3] = { 240, 20 };
-	d.Data[4] = { 350,200 };
-
-	d.Data[5] = { 600,10 };
-	d.Data[6] = { 620,10 };
-	d.Data[7] = { 640,10 };
-	
-	d.Data[8] = { 770,100 };
-	d.Data[9] = { 880,50 };
-	d.Data[10] = { 950,10 };
-	d.Data[11] = { 970,140 };
-	d.Data[12] = { 1500,50 };
-	d.Data[13] = { 1550,50 };
-
-
-	d.Count = 14;
-	RemoveDuplicates(Chain, &d, 0);
-
-#endif 
-
+		region_chain** Chain = (region_chain**)malloc(sizeof(region_chain*));
+		Chain[0] = (region_chain*)malloc(sizeof(region_chain));
+		region_chain* C = Chain[0];
+		
+		C->Rec = { 0  , 100 };
+		C->Next = 0;
+		C->Back = 0;
+		
+		AppendToList(C, { 200, 100 });
+		AppendToList(C, { 400, 100});
+		AppendToList(C, { 600, 100 });
+		AppendToList(C, { 800, 70 });
+		AppendToList(C, { 900, 150 });
+		AppendToList(C, { 1500, 100 });
+		AppendToList(C, { 1600,100 });
+		AppendToList(C, { 1800,50 });
+		AppendToList(C, { 1875,50 });
+		
+		region_chain *S = (region_chain*)malloc(sizeof(region_chain));
+		
+		S->Rec =  { 30, 20 };
+		S->Next = 0;
+		S->Back = 0;
+		
+		AppendToList(S, { 80, 70 });
+		AppendToList(S, { 180, 40 });
+		AppendToList(S, { 240, 20 });
+		AppendToList(S, { 350,200 });
+		
+		AppendToList(S, { 600,10 });
+		AppendToList(S, { 620,10 });
+		AppendToList(S, { 640,10 });
+		
+		AppendToList(S, { 770,100 });
+		AppendToList(S, { 880,50 });
+		AppendToList(S, { 950,10 });
+		AppendToList(S, { 970,140 });
+		AppendToList(S, { 1500,100 });
+		AppendToList(S, { 1825,75 });
+		AppendToList(S, { 1915,100 });
+		
+		
+		RemoveDuplicates(Chain, S, 0);
+		
+#endif
+		
 #if 0
 		data_array<nar_record> Test = { 0,0 };
 		Test.Data = (nar_record*)malloc(sizeof(nar_record) * 11);
