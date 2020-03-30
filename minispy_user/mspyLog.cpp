@@ -37,25 +37,25 @@ _Analysis_mode_(_Analysis_code_type_user_code_)
 BOOLEAN
 TranslateFileTag(
 	_In_ PLOG_RECORD logRecord
-)
-/*++
+	)
+	/*++
 
-Routine Description:
+	Routine Description:
 
-		If this is a mount point reparse point, move the given name string to the
-		correct position in the log record structure so it will be displayed
-		by the common routines.
+			If this is a mount point reparse point, move the given name string to the
+			correct position in the log record structure so it will be displayed
+			by the common routines.
 
-Arguments:
+	Arguments:
 
-		logRecord - The log record to update
+			logRecord - The log record to update
 
-Return Value:
+	Return Value:
 
-		TRUE - if this is a mount point reparse point
-		FALSE - otherwise
+			TRUE - if this is a mount point reparse point
+			FALSE - otherwise
 
---*/
+	--*/
 {
 	PFLT_TAG_DATA_BUFFER TagData;
 	ULONG Length;
@@ -99,24 +99,24 @@ DWORD
 WINAPI
 RetrieveLogRecords(
 	_In_ LPVOID lpParameter
-)
-/*++
+	)
+	/*++
 
-Routine Description:
+	Routine Description:
 
-		This runs as a separate thread.  Its job is to retrieve log records
-		from the filter and then output them
+			This runs as a separate thread.  Its job is to retrieve log records
+			from the filter and then output them
 
-Arguments:
+	Arguments:
 
-		lpParameter - Contains context structure for synchronizing with the
-				main program thread.
+			lpParameter - Contains context structure for synchronizing with the
+					main program thread.
 
-Return Value:
+	Return Value:
 
-		The thread successfully terminated
+			The thread successfully terminated
 
---*/
+	--*/
 {
 	PLOG_CONTEXT context = (PLOG_CONTEXT)lpParameter;
 	DWORD bytesReturned = 0;
@@ -239,7 +239,7 @@ Return Value:
 			}
 
 
-			
+
 			if (pRecordData->Arg1 != 0 && pRecordData->Arg5 == 0) {
 				for (UINT i = 0; i < context->Volumes.Count; i++) {
 
@@ -261,7 +261,7 @@ Return Value:
 
 					if (pRecordData->Arg5 != NAR_ERR_TRINITY
 						&& TRUE /*IsSameVolumes*/) {
-						
+
 						if (!V->IsActive) {
 							printf("Volume isnt active, breaking now\n");
 							break;
@@ -277,7 +277,7 @@ Return Value:
 								//TODO log, failed to log volume change.
 							}
 						}
-						else{
+						else {
 							V->RecordsMem.emplace_back(nar_record{ pRecordData->Arg1,pRecordData->Arg2 });
 						}
 
@@ -290,8 +290,8 @@ Return Value:
 				//printf("Error occured at file %S\n",pLogRecord->Name);
 			}
 
-			
-			
+
+
 			//
 			//  The RecordType could also designate that we are out of memory
 			//  or hit our program defined memory limit, so check for these
@@ -345,26 +345,26 @@ FormatSystemTime(
 	_In_ SYSTEMTIME* SystemTime,
 	_Out_writes_bytes_(BufferLength) CHAR* Buffer,
 	_In_ ULONG BufferLength
-)
-/*++
-Routine Description:
+	)
+	/*++
+	Routine Description:
 
-		Formats the values in a SystemTime struct into the buffer
-		passed in.  The resulting string is NULL terminated.  The format
-		for the time is:
-				hours:minutes:seconds:milliseconds
+			Formats the values in a SystemTime struct into the buffer
+			passed in.  The resulting string is NULL terminated.  The format
+			for the time is:
+					hours:minutes:seconds:milliseconds
 
-Arguments:
+	Arguments:
 
-		SystemTime - the struct to format
-		Buffer - the buffer to place the formatted time in
-		BufferLength - the size of the buffer
+			SystemTime - the struct to format
+			Buffer - the buffer to place the formatted time in
+			BufferLength - the size of the buffer
 
-Return Value:
+	Return Value:
 
-		The length of the string returned in Buffer.
+			The length of the string returned in Buffer.
 
---*/
+	--*/
 {
 	ULONG returnLength = 0;
 
@@ -393,27 +393,27 @@ BOOL
 FileDump(
 	_In_ PRECORD_DATA RecordData,
 	_In_ HANDLE File
-)
-/*++
-Routine Description:
+	)
+	/*++
+	Routine Description:
 
-		Prints a Data log record to the specified file.  The output is in a tab
-		delimited format with the fields in the following order:
+			Prints a Data log record to the specified file.  The output is in a tab
+			delimited format with the fields in the following order:
 
-		SequenceNumber, OriginatingTime, CompletionTime, CallbackMajorId, CallbackMinorId,
-		Flags, NoCache, Paging I/O, Synchronous, Synchronous paging, FileName,
-		ReturnStatus, FileName
+			SequenceNumber, OriginatingTime, CompletionTime, CallbackMajorId, CallbackMinorId,
+			Flags, NoCache, Paging I/O, Synchronous, Synchronous paging, FileName,
+			ReturnStatus, FileName
 
-Arguments:
+	Arguments:
 
-		RecordData - the Data record to print
-		File - the file to print to
+			RecordData - the Data record to print
+			File - the file to print to
 
-Return Value:
+	Return Value:
 
-		None.
+			None.
 
---*/
+	--*/
 {
 	DWORD BytesWritten = 0;
 	BOOL Result = 0;
@@ -440,26 +440,26 @@ ScreenDump(
 	_In_ ULONG SequenceNumber,
 	_In_ WCHAR CONST* Name,
 	_In_ PRECORD_DATA RecordData
-)
-/*++
-Routine Description:
+	)
+	/*++
+	Routine Description:
 
-		Prints a Irp log record to the screen in the following order:
-		SequenceNumber, OriginatingTime, CompletionTime, IrpMajor, IrpMinor,
-		Flags, IrpFlags, NoCache, Paging I/O, Synchronous, Synchronous paging,
-		FileName, ReturnStatus, FileName
+			Prints a Irp log record to the screen in the following order:
+			SequenceNumber, OriginatingTime, CompletionTime, IrpMajor, IrpMinor,
+			Flags, IrpFlags, NoCache, Paging I/O, Synchronous, Synchronous paging,
+			FileName, ReturnStatus, FileName
 
-Arguments:
+	Arguments:
 
-		SequenceNumber - the sequence number for this log record
-		Name - the file name to which this Irp relates
-		RecordData - the Irp record to print
+			SequenceNumber - the sequence number for this log record
+			Name - the file name to which this Irp relates
+			RecordData - the Irp record to print
 
-Return Value:
+	Return Value:
 
-		None.
+			None.
 
---*/
+	--*/
 {
 	//
 	//  Display informatoin

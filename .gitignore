@@ -3,6 +3,8 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/master/VisualStudio.gitignore
 
+!**.*
+
 # User-specific files
 *.rsuser
 *.suo
@@ -338,3 +340,12 @@ ASALocalRun/
 
 # BeatPulse healthcheck temp database
 healthchecksdb
+/minispy_user/FullBackupDisk_E
+/minispy_user/FMetadata_E
+/minispy_user/DMFTLCN_E1
+/minispy_user/DMFTLCN_E0
+/minispy_user/DMetadata_E2
+/minispy_user/DMetadata_E1
+/minispy_user/DMetadata_E0
+/minispy_user/DiffBackupDisk_E1
+/minispy_user/DiffBackupDisk_E0
