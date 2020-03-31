@@ -121,12 +121,21 @@ typedef struct _RECORD_DATA {
     UCHAR CallbackMinorId;
     UCHAR Reserved[2];      // Alignment on IA64
 
-    ULONGLONG Arg1;
-    ULONGLONG Arg2;
-    ULONGLONG Arg3;
-    ULONGLONG Arg4;
-    ULONGLONG Arg5;
-    LARGE_INTEGER Arg6;
+    union {
+      struct {
+        ULONGLONG Arg1;    
+        ULONGLONG Arg2;    
+        ULONGLONG Arg3;    
+        ULONGLONG Arg4;    
+        ULONGLONG Arg5;    
+        LARGE_INTEGER Arg6;
+      };
+      struct {
+        UINT32 P_Start[5];
+        UINT32 P_End[5];  
+        LONGLONG Error;   
+       };
+    };
 
     ULONG EcpCount;
     ULONG KnownEcpMask;

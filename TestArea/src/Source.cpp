@@ -154,9 +154,9 @@ DEBUGReadEntireFile(char* Filename) {
 }
 
 
-
 int
 main() {
+
 	char* ptr = (char*)malloc(1024);
 	GetVolumeInformationA("C:", ptr, 1024, 0, 0, 0, 0, 0);
 	

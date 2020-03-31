@@ -63,23 +63,13 @@ MergeRegions(data_array<nar_record>* R) {
 	UINT32 CurrentIter = 0;
 
 	for (;;) {
-		if (CurrentIter == R->Count - 1) {
-			//Special case for the last element in the array
-			if (!IsRegionsCollide(&R->Data[CurrentIter], &R->Data[MergedRecordsIndex - 1])) {
-				R->Data[MergedRecordsIndex] = R->Data[CurrentIter];
-				MergedRecordsIndex++;
-			}
+		if (CurrentIter >= R->Count) {
 			break;
 		}
-		if (CurrentIter >= R->Count) break;
-
-		R->Data[MergedRecordsIndex].StartPos = R->Data[CurrentIter].StartPos;
-		R->Data[MergedRecordsIndex].Len = R->Data[CurrentIter].Len;
 
 		ULONGLONG EndPointTemp = R->Data[CurrentIter].StartPos + R->Data[CurrentIter].Len;
 
-		while (IsRegionsCollide(&R->Data[MergedRecordsIndex], &R->Data[CurrentIter])) {
-
+		if(IsRegionsCollide(&R->Data[MergedRecordsIndex], &R->Data[CurrentIter])) {
 			ULONGLONG EP1 = R->Data[CurrentIter].StartPos + R->Data[CurrentIter].Len;
 			ULONGLONG EP2 = R->Data[MergedRecordsIndex].StartPos + R->Data[MergedRecordsIndex].Len;
 
@@ -87,18 +77,45 @@ MergeRegions(data_array<nar_record>* R) {
 			R->Data[MergedRecordsIndex].Len = EndPointTemp - R->Data[MergedRecordsIndex].StartPos;
 
 			CurrentIter++;
-
+		}
+		else {
+			MergedRecordsIndex++;
+			R->Data[MergedRecordsIndex] = R->Data[CurrentIter];
 		}
 
-		R->Data[MergedRecordsIndex].Len = EndPointTemp - R->Data[MergedRecordsIndex].StartPos;
-		MergedRecordsIndex++;
-		if (RecordEqual(&R->Data[MergedRecordsIndex], &R->Data[CurrentIter])) { //Todo fix this
-			CurrentIter++;
-		}
 
 	}
-	R->Count = MergedRecordsIndex;
+	R->Count = MergedRecordsIndex + 1;
 	R->Data = (nar_record*)realloc(R->Data, sizeof(nar_record) * R->Count);
+
+}
+
+void
+MergeRegions(region_chain *Chain) {
+	UINT32 MergedRecordsIndex = 0;
+	UINT32 CurrentIter = 0;
+	region_chain* R = Chain->Next;
+
+	for (;;) {
+		if (R == NULL || R->Next == NULL) {
+			break;
+		}
+		
+		
+		if(IsRegionsCollide(&R->Rec, &R->Next->Rec)) {
+			ULONGLONG EP1 = R->Rec.StartPos + R->Rec.Len;
+			ULONGLONG EP2 = R->Next->Rec.StartPos + R->Next->Rec.Len;
+			ULONGLONG EndPointTemp = MAX(EP1, EP2);
+
+			R->Rec.Len = EndPointTemp - R->Rec.StartPos;
+			RemoveFromList(R->Next);
+			if (R->Next == NULL) break;
+		}
+		else {
+			R = R->Next;
+		}
+		
+	}
 
 }
 
@@ -231,15 +248,13 @@ FindPosition(nar_record* R, data_array<nar_record>* M) {
 	// TODO: binary search
 	UINT i = 0;
 	DWORD Return = 0;
-	while (R->StartPos > M->Data[i].StartPos) {
-		i++;
+	while (R->StartPos >= M->Data[i].StartPos) {		
 		Return += M->Data[i].Len; //Incrementing offset
+		i++;
 	}
 
-	i -= 1;
-	DWORD EndPoint = M->Data[i].StartPos + M->Data[i].Len;
-	Return -= (EndPoint - R->StartPos);
-
+	Return += ( -M->Data[i-1].Len + R->StartPos - M->Data[i-1].StartPos );
+	
 	return Return;
 }
 
@@ -433,10 +448,8 @@ RemoveDuplicates(region_chain** Metadatas,
 	if (ID == -1) return; //End of recursion
 
 	region_chain* MReg = Metadatas[ID]->Next;
-	region_chain* SReg = MDShadow;
-	PrintList(MReg);
-	PrintList(SReg);
-
+	region_chain* SReg = MDShadow->Next;
+	
 	for (;;) {
 		if (MReg == NULL || SReg == NULL) {
 			break;
@@ -592,10 +605,12 @@ RemoveDuplicates(region_chain** Metadatas,
 		Special case: If list's head is removed, then Metadata[ID] need to be updated
 	*/
 
-	//Metadatas[ID] = GetListHead(*Metadatas[ID]);
-	PrintList(Metadatas[ID]);
+#if 1
+	//printf("\n$$$$\n");
+	//PrintList(Metadatas[ID]);
+	//PrintList(MDShadow);
+	//printf("$$$$\n");
 
-#if 1		
 	/*Update shadow*/
 	MReg = Metadatas[ID]->Next;
 	SReg = MDShadow->Next; // 0th element is 0-0
@@ -613,7 +628,7 @@ RemoveDuplicates(region_chain** Metadatas,
 					|---------|shadow
 			*/
 			InsertToList(SReg, MReg->Rec);
-			SReg = SReg->Next;
+			SReg = SReg->Next->Next;
 		}
 		else if (MEP < SReg->Rec.StartPos) {
 			/*
@@ -659,8 +674,13 @@ keep iterating at upper level for
 
 	}
 #endif
-	PrintList(MDShadow);
-
+	
+	MergeRegions(MDShadow);
+	//printf("\n$$$$\n");
+	//PrintList(Metadatas[ID]);
+	//PrintList(MDShadow);
+	//printf("$$$$\n");
+	
 	RemoveDuplicates(Metadatas, MDShadow, ID - 1);
 
 }
@@ -1464,7 +1484,7 @@ DiffBackupVolume(PLOG_CONTEXT Context, UINT VolInfIndex) {
 	VolInf = &Context->Volumes.Data[VolInfIndex];
 	MFTLCN = GetMFTLCN(VolInf->Letter);
 
-	printf("Detaching the  volume\n");
+	printf("Detaching volume\n");
 	if (!DetachVolume(Context, VolInfIndex)) {
 		printf("Detach volume failed\n");
 		goto D_Cleanup;
@@ -1544,65 +1564,7 @@ possible implementation of algorithm above
 */
 
 	qsort(DiffRecords.Data, DiffRecords.Count, sizeof(nar_record), CompareNarRecords);
-
-	printf("$$$$\n");
-	for (int i = 0; i < DiffRecords.Count; i++) {
-		printf("%I64d\t%I64d\n", DiffRecords.Data[i].StartPos, DiffRecords.Data[i].Len);
-	}
-	printf("$$$$\n");
-
 	MergeRegions(&DiffRecords);
-
-#if 0
-	UINT32 MergedRecordsIndex = 0;
-	UINT32 CurrentIter = 0;
-
-	for (;;) {
-		if (CurrentIter == DiffRecords.Count - 1) {
-			//Special case for the last element in the array
-			if (!IsRegionsCollide(&DiffRecords.Data[CurrentIter], &DiffRecords.Data[MergedRecordsIndex - 1])) {
-				DiffRecords.Data[MergedRecordsIndex] = DiffRecords.Data[CurrentIter];
-				MergedRecordsIndex++;
-			}
-			break;
-		}
-		if (CurrentIter >= DiffRecords.Count) break;
-
-		DiffRecords.Data[MergedRecordsIndex].StartPos = DiffRecords.Data[CurrentIter].StartPos;
-		DiffRecords.Data[MergedRecordsIndex].Len = DiffRecords.Data[CurrentIter].Len;
-
-		ULONGLONG EndPointTemp = DiffRecords.Data[CurrentIter].StartPos + DiffRecords.Data[CurrentIter].Len;
-
-		while (IsRegionsCollide(&DiffRecords.Data[MergedRecordsIndex], &DiffRecords.Data[CurrentIter])) {
-
-			ULONGLONG EP1 = DiffRecords.Data[CurrentIter].StartPos + DiffRecords.Data[CurrentIter].Len;
-			ULONGLONG EP2 = DiffRecords.Data[MergedRecordsIndex].StartPos + DiffRecords.Data[MergedRecordsIndex].Len;
-
-			EndPointTemp = MAX(EP1, EP2);
-			DiffRecords.Data[MergedRecordsIndex].Len = EndPointTemp - DiffRecords.Data[MergedRecordsIndex].StartPos;
-
-			CurrentIter++;
-
-		}
-
-		DiffRecords.Data[MergedRecordsIndex].Len = EndPointTemp - DiffRecords.Data[MergedRecordsIndex].StartPos;
-		MergedRecordsIndex++;
-		if (RecordEqual(&DiffRecords.Data[MergedRecordsIndex], &DiffRecords.Data[CurrentIter])) {
-			CurrentIter++;
-		}
-
-	}
-
-	DiffRecords.Count = MergedRecordsIndex;
-	DiffRecords.Data = (nar_record*)realloc(DiffRecords.Data, DiffRecords.Count * sizeof(DiffRecords.Data[0]));
-#endif 
-
-	printf("$$$$\n");
-	for (int i = 0; i < DiffRecords.Count; i++) {
-		printf("%I64d\t%I64d\n", DiffRecords.Data[i].StartPos, DiffRecords.Data[i].Len);
-	}
-	printf("$$$$\n");
-
 
 
 	ShadowHandle = CreateFileW(
@@ -1788,7 +1750,7 @@ FullBackupVolume(PLOG_CONTEXT Context, UINT VolInfIndex) {
 	ULONGLONG UsedClusterCount = 0;
 	UCHAR BitmapMask = 1;
 	DWORD ToMove = BufferSize;
-	DWORD ClusterSize = 8 * 512;
+	DWORD ClusterSize = Context->Volumes.Data[VolInfIndex].ClusterSize;
 
 	ClusterIndices = (UINT*)malloc(MaxClusterCount * sizeof(UINT));
 	UINT CurrentIndex = 0;
@@ -1955,6 +1917,7 @@ RestoreVolume(PLOG_CONTEXT Context, restore_inf* RestoreInf) {
 	}
 
 	Metadatas[0] = ReadFBMetadata(FBackupMDFile);
+	
 	printf("FBMetadata read\n");
 
 	for (int i = 1; i < ID + 2; i++) {
@@ -1982,6 +1945,7 @@ RestoreVolume(PLOG_CONTEXT Context, restore_inf* RestoreInf) {
 
 
 	Chains[0] = InitDBMetadataChain(Metadatas[0].Data, Metadatas[0].Count);
+	PrintList(Chains[0]);
 	CLEANHANDLE(FBackupMDFile);
 
 	ShadowChain = CopyChain(Chains[ID + 1]); //Last element
@@ -2031,8 +1995,9 @@ RestoreVolume(PLOG_CONTEXT Context, restore_inf* RestoreInf) {
 		printf("Minimal copy operation started\n");
 
 		//+1 for including fullbackup, +1 for ID is already 0 based
+		int j = 0;
 		for (UINT i = 0; i < ID + 2; i++) {
-			int j = 0;
+			
 			HANDLE SrcHandle = INVALID_HANDLE_VALUE;
 
 			if (i != 0) {
@@ -2065,7 +2030,7 @@ RestoreVolume(PLOG_CONTEXT Context, restore_inf* RestoreInf) {
 
 			}
 
-			for (node = Chains[i];
+			for (node = Chains[i]->Next;
 				node != 0;
 				node = node->Next) {
 
@@ -2098,9 +2063,10 @@ RestoreVolume(PLOG_CONTEXT Context, restore_inf* RestoreInf) {
 					goto R_Cleanup;
 					// TODO: Log
 				}
-
-				j++;
+	
 			}
+
+			j++;
 
 		}
 	}
@@ -2157,21 +2123,31 @@ wmain(
 	int argc,
 	WCHAR* argv[]
 	) {
+	
+	/*
 	data_array<nar_record> test;
 	test.Data = 0;
 	test.Count = 0;
-	test.Insert({ 100,20 });
-	test.Insert({ 120,20 });
-	test.Insert({ 140,20 });
-	test.Insert({ 160,20 });
-	test.Insert({ 170,20 });
-
+	test.Insert({1912, 33		});
+  test.Insert({1912, 101	});
+  test.Insert({1912, 101	});
+  test.Insert({1944, 33		});
+  test.Insert({1976, 33		});
+  test.Insert({2008, 5		});
+  test.Insert({2077, 65		});
+  test.Insert({2141, 65		});
+  test.Insert({2333, 49		});
+  test.Insert({2382, 19		});
+  test.Insert({2382, 19		});
+  test.Insert({2782, 19   });
+	
 	MergeRegions(&test);
 	printf("$$$$\n");
 	for (int i = 0; i < test.Count; i++) {
 		printf("%I64d\t%I64d\n", test.Data[i].StartPos, test.Data[i].Len);
 	}
 	printf("$$$$\n");
+	*/
 
 #if 0
 	region_chain** Chain = (region_chain**)malloc(sizeof(region_chain*));
@@ -2218,9 +2194,6 @@ wmain(
 
 	RemoveDuplicates(Chain, S, 0);
 
-#endif
-
-#if 0
 	data_array<nar_record> Test = { 0,0 };
 	Test.Data = (nar_record*)malloc(sizeof(nar_record) * 11);
 	Test.Data[0] = nar_record{ 0,112 };
@@ -2293,11 +2266,6 @@ wmain(
 	return 0;
 #endif 
 
-
-	WCHAR TrackedVolumeName[] = L"ASDFASF";
-	WCHAR RestoreVolumeName[] = L"ASDFASDFAS";
-
-
 	HANDLE port = INVALID_HANDLE_VALUE;
 	HRESULT hResult = S_OK;
 	DWORD result;
@@ -2338,7 +2306,7 @@ wmain(
 	//  Open the port that is used to talk to
 	//  MiniSpy.
 	//
-#if 0
+#if 1
 	printf("Connecting to filter's port...\n");
 
 	hResult = FilterConnectCommunicationPort(MINISPY_PORT_NAME,
@@ -2354,7 +2322,7 @@ wmain(
 		DisplayError(hResult);
 		goto Main_Exit;
 	}
-#endif 
+
 	//
 	// Initialize the fields of the LOG_CONTEXT
 	//
@@ -2369,7 +2337,9 @@ wmain(
 	// by MiniSpy.sys.
 	//
 
-	//NarCreateThreadCom(&context);
+	NarCreateThreadCom(&context);
+#endif 
+	
 
 #if 1
 #pragma region NAR_TEST
@@ -2381,7 +2351,7 @@ wmain(
 
 	for (;;) {
 		std::wstring Input = L"restore,E,N,1";
-		//std::wcin >> Input;
+		std::wcin >> Input;
 		auto Answer = Split(Input, L",");
 
 		if (Answer[0] == L"q") {
@@ -2400,7 +2370,6 @@ wmain(
 					break;
 				}
 			}
-			printf("INDEX AT LIST %d\n", Index);
 			DiffBackupVolume(&context, Index); //Hard coded
 		}
 		else if (Answer[0] == L"full") {
@@ -2413,7 +2382,7 @@ wmain(
 					break;
 				}
 			}
-			printf("Test\n");
+			
 			FullBackupVolume(&context, Index);
 		}
 		else if (Answer[0] == L"restore") {

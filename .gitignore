@@ -349,3 +349,6 @@ healthchecksdb
 /minispy_user/DMetadata_E0
 /minispy_user/DiffBackupDisk_E1
 /minispy_user/DiffBackupDisk_E0
+/minispy_user/LogFile.txt
+/minispy_user/DBMFT_BINARY_E1
+/minispy_user/DBMFT_BINARY_E0

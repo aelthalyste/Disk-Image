@@ -63,18 +63,8 @@ RecordEqual(nar_record* N1, nar_record* N2) {
 }
 
 
-//#define printf(format,...) LogF((format),__VA_ARGS__)
+//#define printf(format,...) LogFile((format),__VA_ARGS__)
 
-inline void
-LogF(const char* fmt, ...) {
-	//TODO add time
-	va_list args;
-	va_start(args, fmt);
-	vprintf(fmt, args);
-	va_end(args);
-
-	return;
-}
 
 #define BUFFER_SIZE     4096
 
