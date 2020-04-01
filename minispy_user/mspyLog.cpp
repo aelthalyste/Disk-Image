@@ -238,18 +238,22 @@ RetrieveLogRecords(
 				}
 			}
 
-
-
-			if (pRecordData->Arg1 != 0 && pRecordData->Arg5 == 0) {
+			if (pRecordData->Error == 0 || pRecordData->RecCount != 0) { //No error occured
 				for (UINT i = 0; i < context->Volumes.Count; i++) {
 
 					volume_backup_inf* V = &context->Volumes.Data[i];
+
+					/*FLUSH TO FILE*/
 					if (V->FlushToFile && V->RecordsMem.size() != 0) {
+						printf("Dumping memory contents to file\n");
 						HRESULT Result;
 						DWORD BytesWritten = 0;
 						DWORD BufferSize = V->RecordsMem.size() * sizeof(nar_record);
 						Result = WriteFile(V->LogHandle, V->RecordsMem.data(), BufferSize, &BytesWritten, 0);
 						if (!SUCCEEDED(Result) || BytesWritten != BufferSize) {
+							printf("Couldnt dump memory contents\n");
+							printf("written => %d\tbuffersize -> %d\n", BytesWritten, BufferSize);
+							printf("Result -> %d\n", Result);
 							//TODO log error
 						}
 						else {
@@ -257,9 +261,11 @@ RetrieveLogRecords(
 							V->SaveToFile = TRUE;
 							V->RecordsMem.clear();
 						}
+						break;
 					}
 
-					if (pRecordData->Arg5 != NAR_ERR_TRINITY
+					/*WRITE TO FILE*/
+					if (pRecordData->Error != NAR_ERR_TRINITY
 						&& TRUE /*IsSameVolumes*/) {
 
 						if (!V->IsActive) {
@@ -267,29 +273,34 @@ RetrieveLogRecords(
 							break;
 						}
 						if (V->SaveToFile) {
+
 							if (FileDump(pRecordData, V->LogHandle)) {
-								V->IncRecordCount++;
-								if (pRecordData->Arg3 != 0) V->IncRecordCount++;
-								ScreenDump(0, pLogRecord->Name, pRecordData);
+								V->IncRecordCount += pRecordData->RecCount;
 								break;
 							} {
 								printf("## Error occured while writing log to file. FERROR!!\n");
 								//TODO log, failed to log volume change.
 							}
+
 						}
 						else {
-							V->RecordsMem.emplace_back(nar_record{ pRecordData->Arg1,pRecordData->Arg2 });
+							for (int i = 0; i < pRecordData->RecCount; i++) {
+								V->RecordsMem.emplace_back(nar_record{ pRecordData->P[i].S, pRecordData->P[i].L});
+							}
+
 						}
 
 					}
 					else { printf("THAT SHOULDN'T HAPPEN\n"); }
-
 				}
 			}
 			else {
-				//printf("Error occured at file %S\n",pLogRecord->Name);
+				if (pRecordData->Error != NAR_ERR_TRINITY) {
+					ScreenDump(0, pLogRecord->Name, pRecordData);
+				}
 			}
 
+			
 
 
 			//
@@ -416,19 +427,17 @@ FileDump(
 	--*/
 {
 	DWORD BytesWritten = 0;
-	BOOL Result = 0;
-	DWORD BytesToWrite = sizeof(nar_record);
-	if (RecordData->Arg3 != 0 && RecordData->Arg4 != 0) {
-		printf("2\t");
-		BytesToWrite = 2 * sizeof(nar_record);
-	}
-	else {
-		printf("1\t");
-	}
+	BOOL Result = TRUE;
+	DWORD BytesToWrite = 0;
+	
+	BytesToWrite = RecordData->RecCount * sizeof(nar_record);
 
-	Result = WriteFile(File, &RecordData->Arg1, BytesToWrite, &BytesWritten, 0);
+	Result = WriteFile(File, &RecordData->P, BytesToWrite, &BytesWritten, 0);
 	if (!SUCCEEDED(Result) || BytesWritten != BytesToWrite) {
 		printf("Error occured!\n");
+		printf("Bytes written -> %d, BytesToWrite -> %d\n", BytesWritten, BytesToWrite);
+		printf("Result => %d\n", Result);
+		Result = FALSE;
 	}
 
 	return Result;
@@ -461,56 +470,33 @@ ScreenDump(
 
 	--*/
 {
-	//
-	//  Display informatoin
-	//
-	/*
-	if (RecordData->Flags & FLT_CALLBACK_DATA_IRP_OPERATION) {
 
-			printf( "IRP ");
-
-	} else if (RecordData->Flags & FLT_CALLBACK_DATA_FAST_IO_OPERATION) {
-
-			printf( "FIO ");
-
-	} else if (RecordData->Flags & FLT_CALLBACK_DATA_FS_FILTER_OPERATION) {
-
-			printf( "FSF " );
-	} else {
-
-			printf( "ERR ");
-	}
-	printf( "%08X ", SequenceNumber );
-
-	*/
-
-	if (RecordData->CallbackMajorId == IRP_MJ_WRITE) {
-
+	
 		printf("%S\t", Name);
-		if (RecordData->Arg5 == NAR_ERR_TRINITY) {
+		if (RecordData->Error == NAR_ERR_TRINITY) {
 			printf("Holy Trinity error!\n");
 		}
-		else if (RecordData->Arg5 == NAR_ERR_REG_OVERFLOW) {
+		else if (RecordData->Error == NAR_ERR_REG_OVERFLOW) {
 			printf("REG OVERFLOW!!! error ! \n");
 		}
-		else if (RecordData->Arg5 == NAR_ERR_REG_CANT_FILL) {
+		else if (RecordData->Error == NAR_ERR_REG_CANT_FILL) {
 			printf("CANT_FILL error!\n");
 		}
-		else if (RecordData->Arg5 == NAR_ERR_ALIGN) {
+		else if (RecordData->Error == NAR_ERR_ALIGN) {
 			printf("Align error!\n");
 		}
-		else if (RecordData->Arg5 == NAR_ERR_MAX_ITER) {
+		else if (RecordData->Error == NAR_ERR_MAX_ITER) {
 			printf("MAX_ITER ERROR!\n");
 		}
+		else if (RecordData->Error == NAR_ERR_OVERFLOW) {
+			printf("OVERFLOW ERROR\n");
+		}
 		else {
-			printf("%I64u\t", RecordData->Arg1);
-			printf("%I64u\t", RecordData->Arg2);
-
-			printf("%I64u\t", RecordData->Arg3);
-			printf("%I64u\t", RecordData->Arg4);
+			for (int i = 0; i < RecordData->RecCount; i++) {
+				printf("%d\t\%d\t",RecordData->P[i].S, RecordData->P[i].L);
+			}
+			printf("\n");
 		}
 
-		printf("\n");
-	}
 }
 

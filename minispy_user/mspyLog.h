@@ -30,6 +30,7 @@ Environment:
 #define NAR_ERR_REG_CANT_FILL 5
 #define NAR_ERR_ALIGN 6
 #define NAR_ERR_MAX_ITER 7
+#define NAR_ERR_OVERFLOW 8
 
 enum rec_or {
 	LEFT = 0,
@@ -40,8 +41,8 @@ enum rec_or {
 };
 
 typedef struct _record {
-	ULONGLONG StartPos;
-	ULONGLONG Len;
+	UINT32 StartPos;
+	UINT32 Len;
 }nar_record, bitmap_region;
 
 template<typename DATA_TYPE>

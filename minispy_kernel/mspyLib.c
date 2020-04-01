@@ -26,6 +26,7 @@ Environment:
 #define NAR_ERR_REG_CANT_FILL 5
 #define NAR_ERR_ALIGN 6
 #define NAR_ERR_MAX_ITER 7
+#define NAR_ERR_OVERFLOW 8
 //
 // Can't pull in wsk.h until after MINISPY_VISTA is defined
 //
@@ -1135,18 +1136,19 @@ Return Value:
 		ClusterMapBuffer.StartingVcn.QuadPart = 0;
 		StartingInputVCNBuffer.StartingVcn.QuadPart = 0;
 
-		ULONGLONG RegionLen = 0;
+		UINT32 RegionLen = 0;
 
 		ULONG ClusterSize = 512 * 8; //TODO cluster size might not be 8*sector. check this 
 
 		LARGE_INTEGER WriteOffsetLargeInt = Data->Iopb->Parameters.Write.ByteOffset;
 		ULONG WriteLen = Data->Iopb->Parameters.Write.Length;
-		ULONGLONG NClustersToWrite = (WriteLen / (ClusterSize)+1);
-
-		ULONGLONG ClusterWriteStartOffset = WriteOffsetLargeInt.QuadPart / (ClusterSize);
+		UINT32 NClustersToWrite = (WriteLen / (ClusterSize) + 1);
+		
+		UINT32 ClusterWriteStartOffset = (UINT32)(WriteOffsetLargeInt.QuadPart / (LONGLONG)(ClusterSize));
 
 		UINT32 MaxIteration = 0;
-
+		recordData->RecCount = 0;
+		recordData->Error = 0;
 
 		BOOLEAN HeadFound = FALSE;
 		BOOLEAN CeilTest = FALSE;
@@ -1154,7 +1156,7 @@ Return Value:
 		for (;;) {
 			MaxIteration++;
 			if (MaxIteration > 256) {
-				recordData->Arg5 = NAR_ERR_MAX_ITER;
+				recordData->Error = NAR_ERR_MAX_ITER;
 				break;
 			}
 
@@ -1172,7 +1174,16 @@ Return Value:
 			if (status != STATUS_BUFFER_OVERFLOW
 				&& status != STATUS_SUCCESS
 				&& status != STATUS_END_OF_FILE) {
-				recordData->Arg5 = NAR_ERR_TRINITY;
+				recordData->Error = NAR_ERR_TRINITY;
+				break;
+			}
+
+			/*
+			It is unlikely, but we should check overflows
+			*/
+
+			if (ClusterMapBuffer.Extents[0].Lcn.QuadPart > MAXUINT32 || ClusterMapBuffer.Extents[0].NextVcn.QuadPart > MAXUINT32 || ClusterMapBuffer.StartingVcn.QuadPart > MAXUINT32) {
+				recordData->Error = NAR_ERR_OVERFLOW;
 				break;
 			}
 
@@ -1184,30 +1195,31 @@ Return Value:
 			}
 
 			if ((LONGLONG)ClusterWriteStartOffset >= StartingInputVCNBuffer.StartingVcn.QuadPart && CeilTest) {
-				RegionLen = (ClusterMapBuffer.Extents[0].NextVcn.QuadPart - ClusterMapBuffer.StartingVcn.QuadPart);
+
+				RegionLen = (UINT32)(ClusterMapBuffer.Extents[0].NextVcn.QuadPart - ClusterMapBuffer.StartingVcn.QuadPart);
 
 				if (!HeadFound) {
 
 					//Starting position of the write operation
-					ULONGLONG OffsetFromRegionStart = (ClusterWriteStartOffset - ClusterMapBuffer.StartingVcn.QuadPart);
+					UINT32 OffsetFromRegionStart = (ClusterWriteStartOffset - (UINT32)ClusterMapBuffer.StartingVcn.QuadPart);
 
 
 					if (ClusterMapBuffer.Extents->NextVcn.QuadPart - OffsetFromRegionStart < NClustersToWrite) {
 						//Region overflow
-						recordData->Arg1 = (ClusterMapBuffer.Extents[0].Lcn.QuadPart + OffsetFromRegionStart);//start
-						recordData->Arg2 = RegionLen - OffsetFromRegionStart;
-
+						recordData->P[recordData->RecCount].S = ((UINT32)ClusterMapBuffer.Extents[0].Lcn.QuadPart + OffsetFromRegionStart);//start
+						recordData->P[recordData->RecCount].L = RegionLen - OffsetFromRegionStart;
+						recordData->RecCount++;
 						NClustersToWrite -= (RegionLen - OffsetFromRegionStart);
 					}
 					else {
 						//Operation fits the region
-						recordData->Arg1 = ClusterMapBuffer.Extents[0].Lcn.QuadPart + OffsetFromRegionStart;
-						recordData->Arg2 = NClustersToWrite;
-
+						recordData->P[recordData->RecCount].S = (UINT32)ClusterMapBuffer.Extents[0].Lcn.QuadPart + OffsetFromRegionStart;
+						recordData->P[recordData->RecCount].L = NClustersToWrite;
+						recordData->RecCount++;
 						NClustersToWrite = 0;
 					}
 
-					ClusterWriteStartOffset = ClusterMapBuffer.Extents[0].NextVcn.QuadPart;
+					ClusterWriteStartOffset = (UINT32)ClusterMapBuffer.Extents[0].NextVcn.QuadPart;
 
 					HeadFound = TRUE;
 
@@ -1216,21 +1228,35 @@ Return Value:
 						//Write operation falls over other region(s)
 					if ((NClustersToWrite - RegionLen) > 0) {
 						//write operation does not fit this region
-						recordData->Arg3 = ClusterMapBuffer.Extents[0].Lcn.QuadPart;
-						recordData->Arg4 = RegionLen;
+						recordData->P[recordData->RecCount].S = (UINT32)ClusterMapBuffer.Extents[0].Lcn.QuadPart;
+						recordData->P[recordData->RecCount].L = RegionLen;
+						recordData->RecCount++;
 						NClustersToWrite -= RegionLen;
 					}
+					else if(recordData->RecCount < 5){
+						/*
+						Write operation fits that region
+						*/
+						recordData->P[recordData->RecCount].S = (UINT32)ClusterMapBuffer.Extents[0].Lcn.QuadPart;
+						recordData->P[recordData->RecCount].L = NClustersToWrite;
+						recordData->RecCount++;
+						NClustersToWrite = 0;
+						break;
+					}
 					else {
-						recordData->Arg5 = NAR_ERR_REG_CANT_FILL;
+						recordData->Error = NAR_ERR_REG_CANT_FILL;
 						break;
 					}
 
-					ClusterWriteStartOffset = ClusterMapBuffer.Extents[0].NextVcn.QuadPart;
+					ClusterWriteStartOffset = (UINT32)ClusterMapBuffer.Extents[0].NextVcn.QuadPart;
 				}
 
 			}
 
 			if (NClustersToWrite <= 0) {
+				break;
+			}
+			if (recordData->RecCount == 5) {
 				break;
 			}
 
@@ -1246,16 +1272,6 @@ Return Value:
 
 
 #pragma warning(pop)
-#endif
-
-
-#if 0				
-		recordData->Arg1 = (PVOID)Data->Iopb->Parameters.Write.Length;
-		recordData->Arg2 = (PVOID)Data->Iopb->Parameters.Write.ByteOffset.QuadPart;
-		recordData->Arg3 = Data->Iopb->Parameters.Others.Argument3;
-		recordData->Arg4 = Data->Iopb->Parameters.Others.Argument4;
-		recordData->Arg5 = Data->Iopb->Parameters.Others.Argument5;
-		recordData->Arg6.QuadPart = Data->Iopb->Parameters.Others.Argument6.QuadPart;
 #endif
 
 		KeQuerySystemTime(&recordData->OriginatingTime);

@@ -121,26 +121,26 @@ typedef struct _RECORD_DATA {
     UCHAR CallbackMinorId;
     UCHAR Reserved[2];      // Alignment on IA64
 
-    union {
-      struct {
-        ULONGLONG Arg1;    
-        ULONGLONG Arg2;    
-        ULONGLONG Arg3;    
-        ULONGLONG Arg4;    
-        ULONGLONG Arg5;    
-        LARGE_INTEGER Arg6;
-      };
-      struct {
-        UINT32 P_Start[5];
-        UINT32 P_End[5];  
-        LONGLONG Error;   
-       };
-    };
+#pragma warning(push)
+#pragma warning(disable:4201) // disable warnings for structures-unions without names
+
+     
+     struct {
+       UINT32 S;
+       UINT32 L;
+     }P[5];
+     UINT32 RecCount;
+     UINT32 Error;
+     
+    
 
     ULONG EcpCount;
     ULONG KnownEcpMask;
 
 } RECORD_DATA, *PRECORD_DATA;
+
+#pragma warning(pop)
+
 
 //
 //  What information we actually log.
