@@ -252,7 +252,7 @@ Function declerations
 #define Megabyte(val) Kilobyte(val)*1024LL
 
 BOOLEAN
-CopyData(HANDLE S, HANDLE D, DWORD Len, DWORD BufSize = Megabyte(1));
+CopyData(HANDLE S, HANDLE D, ULONGLONG Len, DWORD BufSize = Megabyte(1));
 
 
 inline std::wstring

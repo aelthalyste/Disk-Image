@@ -680,7 +680,7 @@ keep iterating at upper level for
 
 
 BOOLEAN
-CopyData(HANDLE S, HANDLE D, DWORD Len, DWORD BufSize) {
+CopyData(HANDLE S, HANDLE D, ULONGLONG Len, DWORD BufSize) {
 	BOOLEAN Return = TRUE;
 	if (BufSize == 0) {
 		printf("Buffer size can't be null\n");
@@ -689,7 +689,7 @@ CopyData(HANDLE S, HANDLE D, DWORD Len, DWORD BufSize) {
 
 	void* Buffer = malloc(BufSize);
 	if (Buffer != NULL) {
-		DWORD BytesRemaining = Len;
+		ULONGLONG BytesRemaining = Len;
 		DWORD BytesOperated = 0;
 		if (BytesRemaining > BufSize) {
 
@@ -1824,12 +1824,9 @@ RestoreVolume(PLOG_CONTEXT Context, restore_inf* RestoreInf) {
 	UINT ID = RestoreInf->DiffVersion;
 
 	data_array<nar_record>* Metadatas = 0;
-	region_chain** Chains = 0;
-	region_chain* ShadowChain = 0;
-
+	
 	//This is going to store full backup metadata too, so ID + 1 should be used since
 	//ID is identifier for diff backup, since it is zero based, another +1 is needed
-	Chains = (region_chain**)malloc(sizeof(region_chain*) * (ID + 2));
 	Metadatas = (data_array<nar_record>*)malloc(sizeof(data_array<nar_record>) * (ID + 2));
 	void* Buffer = malloc(BufferSize);
 
@@ -1838,7 +1835,7 @@ RestoreVolume(PLOG_CONTEXT Context, restore_inf* RestoreInf) {
 	std::wstring fbmdfname = L"";
 	std::wstring DMDFileName = L"";
 
-	if (Chains == NULL || Metadatas == NULL) {
+	if (Metadatas == NULL) {
 		printf("Can't allocate memory for metadata buffers\n");
 		goto R_Cleanup;
 	}
@@ -1884,23 +1881,12 @@ RestoreVolume(PLOG_CONTEXT Context, restore_inf* RestoreInf) {
 			goto R_Cleanup;
 		}
 		Metadatas[i] = ReadMetadata(DBackupMDFile);
-		Chains[i] = InitDBMetadataChain(Metadatas[i].Data, Metadatas[i].Count);
 		
 		CLEANHANDLE(DBackupMDFile);
 	}
 
 
-	Chains[0] = InitDBMetadataChain(Metadatas[0].Data, Metadatas[0].Count);
 	CLEANHANDLE(FBackupMDFile);
-
-	ShadowChain = CopyChain(Chains[ID + 1]); //Last element
-	printf("Duplicate regoins is going to be removed\n");
-	RemoveDuplicates(Chains, ShadowChain, ID); //Since last one is equal to shadow, start from last - 1( last is = ID -1 )
-
-	/*
-			Copy fullbackup first, then diff's (0th to ID)
-			*/
-
 
 
 	WCHAR VTRNameTemp[] = L"\\\\.\\ :";
@@ -1932,9 +1918,7 @@ RestoreVolume(PLOG_CONTEXT Context, restore_inf* RestoreInf) {
 	}
 
 	{
-		region_chain* node;
-		LARGE_INTEGER MoveTo = { 0 };
-		LARGE_INTEGER NewFilePointer = { 0 };
+		
 		printf("Minimal copy operation started\n");
 
 		//+1 for including fullbackup, +1 for ID is already 0 based
@@ -1972,41 +1956,31 @@ RestoreVolume(PLOG_CONTEXT Context, restore_inf* RestoreInf) {
 
 			}
 
-			for (node = Chains[i]->Next;//Skip head of the chain since it is 0-0 record
-				node != 0;
-				node = node->Next) {
-
+			for (int j = 0; j < Metadatas[i].Count; j++) {
 				LARGE_INTEGER MoveTo = { 0 };
 				LARGE_INTEGER NewFilePointer = { 0 };
-
-				DWORD Pos = FindPosition(&node->Rec, &Metadatas[i]);
-				MoveTo.QuadPart = (ULONGLONG)Pos * (ULONGLONG)RestoreInf->ClusterSize;
-				if (!SetFilePointerEx(SrcHandle, MoveTo, &NewFilePointer, FILE_BEGIN) ||
-					NewFilePointer.QuadPart != MoveTo.QuadPart) {
-					printf("Couldn't set file pointer for SOURCE handle to -> %I64d, instead it's been set to -> %I64d\n", MoveTo.QuadPart, NewFilePointer.QuadPart);
+					
+				MoveTo.QuadPart = Metadatas[i].Data[j].StartPos * RestoreInf->ClusterSize;
+				SetFilePointerEx(VolumeToRestore, MoveTo, &NewFilePointer, FILE_BEGIN);
+				if (MoveTo.QuadPart != NewFilePointer.QuadPart) {
+					printf("Cant set file pointer to -> %I64d\n", MoveTo.QuadPart);
 					DisplayError(GetLastError());
 					goto R_Cleanup;
-					// TODO: Log
+					//TODO
 				}
-
-				MoveTo.QuadPart = node->Rec.StartPos * RestoreInf->ClusterSize;
-				NewFilePointer.QuadPart = 0;
-				if (!SetFilePointerEx(VolumeToRestore, MoveTo, &NewFilePointer, FILE_BEGIN) ||
-					NewFilePointer.QuadPart != MoveTo.QuadPart) {
-					printf("Couldn't set file pointer for DESTINATION handle to -> %I64d, instead it's been set to -> %I64d\n", MoveTo.QuadPart, NewFilePointer.QuadPart);
+				
+				ULONGLONG CopySize = Metadatas[i].Data[j].Len * RestoreInf->ClusterSize;
+				if (!CopyData(SrcHandle, VolumeToRestore, CopySize)) {
+					printf("Copy operation failed\n");
+					printf("Tried to copy %I64d\n",CopySize);
 					DisplayError(GetLastError());
 					goto R_Cleanup;
-					// TODO: Log
+					//TODO log
 				}
 
-				//src to destination
-				if (!CopyData(SrcHandle, VolumeToRestore, node->Rec.Len * RestoreInf->ClusterSize)) {
-					printf("Couldn't copy data from source to destination\n");
-					goto R_Cleanup;
-					// TODO: Log
-				}
-	
 			}
+
+
 			CLEANHANDLE(SrcHandle);
 
 		}
@@ -2041,11 +2015,9 @@ R_Cleanup:
 
 	for (int i = 0; i < ID + 2; i++) {
 		CLEANMEMORY(Metadatas[i].Data);
-		DeleteChain(Chains[i]);
 	}
 	CLEANMEMORY(Metadatas);
-	DeleteChain(ShadowChain);
-
+	
 	printf("Cleaned!\n");
 	return Return;
 }
@@ -2059,6 +2031,7 @@ R_Cleanup:
 #pragma warning(push)
 #pragma warning(disable:4706) // assignment within conditional expression
 
+
 int
 wmain(
 	int argc,
@@ -2070,7 +2043,7 @@ wmain(
 	DWORD result;
 	LOG_CONTEXT context = { 0 };
 
-
+	//Init one time
 	hResult = CoInitialize(NULL);
 	if (!SUCCEEDED(hResult)) {
 		printf("Failed CoInitialize function \n");
@@ -2094,7 +2067,6 @@ wmain(
 		DisplayError(GetLastError());
 		goto Main_Exit;
 	}
-
 
 	//  Initialize handle in case of error
 	//
