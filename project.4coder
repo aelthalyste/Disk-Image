@@ -18,11 +18,9 @@ blacklist_patterns={
 
 lp = {
 {".",.recursive=false},
-{"/src"},
+{"/inc"},
 {"/minispy_user/",.recursive=false},
-{"/TestArea/src/",.recursive=false},
-{"/Disk Image/src/",.recursive=false},
-{"/TestArea/include/",.recursive=false},
+{"/NarDIWrapper/",.recursive=false}
 };
 
 load_paths = {

@@ -13,6 +13,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "minispy_kernel", "minispy_k
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "minispy_user", "minispy_user\minispy_user.vcxproj", "{CF307DC8-96B6-4818-AB94-4EFF2176A02B}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NarDIWrapper", "NarDIWrapper\NarDIWrapper.vcxproj", "{FFE248C9-AE73-4719-892A-692975BB6B9C}"
+	ProjectSection(ProjectDependencies) = postProject
+		{CF307DC8-96B6-4818-AB94-4EFF2176A02B} = {CF307DC8-96B6-4818-AB94-4EFF2176A02B}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|ARM = Debug|ARM
@@ -101,6 +106,18 @@ Global
 		{CF307DC8-96B6-4818-AB94-4EFF2176A02B}.Release|x64.Build.0 = Release|x64
 		{CF307DC8-96B6-4818-AB94-4EFF2176A02B}.Release|x86.ActiveCfg = Release|Win32
 		{CF307DC8-96B6-4818-AB94-4EFF2176A02B}.Release|x86.Build.0 = Release|Win32
+		{FFE248C9-AE73-4719-892A-692975BB6B9C}.Debug|ARM.ActiveCfg = Debug|Win32
+		{FFE248C9-AE73-4719-892A-692975BB6B9C}.Debug|ARM64.ActiveCfg = Debug|Win32
+		{FFE248C9-AE73-4719-892A-692975BB6B9C}.Debug|x64.ActiveCfg = Debug|x64
+		{FFE248C9-AE73-4719-892A-692975BB6B9C}.Debug|x64.Build.0 = Debug|x64
+		{FFE248C9-AE73-4719-892A-692975BB6B9C}.Debug|x86.ActiveCfg = Debug|Win32
+		{FFE248C9-AE73-4719-892A-692975BB6B9C}.Debug|x86.Build.0 = Debug|Win32
+		{FFE248C9-AE73-4719-892A-692975BB6B9C}.Release|ARM.ActiveCfg = Release|Win32
+		{FFE248C9-AE73-4719-892A-692975BB6B9C}.Release|ARM64.ActiveCfg = Release|Win32
+		{FFE248C9-AE73-4719-892A-692975BB6B9C}.Release|x64.ActiveCfg = Release|x64
+		{FFE248C9-AE73-4719-892A-692975BB6B9C}.Release|x64.Build.0 = Release|x64
+		{FFE248C9-AE73-4719-892A-692975BB6B9C}.Release|x86.ActiveCfg = Release|Win32
+		{FFE248C9-AE73-4719-892A-692975BB6B9C}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

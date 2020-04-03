@@ -4,16 +4,16 @@ Copyright (c) 1989-2002  Microsoft Corporation
 
 Module Name:
 
-		mspyLog.c
+    mspyLog.c
 
 Abstract:
 
-		This module contains functions used to retrieve and see the log records
-		recorded by MiniSpy.sys.
+    This module contains functions used to retrieve and see the log records
+    recorded by MiniSpy.sys.
 
 Environment:
 
-		User mode
+    User mode
 
 --*/
 
@@ -32,471 +32,477 @@ _Analysis_mode_(_Analysis_code_type_user_code_)
 #define TIME_BUFFER_LENGTH 20
 #define TIME_ERROR         "time error"
 
-#define POLL_INTERVAL   50     // 10 milliseconds
+#define POLL_INTERVAL   10     // 10 milliseconds
+
 
 BOOLEAN
 TranslateFileTag(
-	_In_ PLOG_RECORD logRecord
-	)
-	/*++
+  _In_ PLOG_RECORD logRecord
+)
+/*++
 
-	Routine Description:
+Routine Description:
 
-			If this is a mount point reparse point, move the given name string to the
-			correct position in the log record structure so it will be displayed
-			by the common routines.
+    If this is a mount point reparse point, move the given name string to the
+    correct position in the log record structure so it will be displayed
+    by the common routines.
 
-	Arguments:
+Arguments:
 
-			logRecord - The log record to update
+    logRecord - The log record to update
 
-	Return Value:
+Return Value:
 
-			TRUE - if this is a mount point reparse point
-			FALSE - otherwise
+    TRUE - if this is a mount point reparse point
+    FALSE - otherwise
 
-	--*/
+--*/
 {
-	PFLT_TAG_DATA_BUFFER TagData;
-	ULONG Length;
+  PFLT_TAG_DATA_BUFFER TagData;
+  ULONG Length;
 
-	//
-	// The reparse data structure starts in the NAME field, point to it.
-	//
+  //
+  // The reparse data structure starts in the NAME field, point to it.
+  //
 
-	TagData = (PFLT_TAG_DATA_BUFFER)&logRecord->Name[0];
+  TagData = (PFLT_TAG_DATA_BUFFER)&logRecord->Name[0];
 
-	//
-	//  See if MOUNT POINT tag
-	//
+  //
+  //  See if MOUNT POINT tag
+  //
 
-	if (TagData->FileTag == IO_REPARSE_TAG_MOUNT_POINT) {
+  if (TagData->FileTag == IO_REPARSE_TAG_MOUNT_POINT) {
 
-		//
-		//  calculate how much to copy
-		//
+    //
+    //  calculate how much to copy
+    //
 
-		Length = min(MAX_NAME_SPACE - sizeof(UNICODE_NULL), TagData->MountPointReparseBuffer.SubstituteNameLength);
+    Length = min(MAX_NAME_SPACE - sizeof(UNICODE_NULL), TagData->MountPointReparseBuffer.SubstituteNameLength);
 
-		//
-		//  Position the reparse name at the proper position in the buffer.
-		//  Note that we are doing an overlapped copy
-		//
+    //
+    //  Position the reparse name at the proper position in the buffer.
+    //  Note that we are doing an overlapped copy
+    //
 
-		MoveMemory(&logRecord->Name[0],
-			TagData->MountPointReparseBuffer.PathBuffer,
-			Length);
+    MoveMemory(&logRecord->Name[0],
+      TagData->MountPointReparseBuffer.PathBuffer,
+      Length);
 
-		logRecord->Name[Length / sizeof(WCHAR)] = UNICODE_NULL;
-		return TRUE;
-	}
+    logRecord->Name[Length / sizeof(WCHAR)] = UNICODE_NULL;
+    return TRUE;
+  }
 
-	return FALSE;
+  return FALSE;
 }
 
 
 DWORD
 WINAPI
 RetrieveLogRecords(
-	_In_ LPVOID lpParameter
-	)
-	/*++
+  _In_ LPVOID lpParameter
+)
+/*++
 
-	Routine Description:
+Routine Description:
 
-			This runs as a separate thread.  Its job is to retrieve log records
-			from the filter and then output them
+    This runs as a separate thread.  Its job is to retrieve log records
+    from the filter and then output them
 
-	Arguments:
+Arguments:
 
-			lpParameter - Contains context structure for synchronizing with the
-					main program thread.
+    lpParameter - Contains context structure for synchronizing with the
+        main program thread.
 
-	Return Value:
+Return Value:
 
-			The thread successfully terminated
+    The thread successfully terminated
 
-	--*/
+--*/
 {
-	PLOG_CONTEXT context = (PLOG_CONTEXT)lpParameter;
-	DWORD bytesReturned = 0;
-	DWORD used;
-	PVOID alignedBuffer[BUFFER_SIZE / sizeof(PVOID)];
-	PCHAR buffer = (PCHAR)alignedBuffer;
-	HRESULT hResult;
-	PLOG_RECORD pLogRecord;
-	PRECORD_DATA pRecordData;
-	COMMAND_MESSAGE commandMessage;
+  PLOG_CONTEXT context = (PLOG_CONTEXT)lpParameter;
+  DWORD bytesReturned = 0;
+  DWORD used;
+  PVOID alignedBuffer[BUFFER_SIZE / sizeof(PVOID)];
+  PCHAR buffer = (PCHAR)alignedBuffer;
+  HRESULT hResult;
+  PLOG_RECORD pLogRecord;
+  PRECORD_DATA pRecordData;
+  COMMAND_MESSAGE commandMessage;
 
-	//printf("Log: Starting up\n");
+  //printf("Log: Starting up\n");
 
 #pragma warning(push)
 #pragma warning(disable:4127) // conditional expression is constant
-	printf("Thread started!\n");
-	while (TRUE) {
+  printf("Thread started!\n");
+  while (TRUE) {
 
 #pragma warning(pop)
 
-		//
-		//  Check to see if we should shut down.
-		//
+    //
+    //  Check to see if we should shut down.
+    //
 
-		if (context->CleaningUp) {
+    if (context->CleaningUp) {
 
-			break;
-		}
+      break;
+    }
 
-		//
-		//  Request log data from MiniSpy.
-		//
+    //
+    //  Request log data from MiniSpy.
+    //
 
-		commandMessage.Command = GetMiniSpyLog;
+    commandMessage.Command = GetMiniSpyLog;
 
-		hResult = FilterSendMessage(context->Port,
-			&commandMessage,
-			sizeof(COMMAND_MESSAGE),
-			buffer,
-			sizeof(alignedBuffer),
-			&bytesReturned);
+    hResult = FilterSendMessage(context->Port,
+      &commandMessage,
+      sizeof(COMMAND_MESSAGE),
+      buffer,
+      sizeof(alignedBuffer),
+      &bytesReturned);
 
-		if (IS_ERROR(hResult)) {
+    if (IS_ERROR(hResult)) {
 
-			if (HRESULT_FROM_WIN32(ERROR_INVALID_HANDLE) == hResult) {
+      if (HRESULT_FROM_WIN32(ERROR_INVALID_HANDLE) == hResult) {
 
-				printf("The kernel component of minispy has unloaded. Exiting\n");
-				ExitProcess(0);
-			}
-			else {
+        printf("The kernel component of minispy has unloaded. Exiting\n");
+        ExitProcess(0);
+      }
+      else {
 
-				if (hResult != HRESULT_FROM_WIN32(ERROR_NO_MORE_ITEMS)) {
+        if (hResult != HRESULT_FROM_WIN32(ERROR_NO_MORE_ITEMS)) {
 
-					printf("UNEXPECTED ERROR received: %x\n", hResult);
-				}
+          printf("UNEXPECTED ERROR received: %x\n", hResult);
+        }
 
-				Sleep(POLL_INTERVAL);
-			}
+        Sleep(POLL_INTERVAL);
+      }
 
-			continue;
-		}
+      continue;
+    }
 
-		//
-		//  Buffer is filled with a series of LOG_RECORD structures, one
-		//  right after another.  Each LOG_RECORD says how long it is, so
-		//  we know where the next LOG_RECORD begins.
-		//
+    //
+    //  Buffer is filled with a series of LOG_RECORD structures, one
+    //  right after another.  Each LOG_RECORD says how long it is, so
+    //  we know where the next LOG_RECORD begins.
+    //
 
-		pLogRecord = (PLOG_RECORD)buffer;
-		used = 0;
+    pLogRecord = (PLOG_RECORD)buffer;
+    used = 0;
 
-		//
-		//  Logic to write record to screen and/or file
-		//
+    //
+    //  Logic to write record to screen and/or file
+    //
 
-		for (;;) {
+    for (;;) {
 
-			if (used + FIELD_OFFSET(LOG_RECORD, Name) > bytesReturned) {
+      if (used + FIELD_OFFSET(LOG_RECORD, Name) > bytesReturned) {
 
-				break;
-			}
+        break;
+      }
 
-			if (pLogRecord->Length < (sizeof(LOG_RECORD) + sizeof(WCHAR))) {
+      if (pLogRecord->Length < (sizeof(LOG_RECORD) + sizeof(WCHAR))) {
 
-				printf("UNEXPECTED LOG_RECORD->Length: length=%d expected>=%d\n",
-					pLogRecord->Length,
-					(ULONG)(sizeof(LOG_RECORD) + sizeof(WCHAR)));
+        printf("UNEXPECTED LOG_RECORD->Length: length=%d expected>=%d\n",
+          pLogRecord->Length,
+          (ULONG)(sizeof(LOG_RECORD) + sizeof(WCHAR)));
 
-				break;
-			}
+        break;
+      }
 
-			used += pLogRecord->Length;
+      used += pLogRecord->Length;
 
-			if (used > bytesReturned) {
+      if (used > bytesReturned) {
 
-				printf("UNEXPECTED LOG_RECORD size: used=%d bytesReturned=%d\n",
-					used,
-					bytesReturned);
+        printf("UNEXPECTED LOG_RECORD size: used=%d bytesReturned=%d\n",
+          used,
+          bytesReturned);
 
-				break;
-			}
+        break;
+      }
 
-			pRecordData = &pLogRecord->Data;
+      pRecordData = &pLogRecord->Data;
 
-			//
-			//  See if a reparse point entry
-			//
+      //
+      //  See if a reparse point entry
+      //
 
-			if (FlagOn(pLogRecord->RecordType, RECORD_TYPE_FILETAG)) {
+      if (FlagOn(pLogRecord->RecordType, RECORD_TYPE_FILETAG)) {
 
-				if (!TranslateFileTag(pLogRecord)) {
+        if (!TranslateFileTag(pLogRecord)) {
 
-					//
-					// If this is a reparse point that can't be interpreted, move on.
-					//
+          //
+          // If this is a reparse point that can't be interpreted, move on.
+          //
 
-					pLogRecord = (PLOG_RECORD)Add2Ptr(pLogRecord, pLogRecord->Length);
-					continue;
-				}
-			}
+          pLogRecord = (PLOG_RECORD)Add2Ptr(pLogRecord, pLogRecord->Length);
+          continue;
+        }
+      }
 
-			if (pRecordData->Error == 0 || pRecordData->RecCount != 0) { //No error occured
-				for (UINT i = 0; i < context->Volumes.Count; i++) {
+      if (pRecordData->Error != NAR_ERR_TRINITY &&
+        pRecordData->RecCount != 0) { //Valid log
 
-					volume_backup_inf* V = &context->Volumes.Data[i];
+        /*
+Check errors here
+*/
+        if (pRecordData->Error != 0) {
+          ScreenDump(0, pLogRecord->Name, pRecordData);
+        }
 
-					/*FLUSH TO FILE*/
-					if (V->FlushToFile && V->RecordsMem.size() != 0) {
-						printf("Dumping memory contents to file\n");
-						HRESULT Result;
-						DWORD BytesWritten = 0;
-						DWORD BufferSize = V->RecordsMem.size() * sizeof(nar_record);
-						Result = WriteFile(V->LogHandle, V->RecordsMem.data(), BufferSize, &BytesWritten, 0);
-						if (!SUCCEEDED(Result) || BytesWritten != BufferSize) {
-							printf("Couldnt dump memory contents\n");
-							printf("written => %d\tbuffersize -> %d\n", BytesWritten, BufferSize);
-							printf("Result -> %d\n", Result);
-							//TODO log error
-						}
-						else {
-							V->IncRecordCount += V->RecordsMem.size();
-							V->SaveToFile = TRUE;
-							V->RecordsMem.clear();
-						}
-						break;
-					}
+        for (UINT i = 0; i < context->Volumes.Count; i++) {
 
-					/*WRITE TO FILE*/
-					if (pRecordData->Error != NAR_ERR_TRINITY
-						&& TRUE /*IsSameVolumes*/) {
+          volume_backup_inf* V = &context->Volumes.Data[i];
+          if (V->FlushToFile) {
+            printf("Dumping memory contents to file\n");
+            HRESULT Result;
+            DWORD BytesWritten = 0;
+            DWORD BufferSize = V->RecordsMem.size() * sizeof(nar_record);
+            DWORD SucRecCount = 0;
+            Result = WriteFile(V->LogHandle, V->RecordsMem.data(), BufferSize, &BytesWritten, 0);
+            if (!SUCCEEDED(Result) || BytesWritten != BufferSize) {
+              printf("Couldnt dump memory contents\n");
+              printf("written => %d\tbuffersize -> %d\n", BytesWritten, BufferSize);
+              printf("Result -> %d\n", Result);
+              //TODO log error
+            }
+            SucRecCount = BytesWritten / sizeof(nar_record);
+            V->IncRecordCount += SucRecCount;
+            V->SaveToFile = TRUE;
+            V->RecordsMem.clear();
+          }
 
-						if (!V->IsActive) {
-							printf("Volume isnt active, breaking now\n");
-							break;
-						}
-						if (V->SaveToFile) {
+          /*WRITE TO FILE*/
+          if (TRUE /*IsSameVolumes*/) {
+            /*FLUSH TO FILE*/
 
-							if (FileDump(pRecordData, V->LogHandle)) {
-								V->IncRecordCount += pRecordData->RecCount;
-								break;
-							} {
-								printf("## Error occured while writing log to file. FERROR!!\n");
-								//TODO log, failed to log volume change.
-							}
+            if (!V->IsActive) {
+              printf("Volume isnt active, breaking now\n");
+              break;
+            }
+            if (V->SaveToFile) {
 
-						}
-						else {
-							for (int i = 0; i < pRecordData->RecCount; i++) {
-								V->RecordsMem.emplace_back(nar_record{ pRecordData->P[i].S, pRecordData->P[i].L});
-							}
+              if (FileDump(pRecordData, V->LogHandle)) {
+                V->IncRecordCount += pRecordData->RecCount;
+                break;
+              } {
+                printf("## Error occured while writing log to file. FERROR!!\n");
+                //TODO log, failed to log volume change.
+              }
 
-						}
+            }
+            else {
+              for (int i = 0; i < pRecordData->RecCount; i++) {
+                V->RecordsMem.emplace_back(nar_record{ pRecordData->P[i].S, pRecordData->P[i].L });
+              }
 
-					}
-					else { printf("THAT SHOULDN'T HAPPEN\n"); }
-				}
-			}
-			else {
-				if (pRecordData->Error != NAR_ERR_TRINITY) {
-					ScreenDump(0, pLogRecord->Name, pRecordData);
-				}
-			}
+            }
 
-			
+          }
+          else { printf("THAT SHOULDN'T HAPPEN\n"); }
+        }
 
-
-			//
-			//  The RecordType could also designate that we are out of memory
-			//  or hit our program defined memory limit, so check for these
-			//  cases.
-			//
-
-			if (FlagOn(pLogRecord->RecordType, RECORD_TYPE_FLAG_OUT_OF_MEMORY)) {
-
-				if (context->LogToScreen) {
-
-					printf("M:  %08X System Out of Memory\n",
-						pLogRecord->SequenceNumber);
-				}
-
-			}
-			else if (FlagOn(pLogRecord->RecordType, RECORD_TYPE_FLAG_EXCEED_MEMORY_ALLOWANCE)) {
-
-				printf("Exceeded Mamimum Allowed Memory Buffers! This is an fatal error!\n", pLogRecord->SequenceNumber);
-
-				break;
-			}
-
-			//
-			// Move to next LOG_RECORD
-			//
-
-			pLogRecord = (PLOG_RECORD)Add2Ptr(pLogRecord, pLogRecord->Length);
-		}
-
-		//
-		//  If we didn't get any data, pause for 1/2 second
-		//
-
-		if (bytesReturned == 0) {
-
-			Sleep(POLL_INTERVAL);
-		}
+      }
+      else {
+        // TODO(Batuhan):
+      }
 
 
-	}
 
-	printf("Log: Shutting down\n");
-	ReleaseSemaphore(context->ShutDown, 1, NULL);
-	printf("Log: All done\n");
-	return 0;
+
+      //
+      //  The RecordType could also designate that we are out of memory
+      //  or hit our program defined memory limit, so check for these
+      //  cases.
+      //
+
+      if (FlagOn(pLogRecord->RecordType, RECORD_TYPE_FLAG_OUT_OF_MEMORY)) {
+
+        if (context->LogToScreen) {
+
+          printf("M:  %08X System Out of Memory\n",
+            pLogRecord->SequenceNumber);
+        }
+
+      }
+      else if (FlagOn(pLogRecord->RecordType, RECORD_TYPE_FLAG_EXCEED_MEMORY_ALLOWANCE)) {
+
+        printf("Exceeded Mamimum Allowed Memory Buffers! This is an fatal error!\n", pLogRecord->SequenceNumber);
+
+        break;
+      }
+
+      //
+      // Move to next LOG_RECORD
+      //
+
+      pLogRecord = (PLOG_RECORD)Add2Ptr(pLogRecord, pLogRecord->Length);
+    }
+
+    //
+    //  If we didn't get any data, pause for 1/2 second
+    //
+
+    if (bytesReturned == 0) {
+
+      Sleep(POLL_INTERVAL);
+    }
+
+
+  }
+
+  printf("Log: Shutting down\n");
+  ReleaseSemaphore(context->ShutDown, 1, NULL);
+  printf("Log: All done\n");
+  return 0;
 }
 
 
 ULONG
 FormatSystemTime(
-	_In_ SYSTEMTIME* SystemTime,
-	_Out_writes_bytes_(BufferLength) CHAR* Buffer,
-	_In_ ULONG BufferLength
-	)
-	/*++
-	Routine Description:
+  _In_ SYSTEMTIME* SystemTime,
+  _Out_writes_bytes_(BufferLength) CHAR* Buffer,
+  _In_ ULONG BufferLength
+)
+/*++
+Routine Description:
 
-			Formats the values in a SystemTime struct into the buffer
-			passed in.  The resulting string is NULL terminated.  The format
-			for the time is:
-					hours:minutes:seconds:milliseconds
+    Formats the values in a SystemTime struct into the buffer
+    passed in.  The resulting string is NULL terminated.  The format
+    for the time is:
+        hours:minutes:seconds:milliseconds
 
-	Arguments:
+Arguments:
 
-			SystemTime - the struct to format
-			Buffer - the buffer to place the formatted time in
-			BufferLength - the size of the buffer
+    SystemTime - the struct to format
+    Buffer - the buffer to place the formatted time in
+    BufferLength - the size of the buffer
 
-	Return Value:
+Return Value:
 
-			The length of the string returned in Buffer.
+    The length of the string returned in Buffer.
 
-	--*/
+--*/
 {
-	ULONG returnLength = 0;
+  ULONG returnLength = 0;
 
-	if (BufferLength < TIME_BUFFER_LENGTH) {
+  if (BufferLength < TIME_BUFFER_LENGTH) {
 
-		//
-		// Buffer is too short so exit
-		//
+    //
+    // Buffer is too short so exit
+    //
 
-		return 0;
-	}
+    return 0;
+  }
 
-	returnLength = sprintf_s(Buffer,
-		BufferLength,
-		"%02d:%02d:%02d:%03d",
-		SystemTime->wHour,
-		SystemTime->wMinute,
-		SystemTime->wSecond,
-		SystemTime->wMilliseconds);
+  returnLength = sprintf_s(Buffer,
+    BufferLength,
+    "%02d:%02d:%02d:%03d",
+    SystemTime->wHour,
+    SystemTime->wMinute,
+    SystemTime->wSecond,
+    SystemTime->wMilliseconds);
 
-	return returnLength;
+  return returnLength;
 }
 
 
 BOOL
 FileDump(
-	_In_ PRECORD_DATA RecordData,
-	_In_ HANDLE File
-	)
-	/*++
-	Routine Description:
+  _In_ PRECORD_DATA RecordData,
+  _In_ HANDLE File
+)
+/*++
+Routine Description:
 
-			Prints a Data log record to the specified file.  The output is in a tab
-			delimited format with the fields in the following order:
+    Prints a Data log record to the specified file.  The output is in a tab
+    delimited format with the fields in the following order:
 
-			SequenceNumber, OriginatingTime, CompletionTime, CallbackMajorId, CallbackMinorId,
-			Flags, NoCache, Paging I/O, Synchronous, Synchronous paging, FileName,
-			ReturnStatus, FileName
+    SequenceNumber, OriginatingTime, CompletionTime, CallbackMajorId, CallbackMinorId,
+    Flags, NoCache, Paging I/O, Synchronous, Synchronous paging, FileName,
+    ReturnStatus, FileName
 
-	Arguments:
+Arguments:
 
-			RecordData - the Data record to print
-			File - the file to print to
+    RecordData - the Data record to print
+    File - the file to print to
 
-	Return Value:
+Return Value:
 
-			None.
+    None.
 
-	--*/
+--*/
 {
-	DWORD BytesWritten = 0;
-	BOOL Result = TRUE;
-	DWORD BytesToWrite = 0;
-	
-	BytesToWrite = RecordData->RecCount * sizeof(nar_record);
+  DWORD BytesWritten = 0;
+  BOOL Result = TRUE;
+  DWORD BytesToWrite = 0;
 
-	Result = WriteFile(File, &RecordData->P, BytesToWrite, &BytesWritten, 0);
-	if (!SUCCEEDED(Result) || BytesWritten != BytesToWrite) {
-		printf("Error occured!\n");
-		printf("Bytes written -> %d, BytesToWrite -> %d\n", BytesWritten, BytesToWrite);
-		printf("Result => %d\n", Result);
-		Result = FALSE;
-	}
+  BytesToWrite = RecordData->RecCount * sizeof(nar_record);
 
-	return Result;
+  Result = WriteFile(File, &RecordData->P, BytesToWrite, &BytesWritten, 0);
+  if (!SUCCEEDED(Result) || BytesWritten != BytesToWrite) {
+    printf("Error occured!\n");
+    printf("Bytes written -> %d, BytesToWrite -> %d\n", BytesWritten, BytesToWrite);
+    printf("Result => %d\n", Result);
+    Result = FALSE;
+  }
+
+  return Result;
 }
 
 
 VOID
 ScreenDump(
-	_In_ ULONG SequenceNumber,
-	_In_ WCHAR CONST* Name,
-	_In_ PRECORD_DATA RecordData
-	)
-	/*++
-	Routine Description:
+  _In_ ULONG SequenceNumber,
+  _In_ WCHAR CONST* Name,
+  _In_ PRECORD_DATA RecordData
+)
+/*++
+Routine Description:
 
-			Prints a Irp log record to the screen in the following order:
-			SequenceNumber, OriginatingTime, CompletionTime, IrpMajor, IrpMinor,
-			Flags, IrpFlags, NoCache, Paging I/O, Synchronous, Synchronous paging,
-			FileName, ReturnStatus, FileName
+    Prints a Irp log record to the screen in the following order:
+    SequenceNumber, OriginatingTime, CompletionTime, IrpMajor, IrpMinor,
+    Flags, IrpFlags, NoCache, Paging I/O, Synchronous, Synchronous paging,
+    FileName, ReturnStatus, FileName
 
-	Arguments:
+Arguments:
 
-			SequenceNumber - the sequence number for this log record
-			Name - the file name to which this Irp relates
-			RecordData - the Irp record to print
+    SequenceNumber - the sequence number for this log record
+    Name - the file name to which this Irp relates
+    RecordData - the Irp record to print
 
-	Return Value:
+Return Value:
 
-			None.
+    None.
 
-	--*/
+--*/
 {
 
-	
-		printf("%S\t", Name);
-		if (RecordData->Error == NAR_ERR_TRINITY) {
-			printf("Holy Trinity error!\n");
-		}
-		else if (RecordData->Error == NAR_ERR_REG_OVERFLOW) {
-			printf("REG OVERFLOW!!! error ! \n");
-		}
-		else if (RecordData->Error == NAR_ERR_REG_CANT_FILL) {
-			printf("CANT_FILL error!\n");
-		}
-		else if (RecordData->Error == NAR_ERR_ALIGN) {
-			printf("Align error!\n");
-		}
-		else if (RecordData->Error == NAR_ERR_MAX_ITER) {
-			printf("MAX_ITER ERROR!\n");
-		}
-		else if (RecordData->Error == NAR_ERR_OVERFLOW) {
-			printf("OVERFLOW ERROR\n");
-		}
-		else {
-			for (int i = 0; i < RecordData->RecCount; i++) {
-				printf("%d\t\%d\t",RecordData->P[i].S, RecordData->P[i].L);
-			}
-			printf("\n");
-		}
+
+  printf("%S\t", Name);
+  if (RecordData->Error == NAR_ERR_TRINITY) {
+    printf("Holy Trinity error!\n");
+  }
+  else if (RecordData->Error == NAR_ERR_REG_OVERFLOW) {
+    printf("REG OVERFLOW!!! error ! \n");
+  }
+  else if (RecordData->Error == NAR_ERR_REG_CANT_FILL) {
+    printf("CANT_FILL error!\n");
+  }
+  else if (RecordData->Error == NAR_ERR_ALIGN) {
+    printf("Align error!\n");
+  }
+  else if (RecordData->Error == NAR_ERR_MAX_ITER) {
+    printf("MAX_ITER ERROR!\n");
+  }
+  else if (RecordData->Error == NAR_ERR_OVERFLOW) {
+    printf("OVERFLOW ERROR\n");
+  }
+  else {
+    for (int i = 0; i < RecordData->RecCount; i++) {
+      printf("%d\t\%d\t", RecordData->P[i].S, RecordData->P[i].L);
+    }
+    printf("\n");
+  }
 
 }
 
