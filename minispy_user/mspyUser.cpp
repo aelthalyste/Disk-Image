@@ -27,7 +27,6 @@ _Analysis_mode_(_Analysis_code_type_user_code_)
 #include <cstdio>
 #include <windows.h>
 #include <assert.h>
-#include "mspyLog.h"
 #include <strsafe.h>
 #include <functional>
 #include <winioctl.h>
@@ -50,6 +49,7 @@ _Analysis_mode_(_Analysis_code_type_user_code_)
 #include <streambuf>
 #include <sstream>
 
+#include "mspyLog.h"
 
 VOID
 DisplayError(

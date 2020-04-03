@@ -76,18 +76,22 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>$(SolutionDir)\build\$(ProjectName)\$(Platform)\$(ConfigurationName)\</OutDir>
     <IntDir>$(SolutionDir)\bin\$(ProjectName)\$(Platform)\$(ConfigurationName)\</IntDir>
+    <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <OutDir>$(SolutionDir)\build\$(ProjectName)\$(Platform)\$(ConfigurationName)\</OutDir>
     <IntDir>$(SolutionDir)\bin\$(ProjectName)\$(Platform)\$(ConfigurationName)\</IntDir>
+    <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <OutDir>$(SolutionDir)\build\$(ProjectName)\$(Platform)\$(ConfigurationName)\</OutDir>
     <IntDir>$(SolutionDir)\bin\$(ProjectName)\$(Platform)\$(ConfigurationName)\</IntDir>
+    <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>$(SolutionDir)\build\$(ProjectName)\$(Platform)\$(ConfigurationName)\</OutDir>
     <IntDir>$(SolutionDir)\bin\$(ProjectName)\$(Platform)\$(ConfigurationName)\</IntDir>
+    <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -98,8 +102,10 @@
       <AdditionalIncludeDirectories>$(SolutionDir)/minispy_user/;$(SolutionDir)/inc/</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>minispy.lib;FltLib.lib;vssapi.lib</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)\build\minispy_user\$(Platform)\$(Configuration)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>FltLib.lib;vssapi.lib;</AdditionalDependencies>
+      <AdditionalLibraryDirectories>
+      </AdditionalLibraryDirectories>
+      <TreatLinkerWarningAsErrors>true</TreatLinkerWarningAsErrors>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -111,8 +117,10 @@
       <AdditionalIncludeDirectories>$(SolutionDir)/minispy_user/;$(SolutionDir)/inc/</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>minispy.lib;FltLib.lib</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)\build\minispy_user\$(Platform)\$(Configuration)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>FltLib.lib;vssapi.lib;</AdditionalDependencies>
+      <AdditionalLibraryDirectories>
+      </AdditionalLibraryDirectories>
+      <TreatLinkerWarningAsErrors>true</TreatLinkerWarningAsErrors>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -124,8 +132,10 @@
       <AdditionalIncludeDirectories>$(SolutionDir)/minispy_user/;$(SolutionDir)/inc/</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>minispy.lib;FltLib.lib</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)\build\minispy_user\$(Platform)\$(Configuration)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>FltLib.lib;vssapi.lib;</AdditionalDependencies>
+      <AdditionalLibraryDirectories>
+      </AdditionalLibraryDirectories>
+      <TreatLinkerWarningAsErrors>true</TreatLinkerWarningAsErrors>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -137,8 +147,10 @@
       <AdditionalIncludeDirectories>$(SolutionDir)/minispy_user/;$(SolutionDir)/inc/</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>minispy.lib;FltLib.lib;vssapi.lib</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)\build\minispy_user\$(Platform)\$(Configuration)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>FltLib.lib;vssapi.lib;</AdditionalDependencies>
+      <AdditionalLibraryDirectories>
+      </AdditionalLibraryDirectories>
+      <TreatLinkerWarningAsErrors>true</TreatLinkerWarningAsErrors>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
