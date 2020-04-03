@@ -41,6 +41,7 @@ Environment:
 #define NAR_ERR_MAX_ITER 7
 #define NAR_ERR_OVERFLOW 8
 
+
 enum rec_or {
   LEFT = 0,
   RIGHT = 1,

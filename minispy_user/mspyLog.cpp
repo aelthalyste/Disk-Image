@@ -28,12 +28,12 @@ _Analysis_mode_(_Analysis_code_type_user_code_)
 #include <wchar.h>
 
 #include "mspyLog.h"
+#include "minispy.h"
 
 #define TIME_BUFFER_LENGTH 20
 #define TIME_ERROR         "time error"
 
 #define POLL_INTERVAL   10     // 10 milliseconds
-
 
 BOOLEAN
 TranslateFileTag(
