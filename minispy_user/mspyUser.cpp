@@ -52,6 +52,7 @@ _Analysis_mode_(_Analysis_code_type_user_code_)
 #include "mspyLog.h"
 
 
+
 void
 MergeRegions(data_array<nar_record>* R) {
     UINT32 MergedRecordsIndex = 0;
@@ -632,12 +633,10 @@ ReadFBMetadata(HANDLE F) {
 
 
 BOOLEAN
-CopyData(HANDLE S, HANDLE D, ULONGLONG Len, DWORD BufSize) {
+CopyData(HANDLE S, HANDLE D, ULONGLONG Len) {
     BOOLEAN Return = TRUE;
-    if (BufSize == 0) {
-        printf("Buffer size can't be null\n");
-        return FALSE;
-    }
+    
+    BufSize = 1024*1024*64; //64MB
     
     void* Buffer = malloc(BufSize);
     if (Buffer != NULL) {
@@ -913,32 +912,10 @@ RestoreMFT(restore_inf* R, HANDLE VolumeHandle) {
                         goto Exit;
                     }
                     
-#if 0
-                    for (int j = 0; j < Metadata.Data[i].Len; j++) {
-                        DWORD BytesOperated = 0;
-                        Result = ReadFile(MFTHandle, Buffer, BufferSize, &BytesOperated, 0);
-                        if (!SUCCEEDED(Result) || BytesOperated != BufferSize) {
-                            printf("Cant read from mft file\n");
-                            printf("Bytes read -> %d\n", BytesOperated);
-                            printf("Buffersize %d\n", BufferSize);
-                            DisplayError(GetLastError());
-                            goto Exit;
-                        }
-                        
-                        Result = WriteFile(VolumeHandle, Buffer, BufferSize, &BytesOperated, 0);
-                        if (!SUCCEEDED(Result) || BytesOperated != BufferSize) {
-                            printf("Cant write to volume, %S \n", MFTFileName.c_str());
-                            printf("Bytes written %I64d\n", BytesOperated);
-                            DisplayError(GetLastError());
-                            goto Exit;
-                        }
-                    }
-#endif
-                    
-                } //End of mft-copy operation
+                }
                 Return = TRUE;
                 
-            }//if readfile end
+            }
             else {
                 printf("Couldnt read mft metadata\n");
                 DisplayError(GetLastError());
@@ -987,19 +964,20 @@ InitVolumeInf(volume_backup_inf* VolInf, wchar_t Letter, BackupType Type) {
     //TODO, initialize VolInf->PartitionName
     
     BOOLEAN Return = FALSE;
-    Assert(VolInf != NULL);
+    
     VolInf->Letter = Letter;
-    VolInf->IsActive = FALSE;
+    VolInf->FilterFlags.IsActive = FALSE;
     VolInf->FullBackupExists = FALSE;
     VolInf->BT = Type;
     
-    VolInf->SaveToFile = TRUE;
-    VolInf->FlushToFile = FALSE;
+    VolInf->FilterFlags.SaveToFile = TRUE;
+    VolInf->FilterFlags.FlushToFile = FALSE;
     
     VolInf->CurrentLogIndex = 0;
     
     VolInf->ClusterSize = 0;
     VolInf->RecordsMem.clear();
+    VolInf->VSSPTR = 0;
     
     wchar_t Temp[] = L"!:\\";
     Temp[0] = VolInf->Letter;
@@ -1136,8 +1114,9 @@ inline BOOL
 NarCreateThreadCom(
                    PLOG_CONTEXT Context
                    ) {
-    Assert(Context->Thread == NULL);
-    Assert(Context->ShutDown == NULL);
+    if (Context->Thread != NULL || Context->ShutDown != NULL) {
+        printf("THREAD OR SHUTDOWN WASNT NULL\n");
+    }
     
     BOOL Result = FALSE;
     
@@ -1156,6 +1135,7 @@ NarCreateThreadCom(
                                        0,
                                        0);
         if (Context->Thread != NULL) {
+            printf("Communication thread created successfully\n");
             Result = TRUE;
         }
         else {
@@ -1285,8 +1265,9 @@ AddVolumeToTrack(PLOG_CONTEXT Context, wchar_t Letter, BackupType Type) {
     if (InitVolumeInf(&VolInf, Letter, Type)) {
         ErrorOccured = FALSE;
     }
+    printf("Volume initialized\n");
     Context->Volumes.Insert(VolInf);
-    
+    printf("Volume inserted to the list\n");
     return !ErrorOccured;
 }
 
@@ -1300,7 +1281,7 @@ DetachVolume(volume_backup_inf* VolInf) {
     Result = FilterDetach(MINISPY_NAME, Temp.c_str(), 0);
     
     if (!SUCCEEDED(Result)) {
-        VolInf->IsActive = FALSE;
+        VolInf->FilterFlags.IsActive = FALSE;
     }
     else {
         printf("Can't detach filter\n");
@@ -1327,7 +1308,7 @@ AttachVolume(volume_backup_inf* VolInf, BOOLEAN SetActive) {
     
     Result = FilterAttach(MINISPY_NAME, Temp, 0, 0, 0);
     if (SUCCEEDED(Result) || Result == ERROR_FLT_INSTANCE_NAME_COLLISION) {
-        VolInf->IsActive = SetActive;
+        VolInf->FilterFlags.IsActive = SetActive;
         Return = TRUE;
     }
     else {
@@ -1481,8 +1462,8 @@ TerminateBackup(volume_backup_inf* V, BOOLEAN Succeeded) {
             
         }
         
-        V->FlushToFile = TRUE;
-        V->SaveToFile = TRUE;
+        V->FilterFlags.FlushToFile = TRUE;
+        V->FilterFlags.SaveToFile = TRUE;
         
     }
     
@@ -1566,7 +1547,7 @@ SetFullRecords(volume_backup_inf* V) {
     
     ShadowPath[0] = V->Letter;
     
-    V->SaveToFile = TRUE;
+    V->FilterFlags.SaveToFile = TRUE;
     
     ShadowPath = GetShadowPath(ShadowPath.c_str(), V->VSSPTR);
     if (InitNewLogFile(V)) {
@@ -1717,10 +1698,82 @@ SetIncRecords(volume_backup_inf* VolInf) {
     return Result;
 }
 
+
+
+
 BOOLEAN
-SetDiffRecords(volume_backup_inf* VolInf) {
-    //TODO
+SetDiffRecords(volume_backup_inf* V) {
     BOOLEAN Result = FALSE;
+    
+    HANDLE* F = (HANDLE*)malloc(sizeof(HANDLE) * (V->CurrentLogIndex + 1));
+    DWORD* FS = (DWORD*)malloc(sizeof(DWORD) * (V->CurrentLogIndex + 1));
+    memset(FS, 0, sizeof(DWORD) * (V->CurrentLogIndex + 1));
+    memset(F, 0, sizeof(HANDLE) * (V->CurrentLogIndex + 1));
+    
+    DWORD TotalFileSize = 0;
+    printf("SetDiffRecords, array count allocated V->CurrentLogIndex + 1");
+    
+    for(int i = 0;  i<= V->CurrentLogIndex; i++){
+        F[i] = CreateFileW(GenerateDBMetadataFileName(V->Letter,i).c_str(),
+                           GENERIC_READ,0,0,OPEN_EXISTING,0,0
+                           );
+        if(F == INVALID_HANDLE_VALUE){
+            return FALSE;
+        }
+        DWORD Temp = GetFileSize(F,0);
+        TotalFileSize += Temp;
+        FS[i] = Temp;
+        
+    }
+    
+    if(V->Stream.Records.Data != NULL){
+        // TODO(Batuhan): Log error
+    }
+    V->Stream.Records.Data = (nar_record*)malloc(TotalFileSize);
+    V->Stream.Records.Count = 0;
+    
+    DWORD LogRead = 0;
+    for(int i = 0; i<= V->CurrentLogIndex; i++){
+        std::wstring FN = GenerateDBMetadataFileName(V->Letter,i).c_str();
+        
+        DWORD BytesRead = 0;
+        if(SetFilePointer(F[i],0,0,0) == 0){
+            
+            if(ReadFile(F[i],&V->Stream.Records.Data[LogRead],FS[i],&BytesRead,0)
+               && BytesRead == FS[i]){
+                
+                V->Stream.Records.Count += FS[i]/sizeof(nar_record);
+                LogRead += FS[i]/sizeof(nar_record);
+                
+            }
+            else{
+                
+                printf("Unable to read log file\n");
+                printf("File name %S\t FileSize %d\t BytesRead %d\n",FN.c_str(),FS[i],BytesRead);
+                DisplayError(GetLastError());
+                goto TERMINATE;
+                // TODO(Batuhan): error
+                
+            }
+            
+        }else{
+            printf("Unable to set file pointer to zero -> %S\n",FN.c_str());
+            goto TERMINATE;
+            // TODO(Batuhan): error
+        }
+        
+    }
+    
+    Result = TRUE;
+    TERMINATE:
+    CLEANMEMORY(FS);
+    CLEANMEMORY(F);
+    
+    if(Result == TRUE){
+        qsort(V->Stream.Records.Data, V->Stream.Records.Count,sizeof(nar_record),CompareNarRecords);
+        MergeRegions(&V->Stream.Records);
+    }
+    //TODO
     return Result;
 }
 
@@ -1732,7 +1785,7 @@ SetupStreamHandle(volume_backup_inf* VolInf) {
         printf("volume_backup_inf is null\n");
         return FALSE;
     }
-    if (VolInf->VSSPTR.p != NULL) {
+    if (VolInf->VSSPTR != NULL) {
         printf("VSS pointer isn't null\n");
         return FALSE;
     }
@@ -1748,9 +1801,9 @@ SetupStreamHandle(volume_backup_inf* VolInf) {
     }
     printf("Volume detached !\n");
     
-    VolInf->FlushToFile = FALSE;
-    VolInf->SaveToFile = FALSE;
-    VolInf->IsActive = TRUE;
+    VolInf->FilterFlags.FlushToFile = FALSE;
+    VolInf->FilterFlags.SaveToFile = FALSE;
+    VolInf->FilterFlags.IsActive = TRUE;
     
     {
         WCHAR Temp[] = L"!:\\";
@@ -2048,7 +2101,7 @@ RestoreVolume(PLOG_CONTEXT Context, restore_inf* RestoreInf) {
     CLEANHANDLE(FBackupMDFile);
     
     
-    WCHAR VTRNameTemp[] = L"\\\\.\\ :";
+    WCHAR VTRNameTemp[] = L"\\\\.\\ :",;
     VTRNameTemp[lstrlenW(VTRNameTemp) - 2] = RestoreInf->TargetLetter;
     VolumeToRestore = CreateFileW(
                                   VTRNameTemp,
@@ -2200,6 +2253,7 @@ SetupVSS() {
         DisplayError(GetLastError());
         Return = FALSE;
     }
+    
     hResult = CoInitializeSecurity(
                                    NULL,                           //  Allow *all* VSS writers to communicate back!
                                    -1,                             //  Default COM authentication service
@@ -2221,6 +2275,287 @@ SetupVSS() {
     return Return;
 }
 
+BOOLEAN
+ConnectDriver(PLOG_CONTEXT Ctx){
+    BOOLEAN Result = FALSE;
+    DWORD PID = GetCurrentProcessId();
+    HRESULT hResult = FilterConnectCommunicationPort(MINISPY_PORT_NAME,
+                                                     0,
+                                                     &PID,sizeof(PID),
+                                                     NULL,&Ctx->Port);
+    if (!IS_ERROR(hResult)) {
+        
+        if(NarCreateThreadCom(Ctx)){
+            Result = TRUE;
+        }
+        else{
+            CloseHandle(Ctx->Port);
+            printf("Can't create thread to communicate with driver\n");
+            // TODO(Batuhan):
+        }
+        
+    }
+    else{
+        printf("Could not connect to filter: 0x%08x\n", hResult);
+        printf("Program PID is %d\n",PID);
+        DisplayError(hResult);
+    }
+    
+    return Result;
+}
+
+
+/*
+// TODO(Batuhan): negative error values
+Errors:
+- Can't open volume
+- Can't lock volume
+
+*/
+BOOLEAN
+OfflineRestore(restore_inf *Inf){
+    BOOLEAN Result = FALSE;
+    HRESULT hResult = 0;
+    
+    // TODO(Batuhan):  test this
+    int TempLetter  = (int)Inf->TargetLetter;
+    
+    DWORD Drives = DrGetLogicalDrives();
+    
+    if (Drives & 1<<(TempLetter - 65) == Drives){
+        // TODO(Batuhan): exist
+        
+    }
+    else{
+        // TODO(Batuhan): volume does not exist
+    }
+    
+    // TODO(Batuhan): case target volume exists
+    // TODO(Batuhan): case target volume doesnt exist
+    // TODO(Batuhan): not enough space
+    // TODO(Batuhan): can't lock volume
+    // TODO(Batuhan): assert Inf.Stream is empty
+    
+    /*
+ NOTE(Batuhan): Volume handle and stream structure will be available for Offline##Restore functions, since there is another steps required to complete restore operation, diff and incremental backup functions must take care of rest of the operation.
+    Stream struct will be ready for fullbackup operation, nothing more
+*/
+    
+    
+    HANDLE FullFile = CreateFileW(
+                                  GenerateFBFileName(Inf->TargetLetter).c_str();
+                                  GENERIC_READ,
+                                  0,0,OPEN_EXISTING,0,0);
+    
+    if(FullFile == INVALID_HANDLE_VALUE){
+        printf("Can't fullbackup file\n");
+        DisplayError(GetLastError());
+        goto TERMINATE;
+    }
+    
+    wchar Temp[] = L"\\\\.\\ :";
+    Temp[lstrlenW(Temp) - 2] = Inf->TargetLetter;
+    HANDLE VolumeToRestore = CreateFileW(Temp,
+                                         GENERIC_READ|GENERIC_WRITE,
+                                         FILE_SHARE_READ,
+                                         0,OPEN_EXISTING,0,0
+                                         );
+    
+    if(VolumeToRestore == INVALID_HANDLE_VALUE){
+        printf("Unable to open volume to restore, %S\n",Temp);
+        DisplayError(GetLastError());
+        goto TERMINATE;
+    }
+    
+    hResult = DeviceIOControl(VolumeToRestore,
+                              FSCTL_LOCK_VOLUME,
+                              0,0,0,0,0,0);
+    
+    if(!SUCCEEDED(hResult)){
+        printf("Can't lock volume %S\n",Temp);
+        DisplayError(GetLastError());
+        goto TERMINATE;
+    }
+    
+    
+    // NOTE(Batuhan): Since every backup type has to restore fullbackup first, do that operation here, then call spesific restore function
+    
+    HANDLE FBMetadata = CreateFile(GenerateFBMetadataFileName(Inf->SrcLetter),
+                                   GENERIC_READ,
+                                   FILE_SHARE_READ,
+                                   0,OPEN_EXISTING,0,0);
+    
+    if(FBMetadata != INVALID_HANDLE_VALUE){
+        UINT32 FileSize = GetFileSize(FBMetadataFile,0);
+        UINT32 BytesRead = 0;
+        data_array<nar_record> FullRecords;
+        
+        FullRecords.Data = (nar_record*)malloc(FileSize);
+        FullRecords.Count = FileSize/sizeof(nar_record);
+        if(FullRecords.Data == NULL){
+            printf("FATAL: Can't allocate memory !\n");
+            goto TERMINATE;
+        }
+        
+        if(ReadFile(FBMetadataFile,FullRecords.Data,FileSize,&BytesRead,0) && BytesRead == FileSize){
+            
+            
+            for(int i = 0; i<FullRecords.Count;i++){
+                
+                LARGE_INTEGER MoveTo;
+                LARGE_INTEGER NewFilePointer = {0};
+                
+                MoveTo.QuadPart = (ULONGLONG)Inf->ClusterSize*(ULONGLONG)FullRecords.Data[i].StartPos;
+                BOOLEAN R = SetFilePointerEx(VolumeToRestore, MoveTo,
+                                             &NewFilePointer,FILE_BEGIN);
+                
+                if(R && NewFilePointer.QuadPart == MoveTo.QuadPart){
+                    ULONGLONG CopySize = (ULONGLONG)FullRecords.Data[i].Len * (ULONGLONG)Inf->ClusterSize;
+                    if(!CopyData(FullFile,VolumeToRestore,CopySize)){
+                        printf("Unable to copy fullbackup file to volume\n");
+                        printf("Tried to copy %I64d, to volume offset %I64d\n",CopySize,MoveTo.QuadPart);
+                        goto TERMINATE;
+                    }
+                    
+                }
+                else{
+                    printf("Can't set file pointer to %I64d, instead set to %I64d\n",MoveTo.QuadPart,NewFilePointer.QuadPart);
+                    DisplayError(GetLastError());
+                    goto TERMINATE;
+                    // TODO(Batuhan): Error
+                }
+                
+            }
+            
+            
+            if(!Inf->ToFull){
+                // TODO(Batuhan): Close file handles ?
+                CLEANMEMORY(FullRecords.Data);
+                
+                if(Inf->Type == BackupType::Diff){
+                    OfflineDiffRestore(VolumeToRestore,Inf);
+                }
+                else if(Inf->Type == BackupType::Inc){
+                    OfflineIncRestore(VolumeToRestore,Inf);
+                }
+                
+            }
+            
+        }
+        else{
+            printf("Unable to read fullbackup metadat file\n"
+                   "Metadata size -> %d, Read -> %d\n",FileSize,BytesRead);
+            DisplayError(GetLastError());
+        }
+        
+        
+    }
+    
+    
+    Result = TRUE;
+    TERMINATE:
+    CLEANMEMORY(FullRecords.Data);
+    CLEANHANDLE(VolumeToRestore);
+    CLEANHANDLE(FullFile);
+    CLEANHANDLE(FBMetadataFile);
+    
+    return Result;
+}
+
+
+BOOLEAN
+OfflineIncRestore(restore_inf *R, HANDLE V){
+    BOOLEAN Result = FALSE;
+    
+    for(int i= 0; i< R->Version; i++){
+        
+        std::wstring FN = GenerateDBMetadataFileName(R->SrcLetter,i);
+        
+        HANDLE MetadataFile = CreateFileW(FN.c_str(),
+                                          GENERIC_READ,0,0,
+                                          OPEN_EXISTING,0,0);
+        
+        
+        if(MetadataFile != INVALID_HANDLE_VALUE){
+            UINT32 FileSize = GetFileSize(MetadataFile,0);
+            
+            data_array<nar_record> Records = {0,0};
+            Records.Data = (nar_record*)malloc(FileSize);
+            Records.Count = FileSize/sizeof(nar_record);
+            
+            if(Records.Data == NULL){
+                printf("FATAL : Can't allocate memory \n");
+                goto TERMINATE;
+            }
+            
+            HANDLE BackupFile = GenerateDBFileName(R->SrcLetter,i);
+            if(BackupFile != INVALID_HANDLE_VALUE){
+                
+                
+                for(int j= 0;j<Records.Count; j++){
+                    
+                    LARGE_INTEGER MoveTo = {0};
+                    LARGE_INTEGER NewFilePointer = {0};
+                    MoveTo = (ULONGLONG)Records.Data[j].StartPos*(ULONGLONG)R->ClusterSize;
+                    
+                    BOOL Temp = SetFilePointerEx(V,MoveTo,&NewFilePointer,FILE_BEGIN);
+                    
+                    if(Temp && NewFilePointer.QuadPart == MoveTo.QuadPart){
+                        ULONGLONG CopySize = (ULONGLONG)Records.Data[i].Len*(ULONGLONG)R->ClusterSize;
+                        
+                        if(!CopyData(BackupFile,V,CopySize)){
+                            printf("Unable to copy data from backup file to volume\n"
+                                   "Tried to copy %I64d to volume offset %I64d\n",CopySize,MoveTo.QuadPart);
+                            goto TERMINATE;
+                        }
+                        
+                    }
+                    else{
+                        printf("Cant set file pointer to %I64d, instead set to %I64d\n",MoveTo.QuadPart,NewFilePointer.QuadPart);
+                        DisplayError(GetLastError());
+                        goto TERMINATE;
+                        // TODO(Batuhan): error
+                    }
+                    
+                }
+                
+            }
+            else{
+                printf("Cant open backup file %S\n");
+                // TODO(Batuhan): file name
+                DisplayError(GetLastError());
+                goto TERMINATE;
+            }
+            CLEANHANDLE(BackupFile);
+            
+        }
+        else{
+            printf("Cant open metadata file %S\n",FN.c_str());
+            DisplayError(GetLastError());
+            goto TERMINATE;
+        }
+        
+        UINT32 FileSize = GetFileSize(MetadataFile,0);
+        CLEANHANDLE(MetadataFile);
+        
+    }
+    
+    RestoreMFT(R,V);
+    
+    TERMINATE:
+    CLEANMEMORY(Records.Data);
+}
+
+BOOLEAN
+OfflineDiffRestore(restore_inf *R, HANDLE V){
+    
+}
+
+BOOLEAN
+OfflineFullRestore(){
+    
+}
+
 #if 0
 int
 wmain(
@@ -2228,9 +2563,30 @@ wmain(
       WCHAR* argv[]
       ) {
     
+    wchar_t Temp[512];
+    
+    QueryDosDeviceW(L"C:", Temp, 512);
+    printf("%S\n", Temp);
+    
+#if 0
+    GetVolumeInformationA(
+                          LPCSTR  lpRootPathName,
+                          LPSTR   lpVolumeNameBuffer,
+                          DWORD   nVolumeNameSize,
+                          LPDWORD lpVolumeSerialNumber,
+                          LPDWORD lpMaximumComponentLength,
+                          LPDWORD lpFileSystemFlags,
+                          LPSTR   lpFileSystemNameBuffer,
+                          DWORD   nFileSystemNameSize
+                          );
+#endif
+    
+    
+    
     HRESULT hResult = S_OK;
     DWORD result;
     LOG_CONTEXT context = { 0 };
+    sizeof(L"\device\harddiskvolume6");
     
     context.ShutDown = NULL;
     context.Port = INVALID_HANDLE_VALUE;
@@ -2245,22 +2601,48 @@ wmain(
     //
     printf("Connecting to filter's port...\n");
     
+    DWORD PID = GetCurrentProcessId();
     hResult = FilterConnectCommunicationPort(MINISPY_PORT_NAME,
                                              0,
-                                             NULL,
-                                             0,
+                                             &PID,
+                                             sizeof(PID),
                                              NULL,
                                              &context.Port);
     if (IS_ERROR(hResult)) {
         
         printf("Could not connect to filter: 0x%08x\n", hResult);
         DisplayError(hResult);
-        goto Main_Exit;
+        return 0;
     }
     
-    NarCreateThreadCom(&context);
+    
+    if (NarCreateThreadCom(&context)) {
+        printf("Narcreatethreadcom started\n");
+        if (AddVolumeToTrack(&context, L'C', Diff)) {
+            volume_backup_inf* V = &context.Volumes.Data[0];
+            InitNewLogFile(&context.Volumes.Data[0]);
+            AttachVolume(V, TRUE);
+            
+            while (TRUE) {
+                std::string a;
+                std::cin >> a;
+                if (a == "q") return 0;
+                Sleep(50);
+            }
+            
+        }
+        else {
+            printf("Cant add vol to track\n");
+            return 0;
+        }
+    }
+    else {
+        printf("Cant create thread\n");
+        return 0;
+    }
     
     
+#if 0
     for (;;) {
         std::wstring Input = L"restore,E,N,1";
         std::wcin >> Input;
@@ -2327,6 +2709,7 @@ wmain(
         Sleep(50);
     }
     
+#endif
     Main_Cleanup:
     
     //
@@ -2346,7 +2729,6 @@ wmain(
     //
     
     WaitForSingleObject(context.ShutDown, INFINITE);
-    
     
     Main_Exit:
     

@@ -198,6 +198,8 @@ typedef struct _MINISPY_DATA {
 
     ULONG DebugFlags;
 
+    ULONG UserModePID;
+
 #if MINISPY_VISTA
 
     //

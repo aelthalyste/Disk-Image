@@ -274,6 +274,8 @@ Return Value
 
 	FLT_ASSERT(MiniSpyData.ClientPort == NULL);
 	MiniSpyData.ClientPort = ClientPort;
+	MiniSpyData.UserModePID = *((ULONG*)ConnectionContext);
+
 	return STATUS_SUCCESS;
 }
 
@@ -635,7 +637,9 @@ Return Value:
 	PUNICODE_STRING nameToUse;
 	NTSTATUS status;
 
-	if (Data->Iopb->TargetFileObject->Flags & FO_TEMPORARY_FILE) {
+	ULONG PID = FltGetRequestorProcessId(Data);
+
+	if (Data->Iopb->TargetFileObject->Flags & FO_TEMPORARY_FILE || PID == MiniSpyData.UserModePID) {
 		return 	FLT_PREOP_SUCCESS_NO_CALLBACK;
 	}
 

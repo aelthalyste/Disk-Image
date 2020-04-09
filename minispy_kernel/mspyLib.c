@@ -1358,7 +1358,7 @@ Return Value:
 
 	recordData->CallbackMajorId = IRP_MJ_TRANSACTION_NOTIFY;
 	recordData->CallbackMinorId = TxNotificationToMinorCode(TransactionNotification);
-
+	
 	recordData->DeviceObject = (FILE_ID)devObj;
 	recordData->FileObject = (FILE_ID)FltObjects->FileObject;
 	recordData->Transaction = (FILE_ID)FltObjects->Transaction;
