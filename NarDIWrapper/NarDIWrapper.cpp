@@ -47,7 +47,7 @@ namespace NarDIWrapper {
     
     DiskTracker::~DiskTracker() {
         //Do deconstructor things
-        
+        delete R;
         delete C;
     }
     
@@ -83,17 +83,30 @@ namespace NarDIWrapper {
     /*
 Version: -1 to restore full backup otherwise version number to restore(version number=0 first inc-diff backup)
 */
-    bool DiskTracker::CW_RestoreVolumeOffline(wchar_t TargetLetter, wchar_t SrcLetter, DWORD ClusterSize, BOOLEAN Version
-                                              BackupType Type){
+    bool DiskTracker::CW_RestoreVolumeOffline(wchar_t TargetLetter,
+                                              wchar_t SrcLetter,
+                                              UINT32 ClusterSize,
+                                              INT Version,
+                                              BackupType Type
+                                              ){
+        
+        R->TargetLetter = TargetLetter;
+        R->SrcLetter = SrcLetter;
+        R->ClusterSize = ClusterSize;
+        R->Type = Type;
+        
+        R->ToFull = FALSE;
+        R->Version = Version;
+        if(Version < 0){
+            R->ToFull = TRUE;
+            R->Version = 0;
+        }
+        return OfflineRestore(R);
         
     }
     
     bool DiskTracker::CW_ReadStream(void* Data, int Size) {
         return ReadStream(&C->Volumes.Data[StreamID], Data, Size);
-    }
-    
-    bool DiskTracker::CW_WriteStream(void* Data, int Size){
-        
     }
     
     bool DiskTracker::CW_TerminateBackup(bool Succeeded) {

@@ -636,7 +636,7 @@ BOOLEAN
 CopyData(HANDLE S, HANDLE D, ULONGLONG Len) {
     BOOLEAN Return = TRUE;
     
-    BufSize = 1024*1024*64; //64MB
+    UINT32 BufSize = 1024*1024*64; //64MB
     
     void* Buffer = malloc(BufSize);
     if (Buffer != NULL) {
@@ -800,7 +800,7 @@ SaveMFT(volume_backup_inf* VolInf, HANDLE VSSHandle, data_array<nar_record>* MFT
                 goto Exit;
             }
             
-            if (!CopyData(VSSHandle, MFTSaveFile, MFTLCN->Data[i].Len * VolInf->ClusterSize)) {
+            if (!CopyData(VSSHandle, MFTSaveFile, (ULONGLONG)MFTLCN->Data[i].Len * (ULONGLONG)VolInf->ClusterSize)) {
                 printf("Error occured while copying MFT file\n");
                 goto Exit;
             }
@@ -866,7 +866,7 @@ RestoreMFT(restore_inf* R, HANDLE VolumeHandle) {
     void* Buffer = malloc(BufferSize);
     
     HANDLE MFTMDHandle = INVALID_HANDLE_VALUE;
-    std::wstring MFTFileName = GenerateMFTFileName(R->SrcLetter, R->DiffVersion);
+    std::wstring MFTFileName = GenerateMFTFileName(R->SrcLetter, R->Version);
     HANDLE MFTHandle = CreateFileW(
                                    MFTFileName.c_str(),
                                    GENERIC_READ, 0, 0,
@@ -875,7 +875,7 @@ RestoreMFT(restore_inf* R, HANDLE VolumeHandle) {
     printf("Restoring MFT with file %S\n", MFTFileName.c_str());
     
     if (MFTHandle != INVALID_HANDLE_VALUE) {
-        std::wstring MFTMDFileName = GenerateMFTMetadataFileName(R->SrcLetter, R->DiffVersion);
+        std::wstring MFTMDFileName = GenerateMFTMetadataFileName(R->SrcLetter, R->Version);
         MFTMDHandle = CreateFileW(
                                   MFTMDFileName.c_str(),
                                   GENERIC_READ, 0, 0,
@@ -908,7 +908,7 @@ RestoreMFT(restore_inf* R, HANDLE VolumeHandle) {
                         goto Exit;
                     }
                     
-                    if (!CopyData(MFTHandle, VolumeHandle, Metadata.Data[i].Len * R->ClusterSize)) {
+                    if (!CopyData(MFTHandle, VolumeHandle, (ULONGLONG)Metadata.Data[i].Len * (ULONGLONG)R->ClusterSize)) {
                         goto Exit;
                     }
                     
@@ -964,6 +964,7 @@ InitVolumeInf(volume_backup_inf* VolInf, wchar_t Letter, BackupType Type) {
     //TODO, initialize VolInf->PartitionName
     
     BOOLEAN Return = FALSE;
+    VolInf->DOSName = 0; //Assigned NULL to pointer
     
     VolInf->Letter = Letter;
     VolInf->FilterFlags.IsActive = FALSE;
@@ -2316,15 +2317,16 @@ BOOLEAN
 OfflineRestore(restore_inf *Inf){
     BOOLEAN Result = FALSE;
     HRESULT hResult = 0;
-    
+    HANDLE VolumeToRestore = INVALID_HANDLE_VALUE;
+    HANDLE FBMetadata = INVALID_HANDLE_VALUE;
+
     // TODO(Batuhan):  test this
     int TempLetter  = (int)Inf->TargetLetter;
     
-    DWORD Drives = DrGetLogicalDrives();
+    DWORD Drives = GetLogicalDrives();
     
-    if (Drives & 1<<(TempLetter - 65) == Drives){
+    if ((Drives & (1 << (TempLetter - 65)))){
         // TODO(Batuhan): exist
-        
     }
     else{
         // TODO(Batuhan): volume does not exist
@@ -2341,9 +2343,8 @@ OfflineRestore(restore_inf *Inf){
     Stream struct will be ready for fullbackup operation, nothing more
 */
     
-    
     HANDLE FullFile = CreateFileW(
-                                  GenerateFBFileName(Inf->TargetLetter).c_str();
+                                  GenerateFBFileName(Inf->TargetLetter).c_str(),
                                   GENERIC_READ,
                                   0,0,OPEN_EXISTING,0,0);
     
@@ -2353,9 +2354,9 @@ OfflineRestore(restore_inf *Inf){
         goto TERMINATE;
     }
     
-    wchar Temp[] = L"\\\\.\\ :";
+    wchar_t Temp[] = L"\\\\.\\ :";
     Temp[lstrlenW(Temp) - 2] = Inf->TargetLetter;
-    HANDLE VolumeToRestore = CreateFileW(Temp,
+    VolumeToRestore = CreateFileW(Temp,
                                          GENERIC_READ|GENERIC_WRITE,
                                          FILE_SHARE_READ,
                                          0,OPEN_EXISTING,0,0
@@ -2367,7 +2368,7 @@ OfflineRestore(restore_inf *Inf){
         goto TERMINATE;
     }
     
-    hResult = DeviceIOControl(VolumeToRestore,
+    hResult = DeviceIoControl(VolumeToRestore,
                               FSCTL_LOCK_VOLUME,
                               0,0,0,0,0,0);
     
@@ -2378,17 +2379,19 @@ OfflineRestore(restore_inf *Inf){
     }
     
     
+    
+    data_array<nar_record> FullRecords;
+    
     // NOTE(Batuhan): Since every backup type has to restore fullbackup first, do that operation here, then call spesific restore function
     
-    HANDLE FBMetadata = CreateFile(GenerateFBMetadataFileName(Inf->SrcLetter),
+    FBMetadata = CreateFile(GenerateFBMetadataFileName(Inf->SrcLetter).c_str(),
                                    GENERIC_READ,
                                    FILE_SHARE_READ,
                                    0,OPEN_EXISTING,0,0);
     
     if(FBMetadata != INVALID_HANDLE_VALUE){
-        UINT32 FileSize = GetFileSize(FBMetadataFile,0);
-        UINT32 BytesRead = 0;
-        data_array<nar_record> FullRecords;
+        UINT32 FileSize = GetFileSize(FBMetadata,0);
+        DWORD BytesRead = 0;
         
         FullRecords.Data = (nar_record*)malloc(FileSize);
         FullRecords.Count = FileSize/sizeof(nar_record);
@@ -2397,7 +2400,7 @@ OfflineRestore(restore_inf *Inf){
             goto TERMINATE;
         }
         
-        if(ReadFile(FBMetadataFile,FullRecords.Data,FileSize,&BytesRead,0) && BytesRead == FileSize){
+        if(ReadFile(FBMetadata,FullRecords.Data,FileSize,&BytesRead,0) && BytesRead == FileSize){
             
             
             for(int i = 0; i<FullRecords.Count;i++){
@@ -2433,10 +2436,10 @@ OfflineRestore(restore_inf *Inf){
                 CLEANMEMORY(FullRecords.Data);
                 
                 if(Inf->Type == BackupType::Diff){
-                    OfflineDiffRestore(VolumeToRestore,Inf);
+                    OfflineDiffRestore(Inf,VolumeToRestore);
                 }
                 else if(Inf->Type == BackupType::Inc){
-                    OfflineIncRestore(VolumeToRestore,Inf);
+                    OfflineIncRestore(Inf,VolumeToRestore);
                 }
                 
             }
@@ -2457,7 +2460,7 @@ OfflineRestore(restore_inf *Inf){
     CLEANMEMORY(FullRecords.Data);
     CLEANHANDLE(VolumeToRestore);
     CLEANHANDLE(FullFile);
-    CLEANHANDLE(FBMetadataFile);
+    CLEANHANDLE(FBMetadata);
     
     return Result;
 }
@@ -2466,6 +2469,7 @@ OfflineRestore(restore_inf *Inf){
 BOOLEAN
 OfflineIncRestore(restore_inf *R, HANDLE V){
     BOOLEAN Result = FALSE;
+    data_array<nar_record> Records = {0,0};
     
     for(int i= 0; i< R->Version; i++){
         
@@ -2477,9 +2481,9 @@ OfflineIncRestore(restore_inf *R, HANDLE V){
         
         
         if(MetadataFile != INVALID_HANDLE_VALUE){
+            
             UINT32 FileSize = GetFileSize(MetadataFile,0);
             
-            data_array<nar_record> Records = {0,0};
             Records.Data = (nar_record*)malloc(FileSize);
             Records.Count = FileSize/sizeof(nar_record);
             
@@ -2488,15 +2492,18 @@ OfflineIncRestore(restore_inf *R, HANDLE V){
                 goto TERMINATE;
             }
             
-            HANDLE BackupFile = GenerateDBFileName(R->SrcLetter,i);
+            std::wstring FN = GenerateDBFileName(R->SrcLetter,i);
+            HANDLE BackupFile = CreateFileW(FN.c_str(),
+                                            GENERIC_READ,0,0,
+                                            OPEN_EXISTING,0,0);
+            
             if(BackupFile != INVALID_HANDLE_VALUE){
-                
                 
                 for(int j= 0;j<Records.Count; j++){
                     
                     LARGE_INTEGER MoveTo = {0};
                     LARGE_INTEGER NewFilePointer = {0};
-                    MoveTo = (ULONGLONG)Records.Data[j].StartPos*(ULONGLONG)R->ClusterSize;
+                    MoveTo.QuadPart = (ULONGLONG)Records.Data[j].StartPos*(ULONGLONG)R->ClusterSize;
                     
                     BOOL Temp = SetFilePointerEx(V,MoveTo,&NewFilePointer,FILE_BEGIN);
                     
@@ -2540,47 +2547,112 @@ OfflineIncRestore(restore_inf *R, HANDLE V){
         
     }
     
-    RestoreMFT(R,V);
     
+    if(RestoreMFT(R,V)){
+        Result = TRUE;
+    }
+    else{
+        printf("Can't restore MFT");
+    }
     TERMINATE:
     CLEANMEMORY(Records.Data);
+    
+    return Result;
 }
 
 BOOLEAN
 OfflineDiffRestore(restore_inf *R, HANDLE V){
     
-}
-
-BOOLEAN
-OfflineFullRestore(){
+    BOOLEAN Result = 0;
+    data_array<nar_record> Records = {0,0};
+    
+    std::wstring FN = GenerateDBMetadataFileName(R->SrcLetter,R->Version);
+    
+    HANDLE MetadataFile = CreateFileW(FN.c_str(),
+                                      GENERIC_READ,0,0,
+                                      OPEN_EXISTING,0,0);
+    
+    if(MetadataFile != INVALID_HANDLE_VALUE){
+        
+        UINT32 FileSize = GetFileSize(MetadataFile,0);
+        Records.Data = (nar_record*)malloc(FileSize);
+        Records.Count = FileSize/sizeof(nar_record);
+        
+        if(Records.Data == NULL){
+            printf("FATAL : Can't allocate memory\n");
+            goto TERMINATE;
+        }
+        
+        FN = GenerateDBFileName(R->SrcLetter,R->Version);
+        
+        HANDLE BackupFile = CreateFileW(FN.c_str(),
+                                        GENERIC_READ,0,0,
+                                        OPEN_EXISTING,0,0);
+        
+        if(BackupFile != INVALID_HANDLE_VALUE){
+            
+            for(int i = 0; i<Records.Count;i++){
+                
+                LARGE_INTEGER MoveTo = {0};
+                LARGE_INTEGER NewFilePointer = {0};
+                MoveTo.QuadPart = (ULONGLONG)Records.Data[i].StartPos*(ULONGLONG)R->ClusterSize;
+                
+                
+                if(SetFilePointerEx(V, MoveTo, &NewFilePointer, 0) && MoveTo.QuadPart == NewFilePointer.QuadPart){
+                    ULONGLONG CopySize = (ULONGLONG)Records.Data[i].Len*(ULONGLONG)R->ClusterSize;
+                    
+                    if(!CopyData(BackupFile,V,CopySize)){
+                        printf("Unable to copy data from backup file to volume\n"
+                               "Tried to copy %I64d to volume offset %I64d\n",CopySize,MoveTo.QuadPart);
+                        goto TERMINATE;
+                    }
+                    
+                }
+                
+            }
+            
+        }
+        else{
+            printf("Can't open backup file %S\n",FN.c_str());
+            DisplayError(GetLastError());
+        }
+        
+    }
+    else{
+        printf("Can't open metadata file %S\n",FN.c_str());
+        DisplayError(GetLastError());
+    }
+    
+    Result = TRUE;
+    TERMINATE:
+    CLEANMEMORY(Records.Data);
+    CLEANHANDLE(MetadataFile);
+    
+    
+    return Result;
     
 }
 
-#if 0
+
+#if 1
 int
 wmain(
       int argc,
       WCHAR* argv[]
       ) {
     
-    wchar_t Temp[512];
+    // TODO(Batuhan):  test this
+    int TempLetter  = (int)L'E';
+    DWORD Drives = GetLogicalDrives();
     
-    QueryDosDeviceW(L"C:", Temp, 512);
-    printf("%S\n", Temp);
+    if ((Drives & (1 << (TempLetter - 65)))) {
+      printf("hell\n");
+    }
+
     
-#if 0
-    GetVolumeInformationA(
-                          LPCSTR  lpRootPathName,
-                          LPSTR   lpVolumeNameBuffer,
-                          DWORD   nVolumeNameSize,
-                          LPDWORD lpVolumeSerialNumber,
-                          LPDWORD lpMaximumComponentLength,
-                          LPDWORD lpFileSystemFlags,
-                          LPSTR   lpFileSystemNameBuffer,
-                          DWORD   nFileSystemNameSize
-                          );
-#endif
-    
+    //wchar_t Temp[512];    
+    //QueryDosDeviceW(L"C:", Temp, 512);
+    //printf("%S\n", Temp);
     
     
     HRESULT hResult = S_OK;

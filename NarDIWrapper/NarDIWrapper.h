@@ -3,6 +3,7 @@
 #include <msclr/marshal.h>
 #include "mspyLog.h"
 #include "mspyUser.cpp"
+#include "mspyLog.cpp"
 
 namespace NarDIWrapper {
     
@@ -24,10 +25,9 @@ namespace NarDIWrapper {
         bool CW_AddToTrack(wchar_t Letter, int Type);
         bool CW_SetupStream(wchar_t Letter, StreamInfo^ StrInf);
         bool CW_ReadStream(void* Data, int Size);
-        void CW_CloseStream();
         bool CW_TerminateBackup(bool Succeeded);
         
-        bool CW_SetupRestoreStream();
+        bool CW_RestoreVolumeOffline(wchar_t TargetLetter,wchar_t SrcLetter,UINT32 ClusterSize,INT Version,BackupType Type);
         
         private:
         

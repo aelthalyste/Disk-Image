@@ -185,9 +185,8 @@ struct volume_backup_inf {
     
     //these are going to be fully backed up,
     //since driver does not support them
-    
+    wchar_t *DOSName;
     data_array<int> ExtraPartitions; //TODO this is placeholder
-    
     
     HANDLE LogHandle; //Handle to file that is logging volume's changes.
     UINT32 IncRecordCount; //Incremental change count of the volume, this value is will be reseted after every SUCCESSFUL backup operation
@@ -216,7 +215,7 @@ struct volume_backup_inf {
 struct restore_inf {
     wchar_t TargetLetter;
     wchar_t SrcLetter;
-    DWORD ClusterSize;
+    UINT32 ClusterSize;
     BOOLEAN ToFull;
     BOOLEAN Version;
     BackupType Type;
@@ -247,7 +246,6 @@ struct LOG_CONTEXT {
     
     BOOLEAN CleaningUp;
     HANDLE  ShutDown;
-    sizeof(L"\device\harddiskvolume6");
 };
 typedef LOG_CONTEXT* PLOG_CONTEXT;
 
@@ -255,23 +253,6 @@ typedef LOG_CONTEXT* PLOG_CONTEXT;
 //  Function prototypes
 //
 
-DWORD WINAPI
-RetrieveLogRecords(
-                   _In_ LPVOID lpParameter
-                   );
-
-BOOL
-FileDump(
-         _In_ PRECORD_DATA RecordData,
-         _In_ HANDLE File
-         );
-
-VOID
-ScreenDump(
-           _In_ ULONG SequenceNumber,
-           _In_ WCHAR CONST* Name,
-           _In_ PRECORD_DATA RecordData
-           );
 
 
 /*
@@ -347,6 +328,17 @@ SetDiffRecords(volume_backup_inf* VolInf);
 BOOLEAN
 TerminateBackup(volume_backup_inf* V, BOOLEAN Succeeded);
 
+BOOLEAN
+OfflineRestore(restore_inf *Inf);
+
+BOOLEAN
+OfflineIncRestore(restore_inf *Inf, HANDLE V);
+
+BOOLEAN
+OfflineDiffRestore(restore_inf *Inf, HANDLE V);
+
+
+
 
 
 BOOLEAN
@@ -406,8 +398,26 @@ DetachVolume(volume_backup_inf* VolInf);
 inline BOOLEAN
 AttachVolume(volume_backup_inf* VolInf, BOOLEAN SetActive = TRUE);
 
-bool
-ConnectDriver();
+DWORD WINAPI
+RetrieveLogRecords(
+  _In_ LPVOID lpParameter
+);
+
+BOOL
+FileDump(
+  _In_ PRECORD_DATA RecordData,
+  _In_ HANDLE File
+);
+
+VOID
+ScreenDump(
+  _In_ ULONG SequenceNumber,
+  _In_ WCHAR CONST* Name,
+  _In_ PRECORD_DATA RecordData
+);
+
+BOOLEAN
+ConnectDriver(PLOG_CONTEXT Ctx);
 
 #if 0
 inline rec_or
