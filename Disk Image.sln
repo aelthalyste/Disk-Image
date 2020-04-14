@@ -14,9 +14,6 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "minispy_user", "minispy_user\minispy_user.vcxproj", "{CF307DC8-96B6-4818-AB94-4EFF2176A02B}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NarDIWrapper", "NarDIWrapper\NarDIWrapper.vcxproj", "{FFE248C9-AE73-4719-892A-692975BB6B9C}"
-	ProjectSection(ProjectDependencies) = postProject
-		{CF307DC8-96B6-4818-AB94-4EFF2176A02B} = {CF307DC8-96B6-4818-AB94-4EFF2176A02B}
-	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DotNetTest", "DotNetTest\DotNetTest.csproj", "{3E9E7C4C-782C-440E-AC97-76F8B8FB3146}"
 	ProjectSection(ProjectDependencies) = postProject

@@ -93,8 +93,8 @@ RecordEqual(nar_record* N1, nar_record* N2) {
 #define FB_METADATA_FILE_NAME L"FMetadata_"
 #define DB_METADATA_FILE_NAME L"DMetadata_"
 
-#define DB_MFT_LCN_FILE_NAME L"DMFTLCN_"
-#define DB_MFT_FILE_NAME L"DBMFT_BINARY_"
+#define MFT_LCN_FILE_NAME L"MFTLCN_"
+#define MFT_FILE_NAME L"MFT_BINARY_"
 
 #define MAKE_W_STR(arg) L#arg
 
@@ -229,6 +229,14 @@ struct restore_inf {
     
 };
 
+struct StreamInf{
+  INT32 ClusterSize; //Size of clusters, requester has to call readstream with multiples of this size
+  INT32 ClusterCount; //In clusters
+  std::wstring FileName;
+  std::wstring MetadataFileName;
+};
+
+
 //
 //  Structure for managing current state.
 //
@@ -311,7 +319,7 @@ ReadStream(volume_backup_inf* VolInf, void* Buffer, int Size);
 
 
 BOOLEAN
-SetupStream(PLOG_CONTEXT Context, wchar_t Letter);
+SetupStream(PLOG_CONTEXT Context, wchar_t Letter, StreamInf *SI = NULL);
 
 BOOLEAN
 SetupStreamHandle(volume_backup_inf* V);
@@ -363,7 +371,7 @@ IsSameVolumes(const WCHAR* OpName, const WCHAR VolumeLetter);
 BOOL
 CompareNarRecords(const void* v1, const void* v2);
 
-std::wstring
+wchar_t*
 GetShadowPath(std::wstring Drive, CComPtr<IVssBackupComponents>& ptr);
 
 inline BOOL

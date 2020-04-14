@@ -290,8 +290,8 @@ Return Value:
                             
                         }
                         else {
-                            for (int i = 0; i < pRecordData->RecCount; i++) {
-                                V->RecordsMem.emplace_back(nar_record{ pRecordData->P[i].S, pRecordData->P[i].L });
+                            for (int k = 0; k < pRecordData->RecCount; k++) {
+                                V->RecordsMem.emplace_back(nar_record{ pRecordData->P[k].S, pRecordData->P[k].L });
                             }
                             
                         }
