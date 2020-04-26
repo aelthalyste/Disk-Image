@@ -93,12 +93,12 @@ namespace NarDIWrapper {
   bool DiskTracker::CW_SetupStream(wchar_t L, StreamInfo^ StrInf) {
     StreamInf SI = { 0 };
     if (SetupStream(C, L, &SI)) {
-      
+
       StrInf->ClusterCount = SI.ClusterCount;
       StrInf->ClusterSize = SI.ClusterSize;
       StrInf->FileName = gcnew String(SI.FileName.c_str());
       StrInf->MetadataFileName = gcnew String(SI.MetadataFileName.c_str());
-      
+
       int ID = GetVolumeID(C, L);
 
       return true;

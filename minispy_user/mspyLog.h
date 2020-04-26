@@ -34,12 +34,7 @@ Environment:
 #include <vsbackup.h>
 #include <vsmgmt.h>
 
-#define NAR_ERR_TRINITY 3
-#define NAR_ERR_REG_OVERFLOW 4
-#define NAR_ERR_REG_CANT_FILL 5
-#define NAR_ERR_ALIGN 6
-#define NAR_ERR_MAX_ITER 7
-#define NAR_ERR_OVERFLOW 8
+
 
 
 enum rec_or {
@@ -50,7 +45,8 @@ enum rec_or {
     SPLIT = 4,
 };
 
-typedef struct _record {
+
+typedef struct _record{
     UINT32 StartPos;
     UINT32 Len;
 }nar_record, bitmap_region;
@@ -98,9 +94,9 @@ RecordEqual(nar_record* N1, nar_record* N2) {
 
 #define MAKE_W_STR(arg) L#arg
 
+#define Assert(expression, msg) if(!(expression)) {printf(msg); *(int*)0 = 0;}
 #define Assert(expression) if(!(expression)) {*(int*)0 = 0;}
 #define ASSERT_VSS(expression) if(FAILED(expression)) {printf("Err @ %d\n",__LINE__);*(int*)0=0; }
-
 
 inline BOOLEAN
 IsSameVolumes(const WCHAR* OpName, const WCHAR VolumeLetter);
@@ -165,6 +161,13 @@ enum BackupType {
     Inc
 };
 
+struct stream {
+  data_array<nar_record> Records;
+  INT32 RecIndex;
+  INT32 ClusterIndex;
+  HANDLE Handle; //Used for streaming data to C#
+};
+
 struct volume_backup_inf {
     //TODO add partition name of the volume to this structure.
     wchar_t Letter;
@@ -185,7 +188,7 @@ struct volume_backup_inf {
     
     //these are going to be fully backed up,
     //since driver does not support them
-    wchar_t *DOSName;
+    wchar_t DOSName[32];
     data_array<int> ExtraPartitions; //TODO this is placeholder
     
     HANDLE LogHandle; //Handle to file that is logging volume's changes.
@@ -199,12 +202,7 @@ struct volume_backup_inf {
     This structure contains information to track stream head. After every read, ClusterIndex MUST be incremented accordingly and if read operation exceeds that region, RecIndex must be incremented too.
     */
     
-    struct {
-        data_array<nar_record> Records;
-        INT32 RecIndex;
-        INT32 ClusterIndex;
-        HANDLE Handle; //Used for streaming data to C#
-    }Stream;
+    stream Stream;
     
     //TODO
     
@@ -220,20 +218,15 @@ struct restore_inf {
     BOOLEAN Version;
     BackupType Type;
     
-    struct{
-        data_array<nar_record> Records;
-        INT32 RecIndex;
-        INT32 ClusterIndex;
-        HANDLE Handle;
-    }Stream;
+    stream Stream;
     
 };
 
-struct StreamInf{
-  INT32 ClusterSize; //Size of clusters, requester has to call readstream with multiples of this size
-  INT32 ClusterCount; //In clusters
-  std::wstring FileName;
-  std::wstring MetadataFileName;
+struct StreamInf {
+    INT32 ClusterSize; //Size of clusters, requester has to call readstream with multiples of this size
+    INT32 ClusterCount; //In clusters
+    std::wstring FileName;
+    std::wstring MetadataFileName;
 };
 
 
@@ -319,7 +312,7 @@ ReadStream(volume_backup_inf* VolInf, void* Buffer, int Size);
 
 
 BOOLEAN
-SetupStream(PLOG_CONTEXT Context, wchar_t Letter, StreamInf *SI = NULL);
+SetupStream(PLOG_CONTEXT Context, wchar_t Letter, StreamInf* SI = NULL);
 
 BOOLEAN
 SetupStreamHandle(volume_backup_inf* V);
@@ -337,13 +330,13 @@ BOOLEAN
 TerminateBackup(volume_backup_inf* V, BOOLEAN Succeeded);
 
 BOOLEAN
-OfflineRestore(restore_inf *Inf);
+OfflineRestore(restore_inf* Inf);
 
 BOOLEAN
-OfflineIncRestore(restore_inf *Inf, HANDLE V);
+OfflineIncRestore(restore_inf* Inf, HANDLE V);
 
 BOOLEAN
-OfflineDiffRestore(restore_inf *Inf, HANDLE V);
+OfflineDiffRestore(restore_inf* Inf, HANDLE V);
 
 
 
@@ -408,21 +401,21 @@ AttachVolume(volume_backup_inf* VolInf, BOOLEAN SetActive = TRUE);
 
 DWORD WINAPI
 RetrieveLogRecords(
-  _In_ LPVOID lpParameter
-);
+                   _In_ LPVOID lpParameter
+                   );
 
 BOOL
 FileDump(
-  _In_ PRECORD_DATA RecordData,
-  _In_ HANDLE File
-);
+         _In_ PRECORD_DATA RecordData,
+         _In_ HANDLE File
+         );
 
 VOID
 ScreenDump(
-  _In_ ULONG SequenceNumber,
-  _In_ WCHAR CONST* Name,
-  _In_ PRECORD_DATA RecordData
-);
+           _In_ ULONG SequenceNumber,
+           _In_ WCHAR CONST* Name,
+           _In_ PRECORD_DATA RecordData
+           );
 
 BOOLEAN
 ConnectDriver(PLOG_CONTEXT Ctx);

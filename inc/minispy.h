@@ -20,6 +20,14 @@ Environment:
 #ifndef __MINISPY_H__
 #define __MINISPY_H__
 
+// Custom NAR error codes
+
+#define NAR_ERR_TRINITY 3
+#define NAR_ERR_REG_OVERFLOW 4
+#define NAR_ERR_REG_CANT_FILL 5
+#define NAR_ERR_ALIGN 6
+#define NAR_ERR_MAX_ITER 7
+#define NAR_ERR_OVERFLOW 8
 
 //
 //  FltMgr's IRP major codes
