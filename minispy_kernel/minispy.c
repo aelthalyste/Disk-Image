@@ -979,11 +979,11 @@ Return Value:
 	//  log this record, free it now.
 	//
 
-	if (FlagOn(Flags, FLTFL_POST_OPERATION_DRAINING)) {
+ if (FlagOn(Flags, FLTFL_POST_OPERATION_DRAINING)) {
 
-		SpyFreeRecord(recordList);
-		return FLT_POSTOP_FINISHED_PROCESSING;
-	}
+   SpyFreeRecord(recordList);
+   return FLT_POSTOP_FINISHED_PROCESSING;
+ }
 
 	//
 	//  Set completion information into the record

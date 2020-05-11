@@ -35,38 +35,36 @@ Environment:
 #include <vsmgmt.h>
 
 
-
-
 enum rec_or {
-    LEFT = 0,
-    RIGHT = 1,
-    COLLISION = 2,
-    OVERRUN = 3,
-    SPLIT = 4,
+  LEFT = 0,
+  RIGHT = 1,
+  COLLISION = 2,
+  OVERRUN = 3,
+  SPLIT = 4,
 };
 
 
-typedef struct _record{
-    UINT32 StartPos;
-    UINT32 Len;
+typedef struct _record {
+  UINT32 StartPos;
+  UINT32 Len;
 }nar_record, bitmap_region;
 
 template<typename DATA_TYPE>
 struct data_array {
-    DATA_TYPE* Data;
-    UINT Count;
-    
-    inline void Insert(DATA_TYPE Val) {
-        Data = (DATA_TYPE*)realloc(Data, sizeof(Val) * (Count + 1));
-        memcpy(&Data[Count], &Val, sizeof(DATA_TYPE));
-        Count++;
-    }
-    
+  DATA_TYPE* Data;
+  UINT Count;
+
+  inline void Insert(DATA_TYPE Val) {
+    Data = (DATA_TYPE*)realloc(Data, sizeof(Val) * (Count + 1));
+    memcpy(&Data[Count], &Val, sizeof(DATA_TYPE));
+    Count++;
+  }
+
 };
 
 inline BOOLEAN
 RecordEqual(nar_record* N1, nar_record* N2) {
-    return N1->Len == N2->Len && N1->StartPos == N2->StartPos;
+  return N1->Len == N2->Len && N1->StartPos == N2->StartPos;
 }
 
 //#define printf(format,...) LogFile((format),__VA_ARGS__)
@@ -98,6 +96,7 @@ RecordEqual(nar_record* N1, nar_record* N2) {
 #define Assert(expression) if(!(expression)) {*(int*)0 = 0;}
 #define ASSERT_VSS(expression) if(FAILED(expression)) {printf("Err @ %d\n",__LINE__);*(int*)0=0; }
 
+
 inline BOOLEAN
 IsSameVolumes(const WCHAR* OpName, const WCHAR VolumeLetter);
 
@@ -105,27 +104,27 @@ struct restore_target_inf;
 struct restore_inf;
 struct volume_backup_inf;
 
-#if 0
+#if 1
 /*
 structs for algorithm that minimizes restore operation
 that struct generated at run-time, it is safe to std libraries
 only valid for diff restore, since fullbackup just copies raw data once
 */
 struct region_chain {
-    nar_record Rec;
-    /*
-  Problem about indexing:
-  While tearing down region_chain in RemoveDuplicates function, information to
-  read correct positions from incremental chunk is lost, but since they are
-   in consecutive order, problem may be resolved with reading metadata's lengths,
-  and can find which position chain's record falls.
-  
-  Other than that Index doesnt have any value, and it doesnt carried during insertions,
-  appends.
-  */
-    UINT32 Index;
-    region_chain* Next;
-    region_chain* Back; /*Fixed root point*/
+  nar_record Rec;
+  /*
+Problem about indexing:
+While tearing down region_chain in RemoveDuplicates function, information to
+read correct positions from incremental chunk is lost, but since they are
+ in consecutive order, problem may be resolved with reading metadata's lengths,
+and can find which position chain's record falls.
+
+Other than that Index doesnt have any value, and it doesnt carried during insertions,
+appends.
+*/
+  UINT32 Index;
+  region_chain* Next;
+  region_chain* Back; /*Fixed root point*/
 };
 
 /*Inserts element to given chain*/
@@ -151,14 +150,14 @@ Used for Getfilename functions, this structure will change completely.
 temp structure for mft backups
 */
 typedef struct fn_req_inf {
-    wchar_t Letter;
-    int ID;
+  wchar_t Letter;
+  int ID;
 }fn_gen_inf;
 
 
 enum BackupType {
-    Diff,
-    Inc
+  Diff,
+  Inc
 };
 
 struct stream {
@@ -169,64 +168,64 @@ struct stream {
 };
 
 struct volume_backup_inf {
-    //TODO add partition name of the volume to this structure.
-    wchar_t Letter;
-    BOOLEAN FullBackupExists;
-    BackupType BT;
-    
-    struct {
-        BOOLEAN SaveToFile; //If false, records will be saved to memory, RecordsMem
-        BOOLEAN FlushToFile; //If this is set, all memory will be flushed to file
-        BOOLEAN IsActive;
-    }FilterFlags;
-    
-    int CurrentLogIndex;
-    
-    DWORD ClusterSize;
-    
-    std::vector<nar_record> RecordsMem;
-    
-    //these are going to be fully backed up,
-    //since driver does not support them
-    wchar_t DOSName[32];
-    data_array<int> ExtraPartitions; //TODO this is placeholder
-    
-    HANDLE LogHandle; //Handle to file that is logging volume's changes.
-    UINT32 IncRecordCount; //Incremental change count of the volume, this value is will be reseted after every SUCCESSFUL backup operation
-    
-    
-    /*
-    Valid after diff-incremental setup. Stores all changes occured on disk, starting from latest incremental, or beginning if request was diff
-    Diff between this and RecordsMem, RecordsMem is just temporary buffer that stores live changes on the disk, and will be flushed to file after it's available
-  
-    This structure contains information to track stream head. After every read, ClusterIndex MUST be incremented accordingly and if read operation exceeds that region, RecIndex must be incremented too.
-    */
-    
-    stream Stream;
-    
-    //TODO
-    
-    CComPtr<IVssBackupComponents> VSSPTR;
-    
+  //TODO add partition name of the volume to this structure.
+  wchar_t Letter;
+  BOOLEAN FullBackupExists;
+  BackupType BT;
+
+  struct {
+    BOOLEAN SaveToFile; //If false, records will be saved to memory, RecordsMem
+    BOOLEAN FlushToFile; //If this is set, all memory will be flushed to file
+    BOOLEAN IsActive;
+  }FilterFlags;
+
+  int CurrentLogIndex;
+
+  DWORD ClusterSize;
+
+  std::vector<nar_record> RecordsMem;
+
+  //these are going to be fully backed up,
+  //since driver does not support them
+  wchar_t DOSName[32];
+  data_array<int> ExtraPartitions; //TODO this is placeholder
+
+  HANDLE LogHandle; //Handle to file that is logging volume's changes.
+  UINT32 IncRecordCount; //Incremental change count of the volume, this value is will be reseted after every SUCCESSFUL backup operation
+
+
+  /*
+  Valid after diff-incremental setup. Stores all changes occured on disk, starting from latest incremental, or beginning if request was diff
+  Diff between this and RecordsMem, RecordsMem is just temporary buffer that stores live changes on the disk, and will be flushed to file after it's available
+
+  This structure contains information to track stream head. After every read, ClusterIndex MUST be incremented accordingly and if read operation exceeds that region, RecIndex must be incremented too.
+  */
+
+  stream Stream;
+
+  //TODO
+
+  CComPtr<IVssBackupComponents> VSSPTR;
+
 };
 
 struct restore_inf {
-    wchar_t TargetLetter;
-    wchar_t SrcLetter;
-    UINT32 ClusterSize;
-    BOOLEAN ToFull;
-    BOOLEAN Version;
-    BackupType Type;
-    
-    stream Stream;
-    
+  wchar_t TargetLetter;
+  wchar_t SrcLetter;
+  UINT32 ClusterSize;
+  BOOLEAN ToFull;
+  BOOLEAN Version;
+  BackupType Type;
+  stream Stream;
 };
 
-struct StreamInf {
-    INT32 ClusterSize; //Size of clusters, requester has to call readstream with multiples of this size
-    INT32 ClusterCount; //In clusters
-    std::wstring FileName;
-    std::wstring MetadataFileName;
+struct DotNetStreamInf {
+  INT32 ClusterSize; //Size of clusters, requester has to call readstream with multiples of this size
+  INT32 ClusterCount; //In clusters
+  std::wstring FileName;
+  std::wstring MetadataFileName;
+  std::wstring MFTFileName;
+  std::wstring MFTMetadataName;
 };
 
 
@@ -234,19 +233,19 @@ struct StreamInf {
 //  Structure for managing current state.
 //
 struct LOG_CONTEXT {
-    
-    HANDLE Port;
-    HANDLE Thread;
-    BOOLEAN LogToScreen;
-    
-    data_array<volume_backup_inf> Volumes;
-    
-    //
-    // For synchronizing shutting down of both threads
-    //
-    
-    BOOLEAN CleaningUp;
-    HANDLE  ShutDown;
+
+  HANDLE Port;
+  HANDLE Thread;
+  BOOLEAN LogToScreen;
+
+  data_array<volume_backup_inf> Volumes;
+
+  //
+  // For synchronizing shutting down of both threads
+  //
+
+  BOOLEAN CleaningUp;
+  HANDLE  ShutDown;
 };
 typedef LOG_CONTEXT* PLOG_CONTEXT;
 
@@ -290,12 +289,14 @@ GenerateDBMetadataFileName(wchar_t Letter, int ID);
 inline std::wstring
 GenerateDBFileName(wchar_t Letter, int ID);
 
-
 inline std::wstring
 GenerateFBFileName(wchar_t Letter);
 
 inline std::wstring
 GenerateFBMetadataFileName(wchar_t Letter);
+
+inline std::wstring
+GenerateSystemPartitionFileName(wchar_t Letter);
 
 data_array<nar_record>
 ReadFBMetadata(HANDLE F);
@@ -310,9 +311,15 @@ DisplayError(DWORD Code);
 BOOLEAN
 ReadStream(volume_backup_inf* VolInf, void* Buffer, int Size);
 
+//BOOLEAN
+//SetupRestoreStream(PLOG_CONTEXT C, wchar_t Letter, void *Metadata, int MSize);
 
 BOOLEAN
-SetupStream(PLOG_CONTEXT Context, wchar_t Letter, StreamInf* SI = NULL);
+WriteStream(volume_backup_inf* Inf, void* Buffer, int Size);
+
+
+BOOLEAN
+SetupStream(PLOG_CONTEXT Context, wchar_t Letter, DotNetStreamInf* SI = NULL);
 
 BOOLEAN
 SetupStreamHandle(volume_backup_inf* V);
@@ -330,13 +337,13 @@ BOOLEAN
 TerminateBackup(volume_backup_inf* V, BOOLEAN Succeeded);
 
 BOOLEAN
-OfflineRestore(restore_inf* Inf);
+OfflineRestore(restore_inf* Inf, std::wstring RootPath);
 
 BOOLEAN
-OfflineIncRestore(restore_inf* Inf, HANDLE V);
+OfflineIncRestore(restore_inf* Inf, HANDLE V, std::wstring RootPath);
 
 BOOLEAN
-OfflineDiffRestore(restore_inf* Inf, HANDLE V);
+OfflineDiffRestore(restore_inf* Inf, HANDLE V, std::wstring RootPath);
 
 
 
@@ -393,6 +400,9 @@ GetMFTLCN(char VolumeLetter);
 BOOLEAN
 AddVolumeToTrack(PLOG_CONTEXT Context, wchar_t Letter, BackupType Type);
 
+BOOLEAN
+RemoveVolumeFromTrack(PLOG_CONTEXT Context, wchar_t Letter);
+
 inline BOOLEAN
 DetachVolume(volume_backup_inf* VolInf);
 
@@ -401,21 +411,21 @@ AttachVolume(volume_backup_inf* VolInf, BOOLEAN SetActive = TRUE);
 
 DWORD WINAPI
 RetrieveLogRecords(
-                   _In_ LPVOID lpParameter
-                   );
+  _In_ LPVOID lpParameter
+);
 
 BOOL
 FileDump(
-         _In_ PRECORD_DATA RecordData,
-         _In_ HANDLE File
-         );
+  _In_ PRECORD_DATA RecordData,
+  _In_ HANDLE File
+);
 
 VOID
 ScreenDump(
-           _In_ ULONG SequenceNumber,
-           _In_ WCHAR CONST* Name,
-           _In_ PRECORD_DATA RecordData
-           );
+  _In_ ULONG SequenceNumber,
+  _In_ WCHAR CONST* Name,
+  _In_ PRECORD_DATA RecordData
+);
 
 BOOLEAN
 ConnectDriver(PLOG_CONTEXT Ctx);
@@ -426,7 +436,7 @@ GetOrientation(nar_record* M, nar_record* S);
 
 void
 RemoveDuplicates(region_chain** Metadatas,
-                 region_chain* MDShadow, int ID);
+  region_chain* MDShadow, int ID);
 #endif
 
 
@@ -614,26 +624,26 @@ RemoveDuplicates(region_chain** Metadatas,
 
 
 typedef enum {
-    TRANSACTION_NOTIFY_PREPREPARE_CODE = 1,
-    TRANSACTION_NOTIFY_PREPARE_CODE,
-    TRANSACTION_NOTIFY_COMMIT_CODE,
-    TRANSACTION_NOTIFY_ROLLBACK_CODE,
-    TRANSACTION_NOTIFY_PREPREPARE_COMPLETE_CODE,
-    TRANSACTION_NOTIFY_PREPARE_COMPLETE_CODE,
-    TRANSACTION_NOTIFY_COMMIT_COMPLETE_CODE,
-    TRANSACTION_NOTIFY_ROLLBACK_COMPLETE_CODE,
-    TRANSACTION_NOTIFY_RECOVER_CODE,
-    TRANSACTION_NOTIFY_SINGLE_PHASE_COMMIT_CODE,
-    TRANSACTION_NOTIFY_DELEGATE_COMMIT_CODE,
-    TRANSACTION_NOTIFY_RECOVER_QUERY_CODE,
-    TRANSACTION_NOTIFY_ENLIST_PREPREPARE_CODE,
-    TRANSACTION_NOTIFY_LAST_RECOVER_CODE,
-    TRANSACTION_NOTIFY_INDOUBT_CODE,
-    TRANSACTION_NOTIFY_PROPAGATE_PULL_CODE,
-    TRANSACTION_NOTIFY_PROPAGATE_PUSH_CODE,
-    TRANSACTION_NOTIFY_MARSHAL_CODE,
-    TRANSACTION_NOTIFY_ENLIST_MASK_CODE,
-    TRANSACTION_NOTIFY_COMMIT_FINALIZE_CODE = 31
+  TRANSACTION_NOTIFY_PREPREPARE_CODE = 1,
+  TRANSACTION_NOTIFY_PREPARE_CODE,
+  TRANSACTION_NOTIFY_COMMIT_CODE,
+  TRANSACTION_NOTIFY_ROLLBACK_CODE,
+  TRANSACTION_NOTIFY_PREPREPARE_COMPLETE_CODE,
+  TRANSACTION_NOTIFY_PREPARE_COMPLETE_CODE,
+  TRANSACTION_NOTIFY_COMMIT_COMPLETE_CODE,
+  TRANSACTION_NOTIFY_ROLLBACK_COMPLETE_CODE,
+  TRANSACTION_NOTIFY_RECOVER_CODE,
+  TRANSACTION_NOTIFY_SINGLE_PHASE_COMMIT_CODE,
+  TRANSACTION_NOTIFY_DELEGATE_COMMIT_CODE,
+  TRANSACTION_NOTIFY_RECOVER_QUERY_CODE,
+  TRANSACTION_NOTIFY_ENLIST_PREPREPARE_CODE,
+  TRANSACTION_NOTIFY_LAST_RECOVER_CODE,
+  TRANSACTION_NOTIFY_INDOUBT_CODE,
+  TRANSACTION_NOTIFY_PROPAGATE_PULL_CODE,
+  TRANSACTION_NOTIFY_PROPAGATE_PUSH_CODE,
+  TRANSACTION_NOTIFY_MARSHAL_CODE,
+  TRANSACTION_NOTIFY_ENLIST_MASK_CODE,
+  TRANSACTION_NOTIFY_COMMIT_FINALIZE_CODE = 31
 } TRANSACTION_NOTIFICATION_CODES;
 
 //
@@ -750,34 +760,33 @@ typedef enum {
 #pragma warning(disable:4201) // nonstandard extension used : nameless struct/union
 
 typedef struct _FLT_TAG_DATA_BUFFER {
-    ULONG FileTag;
-    USHORT TagDataLength;
-    USHORT UnparsedNameLength;
-    union {
-        GUID TagGuid;
-        struct {
-            USHORT SubstituteNameOffset;
-            USHORT SubstituteNameLength;
-            USHORT PrintNameOffset;
-            USHORT PrintNameLength;
-            ULONG  Flags;
-            WCHAR PathBuffer[1];
-        } SymbolicLinkReparseBuffer;
-        
-        struct {
-            USHORT SubstituteNameOffset;
-            USHORT SubstituteNameLength;
-            USHORT PrintNameOffset;
-            USHORT PrintNameLength;
-            WCHAR PathBuffer[1];
-        } MountPointReparseBuffer;
-        
-        struct {
-            UCHAR  DataBuffer[1];
-        } GenericReparseBuffer;
-    };
-} FLT_TAG_DATA_BUFFER, * PFLT_TAG_DATA_BUFFER;
+  ULONG FileTag;
+  USHORT TagDataLength;
+  USHORT UnparsedNameLength;
+  union {
+    GUID TagGuid;
+    struct {
+      USHORT SubstituteNameOffset;
+      USHORT SubstituteNameLength;
+      USHORT PrintNameOffset;
+      USHORT PrintNameLength;
+      ULONG  Flags;
+      WCHAR PathBuffer[1];
+    } SymbolicLinkReparseBuffer;
 
+    struct {
+      USHORT SubstituteNameOffset;
+      USHORT SubstituteNameLength;
+      USHORT PrintNameOffset;
+      USHORT PrintNameLength;
+      WCHAR PathBuffer[1];
+    } MountPointReparseBuffer;
+
+    struct {
+      UCHAR  DataBuffer[1];
+    } GenericReparseBuffer;
+  };
+} FLT_TAG_DATA_BUFFER, * PFLT_TAG_DATA_BUFFER;
 #pragma warning(pop)
 
 #endif //__MSPYLOG_H__

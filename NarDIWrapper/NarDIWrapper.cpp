@@ -43,6 +43,9 @@ mesaj loopunda, threadinde, bir sorun yaşanırsa nasıl ana uygulamaya bildiril
 
 #include "NarDIWrapper.h"
 
+#define USE_NAMESPACE TRUE
+
+#include "mspyLog.h"
 #include "mspyUser.cpp"
 #include "mspyLog.cpp"
 
@@ -73,17 +76,26 @@ namespace NarDIWrapper {
 
   DiskTracker::~DiskTracker() {
     //Do deconstructor things
+
+    free(C->Volumes.Data);
+    C->CleaningUp = TRUE;
+    WaitForSingleObject(C->ShutDown, INFINITE);
+    CloseHandle(C->Thread);
+    CloseHandle(C->ShutDown);
+
     delete R;
     delete C;
   }
 
-  bool DiskTracker::CW_InitTracker() {
+  bool DiskTracker::CW_RemoveFromTrack(wchar_t Letter) {
+    return TRUE;//C->RemoveVolumeFromTrack(C,Letter);
+  }
 
+  bool DiskTracker::CW_InitTracker() {
     if (SetupVSS()) {
       return ConnectDriver(C);
     }
     return FALSE;
-
   }
 
   bool DiskTracker::CW_AddToTrack(wchar_t L, int Type) {
@@ -91,15 +103,17 @@ namespace NarDIWrapper {
   }
 
   bool DiskTracker::CW_SetupStream(wchar_t L, StreamInfo^ StrInf) {
-    StreamInf SI = { 0 };
+    DotNetStreamInf SI = { 0 };
     if (SetupStream(C, L, &SI)) {
 
       StrInf->ClusterCount = SI.ClusterCount;
       StrInf->ClusterSize = SI.ClusterSize;
       StrInf->FileName = gcnew String(SI.FileName.c_str());
       StrInf->MetadataFileName = gcnew String(SI.MetadataFileName.c_str());
+      StrInf->MFTFileName = gcnew String(SI.MFTFileName.c_str());
+      StrInf->MFTMetadataName = gcnew String(SI.MFTMetadataName.c_str());
 
-      int ID = GetVolumeID(C, L);
+      StreamID = GetVolumeID(C, L);
 
       return true;
     }
@@ -114,7 +128,8 @@ Version: -1 to restore full backup otherwise version number to restore(version n
     wchar_t SrcLetter,
     UINT32 ClusterSize,
     INT Version,
-    INT Type
+    int Type,
+    System::String^ RootDir
   ) {
 
     R->TargetLetter = TargetLetter;
@@ -122,13 +137,21 @@ Version: -1 to restore full backup otherwise version number to restore(version n
     R->ClusterSize = ClusterSize;
     R->Type = (BackupType)Type;
 
+
     R->ToFull = FALSE;
     R->Version = Version;
     if (Version < 0) {
       R->ToFull = TRUE;
       R->Version = 0;
     }
-    return OfflineRestore(R);
+
+    using namespace Runtime::InteropServices;
+
+    const wchar_t* chars = (const wchar_t*)(Marshal::StringToHGlobalUni(RootDir)).ToPointer();
+    std::wstring cString = chars;
+    Marshal::FreeHGlobal(IntPtr((void*)chars));
+
+    return OfflineRestore(R, cString);
 
   }
 

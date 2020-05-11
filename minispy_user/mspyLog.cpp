@@ -133,7 +133,7 @@ Return Value:
   std::wstring LogDOSName = L"";
 #pragma warning(push)
 #pragma warning(disable:4127) // conditional expression is constant
-  printf("Thread started!\n");
+
   while (TRUE) {
 
 #pragma warning(pop)
@@ -256,12 +256,13 @@ Check errors here
 
         for (int i = 0; LogDOSName[i] != '\0'; i++) {
           if (LogDOSName[i] == L'\\') count++;
-          if (count == 3) { 
+          if (count == 3) {
             thirdindex = i;
-            break; 
+            break;
           }
         }
         if (thirdindex == -1) {
+          printf("Third index shouldnt be -1 \n");
           //TODO error log
         }
 
@@ -269,8 +270,9 @@ Check errors here
 
         for (UINT i = 0; i < context->Volumes.Count; i++) {
           volume_backup_inf* V = &context->Volumes.Data[i];
+          printf("V->DOSNAME %S\n", V->DOSName);
 
-          if (StrCmpW(LogDOSName.c_str(),V->DOSName) == 0) {
+          if (StrCmpW(LogDOSName.c_str(), V->DOSName) == 0) {
 
             if (V->FilterFlags.FlushToFile) {
               if (V->RecordsMem.size()) {
@@ -294,13 +296,13 @@ Check errors here
               V->RecordsMem.clear();
             }
 
-            
+
             if (!V->FilterFlags.IsActive) {
               printf("Volume isnt active, breaking now\n");
               break;
             }
             if (V->FilterFlags.SaveToFile) {
-              //ScreenDump(0, pLogRecord->Name, pRecordData);
+              ScreenDump(0, pLogRecord->Name, pRecordData);
 
               if (FileDump(pRecordData, V->LogHandle)) {
                 V->IncRecordCount += pRecordData->RecCount;
@@ -312,15 +314,18 @@ Check errors here
 
             }
             else {
-              //printf("Change logging to memory\n");
+              printf("Change logging to memory\n");
               for (int k = 0; k < pRecordData->RecCount; k++) {
                 V->RecordsMem.emplace_back(nar_record{ pRecordData->P[k].S, pRecordData->P[k].L });
               }
             }
           }
           else {
-            printf("LOGDOSNAME -> %S \t VolumeDOS -> %S, Count %i \n", LogDOSName.c_str(), V->DOSName,context->Volumes.Count);
+
+            printf("ERROR : %S \t %S\n", LogDOSName.c_str(), V->DOSName);
+
           }
+
 
         }
 
