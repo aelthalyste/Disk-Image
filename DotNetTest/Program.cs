@@ -13,14 +13,32 @@ namespace DotNetTest
     static void Main(string[] args)
     {
 
+      var drives = DriveInfo.GetDrives();
+      foreach (var drive in drives)
+      {
+        if (drive.IsReady)
+        {
+          Console.WriteLine(drive.AvailableFreeSpace);
+          Console.WriteLine(drive.DriveFormat);
+          Console.WriteLine(drive.DriveType);
+          Console.WriteLine(drive.IsReady);
+          Console.WriteLine(drive.Name);
+          Console.WriteLine(drive.RootDirectory);
+          Console.WriteLine(drive.TotalFreeSpace);
+          Console.WriteLine(drive.TotalSize);
+          Console.WriteLine(drive.VolumeLabel);
+          Console.WriteLine("##########\n");
+        }
+      }
+      return;
+
       unsafe
       {
         DiskTracker tracker = new DiskTracker();
 
         if (tracker.CW_InitTracker())
         {
-
-
+          
 
           for (; ; )
           {

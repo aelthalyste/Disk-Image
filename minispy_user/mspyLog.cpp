@@ -270,7 +270,6 @@ Check errors here
 
         for (UINT i = 0; i < context->Volumes.Count; i++) {
           volume_backup_inf* V = &context->Volumes.Data[i];
-          printf("V->DOSNAME %S\n", V->DOSName);
 
           if (StrCmpW(LogDOSName.c_str(), V->DOSName) == 0) {
 
@@ -302,7 +301,7 @@ Check errors here
               break;
             }
             if (V->FilterFlags.SaveToFile) {
-              ScreenDump(0, pLogRecord->Name, pRecordData);
+              //ScreenDump(0, pLogRecord->Name, pRecordData);
 
               if (FileDump(pRecordData, V->LogHandle)) {
                 V->IncRecordCount += pRecordData->RecCount;
