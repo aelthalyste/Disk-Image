@@ -1653,7 +1653,7 @@ AddVolumeToTrack(PLOG_CONTEXT Context, wchar_t Letter, BackupType Type) {
         ErrorOccured = FALSE;
     }
     Context->Volumes.Insert(VolInf);
-    
+
     printf("VolClusterSize => %d\n", Context->Volumes.Data[0].ClusterSize);
     printf("New volume size %i\n", Context->Volumes.Count);
     printf("Volume %c inserted to the list\n", (char)Letter);

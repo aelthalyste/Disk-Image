@@ -182,7 +182,7 @@ struct volume_backup_inf {
         BOOLEAN SaveToFile; //If false, records will be saved to memory, RecordsMem
         BOOLEAN FlushToFile; //If this is set, all memory will be flushed to file
         BOOLEAN IsActive;
-    }volatile FilterFlags;
+    }FilterFlags;
     
     int CurrentLogIndex;
     
@@ -295,7 +295,7 @@ struct LOG_CONTEXT {
     
     HANDLE Port;
     HANDLE Thread;
-    volatile BOOLEAN LogToScreen;
+    BOOLEAN LogToScreen;
     
     data_array<volume_backup_inf> Volumes;
     
@@ -303,8 +303,8 @@ struct LOG_CONTEXT {
     // For synchronizing shutting down of both threads
     //
     
-    volatile BOOLEAN CleaningUp;
-    volatile HANDLE  ShutDown;
+    BOOLEAN CleaningUp;
+    HANDLE  ShutDown;
 };
 typedef LOG_CONTEXT* PLOG_CONTEXT;
 
