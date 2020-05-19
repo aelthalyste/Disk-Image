@@ -126,7 +126,6 @@ struct region_chain {
   Other than that Index doesnt have any value, and it doesnt carried during insertions,
   appends.
   */
-    UINT32 Index;
     region_chain* Next;
     region_chain* Back; /*Fixed root point*/
 };
@@ -148,15 +147,6 @@ PrintList(region_chain* Temp);
 void
 PrintListReverse(region_chain* Temp);
 #endif
-
-/*
-Used for Getfilename functions, this structure will change completely.
-temp structure for mft backups
-*/
-typedef struct fn_req_inf {
-    wchar_t Letter;
-    int ID;
-}fn_gen_inf;
 
 
 enum BackupType {
@@ -190,12 +180,10 @@ struct volume_backup_inf {
     
     std::vector<nar_record> RecordsMem;
     
-    //these are going to be fully backed up,
-    //since driver does not support them
     wchar_t DOSName[32];
     
     HANDLE LogHandle; //Handle to file that is logging volume's changes.
-    UINT32 IncRecordCount; //Incremental change count of the volume, this value is will be reseted after every SUCCESSFUL backup operation
+    UINT32 IncRecordCount; //Incremental change count of the volume, this value will be reseted after every SUCCESSFUL backup operation
     
     
     /*
@@ -211,6 +199,29 @@ struct volume_backup_inf {
     
     CComPtr<IVssBackupComponents> VSSPTR;
     
+};
+
+struct backup_metadata{
+    wchar_t Letter;
+    union {
+        BOOL IsOSVolume; // int, 4 bytes
+        struct {
+            BOOLEAN TYPE; // 1 byte
+            BOOLEAN EFI;
+            BOOLEAN RESTORE;
+            BOOLEAN MSR;
+        };
+    };
+    
+    enum BOOLEAN{
+        MBR = 1,
+        GPT,
+        RAW
+    };
+    
+    BackupType BackupType; // diff or inc
+    int Version; // -1 for full backup
+    int ClusterSize;
 };
 
 struct restore_inf {
@@ -234,14 +245,15 @@ struct DotNetStreamInf {
 
 
 struct disk_information {
-  ULONGLONG SizeGB; //In GB!
-  ULONGLONG Unallocated; // IN GB!
-  char Type[4]; // string, RAW,GPT,MBR, one byte for NULL termination
-  int ID;
+    ULONGLONG SizeGB; //In GB!
+    ULONGLONG Unallocated; // IN GB!
+    char Type[4]; // string, RAW,GPT,MBR, one byte for NULL termination
+    int ID;
 };
 
 
 /*
+example output of diskpart list volume command
 Volume ###  Ltr  Label        Fs     Type        Size     Status     Info
   ----------  ---  -----------  -----  ----------  -------  ---------  --------
   Volume 0     N                NTFS   Simple      5000 MB  Healthy
@@ -250,21 +262,21 @@ Volume ###  Ltr  Label        Fs     Type        Size     Status     Info
   Volume 3                      FAT32  Partition    100 MB  Healthy    System
 */
 struct volume_information {
-  ULONGLONG SizeMB; //in MB! 
-  BOOLEAN Bootable; // Healthy && NTFS && !Boot
-  char Letter;
-  char FileSystem[6]; // FAT32, NTFS, FAT, 1 byte for NULL termination
+    ULONGLONG SizeMB; //in MB!
+    BOOLEAN Bootable; // Healthy && NTFS && !Boot
+    char Letter;
+    char FileSystem[6]; // FAT32, NTFS, FAT, 1 byte for NULL termination
 };
 
 // Up to 2GB
 struct file_read {
-  void* Data;
-  int Len;
+    void* Data;
+    int Len;
 };
 
 inline BOOLEAN
 IsNumeric(char val) {
-  return val >= '0' && val <= '9';
+    return val >= '0' && val <= '9';
 }
 
 file_read

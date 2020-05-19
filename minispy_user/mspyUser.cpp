@@ -135,7 +135,7 @@ InsertToList(region_chain* Root, nar_record Rec) {
         }
         
         New->Rec = Rec;
-        New->Index = 0;
+        //New->Index = 0;
         
     }
     
@@ -165,8 +165,6 @@ RemoveFromList(region_chain* R) {
     
     //	R->Back = 0;
     //	R->Next = 0;
-    
-    //CLEANMEMORY(R); //TODO maybe not clean memory here ?
 }
 
 void
@@ -450,10 +448,6 @@ RemoveDuplicates(region_chain** Metadatas,
         
     }
     
-    
-    /*
-     Special case: If list's head is removed, then Metadata[ID] need to be updated
-    */
     
 #if 1
     //printf("\n$$$$\n");
@@ -940,9 +934,9 @@ SaveExtraPartitions(volume_backup_inf* V) {
                             
                             if (PI->PartitionStyle == PARTITION_STYLE_MBR) {
                                 printf("This version can't backup MBR system partitions\n");
-                                
+                                  
                                 if (0) {// TODO(Batuhan): add mbr filter
-                                    std::wstring SPNAME = GenerateSystemPartitionFileName(V->Letter);
+                                  std::wstring SPNAME = GenerateSystemPartitionFileName(V->Letter);
                                     HANDLE SP = CreateFileW(SPNAME.c_str(), GENERIC_WRITE, 0, 0, CREATE_NEW, 0, 0);
                                     if (SP != INVALID_HANDLE_VALUE) {
                                         if (!CopyData(Disk, SP, PI->PartitionLength.QuadPart, PI->StartingOffset.QuadPart)) {
@@ -1396,11 +1390,6 @@ InitVolumeInf(volume_backup_inf* VolInf, wchar_t Letter, BackupType Type) {
     }
     // VolInf->IsOSVolume = FALSE;
     
-    
-    
-    //TODO link letter name and full name
-    //TODO HANDLE EXTRA PARTITIONS, SUCH AS BOOT AND RECOVERY
-    
     return Return;
 }
 
@@ -1429,43 +1418,62 @@ CompareNarRecords(const void* v1, const void* v2) {
 
 wchar_t*
 GetShadowPath(std::wstring Drive, CComPtr<IVssBackupComponents>& ptr) {
+    wchar_t* Result = NULL;
+    BOOLEAN Error = TRUE;
     VSS_ID sid;
     HRESULT res;
     
     res = CreateVssBackupComponents(&ptr);
     
-    res = ptr->InitializeForBackup();
-    ASSERT_VSS(res == S_OK);
-    res = ptr->SetContext(VSS_CTX_BACKUP);
-    ASSERT_VSS(res == S_OK);
-    res = ptr->StartSnapshotSet(&sid);
-    ASSERT_VSS(res == S_OK);
-    res = ptr->SetBackupState(false, false, VSS_BACKUP_TYPE::VSS_BT_FULL, false);
-    ASSERT_VSS(res == S_OK);
-    res = ptr->AddToSnapshotSet((LPWSTR)Drive.c_str(), GUID_NULL, &sid); // C:\\ ex
-    ASSERT_VSS(res == S_OK);
-    
-    {
-        CComPtr<IVssAsync> Async;
-        res = ptr->PrepareForBackup(&Async);
-        ASSERT_VSS(res == S_OK);
-        Async->Wait();
+    if (S_OK == ptr->InitializeForBackup()) {
+        if (S_OK == ptr->SetContext(VSS_CTX_BACKUP)) {
+            if (S_OK == ptr->StartSnapshotSet(&sid)) {
+                if (S_OK == ptr->SetBackupState(false, false, VSS_BACKUP_TYPE::VSS_BT_FULL, false)) {
+                    if (S_OK == ptr->AddToSnapshotSet((LPWSTR)Drive.c_str(), GUID_NULL, &sid)) {
+                        CComPtr<IVssAsync> Async;
+                        if (S_OK == ptr->PrepareForBackup(&Async)) {
+                            Async->Wait();
+                            CComPtr<IVssAsync> Async2;
+                            if (S_OK == ptr->DoSnapshotSet(&Async2)) {
+                                Async->Wait();
+                                Error = FALSE;
+                            }
+                            else {
+                                printf("Can't do snapshotset\n");
+                            }
+                        }
+                        else {
+                            printf("Can't prepare for backup");
+                        }
+                    }
+                    else {
+                        printf("Can't add volume to snapshot set\n");
+                    }
+                }
+                else {
+                    printf("Can't set VSS backup state\n");
+                }
+            }
+            else {
+                printf("Can't start VSS snapshotset\n");
+            }
+        }
+        else {
+            printf("Can't set VSS context\n");
+        }
+    }
+    else {
+        printf("Can't initialize VSS for backup\n");
     }
     
-    {
-        CComPtr<IVssAsync> Async;
-        res = ptr->DoSnapshotSet(&Async);
-        ASSERT_VSS(res == S_OK);
-        Async->Wait();
+    if (!Error) {
+        VSS_SNAPSHOT_PROP SnapshotProp;
+        ptr->GetSnapshotProperties(sid, &SnapshotProp);
+        
+        Result = (wchar_t*)malloc(sizeof(wchar_t) * lstrlenW(SnapshotProp.m_pwszSnapshotDeviceObject));
+        
+        Result = lstrcpyW(Result, SnapshotProp.m_pwszSnapshotDeviceObject);
     }
-    
-    VSS_SNAPSHOT_PROP SnapshotProp;
-    ptr->GetSnapshotProperties(sid, &SnapshotProp);
-    
-    //TODO LEAK VSS_SNAPSHOT_PROP
-    wchar_t* Result = (wchar_t*)malloc(sizeof(wchar_t) * lstrlenW(SnapshotProp.m_pwszSnapshotDeviceObject));
-    
-    Result = lstrcpyW(Result, SnapshotProp.m_pwszSnapshotDeviceObject);
     
     return Result;
 }
@@ -1653,7 +1661,7 @@ AddVolumeToTrack(PLOG_CONTEXT Context, wchar_t Letter, BackupType Type) {
         ErrorOccured = FALSE;
     }
     Context->Volumes.Insert(VolInf);
-
+    
     printf("VolClusterSize => %d\n", Context->Volumes.Data[0].ClusterSize);
     printf("New volume size %i\n", Context->Volumes.Count);
     printf("Volume %c inserted to the list\n", (char)Letter);
@@ -2426,6 +2434,10 @@ SetupStreamHandle(volume_backup_inf* VolInf) {
     WCHAR Temp[] = L"!:\\";
     Temp[0] = VolInf->Letter;
     wchar_t* ShadowPath = GetShadowPath(Temp, VolInf->VSSPTR);
+    if(!ShadowPath){
+        printf("Can't get shadowpath from VSS\n");
+        return FALSE;
+    }
     
     if (!VolInf->FullBackupExists) {
         if (!InitNewLogFile(VolInf)) {
@@ -2472,7 +2484,6 @@ FullBackupVolume(PLOG_CONTEXT Context, UINT VolInfIndex) {
     std::wstring FBFname = L"";
     
     ShadowPath = GetShadowPath(ShadowPath.c_str(), ptr);
-    
     
     
     if (!AttachVolume(Context, VolInfIndex)) {
@@ -3379,305 +3390,301 @@ OfflineDiffRestore(restore_inf* R, HANDLE V, std::wstring RootDir) {
 
 file_read
 NarReadFile(const char* FileName) {
-  file_read Result = { 0 };
-  HANDLE File = CreateFileA(FileName, GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
-  if (File != INVALID_HANDLE_VALUE) {
-    DWORD BytesRead = 0;
-    Result.Len = GetFileSize(File, 0);
-    if (Result.Len == 0) return Result;
-    Result.Data = malloc(Result.Len);
-    if (Result.Data) {
-      ReadFile(File, Result.Data, Result.Len, &BytesRead, 0);
-      if (BytesRead == Result.Len) {
-        // NOTE success
-      }
-      else {
-        free(Result.Data);
-        printf("Read %i bytes instead of %i\n", BytesRead, Result.Len);
-      }
-
+    file_read Result = { 0 };
+    HANDLE File = CreateFileA(FileName, GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
+    if (File != INVALID_HANDLE_VALUE) {
+        DWORD BytesRead = 0;
+        Result.Len = GetFileSize(File, 0);
+        if (Result.Len == 0) return Result;
+        Result.Data = malloc(Result.Len);
+        if (Result.Data) {
+            ReadFile(File, Result.Data, Result.Len, &BytesRead, 0);
+            if (BytesRead == Result.Len) {
+                // NOTE success
+            }
+            else {
+                free(Result.Data);
+                printf("Read %i bytes instead of %i\n", BytesRead, Result.Len);
+            }
+            
+        }
+        CloseHandle(File);
     }
-    CloseHandle(File);
-  }
-  else {
-    printf("Can't create file: %S\n", FileName);
-  }
-  //CreateFileA(FNAME, GENERIC_WRITE, 0,0 ,CREATE_NEW, 0,0)
-  return Result;
+    else {
+        printf("Can't create file: %S\n", FileName);
+    }
+    //CreateFileA(FNAME, GENERIC_WRITE, 0,0 ,CREATE_NEW, 0,0)
+    return Result;
 }
 
 BOOLEAN
 NarDumpToFile(const char* FileName, void* Data, int Size) {
-  BOOLEAN Result = FALSE;
-  HANDLE File = CreateFileA(FileName, GENERIC_WRITE, 0, 0, CREATE_ALWAYS, 0, 0);
-  if (File != INVALID_HANDLE_VALUE) {
-    DWORD BytesWritten = 0;
-    WriteFile(File, Data, Size, &BytesWritten, 0);
-    if (BytesWritten == Size) {
-      Result = TRUE;
+    BOOLEAN Result = FALSE;
+    HANDLE File = CreateFileA(FileName, GENERIC_WRITE, 0, 0, CREATE_ALWAYS, 0, 0);
+    if (File != INVALID_HANDLE_VALUE) {
+        DWORD BytesWritten = 0;
+        WriteFile(File, Data, Size, &BytesWritten, 0);
+        if (BytesWritten == Size) {
+            Result = TRUE;
+        }
+        else {
+            printf("Written %i bytes instead of %i\n", BytesWritten, Size);
+        }
+        CloseHandle(File);
     }
     else {
-      printf("Written %i bytes instead of %i\n", BytesWritten, Size);
+        printf("Can't create file: %S\n", FileName);
     }
-    CloseHandle(File);
-  }
-  else {
-    printf("Can't create file: %S\n", FileName);
-  }
-  //CreateFileA(FNAME, GENERIC_WRITE, 0,0 ,CREATE_NEW, 0,0)
-  return Result;
+    //CreateFileA(FNAME, GENERIC_WRITE, 0,0 ,CREATE_NEW, 0,0)
+    return Result;
 }
 
 
 BOOLEAN
 SetVolumeSize(char Letter, int TargetSizeMB) {
-  BOOLEAN Result = 0;
-  ULONGLONG VolSizeMB = 0;
-  char Buffer[1024];
-  char FNAME[] = "NARDPSCRPT";
-
-
-  ULARGE_INTEGER TOTAL_SIZE = { 0 };
-  ULARGE_INTEGER A, B;
-  GetDiskFreeSpaceExA("", 0, &TOTAL_SIZE, 0);
-  VolSizeMB = TOTAL_SIZE.QuadPart / (1024 * 1024); // byte to MB
-  if (VolSizeMB == TargetSizeMB) {
-    return TRUE;;
-  }
-
-  /*
-extend size = X // extends volume by X. Doesnt resize, just adds X
-shrink desired = X // shrink volume to X, if X is bigger than current size, operation fails
-*/
-  if (VolSizeMB > TargetSizeMB) {
-    // shrink volume
-    sprintf(Buffer, "select volume %c\nshrink desired = %i\n", Letter, TargetSizeMB);
-  }
-  else {
-    // extend volume
-    ULONGLONG Diff = TargetSizeMB - VolSizeMB;
-    sprintf(Buffer, "select volume %c\nextend size = %i\n", Letter, Diff);
-  }
-
-  //NarDumpToFile(const char *FileName, void* Data, int Size)
-  if (NarDumpToFile(FNAME, Buffer, strlen(Buffer))) {
-    char CMDBuffer[1024];
-    sprintf(CMDBuffer, "diskpart \s %s", FNAME);
-    system(CMDBuffer);
-    // TODO(Batuhan): maybe check output
-    Result = TRUE;
-  }
-  return Result;
+    BOOLEAN Result = 0;
+    ULONGLONG VolSizeMB = 0;
+    char Buffer[1024];
+    char FNAME[] = "NARDPSCRPT";
+    sprintf(Buffer, "%c:\\", Letter);
+    
+    ULARGE_INTEGER TOTAL_SIZE = { 0 };
+    ULARGE_INTEGER A, B;
+    GetDiskFreeSpaceExA(Buffer, 0, &TOTAL_SIZE, 0);
+    VolSizeMB = TOTAL_SIZE.QuadPart / (1024 * 1024); // byte to MB
+    if (VolSizeMB == TargetSizeMB) {
+        return TRUE;;
+    }
+    
+    /*
+  extend size = X // extends volume by X. Doesnt resize, just adds X
+  shrink desired = X // shrink volume to X, if X is bigger than current size, operation fails
+  */
+    if (VolSizeMB > TargetSizeMB) {
+        // shrink volume
+      ULONGLONG Diff = VolSizeMB - TargetSizeMB;
+        sprintf(Buffer, "select volume %c\nshrink desired = %i\n", Letter, Diff);
+    }
+    else {
+        // extend volume
+        ULONGLONG Diff = TargetSizeMB - VolSizeMB;
+        sprintf(Buffer, "select volume %c\nextend size = %i\n", Letter, Diff);
+    }
+    
+    //NarDumpToFile(const char *FileName, void* Data, int Size)
+    if (NarDumpToFile(FNAME, Buffer, strlen(Buffer))) {
+        char CMDBuffer[1024];
+        sprintf(CMDBuffer, "diskpart /s %s", FNAME);
+        system(CMDBuffer);
+        // TODO(Batuhan): maybe check output
+        Result = TRUE;
+    }
+    return Result;
 }
 
 BOOLEAN
 CreatePartition(int Disk, char Letter, unsigned size) {
-  BOOLEAN Result = FALSE;
-  char Buffer[1024];
-
+    BOOLEAN Result = FALSE;
+    char Buffer[1024];
+    
 #if 0
-  "select disk %i\ncreate partition primary size = %u\nassign letter = \"X\"\nformat fs = \"NTFS\" label = \"New Volume\" QUICK";
-
-  // diskpart /s DiskPartFile to call DiskPartFile as script
-
-  /*
-create partition primary size = X //
-assign letter = "X" // creates partition with given letter
-format fs = "NTFS" label = "New Volume" QUICK // label might change, dont know what actually it means
-*/
+    "select disk %i\ncreate partition primary size = %u\nassign letter = \"X\"\nformat fs = \"NTFS\" label = \"New Volume\" QUICK";
+    
+    // diskpart /s DiskPartFile to call DiskPartFile as script
+    
+    /*
+  create partition primary size = X //
+  assign letter = "X" // creates partition with given letter
+  format fs = "NTFS" label = "New Volume" QUICK // label might change, dont know what actually it means
+  */
 #endif
+    if (Letter >= 'a' && Letter <= 'z') Letter += ('A' - 'a'); //convert to uppercase
 
-  sprintf(Buffer, "select disk %i\ncreate partition primary size = %u\nassign letter = \"X\"\nformat fs = \"NTFS\" label = \"New Volume\" QUICK", Disk, size, Letter);
-  char FileName[] = "NARDPSCRPT";
-
-  if (NarDumpToFile(FileName, Buffer, strlen(Buffer))) {
-    char CMDBuffer[1024];
-    sprintf(CMDBuffer, "diskpart \s %s", FileName);
-    system(CMDBuffer);
-    // TODO(Batuhan): maybe check output
-    Result = TRUE;
-  }
-
-  return Result;
+    DWORD Drives = GetLogicalDrives();
+    if (Drives & (1 << (Letter - 'A'))) {
+      printf("Volume exists in system\n");
+      return FALSE;
+    }
+    sprintf(Buffer, "select disk %i\ncreate partition primary size = %u\nassign letter = \"%c\"\nformat fs = \"NTFS\" label = \"New Volume\" QUICK", Disk, size, Letter);
+    char FileName[] = "NARDPSCRPT";
+    
+    if (NarDumpToFile(FileName, Buffer, strlen(Buffer))) {
+        char CMDBuffer[1024];
+        sprintf(CMDBuffer, "diskpart /s %s", FileName);
+        system(CMDBuffer);
+        // TODO(Batuhan): maybe check output
+        Result = TRUE;
+    }
+    
+    return Result;
 }
 
 
 // returns # of disks, returns 0 if information doesnt fit in array
 int
 NarGetDisks(disk_information* Result, int NElements) {
-
-  int DiskCount = 0;
-  char TextBuffer[1024];
-  sprintf(TextBuffer, "list disk\n");
-  char DPInputFName[] = "DPINPUT";
-  char DPOutputFName[] = "DPOUTPUT";
-
-  if (NarDumpToFile(DPInputFName, TextBuffer, strlen(TextBuffer))) {
-    char CMDBuffer[1024];
-    sprintf(CMDBuffer, "diskpart /s %s >%s", DPInputFName, DPOutputFName);
-    system(CMDBuffer);
-  }
-
-
-  file_read File = NarReadFile(DPOutputFName);
-  char* Buffer = (char*)File.Data;
-
-  DWORD DriveLayoutSize = 1024 * 64;// 64KB 
-  DRIVE_LAYOUT_INFORMATION_EX* DriveLayout = (DRIVE_LAYOUT_INFORMATION_EX*)malloc(DriveLayoutSize);
-
-  //Find first occurance
-  char Target[1024];
-  int DiskIndex = 0;
-
-  sprintf(Target, "Disk %i", DiskIndex);
-
-  while (TRUE) {
-
-    Buffer = strstr(Buffer, Target);
-    if (Buffer != NULL) {
-
-      if (DiskIndex == NElements) {
-        DiskIndex = 0;
-        break; //Exceeding array
-      }
-
-      Buffer = Buffer + strlen(Target); //bypass "Disk #" string
-
-      Result[DiskIndex].ID = DiskIndex;
-
-      int NumberLen = 1;
-      char Temp[32];
-      memset(Temp, ' ', 32);
-
-      //TODO increment buffer by sizeof target
-      while (!IsNumeric(*(++Buffer)) && *Buffer != '\0'); //Find size
-      while (*(++Buffer) != ' ' && *Buffer != '\0') NumberLen++; //Find size's len in char
-
-      strncpy(Temp, Buffer - NumberLen, NumberLen);
-      Result[DiskIndex].SizeGB = atoi(Temp);
-
-      while (*(++Buffer) == ' ' && *Buffer != '\0');// find size identifier letter
-
-      if (*Buffer != 'G') Result[DiskIndex].SizeGB = 0; //If not GB, we are not interested with this disk
-
-      // Find unallocated space
-      NumberLen = 1;
-      while (!IsNumeric(*(++Buffer)) && *Buffer != '\0');
-      while (*(++Buffer) != ' ' && *Buffer != '\0') NumberLen++; //Find size's len in char
-
-      strncpy(Temp, Buffer - NumberLen, NumberLen); //Copy number
-      Result[DiskIndex].Unallocated = atoi(Temp);
-      Buffer++;  // increment to unit identifier, KB or GB
-      if (*Buffer != 'G') Result[DiskIndex].Unallocated = 0;
-
-      {
-        char PHNAME[] = "\\\\?\\PhysicalDrive%i";
-        sprintf(PHNAME, "\\\\?\\PhysicalDrive%i", Result[DiskIndex].ID);
-
-        HANDLE Disk = CreateFileA(PHNAME, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, 0, OPEN_EXISTING, 0, 0);
-        if (Disk != INVALID_HANDLE_VALUE) {
-          DWORD HELL;
-          if (DeviceIoControl(Disk, IOCTL_DISK_GET_DRIVE_LAYOUT_EX, 0, 0, DriveLayout, DriveLayoutSize, &HELL, 0)) { // TODO check if we can pass NULL to byteswritten 
-            if (DriveLayout->PartitionStyle == PARTITION_STYLE_MBR) {
-              strcpy(Result[DiskIndex].Type, "MBR");
+    
+    int DiskCount = 0;
+    char TextBuffer[1024];
+    sprintf(TextBuffer, "list disk\n");
+    char DPInputFName[] = "DPINPUT";
+    char DPOutputFName[] = "DPOUTPUT";
+    
+    if (NarDumpToFile(DPInputFName, TextBuffer, strlen(TextBuffer))) {
+        char CMDBuffer[1024];
+        sprintf(CMDBuffer, "diskpart /s %s >%s", DPInputFName, DPOutputFName);
+        system(CMDBuffer);
+    }
+    
+    
+    file_read File = NarReadFile(DPOutputFName);
+    char* Buffer = (char*)File.Data;
+    
+    DWORD DriveLayoutSize = 1024 * 64;// 64KB
+    DRIVE_LAYOUT_INFORMATION_EX* DriveLayout = (DRIVE_LAYOUT_INFORMATION_EX*)malloc(DriveLayoutSize);
+    
+    //Find first occurance
+    char Target[1024];
+    int DiskIndex = 0;
+    
+    sprintf(Target, "Disk %i", DiskIndex);
+    
+    while (TRUE) {
+        
+        Buffer = strstr(Buffer, Target);
+        if (Buffer != NULL) {
+            
+            if (DiskIndex == NElements) {
+                DiskIndex = 0;
+                break; //Exceeding array
             }
-            if (DriveLayout->PartitionStyle == PARTITION_STYLE_GPT) {
-              strcpy(Result[DiskIndex].Type, "GPT");
+            
+            Buffer = Buffer + strlen(Target); //bypass "Disk #" string
+            
+            Result[DiskIndex].ID = DiskIndex;
+            
+            int NumberLen = 1;
+            char Temp[32];
+            memset(Temp, ' ', 32);
+            
+            //TODO increment buffer by sizeof target
+            while (!IsNumeric(*(++Buffer)) && *Buffer != '\0'); //Find size
+            while (*(++Buffer) != ' ' && *Buffer != '\0') NumberLen++; //Find size's len in char
+            
+            strncpy(Temp, Buffer - NumberLen, NumberLen);
+            Result[DiskIndex].SizeGB = atoi(Temp);
+            
+            while (*(++Buffer) == ' ' && *Buffer != '\0');// find size identifier letter
+            
+            if (*Buffer != 'G') Result[DiskIndex].SizeGB = 0; //If not GB, we are not interested with this disk
+            
+            // Find unallocated space
+            NumberLen = 1;
+            while (!IsNumeric(*(++Buffer)) && *Buffer != '\0');
+            while (*(++Buffer) != ' ' && *Buffer != '\0') NumberLen++; //Find size's len in char
+            
+            strncpy(Temp, Buffer - NumberLen, NumberLen); //Copy number
+            Result[DiskIndex].Unallocated = atoi(Temp);
+            Buffer++;  // increment to unit identifier, KB or GB
+            if (*Buffer != 'G') Result[DiskIndex].Unallocated = 0;
+            
+            {
+                char PHNAME[] = "\\\\?\\PhysicalDrive%i";
+                sprintf(PHNAME, "\\\\?\\PhysicalDrive%i", Result[DiskIndex].ID);
+                
+                HANDLE Disk = CreateFileA(PHNAME, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, 0, OPEN_EXISTING, 0, 0);
+                if (Disk != INVALID_HANDLE_VALUE) {
+                    DWORD HELL;
+                    if (DeviceIoControl(Disk, IOCTL_DISK_GET_DRIVE_LAYOUT_EX, 0, 0, DriveLayout, DriveLayoutSize, &HELL, 0)) { // TODO check if we can pass NULL to byteswritten
+                        if (DriveLayout->PartitionStyle == PARTITION_STYLE_MBR) {
+                            strcpy(Result[DiskIndex].Type, "MBR");
+                        }
+                        if (DriveLayout->PartitionStyle == PARTITION_STYLE_GPT) {
+                            strcpy(Result[DiskIndex].Type, "GPT");
+                        }
+                        if (DriveLayout->PartitionStyle == PARTITION_STYLE_RAW) {
+                            strcpy(Result[DiskIndex].Type, "RAW");
+                        }
+                        
+                    }
+                    else {
+                        printf("Can't get drive layout for disk %s\n", PHNAME);
+                    }
+                    CloseHandle(Disk);
+                }
+                else {
+                    printf("Can't open disk %s\n", PHNAME);
+                }
+                
             }
-            if (DriveLayout->PartitionStyle == PARTITION_STYLE_RAW) {
-              strcpy(Result[DiskIndex].Type, "RAW");
-            }
-
-          }
-          else {
-            printf("Can't get drive layout for disk %s\n", PHNAME);
-          }
-          CloseHandle(Disk);
+            
+            DiskIndex++;
+            sprintf(Target, "Disk %i", DiskIndex);
+            
         }
         else {
-          printf("Can't open disk %s\n", PHNAME);
+            break;
         }
-
-      }
-
-      DiskIndex++;
-      sprintf(Target, "Disk %i", DiskIndex);
-
+        
     }
-    else {
-      break;
-    }
-
-  }
-
-  free(DriveLayout);
-  free(File.Data);
-  return DiskIndex;
+    
+    free(DriveLayout);
+    free(File.Data);
+    return DiskIndex;
 }
 
 
 //Returns # of volumes detected
 int
 GetVolumes(volume_information* Result, int NElements) {
-  DWORD Drives = GetLogicalDrives();
-  char VolumeString[] = " :\\";
-  int VolumeIndex = 0;
-  char WindowsDir[512];
-  GetWindowsDirectoryA(WindowsDir, 512);
-  for (int CurrentDriveIndex = 0; CurrentDriveIndex < 26; CurrentDriveIndex++) {
     DWORD Drives = GetLogicalDrives();
-    if (VolumeIndex == NElements) {
-      VolumeIndex = 0;
-      break;
+    char VolumeString[] = " :\\";
+    int VolumeIndex = 0;
+    char WindowsDir[512];
+    GetWindowsDirectoryA(WindowsDir, 512);
+    for (int CurrentDriveIndex = 0; CurrentDriveIndex < 26; CurrentDriveIndex++) {
+        DWORD Drives = GetLogicalDrives();
+        if (VolumeIndex == NElements) {
+            VolumeIndex = 0;
+            break;
+        }
+        if (Drives & (1 << CurrentDriveIndex)) {
+            VolumeString[0] = 'A' + CurrentDriveIndex;
+            char FSname[1024];
+            ULARGE_INTEGER TotalSize = { 0 };
+            
+            GetVolumeInformationA(VolumeString, 0, 0, 0, 0, 0, FSname, 1024);
+            GetDiskFreeSpaceExA(VolumeString, 0, &TotalSize, 0);
+            strcpy(Result[VolumeIndex].FileSystem, FSname);
+            
+            Result[VolumeIndex].Letter = 'A' + CurrentDriveIndex;
+            Result[VolumeIndex].SizeMB = TotalSize.QuadPart / (1024 * 1024);
+            Result[VolumeIndex].FileSystem[strlen(FSname)] = '\0'; // Null termination
+            Result[VolumeIndex].Bootable = (WindowsDir[0] == Result[VolumeIndex].Letter);
+            VolumeIndex++;
+        }
     }
-    if (Drives & (1 << CurrentDriveIndex)) {
-      VolumeString[0] = 'A' + CurrentDriveIndex;
-      char FSname[1024];
-      ULARGE_INTEGER TotalSize = { 0 };
-
-      GetVolumeInformationA(VolumeString, 0, 0, 0, 0, 0, FSname, 1024);
-      GetDiskFreeSpaceExA(VolumeString, 0, &TotalSize, 0);
-      strcpy(Result[VolumeIndex].FileSystem, FSname);
-
-      Result[VolumeIndex].Letter = 'A' + CurrentDriveIndex;
-      Result[VolumeIndex].SizeMB = TotalSize.QuadPart / (1024 * 1024);
-      Result[VolumeIndex].FileSystem[strlen(FSname)] = '\0'; // Null termination
-      Result[VolumeIndex].Bootable = (WindowsDir[0] == Result[VolumeIndex].Letter);
-      VolumeIndex++;
-    }
-  }
-  return VolumeIndex;
-
+    return VolumeIndex;
+    
 }
 
 
 
 #if 1
 int
-wmain(
+main(
       int argc,
-      WCHAR* argv[]
+      CHAR* argv[]
       ) {
-    int DiskID, Size;
-    char Type;
-    
-    scanf("DiskID: %i", &DiskID);
-    scanf("Size  : %i", &Size);
-    scanf("Type  : %c", &Type);
-    
-    printf("%i %i %c", DiskID, Size, Type);
-    
-    if (Type == 'G' || Type == 'g') {
-        CreateGPTPartition(DiskID, Size);
-    }
-    else if (Type == 'M' || Type == 'm') {
-        CreateMBRPartition(DiskID, Size);
-    }
-    else {
-        printf("Invalid argument\n");
-        return 0;
-    }
+  
+  if (argc != 4) {
+    printf("Usage : DiskID Letter NewVolumeSizeMB\n");
     return 0;
+  }
+  else {
+    CreatePartition(atoi(argv[1]), argv[2][0], atoi(argv[3]));
+  }
+  return 0;
     
     void* Buff = malloc(1024);
     memset(Buff, 0, 1024);

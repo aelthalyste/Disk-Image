@@ -16,7 +16,38 @@ namespace NarDIWrapper {
         System::String^ MFTMetadataName;
     };
     
+
+    struct disk_information {
+      ULONGLONG SizeGB; //In GB!
+      ULONGLONG Unallocated; // IN GB!
+      char Type[4]; // string, RAW,GPT,MBR, one byte for NULL termination
+      int ID;
+    };
+    struct volume_information {
+      ULONGLONG SizeMB; //in MB! 
+      BOOLEAN Bootable; // Healthy && NTFS && !Boot
+      char Letter;
+      char FileSystem[6]; // FAT32, NTFS, FAT, 1 byte for NULL termination
+    };
     
+    public ref class DiskInfo {
+    public:
+      unsigned SizeGB;
+      unsigned Unallocated;
+      System::String^ Type; // MBR, RAW, GPT
+      int ID;
+    };
+
+
+    public ref class VolumeInformation{
+    public:
+      unsigned SizeMB;
+      bool Bootable;
+      wchar_t Letter;
+      System::String^ FileSystem;
+    };
+
+
     public ref class DiskTracker
     {
         public:
@@ -43,6 +74,8 @@ namespace NarDIWrapper {
         restore_inf* R;
         
     };
-    
+   
+
+
     
 }

@@ -1,0 +1,2 @@
+select volume N
+shrink desired = 2045
