@@ -18,6 +18,8 @@ Environment:
 
 #include "mspyKern.h"
 #include <stdio.h>
+#include <Ntstrsafe.h>
+#include <string.h>
 
 //
 //  Global variables
@@ -25,6 +27,9 @@ Environment:
 
 MINISPY_DATA MiniSpyData;
 NTSTATUS StatusToBreakOn = 0;
+
+#define NAR_GLOBAL_BUFFER_SIZE 512
+WCHAR GlobalWCharBuffer[NAR_GLOBAL_BUFFER_SIZE]; // max 256 for
 
 //NAR
 
@@ -120,119 +125,127 @@ Return Value:
 	NTSTATUS status = STATUS_SUCCESS;
 
 
-	try {
+ try {
 
-		//
-		// Initialize global data structures.
-		//
+   //
+   // Initialize global data structures.
+   //
 
-		MiniSpyData.LogSequenceNumber = 0;
-		MiniSpyData.MaxRecordsToAllocate = DEFAULT_MAX_RECORDS_TO_ALLOCATE;
-		MiniSpyData.RecordsAllocated = 0;
-		MiniSpyData.NameQueryMethod = DEFAULT_NAME_QUERY_METHOD;
+   MiniSpyData.LogSequenceNumber = 0;
+   MiniSpyData.MaxRecordsToAllocate = DEFAULT_MAX_RECORDS_TO_ALLOCATE;
+   MiniSpyData.RecordsAllocated = 0;
+   MiniSpyData.NameQueryMethod = DEFAULT_NAME_QUERY_METHOD;
 
-		MiniSpyData.DriverObject = DriverObject;
+   MiniSpyData.DriverObject = DriverObject;
 
-		InitializeListHead(&MiniSpyData.OutputBufferList);
-		KeInitializeSpinLock(&MiniSpyData.OutputBufferLock);
+   InitializeListHead(&MiniSpyData.OutputBufferList);
+   KeInitializeSpinLock(&MiniSpyData.OutputBufferLock);
 
-		ExInitializeNPagedLookasideList(&MiniSpyData.FreeBufferList,
-			NULL,
-			NULL,
-			POOL_NX_ALLOCATION,
-			RECORD_SIZE,
-			SPY_TAG,
-			0);
+   ExInitializeNPagedLookasideList(&MiniSpyData.FreeBufferList,
+     NULL,
+     NULL,
+     POOL_NX_ALLOCATION,
+     RECORD_SIZE,
+     SPY_TAG,
+     0);
 
 #if MINISPY_VISTA
 
-		//
-		//  Dynamically import FilterMgr APIs for transaction support
-		//
+   //
+   //  Dynamically import FilterMgr APIs for transaction support
+   //
 
 #pragma warning(push)
 #pragma warning(disable:4055) // type cast from data pointer to function pointer
-		MiniSpyData.PFltSetTransactionContext = (PFLT_SET_TRANSACTION_CONTEXT)FltGetRoutineAddress("FltSetTransactionContext");
-		MiniSpyData.PFltGetTransactionContext = (PFLT_GET_TRANSACTION_CONTEXT)FltGetRoutineAddress("FltGetTransactionContext");
-		MiniSpyData.PFltEnlistInTransaction = (PFLT_ENLIST_IN_TRANSACTION)FltGetRoutineAddress("FltEnlistInTransaction");
+   MiniSpyData.PFltSetTransactionContext = (PFLT_SET_TRANSACTION_CONTEXT)FltGetRoutineAddress("FltSetTransactionContext");
+   MiniSpyData.PFltGetTransactionContext = (PFLT_GET_TRANSACTION_CONTEXT)FltGetRoutineAddress("FltGetTransactionContext");
+   MiniSpyData.PFltEnlistInTransaction = (PFLT_ENLIST_IN_TRANSACTION)FltGetRoutineAddress("FltEnlistInTransaction");
 #pragma warning(pop)
 
 #endif
 
-		//
-		// Read the custom parameters for MiniSpy from the registry
-		//
+   //
+   // Read the custom parameters for MiniSpy from the registry
+   //
 
-		SpyReadDriverParameters(RegistryPath);
+   SpyReadDriverParameters(RegistryPath);
 
-		//
-		//  Now that our global configuration is complete, register with FltMgr.
-		//
+   //
+   //  Now that our global configuration is complete, register with FltMgr.
+   //
 
-		status = FltRegisterFilter(DriverObject,
-			&FilterRegistration,
-			&MiniSpyData.Filter);
+   status = FltRegisterFilter(DriverObject,
+     &FilterRegistration,
+     &MiniSpyData.Filter);
 
-		if (!NT_SUCCESS(status)) {
+   if (!NT_SUCCESS(status)) {
 
-			leave;
-		}
+     leave;
+   }
 
 
-		status = FltBuildDefaultSecurityDescriptor(&sd,
-			FLT_PORT_ALL_ACCESS);
+   status = FltBuildDefaultSecurityDescriptor(&sd,
+     FLT_PORT_ALL_ACCESS);
 
-		if (!NT_SUCCESS(status)) {
-			leave;
-		}
+   if (!NT_SUCCESS(status)) {
+     leave;
+   }
 
-		RtlInitUnicodeString(&uniString, MINISPY_PORT_NAME);
+   RtlInitUnicodeString(&uniString, MINISPY_PORT_NAME);
 
-		InitializeObjectAttributes(&oa,
-			&uniString,
-			OBJ_KERNEL_HANDLE | OBJ_CASE_INSENSITIVE,
-			NULL,
-			sd);
+   InitializeObjectAttributes(&oa,
+     &uniString,
+     OBJ_KERNEL_HANDLE | OBJ_CASE_INSENSITIVE,
+     NULL,
+     sd);
 
-		status = FltCreateCommunicationPort(MiniSpyData.Filter,
-			&MiniSpyData.ServerPort,
-			&oa,
-			NULL,
-			SpyConnect,
-			SpyDisconnect,
-			SpyMessage,
-			1);
+   status = FltCreateCommunicationPort(MiniSpyData.Filter,
+     &MiniSpyData.ServerPort,
+     &oa,
+     NULL,
+     SpyConnect,
+     SpyDisconnect,
+     SpyMessage,
+     1);
 
-		FltFreeSecurityDescriptor(sd);
+   FltFreeSecurityDescriptor(sd);
 
-		if (!NT_SUCCESS(status)) {
-			leave;
-		}
+   if (!NT_SUCCESS(status)) {
+     leave;
+   }
 
-		//
-		//  We are now ready to start filtering
-		//
+			
+			RtlInitEmptyUnicodeString(&MiniSpyData.Nar.IgnoreBuffer, GlobalWCharBuffer, NAR_GLOBAL_BUFFER_SIZE);
 
-		status = FltStartFiltering(MiniSpyData.Filter);
+		
 
-	}
-	finally {
+			
+   
 
-		if (!NT_SUCCESS(status)) {
+   //
+   //  We are now ready to start filtering
+   //
 
-			if (NULL != MiniSpyData.ServerPort) {
-				FltCloseCommunicationPort(MiniSpyData.ServerPort);
-			}
+   status = FltStartFiltering(MiniSpyData.Filter);
 
-			if (NULL != MiniSpyData.Filter) {
-				FltUnregisterFilter(MiniSpyData.Filter);
-			}
+ }
+ finally {
 
-			ExDeleteNPagedLookasideList(&MiniSpyData.FreeBufferList);
-		}
-	}
+   if (!NT_SUCCESS(status)) {
 
-	return status;
+     if (NULL != MiniSpyData.ServerPort) {
+       FltCloseCommunicationPort(MiniSpyData.ServerPort);
+     }
+
+     if (NULL != MiniSpyData.Filter) {
+       FltUnregisterFilter(MiniSpyData.Filter);
+     }
+
+     ExDeleteNPagedLookasideList(&MiniSpyData.FreeBufferList);
+   }
+ }
+
+ return status;
 }
 
 NTSTATUS
@@ -265,19 +278,34 @@ Return Value
 --*/
 {
 
-	PAGED_CODE();
+  PAGED_CODE();
 
-	UNREFERENCED_PARAMETER(ServerPortCookie);
-	UNREFERENCED_PARAMETER(ConnectionContext);
-	UNREFERENCED_PARAMETER(SizeOfContext);
-	UNREFERENCED_PARAMETER(ConnectionCookie);
+  UNREFERENCED_PARAMETER(ServerPortCookie);
+  UNREFERENCED_PARAMETER(ConnectionContext);
+  UNREFERENCED_PARAMETER(SizeOfContext);
+  UNREFERENCED_PARAMETER(ConnectionCookie);
 
-	FLT_ASSERT(MiniSpyData.ClientPort == NULL);
-	MiniSpyData.ClientPort = ClientPort;
-	MiniSpyData.UserModePID = *((ULONG*)ConnectionContext);
+  FLT_ASSERT(MiniSpyData.ClientPort == NULL);
+  NAR_CONNECTION_CONTEXT* CTX = ConnectionContext;
+  CTX->UserName[255] = '\0';
 
-	return STATUS_SUCCESS;
+  MiniSpyData.ClientPort = ClientPort;
+  
+		MiniSpyData.Nar.UserModePID = CTX->PID;
+		
+		//Copy user name
+		int Index = 0;
+		while (Index < 256) {
+				MiniSpyData.Nar.UserName[Index] = CTX->UserName[Index];
+				Index++;
+				if (CTX->UserName[Index] == '\0') break;
+		}
+		
+
+  return STATUS_SUCCESS;
 }
+
+
 
 
 VOID
@@ -639,7 +667,7 @@ Return Value:
 
 	ULONG PID = FltGetRequestorProcessId(Data);
 
-	if (Data->Iopb->TargetFileObject->Flags & FO_TEMPORARY_FILE || PID == MiniSpyData.UserModePID) {
+	if (Data->Iopb->TargetFileObject->Flags & FO_TEMPORARY_FILE || PID == MiniSpyData.Nar.UserModePID) {
 		return 	FLT_PREOP_SUCCESS_NO_CALLBACK;
 	}
 
@@ -656,6 +684,76 @@ Return Value:
 	WCHAR name[MAX_NAME_SPACE / sizeof(WCHAR)];
 
 #endif
+
+	if (FltObjects->FileObject != NULL) {
+
+			status = FltGetFileNameInformation(Data,
+					FLT_FILE_NAME_NORMALIZED |
+					MiniSpyData.NameQueryMethod,
+					&nameInfo);
+			if (NT_SUCCESS(status)) {
+
+					// Harddiskdevice\path\asdfs\sdffsd\file
+     /*
+								C:\Users\adm\AppData\Local\Temp
+								C:\Users\adm\AppData\Local\Microsoft\Windows\Temporary Internet Files
+								C:\Users\adm\AppData\Local\Google\Chrome\User Data\Default\Cache
+								C:\Users\adm\AppData\Local\Opera Software
+								C:\Users\adm\AppData\Local\Mozilla\Firefox\Profiles
+								C:\Windows\CSC
+					*/
+
+					RtlUnicodeStringPrintf(&MiniSpyData.Nar.IgnoreBuffer, L"\\Device\\HarddiskVolume%i\\Users\\%S\\AppData\\Local\\Temp", MiniSpyData.Nar.OsDeviceID, MiniSpyData.Nar.UserName);
+					if (RtlPrefixUnicodeString(&MiniSpyData.Nar.IgnoreBuffer, &nameInfo->Name, FALSE)) {
+							goto NAR_PREOP_END;
+					}
+					
+					RtlUnicodeStringPrintf(&MiniSpyData.Nar.IgnoreBuffer, L"\\Device\\HarddiskVolume%i\\Users\\%S\\AppData\\Local\\Microsoft\\Windows\\Temporary Internet Files", MiniSpyData.Nar.OsDeviceID, MiniSpyData.Nar.UserName);
+					if (RtlPrefixUnicodeString(&MiniSpyData.Nar.IgnoreBuffer, &nameInfo->Name, FALSE)) {
+							goto NAR_PREOP_END;
+					}
+
+					RtlUnicodeStringPrintf(&MiniSpyData.Nar.IgnoreBuffer, L"\\Device\\HarddiskVolume%i\\Users\\%S\\AppData\\Local\\Google\\Chrome\\User Data\\Default\\Cache", MiniSpyData.Nar.OsDeviceID, MiniSpyData.Nar.UserName);
+					if (RtlPrefixUnicodeString(&MiniSpyData.Nar.IgnoreBuffer, &nameInfo->Name, FALSE)) {
+							goto NAR_PREOP_END;
+					}
+
+					RtlUnicodeStringPrintf(&MiniSpyData.Nar.IgnoreBuffer, L"\\Device\\HarddiskVolume%i\\Users\\%S\\AppData\\Local\\Opera Software", MiniSpyData.Nar.OsDeviceID, MiniSpyData.Nar.UserName);
+					if (RtlPrefixUnicodeString(&MiniSpyData.Nar.IgnoreBuffer, &nameInfo->Name, FALSE)) {
+							goto NAR_PREOP_END;
+					}
+
+					RtlUnicodeStringPrintf(&MiniSpyData.Nar.IgnoreBuffer, L"\\Device\\HarddiskVolume%i\\Users\\%S\\AppData\\Local\\Mozilla\\Firefox\\Profiles", MiniSpyData.Nar.OsDeviceID, MiniSpyData.Nar.UserName);
+					if (RtlPrefixUnicodeString(&MiniSpyData.Nar.IgnoreBuffer, &nameInfo->Name, FALSE)) {
+							goto NAR_PREOP_END;
+					}
+
+					
+
+					//Suffix area
+					RtlUnicodeStringPrintf(&MiniSpyData.Nar.IgnoreBuffer, L".tmp");
+					if (RtlSuffixUnicodeString(&MiniSpyData.Nar.IgnoreBuffer, &nameInfo->Name, FALSE)) {
+							goto NAR_PREOP_END;
+					}
+					RtlUnicodeStringPrintf(&MiniSpyData.Nar.IgnoreBuffer, L"~");
+					if (RtlSuffixUnicodeString(&MiniSpyData.Nar.IgnoreBuffer, &nameInfo->Name, FALSE)) {
+							goto NAR_PREOP_END;
+					}
+					RtlUnicodeStringPrintf(&MiniSpyData.Nar.IgnoreBuffer, L".tib.metadata");
+					if (RtlSuffixUnicodeString(&MiniSpyData.Nar.IgnoreBuffer, &nameInfo->Name, FALSE)) {
+							goto NAR_PREOP_END;
+					}
+					RtlUnicodeStringPrintf(&MiniSpyData.Nar.IgnoreBuffer, L".tib");
+					if (RtlSuffixUnicodeString(&MiniSpyData.Nar.IgnoreBuffer, &nameInfo->Name, FALSE)) {
+							goto NAR_PREOP_END;
+					}
+
+
+
+
+			}
+	}
+
 
 	//
 	//  Try and get a log record
@@ -922,6 +1020,7 @@ Return Value:
 		}
 	}
 
+	NAR_PREOP_END:
 	return returnStatus;
 }
 

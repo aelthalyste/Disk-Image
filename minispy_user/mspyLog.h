@@ -149,7 +149,7 @@ PrintListReverse(region_chain* Temp);
 #endif
 
 
-enum BackupType {
+enum class BackupType : short {
     Diff,
     Inc
 };
@@ -162,7 +162,6 @@ struct stream {
 };
 
 struct volume_backup_inf {
-    //TODO add partition name of the volume to this structure.
     wchar_t Letter;
     BOOLEAN FullBackupExists;
     BOOLEAN IsOSVolume;
@@ -195,34 +194,67 @@ struct volume_backup_inf {
     
     stream Stream;
     
-    //TODO
-    
     CComPtr<IVssBackupComponents> VSSPTR;
     
 };
 
-struct backup_metadata{
-    wchar_t Letter;
+
+#pragma pack(push ,1) // force 1 byte alignment
+struct backup_metadata {
+    
     union {
         BOOL IsOSVolume; // int, 4 bytes
         struct {
-            BOOLEAN TYPE; // 1 byte
-            BOOLEAN EFI;
+            BOOLEAN IsGPT; // MBR if false
+            BOOLEAN SYSTEM; // EFI for GPT
             BOOLEAN RESTORE;
             BOOLEAN MSR;
         };
-    };
+    }; // 4byte
     
-    enum BOOLEAN{
-        MBR = 1,
-        GPT,
-        RAW
-    };
+    
+    int Version; // -1 for full backup
+    int ClusterSize; // 4096 default
+    
+    
+    char Letter;
+    BOOLEAN Error; //whole error flags can fit here
     
     BackupType BackupType; // diff or inc
-    int Version; // -1 for full backup
-    int ClusterSize;
+    
+    
+    struct {
+        //Standart for all backup types
+        ULONGLONG RegionMetadata;
+        ULONGLONG Region;
+        
+        //For non-full backups
+        ULONGLONG MFTMetadata;
+        ULONGLONG MFT;
+        
+        //For volumes contains an operating system
+        ULONGLONG SYSTEM;
+        ULONGLONG RESTORE;
+        ULONGLONG MSR; // 16MB or zero (0)
+    }Size;
+    
+    //F prefix to indicate Flag
+    enum class Flags : char {
+        F_Metadata = 1 << 0,
+        F_MFTMetadata = 1 << 1, //Ignored in fullbackup;
+        //Actual data flags
+        F_Regions = 1 << 2,
+        F_MFT = 1 << 3,
+        // if OS volume
+        F_SYSTEM = 1 << 4,
+        F_RESTORE = 1 << 5,
+        F_MSR = 1 << 6
+    };
+    
 };
+#pragma pack(pop)
+
+
 
 struct restore_inf {
     wchar_t TargetLetter;
@@ -232,6 +264,12 @@ struct restore_inf {
     BOOLEAN Version;
     BackupType Type;
     stream Stream;
+    
+    union {
+      BOOLEAN IsOsVolume;
+      BYTE DiskID;
+    };
+
 };
 
 struct DotNetStreamInf {
@@ -286,10 +324,13 @@ BOOLEAN
 NarDumpToFile(const char* FileName, void* Data, int Size);
 
 BOOLEAN
-SetVolumeSize(char Letter, int TargetSizeMB);
+NarSetVolumeSize(char Letter, int TargetSizeMB);
 
 BOOLEAN
 CreatePartition(int Disk, char Letter, unsigned size);
+
+BOOLEAN
+NarCreateGPTBootPartition(int DiskID, int VolumeSizeMB, int EFISizeMB, int RecoverySizeMB, char Letter);
 
 int
 NarGetDisks(disk_information* Result, int NElements);
@@ -425,7 +466,8 @@ OfflineIncRestore(restore_inf* Inf, HANDLE V, std::wstring RootPath);
 BOOLEAN
 OfflineDiffRestore(restore_inf* Inf, HANDLE V, std::wstring RootPath);
 
-
+BOOLEAN
+RestoreSystemPartitions(restore_inf* Inf);
 
 
 

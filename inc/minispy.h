@@ -65,10 +65,10 @@ Environment:
 #define MINISPY_MIN_VERSION 0
 
 typedef struct _MINISPYVER {
-
+    
     USHORT Major;
     USHORT Minor;
-
+    
 } MINISPYVER, *PMINISPYVER;
 
 //
@@ -107,44 +107,44 @@ typedef _Return_type_success_(return >= 0) LONG NTSTATUS;
 //
 
 typedef struct _RECORD_DATA {
-
+    
     LARGE_INTEGER OriginatingTime;
     LARGE_INTEGER CompletionTime;
-
+    
     FILE_ID DeviceObject;
     FILE_ID FileObject;
     FILE_ID Transaction;
-
+    
     FILE_ID ProcessId;
     FILE_ID ThreadId;
-
+    
     ULONG_PTR Information;
-
+    
     NTSTATUS Status;
-
+    
     ULONG IrpFlags;
     ULONG Flags;
-
+    
     UCHAR CallbackMajorId;
     UCHAR CallbackMinorId;
     UCHAR Reserved[2];      // Alignment on IA64
-
+    
 #pragma warning(push)
 #pragma warning(disable:4201) // disable warnings for structures-unions without names
-
-     
-     struct {
-       UINT32 S;
-       UINT32 L;
-     }P[5];
-     UINT32 RecCount;
-     UINT32 Error;
-     
     
-
+    
+    struct {
+        UINT32 S;
+        UINT32 L;
+    }P[5];
+    UINT32 RecCount;
+    UINT32 Error;
+    
+    
+    
     ULONG EcpCount;
     ULONG KnownEcpMask;
-
+    
 } RECORD_DATA, *PRECORD_DATA;
 
 #pragma warning(pop)
@@ -158,17 +158,17 @@ typedef struct _RECORD_DATA {
 #pragma warning(disable:4200) // disable warnings for structures with zero length arrays.
 
 typedef struct _LOG_RECORD {
-
-
+    
+    
     ULONG Length;           // Length of log record.  This Does not include
     ULONG SequenceNumber;   // space used by other members of RECORD_LIST
-
+    
     ULONG RecordType;       // The type of log record this is.
     ULONG Reserved;         // For alignment on IA64
-
+    
     RECORD_DATA Data;
     WCHAR Name[];           //  This is a null terminated string
-
+    
 } LOG_RECORD, *PLOG_RECORD;
 
 #pragma warning(pop)
@@ -178,9 +178,9 @@ typedef struct _LOG_RECORD {
 //
 
 typedef struct _RECORD_LIST {
-
+    
     LIST_ENTRY List;
-
+    
     //
     // Must always be last item.  See MAX_LOG_RECORD_LENGTH macro below.
     // Must be aligned on PVOID boundary in this structure. This is because the
@@ -188,9 +188,9 @@ typedef struct _RECORD_LIST {
     // Size of log record must also be multiple of PVOID size to avoid alignment
     // faults while accessing the log records on IA64
     //
-
+    
     LOG_RECORD LogRecord;
-
+    
 } RECORD_LIST, *PRECORD_LIST;
 
 //
@@ -198,10 +198,10 @@ typedef struct _RECORD_LIST {
 //
 
 typedef enum _MINISPY_COMMAND {
-
+    
     GetMiniSpyLog,
     GetMiniSpyVersion
-
+        
 } MINISPY_COMMAND;
 
 //
@@ -218,6 +218,14 @@ typedef struct _COMMAND_MESSAGE {
 } COMMAND_MESSAGE, *PCOMMAND_MESSAGE;
 
 #pragma warning(pop)
+
+typedef struct _NAR_CONNECTION_CONTEXT {
+    unsigned long PID;
+    int OsDeviceID; // parse QueryDeviceName
+    WCHAR UserName[256]; // Null terminated
+}NAR_CONNECTION_CONTEXT;
+
+
 
 //
 //  The maximum number of BYTES that can be used to store the file name in the
@@ -241,8 +249,8 @@ typedef struct _COMMAND_MESSAGE {
 //
 
 #define REMAINING_NAME_SPACE(LogRecord) \
-    (FLT_ASSERT((LogRecord)->Length >= sizeof(LOG_RECORD)), \
-     (USHORT)(MAX_NAME_SPACE - ((LogRecord)->Length - sizeof(LOG_RECORD))))
+(FLT_ASSERT((LogRecord)->Length >= sizeof(LOG_RECORD)), \
+ (USHORT)(MAX_NAME_SPACE - ((LogRecord)->Length - sizeof(LOG_RECORD))))
 
 #define MAX_LOG_RECORD_LENGTH  (RECORD_SIZE - FIELD_OFFSET( RECORD_LIST, LogRecord ))
 
@@ -257,7 +265,7 @@ typedef struct _COMMAND_MESSAGE {
 
 #ifndef ROUND_TO_SIZE
 #define ROUND_TO_SIZE(_length, _alignment)    \
-            (((_length) + ((_alignment)-1)) & ~((_alignment) - 1))
+(((_length) + ((_alignment)-1)) & ~((_alignment) - 1))
 #endif
 
 #ifndef FlagOn

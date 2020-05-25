@@ -77,7 +77,7 @@ HKR,"Instances\"%Instance3.Name%,"Flags",0x00010001,%Instance3.Flags%
 %DriverName%.sys
 
 [Minispy.UserFiles]
-minispy.exe
+;;minispy.exe
 
 [SourceDisksFiles]
 minispy.sys = 1,,

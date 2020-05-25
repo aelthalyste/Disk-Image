@@ -33,7 +33,7 @@ _Analysis_mode_(_Analysis_code_type_user_code_)
 #define TIME_BUFFER_LENGTH 20
 #define TIME_ERROR         "time error"
 
-#define POLL_INTERVAL   5     // 10 milliseconds
+#define POLL_INTERVAL   5
 
 BOOLEAN
 TranslateFileTag(
@@ -119,6 +119,8 @@ Return Value:
 
 --*/
 {
+  printf("Msging thread started\n");
+
   PLOG_CONTEXT context = (PLOG_CONTEXT)lpParameter;
   DWORD bytesReturned = 0;
   DWORD used;
@@ -262,8 +264,8 @@ Check errors here
           }
         }
         if (thirdindex == -1) {
-          printf("Third index shouldnt be -1 \n");
-          //TODO error log
+          printf("FATAL ERROR: Third index shouldnt be -1 \n");
+          continue;
         }
 
         LogDOSName = LogDOSName.substr(0, thirdindex);
@@ -285,7 +287,6 @@ Check errors here
                   printf("Couldnt dump memory contents\n");
                   printf("written => %d\tbuffersize -> %d\n", BytesWritten, BufferSize);
                   printf("Result -> %d\n", Result);
-                  //TODO log error
                 }
                 SucRecCount = BytesWritten / sizeof(nar_record);
                 V->IncRecordCount += SucRecCount;
@@ -308,7 +309,6 @@ Check errors here
                 break;
               } {
                 printf("## Error occured while writing log to file. FERROR!!\n");
-                //TODO log, failed to log volume change.
               }
 
             }
