@@ -55,11 +55,14 @@ struct data_array {
     UINT Count;
     
     inline void Insert(DATA_TYPE Val) {
-        Data = (DATA_TYPE*)realloc(Data, sizeof(Val) * (Count + 1));
+        Data = (DATA_TYPE*)realloc(Data, sizeof(Val) * ((ULONGLONG)Count + 1));
         memcpy(&Data[Count], &Val, sizeof(DATA_TYPE));
         Count++;
     }
-    
+    ~data_array() {
+        // NOTE(Batuhan) : Null protected
+        free(Data);
+    }
 };
 
 inline BOOLEAN
@@ -81,24 +84,13 @@ RecordEqual(nar_record* N1, nar_record* N2) {
 
 #define MINISPY_NAME  L"MiniSpy"
 
-#define FB_FILE_NAME L"FullBackupDisk_"
-#define DB_FILE_NAME L"DiffBackupDisk_"
-
-#define FB_METADATA_FILE_NAME L"FMetadata_"
-#define DB_METADATA_FILE_NAME L"DMetadata_"
-
-#define MFT_LCN_FILE_NAME L"MFTLCN_"
-#define MFT_FILE_NAME L"MFT_BINARY_"
-
-#define MSR_FILE_NAME L"MSR_" // microsoft reserved partition file name prefix
-#define SP_FILE_NAME L"SP_"//system partition file name prefix
-#define REC_FILE_NAME L"REC_" // recovery partition file name prefix
+#define NAR_BINARY_FILE_NAME L"NAR_BINARY_"
 
 #define MAKE_W_STR(arg) L#arg
 
 #define Assert(expression, msg) if(!(expression)) {printf(msg); *(int*)0 = 0;}
 #define Assert(expression) if(!(expression)) {*(int*)0 = 0;}
-#define ASSERT_VSS(expression) if(FAILED(expression)) {printf("Err @ %d\n",__LINE__);*(int*)0=0; }
+
 
 
 inline BOOLEAN
@@ -200,76 +192,123 @@ struct volume_backup_inf {
 
 
 #pragma pack(push ,1) // force 1 byte alignment
+/*
+// NOTE(Batuhan): file that contains this struct contains:
+-- RegionMetadata:
+-- MFTMetadata: (optional)
+-- MFT: (optional)
+-- Recovery: (optional)
+
+If any metadata error occurs, it's related binary data will be marked as corrupt too. If i cant copy mft metadata
+to file, mft itself will be marked as corrupt because i wont have anything to map it to volume  at restore state.
+*/
+#define MetadataFileNameDraft "NAR_"
+#define BackupFileNameDraft "NAR_BACKUP_"
+#define NAR_FULLBACKUP_VERSION -1
+
+#define WideMetadataFileNameDraft L"NAR_"
+#define WideBackupFileNameDraft L"NAR_BACKUP_"
+
+// NOTE(Batuhan): nar binary file contains backup data, mft, and recovery
+static const int GlobalBackupMetadataVersion = 1;
 struct backup_metadata {
     
-    union {
-        BOOL IsOSVolume; // int, 4 bytes
-        struct {
-            BOOLEAN IsGPT; // MBR if false
-            BOOLEAN SYSTEM; // EFI for GPT
-            BOOLEAN RESTORE;
-            BOOLEAN MSR;
-        };
-    }; // 4byte
-    
+    struct {
+        int Size = sizeof(backup_metadata); // Size of this struct
+        // NOTE(Batuhan): structure may change over time(hope it wont), this value hold which version it is so i can identify and cast accordingly
+        int Version;
+    }MetadataInf;
     
     int Version; // -1 for full backup
     int ClusterSize; // 4096 default
     
-    
     char Letter;
-    BOOLEAN Error; //whole error flags can fit here
+    BOOLEAN IsGPT;
+    union {
+        BOOLEAN IsOSVolume;
+        BOOLEAN Recovery; // true if contains restore partition
+    }; // 4byte
+    BackupType BT; // diff or inc
     
-    BackupType BackupType; // diff or inc
-    
-    
+    ULONGLONG VolumeSize;
+    ULONGLONG LastUsedByteOffset;
+
     struct {
-        //Standart for all backup types
-        ULONGLONG RegionMetadata;
-        ULONGLONG Region;
+        ULONGLONG RegionsMetadata;
+        ULONGLONG Regions;
         
-        //For non-full backups
         ULONGLONG MFTMetadata;
         ULONGLONG MFT;
         
-        //For volumes contains an operating system
-        ULONGLONG SYSTEM;
-        ULONGLONG RESTORE;
-        ULONGLONG MSR; // 16MB or zero (0)
-    }Size;
+        ULONGLONG Recovery;
+    }Size; //In bytes!
     
-    //F prefix to indicate Flag
-    enum class Flags : char {
-        F_Metadata = 1 << 0,
-        F_MFTMetadata = 1 << 1, //Ignored in fullbackup;
-        //Actual data flags
-        F_Regions = 1 << 2,
-        F_MFT = 1 << 3,
-        // if OS volume
-        F_SYSTEM = 1 << 4,
-        F_RESTORE = 1 << 5,
-        F_MSR = 1 << 6
-    };
+    struct{
+        ULONGLONG RegionsMetadata;
+        ULONGLONG AlignmentReserved; // ULONGLONG Regions: this is binary backup data, we dont store it here, this value
+        // fixes aligment to 40 byte straight up for 3 struct. maybe useful later?
+        
+        ULONGLONG MFTMetadata;
+        ULONGLONG MFT;
+        
+        ULONGLONG Recovery;
+    }Offset; // offsets from beginning of the file
     
+    // NOTE(Batuhan): error flags to indicate corrupted data, indicates file
+    // may not contain particular metadata or binary data.
+    struct{
+        BOOLEAN RegionsMetadata;
+        BOOLEAN Regions;
+        
+        BOOLEAN MFTMetadata;
+        BOOLEAN MFT;
+        
+        BOOLEAN Recovery;
+    }Errors;
 };
+
 #pragma pack(pop)
 
+/*
+işletim sistemi durumu hakkında, eğer ilk seçenek verilmişse, sadece datayı geri yükler, eğer ikinci seçenek var ise
+boot aşamalarını yapar. kullanıcı sadece içerideki veriyi almak da isteyebilir
+
+input: letter,version,rootdir,targetletter var olan bir volume'a restore yapılmalı
+input: letter,version,rootdir,diskid,targetletter belirtilen diskte yeni volume oluşturularak restore yapılır
+bu seçenekte, işletim sistemi geri yükleniliyorsa, disk ona göre hazırlanır
+*/
+
+struct backup_metadata_ex{
+    backup_metadata M;
+    data_array<nar_record> RegionsMetadata;
+    std::wstring FilePath;
+};
+
+enum NarPartitionType{
+    System,
+    Recovery,
+    MSR,
+    Primary
+};
+
+enum NarDiskType{
+    GPT,
+    MBR
+};
+
+struct{
+    int SizeMB;
+    NarPartitionType PT;
+    NarDiskType DT;
+}NarBasicPartition;
 
 
 struct restore_inf {
     wchar_t TargetLetter;
     wchar_t SrcLetter;
-    UINT32 ClusterSize;
-    BOOLEAN ToFull;
     BOOLEAN Version;
-    BackupType Type;
-    stream Stream;
-    
-    union {
-      BOOLEAN IsOsVolume;
-      BYTE DiskID;
-    };
-
+    std::wstring RootDir;
+    // NOTE(Batuhan): optional
 };
 
 struct DotNetStreamInf {
@@ -277,8 +316,6 @@ struct DotNetStreamInf {
     INT32 ClusterCount; //In clusters
     std::wstring FileName;
     std::wstring MetadataFileName;
-    std::wstring MFTFileName;
-    std::wstring MFTMetadataName;
 };
 
 
@@ -355,7 +392,7 @@ struct LOG_CONTEXT {
     //
     // For synchronizing shutting down of both threads
     //
-    
+    wchar_t RootDir[512];
     BOOLEAN CleaningUp;
     HANDLE  ShutDown;
 };
@@ -390,31 +427,6 @@ CopyData(HANDLE S, HANDLE D, ULONGLONG Len, ULONGLONG FileOffset);
 
 BOOLEAN
 CopyData(HANDLE S, HANDLE D, ULONGLONG Len);
-
-inline std::wstring
-GenerateMFTFileName(wchar_t Letter, int ID);
-
-inline std::wstring
-GenerateMFTMetadataFileName(wchar_t Letter, int ID);
-
-/*Used for diff*/
-inline std::wstring
-GenerateDBMetadataFileName(wchar_t Letter, int ID);
-
-inline std::wstring
-GenerateDBFileName(wchar_t Letter, int ID);
-
-inline std::wstring
-GenerateFBFileName(wchar_t Letter);
-
-inline std::wstring
-GenerateFBMetadataFileName(wchar_t Letter);
-
-inline std::wstring
-GenerateSystemPartitionFileName(wchar_t Letter);
-
-inline std::wstring
-GenerateMSRFileName(wchar_t Letter);
 
 inline void
 StrToGUID(const char* guid, GUID* G);
@@ -469,7 +481,27 @@ OfflineDiffRestore(restore_inf* Inf, HANDLE V, std::wstring RootPath);
 BOOLEAN
 RestoreSystemPartitions(restore_inf* Inf);
 
+BOOLEAN
+InitGPTPartition(int DiskID);
 
+BOOLEAN
+CreateAndMountSystemPartition(int DiskID, char Letter, unsigned SizeMB);
+
+BOOLEAN
+CreateAndMountRecoveryPartition(int DiskID, char Letter, unsigned SizeMB);
+
+BOOLEAN
+CreateAndMountMSRPartition(int DiskID, unsigned SizeMB);
+
+BOOLEAN
+RemoveLetter(int DiskID, unsigned PartitionID, char Letter);
+
+// NOTE(Batuhan): create partition with given size
+BOOLEAN
+NarCreatePrimaryPartition(int DiskID, char Letter, unsigned SizeMB);
+// NOTE(Batuhan): new partition will use all unallocated space left
+BOOLEAN
+NarCreatePrimaryPartition(int DiskID, char Letter);
 
 BOOLEAN
 SetupVSS();
@@ -519,8 +551,6 @@ Split(std::string str, std::string delimiter);
 inline std::vector<std::wstring>
 Split(std::wstring str, std::wstring delimiter);
 
-data_array<nar_record>
-GetMFTLCN(char VolumeLetter);
 
 BOOLEAN
 AddVolumeToTrack(PLOG_CONTEXT Context, wchar_t Letter, BackupType Type);

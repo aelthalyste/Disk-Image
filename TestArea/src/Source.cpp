@@ -84,7 +84,7 @@ CreateMBRPartition(int DiskID, int size) {
 #include <rpcdcep.h>
 #include <rpcdce.h>
 
-void
+inline void
 StrToGUID(const char* guid, GUID* G) {
   if (!G) return;
   sscanf(guid, "{%8X-%4hX-%4hX-%2hX%2hX-%2hX%2hX%2hX%2hX%2hX%2hX}", &G->Data1, &G->Data2, &G->Data3, &G->Data4[0], &G->Data4[1], &G->Data4[2], &G->Data4[3], &G->Data4[4], &G->Data4[5], &G->Data4[6], &G->Data4[7]);
@@ -107,7 +107,7 @@ Volume ###  Ltr  Label        Fs     Type        Size     Status     Info
   Volume 3                      FAT32  Partition    100 MB  Healthy    System
 */
 struct volume_information {
-  ULONGLONG SizeMB; //in MB! 
+  ULONGLONG SizeMB; //in MB!
   BOOLEAN Bootable; // Healthy && NTFS && !Boot
   char Letter;
   char FileSystem[6]; // FAT32, NTFS, FAT, 1 byte for NULL termination
@@ -284,7 +284,7 @@ BOOLEAN
 CreatePartition(int Disk, char Letter, unsigned size) {
   BOOLEAN Result = FALSE;
   char Buffer[1024];
-  
+
 #if 0
   "select disk %i\ncreate partition primary size = %u\nassign letter = \"X\"\nformat fs = \"NTFS\" label = \"New Volume\" QUICK";
 
@@ -332,7 +332,7 @@ NarGetDisks(disk_information* Result, int NElements) {
   file_read File = NarReadFile(DPOutputFName);
   char* Buffer = (char*)File.Data;
 
-  DWORD DriveLayoutSize = 1024 * 64;// 64KB 
+  DWORD DriveLayoutSize = 1024 * 64;// 64KB
   DRIVE_LAYOUT_INFORMATION_EX* DriveLayout = (DRIVE_LAYOUT_INFORMATION_EX*)malloc(DriveLayoutSize);
 
   //Find first occurance
@@ -387,7 +387,7 @@ NarGetDisks(disk_information* Result, int NElements) {
         HANDLE Disk = CreateFileA(PHNAME, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, 0, OPEN_EXISTING, 0, 0);
         if (Disk != INVALID_HANDLE_VALUE) {
           DWORD HELL;
-          if (DeviceIoControl(Disk, IOCTL_DISK_GET_DRIVE_LAYOUT_EX, 0, 0, DriveLayout, DriveLayoutSize, &HELL, 0)) { // TODO check if we can pass NULL to byteswritten 
+          if (DeviceIoControl(Disk, IOCTL_DISK_GET_DRIVE_LAYOUT_EX, 0, 0, DriveLayout, DriveLayoutSize, &HELL, 0)) { // TODO check if we can pass NULL to byteswritten
             if (DriveLayout->PartitionStyle == PARTITION_STYLE_MBR) {
               strcpy(Result[DiskIndex].Type, "MBR");
             }
@@ -481,7 +481,7 @@ struct backup_metadata {
     };
   }; // 4byte
 
-  
+
   int Version; // -1 for full backup
   int ClusterSize; // 4096 default
   char Letter;
@@ -489,8 +489,8 @@ struct backup_metadata {
 
   BOOLEAN Error; //whole error flags can fit here
   BackupType BackupType; // diff or inc
-  
-  
+
+
   struct {
     //Standart for all backup types
     ULONGLONG RegionMetadata;
@@ -628,12 +628,12 @@ struct NAR_GPT_ENTRY {
 
 
 static void nlog(const char* str, ...) {
-  
+
   HWND notepad, edit;
   va_list ap;
   char buf[256];
-  
-  va_start(ap,str);
+
+  va_start(ap, str);
   vsprintf(buf, str, ap);
   va_end(ap);
 
@@ -644,19 +644,164 @@ static void nlog(const char* str, ...) {
 
 }
 
-int main() {
-  NarCreateGPTBootPartition(0, 0, 0, 0, 0);
-  return 0;
-  //NarCreateGPTBootPartition(1, 24000, 99, 0, 'V');
+BOOLEAN
+InitGPTPartition(int DiskID) {
+  char Buffer[1024];
+  sprintf(Buffer, ""
+    "select disk %i\n"
+    "clean\n"
+    "convert gpt\n"
+    "select partition 1\n"
+    "delete partition override\n"
+    "exit\n", DiskID);
 
-    /*
-    NAR_LEGACY_MBR_HEADER
-NAR_GPT_HEADER
-    */
-  
+  char INPUTFNAME[] = "DPINPUT";
+  if (NarDumpToFile(INPUTFNAME, Buffer, strlen(Buffer))) {
+    memset(Buffer, ' ', 1024);
+    sprintf(Buffer, "diskpart /s %s", INPUTFNAME);
+    system(Buffer);
+    return TRUE;
+  }
+
+  return FALSE;
+}
+
+BOOLEAN
+CreateAndMountSystemPartition(int DiskID, char Letter, unsigned SizeMB) {
+  char Buffer[1024];
+  sprintf(Buffer, ""
+    "select disk %i\n"
+    "create partition efi size = %u\n" // size in MB
+    "format fs = \"ntfs\" quick\n"
+    "assign letter = %c\n"
+    "exit\n", DiskID, SizeMB, Letter);
+
+  char INPUTFNAME[] = "DPINPUT";
+  if (NarDumpToFile(INPUTFNAME, Buffer, strlen(Buffer))) {
+    memset(Buffer, ' ', 1024);
+    sprintf(Buffer, "diskpart /s %s", INPUTFNAME);
+    system(Buffer);
+    return TRUE;
+  }
+
+  return FALSE;
+}
+
+BOOLEAN
+CreateAndMountRecoveryPartition(int DiskID, char Letter, unsigned SizeMB) {
+  char Buffer[1024];
+  sprintf(Buffer, ""
+    "select disk %i\n"
+    "create partition primary size = %u\n" // size in MB
+    "set id=\"de94bba4-06d1-4d40-a16a-bfd50179d6ac\"\n"
+    "gpt attributes=0x8000000000000001\n"
+    "format fs = \"fat32\" quick\n"
+    "assign letter = %c\n"
+    "exit\n", DiskID, SizeMB, Letter);
+
+  char INPUTFNAME[] = "DPINPUT";
+  if (NarDumpToFile(INPUTFNAME, Buffer, strlen(Buffer))) {
+    memset(Buffer, ' ', 1024);
+    sprintf(Buffer, "diskpart /s %s", INPUTFNAME);
+    system(Buffer);
+    return TRUE;
+  }
+
+  return FALSE;
+}
+
+BOOLEAN
+CreateAndMountMSRPartition(int DiskID, unsigned SizeMB) {
+  char Buffer[1024];
+  sprintf(Buffer, ""
+    "select disk %i\n"
+    "create partition msr size = %u\n" // size in MB
+    "exit\n", DiskID, SizeMB);
+
+  char INPUTFNAME[] = "DPINPUT";
+  if (NarDumpToFile(INPUTFNAME, Buffer, strlen(Buffer))) {
+    memset(Buffer, ' ', 1024);
+    sprintf(Buffer, "diskpart /s %s", INPUTFNAME);
+    system(Buffer);
+    return TRUE;
+  }
+
+  return FALSE;
+}
+
+BOOLEAN
+RemoveLetter(int DiskID, unsigned PartitionID, char Letter) {
+  char Buffer[1024];
+  sprintf(Buffer, ""
+    "select disk = %u\n"
+    "select partition  = %u\n"
+    "remove letter = %c\n"
+    "exit\n", DiskID, PartitionID, Letter);
+
+  char INPUTFNAME[] = "DPINPUT";
+  if (NarDumpToFile(INPUTFNAME, Buffer, strlen(Buffer))) {
+    memset(Buffer, ' ', 1024);
+    sprintf(Buffer, "diskpart /s %s", INPUTFNAME);
+    system(Buffer);
+    return TRUE;
+  }
+
+  return FALSE;
+}
+
+// NOTE(Batuhan): create partition with given size
+BOOLEAN
+NarCreatePrimaryPartition(int DiskID, char Letter, unsigned SizeMB) {
+  char Buffer[1024];
+  sprintf(Buffer, ""
+    "select disk %i\n"
+    "create partition primary size  = %u\n" // size in MB
+    "format fs = ntfs quick\n"
+    "assign letter = %c\n"
+    "exit\n", DiskID, SizeMB, Letter);
+
+  char INPUTFNAME[] = "DPINPUT";
+  if (NarDumpToFile(INPUTFNAME, Buffer, strlen(Buffer))) {
+    memset(Buffer, ' ', 1024);
+    sprintf(Buffer, "diskpart /s %s", INPUTFNAME);
+    system(Buffer);
+    return TRUE;
+  }
+
+  return FALSE;
+}
+
+// NOTE(Batuhan): new partition will use all unallocated space left
+BOOLEAN
+NarCreatePrimaryPartition(int DiskID, char Letter) {
+  char Buffer[1024];
+  sprintf(Buffer, ""
+    "select disk %i\n"
+    "create partition primary\n" // size in MB
+    "format fs = ntfs quick\n"
+    "assign letter = %c\n"
+    "exit\n", DiskID, Letter);
+
+  char INPUTFNAME[] = "DPINPUT";
+  if (NarDumpToFile(INPUTFNAME, Buffer, strlen(Buffer))) {
+    memset(Buffer, ' ', 1024);
+    sprintf(Buffer, "diskpart /s %s", INPUTFNAME);
+    system(Buffer);
+    return TRUE;
+  }
+
+  return FALSE;
+}
+
+int main() {
+  InitGPTPartition(1);
+  CreateAndMountRecoveryPartition(1, 'V', 529);
+  RemoveLetter(1,1,'V');
+
+  return 0;
   int DiskID, Size;
   char Type;
-  
+
   /*
   DiskID = 3;
   Size = 650;
@@ -694,18 +839,20 @@ NAR_GPT_HEADER
 
   BOOLEAN Result = FALSE;
 
-  
-  VOLUME_DISK_EXTENTS* Ext = NULL;
 
-  DWORD BS = 1024 * 1024;
+  VOLUME_DISK_EXTENTS* Ext = NULL;
+  GUID GEFI = { 0 };
+  StrToGUID("{c12a7328-f81f-11d2-ba4b-00a0c93ec93b}", &GEFI);
+
+  DWORD BS = 1024 * 1024 * 16;
   DWORD T = 0;
 
-  DRIVE_LAYOUT_INFORMATION_EX* DL = (DRIVE_LAYOUT_INFORMATION_EX*)malloc(1024);
+  DRIVE_LAYOUT_INFORMATION_EX* DL = (DRIVE_LAYOUT_INFORMATION_EX*)malloc(BS);
 
-  wchar_t DiskPath[] = L"\\\\?\\PhysicalDrive6";
-  //DiskPath[lstrlenW(DiskPath) - 1] = Ext->Extents[i].DiskNumber + '0';
+  wchar_t DiskPath[] = L"\\\\?\\PhysicalDrive2";
 
-  HANDLE Disk = CreateFileW(DiskPath, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, 0, OPEN_EXISTING, 0, 0);
+
+  HANDLE Disk = CreateFileW(DiskPath, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, 0, OPEN_EXISTING, 0, 0);
   if (Disk != INVALID_HANDLE_VALUE) {
     printf("Disk path  : %S\n", DiskPath);
 
@@ -759,6 +906,22 @@ NAR_GPT_HEADER
         if (PI->PartitionStyle == PARTITION_STYLE_GPT) {
           printf("GPT partition\n");
           printf("GPT Name : %S\n", PI->Gpt.Name);
+
+          printf("GEFI partition detected\n");
+          LARGE_INTEGER T;
+          SetFilePointerEx(Disk, PI->StartingOffset, &T, 0);
+          const unsigned buffersize = 512;
+          char Buffer[buffersize];
+          sprintf(Buffer, "TestInput");
+
+          DWORD Test;
+          if (WriteFile(Disk, Buffer, buffersize, &Test, 0)) {
+            printf("Write op successfull\n");
+          }
+          if (Test != buffersize) {
+            printf("Cant write to physical disk\n");
+          }
+
 
           if (PI->Gpt.Attributes != 0) {
             printf("Attributes :\n");

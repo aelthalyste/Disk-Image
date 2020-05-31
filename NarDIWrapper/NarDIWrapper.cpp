@@ -110,9 +110,7 @@ namespace NarDIWrapper {
       StrInf->ClusterSize = SI.ClusterSize;
       StrInf->FileName = gcnew String(SI.FileName.c_str());
       StrInf->MetadataFileName = gcnew String(SI.MetadataFileName.c_str());
-      StrInf->MFTFileName = gcnew String(SI.MFTFileName.c_str());
-      StrInf->MFTMetadataName = gcnew String(SI.MFTMetadataName.c_str());
-
+      
       StreamID = GetVolumeID(C, L);
 
       return true;
@@ -126,7 +124,6 @@ Version: -1 to restore full backup otherwise version number to restore(version n
 */
   bool DiskTracker::CW_RestoreVolumeOffline(wchar_t TargetLetter,
     wchar_t SrcLetter,
-    UINT32 ClusterSize,
     INT Version,
     int Type,
     System::String^ RootDir
@@ -134,7 +131,6 @@ Version: -1 to restore full backup otherwise version number to restore(version n
 
     R->TargetLetter = TargetLetter;
     R->SrcLetter = SrcLetter;
-    R->ClusterSize = ClusterSize;
     R->Type = (BackupType)Type;
 
 
