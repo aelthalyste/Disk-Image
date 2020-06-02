@@ -59,10 +59,8 @@ struct data_array {
         memcpy(&Data[Count], &Val, sizeof(DATA_TYPE));
         Count++;
     }
-    ~data_array() {
-        // NOTE(Batuhan) : Null protected
-        free(Data);
-    }
+    
+    
 };
 
 inline BOOLEAN
@@ -232,7 +230,7 @@ struct backup_metadata {
     
     ULONGLONG VolumeSize;
     ULONGLONG LastUsedByteOffset;
-
+    
     struct {
         ULONGLONG RegionsMetadata;
         ULONGLONG Regions;
@@ -280,33 +278,21 @@ bu seçenekte, işletim sistemi geri yükleniliyorsa, disk ona göre hazırlanı
 
 struct backup_metadata_ex{
     backup_metadata M;
-    data_array<nar_record> RegionsMetadata;
     std::wstring FilePath;
+    data_array<nar_record> RegionsMetadata;
+    backup_metadata_ex() {
+      RegionsMetadata = { 0, 0 };
+      FilePath = L" ";
+      memset(&M, 0, sizeof(M));
+    }
 };
 
-enum NarPartitionType{
-    System,
-    Recovery,
-    MSR,
-    Primary
-};
-
-enum NarDiskType{
-    GPT,
-    MBR
-};
-
-struct{
-    int SizeMB;
-    NarPartitionType PT;
-    NarDiskType DT;
-}NarBasicPartition;
 
 
 struct restore_inf {
     wchar_t TargetLetter;
     wchar_t SrcLetter;
-    BOOLEAN Version;
+    int Version;
     std::wstring RootDir;
     // NOTE(Batuhan): optional
 };
@@ -318,11 +304,14 @@ struct DotNetStreamInf {
     std::wstring MetadataFileName;
 };
 
+#define NAR_DISKTYPE_GPT 'G'
+#define NAR_DISKTYPE_MBR 'M'
+#define NAR_DISKTYPE_RAW 'R'
 
 struct disk_information {
-    ULONGLONG SizeGB; //In GB!
-    ULONGLONG Unallocated; // IN GB!
-    char Type[4]; // string, RAW,GPT,MBR, one byte for NULL termination
+    ULONGLONG Size; //In bytes!
+    ULONGLONG UnallocatedGB; // IN GB!
+    char Type; // first character of {RAW,GPT,MBR}
     int ID;
 };
 
@@ -367,13 +356,17 @@ BOOLEAN
 CreatePartition(int Disk, char Letter, unsigned size);
 
 BOOLEAN
-NarCreateGPTBootPartition(int DiskID, int VolumeSizeMB, int EFISizeMB, int RecoverySizeMB, char Letter);
+NarCreateCleanGPTBootablePartition(int DiskID, int VolumeSizeMB, int EFISizeMB, int RecoverySizeMB, char Letter);
 
-int
-NarGetDisks(disk_information* Result, int NElements);
+BOOLEAN
+NarCreateCleanGPTPartition(int DiskID, int VolumeSizeMB, char Letter);
 
-int
-GetVolumes(volume_information* Result, int NElements);
+
+data_array<disk_information>
+NarGetDisks();
+
+data_array<volume_information>
+GetVolumes();
 
 
 
@@ -470,15 +463,6 @@ BOOLEAN
 TerminateBackup(volume_backup_inf* V, BOOLEAN Succeeded);
 
 BOOLEAN
-OfflineRestore(restore_inf* Inf, std::wstring RootPath);
-
-BOOLEAN
-OfflineIncRestore(restore_inf* Inf, HANDLE V, std::wstring RootPath);
-
-BOOLEAN
-OfflineDiffRestore(restore_inf* Inf, HANDLE V, std::wstring RootPath);
-
-BOOLEAN
 RestoreSystemPartitions(restore_inf* Inf);
 
 BOOLEAN
@@ -505,6 +489,52 @@ NarCreatePrimaryPartition(int DiskID, char Letter);
 
 BOOLEAN
 SetupVSS();
+
+std::wstring
+GenerateLogFileName(wchar_t Letter, int Version);
+
+std::wstring
+GenerateBinaryFileName(wchar_t Letter, int Version);
+
+backup_metadata_ex*
+InitBackupMetadataEx(wchar_t Letter, int Version, std::wstring RootDir);
+
+BOOLEAN
+OfflineRestoreCleanDisk(restore_inf* R, int DiskID);
+
+BOOLEAN
+OfflineRestoreToVolume(restore_inf* R);
+
+BOOLEAN
+SaveMetadata(char Letter, int Version, int ClusterSize, BackupType BT, data_array<nar_record> BackupRegions, HANDLE VSSHandle);
+
+BOOLEAN
+RestoreIncVersion(restore_inf R);
+
+BOOLEAN
+RestoreDiffVersion(restore_inf R);
+
+BOOLEAN
+NarTruncateFile(HANDLE F, ULONGLONG TargetSize);
+
+ULONGLONG
+NarGetFilePointer(HANDLE F);
+
+BOOLEAN
+AppendMFTFile(HANDLE File, HANDLE VSSHANDLE, char Letter, int ClusterSize);
+
+BOOLEAN
+RestoreVersionWithoutLoop(restore_inf R, BOOLEAN RestoreMFT);
+
+BOOLEAN
+NarRestoreMFT(backup_metadata_ex* BMEX, HANDLE Volume);
+
+data_array<nar_record>
+ReadMFTLCN(backup_metadata_ex* BMEX);
+
+inline BOOLEAN
+IsGPTVolume(char Letter);
+
 
 
 BOOLEAN

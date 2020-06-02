@@ -352,3 +352,16 @@ healthchecksdb
 /minispy_user/LogFile.txt
 /minispy_user/DBMFT_BINARY_E1
 /minispy_user/DBMFT_BINARY_E0
+/DotNetTest/NAR_EFULL
+/DotNetTest/NAR_E1
+/DotNetTest/NAR_E0
+/DotNetTest/NAR_BACKUP_EFULL
+/DotNetTest/NAR_BACKUP_E1
+/DotNetTest/NAR_BACKUP_E0
+/DotNetTest/myimage.7z
+/minispy_user/NAR_EFULL
+/minispy_user/NAR_E1
+/minispy_user/NAR_E0
+/minispy_user/NAR_BACKUP_EFULL
+/minispy_user/NAR_BACKUP_E1
+/minispy_user/NAR_BACKUP_E0

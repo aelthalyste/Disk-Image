@@ -11,41 +11,6 @@ namespace DotNetTest
   class Program
   {
 
-    static void PrintUsage()
-    {
-      Console.Write("##################\n");
-      Console.Write("Kullanım şekli:\n" +
-        "Bir volume'un backupunu almadan önce, \"ekle [Volume harfi] [diff veya inc yedek alma şekli]\" diyerek volumeu operasyona hazır hale getirmelisiniz\n" +
-        "örnek kullanım : \"ekle C inc\" yaparsanız C volumeu incremental yedek alma prosedürü için hazır hale gelir. " +
-        "\nBu noktadan sonra önce full sonra incremental alıp devam edilebilir\n" + 
-        "Yedeklerin çıkartılacağı dizini değiştirmek için \"dizin [istenilen directory]\" yazabilirsiniz.\nYedeklenen dosyalar oraya aktarılacak, restore yapılırken de oraya bakılacaktır\n");
-
-      Console.WriteLine("\n");
-
-      PrintBackupUsage();
-      Console.WriteLine();
-      PrintRestoreUsage();
-      Console.Write("##################\n");
-    }
-
-    static void PrintBackupUsage()
-    {
-      Console.WriteLine("------- BACKUP -------\n");
-      Console.WriteLine("full [volume harfi]");
-      Console.WriteLine("versiyon [volume harfi]");
-      Console.WriteLine("Versiyon numaraları 1den başlar ve her istekte artar");
-    }
-
-    static void PrintRestoreUsage()
-    {
-      Console.WriteLine("----- RESTORE ------\n");
-      Console.WriteLine("restore [kaynak] [hedef] [versiyon, full ise full sadece] [eğer full değil ise inc veya diff]");
-      Console.WriteLine("\"restore [yedek alınmış olan volume harfi] [restore edilmek istenilen hedef volume] [restore versiyonu] [yedek alma tipi]\"" +
-        "\nburadaki [restore versiyonu] bulunan kısma full yazılırsa fullbackupa geri dönecektir, onun dışında girilen bir tamsayı değeri belirtilen versiyona geri yükleme yapar\n" +
-        "\nburada yedek alma tipine inc veya diff yazılmalıdır, eğer fullbackupa geri yükleme yapılacaksa, bu parametre boş bırakılabilir\n" +
-        "Örn kullanım, C volume'u 5 incremental versiyona sahip olsun: \"restore C E full\" ya da \"restore C E 4 inc\"\n");
-    }
-
     static void PrintCommands()
     {
       Console.WriteLine("------- COMMANDS --------\n" +
@@ -65,13 +30,12 @@ namespace DotNetTest
       unsafe
       {
         Console.WriteLine("Narbulut volume yedekleme servisi v0.1\n");
-        PrintUsage();
+        PrintCommands();
         DiskTracker tracker = new DiskTracker();
         string RootDir = "";
         if (tracker.CW_InitTracker())
         {
           
-
           for (; ; )
           {
             var Input = Console.ReadLine().Split(' ');
@@ -79,11 +43,11 @@ namespace DotNetTest
 
             if(Input.Length <= 1)
             {
-              if (Input[0] == "full" || Input[0] == "versiyon") PrintBackupUsage();
-              else if (Input[0] == "restore" || Input[0] == "restore" ) PrintRestoreUsage();
-              else if (Input[0] == "help" || Input[0] == "h") PrintUsage();
+              if (Input[0] == "full" || Input[0] == "versiyon") PrintCommands();
+              else if (Input[0] == "restore" || Input[0] == "restore" ) PrintCommands();
+              else if (Input[0] == "help" || Input[0] == "h") PrintCommands();
               else if (Input[0] == "komutlar") PrintCommands();
-              else PrintUsage();
+              else PrintCommands();
             }
 
             if(Input[0] == "ekle")
@@ -116,6 +80,7 @@ namespace DotNetTest
                 Console.WriteLine("Cant setup stream\n");
                 continue;
               }
+              Console.WriteLine(RootDir + streamInfo.FileName);
 
               FileStream st = File.Create(RootDir + streamInfo.FileName);
 
@@ -188,38 +153,38 @@ namespace DotNetTest
 
             else if (Input[0] == "restore")
             {
-              if (Input.Length != 4 && Input.Length != 5 ) { PrintRestoreUsage(); continue; }
-             else if (Input.Length == 4 && Input[3] != "full") { PrintRestoreUsage(); continue; }
-             else if (Input.Length == 5 && Input[3] == "full") { PrintRestoreUsage(); continue; }
-              else if (Input.Length == 5 && Input[4] != "diff" && Input[4] != "inc") { PrintRestoreUsage(); continue; }
-
-              // restore target source versiyon|full inc|diff
-              // 0        1       2       3            4
-              char SrcLetter = Input[1][0];
-              char TargetLetter = Input[2][0];
-
-              int version = -1; // full restore
-              if (Input.Length == 5) version = Convert.ToInt32(Input[3]) - 1;
-              if (version <= 0) PrintRestoreUsage();
-
-              int type = -1; //full restore
-              if (Input.Length == 5)
+              if (Input.Length == 4)
               {
-                if (Input[4] == "inc") type = 1;
-                if (Input[4] == "diff") type = 0;
-              }
+                // restore target source version
+                // 0        1       2       3  
+                char SrcLetter = Input[1][0];
+                char TargetLetter = Input[2][0];
+                int version;
+                if (Input[3].ToLower() == "full")
+                {
+                  version = -1;
+                }
+                else
+                {
+                  version = System.Convert.ToInt32(Input[3]);
+                }
 
-              Console.Write("Version => ");
-              Console.WriteLine(version);
-              if (tracker.CW_RestoreVolumeOffline(TargetLetter, SrcLetter, 4096, version, type, RootDir))
-              {
-                Console.Write("Restored!\n");
-              }
-              else
-              {
-                Console.Write("Couldn't restore\n");
-              }
 
+                if (tracker.CW_RestoreToVolume(TargetLetter, SrcLetter, version, RootDir))
+                {
+                  Console.Write("Restored!\n");
+                }
+                else
+                {
+                  Console.Write("Couldn't restore\n");
+                }
+              }
+              if(Input.Length == 5)
+              {
+                // restore target source version diskid
+                // 0        1       2       3     4
+
+              }
             }
 
             else if (Input[0] == "q") break;

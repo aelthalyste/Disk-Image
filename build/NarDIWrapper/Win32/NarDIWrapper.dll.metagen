@@ -1,0 +1,48 @@
+ImageRuntimeVersion: v4.0.30319
+Assembly NarDIWrapper, Version=1.0.*, Culture=Invariant Language (Invariant Country): 
+	hash=SHA1, flags=PublicKey
+Assembly mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089: 
+	hash=None, flags=None
+Assembly System.Data, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089: 
+	hash=None, flags=None
+Assembly System, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089: 
+	hash=None, flags=None
+Assembly System.Xml, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089: 
+	hash=None, flags=None
+Class NarDIWrapper.StreamInfo: AutoLayout, AnsiClass, Class, Public, BeforeFieldInit
+    Void .ctor(): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+  Fields:
+    Int32 ClusterSize : Public
+    Int32 ClusterCount : Public
+    System.String FileName : Public
+    System.String MetadataFileName : Public
+    System.String MFTFileName : Public
+    System.String MFTMetadataName : Public
+Class NarDIWrapper.DiskInfo: AutoLayout, AnsiClass, Class, Public, BeforeFieldInit
+    Void .ctor(): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+  Fields:
+    UInt32 SizeGB : Public
+    UInt32 Unallocated : Public
+    System.String Type : Public
+    Int32 ID : Public
+Class NarDIWrapper.VolumeInformation: AutoLayout, AnsiClass, Class, Public, BeforeFieldInit
+    Void .ctor(): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+  Fields:
+    UInt32 SizeMB : Public
+    Boolean Bootable : Public
+    Char Letter : Public
+    System.String FileSystem : Public
+Class NarDIWrapper.DiskTracker: AutoLayout, AnsiClass, Class, Public, BeforeFieldInit
+    Void .ctor(): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+  Interfaces:
+    System.IDisposable
+  Methods:
+    CW_InitTracker(): PrivateScope, Public, HideBySig
+    CW_AddToTrack(Char(HasFieldMarshal), Int32): PrivateScope, Public, HideBySig
+    CW_RemoveFromTrack(Char(HasFieldMarshal)): PrivateScope, Public, HideBySig
+    CW_SetupStream(Char(HasFieldMarshal), StreamInfo): PrivateScope, Public, HideBySig
+    CW_ReadStream(Void*, Int32): PrivateScope, Public, HideBySig
+    CW_TerminateBackup(Boolean(HasFieldMarshal)): PrivateScope, Public, HideBySig
+    CW_RestoreToVolume(Char(HasFieldMarshal), Char(HasFieldMarshal), Int32, String): PrivateScope, Public, HideBySig
+    CW_RestoreToFreshDisk(Char(HasFieldMarshal), Char(HasFieldMarshal), Int32, Int32, String): PrivateScope, Public, HideBySig
+    Dispose(): PrivateScope, Public, Final, Virtual, HideBySig

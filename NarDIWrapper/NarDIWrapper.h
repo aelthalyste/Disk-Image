@@ -62,8 +62,9 @@ namespace NarDIWrapper {
         bool CW_ReadStream(void* Data, int Size);
         bool CW_TerminateBackup(bool Succeeded);
         
-        bool CW_RestoreVolumeOffline(wchar_t TargetLetter, wchar_t SrcLetter, UINT32 ClusterSize, INT Version, int Type, System::String^ RootDir);
-        
+        bool CW_RestoreToVolume(wchar_t TargetLetter, wchar_t SrcLetter, INT Version, System::String^ RootDir);
+        bool CW_RestoreToFreshDisk(wchar_t TargetLetter, wchar_t SrcLetter, INT Version, int DiskID, System::String^ Rootdir);
+
         private:
         
         // Volume ID that it's stream requested store in wrapper, so requester doesnt have to pass letter or ID everytime it calls readstream or closestream.

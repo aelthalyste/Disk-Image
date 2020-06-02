@@ -1,5 +1,6 @@
 ﻿#include <Windows.h>
 #include <stdio.h>
+#include <utility>
 
 void
 CreateMBRPartition(int DiskID, int size) {
@@ -90,10 +91,31 @@ StrToGUID(const char* guid, GUID* G) {
   sscanf(guid, "{%8X-%4hX-%4hX-%2hX%2hX-%2hX%2hX%2hX%2hX%2hX%2hX}", &G->Data1, &G->Data2, &G->Data3, &G->Data4[0], &G->Data4[1], &G->Data4[2], &G->Data4[3], &G->Data4[4], &G->Data4[5], &G->Data4[6], &G->Data4[7]);
 }
 
+
+template<typename DATA_TYPE>
+struct data_array {
+  DATA_TYPE* Data;
+  UINT Count;
+
+  inline void Insert(DATA_TYPE Val) {
+    Data = (DATA_TYPE*)realloc(Data, sizeof(Val) * ((ULONGLONG)Count + 1));
+    memcpy(&Data[Count], &Val, sizeof(DATA_TYPE));
+    Count++;
+  }
+
+  ~data_array() {
+    
+  }
+  
+};
+#define NAR_DISKTYPE_GPT 'G'
+#define NAR_DISKTYPE_MBR 'M'
+#define NAR_DISKTYPE_RAW 'R'
+
 struct disk_information {
-  ULONGLONG SizeGB; //In GB!
+  ULONGLONG Size; //In GB!
   ULONGLONG Unallocated; // IN GB!
-  char Type[4]; // string, RAW,GPT,MBR, one byte for NULL termination
+  char Type;
   int ID;
 };
 
@@ -313,8 +335,12 @@ format fs = "NTFS" label = "New Volume" QUICK // label might change, dont know w
 
 
 // returns # of disks, returns 0 if information doesnt fit in array
-int
-NarGetDisks(disk_information* Result, int NElements) {
+data_array<disk_information>
+NarGetDisks() {
+
+  data_array<disk_information> Result = { 0, 0 };
+  Result.Data = (disk_information*)malloc(sizeof(disk_information) * 1024);
+  Result.Count = 1024;
 
   int DiskCount = 0;
   char TextBuffer[1024];
@@ -334,6 +360,10 @@ NarGetDisks(disk_information* Result, int NElements) {
 
   DWORD DriveLayoutSize = 1024 * 64;// 64KB
   DRIVE_LAYOUT_INFORMATION_EX* DriveLayout = (DRIVE_LAYOUT_INFORMATION_EX*)malloc(DriveLayoutSize);
+  int DGEXSize = 1024 * 16;
+  DISK_GEOMETRY_EX* DGEX = (DISK_GEOMETRY_EX*)malloc(DGEXSize);// 16KB
+  DWORD HELL;
+
 
   //Find first occurance
   char Target[1024];
@@ -346,14 +376,10 @@ NarGetDisks(disk_information* Result, int NElements) {
     Buffer = strstr(Buffer, Target);
     if (Buffer != NULL) {
 
-      if (DiskIndex == NElements) {
-        DiskIndex = 0;
-        break; //Exceeding array
-      }
 
       Buffer = Buffer + strlen(Target); //bypass "Disk #" string
 
-      Result[DiskIndex].ID = DiskIndex;
+      Result.Data[DiskIndex].ID = DiskIndex;
 
       int NumberLen = 1;
       char Temp[32];
@@ -363,41 +389,52 @@ NarGetDisks(disk_information* Result, int NElements) {
       while (!IsNumeric(*(++Buffer)) && *Buffer != '\0'); //Find size
       while (*(++Buffer) != ' ' && *Buffer != '\0') NumberLen++; //Find size's len in char
 
+      if (*Buffer == '\0') goto ERROR_TERMINATE; //that shouldnt happen
+
       strncpy(Temp, Buffer - NumberLen, NumberLen);
-      Result[DiskIndex].SizeGB = atoi(Temp);
+      Result.Data[DiskIndex].Size = atoi(Temp) * 1024 * 1024 * 1024; // Since diskpart returns size in GB(it might return in KB, but take it as 0 anyway)
 
       while (*(++Buffer) == ' ' && *Buffer != '\0');// find size identifier letter
 
-      if (*Buffer != 'G') Result[DiskIndex].SizeGB = 0; //If not GB, we are not interested with this disk
+      if (*Buffer == '\0') goto ERROR_TERMINATE;
+      if (*Buffer != 'G') Result.Data[DiskIndex].Size = 0; //If not GB, we are not interested with this disk
 
       // Find unallocated space
       NumberLen = 1;
       while (!IsNumeric(*(++Buffer)) && *Buffer != '\0');
       while (*(++Buffer) != ' ' && *Buffer != '\0') NumberLen++; //Find size's len in char
 
+      if (*Buffer == '\0') goto ERROR_TERMINATE;
+
       strncpy(Temp, Buffer - NumberLen, NumberLen); //Copy number
-      Result[DiskIndex].Unallocated = atoi(Temp);
+      Result.Data[DiskIndex].Unallocated = atoi(Temp);
       Buffer++;  // increment to unit identifier, KB or GB
-      if (*Buffer != 'G') Result[DiskIndex].Unallocated = 0;
+      if (*Buffer != 'G') Result.Data[DiskIndex].Unallocated = 0;
 
       {
         char PHNAME[] = "\\\\?\\PhysicalDrive%i";
-        sprintf(PHNAME, "\\\\?\\PhysicalDrive%i", Result[DiskIndex].ID);
+        sprintf(PHNAME, "\\\\?\\PhysicalDrive%i", Result.Data[DiskIndex].ID);
 
         HANDLE Disk = CreateFileA(PHNAME, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, 0, OPEN_EXISTING, 0, 0);
         if (Disk != INVALID_HANDLE_VALUE) {
-          DWORD HELL;
-          if (DeviceIoControl(Disk, IOCTL_DISK_GET_DRIVE_LAYOUT_EX, 0, 0, DriveLayout, DriveLayoutSize, &HELL, 0)) { // TODO check if we can pass NULL to byteswritten
+          if (DeviceIoControl(Disk, IOCTL_DISK_GET_DRIVE_LAYOUT_EX, 0, 0, DriveLayout, DriveLayoutSize, &HELL, 0)) {
             if (DriveLayout->PartitionStyle == PARTITION_STYLE_MBR) {
-              strcpy(Result[DiskIndex].Type, "MBR");
+              Result.Data[DiskIndex].Type = NAR_DISKTYPE_MBR;
             }
             if (DriveLayout->PartitionStyle == PARTITION_STYLE_GPT) {
-              strcpy(Result[DiskIndex].Type, "GPT");
+              Result.Data[DiskIndex].Type = NAR_DISKTYPE_GPT;
             }
             if (DriveLayout->PartitionStyle == PARTITION_STYLE_RAW) {
-              strcpy(Result[DiskIndex].Type, "RAW");
+              Result.Data[DiskIndex].Type = NAR_DISKTYPE_RAW;
             }
 
+          }
+          else {
+            printf("Can't get drive layout for disk %s\n", PHNAME);
+          }
+
+          if (DeviceIoControl(Disk, IOCTL_DISK_GET_DRIVE_GEOMETRY_EX, 0, 0, DGEX, DGEXSize, &HELL, 0)) {
+            Result.Data[DiskIndex].Size = DGEX->DiskSize.QuadPart;
           }
           else {
             printf("Can't get drive layout for disk %s\n", PHNAME);
@@ -421,8 +458,19 @@ NarGetDisks(disk_information* Result, int NElements) {
   }
 
   free(DriveLayout);
+  free(DGEX);
   free(File.Data);
-  return DiskIndex;
+  realloc(Result.Data, DiskIndex*sizeof(disk_information));
+  Result.Count = DiskIndex;
+
+  return Result;
+
+ERROR_TERMINATE:
+  DiskIndex = 0;
+  free(Result.Data);
+  Result.Count = 0;
+  return Result;
+
 }
 
 
@@ -794,9 +842,11 @@ NarCreatePrimaryPartition(int DiskID, char Letter) {
 }
 
 int main() {
-  InitGPTPartition(1);
-  CreateAndMountRecoveryPartition(1, 'V', 529);
-  RemoveLetter(1,1,'V');
+
+  data_array<disk_information> R = NarGetDisks();
+  for (int i = 0; i < R.Count;i++) {
+    printf("ID: %i\tSize %I64d\tUnallocatedGB: %I64d\n", R.Data[i].ID, R.Data[i].Size, R.Data[i].Unallocated);
+  }
 
   return 0;
   int DiskID, Size;
