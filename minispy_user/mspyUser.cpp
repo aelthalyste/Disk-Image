@@ -2034,7 +2034,6 @@ SetDiffRecords(volume_backup_inf* V) {
         std::wstring FN = GenerateLogFileName(V->Letter, i);
         
         DWORD BytesRead = 0;
-        printf("Before setfileopinter\n");
         if (SetFilePointer(F[i], 0, 0, FILE_BEGIN) == 0) {
             
             if (LogRead > TotalFileSize / sizeof(nar_record)) {
@@ -2255,28 +2254,87 @@ OfflineRestoreCleanDisk(restore_inf* R, int DiskID) {
   BOOLEAN Result = FALSE;
 
   backup_metadata_ex* BMEX = InitBackupMetadataEx(R->SrcLetter, R->Version, R->RootDir);
+  
   if (BMEX->M.IsOSVolume) {
-    //NOTE(Batuhan) : Hardcoded EFI and recovery partition size
-    if (NarCreateCleanGPTBootablePartition(DiskID, BMEX->M.VolumeSize / (1024 * 1024), 100, 450, R->TargetLetter)) {
-      printf("Couldn't setup disk %i for backup\n",DiskID);
+    if (BMEX->M.DiskType == NAR_DISKTYPE_GPT) {
+      
+      if (NarCreateCleanGPTBootablePartition(DiskID, BMEX->M.VolumeSize / (1024 * 1024), 100, 450, R->TargetLetter)) {
+        Result = TRUE;
+      }
+      else {
+        printf("Can't create bootable GPT partition to restore\n");
+      }
+
+    }
+    if (BMEX->M.DiskType == NAR_DISKTYPE_MBR) {
+      
+      if (NarCreateCleanMBRBootPartition()/*TODO*/) {
+        Result = TRUE;
+      } 
+      else {
+        printf("Can't create bootable MBR partition to restore\n");
+      }
+
+    }
+  }
+  if (BMEX->M.IsOSVolume == FALSE) {
+    if (BMEX->M.DiskType == NAR_DISKTYPE_GPT) {
+      
+      if (NarCreateCleanGPTPartition(DiskID, BMEX->M.VolumeSize / (1024 * 1024), R->TargetLetter)) {
+        Result = TRUE;
+      }
+      else {
+        printf("Can't create clean GPT partition to restore\n");
+      }
+
+    }
+    if (BMEX->M.DiskType == NAR_DISKTYPE_MBR) {
+      
+      if (NarCreateCleanMBRPartition()/*TODO*/) {
+        Result;
+      }
+      else {
+        printf("Can't create MBR partition to restore\n");
+      }
+
+    }
+  }
+
+  FreeBackupMetadataEx(BMEX);
+  if (Result) {
+    Result = OfflineRestoreToVolume(R);
+    if (!Result) {
+      printf("Restored to volume %c, to version %i\n", (char)R->TargetLetter, R->Version);
     }
     else {
-      Result = OfflineRestoreToVolume(R);
+      printf("Can't restore to volume %c, to version %i\n", (char)R->TargetLetter, R->Version);
     }
-
-  }
-  else {
-    if (NarCreateCleanGPTPartition(DiskID, BMEX->M.VolumeSize, R->TargetLetter)) {
-      printf("Couldn't setup disk %i for backup\n", DiskID);
-    }
-    else {
-      Result = OfflineRestoreToVolume(R);
-    }
-
   }
 
-  free(BMEX);
   return Result;
+}
+
+BOOLEAN
+NarFormatVolume(char Letter) {
+  //TODO win10 MSR partition created by default, take it as parameter and format accordingly.
+
+  char Buffer[2096];
+  memset(Buffer, 0, 2096);
+
+  sprintf(Buffer, ""
+    "select volume %c\n"
+    "format fs = ntfs quick\n"
+    "exit\n");
+
+  char InputFN[] = "NARDPINPUT";
+  if (NarDumpToFile(InputFN, Buffer, strlen(Buffer))) {
+    sprintf(Buffer, "diskpart /s %s", InputFN);
+    printf(Buffer);
+    system(Buffer);
+    return TRUE;
+  }
+
+  return FALSE;
 }
 
 BOOLEAN
@@ -2286,7 +2344,10 @@ OfflineRestoreToVolume(restore_inf* R) {
   HANDLE VolumeToRestore = INVALID_HANDLE_VALUE;
 
   backup_metadata_ex* BMEX = InitBackupMetadataEx(R->SrcLetter, R->Version, R->RootDir);
-  
+
+  NarFormatVolume(R->TargetLetter);
+  NarSetVolumeSize(R->TargetLetter, BMEX->M.VolumeSize / (1024 * 1024));
+
   if (BMEX != NULL) {
     if (BMEX->M.Version == NAR_FULLBACKUP_VERSION) {
       RestoreVersionWithoutLoop(*R, FALSE);
@@ -2303,12 +2364,16 @@ OfflineRestoreToVolume(restore_inf* R) {
     }
   }
   
-  free(BMEX);
+  FreeBackupMetadataEx(BMEX);
 
   return Result;
 }
 
-
+void
+FreeBackupMetadataEx(backup_metadata_ex* BMEX) {
+  free(BMEX->RegionsMetadata.Data);
+  free(BMEX);
+}
 
 
 file_read
@@ -2493,7 +2558,7 @@ NarGetDisks() {
             if (*Buffer == '\0') goto ERROR_TERMINATE; //that shouldnt happen
             
             strncpy(Temp, Buffer - NumberLen, NumberLen);
-            Result.Data[DiskIndex].Size = atoi(Temp)*1024*1024*1024; // Since diskpart returns size in GB(it might return in KB, but take it as 0 anyway)
+            Result.Data[DiskIndex].Size = atoi(Temp)*(ULONGLONG)1024*1024*1024; // Since diskpart returns size in GB(it might return in KB, but take it as 0 anyway)
             
             while (*(++Buffer) == ' ' && *Buffer != '\0');// find size identifier letter
             
@@ -2663,7 +2728,7 @@ NarCreateCleanGPTBootablePartition(int DiskID, int VolumeSizeMB, int EFISizeMB, 
   memset(Buffer, 0, 2096);
 
   {
-    ULONGLONG TotalSize = (VolumeSizeMB * 1024 * 1024) + (EFISizeMB * 1024 * 1024) + (RecoverySizeMB * 1024 * 1024);
+    ULONGLONG TotalSize = ((ULONGLONG)VolumeSizeMB * 1024 * 1024) + ((ULONGLONG)EFISizeMB * 1024 * 1024) + ((ULONGLONG)RecoverySizeMB * 1024 * 1024);
     if (NarGetDiskTotalSize(DiskID) < TotalSize) {
       printf("Can't fit bootable partition and it's extra partitions to disk %i\n", DiskID);
     }
@@ -2707,7 +2772,7 @@ NarCreateCleanGPTPartition(int DiskID, int VolumeSizeMB, char Letter) {
 
   
   // Convert MB to byte
-  if (NarGetDiskTotalSize(DiskID) < VolumeSizeMB * 1024 * 1024) {
+  if (NarGetDiskTotalSize(DiskID) < (ULONGLONG)VolumeSizeMB * 1024 * 1024) {
     printf("Not enough space to create partition\n");
     return FALSE;
   }
@@ -2738,11 +2803,13 @@ NarCreateCleanGPTPartition(int DiskID, int VolumeSizeMB, char Letter) {
 
 BOOLEAN
 NarCreateCleanMBRPartition() {
+  printf("NarCreateCleanMBRPartition IS NOT IMPLEMENTED\n");
   return FALSE;
 }
 
 BOOLEAN
 NarCreateCleanMBRBootPartition() {
+  printf("NarCreateCleanMBRBootPartition IS NOT IMPLEMENTED\n");
   return FALSE;
 }
 
@@ -2889,10 +2956,77 @@ NarIsOSVolume(char Letter){
   return windir[0] == Letter;
 }
 
-inline BOOLEAN
-IsGPTVolume(char Letter){
-    // TODO(Batuhan):
-  return TRUE;
+/*
+Returns: 
+'R'aw
+'M'BR
+'G'PT
+*/
+inline int
+NarGetVolumeDiskType(char Letter){
+  wchar_t VolPath[512];
+  wchar_t Vol[] = L"!:\\";
+  Vol[0] = Letter;
+
+  int Result = NAR_DISKTYPE_RAW;
+  DWORD BS = 1024 * 1024 * 32; //32 KB
+  DWORD T = 0;
+
+  VOLUME_DISK_EXTENTS* Ext = (VOLUME_DISK_EXTENTS*)malloc(BS);
+  DRIVE_LAYOUT_INFORMATION_EX* DL = (DRIVE_LAYOUT_INFORMATION_EX*)malloc(BS);
+
+  GetVolumeNameForVolumeMountPointW(Vol, VolPath, 512);
+  VolPath[lstrlenW(VolPath) - 1] = L'\0'; //Remove trailing slash
+  HANDLE Drive = CreateFileW(VolPath, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, 0, 0);
+  HANDLE Disk = INVALID_HANDLE_VALUE;
+
+  if (Drive != INVALID_HANDLE_VALUE) {    
+    
+    if (DeviceIoControl(Drive, IOCTL_VOLUME_GET_VOLUME_DISK_EXTENTS, 0, 0, Ext, BS, &T, 0)) {
+      wchar_t DiskPath[512]; 
+      // L"\\\\?\\PhysicalDrive%i";
+      wsprintfW(DiskPath, L"\\\\?\\PhysicalDrive%i", Ext->Extents[0].DiskNumber);
+      if (Ext->NumberOfDiskExtents != 1) {
+        printf("There are %i disk extents\n", Ext->NumberOfDiskExtents);
+      }
+      Disk = CreateFileW(DiskPath, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, 0, OPEN_EXISTING, 0, 0);
+      if (Disk != INVALID_HANDLE_VALUE) {
+        
+        if (DeviceIoControl(Disk, IOCTL_DISK_GET_DRIVE_LAYOUT_EX, 0, 0, DL, BS, &T, 0)) {
+          if (DL->PartitionStyle == PARTITION_STYLE_MBR) {
+            Result = NAR_DISKTYPE_MBR;
+          }
+          if (DL->PartitionStyle == PARTITION_STYLE_GPT) {
+            Result = NAR_DISKTYPE_GPT;
+          }
+          if (DL->PartitionStyle == PARTITION_STYLE_RAW) {
+            Result = NAR_DISKTYPE_RAW;
+          }
+        }
+        else {
+          printf("DeviceIOControl GET_DRIVE_LAYOUT_EX failed\n");
+          DisplayError(GetLastError());
+        }
+
+      }
+      else {
+        printf("Can't open disk as file\n");
+       //TODO(Batuhan): Ccan't open disk as file
+      }
+
+    }
+
+
+  }
+  else {
+   //TODO(Batuhan): can't open drive as file
+  }
+
+  free(Ext);
+  free(DL);
+  CloseHandle(Drive);
+  CloseHandle(Disk);
+  return Result;
 }
 
 inline BOOLEAN
@@ -3022,9 +3156,9 @@ RestoreVersionWithoutLoop(restore_inf R, BOOLEAN RestoreMFT) {
 
     for (int i = 0; i < BMEX->RegionsMetadata.Count; i++) {
       
-      if (NarSetFilePointer(Volume, BMEX->RegionsMetadata.Data[i].StartPos * BMEX->M.ClusterSize)) {
+      if (NarSetFilePointer(Volume, (ULONGLONG)BMEX->RegionsMetadata.Data[i].StartPos * BMEX->M.ClusterSize)) {
         
-        if (!CopyData(RegionsFile, Volume, BMEX->RegionsMetadata.Data[i].Len * BMEX->M.ClusterSize)) {
+        if (!CopyData(RegionsFile, Volume, (ULONGLONG)BMEX->RegionsMetadata.Data[i].Len * BMEX->M.ClusterSize)) {
           printf("Error occured @ %i'th index\n",i);
           CopyErrorsOccured++;
         }
@@ -3057,7 +3191,7 @@ RestoreVersionWithoutLoop(restore_inf R, BOOLEAN RestoreMFT) {
 
   CloseHandle(RegionsFile);
   CloseHandle(Volume);
-  free(BMEX);
+  FreeBackupMetadataEx(BMEX);
 
   return CopyErrorsOccured == 0;
 }
@@ -3143,8 +3277,8 @@ NarRestoreMFT(backup_metadata_ex* BMEX, HANDLE Volume){
       NarSetFilePointer(MFTFile, BMEX->M.Offset.MFT);
         
         for(int i = 0; i<MFTLCN.Count; i++){
-            if(NarSetFilePointer(Volume, MFTLCN.Data[i].StartPos*BMEX->M.ClusterSize)){
-                if(!CopyData(MFTFile, Volume, MFTLCN.Data[i].Len*BMEX->M.ClusterSize)){
+            if(NarSetFilePointer(Volume, (ULONGLONG)MFTLCN.Data[i].StartPos*BMEX->M.ClusterSize)){
+                if(!CopyData(MFTFile, Volume, (ULONGLONG)MFTLCN.Data[i].Len*BMEX->M.ClusterSize)){
                     CopyErrorsOccured++;
                 }
             }
@@ -3231,7 +3365,7 @@ InitBackupMetadataEx(wchar_t Letter, int Version, std::wstring RootDir) {
   }
   if (ErrorOccured) {
     printf("Error occured while initializing metadata extended structure, freeing regions metadata memory\n");
-    free(BMEX);
+    FreeBackupMetadataEx(BMEX);
   }
   CloseHandle(File);
   return BMEX;
@@ -3270,7 +3404,14 @@ ReadMFTLCN(backup_metadata_ex* BMEX) {
     return Result;
 }
 
-
+ULONGLONG
+NarGetVolumeSize(wchar_t Letter) {
+  wchar_t Temp[] = L"!:\\";
+  Temp[0] = Letter;
+  ULARGE_INTEGER L = { 0 };
+  GetDiskFreeSpaceExW(Temp, 0, &L, 0);
+  return L.QuadPart;
+}
 
 /*
 Version: indicates full backup if <0
@@ -3315,9 +3456,11 @@ SaveMetadata(char Letter, int Version, int ClusterSize, BackupType BT,
     BM.ClusterSize = ClusterSize;
     BM.BT = BT;
     BM.Letter = Letter;
-    BM.IsGPT = IsGPTVolume(BM.Letter);
+    BM.DiskType = NarGetVolumeDiskType(BM.Letter);
     
     BM.IsOSVolume = NarIsOSVolume(Letter);
+    
+    BM.VolumeSize = NarGetVolumeSize(BM.Letter);
     
     memset(&BM.Size, 0, sizeof(BM.Size));
     memset(&BM.Offset, 0, sizeof(BM.Offset));
@@ -3330,7 +3473,7 @@ SaveMetadata(char Letter, int Version, int ClusterSize, BackupType BT,
     if(BackupRegions.Count > 0){
         BM.Size.RegionsMetadata = BackupRegions.Count * sizeof(nar_record);
         for(int i = 0; i<BackupRegions.Count;i++){
-            BM.Size.Regions += BackupRegions.Data[i].Len * BM.ClusterSize;
+            BM.Size.Regions += (ULONGLONG)BackupRegions.Data[i].Len * BM.ClusterSize;
         }
     }
     else{
@@ -3355,7 +3498,7 @@ write it to the file, if any error occurs during this operation, BM.Size.MFT wil
         if(MFTLCN.Count > 0){
             BM.Size.MFTMetadata = MFTLCN.Count * sizeof(nar_record);
             for(int i = 0; i<MFTLCN.Count;i++){
-                BM.Size.MFT += MFTLCN.Data[i].Len * BM.ClusterSize;
+                BM.Size.MFT += (ULONGLONG)MFTLCN.Data[i].Len * BM.ClusterSize;
             }
         }
         else{
@@ -3524,7 +3667,7 @@ AppendMFTFile(HANDLE File, HANDLE VSSHandle, char Letter, int ClusterSize){
     
 }
 
-#if 0
+#if 1
 int
 main(
      int argc,
@@ -3535,13 +3678,12 @@ main(
   restore_inf R;
   R.SrcLetter = L'E';
   R.TargetLetter = L'N';
-  R.Version = 1;
+  R.Version = 2;
   R.RootDir = L"";
 
   OfflineRestoreToVolume(&R);
-
+  std::cin.get();
     return 0;
-    
     
     
     

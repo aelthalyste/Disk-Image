@@ -841,12 +841,80 @@ NarCreatePrimaryPartition(int DiskID, char Letter) {
   return FALSE;
 }
 
-int main() {
+ULONGLONG
+NarGetVolumeSize(wchar_t Letter) {
+  wchar_t Temp[] = L"!:\\";
+  Temp[0] = Letter;
+  ULARGE_INTEGER L = { 0 };
+  GetDiskFreeSpaceExW(Temp, 0, &L, 0);
+  return L.QuadPart;
+}
 
-  data_array<disk_information> R = NarGetDisks();
-  for (int i = 0; i < R.Count;i++) {
-    printf("ID: %i\tSize %I64d\tUnallocatedGB: %I64d\n", R.Data[i].ID, R.Data[i].Size, R.Data[i].Unallocated);
+inline int
+NarGetVolumeDiskType(char Letter) {
+  wchar_t VolPath[512];
+  wchar_t Vol[] = L"!:\\";
+  Vol[0] = Letter;
+
+  int Result = NAR_DISKTYPE_RAW;
+  DWORD BS = 1024 * 1024 * 32; //32 KB
+  DWORD T = 0;
+
+  VOLUME_DISK_EXTENTS* Ext = (VOLUME_DISK_EXTENTS*)malloc(BS);
+  DRIVE_LAYOUT_INFORMATION_EX* DL = (DRIVE_LAYOUT_INFORMATION_EX*)malloc(BS);
+
+  GetVolumeNameForVolumeMountPointW(Vol, VolPath, 512);
+  VolPath[lstrlenW(VolPath) - 1] = L'\0'; //Remove trailing slash
+  HANDLE Drive = CreateFileW(VolPath, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, 0, 0);
+  HANDLE Disk = INVALID_HANDLE_VALUE;
+
+  if (Drive != INVALID_HANDLE_VALUE) {
+
+    if (DeviceIoControl(Drive, IOCTL_VOLUME_GET_VOLUME_DISK_EXTENTS, 0, 0, Ext, BS, &T, 0)) {
+      wchar_t DiskPath[512];
+      // L"\\\\?\\PhysicalDrive%i";
+      wsprintfW(DiskPath, L"\\\\?\\PhysicalDrive%i", Ext->Extents[0].DiskNumber);
+      if (Ext->NumberOfDiskExtents != 1) {
+        printf("There are %i disk extents\n", Ext->NumberOfDiskExtents);
+      }
+      Disk = CreateFileW(DiskPath, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, 0, OPEN_EXISTING, 0, 0);
+      if (Disk != INVALID_HANDLE_VALUE) {
+
+        if (DeviceIoControl(Disk, IOCTL_DISK_GET_DRIVE_LAYOUT_EX, 0, 0, DL, BS, &T, 0)) {
+          if (DL->PartitionStyle == PARTITION_STYLE_MBR) {
+            Result = NAR_DISKTYPE_MBR;
+          }
+          if (DL->PartitionStyle == PARTITION_STYLE_GPT) {
+            Result = NAR_DISKTYPE_MBR;
+          }
+        }
+        else {
+          printf("DeviceIOControl GET_DRIVE_LAYOUT_EX failed\n");
+          //DisplayError(GetLastError());
+        }
+
+      }
+      else {
+        printf("Can't open disk as file\n");
+        //TODO(Batuhan): Ccan't open disk as file
+      }
+
+    }
+
+
   }
+  else {
+    //TODO(Batuhan): can't open drive as file
+  }
+
+  free(Ext);
+  CloseHandle(Drive);
+  CloseHandle(Disk);
+  return Result;
+}
+
+int main() {
+  NarGetVolumeDiskType('C');
 
   return 0;
   int DiskID, Size;

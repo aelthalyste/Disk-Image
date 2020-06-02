@@ -313,7 +313,6 @@ Check errors here
 
             }
             else {
-              printf("Change logging to memory\n");
               for (int k = 0; k < pRecordData->RecCount; k++) {
                 V->RecordsMem.emplace_back(nar_record{ pRecordData->P[k].S, pRecordData->P[k].L });
               }

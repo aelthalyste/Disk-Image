@@ -210,59 +210,65 @@ to file, mft itself will be marked as corrupt because i wont have anything to ma
 // NOTE(Batuhan): nar binary file contains backup data, mft, and recovery
 static const int GlobalBackupMetadataVersion = 1;
 struct backup_metadata {
+
+  struct {
+    int Size = sizeof(backup_metadata); // Size of this struct
+    // NOTE(Batuhan): structure may change over time(hope it wont), this value hold which version it is so i can identify and cast accordingly
+    int Version;
+  }MetadataInf;
+
+  struct {
+    ULONGLONG RegionsMetadata;
+    ULONGLONG Regions;
+
+    ULONGLONG MFTMetadata;
+    ULONGLONG MFT;
+
+    ULONGLONG Recovery;
+  }Size; //In bytes!
+
+  struct {
+    ULONGLONG RegionsMetadata;
+    ULONGLONG AlignmentReserved;
     
-    struct {
-        int Size = sizeof(backup_metadata); // Size of this struct
-        // NOTE(Batuhan): structure may change over time(hope it wont), this value hold which version it is so i can identify and cast accordingly
-        int Version;
-    }MetadataInf;
-    
-    int Version; // -1 for full backup
-    int ClusterSize; // 4096 default
-    
-    char Letter;
-    BOOLEAN IsGPT;
-    union {
-        BOOLEAN IsOSVolume;
-        BOOLEAN Recovery; // true if contains restore partition
-    }; // 4byte
-    BackupType BT; // diff or inc
-    
-    ULONGLONG VolumeSize;
-    ULONGLONG LastUsedByteOffset;
-    
-    struct {
-        ULONGLONG RegionsMetadata;
-        ULONGLONG Regions;
-        
-        ULONGLONG MFTMetadata;
-        ULONGLONG MFT;
-        
-        ULONGLONG Recovery;
-    }Size; //In bytes!
-    
-    struct{
-        ULONGLONG RegionsMetadata;
-        ULONGLONG AlignmentReserved; // ULONGLONG Regions: this is binary backup data, we dont store it here, this value
-        // fixes aligment to 40 byte straight up for 3 struct. maybe useful later?
-        
-        ULONGLONG MFTMetadata;
-        ULONGLONG MFT;
-        
-        ULONGLONG Recovery;
-    }Offset; // offsets from beginning of the file
-    
-    // NOTE(Batuhan): error flags to indicate corrupted data, indicates file
-    // may not contain particular metadata or binary data.
-    struct{
-        BOOLEAN RegionsMetadata;
-        BOOLEAN Regions;
-        
-        BOOLEAN MFTMetadata;
-        BOOLEAN MFT;
-        
-        BOOLEAN Recovery;
-    }Errors;
+
+    ULONGLONG MFTMetadata;
+    ULONGLONG MFT;
+
+    ULONGLONG Recovery;
+  }Offset; // offsets from beginning of the file
+
+  // NOTE(Batuhan): error flags to indicate corrupted data, indicates file
+  // may not contain particular metadata or binary data.
+  struct {
+    BOOLEAN RegionsMetadata;
+    BOOLEAN Regions;
+
+    BOOLEAN MFTMetadata;
+    BOOLEAN MFT;
+
+    BOOLEAN Recovery;
+  }Errors;
+
+  union {
+    CHAR Reserved[128]; // Reserved for future usage
+  };
+
+  ULONGLONG VolumeSize;
+  ULONGLONG LastUsedByteOffset; //DO NOT USE IT, NOT IMPLEMENTED
+
+  int Version; // -1 for full backup
+  int ClusterSize; // 4096 default
+
+  char Letter;
+  BOOLEAN DiskType;
+  union {
+    BOOLEAN IsOSVolume;
+    BOOLEAN Recovery; // true if contains restore partition
+  }; // 4byte
+  BackupType BT; // diff or inc
+
+  
 };
 
 #pragma pack(pop)
@@ -361,6 +367,11 @@ NarCreateCleanGPTBootablePartition(int DiskID, int VolumeSizeMB, int EFISizeMB, 
 BOOLEAN
 NarCreateCleanGPTPartition(int DiskID, int VolumeSizeMB, char Letter);
 
+BOOLEAN
+NarCreateCleanMBRPartition();
+
+BOOLEAN
+NarCreateCleanMBRBootPartition();
 
 data_array<disk_information>
 NarGetDisks();
@@ -443,6 +454,8 @@ ReadStream(volume_backup_inf* VolInf, void* Buffer, int Size);
 BOOLEAN
 WriteStream(volume_backup_inf* Inf, void* Buffer, int Size);
 
+void
+FreeBackupMetadataEx(backup_metadata_ex* BMEX);
 
 BOOLEAN
 SetupStream(PLOG_CONTEXT Context, wchar_t Letter, DotNetStreamInf* SI = NULL);
