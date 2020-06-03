@@ -130,7 +130,7 @@ Version: -1 to restore full backup otherwise version number to restore(version n
 
     R->TargetLetter = TargetLetter;
     R->SrcLetter = SrcLetter;
-    
+
     R->Version = Version;
     if (Version < 0) {
       R->Version = NAR_FULLBACKUP_VERSION;
@@ -147,7 +147,7 @@ Version: -1 to restore full backup otherwise version number to restore(version n
   }
 
   bool DiskTracker::CW_RestoreToFreshDisk(wchar_t TargetLetter, wchar_t SrcLetter, INT Version, int DiskID, System::String^ RootDir) {
-    
+
     R->TargetLetter = TargetLetter;
     R->SrcLetter = SrcLetter;
 

@@ -104,9 +104,9 @@ struct data_array {
   }
 
   ~data_array() {
-    
+
   }
-  
+
 };
 #define NAR_DISKTYPE_GPT 'G'
 #define NAR_DISKTYPE_MBR 'M'
@@ -460,7 +460,7 @@ NarGetDisks() {
   free(DriveLayout);
   free(DGEX);
   free(File.Data);
-  realloc(Result.Data, DiskIndex*sizeof(disk_information));
+  realloc(Result.Data, DiskIndex * sizeof(disk_information));
   Result.Count = DiskIndex;
 
   return Result;

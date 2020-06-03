@@ -14,12 +14,26 @@ namespace DotNetTest
     static void PrintCommands()
     {
       Console.WriteLine("------- COMMANDS --------\n" +
-        "dizin [yeni dizin]\n" +
+        "dizin [dosyaların çıkartılacağı ve okunacağı dizin]\n" +
         "ekle [volume harfi] [inc veya diff prosedür adı]\n" +
         "full [volume harfi]\n" +
         "versiyon [volume harfi]\n" +
-        "restore [kaynak] [hedef] [versiyon, full ise full sadece] [eğer full değil ise inc veya diff]\n");
+        "restore [kaynak] [hedef] [versiyon] (hedef volumeunun var olması gerekir)\n" +
+        "restore [kaynak] [hedef] [versiyon] [disk id] (gerekli hedef volumeu, belirtilen disk numarasında otomatik oluşturur)\n"
+        );
+    }
 
+    static void PrintExampleUsage()
+    {
+      Console.WriteLine("--- ORNEK KULLANIM ----\n" +
+        "ekle C inc\n" +
+        "ekle E diff\n" +
+        "full E\n" +
+        "versiyon E" +
+        "restore E D 1 [yedeklenen E volumeunun 1. versiyonunu, D volumuna geri yükler]\n" +
+        "restore C M 0 [yedeklenen C volumeunun 0. versiyonunu, M volumeuna geri yükler]\n" +
+        "restore C D 2 1 [yedeklenen C volumeunun 2. versiyonunu, birinci diski tamamen silip içerisinde sıfırdan oluşturur]\n"
+        );
     }
 
     static bool IsChar(char val) { return (val >= 'a' && val <= 'z') || (val >= 'A' && val <= 'Z'); }
@@ -35,32 +49,41 @@ namespace DotNetTest
         string RootDir = "";
         if (tracker.CW_InitTracker())
         {
-          
+
           for (; ; )
           {
             var Input = Console.ReadLine().Split(' ');
             Input[0] = Input[0].ToLower();
 
-            if(Input.Length <= 1)
+            if (Input.Length <= 1)
             {
               if (Input[0] == "full" || Input[0] == "versiyon") PrintCommands();
-              else if (Input[0] == "restore" || Input[0] == "restore" ) PrintCommands();
+              else if (Input[0] == "restore" || Input[0] == "restore") PrintCommands();
               else if (Input[0] == "help" || Input[0] == "h") PrintCommands();
               else if (Input[0] == "komutlar") PrintCommands();
               else PrintCommands();
             }
+            if (Input[0] == "örnek" || Input[1] == "ornek")
+            {
+              PrintExampleUsage();
+            }
+            if (Input[0].ToLower() == "commands" || Input[0].ToLower() == "cmd")
+            {
+              PrintCommands();
+            }
 
-            if(Input[0] == "ekle")
+            if (Input[0] == "ekle")
             {
               if (Input.Length != 3) PrintCommands();
               else if (Input[2] != "inc" && Input[2] != "diff") PrintCommands();
-              else if(Input[1].Length != 1) PrintCommands();
+              else if (Input[1].Length != 1) PrintCommands();
               else
               {
                 int type = 0;
                 if (Input[2] == "inc") type = 1;
                 else if (Input[2] == "diff") type = 0;
-                else {
+                else
+                {
                   PrintCommands();
                   continue;
                 }
@@ -83,11 +106,6 @@ namespace DotNetTest
               Console.WriteLine(RootDir + streamInfo.FileName);
 
               FileStream st = File.Create(RootDir + streamInfo.FileName);
-
-              Console.Write("CLUSTER SIZE-> ");
-              Console.WriteLine(streamInfo.ClusterSize);
-              Console.Write("ClusterCount-> ");
-              Console.WriteLine(streamInfo.ClusterCount);
 
               for (int i = 0; i < streamInfo.ClusterCount; i++)
               {
@@ -179,7 +197,7 @@ namespace DotNetTest
                   Console.Write("Couldn't restore\n");
                 }
               }
-              if(Input.Length == 5)
+              if (Input.Length == 5)
               {
                 // restore target source version diskid
                 // 0        1       2       3     4
