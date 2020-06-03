@@ -52,9 +52,20 @@ namespace DotNetTest
 
           for (; ; )
           {
-            var Input = Console.ReadLine().Split(' ');
+            var RawInput = Console.ReadLine();
+            var Input = RawInput.Split(' ');
             Input[0] = Input[0].ToLower();
-
+            if (RawInput == "\n") continue;
+            if (RawInput == "örnek" || RawInput == "ornek")
+            {
+              PrintExampleUsage();
+              continue;
+            }
+            if (RawInput.ToLower() == "commands" || RawInput.ToLower() == "cmd")
+            {
+              PrintCommands();
+              continue;
+            }
             if (Input.Length <= 1)
             {
               if (Input[0] == "full" || Input[0] == "versiyon") PrintCommands();
@@ -62,15 +73,9 @@ namespace DotNetTest
               else if (Input[0] == "help" || Input[0] == "h") PrintCommands();
               else if (Input[0] == "komutlar") PrintCommands();
               else PrintCommands();
+              continue;
             }
-            if (Input[0] == "örnek" || Input[1] == "ornek")
-            {
-              PrintExampleUsage();
-            }
-            if (Input[0].ToLower() == "commands" || Input[0].ToLower() == "cmd")
-            {
-              PrintCommands();
-            }
+            
 
             if (Input[0] == "ekle")
             {

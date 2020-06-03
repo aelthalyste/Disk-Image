@@ -3339,21 +3339,18 @@ InitBackupMetadataEx(wchar_t Letter, int Version, std::wstring RootDir) {
 
         BMEX->RegionsMetadata.Data = (nar_record*)malloc(BMEX->M.Size.RegionsMetadata);
 
-        if (BMEX->RegionsMetadata.Data == NULL) {
-          //TODO cant allocate memory
-        }
+        if (BMEX->RegionsMetadata.Data != NULL) {
+          BMEX->RegionsMetadata.Count = 0;
+          BytesOperated = 0;
 
-
-        BMEX->RegionsMetadata.Count = 0;
-        BytesOperated = 0;
-
-        if (ReadFile(File, BMEX->RegionsMetadata.Data, BMEX->M.Size.RegionsMetadata, &BytesOperated, 0) && BytesOperated == BMEX->M.Size.RegionsMetadata) {
-          ErrorOccured = FALSE;
-          BMEX->RegionsMetadata.Count = BMEX->M.Size.RegionsMetadata / sizeof(nar_record);
-        }
-        else {
-          printf("Couldn't read regions metadata\n");
-          // NOTE(Batuhan): Couldn't read enough bytes for regions
+          if (ReadFile(File, BMEX->RegionsMetadata.Data, BMEX->M.Size.RegionsMetadata, &BytesOperated, 0) && BytesOperated == BMEX->M.Size.RegionsMetadata) {
+            ErrorOccured = FALSE;
+            BMEX->RegionsMetadata.Count = BMEX->M.Size.RegionsMetadata / sizeof(nar_record);
+          }
+          else {
+            printf("Couldn't read regions metadata\n");
+            // NOTE(Batuhan): Couldn't read enough bytes for regions
+          }
         }
 
       }
@@ -3392,14 +3389,19 @@ ReadMFTLCN(backup_metadata_ex* BMEX) {
       DWORD BytesRead = 0;
       Result.Count = BMEX->M.Size.MFTMetadata / sizeof(nar_record);
       Result.Data = (nar_record*)malloc(BMEX->M.Size.MFTMetadata);
-      ReadFile(File, Result.Data, BMEX->M.Size.MFTMetadata, &BytesRead, 0);
-      if (BytesRead == BMEX->M.Size.MFTMetadata) {
-        // NOTE(Batuhan): Success!
+      if (Result.Data) {
+        ReadFile(File, Result.Data, BMEX->M.Size.MFTMetadata, &BytesRead, 0);
+        if (BytesRead == BMEX->M.Size.MFTMetadata) {
+          // NOTE(Batuhan): Success!
+        }
+        else {
+          printf("Can't read MFT metadata, read %i bytes instead of %i\n", BytesRead, BMEX->M.Size.MFTMetadata);
+          free(Result.Data);
+          Result.Count = 0;
+        }
       }
       else {
-        printf("Can't read MFT metadata, read %i bytes instead of %i\n", BytesRead, BMEX->M.Size.MFTMetadata);
-        free(Result.Data);
-        Result.Count = 0;
+        printf("Can't allocate memory for MFT metadata size\n");
       }
     }
     else {
@@ -3608,6 +3610,7 @@ Exit:
 // NOTE(Batuhan): truncates file F to size TargetSize
 BOOLEAN
 NarTruncateFile(HANDLE F, ULONGLONG TargetSize) {
+  
   LARGE_INTEGER MoveTo = { 0 };
   MoveTo.QuadPart = TargetSize;
   LARGE_INTEGER NewFilePointer = { 0 };
