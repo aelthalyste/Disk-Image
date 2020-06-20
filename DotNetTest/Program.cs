@@ -176,8 +176,10 @@ namespace DotNetTest
 
             else if (Input[0] == "restore")
             {
-              if (Input.Length == 4)
+              if (Input.Length == 4 || Input.Length == 5)
               {
+                Console.Write("Arg count ");
+                Console.WriteLine(Input.Length);
                 // restore target source version
                 // 0        1       2       3  
                 char SrcLetter = Input[1][0];
@@ -192,8 +194,18 @@ namespace DotNetTest
                   version = System.Convert.ToInt32(Input[3]);
                 }
 
+                if (Input.Length == 5) {
+                  Console.WriteLine("Fresh disk restore starting\n");
+                  int DiskID = System.Convert.ToInt32(Input[4]);
+                  Console.Write("DiskID => ");
+                  Console.WriteLine(DiskID);
+                  if (!tracker.CW_RestoreToFreshDisk(TargetLetter, SrcLetter, version, DiskID, RootDir)) {
+                    Console.WriteLine("Couldn't restore\n");
+                  }
+                  continue;
+                }
 
-                if (tracker.CW_RestoreToVolume(TargetLetter, SrcLetter, version, RootDir))
+                if (tracker.CW_RestoreToVolume(TargetLetter, SrcLetter, version, true,  RootDir))
                 {
                   Console.Write("Restored!\n");
                 }
@@ -202,12 +214,7 @@ namespace DotNetTest
                   Console.Write("Couldn't restore\n");
                 }
               }
-              if (Input.Length == 5)
-              {
-                // restore target source version diskid
-                // 0        1       2       3     4
-
-              }
+              
             }
 
             else if (Input[0] == "q") break;

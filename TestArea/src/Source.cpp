@@ -913,9 +913,48 @@ NarGetVolumeDiskType(char Letter) {
   return Result;
 }
 
-int main() {
-  NarGetVolumeDiskType('C');
+BOOLEAN
+NarCreateCleanGPTBootablePartition(int DiskID, int VolumeSizeMB, int EFISizeMB, int RecoverySizeMB, char Letter) {
+  //TODO win10 MSR partition created by default, take it as parameter and format accordingly.
 
+  char Buffer[2096];
+  memset(Buffer, 0, 2096);
+
+
+
+  sprintf(Buffer, ""
+    "select disk %i\n" // first argument goes here
+    "clean\n"
+    "convert gpt\n" // format disk as gpt
+    "select partition 1\n"
+    "delete partition override\n"
+    "create partition primary size = 550\n" // recovery partition, 
+    //"format fs = ntfs quick\n"
+    "set id = \"de94bba4-06d1-4d40-a16a-bfd50179d6ac\"\n"
+    "gpt attributes=0x8000000000000001\n"
+    "create partition efi size = %i\n" //efi partition, second argument 
+    //"format fs=fat32 quick Label = \"System\"\n"
+    "create partition msr size = 16\n" // win10
+    "create partition primary size = %i\n" // third argument
+    "assign letter = %c\n" // fourth argument
+    "format fs = \"ntfs\" quick\n"
+    "exit\n", DiskID, EFISizeMB, VolumeSizeMB, Letter);
+
+
+  char InputFN[] = "NARDPINPUT";
+  if (NarDumpToFile(InputFN, Buffer, strlen(Buffer))) {
+    sprintf(Buffer, "diskpart /s %s", InputFN);
+    printf(Buffer);
+    system(Buffer);
+    return TRUE;
+  }
+
+  return FALSE;
+
+}
+
+int main() {
+  NarCreateCleanGPTBootablePartition(0, 28000, 99, 550, 'E');
   return 0;
   int DiskID, Size;
   char Type;

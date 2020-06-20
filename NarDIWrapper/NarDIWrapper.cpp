@@ -69,9 +69,11 @@ namespace NarDIWrapper {
     C->CleaningUp = FALSE;
     C->Volumes = { 0,0 };
 
-    R = (restore_inf*)malloc(sizeof(restore_inf));
-    memset(C, 0, sizeof(restore_inf));
-
+    //R = (restore_inf*)malloc(sizeof(restore_inf*));
+    
+    R = new restore_inf;
+    R->RootDir = L"";
+    
   }
 
   DiskTracker::~DiskTracker() {
@@ -122,9 +124,11 @@ namespace NarDIWrapper {
   /*
 Version: -1 to restore full backup otherwise version number to restore(version number=0 first inc-diff backup)
 */
-  bool DiskTracker::CW_RestoreToVolume(wchar_t TargetLetter,
+  bool DiskTracker::CW_RestoreToVolume(
+    wchar_t TargetLetter,
     wchar_t SrcLetter,
     INT Version,
+    bool ShouldFormat,
     System::String^ RootDir
   ) {
 
@@ -136,13 +140,10 @@ Version: -1 to restore full backup otherwise version number to restore(version n
       R->Version = NAR_FULLBACKUP_VERSION;
     }
 
-    using namespace Runtime::InteropServices;
-
-    const wchar_t* chars = (const wchar_t*)(Marshal::StringToHGlobalUni(RootDir)).ToPointer();
-    R->RootDir = chars;
-    Marshal::FreeHGlobal(IntPtr((void*)chars));
-
-    return OfflineRestoreToVolume(R);
+    
+    R->RootDir = L"";
+    
+    return OfflineRestoreToVolume(R,ShouldFormat);
 
   }
 
@@ -150,18 +151,14 @@ Version: -1 to restore full backup otherwise version number to restore(version n
 
     R->TargetLetter = TargetLetter;
     R->SrcLetter = SrcLetter;
-
     R->Version = Version;
     if (Version < 0) {
       R->Version = NAR_FULLBACKUP_VERSION;
     }
 
-    using namespace Runtime::InteropServices;
-
-    const wchar_t* chars = (const wchar_t*)(Marshal::StringToHGlobalUni(RootDir)).ToPointer();
-    R->RootDir = chars;
-    Marshal::FreeHGlobal(IntPtr((void*)chars));
-
+    
+    R->RootDir = L"";
+    
     return OfflineRestoreCleanDisk(R, DiskID);
   }
 

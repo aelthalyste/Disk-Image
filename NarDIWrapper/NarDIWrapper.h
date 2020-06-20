@@ -62,7 +62,13 @@ namespace NarDIWrapper {
         bool CW_ReadStream(void* Data, int Size);
         bool CW_TerminateBackup(bool Succeeded);
         
-        bool CW_RestoreToVolume(wchar_t TargetLetter, wchar_t SrcLetter, INT Version, System::String^ RootDir);
+        bool CW_RestoreToVolume(
+          wchar_t TargetLetter, 
+          wchar_t SrcLetter, 
+          INT Version, 
+          bool ShouldFormat, 
+          System::String^ RootDir);
+
         bool CW_RestoreToFreshDisk(wchar_t TargetLetter, wchar_t SrcLetter, INT Version, int DiskID, System::String^ Rootdir);
 
         private:
