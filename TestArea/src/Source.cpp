@@ -308,15 +308,7 @@ CreatePartition(int Disk, char Letter, unsigned size) {
   char Buffer[1024];
 
 #if 0
-  "select disk %i\ncreate partition primary size = %u\nassign letter = \"X\"\nformat fs = \"NTFS\" label = \"New Volume\" QUICK";
-
   // diskpart /s DiskPartFile to call DiskPartFile as script
-
-  /*
-create partition primary size = X //
-assign letter = "X" // creates partition with given letter
-format fs = "NTFS" label = "New Volume" QUICK // label might change, dont know what actually it means
-*/
 #endif
 
   sprintf(Buffer, "select disk %i\ncreate partition primary size = %u\nassign letter = \"X\"\nformat fs = \"NTFS\" label = \"New Volume\" QUICK", Disk, size, Letter);
@@ -953,8 +945,150 @@ NarCreateCleanGPTBootablePartition(int DiskID, int VolumeSizeMB, int EFISizeMB, 
 
 }
 
+#define Assert(expression) do{ if(!(expression)) *(int*)0 = 0;} while(0);
+
+#define NAR_OP_ALLOCATE 1
+#define NAR_OP_FREE 2
+#define NAR_OP_ZERO 3
+
+void*
+_InternalNarMemoryOp(int OpCode, size_t Size) {
+  struct {
+    void* P;
+    size_t ReserveSize;
+    size_t Used;
+  }static MemArena = { 0 };
+
+  if (!MemArena.P) {
+    MemArena.ReserveSize = 1024LL * 1024LL * 1024LL * 64LL; // Reserve 64GB
+    MemArena.Used = 0;
+    MemArena.P = VirtualAlloc(0, MemArena.ReserveSize, MEM_RESERVE, PAGE_READWRITE);
+  }
+
+  void* Result = 0;
+
+  if (OpCode == NAR_OP_ALLOCATE) {
+    VirtualAlloc(MemArena.P, Size + MemArena.Used, MEM_COMMIT, PAGE_READWRITE);
+    Result = (char*)MemArena.P + MemArena.Used;
+    MemArena.Used += Size;
+  }
+  if (OpCode == NAR_OP_FREE) {
+
+    if (VirtualFree(MemArena.P, MemArena.Used, MEM_DECOMMIT) == 0) {
+      printf("Cant free scratch memory\n");
+      Assert(FALSE);
+    }
+    MemArena.Used = 0;
+
+  }
+  if (OpCode == NAR_OP_ZERO) {
+    memset(MemArena.P, 0, MemArena.Used);
+  }
+
+  return Result;
+}
+
+static inline void*
+NarScratchAllocate(size_t Size) {
+  return _InternalNarMemoryOp(NAR_OP_ALLOCATE, Size);
+}
+
+static inline void
+NarScratchClear() {
+  _InternalNarMemoryOp(NAR_OP_FREE, 0);
+}
+
+
+BOOLEAN
+NarSetVolumeSize(char Letter, int TargetSizeMB) {
+  BOOLEAN Result = 0;
+  ULONGLONG VolSizeMB = 0;
+  char Buffer[1024];
+  char FNAME[] = "NARDPSCRPT";
+  sprintf(Buffer, "%c:\\", Letter);
+
+  ULARGE_INTEGER TOTAL_SIZE = { 0 };
+  ULARGE_INTEGER A, B;
+  GetDiskFreeSpaceExA(Buffer, 0, &TOTAL_SIZE, 0);
+  VolSizeMB = TOTAL_SIZE.QuadPart / (1024 * 1024); // byte to MB
+  if (VolSizeMB == TargetSizeMB) {
+    return TRUE;;
+  }
+
+  /*
+extend size = X // extends volume by X. Doesnt resize, just adds X
+shrink desired = X // shrink volume to X, if X is bigger than current size, operation fails
+*/
+  if (VolSizeMB > TargetSizeMB) {
+    // shrink volume
+    ULONGLONG Diff = VolSizeMB - TargetSizeMB;
+    sprintf(Buffer, "select volume %c\nshrink desired = %i\nexit\n", Letter, Diff);
+  }
+  else {
+    // extend volume
+    ULONGLONG Diff = TargetSizeMB - VolSizeMB;
+    sprintf(Buffer, "select volume %c\nextend size = %i\nexit\n", Letter, Diff);
+  }
+
+  //NarDumpToFile(const char *FileName, void* Data, int Size)
+  if (NarDumpToFile(FNAME, Buffer, strlen(Buffer))) {
+    char CMDBuffer[1024];
+    sprintf(CMDBuffer, "diskpart /s %s", FNAME);
+    system(CMDBuffer);
+    // TODO(Batuhan): maybe check output
+    Result = TRUE;
+  }
+  return Result;
+}
+
+
 int main() {
-  NarCreateCleanGPTBootablePartition(0, 28000, 99, 550, 'E');
+  void* P1 = 0;
+  void* P2 = 0;
+  void* P3 = 0;
+  void* P4 = 0;
+  void* P5 = 0;
+
+  size_t AllSize = 1024LL * 1024LL * 128; // 128 mb
+  P1 = NarScratchAllocate(AllSize);
+  P2 = NarScratchAllocate(AllSize);
+  P3 = NarScratchAllocate(AllSize);
+  P4 = NarScratchAllocate(AllSize);
+  P5 = NarScratchAllocate(AllSize);
+
+  memset(P1, 1, AllSize);
+  memset(P2, 1, AllSize);
+  memset(P3, 1, AllSize);
+  memset(P4, 1, AllSize);
+  memset(P5, 1, AllSize);
+
+  Assert(P2 == (char*)P1 + AllSize);
+  Assert(P3 == (char*)P2 + AllSize);
+  Assert(P4 == (char*)P3 + AllSize);
+  Assert(P5 == (char*)P4 + AllSize);
+
+  NarScratchClear();
+
+  P1 = NarScratchAllocate(AllSize);
+  P2 = NarScratchAllocate(AllSize);
+  P3 = NarScratchAllocate(AllSize);
+  P4 = NarScratchAllocate(AllSize);
+  P5 = NarScratchAllocate(AllSize);
+
+  memset(P1, 1, AllSize);
+  memset(P2, 1, AllSize);
+  memset(P3, 1, AllSize);
+  memset(P4, 1, AllSize);
+  memset(P5, 1, AllSize);
+
+  Assert(P2 == (char*)P1 + AllSize);
+  Assert(P3 == (char*)P2 + AllSize);
+  Assert(P4 == (char*)P3 + AllSize);
+  Assert(P5 == (char*)P4 + AllSize);
+
+  NarScratchClear();
+  NarSetVolumeSize('N', 34000);
+
   return 0;
   int DiskID, Size;
   char Type;

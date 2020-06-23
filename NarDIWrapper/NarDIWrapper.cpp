@@ -43,7 +43,6 @@ mesaj loopunda, threadinde, bir sorun yaşanırsa nasıl ana uygulamaya bildiril
 
 #include "NarDIWrapper.h"
 
-#define USE_NAMESPACE TRUE
 
 #include "mspyLog.h"
 #include "mspyUser.cpp"
@@ -70,10 +69,10 @@ namespace NarDIWrapper {
     C->Volumes = { 0,0 };
 
     //R = (restore_inf*)malloc(sizeof(restore_inf*));
-    
+
     R = new restore_inf;
     R->RootDir = L"";
-    
+
   }
 
   DiskTracker::~DiskTracker() {
@@ -140,10 +139,10 @@ Version: -1 to restore full backup otherwise version number to restore(version n
       R->Version = NAR_FULLBACKUP_VERSION;
     }
 
-    
+
     R->RootDir = L"";
-    
-    return OfflineRestoreToVolume(R,ShouldFormat);
+
+    return OfflineRestoreToVolume(R, ShouldFormat);
 
   }
 
@@ -156,9 +155,9 @@ Version: -1 to restore full backup otherwise version number to restore(version n
       R->Version = NAR_FULLBACKUP_VERSION;
     }
 
-    
+
     R->RootDir = L"";
-    
+
     return OfflineRestoreCleanDisk(R, DiskID);
   }
 

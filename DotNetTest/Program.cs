@@ -40,7 +40,7 @@ namespace DotNetTest
 
     static void Main(string[] args)
     {
-
+      int BufferSize = 1024 * 1024 * 64;
       unsafe
       {
         Console.WriteLine("Narbulut volume yedekleme servisi v0.1\n");
@@ -75,7 +75,7 @@ namespace DotNetTest
               else PrintCommands();
               continue;
             }
-            
+
 
             if (Input[0] == "ekle")
             {
@@ -114,12 +114,12 @@ namespace DotNetTest
 
               for (int i = 0; i < streamInfo.ClusterCount; i++)
               {
-                byte[] Buffer = new byte[4096];
+                byte[] Buffer = new byte[BufferSize];
                 fixed (byte* BAddr = &Buffer[0])
                 {
-                  if (tracker.CW_ReadStream(BAddr, 4096))
+                  if (tracker.CW_ReadStream(BAddr, BufferSize))
                   {
-                    st.Write(Buffer, 0, 4096);
+                    st.Write(Buffer, 0, BufferSize);
                   }
                   else
                   {
@@ -148,15 +148,15 @@ namespace DotNetTest
               }
               FileStream st = File.Create(RootDir + info.FileName);
 
-              byte[] buffer = new byte[4096];
+              byte[] buffer = new byte[BufferSize];
               fixed (byte* BAdd = &buffer[0])
               {
                 bool succ = true;
                 for (int i = 0; i < info.ClusterCount; i++)
                 {
-                  if (tracker.CW_ReadStream(BAdd, 4096))
+                  if (tracker.CW_ReadStream(BAdd, BufferSize))
                   {
-                    st.Write(buffer, 0, 4096);
+                    st.Write(buffer, 0, BufferSize);
                   }
                   else
                   {
@@ -194,18 +194,20 @@ namespace DotNetTest
                   version = System.Convert.ToInt32(Input[3]);
                 }
 
-                if (Input.Length == 5) {
+                if (Input.Length == 5)
+                {
                   Console.WriteLine("Fresh disk restore starting\n");
                   int DiskID = System.Convert.ToInt32(Input[4]);
                   Console.Write("DiskID => ");
                   Console.WriteLine(DiskID);
-                  if (!tracker.CW_RestoreToFreshDisk(TargetLetter, SrcLetter, version, DiskID, RootDir)) {
+                  if (!tracker.CW_RestoreToFreshDisk(TargetLetter, SrcLetter, version, DiskID, RootDir))
+                  {
                     Console.WriteLine("Couldn't restore\n");
                   }
                   continue;
                 }
 
-                if (tracker.CW_RestoreToVolume(TargetLetter, SrcLetter, version, true,  RootDir))
+                if (tracker.CW_RestoreToVolume(TargetLetter, SrcLetter, version, true, RootDir))
                 {
                   Console.Write("Restored!\n");
                 }
@@ -214,7 +216,7 @@ namespace DotNetTest
                   Console.Write("Couldn't restore\n");
                 }
               }
-              
+
             }
 
             else if (Input[0] == "q") break;
