@@ -46,10 +46,11 @@ namespace DotNetTest
         Console.WriteLine("Narbulut volume yedekleme servisi v0.1\n");
         PrintCommands();
         DiskTracker tracker = new DiskTracker();
-        string RootDir = "";
+        string RootDir = "C:\\Windows";
+
         if (tracker.CW_InitTracker())
         {
-
+          
           for (; ; )
           {
             var RawInput = Console.ReadLine();
@@ -94,6 +95,7 @@ namespace DotNetTest
                 }
 
 
+                
                 if (!tracker.CW_AddToTrack(Input[1][0], type)) Console.WriteLine("Can't start tracking volume\n");
 
               }
@@ -101,6 +103,7 @@ namespace DotNetTest
 
             if (Input[0] == "full")
             {
+              
               char Letter = Input[1][0];
               StreamInfo streamInfo = new StreamInfo();
               if (!tracker.CW_SetupStream(Letter, streamInfo))
@@ -109,7 +112,7 @@ namespace DotNetTest
                 continue;
               }
               Console.WriteLine(RootDir + streamInfo.FileName);
-
+              
               FileStream st = File.Create(RootDir + streamInfo.FileName);
 
               byte[] Buffer = new byte[BufferSize];
@@ -122,6 +125,7 @@ namespace DotNetTest
               if (!tracker.CW_TerminateBackup(true)) {
                 Console.WriteLine("Can't terminate backup\n");
               }
+
               st.Close();
 
 

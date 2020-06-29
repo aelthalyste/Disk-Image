@@ -124,6 +124,7 @@ RecordEqual(nar_record* N1, nar_record* N2) {
 #endif
 
 
+
 inline BOOLEAN
 IsSameVolumes(const WCHAR* OpName, const WCHAR VolumeLetter);
 
@@ -368,10 +369,11 @@ Volume ###  Ltr  Label        Fs     Type        Size     Status     Info
   Volume 3                      FAT32  Partition    100 MB  Healthy    System
 */
 struct volume_information {
-  ULONGLONG SizeMB; //in MB!
+  ULONGLONG Size; //in bytes!
   BOOLEAN Bootable; // Healthy && NTFS && !Boot
   char Letter;
-  char FileSystem[6]; // FAT32, NTFS, FAT, 1 byte for NULL termination
+  INT8 DiskID;
+  char DiskType;
 };
 
 // Up to 2GB
@@ -416,7 +418,16 @@ data_array<disk_information>
 NarGetDisks();
 
 data_array<volume_information>
-GetVolumes();
+NarGetVolumes();
+
+ULONGLONG
+NarGetVolumeSize(char Letter);
+
+inline int 
+NarGetVolumeDiskType(char Letter);
+
+inline int 
+NarGetVolumeDiskID(char Letter);
 
 BOOLEAN
 NarFormatVolume(char Letter);

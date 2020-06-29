@@ -170,5 +170,25 @@ Version: -1 to restore full backup otherwise version number to restore(version n
   }
 
 
+  List<BackupInformation^>^ DiskTracker::GetVolumes() {
+
+    auto V = NarGetVolumes();
+
+    List<BackupInformation^>^ Result = gcnew  List<BackupInformation^>;
+
+    for (int i = 0; i < V.Count; i++) {
+      BackupInformation^ BI = gcnew BackupInformation;
+      BI->Size = V.Data[i].Size;
+      BI->Bootable = V.Data[i].Bootable;
+      BI->DiskID = V.Data[i].DiskID;
+      BI->DiskType = V.Data[i].DiskType;
+      BI->Letter = V.Data[i].Letter;
+      Result->Add(BI);
+    }
+
+    
+    return Result;
+  }
+
   // TODO(Batuhan): helper functions, like which volume we are streaming etc.
 }

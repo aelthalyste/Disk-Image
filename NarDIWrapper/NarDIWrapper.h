@@ -3,6 +3,9 @@
 #include <msclr/marshal.h>
 #include "mspyLog.h"
 
+using namespace System;
+using namespace System::Text;
+using namespace System::Collections::Generic;
 
 namespace NarDIWrapper {
 
@@ -38,15 +41,24 @@ namespace NarDIWrapper {
     int ID;
   };
 
-
+  
   public ref class VolumeInformation {
   public:
-    unsigned SizeMB;
+    unsigned long long Size; // In bytes
     bool Bootable;
     wchar_t Letter;
-    System::String^ FileSystem;
+    wchar_t DiskID;
+    wchar_t DiskType;
   };
 
+  public ref class BackupInformation {
+  public:
+      ULONGLONG Size; //in bytes!
+      BOOLEAN Bootable; // Healthy && NTFS && !Boot
+      char Letter;
+      INT8 DiskID;
+      char DiskType;
+  };
 
   public ref class DiskTracker
   {
@@ -54,12 +66,18 @@ namespace NarDIWrapper {
     DiskTracker();
     ~DiskTracker();
 
+    List<BackupInformation^>^ GetVolumes();
+
     bool CW_InitTracker();
 
     bool CW_AddToTrack(wchar_t Letter, int Type);
+    
     bool CW_RemoveFromTrack(wchar_t Letter);
+    
     bool CW_SetupStream(wchar_t Letter, StreamInfo^ StrInf);
+    
     bool CW_ReadStream(void* Data, int Size);
+    
     bool CW_TerminateBackup(bool Succeeded);
 
     bool CW_RestoreToVolume(

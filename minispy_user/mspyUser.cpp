@@ -2588,43 +2588,47 @@ NarGetDisks() {
 }
 
 
-#if 0
 //Returns # of volumes detected
 data_array<volume_information>
-GetVolumes() {
-    data_array<volume_information> Result = { 0,0 };
-    DWORD Drives = GetLogicalDrives();
-    char VolumeString[] = " :\\";
-    int VolumeIndex = 0;
+NarGetVolumes() {
+
+  data_array<volume_information> Result = { 0,0 };
+  int AAA = 0;
+  char VolumeString[] = " :\\";
+  char WindowsLetter = 'C';
+  {
     char WindowsDir[512];
     GetWindowsDirectoryA(WindowsDir, 512);
-    for (int CurrentDriveIndex = 0; CurrentDriveIndex < 26; CurrentDriveIndex++) {
-        DWORD Drives = GetLogicalDrives();
-        if (VolumeIndex == NElements) {
-            VolumeIndex = 0;
-            break;
-        }
-        if (Drives & (1 << CurrentDriveIndex)) {
-            VolumeString[0] = 'A' + CurrentDriveIndex;
-            char FSname[1024];
-            ULARGE_INTEGER TotalSize = { 0 };
-            
-            GetVolumeInformationA(VolumeString, 0, 0, 0, 0, 0, FSname, 1024);
-            GetDiskFreeSpaceExA(VolumeString, 0, &TotalSize, 0);
-            strcpy(Result[VolumeIndex].FileSystem, FSname);
-            
-            Result[VolumeIndex].Letter = 'A' + CurrentDriveIndex;
-            Result[VolumeIndex].SizeMB = TotalSize.QuadPart / (1024 * 1024);
-            -Result[VolumeIndex].FileSystem[strlen(FSname)] = '\0'; // Null termination
-            Result[VolumeIndex].Bootable = (WindowsDir[0] == Result[VolumeIndex].Letter);
-            VolumeIndex++;
-        }
-    }
-    return VolumeIndex;
-    
-}
+    WindowsLetter = WindowsDir[0];
+  }
 
-#endif
+  DWORD Drives = GetLogicalDrives();
+
+  for (int CurrentDriveIndex = 0; CurrentDriveIndex < 26; CurrentDriveIndex++) {
+
+    if (Drives & (1 << CurrentDriveIndex)) {
+      
+      VolumeString[0] = 'A' + CurrentDriveIndex;
+      char FSname[1024];
+      ULARGE_INTEGER TotalSize = { 0 };
+      volume_information T = { 0 };
+
+      GetDiskFreeSpaceExA(VolumeString, 0, &TotalSize, 0);
+      T.Letter = 'A' + CurrentDriveIndex;
+      T.Size = NarGetVolumeSize(T.Letter);
+      T.Bootable = (WindowsLetter == T.Letter);
+      T.DiskType = NarGetVolumeDiskType(T.Letter);
+      T.DiskID = NarGetVolumeDiskID(T.Letter);
+      
+      Result.Insert(T);
+
+    }
+
+  }
+
+  return Result;
+
+}
 
 
 ULONGLONG
@@ -2957,9 +2961,6 @@ NarGetVolumeDiskType(char Letter) {
             wchar_t DiskPath[512];
             // L"\\\\?\\PhysicalDrive%i";
             wsprintfW(DiskPath, L"\\\\?\\PhysicalDrive%i", Ext->Extents[0].DiskNumber);
-            if (Ext->NumberOfDiskExtents != 1) {
-                printf("There are %i disk extents\n", Ext->NumberOfDiskExtents);
-            }
             Disk = CreateFileW(DiskPath, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, 0, OPEN_EXISTING, 0, 0);
             if (Disk != INVALID_HANDLE_VALUE) {
                 
@@ -2991,6 +2992,7 @@ NarGetVolumeDiskType(char Letter) {
     }
     else {
         //TODO(Batuhan): can't open drive as file
+      printf("Cant open drive %c as file\n", Letter);
     }
     
     free(Ext);
@@ -2998,6 +3000,46 @@ NarGetVolumeDiskType(char Letter) {
     CloseHandle(Drive);
     CloseHandle(Disk);
     return Result;
+}
+
+
+inline int
+NarGetVolumeDiskID(char Letter) {
+  
+  wchar_t VolPath[512];
+  wchar_t Vol[] = L"!:\\";
+  Vol[0] = Letter;
+
+  int Result = -1;
+  DWORD BS = 1024 * 1024 * 64; //64 KB
+  DWORD T = 0;
+
+  VOLUME_DISK_EXTENTS* Ext = (VOLUME_DISK_EXTENTS*)malloc(BS);
+  
+  GetVolumeNameForVolumeMountPointW(Vol, VolPath, 512);
+  VolPath[lstrlenW(VolPath) - 1] = L'\0'; //Remove trailing slash
+  HANDLE Drive = CreateFileW(VolPath, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, 0, 0);
+   
+  if (Drive != INVALID_HANDLE_VALUE) {
+
+    if (DeviceIoControl(Drive, IOCTL_VOLUME_GET_VOLUME_DISK_EXTENTS, 0, 0, Ext, BS, &T, 0)) {
+      wchar_t DiskPath[512];
+      // L"\\\\?\\PhysicalDrive%i";
+      Result = Ext->Extents[0].DiskNumber;
+    }
+    else {
+      printf("DeviceIoControl failed with argument VOLUME_GET_VOLUME_DISK_EXTENTS for volume %c\n", Letter);
+    }
+
+  }
+  else {
+    printf("Cant open drive %c as file\n", Letter);
+  }
+
+  free(Ext);
+  CloseHandle(Drive);
+
+  return Result;
 }
 
 inline BOOLEAN
@@ -3406,7 +3448,7 @@ NARDEBUGExcludeRegions(data_array<nar_record> S, data_array<nar_record> E) {
     }
 
   }
-
+  
   return R;
 
 }
@@ -3698,11 +3740,11 @@ ReadMFTLCN(backup_metadata_ex* BMEX) {
 }
 
 ULONGLONG
-NarGetVolumeSize(wchar_t Letter) {
-    wchar_t Temp[] = L"!:\\";
+NarGetVolumeSize(char Letter) {
+    char Temp[] = "!:\\";
     Temp[0] = Letter;
     ULARGE_INTEGER L = { 0 };
-    GetDiskFreeSpaceExW(Temp, 0, &L, 0);
+    GetDiskFreeSpaceExA(Temp, 0, &L, 0);
     return L.QuadPart;
 }
 
@@ -3985,10 +4027,9 @@ AppendMFTFile(HANDLE File, HANDLE VSSHandle, char Letter, int ClusterSize) {
     
 }
 
-#if 1
+#if 0
 
 #define REGION(Start, End) nar_record{(Start), (End) - (Start)}
-
 
 
 int
@@ -3997,6 +4038,8 @@ main(
      CHAR* argv[]
      ) {
     
+  auto a = GetVolumes();
+
   data_array<nar_record> S = { 0 };
   data_array<nar_record> E = { 0 };
 
@@ -4057,7 +4100,6 @@ main(
 }
 
 #endif
-
 
 
 
