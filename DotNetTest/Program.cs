@@ -112,27 +112,18 @@ namespace DotNetTest
 
               FileStream st = File.Create(RootDir + streamInfo.FileName);
 
-              for (int i = 0; i < streamInfo.ClusterCount; i++)
-              {
-                byte[] Buffer = new byte[BufferSize];
-                fixed (byte* BAddr = &Buffer[0])
+              byte[] Buffer = new byte[BufferSize];
+              fixed (byte* BAddr = &Buffer[0]) {
+                while (tracker.CW_ReadStream(BAddr, BufferSize))
                 {
-                  if (tracker.CW_ReadStream(BAddr, BufferSize))
-                  {
-                    st.Write(Buffer, 0, BufferSize);
-                  }
-                  else
-                  {
-                    Console.Write("Cant read stream, operation failed\n");
-                    break;
-                  }
+                  st.Write(Buffer, 0, BufferSize);
                 }
               }
-              if (!tracker.CW_TerminateBackup(true))
-              {
+              if (!tracker.CW_TerminateBackup(true)) {
                 Console.WriteLine("Can't terminate backup\n");
               }
               st.Close();
+
 
             }
 
@@ -151,23 +142,10 @@ namespace DotNetTest
               byte[] buffer = new byte[BufferSize];
               fixed (byte* BAdd = &buffer[0])
               {
-                bool succ = true;
-                for (int i = 0; i < info.ClusterCount; i++)
-                {
-                  if (tracker.CW_ReadStream(BAdd, BufferSize))
-                  {
-                    st.Write(buffer, 0, BufferSize);
-                  }
-                  else
-                  {
-                    Console.WriteLine("Cant read stream, operation failed\n");
-                    succ = false;
-                    break;
-                  }
-
+                while(tracker.CW_ReadStream(BAdd, BufferSize)){
+                  st.Write(buffer, 0, BufferSize);
                 }
-
-                tracker.CW_TerminateBackup(succ);
+                tracker.CW_TerminateBackup(true);
                 st.Close();
               }
 

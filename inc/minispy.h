@@ -88,7 +88,8 @@ typedef _Return_type_success_(return >= 0) LONG NTSTATUS;
 //  The maximum size of a record that can be passed from the filter
 //
 
-#define RECORD_SIZE     1024
+//#define RECORD_SIZE     1024
+#define RECORD_SIZE     4096
 
 //
 //  This defines the type of record buffer this is along with certain flags.
@@ -146,6 +147,7 @@ typedef struct _RECORD_DATA {
     ULONG KnownEcpMask;
     
 } RECORD_DATA, *PRECORD_DATA;
+
 
 #pragma warning(pop)
 

@@ -63,6 +63,20 @@ struct data_array {
 
 };
 
+template<typename T>
+inline void Append(data_array<T> *Destination, data_array<T> App) {
+  
+  if (App.Data == 0) {
+    return;
+  }
+  
+  ULONGLONG NewSize = sizeof(T)* ((ULONGLONG)App.Count + (ULONGLONG)Destination->Count);
+  Destination->Data = (T*)realloc(Destination->Data, NewSize);
+  memcpy(&Destination->Data[Destination->Count], App.Data, App.Count * sizeof(T));
+  Destination->Count += App.Count;
+
+}
+
 
 template<typename T> void
 FreeDataArray(data_array<T>* V) {
@@ -177,7 +191,7 @@ struct volume_backup_inf {
   wchar_t Letter;
   BOOLEAN FullBackupExists;
   BOOLEAN IsOSVolume;
-  BackupType BT;
+  BackupType BT = BackupType::Inc;
 
   struct {
     BOOLEAN SaveToFile; //If false, records will be saved to memory, RecordsMem
@@ -551,10 +565,10 @@ BOOLEAN
 SaveMetadata(char Letter, int Version, int ClusterSize, BackupType BT, data_array<nar_record> BackupRegions, HANDLE VSSHandle);
 
 BOOLEAN
-RestoreIncVersion(restore_inf R);
+RestoreIncVersion(restore_inf R, HANDLE Volume); // Volume optional, might pass INVALID_HANDLE_VALUE
 
 BOOLEAN
-RestoreDiffVersion(restore_inf R);
+RestoreDiffVersion(restore_inf R, HANDLE Volume); // Volume optional, might pass INVALID_HANDLE_VALUE
 
 BOOLEAN
 NarTruncateFile(HANDLE F, ULONGLONG TargetSize);
@@ -566,7 +580,7 @@ BOOLEAN
 AppendMFTFile(HANDLE File, HANDLE VSSHANDLE, char Letter, int ClusterSize);
 
 BOOLEAN
-RestoreVersionWithoutLoop(restore_inf R, BOOLEAN RestoreMFT);
+RestoreVersionWithoutLoop(restore_inf R, BOOLEAN RestoreMFT, HANDLE Volume); // Volume optional, might pass INVALID_HANDLE_VALUE
 
 BOOLEAN
 NarRestoreMFT(backup_metadata_ex* BMEX, HANDLE Volume);
@@ -577,7 +591,11 @@ ReadMFTLCN(backup_metadata_ex* BMEX);
 inline BOOLEAN
 IsGPTVolume(char Letter);
 
+HANDLE
+NarOpenVolume(char Letter);
 
+void
+NarCloseVolume(HANDLE V);
 
 BOOLEAN
 SaveMFT(volume_backup_inf* VolInf, HANDLE VSSHandle, data_array<nar_record>* MFTLCN);

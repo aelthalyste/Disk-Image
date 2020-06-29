@@ -1149,7 +1149,7 @@ Return Value:
 
     for (;;) {
       MaxIteration++;
-      if (MaxIteration > 256) {
+      if (MaxIteration > 1024) {
         recordData->Error = NAR_ERR_MAX_ITER;
         break;
       }
