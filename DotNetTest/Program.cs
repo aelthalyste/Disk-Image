@@ -46,7 +46,7 @@ namespace DotNetTest
         Console.WriteLine("Narbulut volume yedekleme servisi v0.1\n");
         PrintCommands();
         DiskTracker tracker = new DiskTracker();
-        string RootDir = "C:\\Windows";
+        string RootDir = "";
 
         if (tracker.CW_InitTracker())
         {

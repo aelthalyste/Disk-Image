@@ -123,6 +123,7 @@ RecordEqual(nar_record* N1, nar_record* N2) {
 #define Assert(expression) do{ (expression); }while(0);
 #endif
 
+#define NAR_INVALID_DISK_ID -1
 
 
 inline BOOLEAN
@@ -237,11 +238,11 @@ struct volume_backup_inf {
 If any metadata error occurs, it's related binary data will be marked as corrupt too. If i cant copy mft metadata
 to file, mft itself will be marked as corrupt because i wont have anything to map it to volume  at restore state.
 */
-#define MetadataFileNameDraft "NAR_"
+#define MetadataFileNameDraft "NAR_M_"
 #define BackupFileNameDraft "NAR_BACKUP_"
 #define NAR_FULLBACKUP_VERSION -1
 
-#define WideMetadataFileNameDraft L"NAR_"
+#define WideMetadataFileNameDraft L"NAR_M_"
 #define WideBackupFileNameDraft L"NAR_BACKUP_"
 
 // NOTE(Batuhan): nar binary file contains backup data, mft, and recovery
@@ -486,11 +487,7 @@ CopyData(HANDLE S, HANDLE D, ULONGLONG Len);
 inline void
 StrToGUID(const char* guid, GUID* G);
 
-data_array<nar_record>
-ReadFBMetadata(HANDLE F);
 
-data_array<nar_record>
-ReadMetadata(HANDLE F);
 
 VOID
 DisplayError(DWORD Code);
@@ -589,6 +586,12 @@ NarGetFilePointer(HANDLE F);
 
 BOOLEAN
 AppendMFTFile(HANDLE File, HANDLE VSSHANDLE, char Letter, int ClusterSize);
+
+BOOLEAN
+AppendRecoveryToFile(HANDLE File, char Letter);
+
+BOOLEAN
+RestoreRecoveryFile(restore_inf R);
 
 BOOLEAN
 RestoreVersionWithoutLoop(restore_inf R, BOOLEAN RestoreMFT, HANDLE Volume); // Volume optional, might pass INVALID_HANDLE_VALUE
