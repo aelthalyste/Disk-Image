@@ -1,17 +1,8 @@
 /*
-IMPLEMENTED @MergeRegions function
-  So problem is, which I can not describe properly but at least can show it
-  Let Rn be the record with at the index of N, so R0 becomes first record, M second and so on
+  I do unity builds, so I dont check if declared functions in .h file, I just write it in cpp file and if any build gives me error then
+  I add it to .h file. 
 
-  Let assume there are three records, at least one is overlapping with other records regions
-
-  M =>                      |-----------------|
-  S =>         |--------------|
-  R3 =>                                |------------------|
-  We can shrink that information such that, only storing new record like start => S.start and len = R3.Len + R3.Start
-
-  If such collisions ever occurs, we can shrink them.
-  But in order to process that, list MUST be sorted so we can compare consequent list elements
+  check if INDEX_ALLOCATION falls inside MFT cluster regions
 */
 
 
@@ -4093,6 +4084,7 @@ AppendRecoveryToFile(HANDLE File, char Letter) {
       }
       else {
         printf("DeviceIoControl with argument IOCTL_DISK_GET_DRIVE_LAYOUT_EX failed for drive %i, cant append recovery file to backup metadata\n",Letter);
+        DisplayError(GetLastError());
       }
 
     }
