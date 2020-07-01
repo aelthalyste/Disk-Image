@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using NarDIWrapper;
 using System.IO;
+using NarDIWrapper;
 
 namespace DotNetTest
 {
@@ -47,6 +47,8 @@ namespace DotNetTest
         PrintCommands();
         DiskTracker tracker = new DiskTracker();
         string RootDir = "";
+
+        var test = tracker.CW_GetVolumes();
 
         if (tracker.CW_InitTracker())
         {
@@ -106,7 +108,7 @@ namespace DotNetTest
               
               char Letter = Input[1][0];
               StreamInfo streamInfo = new StreamInfo();
-              if (!tracker.CW_SetupStream(Letter, streamInfo))
+              if (!tracker.CW_SetupStream(Letter, 1, streamInfo))
               {
                 Console.WriteLine("Cant setup stream\n");
                 continue;
@@ -136,7 +138,7 @@ namespace DotNetTest
 
               char Letter = Input[1][0];
               StreamInfo info = new StreamInfo();
-              if (!tracker.CW_SetupStream(Letter, info))
+              if (!tracker.CW_SetupStream(Letter, 1, info))
               {
                 Console.WriteLine("Can't setup stream\n");
                 continue;

@@ -103,9 +103,10 @@ namespace NarDIWrapper {
     return AddVolumeToTrack(C, L, (BackupType)Type);
   }
 
-  bool DiskTracker::CW_SetupStream(wchar_t L, StreamInfo^ StrInf) {
+  bool DiskTracker::CW_SetupStream(wchar_t L, int BT, StreamInfo^ StrInf) {
+    
     DotNetStreamInf SI = { 0 };
-    if (SetupStream(C, L, &SI)) {
+    if (SetupStream(C, L, (BackupType)BT, &SI)) {
 
       StrInf->ClusterCount = SI.ClusterCount;
       StrInf->ClusterSize = SI.ClusterSize;
@@ -170,23 +171,24 @@ Version: -1 to restore full backup otherwise version number to restore(version n
   }
 
 
-  List<BackupInformation^>^ DiskTracker::GetVolumes() {
+  List<VolumeInformation^>^ DiskTracker::CW_GetVolumes() {
 
-    auto V = NarGetVolumes();
+    data_array<volume_information> V = NarGetVolumes();
 
-    List<BackupInformation^>^ Result = gcnew  List<BackupInformation^>;
+    List<VolumeInformation^>^ Result = gcnew  List<VolumeInformation^>;
 
     for (int i = 0; i < V.Count; i++) {
-      BackupInformation^ BI = gcnew BackupInformation;
+      VolumeInformation^ BI = gcnew VolumeInformation;
       BI->Size = V.Data[i].Size;
       BI->Bootable = V.Data[i].Bootable;
-      BI->DiskID = V.Data[i].DiskID;
+      BI->DiskID   = V.Data[i].DiskID;
       BI->DiskType = V.Data[i].DiskType;
-      BI->Letter = V.Data[i].Letter;
+      BI->Letter   = V.Data[i].Letter;
       Result->Add(BI);
     }
 
-    
+    FreeDataArray(V);
+
     return Result;
   }
 

@@ -15,23 +15,8 @@ namespace NarDIWrapper {
     System::Int32 ClusterCount; //In clusters
     System::String^ FileName;
     System::String^ MetadataFileName;
-    System::String^ MFTFileName;
-    System::String^ MFTMetadataName;
   };
 
-
-  struct disk_information {
-    ULONGLONG SizeGB; //In GB!
-    ULONGLONG Unallocated; // IN GB!
-    char Type[4]; // string, RAW,GPT,MBR, one byte for NULL termination
-    int ID;
-  };
-  struct volume_information {
-    ULONGLONG SizeMB; //in MB! 
-    BOOLEAN Bootable; // Healthy && NTFS && !Boot
-    char Letter;
-    char FileSystem[6]; // FAT32, NTFS, FAT, 1 byte for NULL termination
-  };
 
   public ref class DiskInfo {
   public:
@@ -42,16 +27,8 @@ namespace NarDIWrapper {
   };
 
   
-  public ref class VolumeInformation {
-  public:
-    unsigned long long Size; // In bytes
-    bool Bootable;
-    wchar_t Letter;
-    wchar_t DiskID;
-    wchar_t DiskType;
-  };
 
-  public ref class BackupInformation {
+  public ref class VolumeInformation {
   public:
       ULONGLONG Size; //in bytes!
       BOOLEAN Bootable; // Healthy && NTFS && !Boot
@@ -66,7 +43,7 @@ namespace NarDIWrapper {
     DiskTracker();
     ~DiskTracker();
 
-    List<BackupInformation^>^ GetVolumes();
+    List<VolumeInformation^>^ CW_GetVolumes();
 
     bool CW_InitTracker();
 
@@ -74,7 +51,7 @@ namespace NarDIWrapper {
     
     bool CW_RemoveFromTrack(wchar_t Letter);
     
-    bool CW_SetupStream(wchar_t Letter, StreamInfo^ StrInf);
+    bool CW_SetupStream(wchar_t L, int BT, StreamInfo^ StrInf);
     
     bool CW_ReadStream(void* Data, int Size);
     

@@ -273,6 +273,8 @@ Check errors here
         for (UINT i = 0; i < context->Volumes.Count; i++) {
           volume_backup_inf* V = &context->Volumes.Data[i];
 
+          if (V->INVALIDATEDENTRY) continue; // This entry is corrupt
+
           if (StrCmpW(LogDOSName.c_str(), V->DOSName) == 0) {
 
             if (V->FilterFlags.FlushToFile) {
@@ -349,13 +351,15 @@ Check errors here
 
           printf("M:  %08X System Out of Memory\n",
             pLogRecord->SequenceNumber);
+          context->DriverErrorOccured = TRUE;
+
         }
 
       }
       else if (FlagOn(pLogRecord->RecordType, RECORD_TYPE_FLAG_EXCEED_MEMORY_ALLOWANCE)) {
 
         printf("Exceeded Mamimum Allowed Memory Buffers! This is an fatal error!\n", pLogRecord->SequenceNumber);
-
+        context->DriverErrorOccured = TRUE;
         break;
       }
 

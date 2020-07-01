@@ -124,6 +124,21 @@ RecordEqual(nar_record* N1, nar_record* N2) {
 #endif
 
 #define NAR_INVALID_DISK_ID -1
+#define NAR_INVALID_ENTRY -1
+#define NAR_INVALID_VOLUME_LETTER 63
+
+typedef char NARDP;
+#define NAR_DISKTYPE_GPT 'G'
+#define NAR_DISKTYPE_MBR 'M'
+#define NAR_DISKTYPE_RAW 'R'
+
+#define MetadataFileNameDraft "NAR_M_"
+#define BackupFileNameDraft "NAR_BACKUP_"
+#define NAR_FULLBACKUP_VERSION -1
+
+#define WideMetadataFileNameDraft L"NAR_M_"
+#define WideBackupFileNameDraft L"NAR_BACKUP_"
+
 
 
 inline BOOLEAN
@@ -178,6 +193,7 @@ PrintListReverse(region_chain* Temp);
 
 
 enum class BackupType : short {
+  Placeholder,
   Diff,
   Inc
 };
@@ -193,6 +209,7 @@ struct volume_backup_inf {
   wchar_t Letter;
   BOOLEAN FullBackupExists;
   BOOLEAN IsOSVolume;
+  BOOLEAN INVALIDATEDENTRY; // If this flag is set, this entry is unusable. accessing its element wont give meaningful information to caller.
   BackupType BT = BackupType::Inc;
 
   struct {
@@ -238,12 +255,6 @@ struct volume_backup_inf {
 If any metadata error occurs, it's related binary data will be marked as corrupt too. If i cant copy mft metadata
 to file, mft itself will be marked as corrupt because i wont have anything to map it to volume  at restore state.
 */
-#define MetadataFileNameDraft "NAR_M_"
-#define BackupFileNameDraft "NAR_BACKUP_"
-#define NAR_FULLBACKUP_VERSION -1
-
-#define WideMetadataFileNameDraft L"NAR_M_"
-#define WideBackupFileNameDraft L"NAR_BACKUP_"
 
 // NOTE(Batuhan): nar binary file contains backup data, mft, and recovery
 static const int GlobalBackupMetadataVersion = 1;
@@ -338,7 +349,6 @@ struct restore_inf {
   wchar_t SrcLetter;
   int Version;
   std::wstring RootDir;
-  // NOTE(Batuhan): optional
 };
 
 struct DotNetStreamInf {
@@ -348,9 +358,7 @@ struct DotNetStreamInf {
   std::wstring MetadataFileName;
 };
 
-#define NAR_DISKTYPE_GPT 'G'
-#define NAR_DISKTYPE_MBR 'M'
-#define NAR_DISKTYPE_RAW 'R'
+
 
 struct disk_information {
   ULONGLONG Size; //In bytes!
@@ -450,6 +458,7 @@ struct LOG_CONTEXT {
   //
   wchar_t RootDir[512];
   BOOLEAN CleaningUp;
+  BOOLEAN DriverErrorOccured;
   HANDLE  ShutDown;
 };
 typedef LOG_CONTEXT* PLOG_CONTEXT;
@@ -506,7 +515,7 @@ void
 FreeBackupMetadataEx(backup_metadata_ex* BMEX);
 
 BOOLEAN
-SetupStream(PLOG_CONTEXT Context, wchar_t Letter, DotNetStreamInf* SI = NULL);
+SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, DotNetStreamInf* SI = NULL);
 
 BOOLEAN
 SetupStreamHandle(volume_backup_inf* V);
