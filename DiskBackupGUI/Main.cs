@@ -14,27 +14,42 @@ namespace DiskBackupGUI
 {
     public partial class Main : Form
     {
-        MyMessageBox customMessageBox;
-        public class VolumeInformation
-        {
-            public long Size { get; set; }
-            public char Letter { get; set; }
-            public int DiskID { get; set; }
-            public char DiskType { get; set; }
-            public bool Bootable { get; set; }
-        }
+        MyMessageBox myMessageBox;
+        public List<VolumeInformation> volumes;
+        public DiskTracker diskTracker;
+        public int type;
+        //public class VolumeInformation
+        //{
+        //    public bool Checked { get; set; }
+        //    public long Size { get; set; }
+        //    public char Letter { get; set; }
+        //    public int DiskID { get; set; }
+        //    public char DiskType { get; set; }
+        //    public bool Bootable { get; set; }
+        //}
         public Main()
         {
             InitializeComponent();
-      DiskTracker t = new DiskTracker();
-      t.GetVolumes();
-
         }
 
         private void btnAdd_Click(object sender, EventArgs e)
-        {
-            customMessageBox = new MyMessageBox();
-            customMessageBox.Show();
+        { 
+            List<DataGridViewRow> checkedColumn = new List<DataGridViewRow>();
+            volumes = new List<VolumeInformation>();
+            foreach (DataGridViewRow row in dataGridView1.Rows)
+            {
+                if (Convert.ToBoolean(row.Cells["Checked"].Value) == true)
+                {
+                    checkedColumn.Add(row);
+                }             
+            }
+            myMessageBox = new MyMessageBox();
+            foreach (var item in checkedColumn)
+            {
+                myMessageBox.volumeInformations.Add(new VolumeInformation() {Letter = Convert.ToChar(item.Cells["Letter"].Value)});
+            }
+            myMessageBox.MessageText = volumes.Count.ToString();
+            myMessageBox.Show();
         }
 
         private void btnPath_Click(object sender, EventArgs e)
@@ -50,20 +65,23 @@ namespace DiskBackupGUI
 
         private void Form1_Load(object sender, EventArgs e)
         {
-            List<VolumeInformation> volumeInformations = new List<VolumeInformation>();
-            volumeInformations.Add(new VolumeInformation() { Size = 1024L * 1024L * 1024L, DiskID = 12, DiskType = 'M', Letter = 'E', Bootable = true });
-            volumeInformations.Add(new VolumeInformation() { Size = 1024L * 1024L * 1024L * 1024L, DiskID = 12, DiskType = 'M', Letter = 'E', Bootable = false });
-            volumeInformations.Add(new VolumeInformation() { Size = 1024L * 1024L, DiskID = 15, DiskType = 'M', Letter = 'D', Bootable = false });
-            volumeInformations.Add(new VolumeInformation() { Size = 1024L * 1024L, DiskID = 17, DiskType = 'M', Letter = 'C', Bootable = true });
-            volumeInformations.Add(new VolumeInformation() { Size = 400L * 1024L, DiskID = 22, DiskType = 'M', Letter = 'C', Bootable = false }); volumeInformations.Add(new VolumeInformation() { Size = 1024L * 1024L * 1024L, DiskID = 12, DiskType = 'M', Letter = 'E', Bootable = true });
-            volumeInformations.Add(new VolumeInformation() { Size = 1024L * 1024L * 1024L * 1024L, DiskID = 12, DiskType = 'M', Letter = 'E', Bootable = false });
-            volumeInformations.Add(new VolumeInformation() { Size = 1024L * 1024L, DiskID = 15, DiskType = 'M', Letter = 'D', Bootable = false });
-            volumeInformations.Add(new VolumeInformation() { Size = 1024L * 1024L, DiskID = 17, DiskType = 'M', Letter = 'C', Bootable = true });
-            volumeInformations.Add(new VolumeInformation() { Size = 400L * 1024L, DiskID = 22, DiskType = 'M', Letter = 'C', Bootable = false }); volumeInformations.Add(new VolumeInformation() { Size = 1024L * 1024L * 1024L, DiskID = 12, DiskType = 'M', Letter = 'E', Bootable = true });
-            volumeInformations.Add(new VolumeInformation() { Size = 1024L * 1024L * 1024L * 1024L, DiskID = 12, DiskType = 'M', Letter = 'E', Bootable = false });
-            volumeInformations.Add(new VolumeInformation() { Size = 1024L * 1024L, DiskID = 15, DiskType = 'M', Letter = 'D', Bootable = false });
-            volumeInformations.Add(new VolumeInformation() { Size = 1024L * 1024L, DiskID = 17, DiskType = 'M', Letter = 'C', Bootable = true });
-            volumeInformations.Add(new VolumeInformation() { Size = 400L * 1024L, DiskID = 22, DiskType = 'M', Letter = 'C', Bootable = false });
+            //List<VolumeInformation> volumeInformations = new List<VolumeInformation>();
+            //volumeInformations.Add(new VolumeInformation() { Checked = false, SizeMB = (uint)(1024L * 1024L * 1024L), DiskID = 12, DiskType = 'M', Letter = 'E', Bootable = true });
+            //volumeInformations.Add(new VolumeInformation() {Checked = false, Size = 1024L * 1024L * 1024L * 1024L, DiskID = 12, DiskType = 'M', Letter = 'E', Bootable = false });
+            //volumeInformations.Add(new VolumeInformation() {Checked = false, Size = 1024L * 1024L, DiskID = 15, DiskType = 'M', Letter = 'D', Bootable = false });
+            //volumeInformations.Add(new VolumeInformation() {Checked = false, Size = 1024L * 1024L, DiskID = 17, DiskType = 'M', Letter = 'C', Bootable = true });
+            //volumeInformations.Add(new VolumeInformation() {Checked = false, Size = 400L * 1024L, DiskID = 22, DiskType = 'M', Letter = 'C', Bootable = false });
+            //volumeInformations.Add(new VolumeInformation() {Checked = false, Size = 1024L * 1024L * 1024L, DiskID = 12, DiskType = 'M', Letter = 'E', Bootable = true });
+            //volumeInformations.Add(new VolumeInformation() {Checked = false, Size = 1024L * 1024L * 1024L * 1024L, DiskID = 12, DiskType = 'M', Letter = 'E', Bootable = false });
+            //volumeInformations.Add(new VolumeInformation() {Checked = false, Size = 1024L * 1024L, DiskID = 15, DiskType = 'M', Letter = 'D', Bootable = false });
+            //volumeInformations.Add(new VolumeInformation() {Checked = false, Size = 1024L * 1024L, DiskID = 17, DiskType = 'M', Letter = 'C', Bootable = true });
+            //volumeInformations.Add(new VolumeInformation() {Checked = false, Size = 400L * 1024L, DiskID = 22, DiskType = 'M', Letter = 'C', Bootable = false });
+            //volumeInformations.Add(new VolumeInformation() {Checked = false, Size = 1024L * 1024L * 1024L, DiskID = 12, DiskType = 'M', Letter = 'E', Bootable = true });
+            //volumeInformations.Add(new VolumeInformation() {Checked = false, Size = 1024L * 1024L * 1024L * 1024L, DiskID = 12, DiskType = 'M', Letter = 'E', Bootable = false });
+            //volumeInformations.Add(new VolumeInformation() {Checked = false, Size = 1024L * 1024L, DiskID = 15, DiskType = 'M', Letter = 'D', Bootable = false });
+            //volumeInformations.Add(new VolumeInformation() {Checked = false, Size = 1024L * 1024L, DiskID = 17, DiskType = 'M', Letter = 'C', Bootable = true });
+            //volumeInformations.Add(new VolumeInformation() { Checked = false, Size = 400L * 1024L, DiskID = 22, DiskType = 'M', Letter = 'C', Bootable = false });
+            //diskTracker.
             dataGridView1.DataSource = volumeInformations;
             dataGridView1.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
         }
@@ -101,7 +119,6 @@ namespace DiskBackupGUI
         private extern static void ReleaseCapture();
         [DllImport("user32.DLL", EntryPoint = "SendMessage")]
         private extern static void SendMessage(System.IntPtr hWnd, int wMsg, int wParam, int lParam);
-
         private void panel4_MouseDown(object sender, MouseEventArgs e)
         {
             ReleaseCapture();

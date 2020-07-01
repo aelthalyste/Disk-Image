@@ -35,13 +35,8 @@
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="*.h;*.hpp;*.hxx;*.hm;*.inl;*.xsd">
+    <ClInclude Include="mspyKern.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <Inf Include="*.inf">
-      <Filter>Driver Files</Filter>
-    </Inf>
   </ItemGroup>
 </Project>

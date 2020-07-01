@@ -1,4 +1,5 @@
-﻿using System;
+﻿using NarDIWrapper;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -13,6 +14,8 @@ namespace DiskBackupGUI
 {
     public partial class MyMessageBox : Form
     {
+        public string MessageText;
+        public List<VolumeInformation> volumeInformations;
         public MyMessageBox()
         {
             InitializeComponent();
@@ -20,11 +23,15 @@ namespace DiskBackupGUI
 
         private void MyMessageBox_Load(object sender, EventArgs e)
         {
-
+            lblMessage.Text = MessageText;
         }
 
         private void btnOkay_Click(object sender, EventArgs e)
         {
+            foreach (var item in volumeInformations)
+            {
+
+            }
             this.Close();
         }
 

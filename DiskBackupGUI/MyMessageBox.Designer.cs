@@ -30,11 +30,11 @@
         {
             this.components = new System.ComponentModel.Container();
             this.panelTop = new System.Windows.Forms.Panel();
-            this.btnOkay = new FontAwesome.Sharp.IconButton();
+            this.btnIncremental = new FontAwesome.Sharp.IconButton();
             this.lblMessage = new Bunifu.Framework.UI.BunifuCustomLabel();
             this.panelBottom = new System.Windows.Forms.Panel();
             this.bunifuElipse1 = new Bunifu.Framework.UI.BunifuElipse(this.components);
-            this.ıconButton1 = new FontAwesome.Sharp.IconButton();
+            this.btnDifferential = new FontAwesome.Sharp.IconButton();
             this.SuspendLayout();
             // 
             // panelTop
@@ -46,29 +46,29 @@
             this.panelTop.Size = new System.Drawing.Size(637, 25);
             this.panelTop.TabIndex = 8;
             // 
-            // btnOkay
+            // btnIncremental
             // 
-            this.btnOkay.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(180)))), ((int)(((byte)(216)))));
-            this.btnOkay.FlatAppearance.BorderSize = 0;
-            this.btnOkay.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.btnOkay.Flip = FontAwesome.Sharp.FlipOrientation.Normal;
-            this.btnOkay.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(162)));
-            this.btnOkay.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(2)))), ((int)(((byte)(62)))), ((int)(((byte)(138)))));
-            this.btnOkay.IconChar = FontAwesome.Sharp.IconChar.Check;
-            this.btnOkay.IconColor = System.Drawing.Color.FromArgb(((int)(((byte)(2)))), ((int)(((byte)(62)))), ((int)(((byte)(138)))));
-            this.btnOkay.IconSize = 32;
-            this.btnOkay.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            this.btnOkay.Location = new System.Drawing.Point(111, 207);
-            this.btnOkay.Name = "btnOkay";
-            this.btnOkay.Padding = new System.Windows.Forms.Padding(10, 0, 20, 0);
-            this.btnOkay.Rotation = 0D;
-            this.btnOkay.Size = new System.Drawing.Size(176, 60);
-            this.btnOkay.TabIndex = 7;
-            this.btnOkay.Text = "Incremental";
-            this.btnOkay.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            this.btnOkay.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
-            this.btnOkay.UseVisualStyleBackColor = false;
-            this.btnOkay.Click += new System.EventHandler(this.btnOkay_Click);
+            this.btnIncremental.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(180)))), ((int)(((byte)(216)))));
+            this.btnIncremental.FlatAppearance.BorderSize = 0;
+            this.btnIncremental.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnIncremental.Flip = FontAwesome.Sharp.FlipOrientation.Normal;
+            this.btnIncremental.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(162)));
+            this.btnIncremental.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(2)))), ((int)(((byte)(62)))), ((int)(((byte)(138)))));
+            this.btnIncremental.IconChar = FontAwesome.Sharp.IconChar.Check;
+            this.btnIncremental.IconColor = System.Drawing.Color.FromArgb(((int)(((byte)(2)))), ((int)(((byte)(62)))), ((int)(((byte)(138)))));
+            this.btnIncremental.IconSize = 32;
+            this.btnIncremental.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.btnIncremental.Location = new System.Drawing.Point(111, 207);
+            this.btnIncremental.Name = "btnIncremental";
+            this.btnIncremental.Padding = new System.Windows.Forms.Padding(10, 0, 20, 0);
+            this.btnIncremental.Rotation = 0D;
+            this.btnIncremental.Size = new System.Drawing.Size(176, 60);
+            this.btnIncremental.TabIndex = 7;
+            this.btnIncremental.Text = "Incremental";
+            this.btnIncremental.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.btnIncremental.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
+            this.btnIncremental.UseVisualStyleBackColor = false;
+            this.btnIncremental.Click += new System.EventHandler(this.btnOkay_Click);
             // 
             // lblMessage
             // 
@@ -97,37 +97,37 @@
             this.bunifuElipse1.ElipseRadius = 50;
             this.bunifuElipse1.TargetControl = this;
             // 
-            // ıconButton1
+            // btnDifferential
             // 
-            this.ıconButton1.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(180)))), ((int)(((byte)(216)))));
-            this.ıconButton1.FlatAppearance.BorderSize = 0;
-            this.ıconButton1.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.ıconButton1.Flip = FontAwesome.Sharp.FlipOrientation.Normal;
-            this.ıconButton1.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(162)));
-            this.ıconButton1.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(2)))), ((int)(((byte)(62)))), ((int)(((byte)(138)))));
-            this.ıconButton1.IconChar = FontAwesome.Sharp.IconChar.Check;
-            this.ıconButton1.IconColor = System.Drawing.Color.FromArgb(((int)(((byte)(2)))), ((int)(((byte)(62)))), ((int)(((byte)(138)))));
-            this.ıconButton1.IconSize = 32;
-            this.ıconButton1.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            this.ıconButton1.Location = new System.Drawing.Point(371, 207);
-            this.ıconButton1.Name = "ıconButton1";
-            this.ıconButton1.Padding = new System.Windows.Forms.Padding(10, 0, 20, 0);
-            this.ıconButton1.Rotation = 0D;
-            this.ıconButton1.Size = new System.Drawing.Size(176, 60);
-            this.ıconButton1.TabIndex = 9;
-            this.ıconButton1.Text = "Differential";
-            this.ıconButton1.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            this.ıconButton1.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
-            this.ıconButton1.UseVisualStyleBackColor = false;
+            this.btnDifferential.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(180)))), ((int)(((byte)(216)))));
+            this.btnDifferential.FlatAppearance.BorderSize = 0;
+            this.btnDifferential.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnDifferential.Flip = FontAwesome.Sharp.FlipOrientation.Normal;
+            this.btnDifferential.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(162)));
+            this.btnDifferential.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(2)))), ((int)(((byte)(62)))), ((int)(((byte)(138)))));
+            this.btnDifferential.IconChar = FontAwesome.Sharp.IconChar.Check;
+            this.btnDifferential.IconColor = System.Drawing.Color.FromArgb(((int)(((byte)(2)))), ((int)(((byte)(62)))), ((int)(((byte)(138)))));
+            this.btnDifferential.IconSize = 32;
+            this.btnDifferential.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.btnDifferential.Location = new System.Drawing.Point(371, 207);
+            this.btnDifferential.Name = "btnDifferential";
+            this.btnDifferential.Padding = new System.Windows.Forms.Padding(10, 0, 20, 0);
+            this.btnDifferential.Rotation = 0D;
+            this.btnDifferential.Size = new System.Drawing.Size(176, 60);
+            this.btnDifferential.TabIndex = 9;
+            this.btnDifferential.Text = "Differential";
+            this.btnDifferential.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.btnDifferential.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
+            this.btnDifferential.UseVisualStyleBackColor = false;
             // 
             // MyMessageBox
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(637, 292);
-            this.Controls.Add(this.ıconButton1);
+            this.Controls.Add(this.btnDifferential);
             this.Controls.Add(this.panelTop);
-            this.Controls.Add(this.btnOkay);
+            this.Controls.Add(this.btnIncremental);
             this.Controls.Add(this.lblMessage);
             this.Controls.Add(this.panelBottom);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.None;
@@ -143,10 +143,10 @@
         #endregion
 
         private System.Windows.Forms.Panel panelTop;
-        private FontAwesome.Sharp.IconButton btnOkay;
+        private FontAwesome.Sharp.IconButton btnIncremental;
         private Bunifu.Framework.UI.BunifuCustomLabel lblMessage;
         private System.Windows.Forms.Panel panelBottom;
         private Bunifu.Framework.UI.BunifuElipse bunifuElipse1;
-        private FontAwesome.Sharp.IconButton ıconButton1;
+        private FontAwesome.Sharp.IconButton btnDifferential;
     }
 }
