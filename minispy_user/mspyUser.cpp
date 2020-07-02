@@ -584,7 +584,7 @@ CopyData(HANDLE S, HANDLE D, ULONGLONG Len) {
                 if (ReadFile(S, Buffer, BufSize, &BytesOperated, 0)) {
                     if (!WriteFile(D, Buffer, BufSize, &BytesOperated, 0) || BytesOperated != BufSize) {
                         printf("Writefile failed\n");
-                        printf("Bytes written -> %d\n", BytesOperated);
+                        printf("Tried to write -> %I64d, Bytes written -> %d\n", Len, BytesOperated);
                         DisplayError(GetLastError());
                         Return = FALSE;
                         break;
@@ -842,7 +842,8 @@ SaveExtraPartitions(volume_backup_inf* V) {
 inline BOOLEAN
 InitRestoreTargetInf(restore_inf* Inf, wchar_t Letter) {
     
-    Assert(Inf != NULL);
+  if (!Inf) return FALSE;
+
     BOOLEAN Return = FALSE;
     WCHAR Temp[] = L"!:\\";
     Temp[0] = Letter;
@@ -1443,7 +1444,8 @@ ReadStream(volume_backup_inf* VolInf, void* Buffer, int TotalSize) {
 BOOLEAN
 TerminateBackup(volume_backup_inf* V, BOOLEAN Succeeded) {
     BOOLEAN Return = FALSE;
-    
+    if (!V) return FALSE;
+
     if (!V->FullBackupExists) {
         //Termination of fullbackup
         if (Succeeded) {
@@ -1472,7 +1474,8 @@ TerminateBackup(volume_backup_inf* V, BOOLEAN Succeeded) {
     }
     else {
         //Termination of diff-inc backup
-        
+      printf("Termination of diff-inc backup\n");
+
         if (Succeeded) {
             // NOTE(Batuhan):
             printf("Will save metadata to working directory, Version : %i\n", V->CurrentLogIndex);
@@ -1562,6 +1565,7 @@ SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, DotNetStreamInf* SI) {
     
     if (ID < 0) {
         //If volume not found, try to add it
+      printf("Couldnt find volume %c in list, adding it for stream setup\n");
         AddVolumeToTrack(C, L, Type);
         ID = GetVolumeID(C, L);
         if (ID < 0) {
@@ -3901,24 +3905,7 @@ SaveMetadata(char Letter, int Version, int ClusterSize, BackupType BT,
     }
     
     
-    // NOTE(Batuhan): Recovery partition's data is stored on metadata only if it's both full and OS volume backup
-    if (BM.IsOSVolume && BM.Version == NAR_FULLBACKUP_VERSION) {
-        
-        ULONGLONG OldFilePointer = NarGetFilePointer(MetadataFile);
-        if (AppendRecoveryToFile(MetadataFile, BM.Letter)) {
-            ULONGLONG CurrentFilePointer = NarGetFilePointer(MetadataFile);
-            BM.Size.Recovery = CurrentFilePointer - OldFilePointer;
-        }
-        else {
-            printf("Error occured while appending recovery partition to backup metadata file for volume %c\n", BM.Letter);
-            ULONGLONG CurrentFilePointer = NarGetFilePointer(MetadataFile);
-            BM.Size.Recovery = CurrentFilePointer - OldFilePointer;
-            BM.Errors.Recovery = TRUE;
-        }
-        
-        
-        // TODO(Batuhan): Backup recovery partition
-    }
+
     
     {
         WriteFile(MetadataFile, BackupRegions.Data, BM.Size.RegionsMetadata, &BytesWritten, 0);
@@ -3976,6 +3963,25 @@ SaveMetadata(char Letter, int Version, int ClusterSize, BackupType BT,
         // NOTE(Batuhan): that's not an error
     }
     
+    // NOTE(Batuhan): Recovery partition's data is stored on metadata only if it's both full and OS volume backup
+    if (BM.IsOSVolume && BM.Version == NAR_FULLBACKUP_VERSION) {
+
+      ULONGLONG OldFilePointer = NarGetFilePointer(MetadataFile);
+      if (AppendRecoveryToFile(MetadataFile, BM.Letter)) {
+        ULONGLONG CurrentFilePointer = NarGetFilePointer(MetadataFile);
+        BM.Size.Recovery = CurrentFilePointer - OldFilePointer;
+      }
+      else {
+        printf("Error occured while appending recovery partition to backup metadata file for volume %c\n", BM.Letter);
+        ULONGLONG CurrentFilePointer = NarGetFilePointer(MetadataFile);
+        BM.Size.Recovery = CurrentFilePointer - OldFilePointer;
+        BM.Errors.Recovery = TRUE;
+      }
+
+
+      // TODO(Batuhan): Backup recovery partition
+    }
+
     /*
     // NOTE(Batuhan): fill BM.Offset struct
     offset[n] = offset[n-1] + size[n-1]
@@ -4066,7 +4072,7 @@ RestoreRecoveryFile(restore_inf R) {
     std::wstring MFN = R.RootDir;
     MFN += GenerateMetadataName(R.SrcLetter, NAR_FULLBACKUP_VERSION);
     
-    HANDLE MetadataFile = CreateFileW(MFN.c_str(), GENERIC_READ, FILE_SHARE_READ, 0, 0, OPEN_EXISTING, 0);
+    HANDLE MetadataFile = CreateFileW(MFN.c_str(), GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, 0, 0);
     if(MetadataFile != INVALID_HANDLE_VALUE){
         
         int DiskID = NarGetVolumeDiskID(B.Letter);
@@ -4076,7 +4082,7 @@ RestoreRecoveryFile(restore_inf R) {
             char DiskPath[512];
             sprintf(DiskPath, "\\\\?\\PhysicalDrive%i", DiskID);
             
-            Disk = CreateFileA(DiskPath, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_WRITE | FILE_SHARE_READ, 0, 0, OPEN_EXISTING, 0);
+            Disk = CreateFileA(DiskPath, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_WRITE | FILE_SHARE_READ, 0, OPEN_EXISTING, 0, 0);
             if (Disk != INVALID_HANDLE_VALUE) {
                 
                 DWORD Hell = 0;
@@ -4086,7 +4092,7 @@ RestoreRecoveryFile(restore_inf R) {
                             PARTITION_INFORMATION_EX* PI = &DL->PartitionEntry[PartitionIndex];
                             
                             // NOTE(Batuhan): Finding recovery partition via GUID
-                            if (IsEqualGUID(PI->Gpt.PartitionId, GREC)) {
+                            if (IsEqualGUID(PI->Gpt.PartitionType, GREC)) {
                                 if (PI->PartitionLength.QuadPart != B.Size.Recovery) {
                                     printf("Recovery partition size on disk and partition size on metadata doesnt match, on disk %I64d, on metadata %I64d\n", PI->PartitionLength.QuadPart, B.Size.Recovery);
                                 }
@@ -4121,7 +4127,7 @@ RestoreRecoveryFile(restore_inf R) {
         }
     }
     else {
-        printf("Cant open metadata file %s\n", MFN.c_str());
+        printf("Cant open metadata file %S\n", MFN.c_str());
     }
     
     
@@ -4151,7 +4157,7 @@ AppendRecoveryToFile(HANDLE File, char Letter) {
         char DiskPath[512];
         sprintf(DiskPath, "\\\\?\\PhysicalDrive%i", DiskID);
         
-        Disk = CreateFileA(DiskPath, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_WRITE | FILE_SHARE_READ | FILE_SHARE_DELETE, 0, 0, OPEN_EXISTING, 0);
+        Disk = CreateFileA(DiskPath, GENERIC_READ, FILE_SHARE_WRITE | FILE_SHARE_READ | FILE_SHARE_DELETE, 0, OPEN_EXISTING, 0, 0);
         if (Disk != INVALID_HANDLE_VALUE) {
             
             DWORD Hell = 0;
@@ -4162,7 +4168,7 @@ AppendRecoveryToFile(HANDLE File, char Letter) {
                         PARTITION_INFORMATION_EX *PI = &DL->PartitionEntry[PartitionIndex];
                         
                         // NOTE(Batuhan): Finding recovery partition via GUID
-                        if (IsEqualGUID(PI->Gpt.PartitionId, GREC)) {
+                        if (IsEqualGUID(PI->Gpt.PartitionType, GREC)) {
                             
                             NarSetFilePointer(Disk, PI->StartingOffset.QuadPart);
                             if (CopyData(Disk, File, PI->PartitionLength.QuadPart)) {
@@ -4177,6 +4183,7 @@ AppendRecoveryToFile(HANDLE File, char Letter) {
                         
                     }
                 }
+                
                 
             }
             else {
@@ -4352,6 +4359,14 @@ main(
      int argc,
      CHAR* argv[]
      ) {
+  restore_inf R;
+  R.RootDir = std::wstring();
+  R.TargetLetter = 'G';
+  R.SrcLetter = 'C';
+  R.Version = 1;
+  RestoreRecoveryFile(R);
+  return 0;
+
     int BufferSize = 1024 * 1024 * 128; // 128KB
     int Found = 0;
     backup_metadata* B = (backup_metadata*)malloc(BufferSize);

@@ -1042,7 +1042,183 @@ shrink desired = X // shrink volume to X, if X is bigger than current size, oper
 }
 
 
+BOOLEAN
+NarSetFilePointer(HANDLE File, ULONGLONG V) {
+  LARGE_INTEGER MoveTo = { 0 };
+  MoveTo.QuadPart = V;
+  LARGE_INTEGER NewFilePointer = { 0 };
+  SetFilePointerEx(File, MoveTo, &NewFilePointer, FILE_BEGIN);
+  return MoveTo.QuadPart == NewFilePointer.QuadPart;
+}
+
+inline int
+NarGetVolumeDiskID(char Letter) {
+
+  wchar_t VolPath[512];
+  wchar_t Vol[] = L"!:\\";
+  Vol[0] = Letter;
+
+  int Result = -1;
+  DWORD BS = 1024 * 1024 * 64; //64 KB
+  DWORD T = 0;
+
+  VOLUME_DISK_EXTENTS* Ext = (VOLUME_DISK_EXTENTS*)malloc(BS);
+
+  GetVolumeNameForVolumeMountPointW(Vol, VolPath, 512);
+  VolPath[lstrlenW(VolPath) - 1] = L'\0'; //Remove trailing slash
+  HANDLE Drive = CreateFileW(VolPath, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, 0, 0);
+
+  if (Drive != INVALID_HANDLE_VALUE) {
+
+    if (DeviceIoControl(Drive, IOCTL_VOLUME_GET_VOLUME_DISK_EXTENTS, 0, 0, Ext, BS, &T, 0)) {
+      wchar_t DiskPath[512];
+      // L"\\\\?\\PhysicalDrive%i";
+      Result = Ext->Extents[0].DiskNumber;
+    }
+    else {
+      printf("DeviceIoControl failed with argument VOLUME_GET_VOLUME_DISK_EXTENTS for volume %c\n", Letter);
+    }
+
+  }
+  else {
+    printf("Cant open drive %c as file\n", Letter);
+  }
+
+  free(Ext);
+  CloseHandle(Drive);
+
+  return Result;
+}
+
+BOOLEAN
+CopyData(HANDLE S, HANDLE D, ULONGLONG Len) {
+  BOOLEAN Return = TRUE;
+
+  UINT32 BufSize = 64 * 1024 * 1024; //64 MB
+
+  void* Buffer = malloc(BufSize);
+  if (Buffer != NULL) {
+    ULONGLONG BytesRemaining = Len;
+    DWORD BytesOperated = 0;
+    if (BytesRemaining > BufSize) {
+
+      while (BytesRemaining > BufSize) {
+        if (ReadFile(S, Buffer, BufSize, &BytesOperated, 0)) {
+          if (!WriteFile(D, Buffer, BufSize, &BytesOperated, 0) || BytesOperated != BufSize) {
+            printf("Writefile failed\n");
+            printf("Bytes written -> %d\n", BytesOperated);
+            Return = FALSE;
+            break;
+          }
+          BytesRemaining -= BufSize;
+        }
+        else {
+          Return = FALSE;
+          //if readfile failed
+          break;
+        }
+
+      }
+    }
+
+    if (BytesRemaining > 0) {
+      if (ReadFile(S, Buffer, BytesRemaining, &BytesOperated, 0) && BytesOperated == BytesRemaining) {
+        if (!WriteFile(D, Buffer, BytesRemaining, &BytesOperated, 0) || BytesOperated != BytesRemaining) {
+          printf("Writefile failed\n");
+          printf("Bytes written -> %d\n", BytesOperated);
+          Return = FALSE;
+        }
+      }
+    }
+
+
+  }//If Buffer != NULL
+  else {
+    printf("Can't allocate memory for buffer\n");
+    Return = FALSE;
+  }
+
+  free(Buffer);
+  return Return;
+}
+
+BOOLEAN
+AppendRecoveryToFile(HANDLE File, char Letter) {
+
+  GUID GREC = { 0 }; // recovery partition guid
+  StrToGUID("{de94bba4-06d1-4d40-a16a-bfd50179d6ac}", &GREC);
+  
+  BOOLEAN Result = FALSE;
+  DWORD BufferSize = 1024 * 1024 * 128; // 64KB
+
+  char VolPath[128];
+  sprintf(VolPath, "%c:\\", Letter);
+
+  DRIVE_LAYOUT_INFORMATION_EX* DL = (DRIVE_LAYOUT_INFORMATION_EX*)malloc(BufferSize);
+  HANDLE Disk = INVALID_HANDLE_VALUE;
+  int DiskID = NarGetVolumeDiskID(Letter);
+
+  if (DiskID != -1) {
+    char DiskPath[512];
+    sprintf(DiskPath, "\\\\?\\PhysicalDrive%i", DiskID);
+
+    Disk = CreateFileA(DiskPath, GENERIC_READ, FILE_SHARE_WRITE | FILE_SHARE_READ | FILE_SHARE_DELETE, 0, OPEN_EXISTING, 0, 0);
+    if (Disk != INVALID_HANDLE_VALUE) {
+
+      DWORD Hell = 0;
+      if (DeviceIoControl(Disk, IOCTL_DISK_GET_DRIVE_LAYOUT_EX, 0, 0, DL, BufferSize, &Hell, 0)) {
+
+        if (DL->PartitionStyle == PARTITION_STYLE_GPT) {
+          for (int PartitionIndex = 0; PartitionIndex < DL->PartitionCount; PartitionIndex++) {
+            PARTITION_INFORMATION_EX* PI = &DL->PartitionEntry[PartitionIndex];
+
+            // NOTE(Batuhan): Finding recovery partition via GUID
+            if (IsEqualGUID(PI->Gpt.PartitionType, GREC)) {
+
+              NarSetFilePointer(Disk, PI->StartingOffset.QuadPart);
+              if (CopyData(Disk, File, PI->PartitionLength.QuadPart)) {
+                Result = TRUE;
+                //NOTE(Batuhan): Success
+              }
+              else {
+                printf("Couldnt restore recovery partition from backup metadata file\n");
+              }
+
+            }
+
+          }
+        }
+        else {
+          printf("Disk isnt GPT!\n");
+        }
+
+      }
+      else {
+        printf("DeviceIoControl with argument IOCTL_DISK_GET_DRIVE_LAYOUT_EX failed for drive %i, cant append recovery file to backup metadata\n", Letter);
+      }
+
+    }
+    else {
+      printf("Couldnt open disk %s as file, cant append recovery file to backup metadata, err %i\n", DiskPath, GetLastError());
+    }
+
+  }
+  else {
+    printf("Couldnt find valid Disk ID for volume letter %c\n", Letter);
+  }
+
+  free(DL);
+  CloseHandle(Disk);
+  return Result;
+}
+
 int main() {
+  HANDLE F = CreateFileA("Testrecfile", GENERIC_WRITE, 0, 0, CREATE_NEW, 0, 0);
+  if (F != INVALID_HANDLE_VALUE) AppendRecoveryToFile(F, 'C');
+  else printf("Couldnt create file\n");
+  CloseHandle(F);
+  return 0;
+
   void* P1 = 0;
   void* P2 = 0;
   void* P3 = 0;
