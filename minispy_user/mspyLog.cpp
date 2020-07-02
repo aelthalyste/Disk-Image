@@ -310,7 +310,6 @@ Check errors here
                 V->IncRecordCount += pRecordData->RecCount;
                 break;
               } {
-                DisplayError(GetLastError());
                 printf("## Error occured while writing log to file. FERROR!!\n");
               }
 
