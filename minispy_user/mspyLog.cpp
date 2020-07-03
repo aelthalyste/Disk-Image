@@ -35,6 +35,10 @@ _Analysis_mode_(_Analysis_code_type_user_code_)
 
 #define POLL_INTERVAL   5
 
+#ifndef min
+#define min(a,b)            (((a) < (b)) ? (a) : (b))
+#endif
+
 BOOLEAN
 TranslateFileTag(
   _In_ PLOG_RECORD logRecord

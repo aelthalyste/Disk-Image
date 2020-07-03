@@ -142,47 +142,8 @@ typedef struct _MINISPY_DATA {
 
     PFLT_PORT ClientPort;
 
-    //
-    //  List of buffers with data to send to user mode.
-    //
 
-    KSPIN_LOCK OutputBufferLock;
-    LIST_ENTRY OutputBufferList;
-
-    //
-    //  Lookaside list used for allocating buffers.
-    //
-
-    NPAGED_LOOKASIDE_LIST FreeBufferList;
-
-    //
-    //  Variables used to throttle how many records buffer we can use
-    //
-
-    LONG MaxRecordsToAllocate;
-    __volatile LONG RecordsAllocated;
-
-    //
-    //  static buffer used for sending an "out-of-memory" message
-    //  to user mode.
-    //
-
-    __volatile LONG StaticBufferInUse;
-
-    //
-    //  We need to make sure this buffer aligns on a PVOID boundary because
-    //  minispy casts this buffer to a RECORD_LIST structure.
-    //  That can cause alignment faults unless the structure starts on the
-    //  proper PVOID boundary
-    //
-
-    PVOID OutOfMemoryBuffer[RECORD_SIZE/sizeof( PVOID )];
-
-    //
-    //  Variable and lock for maintaining LogRecord sequence numbers.
-    //
-
-    __volatile LONG LogSequenceNumber;
+  
 
     //
     //  The name query method to use.  By default, it is set to
@@ -304,10 +265,7 @@ SpyQueryTeardown (
     _In_ FLT_INSTANCE_QUERY_TEARDOWN_FLAGS Flags
     );
 
-VOID
-SpyReadDriverParameters (
-    _In_ PUNICODE_STRING RegistryPath
-    );
+
 
 LONG
 SpyExceptionFilter (
@@ -319,15 +277,6 @@ SpyExceptionFilter (
 //  Memory allocation routines
 //---------------------------------------------------------------------------
 
-PRECORD_LIST
-SpyAllocateBuffer (
-    _Out_ PULONG RecordType
-    );
-
-VOID
-SpyFreeBuffer (
-    _In_ PVOID Buffer
-    );
 
 //---------------------------------------------------------------------------
 //  Logging routines
@@ -338,85 +287,13 @@ SpyNewRecord (
     );
 
 VOID
-SpyFreeRecord (
-    _In_ PRECORD_LIST Record
-    );
-
-#if MINISPY_VISTA
-
-VOID
-SpyParseEcps (
-    _In_ PFLT_CALLBACK_DATA Data,
-    _Inout_ PRECORD_LIST RecordList,
-    _Inout_ PUNICODE_STRING EcpData
-    );
-
-VOID
-SpyBuildEcpDataString (
-    _In_ PRECORD_LIST RecordList,
-    _Inout_ PUNICODE_STRING EcpData,
-    _In_reads_(NumKnownEcps) PVOID * ContextPointers
-    );
-
-VOID
-SpySetRecordNameAndEcpData (
-    _Inout_ PLOG_RECORD LogRecord,
-    _In_ PUNICODE_STRING Name,
-    _In_opt_ PUNICODE_STRING EcpData
-    );
-
-#else
-
-VOID
-SpySetRecordName (
-    _Inout_ PLOG_RECORD LogRecord,
-    _In_ PUNICODE_STRING Name
-    );
-
-#endif
-
-VOID
 SpyLogPreOperationData (
     _In_ PFLT_CALLBACK_DATA Data,
     _In_ PCFLT_RELATED_OBJECTS FltObjects,
     _Inout_ PRECORD_LIST RecordList
     );
 
-VOID
-SpyLogPostOperationData (
-    _In_ PFLT_CALLBACK_DATA Data,
-    _Inout_ PRECORD_LIST RecordList
-    );
 
-VOID
-SpyLogTransactionNotify (
-    _In_ PCFLT_RELATED_OBJECTS FltObjects,
-    _Inout_ PRECORD_LIST RecordList,
-    _In_ ULONG TransactionNotification
-    );
-
-VOID
-SpyLog (
-    _In_ PRECORD_LIST RecordList
-    );
-
-NTSTATUS
-SpyGetLog (
-    _Out_writes_bytes_to_(OutputBufferLength,*ReturnOutputBufferLength) PUCHAR OutputBuffer,
-    _In_ ULONG OutputBufferLength,
-    _Out_ PULONG ReturnOutputBufferLength
-    );
-
-VOID
-SpyEmptyOutputBufferList (
-    VOID
-    );
-
-VOID
-SpyDeleteTxfContext (
-    _Inout_ PFLT_CONTEXT  Context,
-    _In_ FLT_CONTEXT_TYPE  ContextType
-    );
 
 #endif  //__MSPYKERN_H__
 

@@ -192,7 +192,7 @@ FindPosition(nar_record* R, data_array<nar_record>* M) {
         i++;
     }
     
-    Return += (-M->Data[i - 1].Len + R->StartPos - M->Data[i - 1].StartPos);
+    //Return += (-M->Data[i - 1].Len + R->StartPos - M->Data[i - 1].StartPos);
     
     return Return;
 }
@@ -3829,6 +3829,10 @@ SaveMetadata(char Letter, int Version, int ClusterSize, BackupType BT,
         return FALSE;
     }
     
+    DWORD BytesWritten = 0;
+    backup_metadata BM = { 0 };
+    ULONGLONG BaseOffset = sizeof(BM);
+
     BOOLEAN Result = FALSE;
     char StringBuffer[1024];
     std::string MetadataFilePath = GenerateMetadataName(Letter, Version);
@@ -3837,8 +3841,6 @@ SaveMetadata(char Letter, int Version, int ClusterSize, BackupType BT,
         printf("Couldn't create metadata file : %s\n", MetadataFilePath.c_str());
         goto Exit;
     }
-    DWORD BytesWritten = 0;
-    backup_metadata BM = { 0 };
     
     // NOTE(Batuhan): Reserve first bytes for metadata struct
     WriteFile(MetadataFile, StringBuffer, sizeof(BM), &BytesWritten, 0);
@@ -3916,11 +3918,11 @@ SaveMetadata(char Letter, int Version, int ClusterSize, BackupType BT,
         }
     }
     
-    //Save current file pointer in case of failure, so we can roll back to old pointer.
-    ULONGLONG OldFilePointer = NarGetFilePointer(MetadataFile);
+    
     // NOTE(Batuhan): since MFT size is > 0 if only non-full backup, we dont need to check Version < 0
     if (BM.Size.MFT && !BM.Errors.MFT && MFTLCN.Data != NULL) {
-        
+      //Save current file pointer in case of failure, so we can roll back to old pointer.
+      ULONGLONG OldFilePointer = NarGetFilePointer(MetadataFile);
         if (WriteFile(MetadataFile, MFTLCN.Data, BM.Size.MFTMetadata, &BytesWritten, 0) && BytesWritten == BM.Size.MFTMetadata) {
             OldFilePointer = NarGetFilePointer(MetadataFile);
             
@@ -3987,7 +3989,7 @@ SaveMetadata(char Letter, int Version, int ClusterSize, BackupType BT,
     offset[n] = offset[n-1] + size[n-1]
   offset[0] = baseoffset = struct size
   */
-    ULONGLONG BaseOffset = sizeof(BM);
+    
     BM.Offset.RegionsMetadata = BaseOffset;
     BM.Offset.MFTMetadata = BM.Offset.RegionsMetadata + BM.Size.RegionsMetadata;
     BM.Offset.MFT = BM.Offset.MFTMetadata + BM.Size.MFTMetadata;
@@ -4103,7 +4105,7 @@ RestoreRecoveryFile(restore_inf R) {
                                     //NOTE(Batuhan): Success
                                 }
                                 else {
-                                    printf("Couldnt \n");
+                                    printf("Couldnt copy recovery file to disk\n");
                                 }
                                 
                             }
@@ -4349,7 +4351,7 @@ AppendMFTFile(HANDLE File, HANDLE VSSHandle, char Letter, int ClusterSize) {
     
 }
 
-#if 1
+#if 0
 
 #define REGION(Start, End) nar_record{(Start), (End) - (Start)}
 

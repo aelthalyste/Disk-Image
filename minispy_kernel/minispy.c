@@ -131,24 +131,12 @@ Return Value:
    // Initialize global data structures.
    //
 
-   MiniSpyData.LogSequenceNumber = 0;
-   MiniSpyData.MaxRecordsToAllocate = DEFAULT_MAX_RECORDS_TO_ALLOCATE;
-   MiniSpyData.RecordsAllocated = 0;
    MiniSpyData.NameQueryMethod = DEFAULT_NAME_QUERY_METHOD;
 
    MiniSpyData.DriverObject = DriverObject;
 
-   InitializeListHead(&MiniSpyData.OutputBufferList);
-   KeInitializeSpinLock(&MiniSpyData.OutputBufferLock);
 
-   ExInitializeNPagedLookasideList(&MiniSpyData.FreeBufferList,
-     NULL,
-     NULL,
-     POOL_NX_ALLOCATION,
-     RECORD_SIZE,
-     SPY_TAG,
-     0);
-
+   
 #if MINISPY_VISTA
 
    //
@@ -165,12 +153,6 @@ Return Value:
 #endif
 
    //
-   // Read the custom parameters for MiniSpy from the registry
-   //
-
-   SpyReadDriverParameters(RegistryPath);
-
-   //
    //  Now that our global configuration is complete, register with FltMgr.
    //
 
@@ -184,8 +166,7 @@ Return Value:
    }
 
 
-   status = FltBuildDefaultSecurityDescriptor(&sd,
-     FLT_PORT_ALL_ACCESS);
+   status = FltBuildDefaultSecurityDescriptor(&sd, FLT_PORT_ALL_ACCESS);
 
    if (!NT_SUCCESS(status)) {
      leave;
@@ -241,7 +222,6 @@ Return Value:
        FltUnregisterFilter(MiniSpyData.Filter);
      }
 
-     ExDeleteNPagedLookasideList(&MiniSpyData.FreeBufferList);
    }
  }
 
@@ -378,7 +358,7 @@ Return Value:
 	FltUnregisterFilter(MiniSpyData.Filter);
 
 	SpyEmptyOutputBufferList();
-	ExDeleteNPagedLookasideList(&MiniSpyData.FreeBufferList);
+	
 
 	return STATUS_SUCCESS;
 }
@@ -1063,16 +1043,13 @@ Return Value:
 --*/
 {
 
-	PRECORD_LIST recordList;
-	PRECORD_LIST reparseRecordList = NULL;
-	PLOG_RECORD reparseLogRecord;
+	
 	PFLT_TAG_DATA_BUFFER tagData;
 	ULONG copyLength;
 
 	UNREFERENCED_PARAMETER(FltObjects);
 
-	recordList = (PRECORD_LIST)CompletionContext;
-
+	
 	//
 	//  If our instance is in the process of being torn down don't bother to
 	//  log this record, free it now.
@@ -1080,86 +1057,10 @@ Return Value:
 
  if (FlagOn(Flags, FLTFL_POST_OPERATION_DRAINING)) {
 
-   SpyFreeRecord(recordList);
    return FLT_POSTOP_FINISHED_PROCESSING;
  }
 
-	//
-	//  Set completion information into the record
-	//
-
-	SpyLogPostOperationData(Data, recordList);
-
-	//
-	//  Log reparse tag information if specified.
-	//
-
-	tagData = Data->TagData;
-
-	if (tagData) {
-
-		reparseRecordList = SpyNewRecord();
-
-		if (reparseRecordList) {
-
-			//
-			//  only copy the DATA portion of the information
-			//
-
-			RtlCopyMemory(&reparseRecordList->LogRecord.Data,
-				&recordList->LogRecord.Data,
-				sizeof(RECORD_DATA));
-
-			reparseLogRecord = &reparseRecordList->LogRecord;
-
-			copyLength = FLT_TAG_DATA_BUFFER_HEADER_SIZE + tagData->TagDataLength;
-
-			if (copyLength > MAX_NAME_SPACE) {
-
-				copyLength = MAX_NAME_SPACE;
-			}
-
-			//
-			//  Copy reparse data
-			//
-
-			RtlCopyMemory(
-				&reparseRecordList->LogRecord.Name[0],
-				tagData,
-				copyLength
-			);
-
-			reparseLogRecord->RecordType |= RECORD_TYPE_FILETAG;
-			reparseLogRecord->Length += (ULONG)ROUND_TO_SIZE(copyLength, sizeof(PVOID));
-		}
-	}
-
-	//
-	//  Send the logged information to the user service.
-	//
-
-	SpyLog(recordList);
-
-	if (reparseRecordList) {
-
-		SpyLog(reparseRecordList);
-	}
-
-	//
-	//  For creates within a transaction enlist in the transaction
-	//  if we haven't already done.
-	//
-
-	if ((FltObjects->Transaction != NULL) &&
-		(Data->Iopb->MajorFunction == IRP_MJ_CREATE) &&
-		(Data->IoStatus.Status == STATUS_SUCCESS)) {
-
-		//
-		//  Enlist in the transaction.
-		//
-
-		SpyEnlistInTransaction(FltObjects);
-	}
+	
 
 	return FLT_POSTOP_FINISHED_PROCESSING;
 }

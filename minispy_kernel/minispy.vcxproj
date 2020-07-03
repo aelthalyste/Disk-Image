@@ -102,7 +102,7 @@
     </Link>
     <ClCompile>
       <TreatWarningAsError>true</TreatWarningAsError>
-      <WarningLevel>Level4</WarningLevel>
+      <WarningLevel>EnableAllWarnings</WarningLevel>
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);..\inc</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);_WIN2K_COMPAT_SLIST_USAGE</PreprocessorDefinitions>
       <ExceptionHandling>
@@ -124,7 +124,7 @@
     </Link>
     <ClCompile>
       <TreatWarningAsError>true</TreatWarningAsError>
-      <WarningLevel>Level4</WarningLevel>
+      <WarningLevel>EnableAllWarnings</WarningLevel>
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);..\inc</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);_WIN2K_COMPAT_SLIST_USAGE</PreprocessorDefinitions>
       <ExceptionHandling>
@@ -146,7 +146,7 @@
     </Link>
     <ClCompile>
       <TreatWarningAsError>true</TreatWarningAsError>
-      <WarningLevel>Level4</WarningLevel>
+      <WarningLevel>EnableAllWarnings</WarningLevel>
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);..\inc</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);_WIN2K_COMPAT_SLIST_USAGE</PreprocessorDefinitions>
       <ExceptionHandling>
@@ -168,7 +168,7 @@
     </Link>
     <ClCompile>
       <TreatWarningAsError>true</TreatWarningAsError>
-      <WarningLevel>Level4</WarningLevel>
+      <WarningLevel>EnableAllWarnings</WarningLevel>
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);..\inc</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);_WIN2K_COMPAT_SLIST_USAGE</PreprocessorDefinitions>
       <ExceptionHandling>
