@@ -2530,10 +2530,14 @@ NarGetDisks() {
     file_read File = NarReadFile(DPOutputFName);
     char* Buffer = (char*)File.Data;
     
-    DWORD DriveLayoutSize = 1024 * 64;// 64KB
-    DRIVE_LAYOUT_INFORMATION_EX* DriveLayout = (DRIVE_LAYOUT_INFORMATION_EX*)malloc(DriveLayoutSize);
-    int DGEXSize = 1024 * 16;
-    DISK_GEOMETRY_EX* DGEX = (DISK_GEOMETRY_EX*)malloc(DGEXSize);// 16KB
+    DWORD DriveLayoutSize = 1024 * 4;
+    int DGEXSize = 1024 * 4;
+    DWORD MemorySize = DriveLayoutSize + DGEXSize;
+    void* Memory = VirtualAlloc(0, MemorySize, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+    DRIVE_LAYOUT_INFORMATION_EX* DriveLayout = (DRIVE_LAYOUT_INFORMATION_EX*)(Memory);
+    DISK_GEOMETRY_EX* DGEX = (DISK_GEOMETRY_EX*)((char*)Memory + DriveLayoutSize);// 
+    
+    
     DWORD HELL;
     
     
@@ -2630,14 +2634,16 @@ NarGetDisks() {
     }
     
     
+    FreeFileRead(File);
+    
+    VirtualFree(Memory, 0, MEM_RELEASE);
     Result.Count = DiskIndex;
     return Result;
     
     ERROR_TERMINATE:
     FreeFileRead(File);
-    free(DGEX);
-    free(DriveLayout);
-    
+    VirtualFree(Memory, 0, MEM_RELEASE);
+
     DiskIndex = 0;
     Result.Count = 0;
     return Result;
@@ -2995,21 +3001,23 @@ Returns:
 */
 inline int
 NarGetVolumeDiskType(char Letter) {
-    wchar_t VolPath[512];
-    wchar_t Vol[] = L"!:\\";
+    char VolPath[512];
+    char Vol[] = "!:\\";
     Vol[0] = Letter;
     
     int Result = NAR_DISKTYPE_RAW;
-    DWORD BS = 1024 * 1024 * 64; //64 KB
+    DWORD BS = 1024 * 1024 * 16; //8 KB
     DWORD T = 0;
     
-    VOLUME_DISK_EXTENTS* Ext = (VOLUME_DISK_EXTENTS*)malloc(BS);
-    DRIVE_LAYOUT_INFORMATION_EX* DL = (DRIVE_LAYOUT_INFORMATION_EX*)malloc(BS);
+    void *Buf = VirtualAlloc(0, 2 * BS, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+    VOLUME_DISK_EXTENTS* Ext = (VOLUME_DISK_EXTENTS*)(Buf);
+    DRIVE_LAYOUT_INFORMATION_EX* DL = (DRIVE_LAYOUT_INFORMATION_EX*)((char*)Buf + BS);
+
     
     
-    GetVolumeNameForVolumeMountPointW(Vol, VolPath, 512);
-    VolPath[lstrlenW(VolPath) - 1] = L'\0'; //Remove trailing slash
-    HANDLE Drive = CreateFileW(VolPath, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, 0, 0);
+    GetVolumeNameForVolumeMountPointA(Vol, VolPath, 512);
+    VolPath[strlen(VolPath) - 1] = '\0'; //Remove trailing slash
+    HANDLE Drive = CreateFileA(VolPath, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, 0, 0);
     HANDLE Disk = INVALID_HANDLE_VALUE;
     
     if (Drive != INVALID_HANDLE_VALUE) {
@@ -3052,8 +3060,7 @@ NarGetVolumeDiskType(char Letter) {
         printf("Cant open drive %c as file\n", Letter);
     }
     
-    free(Ext);
-    free(DL);
+    VirtualFree(Buf, 0, MEM_RELEASE);
     CloseHandle(Drive);
     CloseHandle(Disk);
     return Result;
@@ -3068,10 +3075,10 @@ NarGetVolumeDiskID(char Letter) {
     Vol[0] = Letter;
     
     int Result = NAR_INVALID_DISK_ID;
-    DWORD BS = 1024 * 1024 * 64; //64 KB
+    DWORD BS = 1024 * 1024 * 1; //1 KB
     DWORD T = 0;
     
-    VOLUME_DISK_EXTENTS* Ext = (VOLUME_DISK_EXTENTS*)malloc(BS);
+    VOLUME_DISK_EXTENTS* Ext = (VOLUME_DISK_EXTENTS*)VirtualAlloc(0, BS, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
     
     GetVolumeNameForVolumeMountPointW(Vol, VolPath, 512);
     VolPath[lstrlenW(VolPath) - 1] = L'\0'; //Remove trailing slash
@@ -3093,7 +3100,7 @@ NarGetVolumeDiskID(char Letter) {
         printf("Cant open drive %c as file\n", Letter);
     }
     
-    free(Ext);
+    VirtualFree(Ext, 0, MEM_RELEASE);
     CloseHandle(Drive);
     
     return Result;
@@ -3139,7 +3146,7 @@ NarOpenVolume(char Letter) {
     if (Volume != INVALID_HANDLE_VALUE) {
         
         if (DeviceIoControl(Volume, FSCTL_LOCK_VOLUME, 0, 0, 0, 0, 0, 0)) {
-            // NOTE(Batuhan): success
+            
         }
         else {
             // NOTE(Batuhan): this isnt an error, tho prohibiting volume access for other processes would be great.
@@ -3148,7 +3155,7 @@ NarOpenVolume(char Letter) {
         
         
         if (DeviceIoControl(Volume, FSCTL_DISMOUNT_VOLUME, 0, 0, 0, 0, 0, 0)) {
-            
+
         }
         else {
             printf("Couldnt dismount volume\n");

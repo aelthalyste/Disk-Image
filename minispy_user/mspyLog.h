@@ -82,6 +82,7 @@ template<typename T> void
 FreeDataArray(data_array<T>* V) {
   if (V) {
     free(V->Data);
+    V->Count = 0;
     free(V);
   }
 }
@@ -89,6 +90,7 @@ FreeDataArray(data_array<T>* V) {
 template<typename T> void
 FreeDataArray(data_array<T> V) {
   free(V.Data);
+  V.Count = 0;
 }
 
 
