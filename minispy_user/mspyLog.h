@@ -53,6 +53,7 @@ template<typename DATA_TYPE>
 struct data_array {
   DATA_TYPE* Data;
   UINT Count;
+  UINT ReserveCount = 0;
 
   inline void Insert(DATA_TYPE Val) {
     Data = (DATA_TYPE*)realloc(Data, sizeof(Val) * ((ULONGLONG)Count + 1));
@@ -77,20 +78,13 @@ inline void Append(data_array<T> *Destination, data_array<T> App) {
 
 }
 
-
 template<typename T> void
 FreeDataArray(data_array<T>* V) {
   if (V) {
     free(V->Data);
+    V->Data = 0;
     V->Count = 0;
-    free(V);
   }
-}
-
-template<typename T> void
-FreeDataArray(data_array<T> V) {
-  free(V.Data);
-  V.Count = 0;
 }
 
 
@@ -125,6 +119,7 @@ RecordEqual(nar_record* N1, nar_record* N2) {
 #define Assert(expression) do{ (expression); }while(0);
 #endif
 
+#define NAR_INVALID_VOLUME_TRACK_ID -1
 #define NAR_INVALID_DISK_ID -1
 #define NAR_INVALID_ENTRY -1
 #define NAR_INVALID_VOLUME_LETTER 63
