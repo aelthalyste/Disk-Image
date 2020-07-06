@@ -15,103 +15,51 @@ namespace DiskBackupGUI
     public partial class Main : Form
     {
         MyMessageBox myMessageBox;
-        public List<VolumeInformation> volumes;
+        public List<MyVolumeInformation> volumes;
         public DiskTracker diskTracker;
         public int type;
-        //public class VolumeInformation
-        //{
-        //    public bool Checked { get; set; }
-        //    public long Size { get; set; }
-        //    public char Letter { get; set; }
-        //    public int DiskID { get; set; }
-        //    public char DiskType { get; set; }
-        //    public bool Bootable { get; set; }
-        //}
+        public class MyVolumeInformation
+        {
+            public bool Checked { get; set; }
+            public long Size { get; set; }
+            public char Letter { get; set; }
+            public int DiskID { get; set; }
+            public char DiskType { get; set; }
+            public byte Bootable { get; set; }
+        }
         public Main()
         {
             InitializeComponent();
+            diskTracker = new DiskTracker();
+            volumes = new List<MyVolumeInformation>();
+
+            foreach (var item in diskTracker.CW_GetVolumes())
+            {
+                volumes.Add(new MyVolumeInformation()
+                {
+                    Checked = false,
+                    Bootable = item.Bootable,
+                    DiskID = item.DiskID,
+                    DiskType = (char)item.DiskType,
+                    Letter = (char)item.Letter,
+                    Size = (long)item.Size
+                });
+            }
+            dataGridView1.DataSource = volumes;
+            dataGridView1.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
         }
 
         private void btnAdd_Click(object sender, EventArgs e)
-        { 
-            List<DataGridViewRow> checkedColumn = new List<DataGridViewRow>();
-            volumes = new List<VolumeInformation>();
-            foreach (DataGridViewRow row in dataGridView1.Rows)
-            {
-                if (Convert.ToBoolean(row.Cells["Checked"].Value) == true)
-                {
-                    checkedColumn.Add(row);
-                }             
-            }
-            myMessageBox = new MyMessageBox();
-            foreach (var item in checkedColumn)
-            {
-                myMessageBox.volumeInformations.Add(new VolumeInformation() {Letter = Convert.ToChar(item.Cells["Letter"].Value)});
-            }
-            myMessageBox.MessageText = volumes.Count.ToString();
-            myMessageBox.Show();
+        {
         }
 
         private void btnPath_Click(object sender, EventArgs e)
         {
-            DialogResult result = folderBrowserDialog1.ShowDialog();
-            if (result == DialogResult.OK)
-            {
-                string[] files = Directory.GetFiles(folderBrowserDialog1.SelectedPath);
-                txtPath.Text = folderBrowserDialog1.SelectedPath;
-                rtReport.Text = "Dosya konumu  "+folderBrowserDialog1.SelectedPath + "  olarak seçildi.";
-            }
         }
 
         private void Form1_Load(object sender, EventArgs e)
         {
-            //List<VolumeInformation> volumeInformations = new List<VolumeInformation>();
-            //volumeInformations.Add(new VolumeInformation() { Checked = false, SizeMB = (uint)(1024L * 1024L * 1024L), DiskID = 12, DiskType = 'M', Letter = 'E', Bootable = true });
-            //volumeInformations.Add(new VolumeInformation() {Checked = false, Size = 1024L * 1024L * 1024L * 1024L, DiskID = 12, DiskType = 'M', Letter = 'E', Bootable = false });
-            //volumeInformations.Add(new VolumeInformation() {Checked = false, Size = 1024L * 1024L, DiskID = 15, DiskType = 'M', Letter = 'D', Bootable = false });
-            //volumeInformations.Add(new VolumeInformation() {Checked = false, Size = 1024L * 1024L, DiskID = 17, DiskType = 'M', Letter = 'C', Bootable = true });
-            //volumeInformations.Add(new VolumeInformation() {Checked = false, Size = 400L * 1024L, DiskID = 22, DiskType = 'M', Letter = 'C', Bootable = false });
-            //volumeInformations.Add(new VolumeInformation() {Checked = false, Size = 1024L * 1024L * 1024L, DiskID = 12, DiskType = 'M', Letter = 'E', Bootable = true });
-            //volumeInformations.Add(new VolumeInformation() {Checked = false, Size = 1024L * 1024L * 1024L * 1024L, DiskID = 12, DiskType = 'M', Letter = 'E', Bootable = false });
-            //volumeInformations.Add(new VolumeInformation() {Checked = false, Size = 1024L * 1024L, DiskID = 15, DiskType = 'M', Letter = 'D', Bootable = false });
-            //volumeInformations.Add(new VolumeInformation() {Checked = false, Size = 1024L * 1024L, DiskID = 17, DiskType = 'M', Letter = 'C', Bootable = true });
-            //volumeInformations.Add(new VolumeInformation() {Checked = false, Size = 400L * 1024L, DiskID = 22, DiskType = 'M', Letter = 'C', Bootable = false });
-            //volumeInformations.Add(new VolumeInformation() {Checked = false, Size = 1024L * 1024L * 1024L, DiskID = 12, DiskType = 'M', Letter = 'E', Bootable = true });
-            //volumeInformations.Add(new VolumeInformation() {Checked = false, Size = 1024L * 1024L * 1024L * 1024L, DiskID = 12, DiskType = 'M', Letter = 'E', Bootable = false });
-            //volumeInformations.Add(new VolumeInformation() {Checked = false, Size = 1024L * 1024L, DiskID = 15, DiskType = 'M', Letter = 'D', Bootable = false });
-            //volumeInformations.Add(new VolumeInformation() {Checked = false, Size = 1024L * 1024L, DiskID = 17, DiskType = 'M', Letter = 'C', Bootable = true });
-            //volumeInformations.Add(new VolumeInformation() { Checked = false, Size = 400L * 1024L, DiskID = 22, DiskType = 'M', Letter = 'C', Bootable = false });
-            //diskTracker.
-            dataGridView1.DataSource = volumeInformations;
-            dataGridView1.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
-        }
 
-        private void dataGridView1_CellClick(object sender, DataGridViewCellEventArgs e)
-        {
-            var a = dataGridView1.Rows[dataGridView1.CurrentRow.Index].Cells[0].Value;
-            var b = dataGridView1.Rows[dataGridView1.CurrentRow.Index].Cells[1].Value;
-            var c = dataGridView1.Rows[dataGridView1.CurrentRow.Index].Cells[2].Value;
-            var d = dataGridView1.Rows[dataGridView1.CurrentRow.Index].Cells[3].Value;
-            var f = dataGridView1.Rows[dataGridView1.CurrentRow.Index].Cells[4].Value;
-            rtReport.Text = "Size : " + a.ToString() + "\nLetter : " +b.ToString() + "\nDiskId : "+c.ToString()+ "\nDiskType : " + d.ToString()+ "\nBootable : " + f.ToString();
-        }
-
-        private void btnExit_Click(object sender, EventArgs e)
-        {
-            Application.Exit();
-        }
-
-        private void btnExpand_Click(object sender, EventArgs e)
-        {
-            if (WindowState == FormWindowState.Normal)
-                WindowState = FormWindowState.Maximized;
-            else
-                WindowState = FormWindowState.Normal;
-        }
-
-        private void btnMinimize_Click(object sender, EventArgs e)
-        {
-            WindowState = FormWindowState.Minimized;
         }
 
         //panelden formu hareket ettirmek için : 
@@ -123,6 +71,48 @@ namespace DiskBackupGUI
         {
             ReleaseCapture();
             SendMessage(this.Handle, 0x112, 0xf012, 0);
+        }
+
+        private void dataGridView1_CellClick(object sender, DataGridViewCellEventArgs e)
+        {
+            var a = dataGridView1.Rows[dataGridView1.CurrentRow.Index].Cells["Size"].Value;
+            var b = dataGridView1.Rows[dataGridView1.CurrentRow.Index].Cells["Letter"].Value;
+            var c = dataGridView1.Rows[dataGridView1.CurrentRow.Index].Cells["DiskId"].Value;
+            var d = dataGridView1.Rows[dataGridView1.CurrentRow.Index].Cells["DiskType"].Value;
+            var f = dataGridView1.Rows[dataGridView1.CurrentRow.Index].Cells["Bootable"].Value;
+            rtReport.Text = "Size : " + a.ToString() + "\nLetter : " + b.ToString() + "\nDiskId : " + c.ToString() + "\nDiskType : " + d.ToString() + "\nBootable : " + f.ToString();
+        }
+
+        private void btnExit_Click(object sender, EventArgs e)
+        {
+            Application.Exit();
+        }
+
+        private void btnMinimize_Click(object sender, EventArgs e)
+        {
+            WindowState = FormWindowState.Minimized;
+        }
+
+        private void btnIncremental_Click(object sender, EventArgs e)
+        {
+            int typeParam = 1;
+            List<DataGridViewRow> checkedColumn = new List<DataGridViewRow>();
+            foreach (DataGridViewRow row in dataGridView1.Rows)
+            {
+                if (Convert.ToBoolean(row.Cells["Checked"].Value) == true)
+                {
+                    checkedColumn.Add(row);
+                }
+            }
+            rtReport.Text = checkedColumn.Count.ToString() + " veri seçildi";
+
+            foreach (var item in checkedColumn)
+            {
+                if (diskTracker.CW_AddToTrack((char)item.Cells["Letter"].Value, typeParam))
+                {
+                    rtReport.Text += $"\n{item.Cells["Letter"].Value.ToString()} eklendi";
+                }
+            }
         }
     }
 }

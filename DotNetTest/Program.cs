@@ -48,7 +48,8 @@ namespace DotNetTest
         DiskTracker tracker = new DiskTracker();
         string RootDir = "";
 
-        
+        var test = tracker.CW_GetVolumes();
+
         if (tracker.CW_InitTracker())
         {
           
@@ -107,7 +108,7 @@ namespace DotNetTest
               
               char Letter = Input[1][0];
               StreamInfo streamInfo = new StreamInfo();
-              if (!tracker.CW_SetupStream(Letter, 0, streamInfo))
+              if (!tracker.CW_SetupStream(Letter, 1, streamInfo))
               {
                 Console.WriteLine("Cant setup stream\n");
                 continue;
