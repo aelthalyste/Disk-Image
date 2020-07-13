@@ -1042,7 +1042,47 @@ shrink desired = X // shrink volume to X, if X is bigger than current size, oper
 }
 
 
+struct CustomArray {
+  int Len;
+  int* Ptr;
+};
+
+#define ELEMENT_COUNT 1024LL*1024LL*128LL
+#define INIT_CUSTOMARRAY(A) { A.Ptr = (int*)VirtualAlloc(0, sizeof(int)*ELEMENT_COUNT, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE); A.Len = 0; }
+
+void
+Insert(CustomArray* A, int Value) {
+  //VirtualAlloc(A->Ptr + A->Len, sizeof(int), MEM_COMMIT, PAGE_READWRITE);
+  A->Ptr[A->Len++] = Value;
+}
+#include <vector>
+
 int main() {
+
+  CustomArray A;
+  INIT_CUSTOMARRAY(A);
+
+  //std::vector<int> V;
+  ////V.reserve(ELEMENT_COUNT);
+  //for (int i = 0; i < ELEMENT_COUNT; i++) {
+  //  V.push_back(i * 2);
+  //}
+  //
+  //V[0] = V[1];
+  //V[1] = V[4];
+  //V[2] = V[5];
+
+  for (int i = 0; i < ELEMENT_COUNT; i++) {
+    Insert(&A, i * 2);
+  }
+
+  A.Ptr[0] = A.Ptr[1];
+  A.Ptr[1] = A.Ptr[4];
+  A.Ptr[2] = A.Ptr[5];
+
+
+  return 0;
+
   void* P1 = 0;
   void* P2 = 0;
   void* P3 = 0;

@@ -51,16 +51,6 @@ CONST FLT_OPERATION_REGISTRATION Callbacks[] = {
 
 const FLT_CONTEXT_REGISTRATION Contexts[] = {
 
-#if MINISPY_VISTA
-
-    { FLT_TRANSACTION_CONTEXT,
-      0,
-      SpyDeleteTxfContext,
-      sizeof(MINISPY_TRANSACTION_CONTEXT),
-      'ypsM' },
-
-#endif // MINISPY_VISTA
-
     { FLT_CONTEXT_END }
 };
 
@@ -83,7 +73,7 @@ CONST FLT_REGISTRATION FilterRegistration = {
 
     SpyFilterUnload,                        //  FilterUnload
 
-    NULL,                                   //  InstanceSetup
+    SpyVolumeInstanceSetup,                 //  InstanceSetup
     SpyQueryTeardown,                       //  InstanceQueryTeardown
     NULL,                                   //  InstanceTeardownStart
     NULL,                                   //  InstanceTeardownComplete
@@ -91,13 +81,6 @@ CONST FLT_REGISTRATION FilterRegistration = {
     NULL,                                   //  GenerateFileName
     NULL,                                   //  GenerateDestinationFileName
     NULL                                    //  NormalizeNameComponent
-
-#if MINISPY_VISTA
-
-    ,
-    SpyKtmNotificationCallback              //  KTM notification callback
-
-#endif // MINISPY_VISTA
 
 };
 

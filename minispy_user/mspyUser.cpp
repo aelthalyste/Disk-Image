@@ -1710,7 +1710,7 @@ SetFullRecords(volume_backup_inf* V) {
         }
         ClustersRead++;
       }
-
+      printf("Successfully set fullbackup records\n");
       Return = TRUE;
 
 

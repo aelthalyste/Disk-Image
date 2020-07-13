@@ -24,6 +24,8 @@ Environment:
 //
 // Can't pull in wsk.h until after MINISPY_VISTA is defined
 //
+
+
 #include <ntifs.h>
 
 #if MINISPY_VISTA
@@ -32,17 +34,6 @@ Environment:
 #include <wsk.h>
 #endif
 
-//---------------------------------------------------------------------------
-//  Assign text sections for each routine.
-//---------------------------------------------------------------------------
-
-#ifdef ALLOC_PRAGMA
-#pragma alloc_text(INIT, SpyReadDriverParameters)
-#if MINISPY_VISTA
-#pragma alloc_text(PAGE, SpyBuildEcpDataString)
-#pragma alloc_text(PAGE, SpyParseEcps)
-#endif
-#endif
 
 UCHAR TxNotificationToMinorCode(
   _In_ ULONG TxNotification

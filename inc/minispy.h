@@ -29,6 +29,13 @@ Environment:
 #define NAR_ERR_MAX_ITER 7
 #define NAR_ERR_OVERFLOW 8
 
+// all neccecary kernel information will be stored here, every time system boots
+// driver will lookup for this file, if not present, it assumes fresh startup on system, if present
+// it will parse it accordingly and resume tracking neccecary volumes
+
+#define NARKERNEL_MAIN_FILENAME "NARKERNEL_METADATA"
+#define NARKERNEL_RF_PREFIX "NARKERNEL_RF_" // Region file
+
 //
 //  FltMgr's IRP major codes
 //
@@ -65,11 +72,11 @@ Environment:
 #define MINISPY_MIN_VERSION 0
 
 typedef struct _MINISPYVER {
-    
-    USHORT Major;
-    USHORT Minor;
-    
-} MINISPYVER, *PMINISPYVER;
+
+  USHORT Major;
+  USHORT Minor;
+
+} MINISPYVER, * PMINISPYVER;
 
 //
 //  Name of minispy's communication server port
@@ -108,45 +115,45 @@ typedef _Return_type_success_(return >= 0) LONG NTSTATUS;
 //
 
 typedef struct _RECORD_DATA {
-    
-    LARGE_INTEGER OriginatingTime;
-    LARGE_INTEGER CompletionTime;
-    
-    FILE_ID DeviceObject;
-    FILE_ID FileObject;
-    FILE_ID Transaction;
-    
-    FILE_ID ProcessId;
-    FILE_ID ThreadId;
-    
-    ULONG_PTR Information;
-    
-    NTSTATUS Status;
-    
-    ULONG IrpFlags;
-    ULONG Flags;
-    
-    UCHAR CallbackMajorId;
-    UCHAR CallbackMinorId;
-    UCHAR Reserved[2];      // Alignment on IA64
-    
+
+  LARGE_INTEGER OriginatingTime;
+  LARGE_INTEGER CompletionTime;
+
+  FILE_ID DeviceObject;
+  FILE_ID FileObject;
+  FILE_ID Transaction;
+
+  FILE_ID ProcessId;
+  FILE_ID ThreadId;
+
+  ULONG_PTR Information;
+
+  NTSTATUS Status;
+
+  ULONG IrpFlags;
+  ULONG Flags;
+
+  UCHAR CallbackMajorId;
+  UCHAR CallbackMinorId;
+  UCHAR Reserved[2];      // Alignment on IA64
+
 #pragma warning(push)
 #pragma warning(disable:4201) // disable warnings for structures-unions without names
-    
-    
-    struct {
-        UINT32 S;
-        UINT32 L;
-    }P[5];
-    UINT32 RecCount;
-    UINT32 Error;
-    
-    
-    
-    ULONG EcpCount;
-    ULONG KnownEcpMask;
-    
-} RECORD_DATA, *PRECORD_DATA;
+
+
+  struct {
+    UINT32 S;
+    UINT32 L;
+  }P[5];
+  UINT32 RecCount;
+  UINT32 Error;
+
+
+
+  ULONG EcpCount;
+  ULONG KnownEcpMask;
+
+} RECORD_DATA, * PRECORD_DATA;
 
 
 #pragma warning(pop)
@@ -160,18 +167,18 @@ typedef struct _RECORD_DATA {
 #pragma warning(disable:4200) // disable warnings for structures with zero length arrays.
 
 typedef struct _LOG_RECORD {
-    
-    
-    ULONG Length;           // Length of log record.  This Does not include
-    ULONG SequenceNumber;   // space used by other members of RECORD_LIST
-    
-    ULONG RecordType;       // The type of log record this is.
-    ULONG Reserved;         // For alignment on IA64
-    
-    RECORD_DATA Data;
-    WCHAR Name[];           //  This is a null terminated string
-    
-} LOG_RECORD, *PLOG_RECORD;
+
+
+  ULONG Length;           // Length of log record.  This Does not include
+  ULONG SequenceNumber;   // space used by other members of RECORD_LIST
+
+  ULONG RecordType;       // The type of log record this is.
+  ULONG Reserved;         // For alignment on IA64
+
+  RECORD_DATA Data;
+  WCHAR Name[];           //  This is a null terminated string
+
+} LOG_RECORD, * PLOG_RECORD;
 
 #pragma warning(pop)
 
@@ -180,30 +187,30 @@ typedef struct _LOG_RECORD {
 //
 
 typedef struct _RECORD_LIST {
-    
-    LIST_ENTRY List;
-    
-    //
-    // Must always be last item.  See MAX_LOG_RECORD_LENGTH macro below.
-    // Must be aligned on PVOID boundary in this structure. This is because the
-    // log records are going to be packed one after another & accessed directly
-    // Size of log record must also be multiple of PVOID size to avoid alignment
-    // faults while accessing the log records on IA64
-    //
-    
-    LOG_RECORD LogRecord;
-    
-} RECORD_LIST, *PRECORD_LIST;
+
+  LIST_ENTRY List;
+
+  //
+  // Must always be last item.  See MAX_LOG_RECORD_LENGTH macro below.
+  // Must be aligned on PVOID boundary in this structure. This is because the
+  // log records are going to be packed one after another & accessed directly
+  // Size of log record must also be multiple of PVOID size to avoid alignment
+  // faults while accessing the log records on IA64
+  //
+
+  LOG_RECORD LogRecord;
+
+} RECORD_LIST, * PRECORD_LIST;
 
 //
 //  Defines the commands between the utility and the filter
 //
 
 typedef enum _MINISPY_COMMAND {
-    
-    GetMiniSpyLog,
-    GetMiniSpyVersion
-        
+
+  GetMiniSpyLog,
+  GetMiniSpyVersion
+
 } MINISPY_COMMAND;
 
 //
@@ -214,17 +221,17 @@ typedef enum _MINISPY_COMMAND {
 #pragma warning(disable:4200) // disable warnings for structures with zero length arrays.
 
 typedef struct _COMMAND_MESSAGE {
-    MINISPY_COMMAND Command;
-    ULONG Reserved;  // Alignment on IA64
-    UCHAR Data[];
-} COMMAND_MESSAGE, *PCOMMAND_MESSAGE;
+  MINISPY_COMMAND Command;
+  ULONG Reserved;  // Alignment on IA64
+  UCHAR Data[];
+} COMMAND_MESSAGE, * PCOMMAND_MESSAGE;
 
 #pragma warning(pop)
 
 typedef struct _NAR_CONNECTION_CONTEXT {
-    unsigned long PID;
-    int OsDeviceID; // parse QueryDeviceName
-    WCHAR UserName[256]; // Null terminated
+  unsigned long PID;
+  int OsDeviceID; // parse QueryDeviceName
+  WCHAR UserName[256]; // Null terminated
 }NAR_CONNECTION_CONTEXT;
 
 
