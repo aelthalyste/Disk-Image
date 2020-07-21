@@ -4360,7 +4360,7 @@ Exit:
 
 }
 
-#if 0
+#if 1
 
 #define REGION(Start, End) nar_record{(Start), (End) - (Start)}
 
@@ -4370,6 +4370,63 @@ main(
   int argc,
   CHAR* argv[]
 ) {
+  //system("net stop minispy");
+  //system("net start minispy");
+
+  HRESULT hResult = FALSE;
+
+  HANDLE Port = INVALID_HANDLE_VALUE;
+  
+  hResult = FilterConnectCommunicationPort(MINISPY_PORT_NAME,
+    0,
+    0, 0,
+    NULL, &Port);
+  Sleep(100);
+
+  if (!IS_ERROR(hResult)) {
+    DWORD HELL = 0;
+    WCHAR Temp[] = L"C:\\";
+    hResult = FilterSendMessage(Port, Temp, sizeof(Temp), 0, 0, &HELL);
+    
+    printf("Send message from user size\n");
+    if (!SUCCEEDED(hResult)) {
+      printf("Couldnt send message to filter: %i\n", hResult);
+    }
+    Sleep(20);
+
+    hResult = FilterAttach(MINISPY_NAME, Temp, 0, 0, 0);
+    if (SUCCEEDED(hResult) || hResult == ERROR_FLT_INSTANCE_NAME_COLLISION) {
+      printf("Successfully attached to kernel\n");
+    }
+    else {
+      printf("Can't attach filter\n");
+      DisplayError(GetLastError());
+      return 0;
+    }
+
+
+  }
+  else {
+    printf("Could not connect to filter: 0x%08x\n", hResult);
+    DisplayError(GetLastError());
+    return 0;
+  }
+  
+  printf("Successfully setup driver, entering infinite loop, press q to exit.\n");
+  while (1) {
+    if (getchar() == 'q') {
+      printf("Closing..");
+      break;
+    }
+  }
+  FilterDetach(MINISPY_NAME, L"C:\\", 0);
+  Sleep(100);
+
+  printf("Successfully detached volume\n");
+  CloseHandle(Port);
+
+  return 0;
+
   restore_inf R;
   R.RootDir = std::wstring();
   R.TargetLetter = 'G';
@@ -4400,46 +4457,6 @@ main(
   NARDEBUGExcludeRegions(S, E);
   return 0;
 
-
-  HRESULT hResult = S_OK;
-  DWORD result;
-  LOG_CONTEXT context = { 0 };
-
-  //
-  //  Open the port that is used to talk to
-  //  MiniSpy.
-  //
-
-
-Main_Cleanup:
-  printf("Cleaning up...\n");
-
-  //
-  // Set the Cleaning up flag to TRUE to notify other threads
-  // that we are cleaning up
-  //
-  context.CleaningUp = TRUE;
-
-  //
-  // Wait for everyone to shut down
-  //
-
-  WaitForSingleObject(context.ShutDown, INFINITE);
-
-Main_Exit:
-
-  //
-  // Clean up the data that is always around and exit
-  //
-
-  if (context.ShutDown) {
-
-    CloseHandle(context.ShutDown);
-  }
-
-  if (INVALID_HANDLE_VALUE != context.Port) {
-    CloseHandle(context.Port);
-  }
   return 0;
 }
 

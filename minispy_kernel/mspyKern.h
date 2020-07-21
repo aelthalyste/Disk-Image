@@ -30,11 +30,9 @@ Environment:
 
 #pragma prefast(disable:__WARNING_ENCODE_MEMBER_FUNCTION_POINTER, "Not valid for kernel mode drivers")
 
-//
-//  Memory allocation tag
-//
+#define NAR_LOOKASIDE_SIZE 1024LL*2LL
+#define NAR_TAG 'RAN'
 
-#define SPY_TAG 'ypSM'
 
 //
 //  Win8 define for support of NPFS/MSFS
@@ -119,8 +117,8 @@ typedef enum _ECP_TYPE {
 //      Global variables
 //---------------------------------------------------------------------------
 
-typedef struct _MINISPY_DATA {
-
+typedef struct _nar_kernel_data {
+  
   //
   //  The object that identifies this driver.
   //
@@ -157,36 +155,61 @@ typedef struct _MINISPY_DATA {
 
   ULONG NameQueryMethod;
 
-  //
-  //  Global debug flags
-  //
-
-  ULONG DebugFlags;
-
 
 
   //
-  // Lookaside list to allocate pre-operation UNICODE STRINGS and maybe to early fetch all regions.
+  // Lookaside list to allocate pre-operation UNICODE STRINGS and maybe to early fetch all regions, each entry size is LookAsideSize
   //
 
-  PAGED_LOOKASIDE_LIST LAL;
+  PAGED_LOOKASIDE_LIST LookAsideList;
 
 
+  //
+  // In order to compare volume guid strings in list and preop strings, they MUST be allocated in non-paged pool. This nonpaged lookaside list handles this allocation
+  //
+#define NAR_GUID_STR_SIZE 96
+  NPAGED_LOOKASIDE_LIST GUIDCompareNPagedLookAsideList;
 
-  struct {
-    HANDLE Files[26];
-    char DiskID[26]; // ('A'- Letter)th element will indicate volume's NT device ID;
+  //
+  // Spinlock to prevent race conditions while closing file handles
+  //
 
-    HANDLE MetadataHandle;
+  EX_SPIN_LOCK RWListSpinLock; // Read-write spinlock for VolumeRegionBuffer
 
-    ULONG UserModePID;
-    WCHAR UserName[256];
-    int OsDeviceID;
-  }Nar;
+  
+#define NAR_MEMORYBUFFER_SIZE       (1024*512*1)
+#define NAR_MAX_VOLUME_COUNT        (8)
+#define NAR_REGIONBUFFER_SIZE       (64) //struct itself + memory for GUID string
+#define NAR_VOLUMEREGIONBUFFERSIZE  (NAR_MAX_VOLUME_COUNT)*(NAR_REGIONBUFFER_SIZE)
+
+  
+#define NAR_INIT_MEMORYBUFFER(Buffer) (*(INT32*)(Buffer) = sizeof(INT32) + sizeof(INT32))
+#define NAR_MB_USED(Buffer) *(INT32*)(Buffer)
+#define NAR_MB_PUSH(Buffer, Src, Size) memcpy((char*)(Buffer) + NAR_MB_USED(Buffer), (Src), (Size)); (*(INT32*)Buffer += (Size));
+#define NAR_MB_MARK_NOT_ENOUGH_SPACE(Buffer) *(INT32*)((char*)(Buffer) + sizeof(INT32)) = TRUE;
+#define NAR_MB_CLEAR_FLAGS(Buffer)* (INT32*)((char*)(Buffer)+sizeof(INT32)) = 0;
+
+  // this struct's members lays on non-paged memory.
+  struct volume_region_buffer {
+    KSPIN_LOCK Spinlock; // used to provide exclusive access to MemoryBuffer
+    UNICODE_STRING GUIDStrVol; //24 byte
+
+    // GUIDStrVol.Buffer is equal to this struct, do not directly call this.
+    char Reserved[96]; 
+    
+                       
+    // First 4 byte used to indicate used size, first 4 bytes included as used, so memorybuffers max usable size is NAR_MEMORYBUFFER_SIZE - sizeof*(INT32)
+    // Do not directly call this to push data, instead use NAR_PUSH_MB macro
+    void* MemoryBuffer;
+  } *VolumeRegionBuffer; //32 bytes total, but must allocate extra 32 bytes to hold 16 wide character GUIDString
 
 
+  HANDLE MetadataHandle; 
+  ULONG UserModePID;
+  int OsDeviceID;
+  
+} nar_data;
 
-} MINISPY_DATA, * PMINISPY_DATA;
 
 //struct {
 //  UINT32 S;
@@ -216,7 +239,7 @@ typedef struct _MINISPY_TRANSACTION_CONTEXT {
 //  Minispy's global variables
 //
 
-extern MINISPY_DATA MiniSpyData;
+extern nar_data NarData;
 
 #define DEFAULT_MAX_RECORDS_TO_ALLOCATE     1024 // NOTE(Batuhan): was 500
 #define MAX_RECORDS_TO_ALLOCATE             L"MaxRecords"
@@ -265,6 +288,12 @@ NTSTATUS
 SpyQueryTeardown(
   _In_ PCFLT_RELATED_OBJECTS FltObjects,
   _In_ FLT_INSTANCE_QUERY_TEARDOWN_FLAGS Flags
+);
+
+NTSTATUS
+SpyTeardownStart(
+  _In_ PCFLT_RELATED_OBJECTS FltObjects,
+  _In_ FLT_INSTANCE_TEARDOWN_FLAGS Reason
 );
 
 NTSTATUS

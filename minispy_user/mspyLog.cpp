@@ -179,7 +179,7 @@ Return Value:
 
           printf("UNEXPECTED ERROR received: %x\n", hResult);
         }
-
+        
         Sleep(POLL_INTERVAL);
       }
 

@@ -1,86 +1,6 @@
 ﻿#include <Windows.h>
 #include <stdio.h>
 #include <utility>
-
-void
-CreateMBRPartition(int DiskID, int size) {
-  char C[2096];
-
-  sprintf(C, ""
-    "select disk %i\n"
-    "clean\n"
-    "create partition primary size = 100\n"
-    "format quick fs = ntfs label \"System\" \n"
-    "assign letter = \"S\" \n"
-    "active\n"
-    "create partition primary\n"
-    "shrink minimum = %i\n"
-    "format quick fs = ntfs label =\"Windows\" \n"
-    "assign letter = \"W\"\n"
-    "create partition primary\n"
-    "format quick fs = ntfs label  \"Recovery\" \n"
-    "assign letter \"R\" \n"
-    "set id=27\n"
-    "exit\n"
-    , DiskID, size);
-
-  char T[] = "DiskPart /s TempFile";
-  HANDLE File = CreateFileW(L"TempFile", GENERIC_WRITE, 0, 0, CREATE_NEW, 0, 0);
-
-  if (File != INVALID_HANDLE_VALUE) {
-    DWORD BT = 0;
-    DWORD Size = strlen(C);
-    if (WriteFile(File, C, Size, &BT, 0) && BT == Size) {
-      CloseHandle(File);
-      system(T);
-    }
-    else {
-      printf("Cant write to file\n");
-    }
-  }
-  else {
-    printf("Cant open file\n");
-  }
-
-  return;
-  /*
-      rem == CreatePartitions-BIOS.txt ==
-      rem == These commands are used with DiskPart to
-      rem    create three partitions
-      rem    for a BIOS/MBR-based computer.
-      rem    Adjust the partition sizes to fill the drive
-      rem    as necessary. ==
-      select disk 0
-      clean
-      rem == 1. System partition ======================
-      create partition primary size=100
-      format quick fs=ntfs label="System"
-      assign letter="S"
-      active
-      rem == 2. Windows partition =====================
-      rem ==    a. Create the Windows partition =======
-      create partition primary
-      rem ==    b. Create space for the recovery tools
-      rem       ** Update this size to match the size of
-      rem          the recovery tools (winre.wim)
-      rem          plus some free space.
-      shrink minimum=650
-      rem ==    c. Prepare the Windows partition ======
-      format quick fs=ntfs label="Windows"
-      assign letter="W"
-      rem == 3. Recovery tools partition ==============
-      create partition primary
-      format quick fs=ntfs label="Recovery"
-      assign letter="R"
-      set id=27
-      list volume
-      exit
-      */
-}
-
-
-
-
 #include <Windows.h>
 #include <rpcdcep.h>
 #include <rpcdce.h>
@@ -1057,10 +977,49 @@ Insert(CustomArray* A, int Value) {
 }
 #include <vector>
 
+#include <Filter.h>
+#include <DriverSpecs.h>
+
+BOOLEAN
+ConnectDriver() {
+  system("net stop minispy");
+  system("net start minispy");
+  BOOLEAN Result = FALSE;
+  HRESULT hResult = FALSE;
+    
+  HANDLE Port = INVALID_HANDLE_VALUE;
+  {
+
+    hResult = FilterConnectCommunicationPort(MINISPY_PORT_NAME,
+      0,
+      0, 0,
+      NULL, Port);
+
+    if (!IS_ERROR(hResult)) {
+
+ 
+    }
+    else {
+      printf("Could not connect to filter: 0x%08x\n", hResult);
+      printf("Program PID is %d\n", PID);
+    }
+
+  }
+  else {
+    printf("Cant query username from system\n");
+    printf("Bytes written %i, name => %S \n", BytesWritten, CTX.UserName);
+  }
+
+
+  return Result;
+}
+
 int main() {
 
-  CustomArray A;
-  INIT_CUSTOMARRAY(A);
+
+
+
+  return Result;
 
   //std::vector<int> V;
   ////V.reserve(ELEMENT_COUNT);
