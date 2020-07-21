@@ -206,12 +206,6 @@ typedef struct _RECORD_LIST {
 //  Defines the commands between the utility and the filter
 //
 
-typedef enum _MINISPY_COMMAND {
-
-  GetMiniSpyLog,
-  GetMiniSpyVersion
-
-} MINISPY_COMMAND;
 
 //
 //  Defines the command structure between the utility and the filter.
@@ -220,18 +214,33 @@ typedef enum _MINISPY_COMMAND {
 #pragma warning(push)
 #pragma warning(disable:4200) // disable warnings for structures with zero length arrays.
 
-typedef struct _COMMAND_MESSAGE {
-  MINISPY_COMMAND Command;
-  ULONG Reserved;  // Alignment on IA64
-  UCHAR Data[];
-} COMMAND_MESSAGE, * PCOMMAND_MESSAGE;
+enum NAR_COMMAND_TYPE {
+  NarCommandType_GetVolumeLog,
+  NarCommandType_QueryErrors,
+  NarCommandType_AddVolume
+};
+
+typedef struct NAR_COMMAND{
+
+  NAR_COMMAND_TYPE Type;
+
+  union {
+    struct {
+      WCHAR* VolumeGUIDStr;     // Null terminated VolumeGUID string
+      INT32  VolumeGUIDStrSize; //Size of VolumeGUIDStr in BYTES, not characters
+    };
+  };
+
+  
+}NAR_COMMAND;
 
 #pragma warning(pop)
 
 typedef struct _NAR_CONNECTION_CONTEXT {
-  unsigned long PID;
-  int OsDeviceID; // parse QueryDeviceName
-  WCHAR UserName[256]; // Null terminated
+  ULONG  PID;           // PID of user mode application to prevent deadlock in write operations on same volumes. This PID will be filtered out in PREOPERATION callback
+  INT32  OsDeviceID;    // parse QueryDeviceName
+  INT32  UserNameSize;  // In bytes, not characters.
+  WCHAR* UserName;      // Null terminated USERname that is currently active
 }NAR_CONNECTION_CONTEXT;
 
 

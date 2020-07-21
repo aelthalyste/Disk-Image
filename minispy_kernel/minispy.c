@@ -129,7 +129,7 @@ Return Value:
   UNREFERENCED_PARAMETER(RegistryPath);
 
   try {
-
+    
     //
     // Initialize global data structures.
     //
@@ -665,8 +665,8 @@ Return Value:
   //  The minifilter MUST continue to use a try/except around any access to
   //  these buffers.
   //
-
-  if ((InputBuffer != NULL)) {
+  
+  if ((InputBuffer != NULL) && InputBufferSize >= sizeof(NAR_COMMAND)) {
 
     try {
 
@@ -675,9 +675,79 @@ Return Value:
       //  buffer, so need to protect with exception handler
       //
 
+      NAR_COMMAND *Command = (NAR_COMMAND*)InputBuffer;
+      if (Command->Type == NarCommandType_GetVolumeLog) {
+        
+        void *NPagedGUIDStrtBuffer = ExAllocateFromNPagedLookasideList(&NarData.GUIDCompareNPagedLookAsideList);
+        void* NPagedDataBuffer = ExAllocatePoolWithTag(NonPagedPoolNx, OutputBufferSize, NAR_TAG);
+        INT32 MemoryBufferUsed = 0;
+        INT32 FoundVolume = FALSE;
+
+        if (Command->VolumeGUIDStr != NULL 
+          && NPagedGUIDStrtBuffer != NULL
+          && OutputBuffer != NULL 
+          && OutputBufferSize == NAR_MEMORYBUFFER_SIZE
+          && NPagedDataBuffer != NULL
+          && Command->VolumeGUIDStrSize == NAR_GUID_STR_SIZE) {
+          
+          memset(OutputBuffer, 0, OutputBufferSize);
+          
+          if (Command->VolumeGUIDStrSize >= NAR_GUID_STR_SIZE) {
+            memcpy(NPagedGUIDStrtBuffer, Command->VolumeGUIDStrSize, NAR_GUID_STR_SIZE);
+          }
+
+          for (int i = 0; i < NAR_MAX_VOLUME_COUNT; i++) {
+            KIRQL IRQL;
+            KeAcquireSpinLock(&NarData.VolumeRegionBuffer[i].Spinlock, &IRQL);
+            
+            if (RtlCompareMemory(NPagedGUIDStrtBuffer, NarData.VolumeRegionBuffer[i].GUIDStrVol.Buffer, NAR_GUID_STR_SIZE) == NAR_GUID_STR_SIZE) {
+              
+              INT32 MBUSED = NAR_MB_USED(NarData.VolumeRegionBuffer[i].GUIDStrVol.Buffer);
+              
+              memcpy(NPagedDataBuffer, NarData.VolumeRegionBuffer[i].GUIDStrVol.Buffer, MBUSED);
+              
+              // reset memory buffer.
+              memset(NarData.VolumeRegionBuffer[i].GUIDStrVol.Buffer, 0, NAR_MEMORYBUFFER_SIZE);
+              NAR_INIT_MEMORYBUFFER(NarData.VolumeRegionBuffer[i].GUIDStrVol.Buffer);
+              FoundVolume = TRUE;
+            }
+
+            KeReleaseSpinLock(&NarData.VolumeRegionBuffer[i].Spinlock, IRQL);
+
+          }
+          
+          if (FoundVolume == FALSE) {
+
+          }
+
+
+          ExFreeToNPagedLookasideList(&NarData.GUIDCompareNPagedLookAsideList, NPagedGUIDStrtBuffer);
+          ExFreePoolWithTag(NPagedDataBuffer, NAR_TAG);
+
+        }
+        else {
+          DbgPrint("BIG IF BLOCK FAILED IN SPYMESSAGE\n"); // short but effective temporary message
+        }
+
+        
+      }
+      if (Command->Type == NarCommandType_AddVolume) {
+        
+        if (Command->VolumeGUIDStr != NULL) {
+
+        }
+        else {
+            
+        }
+        
+      }
+      if (Command->Type == NarCommandType_QueryErrors) {
+        
+      }
+
       if (((wchar_t*)InputBuffer)[0] == L'C') {
         DbgPrint("Successfully received message\n");
-
+        
         //UNICODE_STRING     uniName;
         //OBJECT_ATTRIBUTES  objAttr;
         //

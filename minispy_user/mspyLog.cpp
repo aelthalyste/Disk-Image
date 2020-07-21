@@ -133,7 +133,7 @@ Return Value:
   HRESULT hResult;
   PLOG_RECORD pLogRecord;
   PRECORD_DATA pRecordData;
-  COMMAND_MESSAGE commandMessage;
+  NAR_COMMAND commandMessage;
 
   //printf("Log: Starting up\n");
   std::wstring LogDOSName = L"";
@@ -157,7 +157,7 @@ Return Value:
     //  Request log data from MiniSpy.
     //
 
-    commandMessage.Command = GetMiniSpyLog;
+    commandMessage
 
     hResult = FilterSendMessage(context->Port,
       &commandMessage,
