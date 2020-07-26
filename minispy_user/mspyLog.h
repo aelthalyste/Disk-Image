@@ -329,14 +329,14 @@ bu seçenekte, işletim sistemi geri yükleniliyorsa, disk ona göre hazırlanı
 */
 
 struct backup_metadata_ex {
-  backup_metadata M;
-  std::wstring FilePath;
-  data_array<nar_record> RegionsMetadata;
-  backup_metadata_ex() {
-    RegionsMetadata = { 0, 0 };
-    FilePath = L" ";
-    memset(&M, 0, sizeof(M));
-  }
+    backup_metadata M;
+    std::wstring FilePath;
+    data_array<nar_record> RegionsMetadata;
+    backup_metadata_ex() {
+        RegionsMetadata = { 0, 0 };
+        FilePath = L" ";
+        memset(&M, 0, sizeof(M));
+    }
 };
 
 
@@ -681,7 +681,8 @@ RetrieveLogRecords(
 
 BOOL
 FileDump(
-  _In_ PRECORD_DATA RecordData,
+  _In_ PVOID Data,
+  _In_ INT32 DataSize,
   _In_ HANDLE File
 );
 

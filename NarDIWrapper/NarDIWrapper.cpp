@@ -187,7 +187,7 @@ Version: -1 to restore full backup otherwise version number to restore(version n
       Result->Add(BI);
     }
 
-    FreeDataArray(V);
+    FreeDataArray(&V);
 
     return Result;
   }

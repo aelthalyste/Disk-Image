@@ -167,7 +167,6 @@ typedef struct _nar_kernel_data {
   //
   // In order to compare volume guid strings in list and preop strings, they MUST be allocated in non-paged pool. This nonpaged lookaside list handles this allocation
   //
-#define NAR_GUID_STR_SIZE 96
   NPAGED_LOOKASIDE_LIST GUIDCompareNPagedLookAsideList;
 
   //
@@ -176,26 +175,13 @@ typedef struct _nar_kernel_data {
 
   EX_SPIN_LOCK RWListSpinLock; // Read-write spinlock for VolumeRegionBuffer
 
-  
-#define NAR_MEMORYBUFFER_SIZE       (1024*512*1)
-#define NAR_MAX_VOLUME_COUNT        (8)
-#define NAR_REGIONBUFFER_SIZE       (64) //struct itself + memory for GUID string
-#define NAR_VOLUMEREGIONBUFFERSIZE  (NAR_MAX_VOLUME_COUNT)*(NAR_REGIONBUFFER_SIZE)
-
-  
-#define NAR_INIT_MEMORYBUFFER(Buffer) (*(INT32*)(Buffer) = sizeof(INT32) + sizeof(INT32))
-#define NAR_MB_USED(Buffer) *(INT32*)(Buffer)
-#define NAR_MB_PUSH(Buffer, Src, Size) memcpy((char*)(Buffer) + NAR_MB_USED(Buffer), (Src), (Size)); (*(INT32*)Buffer += (Size));
-#define NAR_MB_MARK_NOT_ENOUGH_SPACE(Buffer) *(INT32*)((char*)(Buffer) + sizeof(INT32)) = TRUE;
-#define NAR_MB_CLEAR_FLAGS(Buffer)* (INT32*)((char*)(Buffer)+sizeof(INT32)) = 0;
-
   // this struct's members lays on non-paged memory.
   struct volume_region_buffer {
     KSPIN_LOCK Spinlock; // used to provide exclusive access to MemoryBuffer
     UNICODE_STRING GUIDStrVol; //24 byte
 
     // GUIDStrVol.Buffer is equal to this struct, do not directly call this.
-    char Reserved[96]; 
+    char Reserved[NAR_GUID_STR_SIZE];
     
                        
     // First 4 byte used to indicate used size, first 4 bytes included as used, so memorybuffers max usable size is NAR_MEMORYBUFFER_SIZE - sizeof*(INT32)
@@ -204,7 +190,7 @@ typedef struct _nar_kernel_data {
   } *VolumeRegionBuffer; //32 bytes total, but must allocate extra 32 bytes to hold 16 wide character GUIDString
 
 
-  HANDLE MetadataHandle; 
+  HANDLE MetadataHandle;
   ULONG UserModePID;
   int OsDeviceID;
   

@@ -36,6 +36,24 @@ Environment:
 #define NARKERNEL_MAIN_FILENAME "NARKERNEL_METADATA"
 #define NARKERNEL_RF_PREFIX "NARKERNEL_RF_" // Region file
 
+#define NAR_GUID_STR_SIZE 96
+
+#define NAR_MEMORYBUFFER_SIZE       (1024*256)
+#define NAR_MAX_VOLUME_COUNT        (8)
+#define NAR_REGIONBUFFER_SIZE       (64) //struct itself + memory for GUID string
+#define NAR_VOLUMEREGIONBUFFERSIZE  (NAR_MAX_VOLUME_COUNT)*(NAR_REGIONBUFFER_SIZE)
+
+
+#define NAR_INIT_MEMORYBUFFER(Buffer)           *(INT32*)(Buffer) = sizeof(INT32) + sizeof(INT32)
+#define NAR_MB_USED(Buffer)                     *(INT32*)(Buffer)
+#define NAR_MB_PUSH(Buffer, Src, Size)          memcpy((char*)(Buffer) + NAR_MB_USED(Buffer), (Src), (Size)); (*(INT32*)Buffer += (Size));
+#define NAR_MB_MARK_NOT_ENOUGH_SPACE(Buffer)    *(INT32*)((char*)(Buffer) + sizeof(INT32)) = TRUE;
+#define NAR_MB_CLEAR_FLAGS(Buffer)              *(INT32*)((char*)(Buffer) + sizeof(INT32)) = 0;
+#define NAR_MB_ERROR_FLAGS(Buffer)              *(INT32*)((char*)(Buffer) + sizeof(INT32))
+#define NAR_MB_ERROR_OCCURED(Buffer)            NAR_MB_ERROR_FLAGS(Buffer)
+#define NAR_MB_DATA(Buffer)                     (PVOID)((char*)(Buffer) + 2*sizeof(INT32))
+#define NAR_MB_DATA_USED(Buffer)                (NAR_MB_USED(Buffer) - 2*sizeof(INT32))
+
 //
 //  FltMgr's IRP major codes
 //
@@ -214,24 +232,19 @@ typedef struct _RECORD_LIST {
 #pragma warning(push)
 #pragma warning(disable:4200) // disable warnings for structures with zero length arrays.
 
-enum NAR_COMMAND_TYPE {
+typedef enum NAR_COMMAND_TYPE {
   NarCommandType_GetVolumeLog,
   NarCommandType_QueryErrors,
   NarCommandType_AddVolume
-};
+}NAR_COMMAND_TYPE;
 
 typedef struct NAR_COMMAND{
 
   NAR_COMMAND_TYPE Type;
-
-  union {
-    struct {
-      WCHAR* VolumeGUIDStr;     // Null terminated VolumeGUID string
-      INT32  VolumeGUIDStrSize; //Size of VolumeGUIDStr in BYTES, not characters
-    };
+  struct {
+      WCHAR VolumeGUIDStr[49];     // Null terminated VolumeGUID string
   };
 
-  
 }NAR_COMMAND;
 
 #pragma warning(pop)

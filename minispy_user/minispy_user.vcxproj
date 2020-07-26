@@ -97,7 +97,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
       <TreatWarningAsError>false</TreatWarningAsError>
-      <WarningLevel>Level4</WarningLevel>
+      <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);UNICODE;_UNICODE</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(IFSKIT_INC_PATH);$(DDK_INC_PATH);..\inc</AdditionalIncludeDirectories>
       <ExceptionHandling>
@@ -184,7 +184,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="mspyLog.cpp" />
     <ClCompile Include="mspyUser.cpp" />
     <ResourceCompile Include="mspyUser.rc" />
   </ItemGroup>
