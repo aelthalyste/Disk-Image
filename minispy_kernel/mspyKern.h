@@ -167,19 +167,14 @@ typedef struct _nar_kernel_data {
   //
   // In order to compare volume guid strings in list and preop strings, they MUST be allocated in non-paged pool. This nonpaged lookaside list handles this allocation
   //
-  NPAGED_LOOKASIDE_LIST GUIDCompareNPagedLookAsideList;
+  PAGED_LOOKASIDE_LIST GUIDComparePagedLookAsideList;
 
-  //
-  // Spinlock to prevent race conditions while closing file handles
-  //
-
-  EX_SPIN_LOCK RWListSpinLock; // Read-write spinlock for VolumeRegionBuffer
-
+  
   // this struct's members lays on non-paged memory.
   struct volume_region_buffer {
-    KSPIN_LOCK Spinlock; // used to provide exclusive access to MemoryBuffer
+    FAST_MUTEX FastMutex; // used to provide exclusive access to MemoryBuffer
     UNICODE_STRING GUIDStrVol; //24 byte
-
+    
     // GUIDStrVol.Buffer is equal to this struct, do not directly call this.
     char Reserved[NAR_GUID_STR_SIZE];
     
@@ -195,6 +190,7 @@ typedef struct _nar_kernel_data {
   int OsDeviceID;
   
 } nar_data;
+
 
 
 //struct {

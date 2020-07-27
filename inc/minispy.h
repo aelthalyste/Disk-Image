@@ -38,13 +38,13 @@ Environment:
 
 #define NAR_GUID_STR_SIZE 96
 
-#define NAR_MEMORYBUFFER_SIZE       (1024*256)
+#define NAR_MEMORYBUFFER_SIZE       (1024*1024*1) // 1 MB
 #define NAR_MAX_VOLUME_COUNT        (8)
-#define NAR_REGIONBUFFER_SIZE       (64) //struct itself + memory for GUID string
+#define NAR_REGIONBUFFER_SIZE       (sizeof(*NarData.VolumeRegionBuffer)) //struct itself
 #define NAR_VOLUMEREGIONBUFFERSIZE  (NAR_MAX_VOLUME_COUNT)*(NAR_REGIONBUFFER_SIZE)
 
 
-#define NAR_INIT_MEMORYBUFFER(Buffer)           *(INT32*)(Buffer) = sizeof(INT32) + sizeof(INT32)
+#define NAR_INIT_MEMORYBUFFER(Buffer)           *(INT32*)(Buffer) = 2*sizeof(INT32)
 #define NAR_MB_USED(Buffer)                     *(INT32*)(Buffer)
 #define NAR_MB_PUSH(Buffer, Src, Size)          memcpy((char*)(Buffer) + NAR_MB_USED(Buffer), (Src), (Size)); (*(INT32*)Buffer += (Size));
 #define NAR_MB_MARK_NOT_ENOUGH_SPACE(Buffer)    *(INT32*)((char*)(Buffer) + sizeof(INT32)) = TRUE;

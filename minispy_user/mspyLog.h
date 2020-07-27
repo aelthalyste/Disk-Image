@@ -190,7 +190,6 @@ PrintListReverse(region_chain* Temp);
 
 
 enum class BackupType : short {
-  Placeholder,
   Diff,
   Inc
 };

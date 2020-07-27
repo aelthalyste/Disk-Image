@@ -637,6 +637,9 @@ InitNewLogFile(volume_backup_inf* V) {
         V->IncRecordCount = 0;
         Return = TRUE;
     }
+    else {
+        printf("Couldnt initialize new log file for version %i\n", V->CurrentLogIndex);
+    }
 
     return Return;
 }
@@ -672,7 +675,7 @@ SaveExtraPartitions(volume_backup_inf* V) {
     VOLUME_DISK_EXTENTS* Ext = NULL;
     DRIVE_LAYOUT_INFORMATION_EX* DL = NULL;
 
-    DWORD BS = 1024 * 1024;
+    DWORD BS = 1024 * 2;
     DWORD T = 0;
 
 
@@ -685,7 +688,7 @@ SaveExtraPartitions(volume_backup_inf* V) {
 
         Ext = (VOLUME_DISK_EXTENTS*)malloc(BS);
         DL = (DRIVE_LAYOUT_INFORMATION_EX*)malloc(BS);
-
+        
         if (DeviceIoControl(Drive, IOCTL_VOLUME_GET_VOLUME_DISK_EXTENTS, 0, 0, Ext, BS, &T, 0)) {
             for (int i = 0; i < Ext->NumberOfDiskExtents; i++) {
 
@@ -1191,21 +1194,35 @@ AddVolumeToTrack(PLOG_CONTEXT Context, wchar_t Letter, BackupType Type) {
 
         NAR_COMMAND Command;
         Command.Type = NarCommandType_AddVolume;
-        wchar_t VolumeMountName[] = L"!://";
-        GetVolumeNameForVolumeMountPointW(VolumeMountName, Command.VolumeGUIDStr, 50);
-        DWORD BytesReturned;
-        HRESULT hResult = FilterSendMessage(Context->Port, &Command, sizeof(Command), 0, 0, &BytesReturned);
+        wchar_t VolumeMountName[] = L"!:\\";
+        VolumeMountName[0] = Letter;
 
-        if (SUCCEEDED(hResult)) {
-            if (InitVolumeInf(&VolInf, Letter, Type)) {
-                ErrorOccured = FALSE;
+        if (GetVolumeNameForVolumeMountPointW(VolumeMountName, Command.VolumeGUIDStr, 50)) {
+            
+            DWORD BytesReturned;
+            Command.VolumeGUIDStr[1] = L'?';
+            printf("Volume GUID: %S\n", Command.VolumeGUIDStr);
+
+            HRESULT hResult = FilterSendMessage(Context->Port, &Command, sizeof(Command), 0, 0, &BytesReturned);
+
+            if (SUCCEEDED(hResult)) {
+                if (InitVolumeInf(&VolInf, Letter, Type)) {
+                    ErrorOccured = FALSE;
+                }
+                Context->Volumes.Insert(VolInf);
+                printf("Volume %c inserted to the list\n", (char)Letter);
             }
-            Context->Volumes.Insert(VolInf);
-            printf("Volume %c inserted to the list\n", (char)Letter);
+            else {
+                printf("KERNEL error occured: Couldnt add volume @ kernel side, error code %i\n", hResult);
+            }
+
         }
         else {
-            printf("KERNEL error occured: Couldnt add volume @ kernel side, error code %i\n", hResult);
+            printf("GetVolumeNameFormOUNTpOINT failed\n");
+            DisplayError(GetLastError());
         }
+
+        
 
 
 
@@ -1213,7 +1230,7 @@ AddVolumeToTrack(PLOG_CONTEXT Context, wchar_t Letter, BackupType Type) {
     else {
         printf("Volume %c is already in list\n", (char)Letter);
     }
-   
+
 
 
     return !ErrorOccured;
@@ -1674,13 +1691,12 @@ SetFullRecords(volume_backup_inf* V) {
     STARTING_LCN_INPUT_BUFFER StartingLCN;
     StartingLCN.StartingLcn.QuadPart = 0;
     ULONGLONG MaxClusterCount = 0;
-    DWORD BufferSize = 1024 * 1024 * 64; // 64megabytes
+    DWORD BufferSize = 1024 * 1024 * 64; // 32 megabytes
 
     VOLUME_BITMAP_BUFFER* Bitmap = (VOLUME_BITMAP_BUFFER*)malloc(BufferSize);
     if (Bitmap != NULL) {
         HRESULT R = DeviceIoControl(V->Stream.Handle, FSCTL_GET_VOLUME_BITMAP, &StartingLCN, sizeof(StartingLCN), Bitmap, BufferSize, 0, 0);
-        if (SUCCEEDED(R))
-        {
+        if (SUCCEEDED(R)) {
 
             MaxClusterCount = Bitmap->BitmapSize.QuadPart;
             DWORD ClustersRead = 0;
@@ -1770,6 +1786,7 @@ SetIncRecords(volume_backup_inf* VolInf) {
             DisplayError(GetLastError());
         }
         else {
+            printf("IncRecordCount -> %i\n", VolInf->Stream.Records.Count);
             qsort(VolInf->Stream.Records.Data, VolInf->Stream.Records.Count, sizeof(nar_record), CompareNarRecords);
             MergeRegions(&VolInf->Stream.Records);
         }
@@ -3085,7 +3102,7 @@ NarGetVolumeDiskType(char Letter) {
     CloseHandle(Drive);
     CloseHandle(Disk);
     return Result;
-}
+    }
 
 
 inline int
@@ -4093,7 +4110,7 @@ RestoreRecoveryFile(restore_inf R) {
     StrToGUID("{de94bba4-06d1-4d40-a16a-bfd50179d6ac}", &GREC);
 
     BOOLEAN Result = FALSE;
-    DWORD BufferSize = 1024 * 1024 * 64;
+    DWORD BufferSize = 1024 * 1;
 
     DRIVE_LAYOUT_INFORMATION_EX* DL = (DRIVE_LAYOUT_INFORMATION_EX*)malloc(BufferSize);
     HANDLE Disk = INVALID_HANDLE_VALUE;
@@ -4175,8 +4192,8 @@ AppendRecoveryToFile(HANDLE File, char Letter) {
     StrToGUID("{de94bba4-06d1-4d40-a16a-bfd50179d6ac}", &GREC);
 
     BOOLEAN Result = FALSE;
-    DWORD BufferSize = 1024 * 1024 * 128; // 64KB
-
+    DWORD BufferSize = 1024 * 2; // 64KB
+    
     char VolPath[128];
     sprintf(VolPath, "%c:\\", Letter);
 
@@ -4418,7 +4435,7 @@ main(
         }
 
         MessageCommand.VolumeGUIDStr[1] = L'?';
-        
+
         printf("%S\n", VolumeGUIDString);
 
         void* OutBuffer = malloc(Megabyte(1));

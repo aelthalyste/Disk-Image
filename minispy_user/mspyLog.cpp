@@ -33,7 +33,7 @@ _Analysis_mode_(_Analysis_code_type_user_code_)
 #define TIME_BUFFER_LENGTH 20
 #define TIME_ERROR         "time error"
 
-#define POLL_INTERVAL   500 // ms
+#define POLL_INTERVAL   5000 // ms
 
 #ifndef min
 #define min(a,b)            (((a) < (b)) ? (a) : (b))
@@ -134,7 +134,8 @@ Return Value:
     std::wstring LogDOSName = L"";
 #pragma warning(push)
 #pragma warning(disable:4127) // conditional expression is constant
-
+    Sleep(POLL_INTERVAL);
+    void* OutBuffer = malloc(NAR_MEMORYBUFFER_SIZE);
     while (TRUE) {
 
 #pragma warning(pop)
@@ -159,7 +160,12 @@ Return Value:
             
             
             volume_backup_inf* V = &context->Volumes.Data[VolumeIndex];
-            if (V->Letter == NAR_INVALID_VOLUME_LETTER || !V->FilterFlags.IsActive) continue;
+            
+            if (V == NULL 
+                || V->Letter == NAR_INVALID_VOLUME_LETTER ) 
+            {
+                continue;
+            }
 
             wsprintfW(wStrBuffer, L"%c:\\", V->Letter);
             BOOLEAN Result = GetVolumeNameForVolumeMountPointW(wStrBuffer, VolumeGUIDStr, USERGUIDSTRLEN);
@@ -171,14 +177,20 @@ Return Value:
                 NAR_COMMAND Command;
                 memset(&Command, 0, sizeof(NAR_COMMAND));
                 
-                void* OutBuffer = malloc(NAR_MEMORYBUFFER_SIZE);
+                memset(OutBuffer, 0, NAR_MEMORYBUFFER_SIZE);
                 Command.Type = NarCommandType_GetVolumeLog;
                 memcpy(Command.VolumeGUIDStr, VolumeGUIDStr, USERGUIDSTRLEN * sizeof(WCHAR));
                 hResult = FilterSendMessage(context->Port, &Command, sizeof(NAR_COMMAND), OutBuffer, NAR_MEMORYBUFFER_SIZE, &Hell);
 
                 if (SUCCEEDED(hResult)) {
+                    printf("For volume %c message sent successfully\n", (char)V->Letter);
                     
                     if (!NAR_MB_ERROR_OCCURED(OutBuffer)) {
+
+                        // if volume isnt active, just fetch all data and dump it, thats it
+                        if (!V->FilterFlags.IsActive) {
+                            continue;
+                        }
 
                         if (V->FilterFlags.FlushToFile) {
                             if (V->RecordsMem.size()) {
@@ -200,22 +212,40 @@ Return Value:
                             V->FilterFlags.FlushToFile = FALSE;
                             V->RecordsMem.clear();
                         }
+                       
 
 
                         if (!V->FilterFlags.IsActive) {
                             //printf("Volume isnt active, breaking now\n");
-                            break;
+                            continue;
                         }
                         if (V->FilterFlags.SaveToFile) {
                             //ScreenDump(0, pLogRecord->Name, pRecordData);
+                            INT32 DataUsed = NAR_MB_DATA_USED(OutBuffer);
 
-                            if (FileDump(NAR_MB_DATA(OutBuffer), NAR_MB_DATA_USED(OutBuffer), V->LogHandle)) {
-                                V->IncRecordCount += NAR_MB_DATA_USED(OutBuffer)/sizeof(nar_record);
-                                break;
-                            } {
-                                printf("## Error occured while writing log to file. FERROR!!\n");
+                            if (DataUsed > 0 && DataUsed < NAR_MEMORYBUFFER_SIZE - 2*sizeof(INT32)) {
+                            
+                                if (FileDump(NAR_MB_DATA(OutBuffer), DataUsed, V->LogHandle)) {
+                                    V->IncRecordCount += NAR_MB_DATA_USED(OutBuffer) / sizeof(nar_record);
+                                } 
+                                else {
+                                    printf("## Error occured while writing log to file. FERROR!!\n");
+                                }
+
+                            }
+                            else {
+
+                                if (DataUsed < 0) {
+                                    printf("Data used was lower than zero %i\n", DataUsed);
+                                }
+                                if (DataUsed > NAR_MEMORYBUFFER_SIZE - 2*sizeof(INT32)) {
+                                    printf("Data size exceeded buffer size itself, this is a fatal error(size = %i)\n", DataUsed);
+                                }
+                                
                             }
 
+                            continue;
+                            
                         }
                         else {
 
@@ -257,8 +287,7 @@ Return Value:
 
                 }
 
-                free(OutBuffer);
-
+                
             }
             else {
                 printf("Couldnt get volume GUID for volume %c\n", V->Letter);
@@ -272,6 +301,7 @@ Return Value:
 
     }
 
+    free(OutBuffer);
     printf("Log: Shutting down\n");
     ReleaseSemaphore(context->ShutDown, 1, NULL);
     printf("Log: All done\n");
@@ -363,7 +393,7 @@ Return Value:
     if (!SUCCEEDED(Result) || BytesWritten != DataSize) {
         printf("Error occured!\n");
         printf("Bytes written -> %d, BytesToWrite -> %d\n", BytesWritten, DataSize);
-        printf("Result => %d\n", Result);
+        DisplayError(GetLastError());
         Result = FALSE;
     }
 
