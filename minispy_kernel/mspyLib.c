@@ -36,7 +36,7 @@ Environment:
 
 
 UCHAR TxNotificationToMinorCode(
-  _In_ ULONG TxNotification
+    _In_ ULONG TxNotification
 )
 /*++
 
@@ -62,37 +62,37 @@ Return Value:
 
 --*/
 {
-  UCHAR count = 0;
+    UCHAR count = 0;
 
-  if (TxNotification == 0)
-    return 0;
-
-  //
-  //  This assert verifies if no more than one flag is set
-  //  in the TxNotification variable. TxNotification flags are
-  //  supposed to be mutually exclusive. The assert below verifies
-  //  if the value of TxNotification is a power of 2. If it is not
-  //  then we will break.
-  //
-
-  FLT_ASSERT(!((TxNotification) & (TxNotification - 1)));
-
-  while (TxNotification) {
-
-    count++;
-
-    TxNotification >>= 1;
+    if (TxNotification == 0)
+        return 0;
 
     //
-    //  If we hit this assert then we have more notification codes than
-    //  can fit in a UCHAR. We need to revaluate our approach for
-    //  storing minor codes now.
+    //  This assert verifies if no more than one flag is set
+    //  in the TxNotification variable. TxNotification flags are
+    //  supposed to be mutually exclusive. The assert below verifies
+    //  if the value of TxNotification is a power of 2. If it is not
+    //  then we will break.
     //
 
-    FLT_ASSERT(count != 0);
-  }
+    FLT_ASSERT(!((TxNotification) & (TxNotification - 1)));
 
-  return (count);
+    while (TxNotification) {
+
+        count++;
+
+        TxNotification >>= 1;
+
+        //
+        //  If we hit this assert then we have more notification codes than
+        //  can fit in a UCHAR. We need to revaluate our approach for
+        //  storing minor codes now.
+        //
+
+        FLT_ASSERT(count != 0);
+    }
+
+    return (count);
 }
 
 
@@ -114,9 +114,9 @@ Return Value:
 
 VOID
 SpyLogPreOperationData(
-  _In_ PFLT_CALLBACK_DATA Data,
-  _In_ PCFLT_RELATED_OBJECTS FltObjects,
-  _Inout_ PRECORD_LIST RecordList
+    _In_ PFLT_CALLBACK_DATA Data,
+    _In_ PCFLT_RELATED_OBJECTS FltObjects,
+    _Inout_ PRECORD_LIST RecordList
 )
 /*++
 
@@ -142,178 +142,178 @@ Return Value:
 
 --*/
 {
-  PRECORD_DATA recordData = &RecordList->LogRecord.Data;
-  PDEVICE_OBJECT devObj;
-  NTSTATUS status;
+    PRECORD_DATA recordData = &RecordList->LogRecord.Data;
+    PDEVICE_OBJECT devObj;
+    NTSTATUS status;
 
-  status = FltGetDeviceObject(FltObjects->Volume, &devObj);
-  if (NT_SUCCESS(status)) {
+    status = FltGetDeviceObject(FltObjects->Volume, &devObj);
+    if (NT_SUCCESS(status)) {
 
-    ObDereferenceObject(devObj);
+        ObDereferenceObject(devObj);
 
-  }
-  else {
+    }
+    else {
 
-    devObj = NULL;
-  }
+        devObj = NULL;
+    }
 
-  //
-  //  Save the information we want
-  //
-  {
-    recordData->CallbackMajorId = Data->Iopb->MajorFunction;
-    recordData->CallbackMinorId = Data->Iopb->MinorFunction;
-    recordData->IrpFlags = Data->Iopb->IrpFlags;
-    recordData->Flags = Data->Flags;
+    //
+    //  Save the information we want
+    //
+    {
+        recordData->CallbackMajorId = Data->Iopb->MajorFunction;
+        recordData->CallbackMinorId = Data->Iopb->MinorFunction;
+        recordData->IrpFlags = Data->Iopb->IrpFlags;
+        recordData->Flags = Data->Flags;
 
-    recordData->DeviceObject = (FILE_ID)devObj;
-    recordData->FileObject = (FILE_ID)FltObjects->FileObject;
-    recordData->Transaction = (FILE_ID)FltObjects->Transaction;
-    recordData->ProcessId = (FILE_ID)PsGetCurrentProcessId();
-    recordData->ThreadId = (FILE_ID)PsGetCurrentThreadId();
+        recordData->DeviceObject = (FILE_ID)devObj;
+        recordData->FileObject = (FILE_ID)FltObjects->FileObject;
+        recordData->Transaction = (FILE_ID)FltObjects->Transaction;
+        recordData->ProcessId = (FILE_ID)PsGetCurrentProcessId();
+        recordData->ThreadId = (FILE_ID)PsGetCurrentThreadId();
 
-    //NAR
+        //NAR
 #if 1
-    ULONG BytesReturned = 0;
+        ULONG BytesReturned = 0;
 #pragma warning(push)
 #pragma warning(disable:4090) //TODO what is this warning code
 
-    STARTING_VCN_INPUT_BUFFER StartingInputVCNBuffer;
-    RETRIEVAL_POINTERS_BUFFER ClusterMapBuffer;
-    ClusterMapBuffer.StartingVcn.QuadPart = 0;
-    StartingInputVCNBuffer.StartingVcn.QuadPart = 0;
+        STARTING_VCN_INPUT_BUFFER StartingInputVCNBuffer;
+        RETRIEVAL_POINTERS_BUFFER ClusterMapBuffer;
+        ClusterMapBuffer.StartingVcn.QuadPart = 0;
+        StartingInputVCNBuffer.StartingVcn.QuadPart = 0;
 
-    UINT32 RegionLen = 0;
+        UINT32 RegionLen = 0;
 
-    ULONG ClusterSize = 512 * 8; //TODO cluster size might not be 8*sector. check this 
+        ULONG ClusterSize = 512 * 8; //TODO cluster size might not be 8*sector. check this 
 
-    LARGE_INTEGER WriteOffsetLargeInt = Data->Iopb->Parameters.Write.ByteOffset;
-    ULONG WriteLen = Data->Iopb->Parameters.Write.Length;
-    UINT32 NClustersToWrite = (WriteLen / (ClusterSize)+1);
+        LARGE_INTEGER WriteOffsetLargeInt = Data->Iopb->Parameters.Write.ByteOffset;
+        ULONG WriteLen = Data->Iopb->Parameters.Write.Length;
+        UINT32 NClustersToWrite = (WriteLen / (ClusterSize)+1);
 
-    UINT32 ClusterWriteStartOffset = (UINT32)(WriteOffsetLargeInt.QuadPart / (LONGLONG)(ClusterSize));
+        UINT32 ClusterWriteStartOffset = (UINT32)(WriteOffsetLargeInt.QuadPart / (LONGLONG)(ClusterSize));
 
-    UINT32 MaxIteration = 0;
-    recordData->RecCount = 0;
-    recordData->Error = 0;
+        UINT32 MaxIteration = 0;
+        recordData->RecCount = 0;
+        recordData->Error = 0;
 
-    BOOLEAN HeadFound = FALSE;
-    BOOLEAN CeilTest = FALSE;
+        BOOLEAN HeadFound = FALSE;
+        BOOLEAN CeilTest = FALSE;
 
-    for (;;) {
-      MaxIteration++;
-      if (MaxIteration > 1024) {
-        recordData->Error = NAR_ERR_MAX_ITER;
-        break;
-      }
+        for (;;) {
+            MaxIteration++;
+            if (MaxIteration > 1024) {
+                recordData->Error = NAR_ERR_MAX_ITER;
+                break;
+            }
 
-      status = FltFsControlFile(
-        FltObjects->Instance,
-        Data->Iopb->TargetFileObject,
-        FSCTL_GET_RETRIEVAL_POINTERS,
-        &StartingInputVCNBuffer,
-        sizeof(StartingInputVCNBuffer),
-        &ClusterMapBuffer,
-        sizeof(ClusterMapBuffer),
-        &BytesReturned
-      );
+            status = FltFsControlFile(
+                FltObjects->Instance,
+                Data->Iopb->TargetFileObject,
+                FSCTL_GET_RETRIEVAL_POINTERS,
+                &StartingInputVCNBuffer,
+                sizeof(StartingInputVCNBuffer),
+                &ClusterMapBuffer,
+                sizeof(ClusterMapBuffer),
+                &BytesReturned
+            );
 
-      if (status != STATUS_BUFFER_OVERFLOW
-        && status != STATUS_SUCCESS
-        && status != STATUS_END_OF_FILE) {
-        recordData->Error = NAR_ERR_TRINITY;
-        break;
-      }
+            if (status != STATUS_BUFFER_OVERFLOW
+                && status != STATUS_SUCCESS
+                && status != STATUS_END_OF_FILE) {
+                recordData->Error = NAR_ERR_TRINITY;
+                break;
+            }
 
-      /*
-      It is unlikely, but we should check overflows
-      */
-
-      if (ClusterMapBuffer.Extents[0].Lcn.QuadPart > MAXUINT32 || ClusterMapBuffer.Extents[0].NextVcn.QuadPart > MAXUINT32 || ClusterMapBuffer.StartingVcn.QuadPart > MAXUINT32) {
-        recordData->Error = NAR_ERR_OVERFLOW;
-        break;
-      }
-
-      if (!HeadFound) {
-        CeilTest = ((LONGLONG)ClusterWriteStartOffset < ClusterMapBuffer.Extents[0].NextVcn.QuadPart);
-      }
-      else {
-        CeilTest = TRUE;
-      }
-
-      if ((LONGLONG)ClusterWriteStartOffset >= StartingInputVCNBuffer.StartingVcn.QuadPart && CeilTest) {
-
-        RegionLen = (UINT32)(ClusterMapBuffer.Extents[0].NextVcn.QuadPart - ClusterMapBuffer.StartingVcn.QuadPart);
-
-        if (!HeadFound) {
-
-          //Starting position of the write operation
-          UINT32 OffsetFromRegionStart = (ClusterWriteStartOffset - (UINT32)ClusterMapBuffer.StartingVcn.QuadPart);
-
-
-          if (ClusterMapBuffer.Extents->NextVcn.QuadPart - OffsetFromRegionStart < NClustersToWrite) {
-            //Region overflow
-            recordData->P[recordData->RecCount].S = ((UINT32)ClusterMapBuffer.Extents[0].Lcn.QuadPart + OffsetFromRegionStart);//start
-            recordData->P[recordData->RecCount].L = RegionLen - OffsetFromRegionStart;
-            recordData->RecCount++;
-            NClustersToWrite -= (RegionLen - OffsetFromRegionStart);
-          }
-          else {
-            //Operation fits the region
-            recordData->P[recordData->RecCount].S = (UINT32)ClusterMapBuffer.Extents[0].Lcn.QuadPart + OffsetFromRegionStart;
-            recordData->P[recordData->RecCount].L = NClustersToWrite;
-            recordData->RecCount++;
-            NClustersToWrite = 0;
-          }
-
-          ClusterWriteStartOffset = (UINT32)ClusterMapBuffer.Extents[0].NextVcn.QuadPart;
-
-          HeadFound = TRUE;
-
-        }
-        else { // HeadFound
-          //Write operation falls over other region(s)
-          if ((NClustersToWrite - RegionLen) > 0) {
-            //write operation does not fit this region
-            recordData->P[recordData->RecCount].S = (UINT32)ClusterMapBuffer.Extents[0].Lcn.QuadPart;
-            recordData->P[recordData->RecCount].L = RegionLen;
-            recordData->RecCount++;
-            NClustersToWrite -= RegionLen;
-          }
-          else if (recordData->RecCount < 5) {
             /*
-            Write operation fits that region
+            It is unlikely, but we should check overflows
             */
-            recordData->P[recordData->RecCount].S = (UINT32)ClusterMapBuffer.Extents[0].Lcn.QuadPart;
-            recordData->P[recordData->RecCount].L = NClustersToWrite;
-            recordData->RecCount++;
-            NClustersToWrite = 0;
-            break;
-          }
-          else {
-            recordData->Error = NAR_ERR_REG_CANT_FILL;
-            break;
-          }
 
-          ClusterWriteStartOffset = (UINT32)ClusterMapBuffer.Extents[0].NextVcn.QuadPart;
+            if (ClusterMapBuffer.Extents[0].Lcn.QuadPart > MAXUINT32 || ClusterMapBuffer.Extents[0].NextVcn.QuadPart > MAXUINT32 || ClusterMapBuffer.StartingVcn.QuadPart > MAXUINT32) {
+                recordData->Error = NAR_ERR_OVERFLOW;
+                break;
+            }
+
+            if (!HeadFound) {
+                CeilTest = ((LONGLONG)ClusterWriteStartOffset < ClusterMapBuffer.Extents[0].NextVcn.QuadPart);
+            }
+            else {
+                CeilTest = TRUE;
+            }
+
+            if ((LONGLONG)ClusterWriteStartOffset >= StartingInputVCNBuffer.StartingVcn.QuadPart && CeilTest) {
+
+                RegionLen = (UINT32)(ClusterMapBuffer.Extents[0].NextVcn.QuadPart - ClusterMapBuffer.StartingVcn.QuadPart);
+
+                if (!HeadFound) {
+
+                    //Starting position of the write operation
+                    UINT32 OffsetFromRegionStart = (ClusterWriteStartOffset - (UINT32)ClusterMapBuffer.StartingVcn.QuadPart);
+
+
+                    if (ClusterMapBuffer.Extents->NextVcn.QuadPart - OffsetFromRegionStart < NClustersToWrite) {
+                        //Region overflow
+                        recordData->P[recordData->RecCount].S = ((UINT32)ClusterMapBuffer.Extents[0].Lcn.QuadPart + OffsetFromRegionStart);//start
+                        recordData->P[recordData->RecCount].L = RegionLen - OffsetFromRegionStart;
+                        recordData->RecCount++;
+                        NClustersToWrite -= (RegionLen - OffsetFromRegionStart);
+                    }
+                    else {
+                        //Operation fits the region
+                        recordData->P[recordData->RecCount].S = (UINT32)ClusterMapBuffer.Extents[0].Lcn.QuadPart + OffsetFromRegionStart;
+                        recordData->P[recordData->RecCount].L = NClustersToWrite;
+                        recordData->RecCount++;
+                        NClustersToWrite = 0;
+                    }
+
+                    ClusterWriteStartOffset = (UINT32)ClusterMapBuffer.Extents[0].NextVcn.QuadPart;
+
+                    HeadFound = TRUE;
+
+                }
+                else { // HeadFound
+                  //Write operation falls over other region(s)
+                    if ((NClustersToWrite - RegionLen) > 0) {
+                        //write operation does not fit this region
+                        recordData->P[recordData->RecCount].S = (UINT32)ClusterMapBuffer.Extents[0].Lcn.QuadPart;
+                        recordData->P[recordData->RecCount].L = RegionLen;
+                        recordData->RecCount++;
+                        NClustersToWrite -= RegionLen;
+                    }
+                    else if (recordData->RecCount < 5) {
+                        /*
+                        Write operation fits that region
+                        */
+                        recordData->P[recordData->RecCount].S = (UINT32)ClusterMapBuffer.Extents[0].Lcn.QuadPart;
+                        recordData->P[recordData->RecCount].L = NClustersToWrite;
+                        recordData->RecCount++;
+                        NClustersToWrite = 0;
+                        break;
+                    }
+                    else {
+                        recordData->Error = NAR_ERR_REG_CANT_FILL;
+                        break;
+                    }
+
+                    ClusterWriteStartOffset = (UINT32)ClusterMapBuffer.Extents[0].NextVcn.QuadPart;
+                }
+
+            }
+
+            if (NClustersToWrite <= 0) {
+                break;
+            }
+            if (recordData->RecCount == 5) {
+                break;
+            }
+
+            StartingInputVCNBuffer.StartingVcn = ClusterMapBuffer.Extents->NextVcn;
+
+            if (status == STATUS_END_OF_FILE) {
+                break;
+            }
+
         }
-
-      }
-
-      if (NClustersToWrite <= 0) {
-        break;
-      }
-      if (recordData->RecCount == 5) {
-        break;
-      }
-
-      StartingInputVCNBuffer.StartingVcn = ClusterMapBuffer.Extents->NextVcn;
-
-      if (status == STATUS_END_OF_FILE) {
-        break;
-      }
-
-    }
 
 
 
@@ -321,8 +321,8 @@ Return Value:
 #pragma warning(pop)
 #endif
 
-    KeQuerySystemTime(&recordData->OriginatingTime);
-  }
+        KeQuerySystemTime(&recordData->OriginatingTime);
+    }
 }
 
 

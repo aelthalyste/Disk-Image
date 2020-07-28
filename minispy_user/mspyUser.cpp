@@ -688,7 +688,7 @@ SaveExtraPartitions(volume_backup_inf* V) {
 
         Ext = (VOLUME_DISK_EXTENTS*)malloc(BS);
         DL = (DRIVE_LAYOUT_INFORMATION_EX*)malloc(BS);
-        
+
         if (DeviceIoControl(Drive, IOCTL_VOLUME_GET_VOLUME_DISK_EXTENTS, 0, 0, Ext, BS, &T, 0)) {
             for (int i = 0; i < Ext->NumberOfDiskExtents; i++) {
 
@@ -1198,7 +1198,7 @@ AddVolumeToTrack(PLOG_CONTEXT Context, wchar_t Letter, BackupType Type) {
         VolumeMountName[0] = Letter;
 
         if (GetVolumeNameForVolumeMountPointW(VolumeMountName, Command.VolumeGUIDStr, 50)) {
-            
+
             DWORD BytesReturned;
             Command.VolumeGUIDStr[1] = L'?';
             printf("Volume GUID: %S\n", Command.VolumeGUIDStr);
@@ -1222,7 +1222,7 @@ AddVolumeToTrack(PLOG_CONTEXT Context, wchar_t Letter, BackupType Type) {
             DisplayError(GetLastError());
         }
 
-        
+
 
 
 
@@ -1401,7 +1401,7 @@ BOOLEAN
 ReadStream(volume_backup_inf* VolInf, void* Buffer, int TotalSize) {
     //TotalSize MUST be multiple of cluster size
     BOOLEAN Result = TRUE;
-    
+
     int ClustersToRead = TotalSize / VolInf->ClusterSize;
     int BufferOffset = 0;
     DWORD BytesOperated = 0;
@@ -1409,7 +1409,7 @@ ReadStream(volume_backup_inf* VolInf, void* Buffer, int TotalSize) {
         printf("Passed totalsize as 0, terminating now\n");
         return TRUE;
     }
-    
+
     for (;;) {
 
         if (VolInf->Stream.RecIndex == VolInf->Stream.Records.Count) {
@@ -1623,7 +1623,7 @@ SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, DotNetStreamInf* SI) {
     VolInf->Stream.Records.Count = 0;
 
     if (SetupStreamHandle(VolInf)) {
-        
+
         printf("Setup stream handle successfully\n");
         if (!VolInf->FullBackupExists) {
             printf("Fullbackup stream is preparing\n");
@@ -1953,7 +1953,7 @@ SetDiffRecords(volume_backup_inf* V) {
         DWORD Temp = GetFileSize(F[i], 0);
 
         printf("Opened file %S, size %i\n", FName.c_str(), Temp);
-        
+
         TotalFileSize += Temp;
         FS[i] = Temp;
     }
@@ -3119,7 +3119,7 @@ NarGetVolumeDiskType(char Letter) {
     CloseHandle(Drive);
     CloseHandle(Disk);
     return Result;
-    }
+}
 
 
 inline int
@@ -3352,8 +3352,8 @@ RestoreVersionWithoutLoop(restore_inf R, BOOLEAN RestoreMFT, HANDLE Volume) {
     //NOTE(BATUHAN): Zero out fullbackup's MFT region if target version isnt fb, since its mft will be overwritten that shouldnt be a problem
     //Later, I should replace this code with smt that detects MFT regions from fullbackup metadata, then excudes it from it, so we dont have to zero it after at all.
     //For testing purpose this should do the work.
-
-    if (!RestoreMFT) {
+#if 1
+    if (!RestoreMFT && BMEX->M.Version != NAR_FULLBACKUP_VERSION) {
 
         HANDLE BMFile = CreateFile(BMEX->FilePath.c_str(), GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
         if (BMFile != INVALID_HANDLE_VALUE) {
@@ -3414,6 +3414,7 @@ RestoreVersionWithoutLoop(restore_inf R, BOOLEAN RestoreMFT, HANDLE Volume) {
         CloseHandle(BMFile);
 
     }
+#endif 
 
     CloseHandle(RegionsFile);
     if (IsVolumeLocal) { NarCloseVolume(Volume); }
@@ -4210,7 +4211,7 @@ AppendRecoveryToFile(HANDLE File, char Letter) {
 
     BOOLEAN Result = FALSE;
     DWORD BufferSize = 1024 * 2; // 64KB
-    
+
     char VolPath[128];
     sprintf(VolPath, "%c:\\", Letter);
 

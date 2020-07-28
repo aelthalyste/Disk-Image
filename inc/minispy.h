@@ -91,8 +91,8 @@ Environment:
 
 typedef struct _MINISPYVER {
 
-  USHORT Major;
-  USHORT Minor;
+    USHORT Major;
+    USHORT Minor;
 
 } MINISPYVER, * PMINISPYVER;
 
@@ -134,42 +134,42 @@ typedef _Return_type_success_(return >= 0) LONG NTSTATUS;
 
 typedef struct _RECORD_DATA {
 
-  LARGE_INTEGER OriginatingTime;
-  LARGE_INTEGER CompletionTime;
+    LARGE_INTEGER OriginatingTime;
+    LARGE_INTEGER CompletionTime;
 
-  FILE_ID DeviceObject;
-  FILE_ID FileObject;
-  FILE_ID Transaction;
+    FILE_ID DeviceObject;
+    FILE_ID FileObject;
+    FILE_ID Transaction;
 
-  FILE_ID ProcessId;
-  FILE_ID ThreadId;
+    FILE_ID ProcessId;
+    FILE_ID ThreadId;
 
-  ULONG_PTR Information;
+    ULONG_PTR Information;
 
-  NTSTATUS Status;
+    NTSTATUS Status;
 
-  ULONG IrpFlags;
-  ULONG Flags;
+    ULONG IrpFlags;
+    ULONG Flags;
 
-  UCHAR CallbackMajorId;
-  UCHAR CallbackMinorId;
-  UCHAR Reserved[2];      // Alignment on IA64
+    UCHAR CallbackMajorId;
+    UCHAR CallbackMinorId;
+    UCHAR Reserved[2];      // Alignment on IA64
 
 #pragma warning(push)
 #pragma warning(disable:4201) // disable warnings for structures-unions without names
 
 
-  struct {
-    UINT32 S;
-    UINT32 L;
-  }P[5];
-  UINT32 RecCount;
-  UINT32 Error;
+    struct {
+        UINT32 S;
+        UINT32 L;
+    }P[5];
+    UINT32 RecCount;
+    UINT32 Error;
 
 
 
-  ULONG EcpCount;
-  ULONG KnownEcpMask;
+    ULONG EcpCount;
+    ULONG KnownEcpMask;
 
 } RECORD_DATA, * PRECORD_DATA;
 
@@ -187,14 +187,14 @@ typedef struct _RECORD_DATA {
 typedef struct _LOG_RECORD {
 
 
-  ULONG Length;           // Length of log record.  This Does not include
-  ULONG SequenceNumber;   // space used by other members of RECORD_LIST
+    ULONG Length;           // Length of log record.  This Does not include
+    ULONG SequenceNumber;   // space used by other members of RECORD_LIST
 
-  ULONG RecordType;       // The type of log record this is.
-  ULONG Reserved;         // For alignment on IA64
+    ULONG RecordType;       // The type of log record this is.
+    ULONG Reserved;         // For alignment on IA64
 
-  RECORD_DATA Data;
-  WCHAR Name[];           //  This is a null terminated string
+    RECORD_DATA Data;
+    WCHAR Name[];           //  This is a null terminated string
 
 } LOG_RECORD, * PLOG_RECORD;
 
@@ -206,17 +206,17 @@ typedef struct _LOG_RECORD {
 
 typedef struct _RECORD_LIST {
 
-  LIST_ENTRY List;
+    LIST_ENTRY List;
 
-  //
-  // Must always be last item.  See MAX_LOG_RECORD_LENGTH macro below.
-  // Must be aligned on PVOID boundary in this structure. This is because the
-  // log records are going to be packed one after another & accessed directly
-  // Size of log record must also be multiple of PVOID size to avoid alignment
-  // faults while accessing the log records on IA64
-  //
+    //
+    // Must always be last item.  See MAX_LOG_RECORD_LENGTH macro below.
+    // Must be aligned on PVOID boundary in this structure. This is because the
+    // log records are going to be packed one after another & accessed directly
+    // Size of log record must also be multiple of PVOID size to avoid alignment
+    // faults while accessing the log records on IA64
+    //
 
-  LOG_RECORD LogRecord;
+    LOG_RECORD LogRecord;
 
 } RECORD_LIST, * PRECORD_LIST;
 
@@ -233,27 +233,27 @@ typedef struct _RECORD_LIST {
 #pragma warning(disable:4200) // disable warnings for structures with zero length arrays.
 
 typedef enum NAR_COMMAND_TYPE {
-  NarCommandType_GetVolumeLog,
-  NarCommandType_QueryErrors,
-  NarCommandType_AddVolume
+    NarCommandType_GetVolumeLog,
+    NarCommandType_QueryErrors,
+    NarCommandType_AddVolume
 }NAR_COMMAND_TYPE;
 
-typedef struct NAR_COMMAND{
+typedef struct NAR_COMMAND {
 
-  NAR_COMMAND_TYPE Type;
-  struct {
-      WCHAR VolumeGUIDStr[49];     // Null terminated VolumeGUID string
-  };
+    NAR_COMMAND_TYPE Type;
+    struct {
+        WCHAR VolumeGUIDStr[49];     // Null terminated VolumeGUID string
+    };
 
 }NAR_COMMAND;
 
 #pragma warning(pop)
 
 typedef struct _NAR_CONNECTION_CONTEXT {
-  ULONG  PID;           // PID of user mode application to prevent deadlock in write operations on same volumes. This PID will be filtered out in PREOPERATION callback
-  INT32  OsDeviceID;    // parse QueryDeviceName
-  INT32  UserNameSize;  // In bytes, not characters.
-  WCHAR* UserName;      // Null terminated USERname that is currently active
+    ULONG  PID;           // PID of user mode application to prevent deadlock in write operations on same volumes. This PID will be filtered out in PREOPERATION callback
+    INT32  OsDeviceID;    // parse QueryDeviceName
+    INT32  UserNameSize;  // In bytes, not characters.
+    WCHAR* UserName;      // Null terminated USERname that is currently active
 }NAR_CONNECTION_CONTEXT;
 
 

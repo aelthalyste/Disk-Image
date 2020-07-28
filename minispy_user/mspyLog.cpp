@@ -155,28 +155,28 @@ Return Value:
         static WCHAR VolumeGUIDStr[50];
         memset(wStrBuffer, 0, WSTRBUFFERLEN * sizeof(WCHAR));
         memset(VolumeGUIDStr, 0, USERGUIDSTRLEN * sizeof(WCHAR));
-        
+
         for (int VolumeIndex = 0; VolumeIndex < context->Volumes.Count; VolumeIndex++) {
-            
-            
+
+
             volume_backup_inf* V = &context->Volumes.Data[VolumeIndex];
-            
-            if (V == NULL 
-                || V->Letter == NAR_INVALID_VOLUME_LETTER ) 
+
+            if (V == NULL
+                || V->Letter == NAR_INVALID_VOLUME_LETTER)
             {
                 continue;
             }
 
             wsprintfW(wStrBuffer, L"%c:\\", V->Letter);
             BOOLEAN Result = GetVolumeNameForVolumeMountPointW(wStrBuffer, VolumeGUIDStr, USERGUIDSTRLEN);
-            
+
             if (Result != 0) {
                 VolumeGUIDStr[1] = L'?';
 
                 DWORD Hell = 0;
                 NAR_COMMAND Command;
                 memset(&Command, 0, sizeof(NAR_COMMAND));
-                
+
                 memset(OutBuffer, 0, NAR_MEMORYBUFFER_SIZE);
                 Command.Type = NarCommandType_GetVolumeLog;
                 memcpy(Command.VolumeGUIDStr, VolumeGUIDStr, USERGUIDSTRLEN * sizeof(WCHAR));
@@ -184,7 +184,7 @@ Return Value:
 
                 if (SUCCEEDED(hResult)) {
                     printf("For volume %c message sent successfully\n", (char)V->Letter);
-                    
+
                     if (!NAR_MB_ERROR_OCCURED(OutBuffer)) {
 
                         // if volume isnt active, just fetch all data and dump it, thats it
@@ -213,7 +213,7 @@ Return Value:
                             V->RecordsMem.clear();
                             continue;
                         }
-                       
+
 
 
                         if (!V->FilterFlags.IsActive) {
@@ -224,11 +224,11 @@ Return Value:
                             //ScreenDump(0, pLogRecord->Name, pRecordData);
                             INT32 DataUsed = NAR_MB_DATA_USED(OutBuffer);
 
-                            if (DataUsed > 0 && DataUsed < NAR_MEMORYBUFFER_SIZE - 2*sizeof(INT32)) {
-                            
+                            if (DataUsed > 0 && DataUsed < NAR_MEMORYBUFFER_SIZE - 2 * sizeof(INT32)) {
+
                                 if (FileDump(NAR_MB_DATA(OutBuffer), DataUsed, V->LogHandle)) {
                                     V->IncRecordCount += NAR_MB_DATA_USED(OutBuffer) / sizeof(nar_record);
-                                } 
+                                }
                                 else {
                                     printf("## Error occured while writing log to file. FERROR!!\n");
                                 }
@@ -239,14 +239,14 @@ Return Value:
                                 if (DataUsed < 0) {
                                     printf("Data used was lower than zero %i\n", DataUsed);
                                 }
-                                if (DataUsed > NAR_MEMORYBUFFER_SIZE - 2*sizeof(INT32)) {
+                                if (DataUsed > NAR_MEMORYBUFFER_SIZE - 2 * sizeof(INT32)) {
                                     printf("Data size exceeded buffer size itself, this is a fatal error(size = %i)\n", DataUsed);
                                 }
-                                
+
                             }
 
                             continue;
-                            
+
                         }
                         else {
 
@@ -267,7 +267,7 @@ Return Value:
 
                 }
                 else {
-                    
+
                     if (IS_ERROR(hResult)) {
 
                         if (HRESULT_FROM_WIN32(ERROR_INVALID_HANDLE) == hResult) {
@@ -288,14 +288,14 @@ Return Value:
 
                 }
 
-                
+
             }
             else {
                 printf("Couldnt get volume GUID for volume %c\n", V->Letter);
             }
 
 
-            
+
         }
 
         Sleep(POLL_INTERVAL);
@@ -389,7 +389,7 @@ Return Value:
 {
     DWORD BytesWritten = 0;
     BOOL Result = TRUE;
-    
+
     Result = WriteFile(File, Data, DataSize, &BytesWritten, 0);
     if (!SUCCEEDED(Result) || BytesWritten != DataSize) {
         printf("Error occured!\n");

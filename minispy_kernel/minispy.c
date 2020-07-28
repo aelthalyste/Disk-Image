@@ -310,7 +310,7 @@ Return Value:
         }
 #endif
 
-        
+
         ExInitializePagedLookasideList(&NarData.LookAsideList, 0, 0, 0, NAR_LOOKASIDE_SIZE, NAR_TAG, 0);
         ExInitializePagedLookasideList(&NarData.GUIDComparePagedLookAsideList, 0, 0, 0, NAR_GUID_STR_SIZE, NAR_TAG, 0);
 
@@ -325,7 +325,7 @@ Return Value:
         //Initializing each volume entry
         for (int i = 0; i < NAR_MAX_VOLUME_COUNT; i++) {
 
-            
+
             ExInitializeFastMutex(&NarData.VolumeRegionBuffer[i].FastMutex);
             NarData.VolumeRegionBuffer[i].MemoryBuffer = 0;
             NarData.VolumeRegionBuffer[i].MemoryBuffer = ExAllocatePoolWithTag(PagedPool, NAR_MEMORYBUFFER_SIZE, NAR_TAG);
@@ -431,12 +431,12 @@ Return Value
     UNREFERENCED_PARAMETER(SizeOfContext);
     UNREFERENCED_PARAMETER(ConnectionCookie);
 
-    
+
     NAR_CONNECTION_CONTEXT* CTX = ConnectionContext;
     NarData.ClientPort = ClientPort;
     NarData.UserModePID = CTX->PID;
     //Copy user name
-    
+
     return STATUS_SUCCESS;
 }
 
@@ -659,7 +659,7 @@ Return Value:
 
     if ((InputBuffer != NULL) && InputBufferSize >= sizeof(NAR_COMMAND)) {
 
-        
+
 
         try {
 
@@ -671,7 +671,7 @@ Return Value:
             //  Probe and capture input message: the message is raw user mode
             //  buffer, so need to protect with exception handler
             //
-            
+
 
             NAR_COMMAND* Command = (NAR_COMMAND*)InputBuffer;
             if (Command->Type == NarCommandType_GetVolumeLog) {
@@ -686,15 +686,15 @@ Return Value:
 
                     //memset(OutputBuffer, 0, OutputBufferSize);
                     memcpy(PagedGUIDStrBuffer, Command->VolumeGUIDStr, NAR_GUID_STR_SIZE);
-                    
-                    
+
+
                     for (int i = 0; i < NAR_MAX_VOLUME_COUNT; i++) {
 
-                        
+
                         ExAcquireFastMutex(&NarData.VolumeRegionBuffer[i].FastMutex);
 
                         if (RtlCompareMemory(PagedGUIDStrBuffer, NarData.VolumeRegionBuffer[i].Reserved, NAR_GUID_STR_SIZE) == NAR_GUID_STR_SIZE) {
-                            
+
                             memcpy(OutputBuffer, NarData.VolumeRegionBuffer[i].MemoryBuffer, NAR_MB_USED(NarData.VolumeRegionBuffer[i].MemoryBuffer));
 
                             memset(NarData.VolumeRegionBuffer[i].MemoryBuffer, 0, NAR_MEMORYBUFFER_SIZE);
@@ -721,12 +721,12 @@ Return Value:
                     else {
                         DbgPrint("Volume found, copying data from NPAGED memory to output buffer, size %i\n", NAR_MEMORYBUFFER_SIZE);
                         *ReturnOutputBufferLength = (ULONG)NAR_MEMORYBUFFER_SIZE;
-                        
+
                         DbgPrint("Succ copied data to output buffer\n");
                     }
-                    
 
-                    
+
+
                 }
                 else {
                     DbgPrint("BIG IF BLOCK FAILED IN SPYMESSAGE\n"); // short but effective temporary message
@@ -751,7 +751,7 @@ Return Value:
                         DbgPrint("Will iterate volume list\n");
 
                         for (int i = 0; i < NAR_MAX_VOLUME_COUNT; i++) {
-                            
+
                             ExAcquireFastMutex(&NarData.VolumeRegionBuffer[i].FastMutex);
 
                             if (RtlCompareMemory(PagedGUIDStrBuffer, NarData.VolumeRegionBuffer[i].GUIDStrVol.Buffer, NAR_GUID_STR_SIZE) == NAR_GUID_STR_SIZE) {
@@ -769,7 +769,7 @@ Return Value:
                         if (VolumeAlreadyExists == FALSE) {
 
                             for (int i = 0; i < NAR_MAX_VOLUME_COUNT; i++) {
-                                
+
                                 ExAcquireFastMutex(&NarData.VolumeRegionBuffer[i].FastMutex);
 
                                 if (NarData.VolumeRegionBuffer[i].GUIDStrVol.Length == 0) {
@@ -779,7 +779,7 @@ Return Value:
                                     memset(NarData.VolumeRegionBuffer[i].GUIDStrVol.Buffer, 0, NAR_GUID_STR_SIZE);
                                     memcpy(NarData.VolumeRegionBuffer[i].GUIDStrVol.Buffer, PagedGUIDStrBuffer, NAR_GUID_STR_SIZE);
                                     memset(NarData.VolumeRegionBuffer[i].MemoryBuffer, 0, NAR_MEMORYBUFFER_SIZE);
-                                    
+
                                     NAR_INIT_MEMORYBUFFER(NarData.VolumeRegionBuffer[i].MemoryBuffer);
                                     NarData.VolumeRegionBuffer[i].GUIDStrVol.MaximumLength = NAR_GUID_STR_SIZE;
 
@@ -793,12 +793,12 @@ Return Value:
 
                         }
 
-                        
+
                         if (PagedGUIDStrBuffer != NULL) {
                             DbgPrint("VOLUME GUID : %S\n", PagedGUIDStrBuffer);
                             ExFreePoolWithTag(PagedGUIDStrBuffer, NAR_TAG);
                         }
-                        
+
                         if (!VolumeAdded) {
                             DbgPrint("Couldnt add volume to list\n");
                         }
@@ -808,7 +808,7 @@ Return Value:
                         if (VolumeAlreadyExists) {
                             DbgPrint("Volume already exist in the list\n");
                         }
-                        
+
                     }
                     else {
                         DbgPrint("Couldnt allocate paged memory for GUID string\n");
@@ -827,7 +827,7 @@ Return Value:
             }
 
 
-        } 
+        }
         except(SpyExceptionFilter(GetExceptionInformation(), TRUE)) {
             DbgPrint("exception throwed\n");
 
@@ -897,10 +897,10 @@ Return Value:
     ULONG PID = FltGetRequestorProcessId(Data);
     // filter out temporary files and files that would be closed if last handle freed
     if ((Data->Iopb->TargetFileObject->Flags & FO_TEMPORARY_FILE) || (Data->Iopb->TargetFileObject->Flags & FO_DELETE_ON_CLOSE) || PID == NarData.UserModePID) {
-      return 	FLT_PREOP_SUCCESS_NO_CALLBACK;
+        return 	FLT_PREOP_SUCCESS_NO_CALLBACK;
     }
-    
-    
+
+
 
 #if 1
 
@@ -1161,32 +1161,32 @@ Return Value:
                 RtlInitEmptyUnicodeString(&GUIDStringNPaged, CompareBuffer, NAR_GUID_STR_SIZE);
                 status = FltGetVolumeGuidName(FltObjects->Volume, &GUIDStringNPaged, &SizeNeededForGUIDStr);
                 if (NT_SUCCESS(status)) {
-                    
+
                     for (int i = 0; i < NAR_MAX_VOLUME_COUNT; i++) {
 
                         if (NarData.VolumeRegionBuffer[i].GUIDStrVol.Length > 0) {
                             DbgPrint("GUIDStr %wZ\n", &NarData.VolumeRegionBuffer[i].GUIDStrVol);
                         }
-                        
+
                     }
 
                     for (int i = 0; i < NAR_MAX_VOLUME_COUNT; i++) {
-                        
-                        
+
+
                         ExAcquireFastMutex(&NarData.VolumeRegionBuffer[i].FastMutex);
 
                         if (RtlCompareMemory(CompareBuffer, NarData.VolumeRegionBuffer[i].GUIDStrVol.Buffer, NAR_GUID_STR_SIZE) == NAR_GUID_STR_SIZE) {
                             RemainingSizeOnBuffer = NAR_MEMORYBUFFER_SIZE - NAR_MB_USED(NarData.VolumeRegionBuffer[i].MemoryBuffer);
 
                             if (RemainingSizeOnBuffer >= SizeNeededForMemoryBuffer) {
-                                
+
                                 NAR_MB_PUSH(NarData.VolumeRegionBuffer[i].MemoryBuffer, &P[0], SizeNeededForMemoryBuffer);
                                 Added = TRUE;
                             }
                             else {
                                 NAR_MB_MARK_NOT_ENOUGH_SPACE(NarData.VolumeRegionBuffer[i].MemoryBuffer);
                             }
-                            
+
                             ExReleaseFastMutex(&NarData.VolumeRegionBuffer[i].FastMutex);
                             break;
                         }
@@ -1205,7 +1205,7 @@ Return Value:
                     DbgPrint("Couldnt get volume GUID, status : %i, sizeneeded : %i", status, SizeNeededForGUIDStr);
                 }
 
-                
+
 
             }
 
@@ -1216,7 +1216,7 @@ Return Value:
 
             ExFreeToPagedLookasideList(&NarData.LookAsideList, UnicodeStrBuffer);
             ExFreeToPagedLookasideList(&NarData.GUIDComparePagedLookAsideList, CompareBuffer);
-            
+
         }
         else {
             goto NAR_PREOP_END;
@@ -1337,7 +1337,7 @@ Return Value:
 
 NAR_PREOP_END:
     //ExFreeToPagedLookasideList(&NarData.LookAsideList, Buffer);
-    
+
     return FLT_PREOP_SUCCESS_NO_CALLBACK;
 }
 
@@ -1393,7 +1393,7 @@ Return Value:
     NTSTATUS status;
     UNREFERENCED_PARAMETER(status);
 
-    
+
     //
     //  If our instance is in the process of being torn down don't bother to
     //  log this record, free it now.
@@ -1423,7 +1423,7 @@ SpyVolumeInstanceSetup(
     UNREFERENCED_PARAMETER(VolumeFilesystemType);
 
     PAGED_CODE();
-    
+
     if (Flags & FLTFL_INSTANCE_SETUP_MANUAL_ATTACHMENT
         && VolumeFilesystemType == FLT_FSTYPE_NTFS
         && VolumeDeviceType == FILE_DEVICE_DISK_FILE_SYSTEM) {

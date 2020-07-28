@@ -58,27 +58,27 @@ Environment:
 
 typedef NTSTATUS
 (*PFLT_SET_TRANSACTION_CONTEXT)(
-  _In_ PFLT_INSTANCE Instance,
-  _In_ PKTRANSACTION Transaction,
-  _In_ FLT_SET_CONTEXT_OPERATION Operation,
-  _In_ PFLT_CONTEXT NewContext,
-  _Outptr_opt_ PFLT_CONTEXT* OldContext
-  );
+    _In_ PFLT_INSTANCE Instance,
+    _In_ PKTRANSACTION Transaction,
+    _In_ FLT_SET_CONTEXT_OPERATION Operation,
+    _In_ PFLT_CONTEXT NewContext,
+    _Outptr_opt_ PFLT_CONTEXT* OldContext
+    );
 
 typedef NTSTATUS
 (*PFLT_GET_TRANSACTION_CONTEXT)(
-  _In_ PFLT_INSTANCE Instance,
-  _In_ PKTRANSACTION Transaction,
-  _Outptr_ PFLT_CONTEXT* Context
-  );
+    _In_ PFLT_INSTANCE Instance,
+    _In_ PKTRANSACTION Transaction,
+    _Outptr_ PFLT_CONTEXT* Context
+    );
 
 typedef NTSTATUS
 (*PFLT_ENLIST_IN_TRANSACTION)(
-  _In_ PFLT_INSTANCE Instance,
-  _In_ PKTRANSACTION Transaction,
-  _In_ PFLT_CONTEXT TransactionContext,
-  _In_ NOTIFICATION_MASK NotificationMask
-  );
+    _In_ PFLT_INSTANCE Instance,
+    _In_ PKTRANSACTION Transaction,
+    _In_ PFLT_CONTEXT TransactionContext,
+    _In_ NOTIFICATION_MASK NotificationMask
+    );
 
 //
 // Flags for the known ECPs
@@ -102,12 +102,12 @@ typedef NTSTATUS
 
 typedef enum _ECP_TYPE {
 
-  EcpPrefetchOpen,
-  EcpOplockKey,
-  EcpNfsOpen,
-  EcpSrvOpen,
+    EcpPrefetchOpen,
+    EcpOplockKey,
+    EcpNfsOpen,
+    EcpSrvOpen,
 
-  NumKnownEcps
+    NumKnownEcps
 
 } ECP_TYPE;
 
@@ -118,77 +118,77 @@ typedef enum _ECP_TYPE {
 //---------------------------------------------------------------------------
 
 typedef struct _nar_kernel_data {
-  
-  //
-  //  The object that identifies this driver.
-  //
 
-  PDRIVER_OBJECT DriverObject;
+    //
+    //  The object that identifies this driver.
+    //
 
-  //
-  //  The filter that results from a call to
-  //  FltRegisterFilter.
-  //
+    PDRIVER_OBJECT DriverObject;
 
-  PFLT_FILTER Filter;
+    //
+    //  The filter that results from a call to
+    //  FltRegisterFilter.
+    //
 
-  //
-  //  Server port: user mode connects to this port
-  //
+    PFLT_FILTER Filter;
 
-  PFLT_PORT ServerPort;
+    //
+    //  Server port: user mode connects to this port
+    //
 
-  //
-  //  Client connection port: only one connection is allowed at a time.,
-  //
+    PFLT_PORT ServerPort;
 
-  PFLT_PORT ClientPort;
+    //
+    //  Client connection port: only one connection is allowed at a time.,
+    //
 
-
-
-
-  //
-  //  The name query method to use.  By default, it is set to
-  //  FLT_FILE_NAME_QUERY_ALWAYS_ALLOW_CACHE_LOOKUP, but it can be overridden
-  //  by a setting in the registery.
-  //
-
-  ULONG NameQueryMethod;
+    PFLT_PORT ClientPort;
 
 
 
-  //
-  // Lookaside list to allocate pre-operation UNICODE STRINGS and maybe to early fetch all regions, each entry size is LookAsideSize
-  //
 
-  PAGED_LOOKASIDE_LIST LookAsideList;
+    //
+    //  The name query method to use.  By default, it is set to
+    //  FLT_FILE_NAME_QUERY_ALWAYS_ALLOW_CACHE_LOOKUP, but it can be overridden
+    //  by a setting in the registery.
+    //
 
-
-  //
-  // In order to compare volume guid strings in list and preop strings, they MUST be allocated in non-paged pool. This nonpaged lookaside list handles this allocation
-  //
-  PAGED_LOOKASIDE_LIST GUIDComparePagedLookAsideList;
-
-  
-  // this struct's members lays on non-paged memory.
-  struct volume_region_buffer {
-    FAST_MUTEX FastMutex; // used to provide exclusive access to MemoryBuffer
-    UNICODE_STRING GUIDStrVol; //24 byte
-    
-    // GUIDStrVol.Buffer is equal to this struct, do not directly call this.
-    char Reserved[NAR_GUID_STR_SIZE];
-    
-                       
-    // First 4 byte used to indicate used size, first 4 bytes included as used, so memorybuffers max usable size is NAR_MEMORYBUFFER_SIZE - sizeof*(INT32)
-    // Do not directly call this to push data, instead use NAR_PUSH_MB macro
-    void* MemoryBuffer;
-  } *VolumeRegionBuffer; //32 bytes total, but must allocate extra 32 bytes to hold 16 wide character GUIDString
+    ULONG NameQueryMethod;
 
 
-  HANDLE MetadataHandle;
-  ULONG UserModePID;
-  int OsDeviceID;
-  
+
+    //
+    // Lookaside list to allocate pre-operation UNICODE STRINGS and maybe to early fetch all regions, each entry size is LookAsideSize
+    //
+
+    PAGED_LOOKASIDE_LIST LookAsideList;
+
+
+    //
+    // In order to compare volume guid strings in list and preop strings, they MUST be allocated in non-paged pool. This nonpaged lookaside list handles this allocation
+    //
+    PAGED_LOOKASIDE_LIST GUIDComparePagedLookAsideList;
+
+
+    // this struct's members lays on non-paged memory.
+    struct volume_region_buffer {
+        FAST_MUTEX FastMutex; // used to provide exclusive access to MemoryBuffer
+        UNICODE_STRING GUIDStrVol; //24 byte
+
+        // GUIDStrVol.Buffer is equal to this struct, do not directly call this.
+        char Reserved[NAR_GUID_STR_SIZE];
+
+
+        // First 4 byte used to indicate used size, first 4 bytes included as used, so memorybuffers max usable size is NAR_MEMORYBUFFER_SIZE - sizeof*(INT32)
+        // Do not directly call this to push data, instead use NAR_PUSH_MB macro
+        void* MemoryBuffer;
+    } *VolumeRegionBuffer; //32 bytes total, but must allocate extra 32 bytes to hold 16 wide character GUIDString
+
+
+    HANDLE MetadataHandle;
+    ULONG UserModePID;
+    int OsDeviceID;
+
 } nar_data;
 
 
@@ -204,8 +204,8 @@ typedef struct _nar_kernel_data {
 //
 
 typedef struct _MINISPY_TRANSACTION_CONTEXT {
-  ULONG Flags;
-  ULONG Count;
+    ULONG Flags;
+    ULONG Count;
 
 }MINISPY_TRANSACTION_CONTEXT, * PMINISPY_TRANSACTION_CONTEXT;
 
@@ -247,49 +247,49 @@ extern const FLT_REGISTRATION FilterRegistration;
 
 FLT_PREOP_CALLBACK_STATUS
 SpyPreOperationCallback(
-  _Inout_ PFLT_CALLBACK_DATA Data,
-  _In_ PCFLT_RELATED_OBJECTS FltObjects,
-  _Flt_CompletionContext_Outptr_ PVOID* CompletionContext
+    _Inout_ PFLT_CALLBACK_DATA Data,
+    _In_ PCFLT_RELATED_OBJECTS FltObjects,
+    _Flt_CompletionContext_Outptr_ PVOID* CompletionContext
 );
 
 FLT_POSTOP_CALLBACK_STATUS
 SpyPostOperationCallback(
-  _Inout_ PFLT_CALLBACK_DATA Data,
-  _In_ PCFLT_RELATED_OBJECTS FltObjects,
-  _In_ PVOID CompletionContext,
-  _In_ FLT_POST_OPERATION_FLAGS Flags
+    _Inout_ PFLT_CALLBACK_DATA Data,
+    _In_ PCFLT_RELATED_OBJECTS FltObjects,
+    _In_ PVOID CompletionContext,
+    _In_ FLT_POST_OPERATION_FLAGS Flags
 );
 
 
 NTSTATUS
 SpyFilterUnload(
-  _In_ FLT_FILTER_UNLOAD_FLAGS Flags
+    _In_ FLT_FILTER_UNLOAD_FLAGS Flags
 );
 
 NTSTATUS
 SpyQueryTeardown(
-  _In_ PCFLT_RELATED_OBJECTS FltObjects,
-  _In_ FLT_INSTANCE_QUERY_TEARDOWN_FLAGS Flags
+    _In_ PCFLT_RELATED_OBJECTS FltObjects,
+    _In_ FLT_INSTANCE_QUERY_TEARDOWN_FLAGS Flags
 );
 
 NTSTATUS
 SpyTeardownStart(
-  _In_ PCFLT_RELATED_OBJECTS FltObjects,
-  _In_ FLT_INSTANCE_TEARDOWN_FLAGS Reason
+    _In_ PCFLT_RELATED_OBJECTS FltObjects,
+    _In_ FLT_INSTANCE_TEARDOWN_FLAGS Reason
 );
 
 NTSTATUS
 SpyVolumeInstanceSetup(
-  _In_ PCFLT_RELATED_OBJECTS FltObjects,
-  _In_ FLT_INSTANCE_SETUP_FLAGS Flags,
-  _In_ DEVICE_TYPE VolumeDeviceType,
-  _In_ FLT_FILESYSTEM_TYPE VolumeFilesystemType);
+    _In_ PCFLT_RELATED_OBJECTS FltObjects,
+    _In_ FLT_INSTANCE_SETUP_FLAGS Flags,
+    _In_ DEVICE_TYPE VolumeDeviceType,
+    _In_ FLT_FILESYSTEM_TYPE VolumeFilesystemType);
 
 
 LONG
 SpyExceptionFilter(
-  _In_ PEXCEPTION_POINTERS ExceptionPointer,
-  _In_ BOOLEAN AccessingUserBuffer
+    _In_ PEXCEPTION_POINTERS ExceptionPointer,
+    _In_ BOOLEAN AccessingUserBuffer
 );
 
 //---------------------------------------------------------------------------
@@ -302,14 +302,14 @@ SpyExceptionFilter(
 //---------------------------------------------------------------------------
 PRECORD_LIST
 SpyNewRecord(
-  VOID
+    VOID
 );
 
 VOID
 SpyLogPreOperationData(
-  _In_ PFLT_CALLBACK_DATA Data,
-  _In_ PCFLT_RELATED_OBJECTS FltObjects,
-  _Inout_ PRECORD_LIST RecordList
+    _In_ PFLT_CALLBACK_DATA Data,
+    _In_ PCFLT_RELATED_OBJECTS FltObjects,
+    _Inout_ PRECORD_LIST RecordList
 );
 
 
