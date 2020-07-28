@@ -211,6 +211,7 @@ Return Value:
                             V->FilterFlags.SaveToFile = TRUE;
                             V->FilterFlags.FlushToFile = FALSE;
                             V->RecordsMem.clear();
+                            continue;
                         }
                        
 

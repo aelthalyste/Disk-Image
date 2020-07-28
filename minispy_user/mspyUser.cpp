@@ -1401,17 +1401,19 @@ BOOLEAN
 ReadStream(volume_backup_inf* VolInf, void* Buffer, int TotalSize) {
     //TotalSize MUST be multiple of cluster size
     BOOLEAN Result = TRUE;
-
+    
     int ClustersToRead = TotalSize / VolInf->ClusterSize;
     int BufferOffset = 0;
     DWORD BytesOperated = 0;
     if (TotalSize == 0) {
+        printf("Passed totalsize as 0, terminating now\n");
         return TRUE;
     }
-
+    
     for (;;) {
 
         if (VolInf->Stream.RecIndex == VolInf->Stream.Records.Count) {
+            printf("End of records\n");
             Result = FALSE;
             break;
         }
@@ -1429,15 +1431,18 @@ ReadStream(volume_backup_inf* VolInf, void* Buffer, int TotalSize) {
         int CRemainingRegion = VolInf->Stream.Records.Data[VolInf->Stream.RecIndex].Len - VolInf->Stream.ClusterIndex;
 
         //Write offset from the buffer, so new data dont overlap with old one
-        void* BTemp = (BYTE*)Buffer + BufferOffset;
+        void* BTemp = (char*)Buffer + BufferOffset;
 
         if (ClustersToRead > CRemainingRegion) {
             //Read request exceeds current region
             DWORD RS = CRemainingRegion * VolInf->ClusterSize;
             if (!ReadFile(VolInf->Stream.Handle, BTemp, RS, &BytesOperated, 0) || BytesOperated != RS) {
+                printf("Readfile failed, read %i bytes instead of %i\n", BytesOperated, RS);
+                DisplayError(GetLastError());
                 Result = FALSE;
                 break;
             }
+
             BufferOffset += RS;
             ClustersToRead -= CRemainingRegion;
             VolInf->Stream.ClusterIndex = 0;
@@ -1601,7 +1606,7 @@ SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, DotNetStreamInf* SI) {
 
     if (ID < 0) {
         //If volume not found, try to add it
-        printf("Couldnt find volume %c in list, adding it for stream setup\n");
+        printf("Couldnt find volume %c in list, adding it for stream setup\n", L);
         AddVolumeToTrack(C, L, Type);
         ID = GetVolumeID(C, L);
         if (ID < 0) {
@@ -1613,8 +1618,12 @@ SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, DotNetStreamInf* SI) {
 
     volume_backup_inf* VolInf = &C->Volumes.Data[ID];
     VolInf->VSSPTR.Release();
+    VolInf->Stream.ClusterIndex = 0;
+    VolInf->Stream.RecIndex = 0;
+    VolInf->Stream.Records.Count = 0;
 
     if (SetupStreamHandle(VolInf)) {
+        
         printf("Setup stream handle successfully\n");
         if (!VolInf->FullBackupExists) {
             printf("Fullbackup stream is preparing\n");
@@ -1944,8 +1953,7 @@ SetDiffRecords(volume_backup_inf* V) {
         DWORD Temp = GetFileSize(F[i], 0);
 
         printf("Opened file %S, size %i\n", FName.c_str(), Temp);
-        Assert(Temp > 0, "File size can't be lower than zero\n");
-
+        
         TotalFileSize += Temp;
         FS[i] = Temp;
     }
@@ -2003,6 +2011,9 @@ SetDiffRecords(volume_backup_inf* V) {
     Result = TRUE;
 TERMINATE:
 
+
+    // dont free F[V->CurrentLogIndex] since it isnt created in that context, leave caller's resources to caller :]
+
     for (int i = 0; i <= V->CurrentLogIndex; i++) {
         CloseHandle(F[i]);
     }
@@ -2011,6 +2022,12 @@ TERMINATE:
     if (Result == TRUE && V->Stream.Records.Count) {
         qsort(V->Stream.Records.Data, V->Stream.Records.Count, sizeof(nar_record), CompareNarRecords);
         MergeRegions(&V->Stream.Records);
+        ULONGLONG Size = 0;
+        for (int i = 0; i < V->Stream.Records.Count; i++) {
+            Size += V->Stream.Records.Data[i].Len;
+        }
+        printf("TOTAL SIZE TO BE BACKED UP %I64d\n", Size * 4096LL);
+        printf("Records count %i, record index %i\n", V->Stream.Records.Count, V->Stream.RecIndex);
     }
 
     free(F);
@@ -3317,7 +3334,7 @@ RestoreVersionWithoutLoop(restore_inf R, BOOLEAN RestoreMFT, HANDLE Volume) {
     }
 
     if (CopyErrorsOccured) {
-        printf("%i errors occured during copy operation\n");
+        printf("%i errors occured during copy operation\n", CopyErrorsOccured);
     }
 
     if (RestoreMFT && BMEX->M.Version != NAR_FULLBACKUP_VERSION) {
@@ -3360,11 +3377,11 @@ RestoreVersionWithoutLoop(restore_inf R, BOOLEAN RestoreMFT, HANDLE Volume) {
                             NarSetFilePointer(Volume, (ULONGLONG)MFTLCN.Data[i].StartPos * (ULONGLONG)BMEX->M.ClusterSize);
 
                             if (WriteFile(Volume, Buffer, LEN, &BytesRead, 0) && BytesRead == LEN) {
-                                printf("Starting clusternumber %i\t", MFTLCN.Data[i].StartPos);
-                                printf("Zeroed from %I64d, with lenght %I64d\n", (ULONGLONG)MFTLCN.Data[i].StartPos * (ULONGLONG)BMEX->M.ClusterSize, LEN);
+                                //printf("Starting clusternumber %i\t", MFTLCN.Data[i].StartPos);
+                                //printf("Zeroed from %I64d, with lenght %I64d\n", (ULONGLONG)MFTLCN.Data[i].StartPos * (ULONGLONG)BMEX->M.ClusterSize, LEN);
                             }
                             else {
-                                printf("Couldnt zero specific MFT region, contiuning operation\n");
+                                //printf("Couldnt zero specific MFT region, contiuning operation\n");
                             }
 
                             free(Buffer);

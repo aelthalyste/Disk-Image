@@ -46,8 +46,7 @@ namespace DotNetTest
                 Console.WriteLine("Narbulut volume yedekleme servisi v0.1\n");
                 PrintCommands();
                 DiskTracker tracker = new DiskTracker();
-                string RootDir = "";
-
+                
                 
                 if (tracker.CW_InitTracker())
                 {
@@ -112,9 +111,9 @@ namespace DotNetTest
                                 Console.WriteLine("Cant setup stream\n");
                                 continue;
                             }
-                            Console.WriteLine(RootDir + streamInfo.FileName);
+                            Console.WriteLine(streamInfo.FileName);
 
-                            FileStream st = File.Create(RootDir + streamInfo.FileName);
+                            FileStream st = File.Create(streamInfo.FileName);
 
                             byte[] Buffer = new byte[BufferSize];
                             fixed (byte* BAddr = &Buffer[0])
@@ -144,15 +143,34 @@ namespace DotNetTest
                                 Console.WriteLine("Can't setup stream\n");
                                 continue;
                             }
-                            FileStream st = File.Create(RootDir + info.FileName);
+                            FileStream st = File.Create(info.FileName);
+                            Console.WriteLine(info.FileName);
 
                             byte[] buffer = new byte[BufferSize];
                             fixed (byte* BAdd = &buffer[0])
                             {
+                                long ReadSoFar = 0;
                                 while (tracker.CW_ReadStream(BAdd, BufferSize))
                                 {
                                     st.Write(buffer, 0, BufferSize);
+                                    ReadSoFar += BufferSize;
                                 }
+                                
+                                if (ReadSoFar != info.ClusterCount * info.ClusterSize) {
+                                    int ReadRemaining = (int)(info.ClusterCount * info.ClusterSize - ReadSoFar);
+                                    if (ReadRemaining <= BufferSize)
+                                    {
+                                        st.Write(buffer, 0, ReadRemaining);
+                                    }
+                                    else {
+                                        Console.WriteLine("DIOTBETERRIR");
+                                    }
+
+                                }
+
+                                Console.Write("Total read ");
+                                Console.WriteLine(ReadSoFar);
+
                                 tracker.CW_TerminateBackup(true);
                                 st.Close();
                             }
@@ -186,14 +204,14 @@ namespace DotNetTest
                                     int DiskID = System.Convert.ToInt32(Input[4]);
                                     Console.Write("DiskID => ");
                                     Console.WriteLine(DiskID);
-                                    if (!tracker.CW_RestoreToFreshDisk(TargetLetter, SrcLetter, version, DiskID, RootDir))
+                                    if (!tracker.CW_RestoreToFreshDisk(TargetLetter, SrcLetter, version, DiskID, ""))
                                     {
                                         Console.WriteLine("Couldn't restore\n");
                                     }
                                     continue;
                                 }
 
-                                if (tracker.CW_RestoreToVolume(TargetLetter, SrcLetter, version, true, RootDir))
+                                if (tracker.CW_RestoreToVolume(TargetLetter, SrcLetter, version, true, ""))
                                 {
                                     Console.Write("Restored!\n");
                                 }
