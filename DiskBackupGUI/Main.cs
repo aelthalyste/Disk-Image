@@ -19,9 +19,10 @@ namespace DiskBackupGUI
         public List<MyVolumeInformation> volumes;
         public DiskTracker diskTracker;
         public int type;
+        public string Path;
 
         public static Color activeColor = Color.FromArgb(37, 36, 81);
-        
+
         private Form currentChildForm;
         private Panel leftBorderBtn;
         private IconButton currentBtn;
@@ -195,32 +196,76 @@ namespace DiskBackupGUI
                     checkedColumn.Add(row);
                 }
             }
-            Task<List<DataGridViewRow>> task = IncrementalThread(checkedColumn,typeParam);
+            Task task = BackupThreadAsync(checkedColumn, typeParam);
         }
 
-        private async Task<List<DataGridViewRow>> IncrementalThread(List<DataGridViewRow> checkedColumn, int typeParam)
+        private async Task BackupThreadAsync(List<DataGridViewRow> checkedColumn, int typeParam)
         {
+            StreamInfo str = new StreamInfo();
             rtReport.Text = checkedColumn.Count.ToString() + " veri seçildi";
+            int bufferSize = 64 * 1024 * 1024;
+            byte[] buffer = new byte[bufferSize];
+            long readSoFar = 0;
+            bool result = false;
+            
             foreach (var item in checkedColumn)
             {
-                if (diskTracker.CW_AddToTrack((char)item.Cells["Letter"].Value, typeParam))
+                if (diskTracker.CW_SetupStream((char)item.Cells["Letter"].Value, typeParam, str))
                 {
-                    rtReport.Text += $"\n{item.Cells["Letter"].Value.ToString()} eklendi";
+                    rtReport.Text += $"\n{item.Cells["Letter"].Value.ToString()} Incremental eklendi";
+                    MessageBox.Show("Setup Done");
+                    unsafe
+                    {
+                        fixed (byte* BAddr = &buffer[0])
+                        {
+                            FileStream file = File.Create(Path + str.FileName); //kontrol etme işlemine bak
+                            while (diskTracker.CW_ReadStream(BAddr, bufferSize))
+                            {
+                                readSoFar += bufferSize;
+                                file.Write(buffer, 0, bufferSize);
+
+                                MessageBox.Show("Read Done");
+                            }
+                            if (readSoFar != str.ClusterCount * str.ClusterSize)
+                            {
+                                long ReadRemaining = (long)(str.ClusterCount * str.ClusterSize - readSoFar);
+                                if (ReadRemaining <= bufferSize)
+                                {
+                                    file.Write(buffer, 0, (int)ReadRemaining);
+                                    result = true;
+                                    MessageBox.Show("Check Done");
+                                }
+                                else
+                                {
+                                    MessageBox.Show("Error");
+                                    rtReport.Text = "Error";
+                                }
+                            }
+                            diskTracker.CW_TerminateBackup(result);
+                        }
+                    }
+                }
+                MessageBox.Show("Done");
+            }
+        }
+
+        private void btnDifferential_Click(object sender, EventArgs e)
+        {
+            int typeParam = 0;
+            List<DataGridViewRow> checkedColumn = new List<DataGridViewRow>();
+            foreach (DataGridViewRow row in dataGridView1.Rows)
+            {
+                if (Convert.ToBoolean(row.Cells["Checked"].Value) == true)
+                {
+                    checkedColumn.Add(row);
                 }
             }
-
-            await Task.Delay(3000);
-            PBMain.MaximumValue = 300;
-            for (int i = 0; i <= 300; i++)
-            {
-                PBMain.Value = i;
-            }
-            MessageBox.Show("Done");
-            return checkedColumn;
+            Task task = BackupThreadAsync(checkedColumn, typeParam);
         }
 
         private void btnCancel_Click(object sender, EventArgs e)
         {
+            //thread kapat
             PBMain.Value = 0;
             List<DataGridViewRow> checkedColumn = new List<DataGridViewRow>();
             foreach (DataGridViewRow row in dataGridView1.Rows)
@@ -237,6 +282,7 @@ namespace DiskBackupGUI
         private void btnPath_Click(object sender, EventArgs e)
         {
             folderBrowserDialog1.ShowDialog();
+            Path = folderBrowserDialog1.SelectedPath;
         }
 
         private void btnHome_Click(object sender, EventArgs e)
@@ -260,9 +306,6 @@ namespace DiskBackupGUI
             OpenChildForm(new FormRestore(this));
         }
 
-        private void btnDifferential_Click(object sender, EventArgs e)
-        {
 
-        }
     }
 }

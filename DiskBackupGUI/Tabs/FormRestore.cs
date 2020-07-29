@@ -15,11 +15,14 @@ namespace DiskBackupGUI.Tabs
     public partial class FormRestore : Form
     {
         Main myMain;
+        public DiskTracker diskTracker;
+        int chooseDiskOrVolume = 2;
 
         public FormRestore(Main main)
         {
             myMain = main;
             InitializeComponent();
+            diskTracker = new DiskTracker();
         }
 
         private void FormRestore_Load(object sender, EventArgs e)
@@ -31,12 +34,14 @@ namespace DiskBackupGUI.Tabs
 
         private void btnDisc_Click(object sender, EventArgs e)
         {
+            chooseDiskOrVolume = 1;
             DiskShow();
             myMain.RtReportWrite("Disk seçildi", false);
         }
 
         private void btnVolume_Click(object sender, EventArgs e)
         {
+            chooseDiskOrVolume = 0;
             myMain.RtReportWrite("Volume seçildi", false);
             VolumeShow();
         }
@@ -51,6 +56,7 @@ namespace DiskBackupGUI.Tabs
             dgwDisk.Visible = false;
             btnCancel.Visible = false;
             btnRestore.Visible = false;
+            chooseDiskOrVolume = 2;
         }
         public void VolumeShow()
         {
@@ -81,10 +87,19 @@ namespace DiskBackupGUI.Tabs
 
         private async void btnRestore_Click(object sender, EventArgs e)
         {
+            if (chooseDiskOrVolume == 1)
+            {
+                //Disk Thread
+            }
+            else if (chooseDiskOrVolume == 0)
+            {
+                //Volume Thread
+            }
             Task<string> task = MyMessage("asdasdasdasdasd");
             await Task.Delay(100);
             FirstShow();
             myMain.RtReportWrite("\nRestore İşlemi Başlatıldı", true);
+            //Volume disk ayrı thread
         }
 
         private void btnCancel_Click(object sender, EventArgs e)
