@@ -9,60 +9,151 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using DiskBackupGUI.Tabs;
+using FontAwesome.Sharp;
 using NarDIWrapper;
 namespace DiskBackupGUI
 {
     public partial class Main : Form
     {
-        MyMessageBox myMessageBox;
         public List<MyVolumeInformation> volumes;
         public DiskTracker diskTracker;
         public int type;
+
+        public static Color activeColor = Color.FromArgb(37, 36, 81);
+        
+        private Form currentChildForm;
+        private Panel leftBorderBtn;
+        private IconButton currentBtn;
+
         public class MyVolumeInformation
         {
             public bool Checked { get; set; }
             public long Size { get; set; }
             public char Letter { get; set; }
             public int DiskID { get; set; }
-            public char DiskType { get; set; }
+            public string DiskType { get; set; }
             public byte Bootable { get; set; }
         }
+
+        private void OpenChildForm(Form childForm)
+        {
+            //open only form
+            if (currentChildForm != null)
+            {
+                currentChildForm.Close();
+            }
+            currentChildForm = childForm;
+            //End
+            childForm.TopLevel = false;
+            childForm.FormBorderStyle = FormBorderStyle.None;
+            childForm.Dock = DockStyle.Fill;
+            panelMain.Controls.Add(childForm);
+            panelMain.Tag = childForm;
+            childForm.BringToFront();
+            childForm.Show();
+        }
+
+        public void RtReportWrite(string myText, bool add)
+        {
+            if (add == true)
+            {
+                rtReport.Text += myText;
+            }
+            else
+            {
+                rtReport.Text = myText;
+            }
+        }
+
+        private void ActiveButton(object senderBtn, Color color)
+        {
+            if (senderBtn != null)
+            {
+                DisableButton();
+                //Button
+                currentBtn = (IconButton)senderBtn;
+                currentBtn.BackColor = Color.FromArgb(0, 150, 199);
+                currentBtn.ForeColor = color;
+                currentBtn.TextAlign = ContentAlignment.MiddleCenter;
+                currentBtn.IconColor = color;
+                currentBtn.TextImageRelation = TextImageRelation.TextBeforeImage;
+                currentBtn.ImageAlign = ContentAlignment.MiddleRight;
+                //Left Border Button
+                leftBorderBtn.BackColor = color;
+                leftBorderBtn.Location = new Point(0, currentBtn.Location.Y);
+                leftBorderBtn.Visible = true;
+                leftBorderBtn.BringToFront();
+            }
+        }
+
+        private void DisableButton()
+        {
+            if (currentBtn != null)
+            {
+                currentBtn.BackColor = Color.FromArgb(2, 62, 138);
+                currentBtn.ForeColor = Color.Gainsboro;
+                currentBtn.TextAlign = ContentAlignment.MiddleLeft;
+                currentBtn.IconColor = Color.Gainsboro;
+                currentBtn.TextImageRelation = TextImageRelation.ImageBeforeText;
+                currentBtn.ImageAlign = ContentAlignment.MiddleCenter;
+            }
+        }
+
         public Main()
         {
             InitializeComponent();
             diskTracker = new DiskTracker();
             volumes = new List<MyVolumeInformation>();
 
+            leftBorderBtn = new Panel();
+            leftBorderBtn.Size = new Size(7, 60);
+            panelMenu.Controls.Add(leftBorderBtn);
+
             foreach (var item in diskTracker.CW_GetVolumes())
             {
-                volumes.Add(new MyVolumeInformation()
+                if (item.DiskType == 'R')
                 {
-                    Checked = false,
-                    Bootable = item.Bootable,
-                    DiskID = item.DiskID,
-                    DiskType = (char)item.DiskType,
-                    Letter = (char)item.Letter,
-                    Size = (long)item.Size
-                });
+                    volumes.Add(new MyVolumeInformation()
+                    {
+                        Checked = false,
+                        Bootable = item.Bootable,
+                        DiskID = item.DiskID,
+                        Letter = (char)item.Letter,
+                        Size = (long)item.Size,
+                        DiskType = "RAW",
+                    });
+                }
+                else if (item.DiskType == 'M')
+                {
+                    volumes.Add(new MyVolumeInformation()
+                    {
+                        Checked = false,
+                        Bootable = item.Bootable,
+                        DiskID = item.DiskID,
+                        Letter = (char)item.Letter,
+                        Size = (long)item.Size,
+                        DiskType = "MBR",
+                    });
+                }
+                else if (item.DiskType == 'G')
+                {
+                    volumes.Add(new MyVolumeInformation()
+                    {
+                        Checked = false,
+                        Bootable = item.Bootable,
+                        DiskID = item.DiskID,
+                        Letter = (char)item.Letter,
+                        Size = (long)item.Size,
+                        DiskType = "GPT"
+                    });
+                }
             }
             dataGridView1.DataSource = volumes;
             dataGridView1.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
         }
 
-        private void btnAdd_Click(object sender, EventArgs e)
-        {
-        }
-
-        private void btnPath_Click(object sender, EventArgs e)
-        {
-        }
-
-        private void Form1_Load(object sender, EventArgs e)
-        {
-
-        }
-
-        //panelden formu hareket ettirmek için : 
+        //panelden formu hareket ettirmek için: 
         [DllImport("user32.DLL", EntryPoint = "ReleaseCapture")]
         private extern static void ReleaseCapture();
         [DllImport("user32.DLL", EntryPoint = "SendMessage")]
@@ -93,7 +184,7 @@ namespace DiskBackupGUI
             WindowState = FormWindowState.Minimized;
         }
 
-        private void btnIncremental_Click(object sender, EventArgs e)
+        private async void btnIncremental_Click(object sender, EventArgs e)
         {
             int typeParam = 1;
             List<DataGridViewRow> checkedColumn = new List<DataGridViewRow>();
@@ -104,8 +195,12 @@ namespace DiskBackupGUI
                     checkedColumn.Add(row);
                 }
             }
-            rtReport.Text = checkedColumn.Count.ToString() + " veri seçildi";
+            Task<List<DataGridViewRow>> task = IncrementalThread(checkedColumn,typeParam);
+        }
 
+        private async Task<List<DataGridViewRow>> IncrementalThread(List<DataGridViewRow> checkedColumn, int typeParam)
+        {
+            rtReport.Text = checkedColumn.Count.ToString() + " veri seçildi";
             foreach (var item in checkedColumn)
             {
                 if (diskTracker.CW_AddToTrack((char)item.Cells["Letter"].Value, typeParam))
@@ -113,6 +208,61 @@ namespace DiskBackupGUI
                     rtReport.Text += $"\n{item.Cells["Letter"].Value.ToString()} eklendi";
                 }
             }
+
+            await Task.Delay(3000);
+            PBMain.MaximumValue = 300;
+            for (int i = 0; i <= 300; i++)
+            {
+                PBMain.Value = i;
+            }
+            MessageBox.Show("Done");
+            return checkedColumn;
+        }
+
+        private void btnCancel_Click(object sender, EventArgs e)
+        {
+            PBMain.Value = 0;
+            List<DataGridViewRow> checkedColumn = new List<DataGridViewRow>();
+            foreach (DataGridViewRow row in dataGridView1.Rows)
+            {
+                if (Convert.ToBoolean(row.Cells["Checked"].Value) == true)
+                {
+                    Convert.ToBoolean(row.Cells["Checked"].Value = false);
+                    checkedColumn.Add(row);
+                }
+            }
+            rtReport.Text = "Şeçili satırlar kaldırıldı";
+        }
+
+        private void btnPath_Click(object sender, EventArgs e)
+        {
+            folderBrowserDialog1.ShowDialog();
+        }
+
+        private void btnHome_Click(object sender, EventArgs e)
+        {
+            if (currentChildForm != null)
+            {
+                currentChildForm.Close();
+            }
+            DisableButton();
+        }
+
+        private void btnAdd_Click(object sender, EventArgs e)
+        {
+            ActiveButton(sender, activeColor);
+            OpenChildForm(new FormAdd());
+        }
+
+        private void btnRestore_Click(object sender, EventArgs e)
+        {
+            ActiveButton(sender, activeColor);
+            OpenChildForm(new FormRestore(this));
+        }
+
+        private void btnDifferential_Click(object sender, EventArgs e)
+        {
+
         }
     }
 }
