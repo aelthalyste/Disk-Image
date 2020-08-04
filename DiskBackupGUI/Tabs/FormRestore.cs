@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using DiskBackupGUI.Tabs.RestoreTabs;
 using NarDIWrapper;
 
 namespace DiskBackupGUI.Tabs
@@ -16,107 +17,67 @@ namespace DiskBackupGUI.Tabs
     {
         Main myMain;
         public DiskTracker diskTracker;
-        int chooseDiskOrVolume = 2;
+        public int chooseDiskOrVolume = 2;
+        private Form currentChildForm;
+        public List<DataGridViewCell> viewCells;
 
         public FormRestore(Main main)
         {
             myMain = main;
             InitializeComponent();
             diskTracker = new DiskTracker();
+            
         }
 
-        private void FormRestore_Load(object sender, EventArgs e)
+        private void OpenChildForm(Form childForm)
         {
-            FirstShow();
-            dgwVolume.DataSource = myMain.volumes;
-            dgwVolume.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
+            //open only form
+            if (currentChildForm != null)
+            {
+                currentChildForm.Close();
+            }
+            currentChildForm = childForm;
+            //End
+            childForm.TopLevel = false;
+            childForm.FormBorderStyle = FormBorderStyle.None;
+            childForm.Dock = DockStyle.Fill;
+            panelMain.Controls.Add(childForm);
+            panelMain.Tag = childForm;
+            childForm.BringToFront();
+            childForm.Show();
         }
 
         private void btnDisc_Click(object sender, EventArgs e)
         {
-            chooseDiskOrVolume = 1;
-            DiskShow();
-            myMain.RtReportWrite("Disk seçildi", false);
+            //myMain.RtReportWrite("Disk seçildi", false);
+            //List<DataGridViewRow> checkedDgvVolume = new List<DataGridViewRow>();
+            //foreach (DataGridViewRow row in dgwRestore.Rows)
+            //{
+            //    if (Convert.ToBoolean(row.Cells["Checked"].Value) == true)
+            //    {
+            //        checkedDgvVolume.Add(row);
+            //    }
+            //}
+            OpenChildForm(new RestoreDisk(myMain));
         }
 
         private void btnVolume_Click(object sender, EventArgs e)
         {
-            chooseDiskOrVolume = 0;
-            myMain.RtReportWrite("Volume seçildi", false);
-            VolumeShow();
-        }
-        public void FirstShow()
-        {
-            btnVolume.Visible = true;
-            btnDisc.Visible = true;
-            dgwRestore.Visible = true;
-            btnDisc.BringToFront();
-            btnVolume.BringToFront();
-            dgwVolume.Visible = false;
-            dgwDisk.Visible = false;
-            btnCancel.Visible = false;
-            btnRestore.Visible = false;
-            chooseDiskOrVolume = 2;
-        }
-        public void VolumeShow()
-        {
-            btnVolume.Visible = false;
-            dgwRestore.Visible = false;
-            btnDisc.Visible = false;
-            dgwVolume.Visible = true;
-            btnCancel.Visible = true;
-            btnRestore.Visible = true;
-        }
-        public void DiskShow()
-        {
-            btnVolume.Visible = false;
-            btnDisc.Visible = false;
-            dgwRestore.Visible = false;
-            dgwVolume.Visible = false;
-            dgwDisk.Visible = true;
-            btnCancel.Visible = true;
-            btnRestore.Visible = true;
+            //myMain.RtReportWrite("Volume seçildi", false);
+            //List<DataGridViewRow> checkedDgvVolume = new List<DataGridViewRow>();
+            //foreach (DataGridViewRow row in dgwRestore.Rows)
+            //{
+            //    if (Convert.ToBoolean(row.Cells["Checked"].Value) == true)
+            //    {
+            //        checkedDgvVolume.Add(row);
+            //    }
+            //}
+            OpenChildForm(new RestoreVolume(myMain));
         }
 
-        static async Task<string> MyMessage(string denemeMessage)
+        private void dgwRestore_CellClick(object sender, DataGridViewCellEventArgs e)
         {
-            await Task.Delay(5000);
-            MessageBox.Show(denemeMessage);
-            return null;
-        }
 
-        private async void btnRestore_Click(object sender, EventArgs e)
-        {
-            if (chooseDiskOrVolume == 1)
-            {
-                //Disk Thread
-            }
-            else if (chooseDiskOrVolume == 0)
-            {
-                //Volume Thread
-            }
-            Task<string> task = MyMessage("asdasdasdasdasd");
-            await Task.Delay(100);
-            FirstShow();
-            myMain.RtReportWrite("\nRestore İşlemi Başlatıldı", true);
-            //Volume disk ayrı thread
-        }
-
-        private void btnCancel_Click(object sender, EventArgs e)
-        {
-            FirstShow();
-            myMain.RtReportWrite("İşlem İptal Edildi", false);
-        }
-
-        private void dgwVolume_CellClick(object sender, DataGridViewCellEventArgs e)
-        {
-            var size = dgwVolume.Rows[dgwVolume.CurrentRow.Index].Cells["Size"].Value;
-            var letter = dgwVolume.Rows[dgwVolume.CurrentRow.Index].Cells["Letter"].Value;
-            var diskId = dgwVolume.Rows[dgwVolume.CurrentRow.Index].Cells["DiskId"].Value;
-            var diskType = dgwVolume.Rows[dgwVolume.CurrentRow.Index].Cells["DiskType"].Value;
-            var bootable = dgwVolume.Rows[dgwVolume.CurrentRow.Index].Cells["Bootable"].Value;
-            myMain.RtReportWrite("Size : " + size.ToString() + "\nLetter : " + letter.ToString() + "\nDiskId : " + diskId.ToString() + "\nDiskType : " + diskType.ToString() + "\nBootable : " + bootable.ToString(), false);
-           
         }
     }
 }

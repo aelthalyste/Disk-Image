@@ -37,6 +37,63 @@ namespace DiskBackupGUI
             public byte Bootable { get; set; }
         }
 
+        private void Main_Load(object sender, EventArgs e)
+        {
+        }
+
+        public Main()
+        {
+            InitializeComponent();
+            diskTracker = new DiskTracker();
+            volumes = new List<MyVolumeInformation>();
+
+            leftBorderBtn = new Panel();
+            leftBorderBtn.Size = new Size(7, 60);
+            panelMenu.Controls.Add(leftBorderBtn);
+
+            foreach (var item in diskTracker.CW_GetVolumes())
+            {
+                if (item.DiskType == 'R')
+                {
+                    volumes.Add(new MyVolumeInformation()
+                    {
+                        Checked = false,
+                        Bootable = item.Bootable,
+                        DiskID = item.DiskID,
+                        Letter = (char)item.Letter,
+                        Size = (long)item.Size,
+                        DiskType = "RAW",
+                    });
+                }
+                else if (item.DiskType == 'M')
+                {
+                    volumes.Add(new MyVolumeInformation()
+                    {
+                        Checked = false,
+                        Bootable = item.Bootable,
+                        DiskID = item.DiskID,
+                        Letter = (char)item.Letter,
+                        Size = (long)item.Size,
+                        DiskType = "MBR",
+                    });
+                }
+                else if (item.DiskType == 'G')
+                {
+                    volumes.Add(new MyVolumeInformation()
+                    {
+                        Checked = false,
+                        Bootable = item.Bootable,
+                        DiskID = item.DiskID,
+                        Letter = (char)item.Letter,
+                        Size = (long)item.Size,
+                        DiskType = "GPT"
+                    });
+                }
+            }
+            dataGridView1.DataSource = volumes;
+            dataGridView1.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
+        }
+
         private void OpenChildForm(Form childForm)
         {
             //open only form
@@ -101,104 +158,6 @@ namespace DiskBackupGUI
             }
         }
 
-        public Main()
-        {
-            InitializeComponent();
-            diskTracker = new DiskTracker();
-            volumes = new List<MyVolumeInformation>();
-
-            leftBorderBtn = new Panel();
-            leftBorderBtn.Size = new Size(7, 60);
-            panelMenu.Controls.Add(leftBorderBtn);
-
-            foreach (var item in diskTracker.CW_GetVolumes())
-            {
-                if (item.DiskType == 'R')
-                {
-                    volumes.Add(new MyVolumeInformation()
-                    {
-                        Checked = false,
-                        Bootable = item.Bootable,
-                        DiskID = item.DiskID,
-                        Letter = (char)item.Letter,
-                        Size = (long)item.Size,
-                        DiskType = "RAW",
-                    });
-                }
-                else if (item.DiskType == 'M')
-                {
-                    volumes.Add(new MyVolumeInformation()
-                    {
-                        Checked = false,
-                        Bootable = item.Bootable,
-                        DiskID = item.DiskID,
-                        Letter = (char)item.Letter,
-                        Size = (long)item.Size,
-                        DiskType = "MBR",
-                    });
-                }
-                else if (item.DiskType == 'G')
-                {
-                    volumes.Add(new MyVolumeInformation()
-                    {
-                        Checked = false,
-                        Bootable = item.Bootable,
-                        DiskID = item.DiskID,
-                        Letter = (char)item.Letter,
-                        Size = (long)item.Size,
-                        DiskType = "GPT"
-                    });
-                }
-            }
-            dataGridView1.DataSource = volumes;
-            dataGridView1.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
-        }
-
-        //panelden formu hareket ettirmek için: 
-        [DllImport("user32.DLL", EntryPoint = "ReleaseCapture")]
-        private extern static void ReleaseCapture();
-        [DllImport("user32.DLL", EntryPoint = "SendMessage")]
-        private extern static void SendMessage(System.IntPtr hWnd, int wMsg, int wParam, int lParam);
-        private void panel4_MouseDown(object sender, MouseEventArgs e)
-        {
-            ReleaseCapture();
-            SendMessage(this.Handle, 0x112, 0xf012, 0);
-        }
-
-        private void dataGridView1_CellClick(object sender, DataGridViewCellEventArgs e)
-        {
-            var a = dataGridView1.Rows[dataGridView1.CurrentRow.Index].Cells["Size"].Value;
-            var b = dataGridView1.Rows[dataGridView1.CurrentRow.Index].Cells["Letter"].Value;
-            var c = dataGridView1.Rows[dataGridView1.CurrentRow.Index].Cells["DiskId"].Value;
-            var d = dataGridView1.Rows[dataGridView1.CurrentRow.Index].Cells["DiskType"].Value;
-            var f = dataGridView1.Rows[dataGridView1.CurrentRow.Index].Cells["Bootable"].Value;
-            rtReport.Text = "Size : " + a.ToString() + "\nLetter : " + b.ToString() + "\nDiskId : " + c.ToString() + "\nDiskType : " + d.ToString() + "\nBootable : " + f.ToString();
-        }
-
-        private void btnExit_Click(object sender, EventArgs e)
-        {
-            Application.Exit();
-        }
-
-        private void btnMinimize_Click(object sender, EventArgs e)
-        {
-            WindowState = FormWindowState.Minimized;
-        }
-
-        private async void btnIncremental_Click(object sender, EventArgs e)
-        {
-            int typeParam = 1;
-            List<DataGridViewRow> checkedColumn = new List<DataGridViewRow>();
-            foreach (DataGridViewRow row in dataGridView1.Rows)
-            {
-                if (Convert.ToBoolean(row.Cells["Checked"].Value) == true)
-                {
-                    checkedColumn.Add(row);
-                }
-            }
-            Task task = BackupThreadAsync(checkedColumn, typeParam);
-        }
-
         private async Task BackupThreadAsync(List<DataGridViewRow> checkedColumn, int typeParam)
         {
             StreamInfo str = new StreamInfo();
@@ -249,9 +208,32 @@ namespace DiskBackupGUI
             }
         }
 
+        private void dataGridView1_CellClick(object sender, DataGridViewCellEventArgs e)
+        {
+            RtReportWrite("Size : " + dataGridView1.Rows[dataGridView1.CurrentRow.Index].Cells["Size"].Value.ToString()
+                       + "\nLetter : " + dataGridView1.Rows[dataGridView1.CurrentRow.Index].Cells["Letter"].Value.ToString()
+                       + "\nDiskId : " + dataGridView1.Rows[dataGridView1.CurrentRow.Index].Cells["DiskId"].Value.ToString()
+                       + "\nDiskType : " + dataGridView1.Rows[dataGridView1.CurrentRow.Index].Cells["DiskType"].Value.ToString()
+                       + "\nBootable : " + dataGridView1.Rows[dataGridView1.CurrentRow.Index].Cells["Bootable"].Value.ToString(), false);
+        }
+
         private void btnDifferential_Click(object sender, EventArgs e)
         {
             int typeParam = 0;
+            List<DataGridViewRow> checkedColumn = new List<DataGridViewRow>();
+            foreach (DataGridViewRow row in dataGridView1.Rows)
+            {
+                if (Convert.ToBoolean(row.Cells["Checked"].Value) == true)
+                {
+                    checkedColumn.Add(row);
+                }
+            }
+            Task task = BackupThreadAsync(checkedColumn, typeParam);
+        }
+
+        private void btnIncremental_Click(object sender, EventArgs e)
+        {
+            int typeParam = 1;
             List<DataGridViewRow> checkedColumn = new List<DataGridViewRow>();
             foreach (DataGridViewRow row in dataGridView1.Rows)
             {
@@ -306,6 +288,25 @@ namespace DiskBackupGUI
             OpenChildForm(new FormRestore(this));
         }
 
+        private void btnExit_Click(object sender, EventArgs e)
+        {
+            Application.Exit();
+        }
 
+        private void btnMinimize_Click(object sender, EventArgs e)
+        {
+            WindowState = FormWindowState.Minimized;
+        }
+
+        //panelden formu hareket ettirmek için: 
+        [DllImport("user32.DLL", EntryPoint = "ReleaseCapture")]
+        private extern static void ReleaseCapture();
+        [DllImport("user32.DLL", EntryPoint = "SendMessage")]
+        private extern static void SendMessage(System.IntPtr hWnd, int wMsg, int wParam, int lParam);
+        private void panel4_MouseDown(object sender, MouseEventArgs e)
+        {
+            ReleaseCapture();
+            SendMessage(this.Handle, 0x112, 0xf012, 0);
+        }
     }
 }

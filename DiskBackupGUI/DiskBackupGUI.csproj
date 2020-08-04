@@ -90,6 +90,18 @@
     <Compile Include="Tabs\FormRestore.Designer.cs">
       <DependentUpon>FormRestore.cs</DependentUpon>
     </Compile>
+    <Compile Include="Tabs\RestoreTabs\RestoreDisk.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Tabs\RestoreTabs\RestoreDisk.Designer.cs">
+      <DependentUpon>RestoreDisk.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Tabs\RestoreTabs\RestoreVolume.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Tabs\RestoreTabs\RestoreVolume.Designer.cs">
+      <DependentUpon>RestoreVolume.cs</DependentUpon>
+    </Compile>
     <EmbeddedResource Include="Main.resx">
       <DependentUpon>Main.cs</DependentUpon>
     </EmbeddedResource>
@@ -114,6 +126,12 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Tabs\FormRestore.resx">
       <DependentUpon>FormRestore.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Tabs\RestoreTabs\RestoreDisk.resx">
+      <DependentUpon>RestoreDisk.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Tabs\RestoreTabs\RestoreVolume.resx">
+      <DependentUpon>RestoreVolume.cs</DependentUpon>
     </EmbeddedResource>
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">

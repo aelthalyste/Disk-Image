@@ -64,7 +64,7 @@
             // dataGridView1
             // 
             this.dataGridView1.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            this.dataGridView1.Location = new System.Drawing.Point(30, 25);
+            this.dataGridView1.Location = new System.Drawing.Point(61, 25);
             this.dataGridView1.Name = "dataGridView1";
             this.dataGridView1.Size = new System.Drawing.Size(904, 166);
             this.dataGridView1.TabIndex = 10;
@@ -171,10 +171,10 @@
             this.btnPath.IconChar = FontAwesome.Sharp.IconChar.WindowRestore;
             this.btnPath.IconColor = System.Drawing.Color.FromArgb(((int)(((byte)(2)))), ((int)(((byte)(62)))), ((int)(((byte)(138)))));
             this.btnPath.IconSize = 32;
-            this.btnPath.Location = new System.Drawing.Point(811, 189);
+            this.btnPath.Location = new System.Drawing.Point(534, 197);
             this.btnPath.Name = "btnPath";
             this.btnPath.Rotation = 0D;
-            this.btnPath.Size = new System.Drawing.Size(123, 77);
+            this.btnPath.Size = new System.Drawing.Size(176, 60);
             this.btnPath.TabIndex = 25;
             this.btnPath.Text = " Path";
             this.btnPath.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
@@ -247,7 +247,7 @@
             // 
             this.PBMain.BackColor = System.Drawing.Color.Silver;
             this.PBMain.BorderRadius = 5;
-            this.PBMain.Location = new System.Drawing.Point(30, 6);
+            this.PBMain.Location = new System.Drawing.Point(61, 6);
             this.PBMain.MaximumValue = 100;
             this.PBMain.Name = "PBMain";
             this.PBMain.ProgressColor = System.Drawing.Color.Blue;
@@ -274,10 +274,10 @@
             this.btnCancel.IconChar = FontAwesome.Sharp.IconChar.Ban;
             this.btnCancel.IconColor = System.Drawing.Color.FromArgb(((int)(((byte)(2)))), ((int)(((byte)(62)))), ((int)(((byte)(138)))));
             this.btnCancel.IconSize = 32;
-            this.btnCancel.Location = new System.Drawing.Point(320, 199);
+            this.btnCancel.Location = new System.Drawing.Point(306, 197);
             this.btnCancel.Name = "btnCancel";
             this.btnCancel.Rotation = 0D;
-            this.btnCancel.Size = new System.Drawing.Size(151, 60);
+            this.btnCancel.Size = new System.Drawing.Size(176, 60);
             this.btnCancel.TabIndex = 23;
             this.btnCancel.Text = "Cancel";
             this.btnCancel.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
@@ -296,7 +296,7 @@
             this.btnDifferential.IconColor = System.Drawing.Color.FromArgb(((int)(((byte)(2)))), ((int)(((byte)(62)))), ((int)(((byte)(138)))));
             this.btnDifferential.IconSize = 32;
             this.btnDifferential.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            this.btnDifferential.Location = new System.Drawing.Point(565, 197);
+            this.btnDifferential.Location = new System.Drawing.Point(789, 197);
             this.btnDifferential.Name = "btnDifferential";
             this.btnDifferential.Padding = new System.Windows.Forms.Padding(10, 0, 20, 0);
             this.btnDifferential.Rotation = 0D;
@@ -320,7 +320,7 @@
             this.btnIncremental.IconColor = System.Drawing.Color.FromArgb(((int)(((byte)(2)))), ((int)(((byte)(62)))), ((int)(((byte)(138)))));
             this.btnIncremental.IconSize = 32;
             this.btnIncremental.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            this.btnIncremental.Location = new System.Drawing.Point(30, 197);
+            this.btnIncremental.Location = new System.Drawing.Point(61, 197);
             this.btnIncremental.Name = "btnIncremental";
             this.btnIncremental.Padding = new System.Windows.Forms.Padding(10, 0, 20, 0);
             this.btnIncremental.Rotation = 0D;
@@ -351,6 +351,7 @@
             this.Opacity = 0.93D;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Form1";
+            this.Load += new System.EventHandler(this.Main_Load);
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).EndInit();
             this.panelMenu.ResumeLayout(false);
             this.panelPictures.ResumeLayout(false);
