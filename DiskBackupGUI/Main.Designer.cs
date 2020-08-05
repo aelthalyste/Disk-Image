@@ -83,6 +83,7 @@
             this.rtReport.Size = new System.Drawing.Size(1054, 156);
             this.rtReport.TabIndex = 0;
             this.rtReport.Text = "";
+            this.rtReport.MouseDown += new System.Windows.Forms.MouseEventHandler(this.rtReport_MouseDown);
             // 
             // panelMenu
             // 
@@ -95,6 +96,7 @@
             this.panelMenu.Name = "panelMenu";
             this.panelMenu.Size = new System.Drawing.Size(151, 504);
             this.panelMenu.TabIndex = 23;
+            this.panelMenu.MouseDown += new System.Windows.Forms.MouseEventHandler(this.panelMenu_MouseDown);
             // 
             // btnRestore
             // 

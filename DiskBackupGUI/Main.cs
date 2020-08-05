@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
@@ -12,6 +13,9 @@ using System.Windows.Forms;
 using DiskBackupGUI.Tabs;
 using FontAwesome.Sharp;
 using NarDIWrapper;
+using Quartz;
+using Quartz.Impl;
+
 namespace DiskBackupGUI
 {
     public partial class Main : Form
@@ -19,13 +23,26 @@ namespace DiskBackupGUI
         public List<MyVolumeInformation> volumes;
         public DiskTracker diskTracker;
         public int type;
-        public string Path;
+        public string path;
+        public static Main Instance { get; private set; }
 
         public static Color activeColor = Color.FromArgb(37, 36, 81);
 
         private Form currentChildForm;
         private Panel leftBorderBtn;
         private IconButton currentBtn;
+        private IScheduler scheduler;
+
+        public async Task InitSheduler()
+        {
+            NameValueCollection props = new NameValueCollection
+                {
+                    { "quartz.serializer.type", "binary" }
+                };
+            StdSchedulerFactory factory = new StdSchedulerFactory(props);
+            scheduler = await factory.GetScheduler();
+            await scheduler.Start();
+        }
 
         public class MyVolumeInformation
         {
@@ -39,6 +56,7 @@ namespace DiskBackupGUI
 
         private void Main_Load(object sender, EventArgs e)
         {
+
         }
 
         public Main()
@@ -92,6 +110,7 @@ namespace DiskBackupGUI
             }
             dataGridView1.DataSource = volumes;
             dataGridView1.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
+            Instance = this;
         }
 
         private void OpenChildForm(Form childForm)
@@ -158,7 +177,7 @@ namespace DiskBackupGUI
             }
         }
 
-        private async Task BackupThreadAsync(List<DataGridViewRow> checkedColumn, int typeParam)
+        public async Task BackupThreadAsync(List<DataGridViewRow> checkedColumn, int typeParam)
         {
             StreamInfo str = new StreamInfo();
             rtReport.Text = checkedColumn.Count.ToString() + " veri seçildi";
@@ -177,7 +196,7 @@ namespace DiskBackupGUI
                     {
                         fixed (byte* BAddr = &buffer[0])
                         {
-                            FileStream file = File.Create(Path + str.FileName); //kontrol etme işlemine bak
+                            FileStream file = File.Create(path + str.FileName); //kontrol etme işlemine bak
                             while (diskTracker.CW_ReadStream(BAddr, bufferSize))
                             {
                                 readSoFar += bufferSize;
@@ -210,6 +229,7 @@ namespace DiskBackupGUI
 
         private void dataGridView1_CellClick(object sender, DataGridViewCellEventArgs e)
         {
+            //rtReport textbox'una seçili row bilgilerini yazar
             RtReportWrite("Size : " + dataGridView1.Rows[dataGridView1.CurrentRow.Index].Cells["Size"].Value.ToString()
                        + "\nLetter : " + dataGridView1.Rows[dataGridView1.CurrentRow.Index].Cells["Letter"].Value.ToString()
                        + "\nDiskId : " + dataGridView1.Rows[dataGridView1.CurrentRow.Index].Cells["DiskId"].Value.ToString()
@@ -228,6 +248,8 @@ namespace DiskBackupGUI
                     checkedColumn.Add(row);
                 }
             }
+            MyMessageBox myMessageBox = new MyMessageBox();
+            myMessageBox.Show();
             Task task = BackupThreadAsync(checkedColumn, typeParam);
         }
 
@@ -242,6 +264,9 @@ namespace DiskBackupGUI
                     checkedColumn.Add(row);
                 }
             }
+            MyMessageBox myMessageBox = new MyMessageBox();
+            myMessageBox.Show();
+
             Task task = BackupThreadAsync(checkedColumn, typeParam);
         }
 
@@ -264,7 +289,7 @@ namespace DiskBackupGUI
         private void btnPath_Click(object sender, EventArgs e)
         {
             folderBrowserDialog1.ShowDialog();
-            Path = folderBrowserDialog1.SelectedPath;
+            path = folderBrowserDialog1.SelectedPath;
         }
 
         private void btnHome_Click(object sender, EventArgs e)
@@ -293,20 +318,40 @@ namespace DiskBackupGUI
             Application.Exit();
         }
 
+        //formu minimize hale getirip görev çubuğu simgesine dönmesini sağlayan kısım
         private void btnMinimize_Click(object sender, EventArgs e)
         {
             WindowState = FormWindowState.Minimized;
         }
+
+        #region Form Hareket
 
         //panelden formu hareket ettirmek için: 
         [DllImport("user32.DLL", EntryPoint = "ReleaseCapture")]
         private extern static void ReleaseCapture();
         [DllImport("user32.DLL", EntryPoint = "SendMessage")]
         private extern static void SendMessage(System.IntPtr hWnd, int wMsg, int wParam, int lParam);
+        
+        //formun üst kısmındaki panelden formu hareket ettirmek için
         private void panel4_MouseDown(object sender, MouseEventArgs e)
         {
             ReleaseCapture();
             SendMessage(this.Handle, 0x112, 0xf012, 0);
         }
+
+        //formun altındaki textbox'tan formu hareket ettirmek için
+        private void rtReport_MouseDown(object sender, MouseEventArgs e)
+        {
+            ReleaseCapture();
+            SendMessage(this.Handle, 0x112, 0xf012, 0);
+        }
+
+        //sol menüden formu hareket ettirmek için
+        private void panelMenu_MouseDown(object sender, MouseEventArgs e)
+        {
+            ReleaseCapture();
+            SendMessage(this.Handle, 0x112, 0xf012, 0);
+        }
+        #endregion
     }
 }
