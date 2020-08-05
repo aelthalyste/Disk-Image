@@ -122,7 +122,6 @@ RecordEqual(nar_record* N1, nar_record* N2) {
 #define NAR_INVALID_VOLUME_TRACK_ID -1
 #define NAR_INVALID_DISK_ID -1
 #define NAR_INVALID_ENTRY -1
-#define NAR_INVALID_VOLUME_LETTER 63
 
 typedef char NARDP;
 #define NAR_DISKTYPE_GPT 'G'

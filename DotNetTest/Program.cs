@@ -114,7 +114,7 @@ namespace DotNetTest
                             Console.WriteLine(streamInfo.FileName);
 
                             FileStream st = File.Create(streamInfo.FileName);
-
+                            
                             byte[] Buffer = new byte[BufferSize];
                             fixed (byte* BAddr = &Buffer[0])
                             {

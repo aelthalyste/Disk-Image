@@ -28,6 +28,7 @@ struct data_array {
   }
 
 };
+
 #define NAR_DISKTYPE_GPT 'G'
 #define NAR_DISKTYPE_MBR 'M'
 #define NAR_DISKTYPE_RAW 'R'
@@ -1014,12 +1015,88 @@ ConnectDriver() {
   return Result;
 }
 
+
+#pragma pack(push ,1) // force 1 byte alignment
+
+// FA = FILE_ATTRIBUTE
+
+#define NAR_FA_STANDART_INFORMATION    0x10
+#define NAR_FA_ATTRIBUTE_LIST          0x20
+#define NAR_FA_FILE_NAME               0x30
+#define NAR_FA_OBJECT_ID               0x40
+#define NAR_FA_SECURITY_DESCRIPTOR     0x50
+#define NAR_FA_VOLUME_NAME             0x60
+#define NAR_FA_VOLUME_INFORMATION      0x70
+#define NAR_FA_DATA                    0x80
+#define NAR_FA_INDEX_ROOT              0x90
+#define NAR_FA_INDEX_ALLOCATION        0xA0
+#define NAR_FA_BITMAP                  0xB0
+#define NAR_FA_REPARSE_POINT           0xC0
+#define NAR_FA_EA_INFORMATION          0xD0
+#define NAR_FA_EA                      0xE0
+#define NAR_FA_LOGGED_UTILITY_STREAM   0x100
+
+
+#define FILE_SIGNATURE 'FILE'
+
+
+/*
+Template of a data run
+BYTE Size;
+First 4 bit indicates size of first cluster value
+Last 4 bit indicates size of cluster count
+To calculate how much data run we should read, we must 
+do following for each data run
+lenremaining -= (datarun.size[0] + datarun[1] + 1)
+be careful, size[0] indicates first 4 bits,
+*/
+
+
+struct nar_fa_data {
+    BYTE_4 AttributeType;
+    BYTE_4 Length; // Including header
+    BYTE   NonResidentFlag;
+    BYTE   NameLength;
+    BYTE_2 NameOffset;
+    BYTE_2 Flags; // Bitwise, 0 Compressed - 14 Encrypted - 15 Sparse
+    BYTE_2 AttributeID;
+    BYTE_8 FirstVCN;
+    BYTE_8 LastVCN;
+    BYTE_2 DataRunOffset;
+    BYTE_2 CompressionUnitSize;
+    BYTE_4 Padding;
+    BYTE_8 AllocatedSize;
+    BYTE_8 RealSize;
+    BYTE_8 InitializedSize;
+    BYTE DataRuns[];
+};
+
+
+
+
+struct nar_file {
+    BYTE_4 Signature;
+    BYTE Dump4_20[16]; 
+    BYTE_2 OffsetToFirstAttribute;
+    BYTE_2 Flags; // IN_USE(1) - DIRECTORY(1)
+    BYTE_4 RealFileRecordSize;
+    BYTE_4 AllocatedFileRecordSize;
+    BYTE_4 BaseFileRecord;
+    BYTE_4 NextAttributeID;
+    BYTE_4 ID;
+    BYTE Dump48_56[6]; // UPDATE_SEQUANCE_NUMBER(2) - UPDATE_SEQUANCE_ARRAY(4)
+    BYTE Attributes[];
+};
+
+
+#pragma pack(pop)
+
+
 int main() {
 
 
 
-
-  return Result;
+  return 0;
 
   //std::vector<int> V;
   ////V.reserve(ELEMENT_COUNT);

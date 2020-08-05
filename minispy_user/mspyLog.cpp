@@ -161,8 +161,7 @@ Return Value:
 
             volume_backup_inf* V = &context->Volumes.Data[VolumeIndex];
 
-            if (V == NULL
-                || V->Letter == NAR_INVALID_VOLUME_LETTER)
+            if (V == NULL || V->INVALIDATEDENTRY)
             {
                 continue;
             }

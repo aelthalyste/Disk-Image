@@ -54,6 +54,15 @@ Environment:
 #define NAR_MB_DATA(Buffer)                     (PVOID)((char*)(Buffer) + 2*sizeof(INT32))
 #define NAR_MB_DATA_USED(Buffer)                (NAR_MB_USED(Buffer) - 2*sizeof(INT32))
 
+#define NAR_BOOTFILE_NAME  "NARBOOTFILE"
+#define NAR_BOOTFILE_W_NAME L"NARBOOTFILE"
+
+typedef struct _nar_boot_track_data{
+    char Letter;
+    char Version;
+    char BackupType;
+}nar_boot_track_data;
+
 //
 //  FltMgr's IRP major codes
 //

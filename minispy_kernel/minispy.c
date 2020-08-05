@@ -152,7 +152,7 @@ Return Value:
 
             leave;
         }
-
+        
 
         status = FltBuildDefaultSecurityDescriptor(&sd, FLT_PORT_ALL_ACCESS);
 
@@ -203,111 +203,98 @@ Return Value:
         DbgPrint("Driver entry!\n");
 
 
-#if 0
+#if 1
+        nar_boot_track_data TrackedVolumes[NAR_MAX_VOLUME_COUNT];
+        int TrackedVolumesCount = 0;
+        memset(TrackedVolumes, 0, sizeof(TrackedVolumes));
 
-        UNICODE_STRING     uniName;
+        UNICODE_STRING     FileName;
         OBJECT_ATTRIBUTES  objAttr;
 
-        RtlInitUnicodeString(&uniName, L"\\SystemRoot\\Example.txt");  // or L"\\SystemRoot\\example.txt"
-        InitializeObjectAttributes(&objAttr, &uniName,
-            OBJ_CASE_INSENSITIVE | OBJ_KERNEL_HANDLE,
-            NULL, NULL);
-
-        IO_STATUS_BLOCK IOSB = { 0 };
-
-        status = FltCreateFile(
-            NarData.Filter,
-            NULL,
-            &NarData.MetadataHandle,
-            GENERIC_WRITE,
-            &objAttr, &IOSB, 0,
-            FILE_ATTRIBUTE_NORMAL,
-            FILE_SHARE_WRITE | FILE_SHARE_READ,
-            FILE_OPEN_IF,
-            FILE_SYNCHRONOUS_IO_NONALERT | FILE_RANDOM_ACCESS,
-            0, 0, 0);
-
-
-        IO_STATUS_BLOCK Sb = { 0 };
-        char WriteBuffer[512];
-
-
+        void *UnicodeStringBuffer = ExAllocatePoolWithTag(PagedPool, 512, NAR_TAG);
+        RtlInitEmptyUnicodeString(&FileName, UnicodeStringBuffer, 512);
+        status = RtlUnicodeStringCatString(&FileName, L"\\SystemRoot\\");
         if (NT_SUCCESS(status)) {
-            DbgPrint("Successfully created file!\n");
-
-            size_t Len = 0;
-
-            status = RtlStringCbPrintfA(WriteBuffer, 512, "Driver entry success\n");
-            status = RtlStringCbLengthA(WriteBuffer, 512, &Len);
-
-
+            status = RtlUnicodeStringCatString(&FileName, NAR_BOOTFILE_W_NAME);
             if (NT_SUCCESS(status)) {
-                status = ZwWriteFile(NarData.MetadataHandle, 0, 0, 0, &Sb, WriteBuffer, (ULONG)Len, 0, 0);
-                //status = FltWriteFile(0, &TEST, 0, (ULONG)Len, WriteBuffer, FLTFL_IO_OPERATION_SYNCHRONOUS_PAGING, 0, 0, 0);
-                if (!NT_SUCCESS(status)) {
-                    DbgPrint("Failed to write file, status : %i\n", status);
-                }
-                else {
-                    DbgPrint("Successfully written to file\n");
-                }
+                DbgPrint("Succ created unicode string %wZ\n", &FileName);
             }
             else {
-                DbgPrint("Failed sprintf\n");
+                DbgPrint("Couldnt append narbootifle name to unicode string, status : %i\n", status);
             }
-
-            //status = FltClose(NarData.MetadataHandle);
-            //if (NT_SUCCESS(status)) {
-            //  
-            //  DbgPrint("Successfully closed file\n");
-            //}
         }
         else {
-            DbgPrint("Failed to create file status : %i, inf ptr : %p, iosb status : %i\n", status, IOSB.Information, IOSB.Status);
+            DbgPrint("Couldnt append systemroot string to unicode string, status : %i\n", status);
         }
-        //FltClose(NarData.MetadataHandle);
+        
 
-        else {
+        if (NT_SUCCESS(status)) {
 
-            // Special metadata file doesnt exist, create new one
+            InitializeObjectAttributes(&objAttr, &FileName,
+                OBJ_CASE_INSENSITIVE | OBJ_KERNEL_HANDLE,
+                NULL, NULL);
 
-            status = ZwCreateFile(&H,
-                GENERIC_WRITE,
+            IO_STATUS_BLOCK IOSB = { 0 };
+            HANDLE FileHandle;
+
+            status = ZwCreateFile(&FileHandle,
+                GENERIC_READ,
                 &objAttr, &IOSB, NULL,
                 FILE_ATTRIBUTE_NORMAL,
                 0,
-                FILE_CREATE,
+                FILE_OPEN,
                 FILE_SYNCHRONOUS_IO_NONALERT | FILE_RANDOM_ACCESS,
                 NULL, 0);
+
             if (NT_SUCCESS(status)) {
-                size_t Len = 0;
-                void* P = ExAllocateFromPagedLookasideList(&NarData.LookAsideList);
-
-                if (P == NULL) {
-                    status = RtlStringCbPrintfA(WriteBuffer, 512, "couldnt allocate memory from paged pool");
-                    status = RtlStringCbLengthA(WriteBuffer, 512, &Len);
-                }
-                else {
-                    status = RtlStringCbPrintfA(WriteBuffer, 512, "allocated memory from paged pool");
-                    status = RtlStringCbLengthA(WriteBuffer, 512, &Len);
-
-                }
-
+                DbgPrint("Found metadata file\n");
+                FILE_STANDARD_INFORMATION  FI;
+                INT32 FileSize = 0;
+                status = ZwQueryInformationFile(FileHandle, &IOSB, &FI, sizeof(FI), FileStandardInformation);
                 if (NT_SUCCESS(status)) {
-                    ZwWriteFile(H, 0, 0, 0, &Sb, &WriteBuffer, (ULONG)Len, 0, 0);
+                    DbgPrint("Succ queried standard file information");
+                    
+                    if (FI.EndOfFile.QuadPart >= sizeof(TrackedVolumes)) {
+                        DbgPrint("File is too big\n");
+                    }
+                    else if (FI.EndOfFile.QuadPart % sizeof(TrackedVolumes[0]) != 0) {
+                        DbgPrint("File is not aligned\n");
+                    }
+                    else {
+                        FileSize = FI.EndOfFile.QuadPart;
+                    }
+                    DbgPrint("File size %i\n", FI.EndOfFile.QuadPart);
+
+                    if (FileSize > 0) {
+                        TrackedVolumesCount = FileSize / sizeof(TrackedVolumes[0]);
+
+                        status = ZwReadFile(FileHandle, 0, 0, 0, &IOSB, &TrackedVolumes[0], FileSize, 0, 0);
+                        if (NT_SUCCESS(status)) {
+                            DbgPrint("Succ read metadata at driver entry\n");
+                        }
+                        else {
+                            DbgPrint("Couldnt read file, status : %i\n", status);
+                        }
+                    }
+
+
                 }
                 else {
-                    ZwWriteFile(H, 0, 0, 0, &Sb, WriteBuffer, 512, 0, 0);
+                    DbgPrint("Couldnt query standard file information\n");
                 }
+                
+                ZwClose(FileHandle);
+
             }
             else {
-
-                // TODO (Batuhan) : 
-                // NOTE (Batuhan): Cant create file, fatal error.
-                __leave;
-
+                DbgPrint("Metadata file doesnt exist\n");
+                // metadatafile doesnt exist, thats not an error.
             }
 
         }
+
+        ExFreePoolWithTag(UnicodeStringBuffer, NAR_TAG);
+
 #endif
 
 
@@ -339,7 +326,7 @@ Return Value:
                 status = STATUS_FAILED_DRIVER_ENTRY;
                 leave;
             }
-
+            
             memset(NarData.VolumeRegionBuffer[i].MemoryBuffer, 0, NAR_MEMORYBUFFER_SIZE);
             NAR_INIT_MEMORYBUFFER(NarData.VolumeRegionBuffer[i].MemoryBuffer);
             DbgPrint("Initialized volume entry %i\n", i);
@@ -349,9 +336,69 @@ Return Value:
         //
         //  We are now ready to start filtering
         //
-
+        
         status = FltStartFiltering(NarData.Filter);
+        
 
+
+        char UniBuffer[32];
+
+        for (int i = 0; i < TrackedVolumesCount; i++) {
+
+            memset(UniBuffer, 0, 32);
+            UNICODE_STRING VolumeNameUniStr;
+            RtlInitEmptyUnicodeString(&VolumeNameUniStr, UniBuffer, 32);
+
+            status = RtlUnicodeStringPrintf(&VolumeNameUniStr, L"%c:", TrackedVolumes[i].Letter);
+            if (NT_SUCCESS(status)) {
+                PFLT_VOLUME Volume;
+
+                // For every succ call, we must deference PFLT_VOLUME
+                status = FltGetVolumeFromName(NarData.Filter, &VolumeNameUniStr, &Volume);
+                if (NT_SUCCESS(status)) {
+
+                    ULONG BufferNeeded = 0;
+                    status = FltGetVolumeGuidName(Volume, &NarData.VolumeRegionBuffer[i].GUIDStrVol, &BufferNeeded);
+
+                    if (NT_SUCCESS(status)) {
+                        
+                        status = FltAttachVolume(NarData.Filter, Volume, NULL, NULL);
+                        if (NT_SUCCESS(status)) {
+                            DbgPrint("Successfully attached volume %wZ\n", &NarData.VolumeRegionBuffer[i].GUIDStrVol);
+                        }
+                        else {
+                            DbgPrint("Couldnt attach volume volume %wZ, status %i\n", &NarData.VolumeRegionBuffer[i].GUIDStrVol, status);
+                            // revert guid str to null again
+                            memset(NarData.VolumeRegionBuffer[i].Reserved, 0, NAR_GUID_STR_SIZE);
+                            NarData.VolumeRegionBuffer[i].GUIDStrVol.Length = 0;
+
+                        }
+
+                    }
+                    else {
+                        DbgPrint("GetVolumeGUIDName failed\n");
+                    }
+
+                    FltObjectDereference(Volume);
+                }
+                else {
+                    DbgPrint("Couldnt get volume from name\n");
+                }
+            }
+            else {
+
+                DbgPrint("Sprintf failed, volume letter %c, uni str %wZ", TrackedVolumes[i].Letter, &VolumeNameUniStr);
+
+            }
+
+
+
+        }
+                    
+
+        
+
+        
     }
     finally {
 
@@ -1162,13 +1209,7 @@ Return Value:
                 status = FltGetVolumeGuidName(FltObjects->Volume, &GUIDStringNPaged, &SizeNeededForGUIDStr);
                 if (NT_SUCCESS(status)) {
 
-                    for (int i = 0; i < NAR_MAX_VOLUME_COUNT; i++) {
-
-                        if (NarData.VolumeRegionBuffer[i].GUIDStrVol.Length > 0) {
-                            DbgPrint("GUIDStr %wZ\n", &NarData.VolumeRegionBuffer[i].GUIDStrVol);
-                        }
-
-                    }
+                    
 
                     for (int i = 0; i < NAR_MAX_VOLUME_COUNT; i++) {
 
@@ -1274,12 +1315,7 @@ Return Value:
     {
         //DbgPrint("Exceeded buffer, size %i\n", NarData.MemoryBufferUsed);
 
-        KIRQL oldirql = KeGetCurrentIrql();
-        if (oldirql != PASSIVE_LEVEL) {
-            DbgPrint("Not valid IRQL level, terminating now: %i\n", oldirql);
-            ExFreeToPagedLookasideList(&NarData.LookAsideList, TempBuffer);
-            return FLT_PREOP_SUCCESS_NO_CALLBACK;
-        }
+        
 
         UNICODE_STRING     uniName;
         OBJECT_ATTRIBUTES  objAttr;

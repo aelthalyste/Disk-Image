@@ -3061,7 +3061,7 @@ NarGetVolumeDiskType(char Letter) {
     Vol[0] = Letter;
 
     int Result = NAR_DISKTYPE_RAW;
-    DWORD BS = 1024 * 1024 * 16; //8 KB
+    DWORD BS = 1024 * 8; //8 KB
     DWORD T = 0;
 
     void* Buf = VirtualAlloc(0, 2 * BS, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
@@ -3130,7 +3130,7 @@ NarGetVolumeDiskID(char Letter) {
     Vol[0] = Letter;
 
     int Result = NAR_INVALID_DISK_ID;
-    DWORD BS = 1024 * 1024 * 1; //1 KB
+    DWORD BS = 1024 * 2; //1 KB
     DWORD T = 0;
 
     VOLUME_DISK_EXTENTS* Ext = (VOLUME_DISK_EXTENTS*)VirtualAlloc(0, BS, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
@@ -4415,6 +4415,188 @@ Exit:
 
 }
 
+
+/*
+Its not best way to initialize a struct
+*/
+LOG_CONTEXT*
+NarLoadBootState() {
+    
+    LOG_CONTEXT* Result;
+    BOOLEAN bResult = FALSE;
+    Result = (LOG_CONTEXT*)malloc(sizeof(LOG_CONTEXT));
+    memset(Result, 0, sizeof(LOG_CONTEXT));
+    Result->Port = INVALID_HANDLE_VALUE;
+    Result->ShutDown = NULL;
+    Result->Thread = NULL;
+    Result->CleaningUp = FALSE;
+    Result->Volumes = { 0,0 };
+    
+
+    char FileNameBuffer[64];    
+    if (GetWindowsDirectoryA(FileNameBuffer, 64)) {
+        
+        strcat(FileNameBuffer, "\\");
+        strcat(FileNameBuffer, NAR_BOOTFILE_NAME);
+        HANDLE File = CreateFileA(FileNameBuffer, GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
+        if (File != INVALID_HANDLE_VALUE) {
+            
+            // Check aligment, not a great way to check integrity of file
+            DWORD Size = GetFileSize(File, 0);
+            if (Size > sizeof(nar_boot_track_data) * NAR_MAX_VOLUME_COUNT) {
+                printf("Bootfile too large, might be corrupted\n");
+            }
+            else if (Size % sizeof(nar_boot_track_data) != 0) {
+                printf("Bootfile is not aligned\n");
+            }
+            else {
+                
+                DWORD BR = 0;
+                nar_boot_track_data* BootTrackData = (nar_boot_track_data*)malloc(Size);
+                if (BootTrackData != NULL) {
+                    
+                    if (ReadFile(File, BootTrackData, Size, &BR, 0) && BR == Size) {
+                        volume_backup_inf VolInf;
+                        memset(&VolInf, 0, sizeof(VolInf));
+                        int BootTrackDataCount = Size / sizeof(BootTrackData[0]);
+                        
+                        for (int i = 0; i < BootTrackDataCount; i++) {
+
+
+                            bResult = InitVolumeInf(&VolInf, BootTrackData[i].Letter, (BackupType)BootTrackData[i].BackupType);
+                            if (bResult) {
+                            
+                                
+                                VolInf.FilterFlags.IsActive = TRUE;
+                                VolInf.FilterFlags.SaveToFile = TRUE;
+                                
+                                VolInf.FullBackupExists = TRUE;
+                                VolInf.CurrentLogIndex = BootTrackData[i].Version;
+                                std::wstring LogFileName = GenerateLogFileName(VolInf.Letter, VolInf.CurrentLogIndex);
+                                VolInf.LogHandle = CreateFileW(LogFileName.c_str(), GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, 0, 0);
+                                
+                                if (VolInf.LogHandle != INVALID_HANDLE_VALUE) {
+                                    // succ created file, we can continue logging.
+                                    Result->Volumes.Insert(VolInf);
+
+                                    bResult = TRUE;
+                                    
+                                }
+                                else {
+                                    printf("Couldnt open existing log file %S\n", LogFileName);
+                                }
+
+                            }
+                            else{
+                                printf("Couldnt initialize volume backup inf for volume %c\n", BootTrackData[i].Letter);
+                            }
+
+                        }
+
+                        
+                    }
+                    else {
+                        printf("Couldnt read boot file, read %i, file size was %i\n", Size);
+                        DisplayError(GetLastError());
+                    }
+
+                }
+                else {
+                    printf("Couldnt allocate memory for nar_boot_track_data \n");
+                    BootTrackData = 0;
+                }
+
+                free(BootTrackData);
+
+            }
+
+        }
+        else {
+            // File doesnt exist
+        }
+
+        CloseHandle(File);
+
+    }
+    else {
+        printf("Couldnt get windows directory, error %i\n", GetLastError());
+    }
+
+    if (!Result) {
+        free(Result);
+        Result = NULL;
+    }
+
+    return Result;
+}
+
+
+/*
+    Saves the current program state into a file, so next time computer boots driver can recognize it and setup itself accordingly.
+*/
+
+BOOLEAN
+NarSaveBootState(LOG_CONTEXT* CTX) {
+    if (CTX == NULL && CTX->Volumes.Data == 0) return FALSE;
+
+    BOOLEAN Result = TRUE;
+    
+    nar_boot_track_data Pack;
+
+    char FileNameBuffer[64];
+    if (GetWindowsDirectoryA(FileNameBuffer, 64)) {
+        strcat(FileNameBuffer, "\\");
+        strcat(FileNameBuffer, NAR_BOOTFILE_NAME);
+        HANDLE File = CreateFileA(FileNameBuffer, GENERIC_WRITE, 0, 0, CREATE_ALWAYS, 0, 0);
+
+        if (File != INVALID_HANDLE_VALUE) {
+
+            for (int i = 0; i < CTX->Volumes.Count; i++) {
+                Pack.Letter = 0;
+                Pack.Version = -2;
+
+                if (CTX->Volumes.Data[i].INVALIDATEDENTRY) {
+
+                    Pack.Letter = (char)CTX->Volumes.Data[i].Letter;
+                    Pack.Version = CTX->Volumes.Data[i].CurrentLogIndex;
+                    Pack.BackupType = (char)CTX->Volumes.Data[i].BT;
+                    DWORD BR = 0;
+
+                    if (WriteFile(File, &Pack, sizeof(Pack), &BR, 0) && BR == sizeof(Pack)) {
+
+                    }
+                    else {
+                        Result = FALSE;
+                        // TODO error
+                    }
+
+                }
+
+                continue;
+
+            }
+
+
+        }
+        else {
+           // GetWindowsdirectory failed
+            Result = FALSE;
+        }
+
+        CloseHandle(File);
+
+
+    }
+
+    
+
+
+    
+    return Result;
+
+}
+
+
 #if 1
 
 #define REGION(Start, End) nar_record{(Start), (End) - (Start)}
@@ -4425,6 +4607,18 @@ main(
     int argc,
     CHAR* argv[]
 ) {
+    char STRB[512];
+    GetWindowsDirectoryA(STRB, 512);
+    strcat(STRB, "\\");
+    strcat(STRB, NAR_BOOTFILE_NAME);
+    HANDLE File = CreateFileA(STRB, GENERIC_WRITE, 0, 0, CREATE_ALWAYS, 0, 0);
+    if (File != INVALID_HANDLE_VALUE) {
+        printf("Succ created file\n");
+    }
+    else {
+        DisplayError(GetLastError());
+    }
+    CloseHandle(File);
     //system("net stop minispy");
     //system("net start minispy");
 
