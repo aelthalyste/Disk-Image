@@ -42,8 +42,13 @@
             this.panel1 = new System.Windows.Forms.Panel();
             this.bunifuSeparator4 = new Bunifu.Framework.UI.BunifuSeparator();
             this.label5 = new System.Windows.Forms.Label();
+            this.btnNowOkay = new FontAwesome.Sharp.IconButton();
             this.panel2 = new System.Windows.Forms.Panel();
             this.btnRepeatOkay = new FontAwesome.Sharp.IconButton();
+            this.label10 = new System.Windows.Forms.Label();
+            this.label9 = new System.Windows.Forms.Label();
+            this.txtRepeatCount = new System.Windows.Forms.TextBox();
+            this.label8 = new System.Windows.Forms.Label();
             this.txtRepeatTime = new System.Windows.Forms.TextBox();
             this.label7 = new System.Windows.Forms.Label();
             this.bunifuSeparator3 = new Bunifu.Framework.UI.BunifuSeparator();
@@ -52,10 +57,6 @@
             this.label4 = new System.Windows.Forms.Label();
             this.label3 = new System.Windows.Forms.Label();
             this.repeatDatePicker = new System.Windows.Forms.DateTimePicker();
-            this.txtRepeatCount = new System.Windows.Forms.TextBox();
-            this.label8 = new System.Windows.Forms.Label();
-            this.label9 = new System.Windows.Forms.Label();
-            this.label10 = new System.Windows.Forms.Label();
             this.panelTop.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             this.panel1.SuspendLayout();
@@ -96,13 +97,13 @@
             this.btnOkay.IconColor = System.Drawing.Color.FromArgb(((int)(((byte)(2)))), ((int)(((byte)(62)))), ((int)(((byte)(138)))));
             this.btnOkay.IconSize = 32;
             this.btnOkay.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            this.btnOkay.Location = new System.Drawing.Point(65, 174);
+            this.btnOkay.Location = new System.Drawing.Point(38, 174);
             this.btnOkay.Name = "btnOkay";
             this.btnOkay.Padding = new System.Windows.Forms.Padding(10, 0, 20, 0);
             this.btnOkay.Rotation = 0D;
-            this.btnOkay.Size = new System.Drawing.Size(176, 60);
+            this.btnOkay.Size = new System.Drawing.Size(186, 60);
             this.btnOkay.TabIndex = 7;
-            this.btnOkay.Text = "Tamam";
+            this.btnOkay.Text = "Görev Oluştur";
             this.btnOkay.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             this.btnOkay.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
             this.btnOkay.UseVisualStyleBackColor = false;
@@ -200,13 +201,37 @@
             this.label5.TabIndex = 14;
             this.label5.Text = "Görev Oluştur";
             // 
+            // btnNowOkay
+            // 
+            this.btnNowOkay.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(150)))), ((int)(((byte)(199)))));
+            this.btnNowOkay.FlatAppearance.BorderSize = 0;
+            this.btnNowOkay.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnNowOkay.Flip = FontAwesome.Sharp.FlipOrientation.Normal;
+            this.btnNowOkay.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(162)));
+            this.btnNowOkay.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(2)))), ((int)(((byte)(62)))), ((int)(((byte)(138)))));
+            this.btnNowOkay.IconChar = FontAwesome.Sharp.IconChar.Check;
+            this.btnNowOkay.IconColor = System.Drawing.Color.FromArgb(((int)(((byte)(2)))), ((int)(((byte)(62)))), ((int)(((byte)(138)))));
+            this.btnNowOkay.IconSize = 32;
+            this.btnNowOkay.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.btnNowOkay.Location = new System.Drawing.Point(230, 235);
+            this.btnNowOkay.Name = "btnNowOkay";
+            this.btnNowOkay.Padding = new System.Windows.Forms.Padding(10, 0, 20, 0);
+            this.btnNowOkay.Rotation = 0D;
+            this.btnNowOkay.Size = new System.Drawing.Size(210, 60);
+            this.btnNowOkay.TabIndex = 25;
+            this.btnNowOkay.Text = "Şimdi Çalıştır";
+            this.btnNowOkay.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.btnNowOkay.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
+            this.btnNowOkay.UseVisualStyleBackColor = false;
+            this.btnNowOkay.Click += new System.EventHandler(this.btnNowOkay_Click);
+            // 
             // panel2
             // 
+            this.panel2.Controls.Add(this.btnRepeatOkay);
             this.panel2.Controls.Add(this.label10);
             this.panel2.Controls.Add(this.label9);
             this.panel2.Controls.Add(this.txtRepeatCount);
             this.panel2.Controls.Add(this.label8);
-            this.panel2.Controls.Add(this.btnRepeatOkay);
             this.panel2.Controls.Add(this.txtRepeatTime);
             this.panel2.Controls.Add(this.label7);
             this.panel2.Controls.Add(this.bunifuSeparator3);
@@ -234,17 +259,57 @@
             this.btnRepeatOkay.IconColor = System.Drawing.Color.FromArgb(((int)(((byte)(2)))), ((int)(((byte)(62)))), ((int)(((byte)(138)))));
             this.btnRepeatOkay.IconSize = 32;
             this.btnRepeatOkay.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            this.btnRepeatOkay.Location = new System.Drawing.Point(69, 174);
+            this.btnRepeatOkay.Location = new System.Drawing.Point(66, 180);
             this.btnRepeatOkay.Name = "btnRepeatOkay";
             this.btnRepeatOkay.Padding = new System.Windows.Forms.Padding(10, 0, 20, 0);
             this.btnRepeatOkay.Rotation = 0D;
-            this.btnRepeatOkay.Size = new System.Drawing.Size(176, 60);
+            this.btnRepeatOkay.Size = new System.Drawing.Size(210, 60);
             this.btnRepeatOkay.TabIndex = 19;
-            this.btnRepeatOkay.Text = "Tamam";
+            this.btnRepeatOkay.Text = "T. Görev Oluştur";
             this.btnRepeatOkay.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             this.btnRepeatOkay.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
             this.btnRepeatOkay.UseVisualStyleBackColor = false;
             this.btnRepeatOkay.Click += new System.EventHandler(this.btnRepeatOkay_Click);
+            // 
+            // label10
+            // 
+            this.label10.AutoSize = true;
+            this.label10.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F);
+            this.label10.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(2)))), ((int)(((byte)(62)))), ((int)(((byte)(138)))));
+            this.label10.Location = new System.Drawing.Point(260, 148);
+            this.label10.Name = "label10";
+            this.label10.Size = new System.Drawing.Size(41, 20);
+            this.label10.TabIndex = 24;
+            this.label10.Text = "defa";
+            // 
+            // label9
+            // 
+            this.label9.AutoSize = true;
+            this.label9.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F);
+            this.label9.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(2)))), ((int)(((byte)(62)))), ((int)(((byte)(138)))));
+            this.label9.Location = new System.Drawing.Point(274, 117);
+            this.label9.Name = "label9";
+            this.label9.Size = new System.Drawing.Size(30, 20);
+            this.label9.TabIndex = 23;
+            this.label9.Text = "dk.";
+            // 
+            // txtRepeatCount
+            // 
+            this.txtRepeatCount.Location = new System.Drawing.Point(146, 148);
+            this.txtRepeatCount.Name = "txtRepeatCount";
+            this.txtRepeatCount.Size = new System.Drawing.Size(109, 20);
+            this.txtRepeatCount.TabIndex = 22;
+            // 
+            // label8
+            // 
+            this.label8.AutoSize = true;
+            this.label8.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F);
+            this.label8.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(2)))), ((int)(((byte)(62)))), ((int)(((byte)(138)))));
+            this.label8.Location = new System.Drawing.Point(-2, 151);
+            this.label8.Name = "label8";
+            this.label8.Size = new System.Drawing.Size(99, 20);
+            this.label8.TabIndex = 21;
+            this.label8.Text = "Tekrar Sayısı";
             // 
             // txtRepeatTime
             // 
@@ -326,52 +391,13 @@
             this.repeatDatePicker.Size = new System.Drawing.Size(158, 20);
             this.repeatDatePicker.TabIndex = 14;
             // 
-            // txtRepeatCount
-            // 
-            this.txtRepeatCount.Location = new System.Drawing.Point(146, 148);
-            this.txtRepeatCount.Name = "txtRepeatCount";
-            this.txtRepeatCount.Size = new System.Drawing.Size(109, 20);
-            this.txtRepeatCount.TabIndex = 22;
-            // 
-            // label8
-            // 
-            this.label8.AutoSize = true;
-            this.label8.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F);
-            this.label8.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(2)))), ((int)(((byte)(62)))), ((int)(((byte)(138)))));
-            this.label8.Location = new System.Drawing.Point(-2, 151);
-            this.label8.Name = "label8";
-            this.label8.Size = new System.Drawing.Size(99, 20);
-            this.label8.TabIndex = 21;
-            this.label8.Text = "Tekrar Sayısı";
-            // 
-            // label9
-            // 
-            this.label9.AutoSize = true;
-            this.label9.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F);
-            this.label9.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(2)))), ((int)(((byte)(62)))), ((int)(((byte)(138)))));
-            this.label9.Location = new System.Drawing.Point(274, 117);
-            this.label9.Name = "label9";
-            this.label9.Size = new System.Drawing.Size(30, 20);
-            this.label9.TabIndex = 23;
-            this.label9.Text = "dk.";
-            // 
-            // label10
-            // 
-            this.label10.AutoSize = true;
-            this.label10.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F);
-            this.label10.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(2)))), ((int)(((byte)(62)))), ((int)(((byte)(138)))));
-            this.label10.Location = new System.Drawing.Point(260, 148);
-            this.label10.Name = "label10";
-            this.label10.Size = new System.Drawing.Size(41, 20);
-            this.label10.TabIndex = 24;
-            this.label10.Text = "defa";
-            // 
             // MyMessageBox
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(150)))), ((int)(((byte)(199)))));
             this.ClientSize = new System.Drawing.Size(660, 308);
+            this.Controls.Add(this.btnNowOkay);
             this.Controls.Add(this.panel2);
             this.Controls.Add(this.panel1);
             this.Controls.Add(this.panelTop);
@@ -420,5 +446,6 @@
         private System.Windows.Forms.Label label8;
         private System.Windows.Forms.Label label10;
         private System.Windows.Forms.Label label9;
+        private FontAwesome.Sharp.IconButton btnNowOkay;
     }
 }

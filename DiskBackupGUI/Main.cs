@@ -113,6 +113,7 @@ namespace DiskBackupGUI
             dataGridView1.DataSource = volumes;
             dataGridView1.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
             Instance = this;
+            InitSheduler().Wait();
         }
 
         private void OpenChildForm(Form childForm)

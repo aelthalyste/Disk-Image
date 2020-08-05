@@ -17,11 +17,7 @@ namespace DiskBackupGUI
             //liste varmış gibi kabul ediyoruz
             List<char> letters = Main.Instance.taskParams[context.JobDetail.Key.Name];
             var diskTracker = Main.Instance.diskTracker;
-            int typeParam = context.RefireCount == 0? 0 : 1;
-            if (typeParam > -1)
-            {
-                return Task.CompletedTask;
-            }
+            int typeParam = context.PreviousFireTimeUtc == null? 0 : 1;
 
             int bufferSize = 64 * 1024 * 1024;
             byte[] buffer = new byte[bufferSize];
@@ -59,7 +55,6 @@ namespace DiskBackupGUI
 
             }
             return Task.CompletedTask;
-
 
         }
 
