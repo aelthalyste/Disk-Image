@@ -1,4 +1,5 @@
-﻿using NarDIWrapper;
+﻿using Microsoft.Identity.Client;
+using NarDIWrapper;
 using Quartz;
 using Quartz.Impl;
 using System;
@@ -18,7 +19,8 @@ namespace DiskBackupGUI
     public partial class MyMessageBox : Form
     {
         public IScheduler Scheduler { get; set; }
-
+        public static int jobIdCounter = 0;
+        public List<char> Letters { get; set; }
         public MyMessageBox()
         {
             InitializeComponent();
@@ -29,27 +31,39 @@ namespace DiskBackupGUI
             Close();
         }
 
-        private void btnRepeatOkay_Click(object sender, EventArgs e)
+        private async void btnRepeatOkay_Click(object sender, EventArgs e)
         {
             try
             {
+                btnRepeatOkay.Enabled = false;
                 var repeat = Convert.ToInt32(txtRepeatTime.Text);
                 var repeatCount = Convert.ToInt32(txtRepeatCount.Text);
                 var startDate = repeatDatePicker.Value;
                 var startTime = repeatTimePicker.Value + (startDate - DateTime.Now);
+                IJobDetail job = JobBuilder.Create<BackupJob>()
+                               .WithIdentity("job" +jobIdCounter, "group1")
+                               .Build();
                 var trigger = TriggerBuilder.Create()
-               .WithIdentity("trigger3", "group1")
-               .StartAt(DateTimeOffset.Now.Add(startTime - DateTime.Now)) // if a start time is not given (if this line were omitted), "now" is implied
-               .WithSimpleSchedule(x => x
-                   .WithIntervalInMinutes(repeat)
-                   .WithRepeatCount(repeatCount))
-               .Build();
+                   .WithIdentity("trigger" + jobIdCounter, "group1")
+                   .StartAt(DateTimeOffset.Now.Add(startTime - DateTime.Now)) // if a start time is not given (if this line were omitted), "now" is implied
+                   .WithSimpleSchedule(x => x
+                       .WithIntervalInMinutes(repeat)
+                       .WithRepeatCount(repeatCount))
+                   .Build();
+                await Scheduler.ScheduleJob(job, trigger);
+                Main.Instance.taskParams["job" + jobIdCounter] = Letters;
+                jobIdCounter++;
                 Close();
 
             }
             catch (Exception)
             {
                 MessageBox.Show("Tekrarlanıcak Süreyi Dakika Cinsinden Yazınız!!!");
+            }
+            finally
+            {
+                btnRepeatOkay.Enabled = true;
+
             }
         }
 

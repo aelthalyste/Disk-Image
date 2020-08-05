@@ -24,6 +24,8 @@ namespace DiskBackupGUI
         public DiskTracker diskTracker;
         public int type;
         public string path;
+        public Dictionary<string, List<char>> taskParams = new Dictionary<string, List<char>>();
+
         public static Main Instance { get; private set; }
 
         public static Color activeColor = Color.FromArgb(37, 36, 81);
@@ -256,18 +258,19 @@ namespace DiskBackupGUI
         private void btnIncremental_Click(object sender, EventArgs e)
         {
             int typeParam = 1;
-            List<DataGridViewRow> checkedColumn = new List<DataGridViewRow>();
+            List<char> checkedColumn = new List<char>();
             foreach (DataGridViewRow row in dataGridView1.Rows)
             {
                 if (Convert.ToBoolean(row.Cells["Checked"].Value) == true)
                 {
-                    checkedColumn.Add(row);
+                    checkedColumn.Add((char)row.Cells["Letter"].Value);
                 }
             }
             MyMessageBox myMessageBox = new MyMessageBox();
+            myMessageBox.Scheduler = scheduler;
+            myMessageBox.Letters = checkedColumn;
             myMessageBox.Show();
 
-            Task task = BackupThreadAsync(checkedColumn, typeParam);
         }
 
         private void btnCancel_Click(object sender, EventArgs e)
