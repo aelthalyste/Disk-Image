@@ -1283,7 +1283,7 @@ GetVolumesOnTrack(PLOG_CONTEXT C, volume_information* Out, int BufferSize, int* 
 
 
 BOOLEAN
-RemoveVolumeFromTrack(PLOG_CONTEXT C, wchar_t L) {
+RemoveVolumeFromTrack(LOG_CONTEXT *C, wchar_t L) {
     BOOLEAN Result = FALSE;
 
     int ID = GetVolumeID(C, L);

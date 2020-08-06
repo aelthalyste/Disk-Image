@@ -21,12 +21,20 @@ namespace NarDIWrapper {
   public ref class DiskInfo {
   public:
     unsigned SizeGB;
-    unsigned Unallocated;
     System::String^ Type; // MBR, RAW, GPT
     int ID;
   };
 
-  
+  public ref class BackupMetadata {
+  public:
+
+      wchar_t Letter;
+      int BackupType;
+      int Version;
+      int OSVolume; // boolean actually
+      wchar_t DiskType;
+
+  };
 
   public ref class VolumeInformation {
   public:
@@ -65,6 +73,8 @@ namespace NarDIWrapper {
       System::String^ RootDir);
 
     bool CW_RestoreToFreshDisk(wchar_t TargetLetter, wchar_t SrcLetter, INT Version, int DiskID, System::String^ Rootdir);
+
+    List<BackupMetadata^>^ CW_GetBackupsInDirectory(wchar_t RootDir);
 
   private:
 

@@ -58,139 +58,180 @@ using namespace System;
 #define CONVERT_TYPES(_in,_out) _out = msclr::interop::marshal_as<decltype(_out)>(_in);
 
 namespace NarDIWrapper {
-
-  DiskTracker::DiskTracker() {
-    C = (LOG_CONTEXT*)malloc(sizeof(LOG_CONTEXT));
-    memset(C, 0, sizeof(LOG_CONTEXT));
-    C->Port = INVALID_HANDLE_VALUE;
-    C->ShutDown = NULL;
-    C->Thread = NULL;
-    C->CleaningUp = FALSE;
-    C->Volumes = { 0,0 };
-
-    //R = (restore_inf*)malloc(sizeof(restore_inf*));
-
-    R = new restore_inf;
-    R->RootDir = L"";
-
-  }
-
-  DiskTracker::~DiskTracker() {
-    //Do deconstructor things
-
-    free(C->Volumes.Data);
-    C->CleaningUp = TRUE;
-    WaitForSingleObject(C->ShutDown, INFINITE);
-    CloseHandle(C->Thread);
-    CloseHandle(C->ShutDown);
-
-    delete R;
-    delete C;
-  }
-
-  bool DiskTracker::CW_RemoveFromTrack(wchar_t Letter) {
-    return TRUE;//C->RemoveVolumeFromTrack(C,Letter);
-  }
-
-  bool DiskTracker::CW_InitTracker() {
-    if (SetupVSS()) {
-      return ConnectDriver(C);
-    }
-    return FALSE;
-  }
-
-  bool DiskTracker::CW_AddToTrack(wchar_t L, int Type) {
-    return AddVolumeToTrack(C, L, (BackupType)Type);
-  }
-
-  bool DiskTracker::CW_SetupStream(wchar_t L, int BT, StreamInfo^ StrInf) {
     
-    DotNetStreamInf SI = { 0 };
-    if (SetupStream(C, L, (BackupType)BT, &SI)) {
-
-      StrInf->ClusterCount = SI.ClusterCount;
-      StrInf->ClusterSize = SI.ClusterSize;
-      StrInf->FileName = gcnew String(SI.FileName.c_str());
-      StrInf->MetadataFileName = gcnew String(SI.MetadataFileName.c_str());
-
-      StreamID = GetVolumeID(C, L);
-
-      return true;
+    DiskTracker::DiskTracker() {
+        C = (LOG_CONTEXT*)malloc(sizeof(LOG_CONTEXT));
+        memset(C, 0, sizeof(LOG_CONTEXT));
+        C->Port = INVALID_HANDLE_VALUE;
+        C->ShutDown = NULL;
+        C->Thread = NULL;
+        C->CleaningUp = FALSE;
+        C->Volumes = { 0,0 };
+        
+        //R = (restore_inf*)malloc(sizeof(restore_inf*));
+        
+        R = new restore_inf;
+        R->RootDir = L"";
+        
     }
-
-    return false;
-  }
-
-  /*
-Version: -1 to restore full backup otherwise version number to restore(version number=0 first inc-diff backup)
-*/
-  bool DiskTracker::CW_RestoreToVolume(
-    wchar_t TargetLetter,
-    wchar_t SrcLetter,
-    INT Version,
-    bool ShouldFormat,
-    System::String^ RootDir
-  ) {
-
-    R->TargetLetter = TargetLetter;
-    R->SrcLetter = SrcLetter;
-
-    R->Version = Version;
-    if (Version < 0) {
-      R->Version = NAR_FULLBACKUP_VERSION;
+    
+    DiskTracker::~DiskTracker() {
+        //Do deconstructor things
+        
+        free(C->Volumes.Data);
+        C->CleaningUp = TRUE;
+        WaitForSingleObject(C->ShutDown, INFINITE);
+        CloseHandle(C->Thread);
+        CloseHandle(C->ShutDown);
+        
+        delete R;
+        delete C;
     }
-
-
-    R->RootDir = L"";
-
-    return OfflineRestoreToVolume(R, ShouldFormat);
-
-  }
-
-  bool DiskTracker::CW_RestoreToFreshDisk(wchar_t TargetLetter, wchar_t SrcLetter, INT Version, int DiskID, System::String^ RootDir) {
-
-    R->TargetLetter = TargetLetter;
-    R->SrcLetter = SrcLetter;
-    R->Version = Version;
-    if (Version < 0) {
-      R->Version = NAR_FULLBACKUP_VERSION;
+    
+    bool DiskTracker::CW_RemoveFromTrack(wchar_t Letter) {
+        return TRUE;//C->RemoveVolumeFromTrack(C,Letter);
     }
-
-
-    R->RootDir = L"";
-
-    return OfflineRestoreCleanDisk(R, DiskID);
-  }
-
-  bool DiskTracker::CW_ReadStream(void* Data, int Size) {
-    return ReadStream(&C->Volumes.Data[StreamID], Data, Size);
-  }
-
-  bool DiskTracker::CW_TerminateBackup(bool Succeeded) {
-    return TerminateBackup(&C->Volumes.Data[StreamID], Succeeded);
-  }
-
-
-  List<VolumeInformation^>^ DiskTracker::CW_GetVolumes() {
-
-    data_array<volume_information> V = NarGetVolumes();
-
-    List<VolumeInformation^>^ Result = gcnew  List<VolumeInformation^>;
-
-    for (int i = 0; i < V.Count; i++) {
-      VolumeInformation^ BI = gcnew VolumeInformation;
-      BI->Size = V.Data[i].Size;
-      BI->Bootable = V.Data[i].Bootable;
-      BI->DiskID   = V.Data[i].DiskID;
-      BI->DiskType = V.Data[i].DiskType;
-      BI->Letter   = V.Data[i].Letter;
-      Result->Add(BI);
+    
+    bool DiskTracker::CW_InitTracker() {
+        if (SetupVSS()) {
+            return ConnectDriver(C);
+        }
+        return FALSE;
     }
+    
+    bool DiskTracker::CW_AddToTrack(wchar_t L, int Type) {
+        return AddVolumeToTrack(C, L, (BackupType)Type);
+    }
+    
+    bool DiskTracker::CW_RemoveFromTrack(wchar_t Letter) {
+        return RemoveVolumeFromTrack(C, Letter);
+    }
+    
+    bool DiskTracker::CW_SetupStream(wchar_t L, int BT, StreamInfo^ StrInf) {
+        
+        DotNetStreamInf SI = { 0 };
+        if (SetupStream(C, L, (BackupType)BT, &SI)) {
+            
+            StrInf->ClusterCount = SI.ClusterCount;
+            StrInf->ClusterSize = SI.ClusterSize;
+            StrInf->FileName = gcnew String(SI.FileName.c_str());
+            StrInf->MetadataFileName = gcnew String(SI.MetadataFileName.c_str());
+            
+            StreamID = GetVolumeID(C, L);
+            
+            return true;
+        }
+        
+        return false;
+    }
+    
+    /*
+  Version: -1 to restore full backup otherwise version number to restore(version number=0 first inc-diff backup)
+  */
+    bool DiskTracker::CW_RestoreToVolume(
+                                         wchar_t TargetLetter,
+                                         wchar_t SrcLetter,
+                                         INT Version,
+                                         bool ShouldFormat,
+                                         System::String^ RootDir
+                                         ) {
+        
+        R->TargetLetter = TargetLetter;
+        R->SrcLetter = SrcLetter;
+        
+        R->Version = Version;
+        if (Version < 0) {
+            R->Version = NAR_FULLBACKUP_VERSION;
+        }
+        
+        
+        R->RootDir = L"";
+        
+        return OfflineRestoreToVolume(R, ShouldFormat);
+        
+    }
+    
+    bool DiskTracker::CW_RestoreToFreshDisk(wchar_t TargetLetter, wchar_t SrcLetter, INT Version, int DiskID, System::String^ RootDir) {
+        
+        R->TargetLetter = TargetLetter;
+        R->SrcLetter = SrcLetter;
+        R->Version = Version;
+        if (Version < 0) {
+            R->Version = NAR_FULLBACKUP_VERSION;
+        }
+        
+        
+        R->RootDir = L"";
+        
+        return OfflineRestoreCleanDisk(R, DiskID);
+    }
+    
+    bool DiskTracker::CW_ReadStream(void* Data, int Size) {
+        return ReadStream(&C->Volumes.Data[StreamID], Data, Size);
+    }
+    
+    bool DiskTracker::CW_TerminateBackup(bool Succeeded) {
+        return TerminateBackup(&C->Volumes.Data[StreamID], Succeeded);
+    }
+    
+    
+    List<VolumeInformation^>^ DiskTracker::CW_GetVolumes() {
+        
+        data_array<volume_information> V = NarGetVolumes();
+        
+        List<VolumeInformation^>^ Result = gcnew  List<VolumeInformation^>;
+        
+        for (int i = 0; i < V.Count; i++) {
+            VolumeInformation^ BI = gcnew VolumeInformation;
+            BI->Size = V.Data[i].Size;
+            BI->Bootable = V.Data[i].Bootable;
+            BI->DiskID = V.Data[i].DiskID;
+            BI->DiskType = V.Data[i].DiskType;
+            BI->Letter = V.Data[i].Letter;
+            Result->Add(BI);
+        }
+        
+        FreeDataArray(&V);
+        
+        return Result;
+    }
+    
+    List<BackupMetadata^>^ CW_GetBackupsInDirectory(const wchar_t *RootDir) {
+        
+        List<BackupMetadata^>^ ResultList = gcnew List<BackupMetadata^>;
+        int MaxMetadataCount = 128;
+        int Found = 0;
+        backup_metadata* BMList = (backup_metadata*)malloc(sizeof(backup_metadata) * MaxMetadataCount);
+        
+        BOOLEAN bResult = NarGetBackupsInDirectory(RootDir, BMList, MaxMetadataCount, &Found);
+        if (bResult && Found <= MaxMetadataCount) {
+            
+            for (int i = 0; i < Found; i++) {
+                
+                BackupMetadata^ BMet = gcnew BackupMetadata;
+                BMet->Letter = BMList[i].Letter;
+                BMet->BackupType = (int)BMList[i].BT;
+                BMet->DiskType = BMList[i].DiskType;
+                BMet->OSVolume = BMList[i].IsOSVolume;
+                BMet->Version = BMList[i].Version;
+                ResultList->Add(BMet);
+            }
 
-    FreeDataArray(&V);
+        }
+        else {
+            if (bResult == FALSE) {
+                // TODO
+            }
+            if (Found > MaxMetadataCount) {
+                //TODO
+            }
+        }
 
-    return Result;
-  }
 
-  // TODO(Batuhan): helper functions, like which volume we are streaming etc.
+        free(BMList);
+
+        return ResultList;
+    }
+    
+    // TODO(Batuhan): helper functions, like which volume we are streaming etc.
 }

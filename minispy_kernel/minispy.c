@@ -869,7 +869,33 @@ Return Value:
                 }
 
             }
-            if (Command->Type == NarCommandType_QueryErrors) {
+            if (Command->Type == NarCommandType_DeleteVolume) {
+
+                BOOLEAN FoundVolume = FALSE;
+                for (int i = 0; i < NAR_MAX_VOLUME_COUNT; i++) {
+                    
+                    ExAcquireFastMutex(&NarData.VolumeRegionBuffer[i].FastMutex);
+
+                    if (RtlCompareMemory(Command->VolumeGUIDStr, NarData.VolumeRegionBuffer[i].Reserved, NAR_GUID_STR_SIZE) == NAR_GUID_STR_SIZE) {
+                        // found the volume
+                        FoundVolume = TRUE;
+                        memset(NarData.VolumeRegionBuffer[i].MemoryBuffer, 0, NAR_MEMORYBUFFER_SIZE);
+                        NAR_MB_USED(NarData.VolumeRegionBuffer[i].MemoryBuffer) = 2 * sizeof(INT32);
+                        memset(NarData.VolumeRegionBuffer[i].Reserved, 0, NAR_GUID_STR_SIZE);
+                        NarData.VolumeRegionBuffer[i].GUIDStrVol.Length = 0;
+
+                        // early termination
+                        ExReleaseFastMutex(&NarData.VolumeRegionBuffer[i].FastMutex);
+                        break;
+                    }
+
+                    ExReleaseFastMutex(&NarData.VolumeRegionBuffer[i].FastMutex);
+
+                }
+
+                if (!FoundVolume) {
+                    DbgPrint("Couldnt find volume %S\n", Command->VolumeGUIDStr);
+                }
 
             }
 

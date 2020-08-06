@@ -243,7 +243,7 @@ typedef struct _RECORD_LIST {
 
 typedef enum NAR_COMMAND_TYPE {
     NarCommandType_GetVolumeLog,
-    NarCommandType_QueryErrors,
+    NarCommandType_DeleteVolume,
     NarCommandType_AddVolume
 }NAR_COMMAND_TYPE;
 

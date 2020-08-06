@@ -664,13 +664,17 @@ BOOLEAN
 AddVolumeToTrack(PLOG_CONTEXT Context, wchar_t Letter, BackupType Type);
 
 BOOLEAN
-RemoveVolumeFromTrack(PLOG_CONTEXT Context, wchar_t Letter);
+RemoveVolumeFromTrack(LOG_CONTEXT *Context, wchar_t Letter);
 
 inline BOOLEAN
 DetachVolume(volume_backup_inf* VolInf);
 
 inline BOOLEAN
 AttachVolume(volume_backup_inf* VolInf, BOOLEAN SetActive = TRUE);
+
+
+BOOLEAN
+NarGetBackupsInDirectory(const wchar_t* Directory, backup_metadata* B, int BufferSize, int* FoundCount);
 
 DWORD WINAPI
 RetrieveLogRecords(
