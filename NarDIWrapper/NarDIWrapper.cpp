@@ -60,13 +60,24 @@ using namespace System;
 namespace NarDIWrapper {
     
     DiskTracker::DiskTracker() {
-        C = (LOG_CONTEXT*)malloc(sizeof(LOG_CONTEXT));
-        memset(C, 0, sizeof(LOG_CONTEXT));
-        C->Port = INVALID_HANDLE_VALUE;
-        C->ShutDown = NULL;
-        C->Thread = NULL;
-        C->CleaningUp = FALSE;
-        C->Volumes = { 0,0 };
+        C = NarLoadBootState();
+        // when loading, always check for old states, if one is not presented, create new one from scratch
+        if (C == NULL) {
+            // couldnt find old state
+            C = (LOG_CONTEXT*)malloc(sizeof(LOG_CONTEXT));
+            memset(C, 0, sizeof(LOG_CONTEXT));
+            C->Port = INVALID_HANDLE_VALUE;
+            C->ShutDown = NULL;
+            C->Thread = NULL;
+            C->CleaningUp = FALSE;
+            C->Volumes = { 0,0 };
+
+        }
+        else {
+            // find old state
+            printf("Succ loaded boot state\n");
+        }
+
         
         //R = (restore_inf*)malloc(sizeof(restore_inf*));
         
@@ -196,7 +207,24 @@ namespace NarDIWrapper {
         return Result;
     }
     
-    List<BackupMetadata^>^ CW_GetBackupsInDirectory(const wchar_t *RootDir) {
+    List<DiskInfo^>^ DiskTracker::CW_GetDisksOnSystem() {
+        auto CResult = NarGetDisks();
+        if (CResult.Count == 0) return nullptr;
+
+        List<DiskInfo^>^ Result = gcnew List<DiskInfo^>;
+        for (int i = 0; i < CResult.Count; i++) {
+            DiskInfo^ temp = gcnew DiskInfo;
+            temp->ID = CResult.Data[i].ID;
+            temp->SizeGB = CResult.Data[i].Size;
+            temp->ToString = CResult.Data[i].Type;
+            
+            Result->Add(temp);
+        }
+
+        return Result;
+    }
+
+    List<BackupMetadata^>^ DiskTracker::CW_GetBackupsInDirectory(const wchar_t *RootDir) {
         
         List<BackupMetadata^>^ ResultList = gcnew List<BackupMetadata^>;
         int MaxMetadataCount = 128;

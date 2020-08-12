@@ -74,7 +74,8 @@ namespace NarDIWrapper {
 
     bool CW_RestoreToFreshDisk(wchar_t TargetLetter, wchar_t SrcLetter, INT Version, int DiskID, System::String^ Rootdir);
 
-    List<BackupMetadata^>^ CW_GetBackupsInDirectory(wchar_t RootDir);
+    List<BackupMetadata^>^ CW_GetBackupsInDirectory(const wchar_t *RootDir);
+    List<DiskInfo^>^ CW_GetDisksOnSystem();
 
   private:
 
