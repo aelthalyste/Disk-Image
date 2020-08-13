@@ -1166,7 +1166,22 @@ GetMFTLCN(char VolumeLetter) {
         Result.Insert(r);
     }
 
-#define MEMORY_BUFFER_SIZE (1024LL*1024LL*716LL)
+#define MEMORY_BUFFER_SIZE (1024LL*1024LL*1024LL)
+
+    struct {
+        UINT32 Count[8];
+        UINT32 Start[8];
+    }DEBUG_CLUSTER_INFORMATION;
+    
+    nar_record* ClustersExtracted = (nar_record*)malloc(1024*1024*5);
+    int ClusterExtractedCount = 0;
+    memset(ClustersExtracted, 0, 1024 * 1024 * 5);
+#define NAR_INSERT_CLUSTER(START, LEN) ClustersExtracted[ClusterExtractedCount] = {(UINT32)(START), (UINT32)(LEN)}; ClusterExtractedCount++;
+
+    int DBG_CLUSTER_COUNT = 0;
+    memset(&DEBUG_CLUSTER_INFORMATION, 0, sizeof(DEBUG_CLUSTER_INFORMATION));
+#define DBG_INSERT(START,COUNT) DEBUG_CLUSTER_INFORMATION.Start[DBG_CLUSTER_COUNT] = (UINT32)(START); DEBUG_CLUSTER_INFORMATION.Count[DBG_CLUSTER_COUNT] = (UINT32)(COUNT); (DBG_CLUSTER_COUNT)++;
+#define DBG_INSERT
 
     void* FileBuffer = malloc(MEMORY_BUFFER_SIZE);
     INT32 FileBufferCount = MEMORY_BUFFER_SIZE / 1024LL;
@@ -1182,13 +1197,13 @@ GetMFTLCN(char VolumeLetter) {
             // change. sadly i havent found official document to says like, mft starts at 0x10th sector.
             // on my machine it always starts from 0x10th sector. which is second cluster if your sector size is 512
             // and cluster size is 8*sector
-            LONGLONG MFTOffsetInByte = 8192; // 0x10*SectorSize
-            if (NarSetFilePointer(VolumeHandle, MFTOffsetInByte)) {
+            
+            {
 
                 //nar_region *MFTRegions = 0;
                 DWORD BR = 0;
 
-                if (ReadFile(VolumeHandle, FileBuffer, MEMORY_BUFFER_SIZE, &BR, 0)) {
+                {
 
 
                     // So we now MFT lcns, just iterate them one by one, check for directory flag. if set, parse where its INDEX_ALLOCATION data at the volume
@@ -1243,21 +1258,15 @@ GetMFTLCN(char VolumeLetter) {
                                             // iterate until file attr 0xA0 found, which is INDEX_ALLOCATION
                                             // maybe some dir does not contain INDEX_ALLOCATION, like empty dirs, or other things i am not aware of.
                                             // its better write solid solution
+
                                             while (RemainingLen > 0) {
 
                                                 if ((*(INT32*)FileAttribute & NAR_INDEX_ALLOCATION_FLAG) == NAR_INDEX_ALLOCATION_FLAG) {
 
                                                     INT32 DataRunsOffset = *(INT32*)((BYTE*)FileAttribute + 32);
-                                                    INT32 FileAttributeSize = *(INT32*)((BYTE*)FileAttribute + 4);
-
-                                                    void* DataRuns = (char*)FileAttribute + DataRunsOffset;
                                                     
-                                                    // NOTE(Batuhan): In order to find where dataruns end, i must know endpoint of file attribute itself.
-                                                    // for each datarun, i can substract its totalsize from fileattribute then check if i found end of it.
-                                                    FileAttributeSize -= DataRunsOffset;
-                                                    INT32 DataRunReadSoFar = 0;
+                                                    void* DataRuns = (char*)FileAttribute + DataRunsOffset;
 
-                                                    INT32 TempVariable = 0;
                                                     // So it looks like dataruns doesnt actually tells you LCN, to save up space, they kinda use smt like 
                                                     // winapi's deviceiocontrol routine, maybe the reason for fetching VCN-LCN maps from winapi is weird because 
                                                     // thats how its implemented at ntfs at first place. who knows
@@ -1290,23 +1299,27 @@ GetMFTLCN(char VolumeLetter) {
                                                     } 
 
 
-                                                    FileAttributeSize -= (FirstClusterSize + ClusterCountSize);
-                                                    DataRunReadSoFar = FirstClusterSize + ClusterCountSize;
-
+                                                    
                                                     INT64 OldClusterStart = FirstCluster;
+                                                    void *D = (BYTE*)DataRuns + FirstClusterSize + ClusterCountSize + 1;
 
-                                                    while (FileAttributeSize > 0) {
+                                                    
+                                                    DBG_INSERT(FirstCluster, ClusterCount);
+                                                    NAR_INSERT_CLUSTER(FirstCluster, ClusterCount);
 
-                                                        void* D = (BYTE*)DataRuns + DataRunReadSoFar;
+                                                    while (*(BYTE*)D) {
+
                                                         Size = *(BYTE*)D;
 
+                                                        //UPDATE: Even tho entry finishes at 8 byte aligment, it doesnt finish itself here, adds at least 1 byte for zero termination to indicate its end
+                                                        //so rather than tracking how much we read so far, we can check if we encountered zero termination
                                                         // NOTE(Batuhan): Each entry is at 8byte aligment, so lets say we thought there must be smt like 80 bytes reserved for 0xA0 attribute
                                                         // but since data run's size is not constant, it might finish at not exact multiple of 8, like 75, so rest of the 5 bytes are 0
                                                         // We can keep track how many bytes we read so far etc etc, but rather than that, if we just check if size is 0, which means rest is just filler 
                                                         // bytes to aligment border, we can break early.
                                                         if (Size == 0) break;
                                                         
-                                                        TempVariable++;
+                                                        
 
                                                         // extract 4bit nibbles from size
                                                         ClusterCountSize = (Size & 0x0F);
@@ -1314,7 +1327,7 @@ GetMFTLCN(char VolumeLetter) {
                                                         
                                                         // Sparse files may cause that, but not sure about what is sparse and if it effects directories. 
                                                         // If not, nothing to worry about, branch predictor should take care of that
-                                                        if(ClusterCountSize == 0)break;
+                                                        if(ClusterCountSize == 0 || FirstClusterSize == 0)break;
 
                                                         // Swipe to left to clear extra bits, then swap back to get correct result.
                                                         ClusterCount = *(INT64*)((BYTE*)D + 1);
@@ -1328,15 +1341,18 @@ GetMFTLCN(char VolumeLetter) {
                                                         }
 
 
-                                                        if(TempVariable > 1 && FirstCluster < 0){
-                                                            printf("temp variable was bigger than one\n");
-                                                        }
+                                                        //if(TempVariable > 1 && FirstCluster < 0){
+                                                        //    dbgbreak
+                                                        //}
 
-
+                                                        
                                                         FirstCluster += OldClusterStart;
+                                                        // Update tail
                                                         OldClusterStart = FirstCluster;
-                                                        FileAttributeSize -= (FirstClusterSize + ClusterCountSize);
-                                                        DataRunReadSoFar += FirstClusterSize + ClusterCountSize + 1;
+                                                        
+                                                        D = (BYTE*)D + (FirstClusterSize + ClusterCountSize + 1);
+                                                        DBG_INSERT(FirstCluster, ClusterCount);
+                                                        NAR_INSERT_CLUSTER(FirstCluster, ClusterCount);
 
                                                     }
 
@@ -1365,18 +1381,23 @@ GetMFTLCN(char VolumeLetter) {
                                     
                                     }
 
-
+                                    
 
                                 }
                                 else {
-                                    
-                                    
+#if _DEBUG
+                                DebugBreak();
+#endif
 
                                 }
 
 
                             }
                             else {
+#if _DEBUG
+                            DebugBreak();
+#endif
+                                printf("FileCount %i\t FileBufferCount %i\n", FileCount, FileBufferCount);
                                 // must iterate 
 
                             }
@@ -1396,9 +1417,7 @@ GetMFTLCN(char VolumeLetter) {
 
 
             }
-            else {
-
-            }
+           
 
 
 
