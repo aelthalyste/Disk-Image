@@ -26,7 +26,6 @@ namespace DiskBackupGUI.Tabs
             myMain = main;
             InitializeComponent();
             diskTracker = new DiskTracker();
-            
         }
 
         private void OpenChildForm(Form childForm)
