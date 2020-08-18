@@ -494,8 +494,8 @@ VOID
 DisplayError(DWORD Code);
 
 
-INT32
-ReadStream(volume_backup_inf* VolInf, void* Buffer, int Size);
+UINT32
+ReadStream(volume_backup_inf* VolInf, void* Buffer, unsigned int Size);
 
 //BOOLEAN
 //SetupRestoreStream(PLOG_CONTEXT C, wchar_t Letter, void *Metadata, int MSize);

@@ -57,6 +57,16 @@ using namespace System;
 
 #define CONVERT_TYPES(_in,_out) _out = msclr::interop::marshal_as<decltype(_out)>(_in);
 
+void SystemStringToWCharPtr(System::String ^SystemStr, wchar_t *Destination) {
+    
+    pin_ptr<const wchar_t> wch = PtrToStringChars(SystemStr);
+    size_t ConvertedChars = 0;
+    size_t SizeInBytes = (SystemStr->Length + 1) * 2;
+    
+    memcpy(Destination, wch, SizeInBytes);
+
+}
+
 namespace NarDIWrapper {
     
     DiskTracker::DiskTracker() {
@@ -222,8 +232,11 @@ namespace NarDIWrapper {
         return Result;
     }
 
-    List<BackupMetadata^>^ DiskTracker::CW_GetBackupsInDirectory(const wchar_t *RootDir) {
+    List<BackupMetadata^>^ DiskTracker::CW_GetBackupsInDirectory(System::String^ SystemStrRootDir) {
         
+        wchar_t RootDir[256];
+        SystemStringToWCharPtr(SystemStrRootDir, RootDir);
+
         List<BackupMetadata^>^ ResultList = gcnew List<BackupMetadata^>;
         int MaxMetadataCount = 128;
         int Found = 0;

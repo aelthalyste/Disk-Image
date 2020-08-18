@@ -222,11 +222,11 @@ Return Value:
                                 
                                 for (int TempIndex = 0; TempIndex < DataUsed / sizeof(nar_record); TempIndex++) {
                                     
-                                    if (((nar_record*)NAR_MB_DATA(OutBuffer))[TempIndex].StartPos >= V->VolumeTotalClusterCount) {
-
+                                    if (((nar_record*)NAR_MB_DATA(OutBuffer))[TempIndex].StartPos + ((nar_record*)NAR_MB_DATA(OutBuffer))[TempIndex].Len < V->VolumeTotalClusterCount) {
+                                        FileDump(&((nar_record*)NAR_MB_DATA(OutBuffer))[TempIndex] , sizeof(nar_record), V->LogHandle);
                                     }
                                     else{
-                                        FileDump(&((nar_record*)NAR_MB_DATA(OutBuffer))[TempIndex] , sizeof(nar_record), V->LogHandle);
+                                        
                                     }
 
                                 }

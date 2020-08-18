@@ -1774,10 +1774,10 @@ GetVolumeID(PLOG_CONTEXT C, wchar_t Letter) {
     return ID;
 }
 
-INT32
-ReadStream(volume_backup_inf* VolInf, void* Buffer, int TotalSize) {
+UINT32
+ReadStream(volume_backup_inf* VolInf, void* Buffer, unsigned int TotalSize) {
     //TotalSize MUST be multiple of cluster size
-    INT32 Result = 0;
+    UINT32 Result = 0;
     BOOLEAN ErrorOccured = FALSE;
 
     int ClustersToRead = TotalSize / VolInf->ClusterSize;
@@ -1789,7 +1789,7 @@ ReadStream(volume_backup_inf* VolInf, void* Buffer, int TotalSize) {
     }
     
 
-    int RemainingSize = TotalSize;
+    unsigned int RemainingSize = TotalSize;
     void* CurrentBufferOffset = Buffer;
     
     if (VolInf->Stream.RecIndex >= VolInf->Stream.Records.Count) {
@@ -1800,7 +1800,7 @@ ReadStream(volume_backup_inf* VolInf, void* Buffer, int TotalSize) {
     while (RemainingSize) {
 
         if (VolInf->Stream.RecIndex >= VolInf->Stream.Records.Count) {
-            printf("Rec index was higher than record's count, result %i, rec_index %i rec_count %i\n", Result, VolInf->Stream.RecIndex, VolInf->Stream.Records.Count);
+            printf("Rec index was higher than record's count, result %u, rec_index %i rec_count %i\n", Result, VolInf->Stream.RecIndex, VolInf->Stream.Records.Count);
             return Result;
         }
 
@@ -1809,7 +1809,7 @@ ReadStream(volume_backup_inf* VolInf, void* Buffer, int TotalSize) {
         UINT64 ClustersRemainingByteSize = VolInf->Stream.Records.Data[VolInf->Stream.RecIndex].Len - VolInf->Stream.ClusterIndex;
         ClustersRemainingByteSize *= VolInf->ClusterSize;
 
-        int ReadSize = MIN((UINT64)RemainingSize, ClustersRemainingByteSize);
+        DWORD ReadSize = MIN((UINT64)RemainingSize, ClustersRemainingByteSize);
 
         ULONGLONG FilePtrTarget = (ULONGLONG)VolInf->ClusterSize * ((ULONGLONG)VolInf->Stream.Records.Data[VolInf->Stream.RecIndex].StartPos + (ULONGLONG)VolInf->Stream.ClusterIndex);
         if (NarSetFilePointer(VolInf->Stream.Handle, FilePtrTarget)) {
@@ -1817,9 +1817,9 @@ ReadStream(volume_backup_inf* VolInf, void* Buffer, int TotalSize) {
             BOOL OperationResult = ReadFile(VolInf->Stream.Handle, CurrentBufferOffset, ReadSize, &BytesReadAfterOperation, 0);
             Result += BytesReadAfterOperation;
             if (!OperationResult || BytesReadAfterOperation != ReadSize) {
-              printf("STREAM ERROR: Couldnt read %i bytes, instead read %i, error code %i\n", ReadSize, BytesReadAfterOperation, OperationResult);
+              printf("STREAM ERROR: Couldnt read %lu bytes, instead read %lu, error code %i\n", ReadSize, BytesReadAfterOperation, OperationResult);
               printf("rec_index % i rec_count % i, remaining bytes %I64d, offset at disk %I64d\n", VolInf->Stream.RecIndex, VolInf->Stream.Records.Count, ClustersRemainingByteSize, FilePtrTarget);
-              printf("Total bytes read for buffer %i\n", Result);
+              printf("Total bytes read for buffer %u\n", Result);
               ErrorOccured = TRUE;
             }
             
@@ -2690,6 +2690,13 @@ OfflineRestoreToVolume(restore_inf* R, BOOLEAN ShouldFormat) {
         }
         else {
             printf("Couldnt read backup metadata\n");
+            
+            printf("Error RegionsMetadata %i\n", BM.Errors.RegionsMetadata);
+            printf("Error Regions %i\n", BM.Errors.Regions);
+            printf("Error MFTMetadata %i\n", BM.Errors.MFTMetadata);
+            printf("Error MFT %i\n", BM.Errors.MFT);
+            printf("Error Recovery %i\n", BM.Errors.Recovery);
+
             Result = FALSE;
         }
     }
