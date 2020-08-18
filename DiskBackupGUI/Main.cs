@@ -242,23 +242,22 @@ namespace DiskBackupGUI
 
         private void btnDifferential_Click(object sender, EventArgs e)
         {
-            int typeParam = 0;
-            List<DataGridViewRow> checkedColumn = new List<DataGridViewRow>();
+            List<char> checkedColumn = new List<char>();
             foreach (DataGridViewRow row in dataGridView1.Rows)
             {
                 if (Convert.ToBoolean(row.Cells["Checked"].Value) == true)
                 {
-                    checkedColumn.Add(row);
+                    checkedColumn.Add((char)row.Cells["Letter"].Value);
                 }
             }
             MyMessageBox myMessageBox = new MyMessageBox();
+            myMessageBox.Scheduler = scheduler;
+            myMessageBox.Letters = checkedColumn;
             myMessageBox.Show();
-            Task task = BackupThreadAsync(checkedColumn, typeParam);
         }
 
         private void btnIncremental_Click(object sender, EventArgs e)
         {
-            int typeParam = 1;
             List<char> checkedColumn = new List<char>();
             foreach (DataGridViewRow row in dataGridView1.Rows)
             {
@@ -311,12 +310,14 @@ namespace DiskBackupGUI
             OpenChildForm(new FormAdd());
         }
 
+        //restore tab açma methodu
         private void btnRestore_Click(object sender, EventArgs e)
         {
             ActiveButton(sender, activeColor);
             OpenChildForm(new FormRestore(this));
         }
-
+       
+        //formu kapatma butonu
         private void btnExit_Click(object sender, EventArgs e)
         {
             Application.Exit();

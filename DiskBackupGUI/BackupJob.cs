@@ -55,7 +55,6 @@ namespace DiskBackupGUI
 
             }
             return Task.CompletedTask;
-
         }
 
     }

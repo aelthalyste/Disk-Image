@@ -21,6 +21,7 @@ namespace DiskBackupGUI
         public IScheduler Scheduler { get; set; }
         public static int jobIdCounter = 0;
         public List<char> Letters { get; set; }
+        
         public MyMessageBox()
         {
             InitializeComponent();
@@ -56,7 +57,6 @@ namespace DiskBackupGUI
             finally
             {
                 btnOkay.Enabled = true;
-
             }
         }
 
@@ -151,9 +151,12 @@ namespace DiskBackupGUI
             jobIdCounter++;
             Close();
 
-
             btnNowOkay.Enabled = true;
+        }
 
+        private void btnExit_Click(object sender, EventArgs e)
+        {
+            Close();
         }
     }
 }
