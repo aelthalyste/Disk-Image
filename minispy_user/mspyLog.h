@@ -112,10 +112,8 @@ RecordEqual(nar_record* N1, nar_record* N2) {
 #define MAKE_W_STR(arg) L#arg
 
 #ifdef _DEBUG
-#define Assert(expression, msg) if(!(expression)) do{printf(msg); *(int*)0 = 0;}while(0);
 #define Assert(expression) if(!(expression)) do{*(int*)0 = 0;}while(0);
 #else
-#define Assert(expression, msg) do{(expression);} while(0);
 #define Assert(expression) do{ (expression); }while(0);
 #endif
 
@@ -222,6 +220,7 @@ struct volume_backup_inf {
     HANDLE LogHandle; //Handle to file that is logging volume's changes.
     UINT32 IncRecordCount; //Incremental change count of the volume, this value will be reseted after every SUCCESSFUL backup operation
     
+    DWORD VolumeTotalClusterCount;
     
     /*
     Valid after diff-incremental setup. Stores all changes occured on disk, starting from latest incremental, or beginning if request was diff
@@ -374,7 +373,7 @@ struct volume_information {
     ULONGLONG Size; //in bytes!
     BOOLEAN Bootable; // Healthy && NTFS && !Boot
     char Letter;
-    INT8 DiskID;
+    unsigned char DiskID;
     char DiskType;
 };
 
@@ -393,7 +392,7 @@ file_read
 NarReadFile(const char* FileName);
 
 BOOLEAN
-NarDumpToFile(const char* FileName, void* Data, int Size);
+NarDumpToFile(const char* FileName, void* Data, unsigned int Size);
 
 BOOLEAN
 NarSetVolumeSize(char Letter, int TargetSizeMB);
@@ -428,7 +427,7 @@ NarGetVolumeSize(char Letter);
 inline int
 NarGetVolumeDiskType(char Letter);
 
-inline int
+inline unsigned char
 NarGetVolumeDiskID(char Letter);
 
 BOOLEAN
@@ -495,7 +494,7 @@ VOID
 DisplayError(DWORD Code);
 
 
-BOOLEAN
+INT32
 ReadStream(volume_backup_inf* VolInf, void* Buffer, int Size);
 
 //BOOLEAN
@@ -587,7 +586,7 @@ ULONGLONG
 NarGetFilePointer(HANDLE F);
 
 BOOLEAN
-AppendMFTFile(HANDLE File, HANDLE VSSHANDLE, char Letter, int ClusterSize);
+AppendMFTFile(HANDLE File, HANDLE VSSHANDLE, data_array<nar_record> MFTLCN, int ClusterSize);
 
 BOOLEAN
 AppendRecoveryToFile(HANDLE File, char Letter);
@@ -613,7 +612,7 @@ NarOpenVolume(char Letter);
 void
 NarCloseVolume(HANDLE V);
 
-BOOLEAN
+inline BOOLEAN
 NarSetFilePointer(HANDLE File, ULONGLONG V);
 
 BOOLEAN

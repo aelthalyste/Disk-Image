@@ -128,8 +128,7 @@ Return Value:
     PLOG_CONTEXT context = (PLOG_CONTEXT)lpParameter;
     HRESULT hResult;
 
-    NAR_COMMAND commandMessage;
-
+    
     //printf("Log: Starting up\n");
     std::wstring LogDOSName = L"";
 #pragma warning(push)
@@ -152,10 +151,8 @@ Return Value:
         static constexpr int USERGUIDSTRLEN = 50;
         static constexpr int WSTRBUFFERLEN = 256;
         static WCHAR wStrBuffer[256];
-        static WCHAR VolumeGUIDStr[50];
         memset(wStrBuffer, 0, WSTRBUFFERLEN * sizeof(WCHAR));
-        memset(VolumeGUIDStr, 0, USERGUIDSTRLEN * sizeof(WCHAR));
-
+        
         for (int VolumeIndex = 0; VolumeIndex < context->Volumes.Count; VolumeIndex++) {
 
 
@@ -165,20 +162,18 @@ Return Value:
             {
                 continue;
             }
+            NAR_COMMAND Command;
 
             wsprintfW(wStrBuffer, L"%c:\\", V->Letter);
-            BOOLEAN Result = GetVolumeNameForVolumeMountPointW(wStrBuffer, VolumeGUIDStr, USERGUIDSTRLEN);
+            
 
-            if (Result != 0) {
-                VolumeGUIDStr[1] = L'?';
+            if (NarGetVolumeGUIDKernelCompatible(V->Letter, Command.VolumeGUIDStr)) {
 
                 DWORD Hell = 0;
-                NAR_COMMAND Command;
-                memset(&Command, 0, sizeof(NAR_COMMAND));
-
+                
                 memset(OutBuffer, 0, NAR_MEMORYBUFFER_SIZE);
                 Command.Type = NarCommandType_GetVolumeLog;
-                memcpy(Command.VolumeGUIDStr, VolumeGUIDStr, USERGUIDSTRLEN * sizeof(WCHAR));
+                
                 hResult = FilterSendMessage(context->Port, &Command, sizeof(NAR_COMMAND), OutBuffer, NAR_MEMORYBUFFER_SIZE, &Hell);
 
                 if (SUCCEEDED(hResult)) {
@@ -222,24 +217,37 @@ Return Value:
                         if (V->FilterFlags.SaveToFile) {
                             //ScreenDump(0, pLogRecord->Name, pRecordData);
                             INT32 DataUsed = NAR_MB_DATA_USED(OutBuffer);
+                            
+                            if (DataUsed > 0 && DataUsed < NAR_MEMORYBUFFER_SIZE) {
+                                
+                                for (int TempIndex = 0; TempIndex < DataUsed / sizeof(nar_record); TempIndex++) {
+                                    
+                                    if (((nar_record*)NAR_MB_DATA(OutBuffer))[TempIndex].StartPos >= V->VolumeTotalClusterCount) {
 
-                            if (DataUsed > 0 && DataUsed < NAR_MEMORYBUFFER_SIZE - 2 * sizeof(INT32)) {
+                                    }
+                                    else{
+                                        FileDump(&((nar_record*)NAR_MB_DATA(OutBuffer))[TempIndex] , sizeof(nar_record), V->LogHandle);
+                                    }
 
+                                }
+
+                                /*
                                 if (FileDump(NAR_MB_DATA(OutBuffer), DataUsed, V->LogHandle)) {
                                     V->IncRecordCount += NAR_MB_DATA_USED(OutBuffer) / sizeof(nar_record);
                                 }
                                 else {
                                     printf("## Error occured while writing log to file. FERROR!!\n");
                                 }
+                                */
 
                             }
                             else {
 
                                 if (DataUsed < 0) {
-                                    printf("Data used was lower than zero %i\n", DataUsed);
+                                    printf("Data used was lower than zero %i, GUID : %S\n", DataUsed, Command.VolumeGUIDStr);
                                 }
                                 if (DataUsed > NAR_MEMORYBUFFER_SIZE - 2 * sizeof(INT32)) {
-                                    printf("Data size exceeded buffer size itself, this is a fatal error(size = %i)\n", DataUsed);
+                                    printf("Data size exceeded buffer size itself, this is a fatal error(size = %i), GUID : %S\n", DataUsed, Command.VolumeGUIDStr);
                                 }
 
                             }
@@ -445,12 +453,9 @@ Return Value:
     if (RecordData->Error == NAR_ERR_MAX_ITER) {
         printf("MAX_ITER ERROR! ");
     }
-    if (RecordData->Error == NAR_ERR_OVERFLOW) {
-        printf("OVERFLOW ERROR ");
-    }
     {
         for (int i = 0; i < RecordData->RecCount; i++) {
-            printf("%d\t\%d\t", RecordData->P[i].S, RecordData->P[i].L);
+            printf("%d\t%d\t", RecordData->P[i].S, RecordData->P[i].L);
         }
         printf("\n");
     }

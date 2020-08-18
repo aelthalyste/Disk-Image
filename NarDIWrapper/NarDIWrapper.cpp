@@ -99,9 +99,7 @@ namespace NarDIWrapper {
         delete C;
     }
     
-    bool DiskTracker::CW_RemoveFromTrack(wchar_t Letter) {
-        return TRUE;//C->RemoveVolumeFromTrack(C,Letter);
-    }
+   
     
     bool DiskTracker::CW_InitTracker() {
         if (SetupVSS()) {
@@ -177,7 +175,7 @@ namespace NarDIWrapper {
         return OfflineRestoreCleanDisk(R, DiskID);
     }
     
-    bool DiskTracker::CW_ReadStream(void* Data, int Size) {
+    INT32 DiskTracker::CW_ReadStream(void* Data, int Size) {
         return ReadStream(&C->Volumes.Data[StreamID], Data, Size);
     }
     
@@ -216,7 +214,7 @@ namespace NarDIWrapper {
             DiskInfo^ temp = gcnew DiskInfo;
             temp->ID = CResult.Data[i].ID;
             temp->SizeGB = CResult.Data[i].Size;
-            temp->ToString = CResult.Data[i].Type;
+            temp->Type = CResult.Data[i].Type;
             
             Result->Add(temp);
         }

@@ -723,16 +723,13 @@ Return Value:
             NAR_COMMAND* Command = (NAR_COMMAND*)InputBuffer;
             if (Command->Type == NarCommandType_GetVolumeLog) {
                 
-                void* PagedGUIDStrBuffer = ExAllocatePoolWithTag(PagedPool, NAR_GUID_STR_SIZE, NAR_TAG);
                 INT32 FoundVolume = FALSE;
                 
                 if (Command->VolumeGUIDStr != NULL
-                    && PagedGUIDStrBuffer != NULL
                     && OutputBuffer != NULL
                     && OutputBufferSize == NAR_MEMORYBUFFER_SIZE) {
                     
                     //memset(OutputBuffer, 0, OutputBufferSize);
-                    memcpy(PagedGUIDStrBuffer, Command->VolumeGUIDStr, NAR_GUID_STR_SIZE);
                     
                     
                     for (int i = 0; i < NAR_MAX_VOLUME_COUNT; i++) {
@@ -740,7 +737,7 @@ Return Value:
                         
                         ExAcquireFastMutex(&NarData.VolumeRegionBuffer[i].FastMutex);
                         
-                        if (RtlCompareMemory(PagedGUIDStrBuffer, NarData.VolumeRegionBuffer[i].Reserved, NAR_GUID_STR_SIZE) == NAR_GUID_STR_SIZE) {
+                        if (RtlCompareMemory(Command->VolumeGUIDStr, NarData.VolumeRegionBuffer[i].Reserved, NAR_GUID_STR_SIZE) == NAR_GUID_STR_SIZE) {
                             
                             memcpy(OutputBuffer, NarData.VolumeRegionBuffer[i].MemoryBuffer, NAR_MB_USED(NarData.VolumeRegionBuffer[i].MemoryBuffer));
                             
@@ -763,12 +760,10 @@ Return Value:
                     
                     *ReturnOutputBufferLength = 0;
                     if (FoundVolume == FALSE) {
-                        DbgPrint("Volume not found!\n");
+                        DbgPrint("Volume not found! %wZ\n", Command->VolumeGUIDStr);
                     }
                     else {
-                        DbgPrint("Volume found, copying data from NPAGED memory to output buffer, size %i\n", NAR_MEMORYBUFFER_SIZE);
                         *ReturnOutputBufferLength = (ULONG)NAR_MEMORYBUFFER_SIZE;
-                        
                         DbgPrint("Succ copied data to output buffer\n");
                     }
                     
@@ -779,7 +774,6 @@ Return Value:
                     DbgPrint("BIG IF BLOCK FAILED IN SPYMESSAGE\n"); // short but effective temporary message
                 }
                 
-                if (PagedGUIDStrBuffer != 0) ExFreePoolWithTag(PagedGUIDStrBuffer, NAR_TAG);
                 
             }
             if (Command->Type == NarCommandType_AddVolume) {
@@ -970,8 +964,8 @@ Return Value:
     
     ULONG PID = FltGetRequestorProcessId(Data);
     // filter out temporary files and files that would be closed if last handle freed
-    if ((Data->Iopb->TargetFileObject->Flags & FO_TEMPORARY_FILE) || (Data->Iopb->TargetFileObject->Flags & FO_DELETE_ON_CLOSE) || PID == NarData.UserModePID) {
-        return 	FLT_PREOP_SUCCESS_NO_CALLBACK;
+    if ((Data->Iopb->TargetFileObject->Flags & FO_TEMPORARY_FILE) == FO_TEMPORARY_FILE || (Data->Iopb->TargetFileObject->Flags & FO_DELETE_ON_CLOSE) == FO_DELETE_ON_CLOSE || PID == NarData.UserModePID) {
+        return  FLT_PREOP_SUCCESS_NO_CALLBACK;
     }
     
     
@@ -1010,7 +1004,6 @@ Return Value:
             
             //
 #if 0
-            if (0) {
                 
                 RtlUnicodeStringPrintf(&UniStr, L"\\Device\\HarddiskVolume%i\\Users\\%S\\AppData\\Local\\Temp", NarData.OsDeviceID, NarData.UserName);
                 if (RtlPrefixUnicodeString(&UniStr, &nameInfo->Name, FALSE)) {
@@ -1042,7 +1035,7 @@ Return Value:
                     goto NAR_PREOP_END;
                 }
                 
-            }
+            
 #endif
             
             
@@ -1067,6 +1060,12 @@ Return Value:
                 ExFreeToPagedLookasideList(&NarData.LookAsideList, UnicodeStrBuffer);
                 goto NAR_PREOP_END;
             }
+            RtlUnicodeStringPrintf(&UniStr, L".pf");
+            if (RtlSuffixUnicodeString(&UniStr, &nameInfo->Name, FALSE)) {
+                ExFreeToPagedLookasideList(&NarData.LookAsideList, UnicodeStrBuffer);
+                goto NAR_PREOP_END;
+            }
+
             
             //NAR
             
@@ -1106,14 +1105,14 @@ Return Value:
             BOOLEAN CeilTest = FALSE;
             
             for (;;) {
+
                 MaxIteration++;
                 if (MaxIteration > 1024) {
-                    Error = NAR_ERR_MAX_ITER;
+                    Error |= NAR_ERR_MAX_ITER;
                     break;
                 }
                 
-                status = FltFsControlFile(
-                                          FltObjects->Instance,
+                status = FltFsControlFile(FltObjects->Instance,
                                           Data->Iopb->TargetFileObject,
                                           FSCTL_GET_RETRIEVAL_POINTERS,
                                           &StartingInputVCNBuffer,
@@ -1126,7 +1125,7 @@ Return Value:
                 if (status != STATUS_BUFFER_OVERFLOW
                     && status != STATUS_SUCCESS
                     && status != STATUS_END_OF_FILE) {
-                    Error = NAR_ERR_TRINITY;
+                    Error |= NAR_ERR_TRINITY;
                     break;
                 }
                 
@@ -1135,10 +1134,22 @@ Return Value:
                 */
                 
                 if (ClusterMapBuffer.Extents[0].Lcn.QuadPart > MAXUINT32 || ClusterMapBuffer.Extents[0].NextVcn.QuadPart > MAXUINT32 || ClusterMapBuffer.StartingVcn.QuadPart > MAXUINT32) {
-                    Error = NAR_ERR_OVERFLOW;
+                    DbgPrint("OVERFLOW OCCURED lcn :%X, nextvcn : %X, starting vcn : %X, index %i, name %wZ\n",ClusterMapBuffer.Extents[0].Lcn.QuadPart, ClusterMapBuffer.Extents[0].NextVcn.QuadPart, ClusterMapBuffer.Extents[0].NextVcn.QuadPart, RecCount, &nameInfo->Name);
+                    Error |= NAR_ERR_REG_OVERFLOW;
                     break;
                 }
-                
+
+                if (ClusterMapBuffer.Extents[0].NextVcn.QuadPart - ClusterMapBuffer.StartingVcn.QuadPart < 0ll) {
+                    DbgPrint("Region was lower than 0, reg len :%X, extents %X, StartingVcn : %X, name : %wZ\n", ClusterMapBuffer.Extents[0].NextVcn.QuadPart - ClusterMapBuffer.StartingVcn.QuadPart, ClusterMapBuffer.Extents[0].NextVcn.QuadPart, ClusterMapBuffer.StartingVcn.QuadPart, &nameInfo->Name);
+                    
+                    for (int i = 0; i < RecCount; i++) {
+                        DbgPrint("Start: %X\tLen: %X\n", P[i].S, P[i].L);
+                    }
+
+                    Error |= NAR_ERR_REG_BELOW_ZERO;
+                    break;
+                }
+
                 if (!HeadFound) {
                     CeilTest = ((LONGLONG)ClusterWriteStartOffset < ClusterMapBuffer.Extents[0].NextVcn.QuadPart);
                 }
@@ -1197,7 +1208,6 @@ Return Value:
                         }
                         else {
                             DbgPrint("Cant fill any more regions\n");
-                            Error = NAR_ERR_REG_CANT_FILL;
                             break;
                         }
                         
@@ -1222,14 +1232,19 @@ Return Value:
                 
             }
             
+
+
             // TODO(BATUHAN): try one loop via KeTestSpinLock, to fast check if volume is available for fast access, if it is available and matches GUID, immidiately flush all regions and return, if not available test higher elements in list.
             void* CompareBuffer = ExAllocateFromPagedLookasideList(&NarData.GUIDComparePagedLookAsideList);
             ULONG SizeNeededForGUIDStr = 0;
             
             UNICODE_STRING GUIDStringNPaged;
             BOOLEAN Added = FALSE;
+            if(Error){
+                DbgPrint("Error flag(s) detected, %X\n", Error);
+            }
             
-            if (RecCount > 0 && UniStr.MaximumLength >= NAR_GUID_STR_SIZE) {
+            if (RecCount > 0 && UniStr.MaximumLength >= NAR_GUID_STR_SIZE && Error == 0) {
                 INT32 SizeNeededForMemoryBuffer = 2 * RecCount * sizeof(UINT32);
                 INT32 RemainingSizeOnBuffer = 0;
                 RtlInitEmptyUnicodeString(&GUIDStringNPaged, CompareBuffer, NAR_GUID_STR_SIZE);

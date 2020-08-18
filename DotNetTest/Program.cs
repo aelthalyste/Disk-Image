@@ -118,10 +118,19 @@ namespace DotNetTest
                             byte[] Buffer = new byte[BufferSize];
                             fixed (byte* BAddr = &Buffer[0])
                             {
-                                while (tracker.CW_ReadStream(BAddr, BufferSize))
+                                int Read = 0;
+                                long BytesReadSoFar = 0;
+                                while (true)
                                 {
-                                    st.Write(Buffer, 0, BufferSize);
+                                    Read = tracker.CW_ReadStream(BAddr, BufferSize);
+                                    if (Read == 0) break;
+                                    st.Write(Buffer, 0, Read);
+                                    BytesReadSoFar += Read;
                                 }
+
+                                Console.Write("Br at c# size ");
+                                Console.WriteLine(BytesReadSoFar);
+
                             }
                             if (!tracker.CW_TerminateBackup(true))
                             {
@@ -147,29 +156,21 @@ namespace DotNetTest
                             Console.WriteLine(info.FileName);
 
                             byte[] buffer = new byte[BufferSize];
+                            long BytesReadSoFar = 0;
                             fixed (byte* BAdd = &buffer[0])
                             {
-                                long ReadSoFar = 0;
-                                while (tracker.CW_ReadStream(BAdd, BufferSize))
+
+                                int Read = 0;
+                                while (true)
                                 {
-                                    st.Write(buffer, 0, BufferSize);
-                                    ReadSoFar += BufferSize;
+                                    Read = tracker.CW_ReadStream(BAdd, BufferSize);
+                                    if (Read == 0) break;   
+                                    st.Write(buffer, 0, Read);
+                                    BytesReadSoFar += Read;
                                 }
                                 
-                                if (ReadSoFar != info.ClusterCount * info.ClusterSize) {
-                                    int ReadRemaining = (int)(info.ClusterCount * info.ClusterSize - ReadSoFar);
-                                    if (ReadRemaining <= BufferSize)
-                                    {
-                                        st.Write(buffer, 0, ReadRemaining);
-                                    }
-                                    else {
-                                        Console.WriteLine("DIOTBETERRIR");
-                                    }
-
-                                }
-
-                                Console.Write("Total read ");
-                                Console.WriteLine(ReadSoFar);
+                                Console.Write("Br at c# size ");
+                                Console.WriteLine(BytesReadSoFar);
 
                                 tracker.CW_TerminateBackup(true);
                                 st.Close();

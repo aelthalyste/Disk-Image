@@ -230,7 +230,7 @@ Return Value:
             */
 
             if (ClusterMapBuffer.Extents[0].Lcn.QuadPart > MAXUINT32 || ClusterMapBuffer.Extents[0].NextVcn.QuadPart > MAXUINT32 || ClusterMapBuffer.StartingVcn.QuadPart > MAXUINT32) {
-                recordData->Error = NAR_ERR_OVERFLOW;
+                recordData->Error |= NAR_ERR_REG_OVERFLOW;
                 break;
             }
 

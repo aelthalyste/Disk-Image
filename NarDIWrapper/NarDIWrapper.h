@@ -21,7 +21,7 @@ namespace NarDIWrapper {
   public ref class DiskInfo {
   public:
     unsigned SizeGB;
-    System::String^ Type; // MBR, RAW, GPT
+    wchar_t Type; // MBR, RAW, GPT
     int ID;
   };
 
@@ -61,7 +61,7 @@ namespace NarDIWrapper {
     
     bool CW_SetupStream(wchar_t L, int BT, StreamInfo^ StrInf);
     
-    bool CW_ReadStream(void* Data, int Size);
+    INT32 CW_ReadStream(void* Data, int Size);
     
     bool CW_TerminateBackup(bool Succeeded);
 

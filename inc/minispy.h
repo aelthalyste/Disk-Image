@@ -22,12 +22,12 @@ Environment:
 
 // Custom NAR error codes
 
-#define NAR_ERR_TRINITY 3
-#define NAR_ERR_REG_OVERFLOW 4
-#define NAR_ERR_REG_CANT_FILL 5
+#define NAR_ERR_TRINITY         0x00000001
+#define NAR_ERR_REG_OVERFLOW    0x00000002 
+#define NAR_ERR_REG_CANT_FILL   0x00000004
+#define NAR_ERR_REG_BELOW_ZERO  0x00000008
 #define NAR_ERR_ALIGN 6
 #define NAR_ERR_MAX_ITER 7
-#define NAR_ERR_OVERFLOW 8
 
 // all neccecary kernel information will be stored here, every time system boots
 // driver will lookup for this file, if not present, it assumes fresh startup on system, if present
@@ -46,7 +46,7 @@ Environment:
 
 #define NAR_INIT_MEMORYBUFFER(Buffer)           *(INT32*)(Buffer) = 2*sizeof(INT32)
 #define NAR_MB_USED(Buffer)                     *(INT32*)(Buffer)
-#define NAR_MB_PUSH(Buffer, Src, Size)          memcpy((char*)(Buffer) + NAR_MB_USED(Buffer), (Src), (Size)); (*(INT32*)Buffer += (Size));
+#define NAR_MB_PUSH(Buffer, Src, Size)          memcpy((char*)(Buffer) + NAR_MB_USED(Buffer), (Src), (Size)); *(INT32*)(Buffer) = (*(INT32*)(Buffer) + (Size));
 #define NAR_MB_MARK_NOT_ENOUGH_SPACE(Buffer)    *(INT32*)((char*)(Buffer) + sizeof(INT32)) = TRUE;
 #define NAR_MB_CLEAR_FLAGS(Buffer)              *(INT32*)((char*)(Buffer) + sizeof(INT32)) = 0;
 #define NAR_MB_ERROR_FLAGS(Buffer)              *(INT32*)((char*)(Buffer) + sizeof(INT32))
