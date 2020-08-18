@@ -16,16 +16,19 @@ namespace DiskBackupGUI.Tabs.RestoreTabs
     {
         Main myMain;
         FormRestore formRestore;
+        FormRestore.MyBackupMetadata myBackupMetadata;
         public DiskTracker diskTracker;
         private int choseVolume = 0;
         public List<MyVolumeInformation> volumes;
         private Form currentChildForm;
 
-        public RestoreVolume(Main main)
+        public RestoreVolume(Main main, FormRestore.MyBackupMetadata myBackup)
         {
+            //volume listesini tekrar çağır mainden gelmesi sıkıntı olabilir
             InitializeComponent();
             formRestore = new FormRestore(myMain);
             myMain = main;
+            myBackupMetadata = myBackup;
             diskTracker = new DiskTracker();
             volumes = new List<MyVolumeInformation>();
 
@@ -74,6 +77,12 @@ namespace DiskBackupGUI.Tabs.RestoreTabs
         {
             dgwVolume.DataSource = volumes;
             dgwVolume.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
+
+            myMain.RtReportWrite("Letter : " + myBackupMetadata.Letter.ToString()
+                + "\nBackupType : " + myBackupMetadata.BackupType.ToString()
+                + "\nVersion  : " + myBackupMetadata.Version.ToString()
+                + "\nOSVolume : " + myBackupMetadata.OSVolume.ToString()
+                + "\nDiskType : " + myBackupMetadata.DiskType.ToString(), false);
         }
 
         private void OpenChildForm(Form childForm)
@@ -105,6 +114,13 @@ namespace DiskBackupGUI.Tabs.RestoreTabs
 
         private void btnRestore_Click(object sender, EventArgs e)
         {
+          //aşşağıdaki koda ihtiyaç olmayabilir... 
+          //**************************************************
+          //**************************************************
+          //              BURAYI TEKRAR DÜŞÜN
+          //**************************************************
+          //**************************************************
+
           List<DataGridViewRow> checkedDgvVolume = new List<DataGridViewRow>();
           foreach (DataGridViewRow row in dgwVolume.Rows)
           {
@@ -113,8 +129,6 @@ namespace DiskBackupGUI.Tabs.RestoreTabs
                   checkedDgvVolume.Add(row);
               }
           }
-         
-          myMain.RtReportWrite("Textbox boş bırakılamaz",false);
         }
 
         private void btnCancel_Click(object sender, EventArgs e)

@@ -31,8 +31,6 @@
             this.components = new System.ComponentModel.Container();
             this.panelMain = new System.Windows.Forms.Panel();
             this.dgwRestore = new System.Windows.Forms.DataGridView();
-            this.Column1 = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.Column3 = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.btnVolume = new FontAwesome.Sharp.IconButton();
             this.btnDisc = new FontAwesome.Sharp.IconButton();
             this.bunifuElipse2 = new Bunifu.Framework.UI.BunifuElipse(this.components);
@@ -55,24 +53,11 @@
             // dgwRestore
             // 
             this.dgwRestore.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            this.dgwRestore.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
-            this.Column1,
-            this.Column3});
             this.dgwRestore.Location = new System.Drawing.Point(76, 41);
             this.dgwRestore.Name = "dgwRestore";
             this.dgwRestore.Size = new System.Drawing.Size(904, 166);
             this.dgwRestore.TabIndex = 30;
             this.dgwRestore.CellClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.dgwRestore_CellClick);
-            // 
-            // Column1
-            // 
-            this.Column1.HeaderText = "Restore";
-            this.Column1.Name = "Column1";
-            // 
-            // Column3
-            // 
-            this.Column3.HeaderText = "restoreee";
-            this.Column3.Name = "Column3";
             // 
             // btnVolume
             // 
@@ -149,7 +134,5 @@
         private FontAwesome.Sharp.IconButton btnDisc;
         private System.Windows.Forms.DataGridView dgwRestore;
         private Bunifu.Framework.UI.BunifuElipse bunifuElipse2;
-        private System.Windows.Forms.DataGridViewTextBoxColumn Column1;
-        private System.Windows.Forms.DataGridViewTextBoxColumn Column3;
     }
 }

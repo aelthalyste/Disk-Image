@@ -14,6 +14,7 @@ namespace DiskBackupGUI.Tabs
     {
         public FormAdd()
         {
+            //serilization edilen görevleri göstermek ve fail olan görevleri göstermek için kullanılacak form 
             InitializeComponent();
         }
     }

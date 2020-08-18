@@ -22,7 +22,8 @@ namespace DiskBackupGUI
             int bufferSize = 64 * 1024 * 1024;
             byte[] buffer = new byte[bufferSize];
             StreamInfo str = new StreamInfo();
-            long readSoFar = 0;
+            long BytesReadSoFar = 0;
+            int Read = 0;
             bool result = false;
             foreach (var letter in letters)
             {
@@ -32,22 +33,17 @@ namespace DiskBackupGUI
                     {
                         fixed (byte* BAddr = &buffer[0])
                         {
-                            FileStream file = File.Create(Main.Instance.path + str.FileName); //kontrol etme işlemine bak
-                            while (diskTracker.CW_ReadStream(BAddr, bufferSize))
+                            FileStream file = File.Create(Main.Instance.myPath + str.FileName); 
+                            while (true)
                             {
-                                readSoFar += bufferSize;
-                                file.Write(buffer, 0, bufferSize);
+                                Read = diskTracker.CW_ReadStream(BAddr, bufferSize);
+                                if (Read == 0)
+                                    break;
+                                file.Write(buffer, 0, Read);
+                                BytesReadSoFar += Read;
+                            }
 
-                            }
-                            if (readSoFar != str.ClusterCount * str.ClusterSize)
-                            {
-                                long ReadRemaining = (long)(str.ClusterCount * str.ClusterSize - readSoFar);
-                                if (ReadRemaining <= bufferSize)
-                                {
-                                    file.Write(buffer, 0, (int)ReadRemaining);
-                                    result = true;
-                                }
-                            }
+                            result = (long)str.ClusterCount * (long)str.ClusterSize == BytesReadSoFar;
                             diskTracker.CW_TerminateBackup(result);
                         }
                     }

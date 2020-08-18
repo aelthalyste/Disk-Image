@@ -23,7 +23,7 @@ namespace DiskBackupGUI
         public List<MyVolumeInformation> volumes;
         public DiskTracker diskTracker;
         public int type;
-        public string path;
+        public string myPath = "";
         public Dictionary<string, List<char>> taskParams = new Dictionary<string, List<char>>();
 
         public static Main Instance { get; private set; }
@@ -71,6 +71,7 @@ namespace DiskBackupGUI
             leftBorderBtn.Size = new Size(7, 60);
             panelMenu.Controls.Add(leftBorderBtn);
 
+            //formda gösterim anında kısaltma "R" yerine tam adını yazması için "Raw" 
             foreach (var item in diskTracker.CW_GetVolumes())
             {
                 if (item.DiskType == 'R')
@@ -134,6 +135,7 @@ namespace DiskBackupGUI
             childForm.Show();
         }
 
+        //diğer form ekranlarından aşşağıdaki textbox'a yazı yazmayı sağlayan method
         public void RtReportWrite(string myText, bool add)
         {
             if (add == true)
@@ -180,15 +182,16 @@ namespace DiskBackupGUI
             }
         }
 
+        //scheduler yapıldığı için bu method şuanlık kullanılmıyor.
         public async Task BackupThreadAsync(List<DataGridViewRow> checkedColumn, int typeParam)
         {
             StreamInfo str = new StreamInfo();
             rtReport.Text = checkedColumn.Count.ToString() + " veri seçildi";
             int bufferSize = 64 * 1024 * 1024;
             byte[] buffer = new byte[bufferSize];
-            long readSoFar = 0;
+            long BytesReadSoFar = 0;
             bool result = false;
-            
+            int Read = 0;
             foreach (var item in checkedColumn)
             {
                 if (diskTracker.CW_SetupStream((char)item.Cells["Letter"].Value, typeParam, str))
@@ -199,29 +202,17 @@ namespace DiskBackupGUI
                     {
                         fixed (byte* BAddr = &buffer[0])
                         {
-                            FileStream file = File.Create(path + str.FileName); //kontrol etme işlemine bak
-                            while (diskTracker.CW_ReadStream(BAddr, bufferSize))
+                            FileStream file = File.Create(Main.Instance.myPath + str.FileName); //kontrol etme işlemine bak
+                            while (true)
                             {
-                                readSoFar += bufferSize;
-                                file.Write(buffer, 0, bufferSize);
+                                Read = diskTracker.CW_ReadStream(BAddr, bufferSize);
+                                if (Read == 0)
+                                    break;
+                                file.Write(buffer, 0, Read);
+                                BytesReadSoFar += Read;
+                            }
 
-                                MessageBox.Show("Read Done");
-                            }
-                            if (readSoFar != str.ClusterCount * str.ClusterSize)
-                            {
-                                long ReadRemaining = (long)(str.ClusterCount * str.ClusterSize - readSoFar);
-                                if (ReadRemaining <= bufferSize)
-                                {
-                                    file.Write(buffer, 0, (int)ReadRemaining);
-                                    result = true;
-                                    MessageBox.Show("Check Done");
-                                }
-                                else
-                                {
-                                    MessageBox.Show("Error");
-                                    rtReport.Text = "Error";
-                                }
-                            }
+                            result = (long)str.ClusterCount * (long)str.ClusterSize == BytesReadSoFar;
                             diskTracker.CW_TerminateBackup(result);
                         }
                     }
@@ -289,10 +280,11 @@ namespace DiskBackupGUI
             rtReport.Text = "Şeçili satırlar kaldırıldı";
         }
 
+        //path değişkenine global'de ihtiyaç olduğu için soldaki menüye eklemeyi düşün.
         private void btnPath_Click(object sender, EventArgs e)
         {
             folderBrowserDialog1.ShowDialog();
-            path = folderBrowserDialog1.SelectedPath;
+            myPath = folderBrowserDialog1.SelectedPath;
         }
 
         private void btnHome_Click(object sender, EventArgs e)
@@ -329,9 +321,9 @@ namespace DiskBackupGUI
             WindowState = FormWindowState.Minimized;
         }
 
+        //panelden formu hareket ettirmek için: 
         #region Form Hareket
 
-        //panelden formu hareket ettirmek için: 
         [DllImport("user32.DLL", EntryPoint = "ReleaseCapture")]
         private extern static void ReleaseCapture();
         [DllImport("user32.DLL", EntryPoint = "SendMessage")]

@@ -15,16 +15,20 @@ namespace DiskBackupGUI.Tabs.RestoreTabs
     {
         Main myMain;
         FormRestore formRestore;
+        FormRestore.MyBackupMetadata myBackupMetadata;
         public DiskTracker diskTracker;
         private int choseDisk = 1;
         private Form currentChildForm;
 
-        public RestoreDisk(Main main)
+        public RestoreDisk(Main main, FormRestore.MyBackupMetadata backupMetadata)
         {
+            //buraya formRestore'dan seçili olan myBackupMetadata geliyor
             InitializeComponent();
             formRestore = new FormRestore(myMain);
             myMain = main;
+            myBackupMetadata = backupMetadata;
             diskTracker = new DiskTracker();
+            dgwDisk.DataSource = diskTracker.CW_GetDisksOnSystem();
         }
 
         private void OpenChildForm(Form childForm)
@@ -47,6 +51,13 @@ namespace DiskBackupGUI.Tabs.RestoreTabs
 
         private void RestoreDisk_Load(object sender, EventArgs e)
         {
+            dgwDisk.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
+
+            myMain.RtReportWrite("Letter : " + myBackupMetadata.Letter.ToString()
+                + "\nBackupType : " + myBackupMetadata.BackupType.ToString()
+                + "\nVersion  : " + myBackupMetadata.Version.ToString()
+                + "\nOSVolume : " + myBackupMetadata.OSVolume.ToString()
+                + "\nDiskType : " + myBackupMetadata.DiskType.ToString(), false);
         }
 
         private void dgwDisk_CellClick(object sender, DataGridViewCellEventArgs e)
@@ -56,6 +67,13 @@ namespace DiskBackupGUI.Tabs.RestoreTabs
 
         private void btnRestore_Click(object sender, EventArgs e)
         {
+            //aşşağıdaki koda ihtiyaç olmayabilir... 
+            //**************************************************
+            //**************************************************
+            //              BURAYI TEKRAR DÜŞÜN
+            //**************************************************
+            //**************************************************
+
             if (txtDiskName.Text != "")
             {
                 List<DataGridViewRow> checkedDgvDisk = new List<DataGridViewRow>();
