@@ -205,21 +205,32 @@ struct volume_backup_inf {
     BackupType BT = BackupType::Inc;
     
     struct {
-        BOOLEAN SaveToFile; //If false, records will be saved to memory, RecordsMem
-        BOOLEAN FlushToFile; //If this is set, all memory will be flushed to file
         BOOLEAN IsActive;
     }FilterFlags;
-    
-    int CurrentLogIndex;
-    
-    DWORD ClusterSize;
-    
-    std::vector<nar_record> RecordsMem;
+
+    // when backing up, we dont want to mess up with log file while setting up file pointers
+    // since msging thread has to append, but program itself may read from start, that will
+    // eventually cause bugs. This mutex ensures there are no more than one thread using LogHandle
+    HANDLE FileWriteMutex;
+
+    UINT32 Version;
+    DWORD ClusterSize;    
     
     
     HANDLE LogHandle; //Handle to file that is logging volume's changes.
-    UINT32 IncRecordCount; //Incremental change count of the volume, this value will be reseted after every SUCCESSFUL backup operation
+
+    ////Incremental change count of the volume, this value will be reseted after every SUCCESSFUL backup operation
+    // this value times sizeof(nar_record) indicates how much data appended since last backup, useful when doing incremental backups
+    //UINT32 IncRecordCount;  // IGNORED IF DIFF BACKUP
     
+    // INdicates where last backup regions end in local metadata. bytes after that offset is non-backed up parts of the volume.
+    // this value + increcordcount*sizeof(nar_record) is PossibleNewBackupRegionOffsetMark
+    UINT64 LastBackupRegionOffset;
+
+    struct{
+        UINT64 PossibleNewBackupRegionOffsetMark;
+    }ActiveBackupInf;
+
     DWORD VolumeTotalClusterCount;
     
     /*
@@ -472,8 +483,6 @@ Function declerations
 void
 MergeRegions(data_array<nar_record>* R);
 
-inline BOOLEAN
-InitNewLogFile(volume_backup_inf* V);
 
 /*Returns negative ID if not found*/
 INT
@@ -552,10 +561,10 @@ NarCreatePrimaryPartition(int DiskID, char Letter);
 BOOLEAN
 SetupVSS();
 
-std::wstring
-GenerateLogFileName(wchar_t Letter, int Version);
+inline std::wstring
+GenerateLogFileName(wchar_t Letter);
 
-std::wstring
+inline std::wstring
 GenerateBinaryFileName(wchar_t Letter, int Version);
 
 backup_metadata_ex*

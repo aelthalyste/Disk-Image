@@ -645,24 +645,6 @@ CopyData(HANDLE S, HANDLE D, ULONGLONG Len) {
 
 
 
-inline BOOLEAN
-InitNewLogFile(volume_backup_inf* V) {
-    BOOLEAN Return = FALSE;
-    CloseHandle(V->LogHandle);
-    
-    V->LogHandle = CreateFileW(GenerateLogFileName(V->Letter, V->CurrentLogIndex).c_str(),
-                               GENERIC_READ | GENERIC_WRITE, 0, 0,
-                               CREATE_ALWAYS, 0, 0);
-    if (V->LogHandle != INVALID_HANDLE_VALUE) {
-        V->IncRecordCount = 0;
-        Return = TRUE;
-    }
-    else {
-        printf("Couldnt initialize new log file for version %i\n", V->CurrentLogIndex);
-    }
-    
-    return Return;
-}
 
 
 #pragma warning(push)
@@ -890,17 +872,13 @@ InitVolumeInf(volume_backup_inf* VolInf, wchar_t Letter, BackupType Type) {
     VolInf->FullBackupExists = FALSE;
     VolInf->BT = Type;
     
-    VolInf->FilterFlags.SaveToFile = TRUE;
-    VolInf->FilterFlags.FlushToFile = FALSE;
     
-    VolInf->CurrentLogIndex = 0;
     
+    VolInf->Version = -4;
     VolInf->ClusterSize = 0;
-    VolInf->RecordsMem.clear();
     VolInf->VSSPTR = 0;
     
     VolInf->LogHandle = INVALID_HANDLE_VALUE;
-    VolInf->IncRecordCount = 0;
     
     VolInf->Stream.Records = { 0,0 };
     VolInf->Stream.Handle = 0;
@@ -927,13 +905,20 @@ InitVolumeInf(volume_backup_inf* VolInf, wchar_t Letter, BackupType Type) {
             //Selected volume contains windows
             VolInf->IsOSVolume = TRUE;
         }
-        Return = TRUE;
+        VolInf->FileWriteMutex = CreateMutexA(NULL, FALSE, NULL);
+        if (VolInf->FileWriteMutex != NULL) {
+            Return = TRUE;
+        }
+        else {
+            printf("Couldnt create mutex for volume backup information structure\n");
+        }
     }
     else {
         printf("Cant get disk information from WINAPI\n");
         DisplayError(GetLastError());
     }
     // VolInf->IsOSVolume = FALSE;
+    
     
     return Return;
 }
@@ -1186,6 +1171,8 @@ GetMFTLCN(char VolumeLetter, HANDLE VolumeHandle) {
         Result.Insert(r);
     }
 
+
+    return Result;
     
     //return Result;
 
@@ -1201,12 +1188,20 @@ GetMFTLCN(char VolumeLetter, HANDLE VolumeHandle) {
     int ClusterExtractedCount = 0;
     memset(ClustersExtracted, 0, ClusterExtractedBufferSize);
 #define NAR_INSERT_CLUSTER(START, LEN) ClustersExtracted[ClusterExtractedCount++] = {(UINT32)(START), (UINT32)(LEN) };
-    
+
+
+#define NAR_MFT_DBG_INFO 0
+#if NAR_MFT_DBG_INFO
+#define DBG_INC(v) (v)++;
+#else
+#define DBG_INC
+#endif
+
     int DBG_INDX_FOUND = 0;
     int DBG_TOTAL_DIR_FOUND = 0;
-    
     int DBG_CLUSTER_COUNT = 0;
     int DBG_TOTAL_FILES_FOUND = 0;
+
     memset(&DEBUG_CLUSTER_INFORMATION, 0, sizeof(DEBUG_CLUSTER_INFORMATION));
 
 //#define DBG_INSERT(START,COUNT) DEBUG_CLUSTER_INFORMATION.Start[DBG_CLUSTER_COUNT] = (UINT32)(START); DEBUG_CLUSTER_INFORMATION.Count[DBG_CLUSTER_COUNT] = (UINT32)(COUNT); (DBG_CLUSTER_COUNT)++;
@@ -1266,14 +1261,15 @@ GetMFTLCN(char VolumeLetter, HANDLE VolumeHandle) {
                                 
                                 
 
-                                DBG_TOTAL_FILES_FOUND++;
+                                DBG_INC(DBG_TOTAL_FILES_FOUND);
 
                                 INT16 Flags = *(INT16*)((BYTE*)FileRecord + FlagOffset);
                                 
 
                                 if ((Flags & DirectoryFlag) == DirectoryFlag) {
                                     // that is a directory 
-                                    DBG_TOTAL_DIR_FOUND++;
+                                    DBG_INC(DBG_TOTAL_DIR_FOUND);
+                                    
                                     /*
                                     As far as i know, attributes will be sorted. so i can early terminate if i can just compare CurrentAttr>INDEX_ALLOCCATION
                                     */
@@ -1335,8 +1331,8 @@ GetMFTLCN(char VolumeLetter, HANDLE VolumeHandle) {
 
                                             DBG_INSERT(FirstCluster, ClusterCount);
                                             NAR_INSERT_CLUSTER(FirstCluster, ClusterCount);
-                                            DBG_INDX_FOUND++;
-
+                                            
+                                            DBG_INC(DBG_INDX_FOUND);
                                             while (*(BYTE*)D) {
 
                                                 Size = *(BYTE*)D;
@@ -1383,7 +1379,7 @@ GetMFTLCN(char VolumeLetter, HANDLE VolumeHandle) {
                                                 D = (BYTE*)D + (FirstClusterSize + ClusterCountSize + 1);
                                                 DBG_INSERT(FirstCluster, ClusterCount);
                                                 NAR_INSERT_CLUSTER(FirstCluster, ClusterCount);
-                                                DBG_INDX_FOUND++;
+                                                DBG_INC(DBG_INDX_FOUND);
                                                 
                                             }
 
@@ -1675,12 +1671,9 @@ RemoveVolumeFromTrack(LOG_CONTEXT *C, wchar_t L) {
         NarRemoveVolumeFromKernelList(L, C->Port);
         
         V->FullBackupExists = FALSE;
-        V->FilterFlags.SaveToFile = TRUE;
-        V->FilterFlags.FlushToFile = FALSE;
         V->FilterFlags.IsActive = FALSE;
-        V->CurrentLogIndex = -1;
         CloseHandle(V->LogHandle);
-        V->IncRecordCount = 0;
+        
         FreeDataArray(&V->Stream.Records);
         V->Stream.RecIndex = 0;
         V->Stream.ClusterIndex = 0;
@@ -1818,7 +1811,7 @@ ReadStream(volume_backup_inf* VolInf, void* Buffer, unsigned int TotalSize) {
             Result += BytesReadAfterOperation;
             if (!OperationResult || BytesReadAfterOperation != ReadSize) {
               printf("STREAM ERROR: Couldnt read %lu bytes, instead read %lu, error code %i\n", ReadSize, BytesReadAfterOperation, OperationResult);
-              printf("rec_index % i rec_count % i, remaining bytes %I64d, offset at disk %I64d\n", VolInf->Stream.RecIndex, VolInf->Stream.Records.Count, ClustersRemainingByteSize, FilePtrTarget);
+              printf("rec_index % i rec_count % i, remaining bytes %I64u, offset at disk %I64u\n", VolInf->Stream.RecIndex, VolInf->Stream.Records.Count, ClustersRemainingByteSize, FilePtrTarget);
               printf("Total bytes read for buffer %u\n", Result);
               ErrorOccured = TRUE;
             }
@@ -1879,11 +1872,8 @@ TerminateBackup(volume_backup_inf* V, BOOLEAN Succeeded) {
             
             //Somehow operation failed.
             V->FilterFlags.IsActive = FALSE;
-            V->FilterFlags.SaveToFile = FALSE;
-            V->FilterFlags.FlushToFile = FALSE;
             CLEANHANDLE(V->LogHandle);
             V->FullBackupExists = FALSE;
-            V->CurrentLogIndex = 0;
             
         }
         
@@ -1897,8 +1887,8 @@ TerminateBackup(volume_backup_inf* V, BOOLEAN Succeeded) {
         
         if (Succeeded) {
             // NOTE(Batuhan):
-            printf("Will save metadata to working directory, Version : %i\n", V->CurrentLogIndex);
-            SaveMetadata((char)V->Letter, V->CurrentLogIndex, V->ClusterSize, V->BT, V->Stream.Records, V->Stream.Handle);
+            printf("Will save metadata to working directory, Version : %i\n", V->Version);
+            SaveMetadata((char)V->Letter, V->Version, V->ClusterSize, V->BT, V->Stream.Records, V->Stream.Handle);
             
             if (V->BT == BackupType::Inc) {
                 
@@ -1935,21 +1925,20 @@ TerminateBackup(volume_backup_inf* V, BOOLEAN Succeeded) {
             we should overwrite and truncate it
          */
             
-            V->CurrentLogIndex++;
-            printf("Initializing new log file\n");
-            if (InitNewLogFile(V)) {
-                Return = TRUE;
-            }
-            else {
-                printf("Couldn't create metadata file, this is fatal error\n");
-                DisplayError(GetLastError());
-            }
+            V->Version++;
+            printf("YOU SHOULDNT BE SEEING THAT, GO TO LINE %i\n", __LINE__);
+            //if (InitNewLogFile(V)) {
+            //    Return = TRUE;
+            //}
+            //else {
+            //    printf("Couldn't create metadata file, this is fatal error\n");
+            //    DisplayError(GetLastError());
+            //}
             
             //backup operation succeeded condition end (for diff and inc)
         }
         
-        V->FilterFlags.FlushToFile = TRUE;
-        V->FilterFlags.SaveToFile = TRUE;
+
     }
     
     CLEANHANDLE(V->Stream.Handle);
@@ -2053,7 +2042,7 @@ SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, DotNetStreamInf* SI) {
                 
                 SI->ClusterCount = 0;
                 SI->ClusterSize = VolInf->ClusterSize;
-                SI->FileName = GenerateBinaryFileName(VolInf->Letter, VolInf->CurrentLogIndex);
+                SI->FileName = GenerateBinaryFileName(VolInf->Letter, VolInf->Version);
                 for (unsigned int i = 0; i < VolInf->Stream.Records.Count; i++) {
                     SI->ClusterCount += VolInf->Stream.Records.Data[i].Len;
                 }
@@ -2160,33 +2149,78 @@ SetIncRecords(volume_backup_inf* VolInf) {
     
     BOOLEAN Result = FALSE;
     DWORD BytesOperated = 0;
-    
-    DWORD FileSize = VolInf->IncRecordCount * sizeof(nar_record);
-    
-    VolInf->Stream.Records.Data = (nar_record*)malloc(FileSize);
-    VolInf->Stream.Records.Count = FileSize / sizeof(nar_record);
-    memset(VolInf->Stream.Records.Data, 0, FileSize);
-    printf("CURRENT LOG INDEX -> %i\n", VolInf->CurrentLogIndex);
-    if (SetFilePointer(VolInf->LogHandle, 0, 0, FILE_BEGIN) == 0) {
-        Result = ReadFile(VolInf->LogHandle, VolInf->Stream.Records.Data, FileSize, &BytesOperated, 0);
-        if (!SUCCEEDED(Result) || FileSize != BytesOperated) {
-            printf("Cant read difmetadata \n");
-            printf("Filesize-> %d, BytesOperated -> %d", FileSize, BytesOperated);
-            printf("N of records => %ld \n", FileSize / (UINT32)sizeof(nar_record));
-            DisplayError(GetLastError());
-        }
-        else {
-            printf("IncRecordCount -> %i\n", VolInf->Stream.Records.Count);
-            qsort(VolInf->Stream.Records.Data, VolInf->Stream.Records.Count, sizeof(nar_record), CompareNarRecords);
-            MergeRegions(&VolInf->Stream.Records);
-        }
-        
-        Result = TRUE;
+    if(VolInf == NULL){
+        printf("SetIncRecords: VolInf was null\n");
+        return FALSE;
     }
-    else {
-        printf("Failed to set file pointer to beginning of the file\n");
-        DisplayError(GetLastError());
-        //TODO failed
+
+    VolInf->Stream.Records.Data = 0;
+    VolInf->Stream.Records.Count = 0;
+
+    DWORD TargetReadSize = 0;
+    DWORD BytesRead = 0;
+
+    DWORD RetVal = WaitForSingleObject(VolInf->FileWriteMutex, 500);
+    if(RetVal == WAIT_OBJECT_0) {
+           
+        // safe to read from V->LogHandle
+
+        if(VolInf->ActiveBackupInf.PossibleNewBackupRegionOffsetMark - VolInf->LastBackupRegionOffset < 0xFFFFFFFFll){
+            TargetReadSize = VolInf->ActiveBackupInf.PossibleNewBackupRegionOffsetMark - VolInf->LastBackupRegionOffset;
+        
+            if(NarSetFilePointer(VolInf->LogHandle, VolInf->LastBackupRegionOffset)){
+                
+                VolInf->Stream.Records.Data = (nar_record*)malloc(TargetReadSize);
+                memset(VolInf->Stream.Records.Data, 0, TargetReadSize);
+                VolInf->Stream.Records.Count = TargetReadSize/sizeof(nar_record);
+
+                if(ReadFile(VolInf->LogHandle, VolInf->Stream.Records.Data, TargetReadSize, &BytesRead, 0) && BytesRead == TargetReadSize){
+                    
+                    qsort(VolInf->Stream.Records.Data, VolInf->Stream.Records.Count, sizeof(nar_record), CompareNarRecords);
+                    MergeRegions(&VolInf->Stream.Records);
+                    Result = TRUE;
+
+                }
+                else{
+
+                    printf("SetIncRecords Couldnt read %lu, instead read %lu\n", TargetReadSize, BytesRead);
+                    DisplayError(GetLastError());
+
+                }
+
+            }
+            else{
+                printf("Couldnt set file pointer\n");
+            }
+
+        }
+        else{
+            printf("Records appended since last backups size exceeds 4GB, size %I64u\n", VolInf->ActiveBackupInf.PossibleNewBackupRegionOffsetMark - VolInf->LastBackupRegionOffset);
+            // TODO exceeds 4GB limit
+        }
+
+
+        ReleaseMutex(VolInf->FileWriteMutex);
+
+    }
+    else{
+        
+        printf("Couldnt lock write file, ");
+        if(RetVal == WAIT_TIMEOUT){
+            printf("TIMEOUT");   
+        }
+        else if(RetVal == WAIT_FAILED){
+            printf("FAILED");
+        }
+        else if(RetVal == WAIT_ABANDONED){
+            printf("ABONDONED");
+        }
+        else{
+            printf("UNDEFINED\n");
+        }
+
+        printf("\n");
+
     }
     
     
@@ -2306,117 +2340,117 @@ WriteStream(restore_inf* RestoreInf, void* Data, int Size) {
 #endif
 
 
-#if 1
 BOOLEAN
 SetDiffRecords(volume_backup_inf* V) {
+
     printf("Entered SetDiffRecords\n");
     BOOLEAN Result = FALSE;
-    
-    HANDLE* F = (HANDLE*)malloc(sizeof(HANDLE) * (V->CurrentLogIndex + 1));
-    memset(F, 0, sizeof(HANDLE) * (V->CurrentLogIndex + 1));
-    
-    DWORD* FS = (DWORD*)malloc(sizeof(DWORD) * (V->CurrentLogIndex + 1));
-    memset(FS, 0, sizeof(DWORD) * (V->CurrentLogIndex + 1));
-    
-    
-    DWORD TotalFileSize = 0;
-    
-    for (int i = 0; i < V->CurrentLogIndex; i++) {
-        std::wstring FName = GenerateLogFileName(V->Letter, i).c_str();
-        F[i] = CreateFile(FName.c_str(), GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, 0, 0);
+
+    if (V == NULL || V->LogHandle == INVALID_HANDLE_VALUE) {
         
-        if (F[i] == INVALID_HANDLE_VALUE) {
-            printf("Can't open file %S\n", FName.c_str());
-            DisplayError(GetLastError());
-            return FALSE;
-        }
-        
-        DWORD Temp = GetFileSize(F[i], 0);
-        
-        printf("Opened file %S, size %i\n", FName.c_str(), Temp);
-        
-        TotalFileSize += Temp;
-        FS[i] = Temp;
-    }
-    
-    printf("IncRecordCount -> %i\n", V->IncRecordCount);
-    F[V->CurrentLogIndex] = V->LogHandle;
-    FS[V->CurrentLogIndex] = V->IncRecordCount * sizeof(nar_record);
-    TotalFileSize += (V->IncRecordCount * sizeof(nar_record));
-    
-    printf("Totalfilesize %i\tCurrentlogindex %i\n", TotalFileSize, V->CurrentLogIndex);
-    
-    if (V->Stream.Records.Data != NULL) {
-        // TODO(Batuhan): Log error
-    }
-    V->Stream.Records.Data = (nar_record*)malloc(TotalFileSize);
-    V->Stream.Records.Count = 0;
-    
-    DWORD LogRead = 0;
-    for (int i = 0; i <= V->CurrentLogIndex; i++) {
-        
-        std::wstring FN = GenerateLogFileName(V->Letter, i);
-        
-        DWORD BytesRead = 0;
-        if (SetFilePointer(F[i], 0, 0, FILE_BEGIN) == 0) {
-            
-            if (LogRead > TotalFileSize / sizeof(nar_record)) {
-                printf("Possibly access violation, LogRead -> %i , TotalFileSize -> %i\n", LogRead, TotalFileSize);
+        if(V){
+            if(V->LogHandle == INVALID_HANDLE_VALUE){
+                printf("LogHandle has invalid handle value\n");
             }
+        }
+        else{
+            printf("volume backup inf structure was null\n");
+        }
+
+        return FALSE;
+
+    }
+
+
+    V->ActiveBackupInf.PossibleNewBackupRegionOffsetMark = NarGetFilePointer(V->LogHandle);
+
+    DWORD WINAPIRetVAL = WaitForSingleObject(V->FileWriteMutex, 500);
+    if(WINAPIRetVAL == WAIT_OBJECT_0){
+
+        if(V->ActiveBackupInf.PossibleNewBackupRegionOffsetMark < 0xFFFFFFFFll){
             
-            if (ReadFile(F[i], &V->Stream.Records.Data[LogRead], FS[i], &BytesRead, 0) && BytesRead == FS[i]) {
-                V->Stream.Records.Count += FS[i] / sizeof(nar_record);
-                LogRead += FS[i] / sizeof(nar_record);
-                
+            DWORD TargetReadSize = V->ActiveBackupInf.PossibleNewBackupRegionOffsetMark;
+            DWORD BytesRead = 0;
+
+            if(NarSetFilePointer(V->LogHandle, 0)){
+
+                V->Stream.Records.Data = (nar_record*)malloc(TargetReadSize);
+                V->Stream.Records.Count = TargetReadSize / sizeof(TargetReadSize);
+
+                if(ReadFile(V->LogHandle, V->Stream.Records.Data, TargetReadSize, &BytesRead,0) && BytesRead == TargetReadSize){
+
+                    qsort(V->Stream.Records.Data, V->Stream.Records.Count, sizeof(nar_record), CompareNarRecords);
+                    MergeRegions(&V->Stream.Records);
+                    Result = TRUE;
+
+                }
+                else{
+
+                    printf("SetDiffRecords Couldnt read %lu, instead read %lu\n", TargetReadSize, BytesRead);
+                    DisplayError(GetLastError());
+                    
+                }
+
             }
-            else {
+            else{
                 
-                printf("Unable to read log file\n");
-                printf("File name %S\t FileSize %d\t BytesRead %d\n", FN.c_str(), FS[i], BytesRead);
-                DisplayError(GetLastError());
-                goto TERMINATE;
-                // TODO(Batuhan): error
-                
+                printf("Couldnt set file pointer to beginning of the file\n");
+
             }
-            
+
+        }  
+        else{
+            printf("LogFile size exceeds 4GB, cant process that much log, %I64d\n", V->ActiveBackupInf.PossibleNewBackupRegionOffsetMark);
         }
-        else {
-            printf("Unable to set file pointer to zero -> %S\n", FN.c_str());
-            DisplayError(GetLastError());
-            goto TERMINATE;
-            // TODO(Batuhan): error
+
+        ReleaseMutex(V->FileWriteMutex);
+
+    }
+    else{
+
+        printf("Couldnt lock write file, ");
+        if(WINAPIRetVAL == WAIT_TIMEOUT){
+            printf("TIMEOUT");   
         }
-        
-    }
-    
-    Result = TRUE;
-    TERMINATE:
-    
-    
-    // dont free F[V->CurrentLogIndex] since it isnt created in that context, leave caller's resources to caller :]
-    
-    for (int i = 0; i <= V->CurrentLogIndex; i++) {
-        CloseHandle(F[i]);
-    }
-    
-    
-    if (Result == TRUE && V->Stream.Records.Count) {
-        qsort(V->Stream.Records.Data, V->Stream.Records.Count, sizeof(nar_record), CompareNarRecords);
-        MergeRegions(&V->Stream.Records);
-        ULONGLONG Size = 0;
-        for (int i = 0; i < V->Stream.Records.Count; i++) {
-            Size += V->Stream.Records.Data[i].Len;
+        else if(WINAPIRetVAL == WAIT_FAILED){
+            printf("FAILED");
         }
-        printf("TOTAL SIZE TO BE BACKED UP %I64d\n", Size * 4096LL);
-        printf("Records count %i, record index %i\n", V->Stream.Records.Count, V->Stream.RecIndex);
+        else if(WINAPIRetVAL == WAIT_ABANDONED){
+            printf("ABONDONED");
+        }
+        else{
+            printf("UNDEFINED\n");
+        }
+
+        printf("\n");
+
     }
-    
-    free(F);
-    free(FS);
-    
+
+    if (V->ActiveBackupInf.PossibleNewBackupRegionOffsetMark > 0xFFFFFFFFll) {
+        // TODO(Batuhan) :
+    }
+
+    V->ActiveBackupInf.PossibleNewBackupRegionOffsetMark;
+
+    V->Stream.Records.Data = (nar_record*)malloc(V->ActiveBackupInf.PossibleNewBackupRegionOffsetMark);
+    V->Stream.Records.Count = V->ActiveBackupInf.PossibleNewBackupRegionOffsetMark / sizeof(nar_record);
+
+    DWORD BytesRead = 0;
+    DWORD TargetReadSize = (DWORD)V->ActiveBackupInf.PossibleNewBackupRegionOffsetMark;
+    Result = ReadFile(V->LogHandle, V->Stream.Records.Data, TargetReadSize, &BytesRead, 0);
+
+    if (Result && TargetReadSize == BytesRead) {
+        // thats it?
+    }
+    else {
+        // TODO(Batuhan): 
+
+    }
+
     return Result;
 }
-#endif
+    
+
 
 
 BOOLEAN
@@ -2432,14 +2466,30 @@ SetupStreamHandle(volume_backup_inf* VolInf) {
     BOOLEAN ErrorOccured = FALSE;
     HRESULT Result = 0;
     
-    VolInf->FilterFlags.FlushToFile = FALSE;
-    VolInf->FilterFlags.SaveToFile = !VolInf->FullBackupExists;
     VolInf->FilterFlags.IsActive = TRUE;
     
     if (VolInf->FullBackupExists) {
         if (!DetachVolume(VolInf)) {
             printf("Detach volume failed\n");
             return FALSE;
+        }
+        else{
+
+            DWORD RetVal = WaitForSingleObject(VolInf->FileWriteMutex, 500);
+            if(RetVal == WAIT_OBJECT_0){
+                LARGE_INTEGER CurrentFilePtr = {0};
+                if(GetFileSizeEx(VolInf->LogHandle, &CurrentFilePtr) != 0){
+                    VolInf->ActiveBackupInf.PossibleNewBackupRegionOffsetMark = CurrentFilePtr.QuadPart;
+                }
+
+                ReleaseMutex(VolInf->FileWriteMutex);
+
+            }
+            else{
+                printf("Couldnt lock file write mutex @ setupstreamhandle, returning false\n");
+                return FALSE;
+            }
+
         }
         printf("Volume detached !\n");
     }
@@ -2456,11 +2506,12 @@ SetupStreamHandle(volume_backup_inf* VolInf) {
         return FALSE;
     }
     
+    printf("YOU SHOULDNT BE SEEING THAT %i\n", __LINE__);
     if (!VolInf->FullBackupExists) {
-        if (!InitNewLogFile(VolInf)) {
-            printf("Can't init new log file\n");
-            return FALSE;
-        }
+        //if (!InitNewLogFile(VolInf)) {
+        //    printf("Can't init new log file\n");
+        //    return FALSE;
+        //}
     }
     
     
@@ -3661,15 +3712,9 @@ GenerateMetadataName(char Letter, int Version) {
 }
 
 inline std::wstring
-GenerateLogFileName(wchar_t Letter, int Version) {
+GenerateLogFileName(wchar_t Letter) {
     std::wstring Result = L"LOGFILE_";
     Result += (Letter);
-    if (Version == NAR_FULLBACKUP_VERSION) {
-        Result += L"FULL";
-    }
-    else {
-        Result += std::to_wstring(Version);
-    }
     return Result;
 }
 
@@ -4730,20 +4775,24 @@ NarGetBackupsInDirectory(const wchar_t* Directory, backup_metadata* B, int Buffe
                             //NOTE(Batuhan): File name indicated from metadata and actual file name matches
                             //Even though metadatas match, actual binary data may not exist at all or even, metadata itself might be corrupted too, or missing. Check it
                             
+
+                            BackupFound++;
+                            printf("Backup found %S\n", FDATA.cFileName);
+
+#if 0
                             //NOTE(Batuhan): check if actual binary data exists in path and valid in size
                             wcscpy(wstrbuffer, Directory);
                             wcscat(wstrbuffer, L"\\");
                             wcscat(wstrbuffer, GenerateBinaryFileName(B[BackupFound].Letter, B[BackupFound].Version).c_str());
                             if (PathFileExistsW(wstrbuffer)) {
                                 if (NarGetFileSize(wstrbuffer) == B[BackupFound].Size.Regions) {
-                                    BackupFound++;
-                                    printf("Backup found %S\n", FDATA.cFileName);
                                 }
                             }
-                            
+#endif
+
                         }
                         else {
-                            //NOTE(Batuhan): File name indicated from metadata and acutla file name does NOT match.
+                            //NOTE(Batuhan): File name indicated from metadata and actual file name does NOT match.
                             memset(&B[BackupFound], 0, sizeof(*B));
                         }
                         
@@ -4872,11 +4921,10 @@ NarLoadBootState() {
                                 
                                 
                                 VolInf.FilterFlags.IsActive = TRUE;
-                                VolInf.FilterFlags.SaveToFile = TRUE;
                                 
                                 VolInf.FullBackupExists = TRUE;
-                                VolInf.CurrentLogIndex = BootTrackData[i].Version;
-                                std::wstring LogFileName = GenerateLogFileName(VolInf.Letter, VolInf.CurrentLogIndex);
+                                VolInf.Version = BootTrackData[i].Version;
+                                std::wstring LogFileName = GenerateLogFileName(VolInf.Letter);
                                 VolInf.LogHandle = CreateFileW(LogFileName.c_str(), GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, 0, 0);
                                 
                                 if (VolInf.LogHandle != INVALID_HANDLE_VALUE) {
@@ -4963,7 +5011,7 @@ NarSaveBootState(LOG_CONTEXT* CTX) {
                 if (CTX->Volumes.Data[i].INVALIDATEDENTRY) {
                     
                     Pack.Letter = (char)CTX->Volumes.Data[i].Letter;
-                    Pack.Version = CTX->Volumes.Data[i].CurrentLogIndex;
+                    Pack.Version = CTX->Volumes.Data[i].Version;
                     Pack.BackupType = (char)CTX->Volumes.Data[i].BT;
                     DWORD BR = 0;
                     

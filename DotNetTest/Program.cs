@@ -46,8 +46,19 @@ namespace DotNetTest
                 Console.WriteLine("Narbulut volume yedekleme servisi v0.1\n");
                 PrintCommands();
                 DiskTracker tracker = new DiskTracker();
-                
-                
+
+                Console.WriteLine(Directory.GetCurrentDirectory());
+
+                var v111 = tracker.CW_GetBackupsInDirectory("D:\\workspace\\programming\\c++\\Disk Image\\DotNetTest\\bin\\Release");
+                Console.WriteLine(v111.Count);
+                foreach (var item in v111)
+                {
+                    Console.WriteLine(item.Letter);
+                    Console.WriteLine(item.Version);
+                    Console.WriteLine("");
+                }
+
+
                 if (tracker.CW_InitTracker())
                 {
 

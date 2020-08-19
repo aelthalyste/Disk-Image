@@ -144,7 +144,6 @@ Return Value:
         //
 
         if (context->CleaningUp) {
-
             break;
         }
 
@@ -154,7 +153,6 @@ Return Value:
         memset(wStrBuffer, 0, WSTRBUFFERLEN * sizeof(WCHAR));
         
         for (int VolumeIndex = 0; VolumeIndex < context->Volumes.Count; VolumeIndex++) {
-
 
             volume_backup_inf* V = &context->Volumes.Data[VolumeIndex];
 
@@ -177,7 +175,6 @@ Return Value:
                 hResult = FilterSendMessage(context->Port, &Command, sizeof(NAR_COMMAND), OutBuffer, NAR_MEMORYBUFFER_SIZE, &Hell);
 
                 if (SUCCEEDED(hResult)) {
-                    printf("For volume %c message sent successfully\n", (char)V->Letter);
 
                     if (!NAR_MB_ERROR_OCCURED(OutBuffer)) {
 
@@ -186,90 +183,47 @@ Return Value:
                             continue;
                         }
 
-                        if (V->FilterFlags.FlushToFile) {
-                            if (V->RecordsMem.size()) {
-                                printf("Dumping memory contents to file\n");
-                                HRESULT Result;
-                                DWORD BytesWritten = 0;
-                                DWORD BufferSize = V->RecordsMem.size() * sizeof(nar_record);
-                                DWORD SucRecCount = 0;
-                                Result = WriteFile(V->LogHandle, V->RecordsMem.data(), BufferSize, &BytesWritten, 0);
-                                if (!SUCCEEDED(Result) || BytesWritten != BufferSize) {
-                                    printf("Couldnt dump memory contents\n");
-                                    printf("written => %d\tbuffersize -> %d\n", BytesWritten, BufferSize);
-                                    printf("Result -> %d\n", Result);
-                                }
-                                SucRecCount = BytesWritten / sizeof(nar_record);
-                                V->IncRecordCount += SucRecCount;
+
+                        INT32 DataUsed = NAR_MB_DATA_USED(OutBuffer);
+
+                        if (DataUsed > 0 && DataUsed < NAR_MEMORYBUFFER_SIZE) {
+
+                            UINT32 RecCount = NAR_MB_DATA_USED(OutBuffer)/sizeof(nar_record);
+                            nar_record *Recs = (nar_record*)NAR_MB_DATA(OutBuffer);
+                            DWORD MSDNRetVAL = 0;
+
+                            MSDNRetVAL = WaitForSingleObject(V->FileWriteMutex, 250);
+                            if(MSDNRetVAL != WAIT_OBJECT_0){
+                                printf("Couldnt lock mutex to write records to file\n");
+                                continue;
                             }
-                            V->FilterFlags.SaveToFile = TRUE;
-                            V->FilterFlags.FlushToFile = FALSE;
-                            V->RecordsMem.clear();
-                            continue;
-                        }
 
 
+                            for (int TempIndex = 0; TempIndex < RecCount; TempIndex++) {
 
-                        if (!V->FilterFlags.IsActive) {
-                            //printf("Volume isnt active, breaking now\n");
-                            continue;
-                        }
-                        if (V->FilterFlags.SaveToFile) {
-                            //ScreenDump(0, pLogRecord->Name, pRecordData);
-                            INT32 DataUsed = NAR_MB_DATA_USED(OutBuffer);
-                            
-                            if (DataUsed > 0 && DataUsed < NAR_MEMORYBUFFER_SIZE) {
-                                
-                                UINT32 RecCount = NAR_MB_DATA_USED(OutBuffer)/sizeof(nar_record);
-                                nar_record *Recs = (nar_record*)NAR_MB_DATA(OutBuffer);
-
-                                for (int TempIndex = 0; TempIndex < RecCount; TempIndex++) {
-                                    
-                                    if (Recs[TempIndex].StartPos + Recs[TempIndex].Len < V->VolumeTotalClusterCount) {
-                                        FileDump(&Recs[TempIndex] , sizeof(nar_record), V->LogHandle);
-                                    }
-                                    else{
-                                        
-                                    }
-
+                                if (Recs[TempIndex].StartPos + Recs[TempIndex].Len < V->VolumeTotalClusterCount) {
+                                    FileDump(&Recs[TempIndex] , sizeof(nar_record), V->LogHandle);        
                                 }
+                                else{
 
-                                /*
-                                if (FileDump(NAR_MB_DATA(OutBuffer), DataUsed, V->LogHandle)) {
-                                    V->IncRecordCount += NAR_MB_DATA_USED(OutBuffer) / sizeof(nar_record);
-                                }
-                                else {
-                                    printf("## Error occured while writing log to file. FERROR!!\n");
-                                }
-                                */
-
-                            }
-                            else {
-
-                                if (DataUsed < 0) {
-                                    printf("Data used was lower than zero %i, GUID : %S\n", DataUsed, Command.VolumeGUIDStr);
-                                }
-                                if (DataUsed > NAR_MEMORYBUFFER_SIZE - 2 * sizeof(INT32)) {
-                                    printf("Data size exceeded buffer size itself, this is a fatal error(size = %i), GUID : %S\n", DataUsed, Command.VolumeGUIDStr);
                                 }
 
                             }
 
-                            continue;
+                            ReleaseMutex(V->FileWriteMutex);
 
                         }
                         else {
 
-                            UINT32 RecCount = NAR_MB_DATA_USED(OutBuffer) / sizeof(nar_record);
-                            nar_record* Recs = (nar_record*)NAR_MB_DATA(OutBuffer);
-
-                            for (unsigned int RecordIndex = 0; RecordIndex < RecCount; RecordIndex++) {
-                                if(Recs[RecordIndex].StartPos + Recs[RecordIndex].Len < V->VolumeTotalClusterCount){
-                                    V->RecordsMem.emplace_back(Recs[RecordIndex]);
-                                }
+                            if (DataUsed < 0) {
+                                printf("Data used was lower than zero %i, GUID : %S\n", DataUsed, Command.VolumeGUIDStr);
+                            }
+                            if (DataUsed > NAR_MEMORYBUFFER_SIZE - 2 * sizeof(INT32)) {
+                                printf("Data size exceeded buffer size itself, this is a fatal error(size = %i), GUID : %S\n", DataUsed, Command.VolumeGUIDStr);
                             }
 
                         }
+
 
 
                     }

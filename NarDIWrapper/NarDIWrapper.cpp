@@ -242,9 +242,12 @@ namespace NarDIWrapper {
         int Found = 0;
         backup_metadata* BMList = (backup_metadata*)malloc(sizeof(backup_metadata) * MaxMetadataCount);
         
+        printf("PRE GETBACKUPSINDIRECTORY CALL\n");
         BOOLEAN bResult = NarGetBackupsInDirectory(RootDir, BMList, MaxMetadataCount, &Found);
         if (bResult && Found <= MaxMetadataCount) {
             
+            printf("FOUND %i", Found);
+
             for (int i = 0; i < Found; i++) {
                 
                 BackupMetadata^ BMet = gcnew BackupMetadata;
@@ -254,16 +257,20 @@ namespace NarDIWrapper {
                 BMet->OSVolume = BMList[i].IsOSVolume;
                 BMet->Version = BMList[i].Version;
                 ResultList->Add(BMet);
+
             }
 
+            
         }
         else {
+
             if (bResult == FALSE) {
-                // TODO
+                printf("NarGetBackupsInDirectory returned FALSE\n");
             }
             if (Found > MaxMetadataCount) {
-                //TODO
+                printf("Found metadata count exceeds maxmetdatacount\n");
             }
+
         }
 
 

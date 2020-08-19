@@ -731,7 +731,7 @@ Return Value:
                     
                     //memset(OutputBuffer, 0, OutputBufferSize);
                     
-                    
+                    int DEBUG_COPIED_DATA = 0;
                     for (int i = 0; i < NAR_MAX_VOLUME_COUNT; i++) {
                         
                         
@@ -740,7 +740,8 @@ Return Value:
                         if (RtlCompareMemory(Command->VolumeGUIDStr, NarData.VolumeRegionBuffer[i].Reserved, NAR_GUID_STR_SIZE) == NAR_GUID_STR_SIZE) {
                             
                             memcpy(OutputBuffer, NarData.VolumeRegionBuffer[i].MemoryBuffer, NAR_MB_USED(NarData.VolumeRegionBuffer[i].MemoryBuffer));
-                            
+                            DEBUG_COPIED_DATA = NAR_MB_USED(NarData.VolumeRegionBuffer[i].MemoryBuffer);
+
                             memset(NarData.VolumeRegionBuffer[i].MemoryBuffer, 0, NAR_MEMORYBUFFER_SIZE);
                             NAR_INIT_MEMORYBUFFER(NarData.VolumeRegionBuffer[i].MemoryBuffer);
                             
@@ -764,7 +765,7 @@ Return Value:
                     }
                     else {
                         *ReturnOutputBufferLength = (ULONG)NAR_MEMORYBUFFER_SIZE;
-                        DbgPrint("Succ copied data to output buffer\n");
+                        DbgPrint("Succ copied data to output buffer, size %i\n", DEBUG_COPIED_DATA);
                     }
                     
                     
@@ -952,7 +953,7 @@ Return Value:
 
 --*/
 {
-    PFLT_FILE_NAME_INFORMATION nameInfo = NULL;
+    
     UNICODE_STRING defaultName;
     PUNICODE_STRING nameToUse;
     NTSTATUS status;
@@ -961,463 +962,8 @@ Return Value:
     UNREFERENCED_PARAMETER(nameToUse);
     UNREFERENCED_PARAMETER(CompletionContext);
     
-    
-    ULONG PID = FltGetRequestorProcessId(Data);
-    // filter out temporary files and files that would be closed if last handle freed
-    if ((Data->Iopb->TargetFileObject->Flags & FO_TEMPORARY_FILE) == FO_TEMPORARY_FILE || (Data->Iopb->TargetFileObject->Flags & FO_DELETE_ON_CLOSE) == FO_DELETE_ON_CLOSE || PID == NarData.UserModePID) {
-        return  FLT_PREOP_SUCCESS_NO_CALLBACK;
-    }
-    
-    
-    
-#if 1
-    
-    
-    if (FltObjects->FileObject != NULL) {
-        
-        status = FltGetFileNameInformation(Data,
-                                           FLT_FILE_NAME_NORMALIZED |
-                                           NarData.NameQueryMethod,
-                                           &nameInfo);
-        if (NT_SUCCESS(status)) {
-            
-            // Harddiskdevice\path\asdfs\sdffsd\file
-            /*
-               C:\Users\adm\AppData\Local\Temp
-               C:\Users\adm\AppData\Local\Microsoft\Windows\Temporary Internet Files
-               C:\Users\adm\AppData\Local\Google\Chrome\User Data\Default\Cache
-               C:\Users\adm\AppData\Local\Opera Software
-               C:\Users\adm\AppData\Local\Mozilla\Firefox\Profiles
-               C:\Windows\CSC
-            */
-            
-            //FltGetVolumeName(FltObjects->Volume, StringBuffer, 0);
-            
-            UNICODE_STRING UniStr;
-            void* UnicodeStrBuffer = ExAllocateFromPagedLookasideList(&NarData.LookAsideList);
-            if (UnicodeStrBuffer == NULL) {
-                DbgPrint("Couldnt allocate memory for unicode string\n");
-                return FLT_PREOP_SUCCESS_NO_CALLBACK;
-            }
-            
-            RtlInitEmptyUnicodeString(&UniStr, UnicodeStrBuffer, NAR_LOOKASIDE_SIZE);
-            
-            //
-#if 0
-                
-                RtlUnicodeStringPrintf(&UniStr, L"\\Device\\HarddiskVolume%i\\Users\\%S\\AppData\\Local\\Temp", NarData.OsDeviceID, NarData.UserName);
-                if (RtlPrefixUnicodeString(&UniStr, &nameInfo->Name, FALSE)) {
-                    ExFreeToPagedLookasideList(&NarData.LookasideList, UnicodeStrBuffer);
-                    goto NAR_PREOP_END;
-                }
-                
-                RtlUnicodeStringPrintf(&UniStr, L"\\Device\\HarddiskVolume%i\\Users\\%S\\AppData\\Local\\Microsoft\\Windows\\Temporary Internet Files", NarData.OsDeviceID, NarData.UserName);
-                if (RtlPrefixUnicodeString(&UniStr, &nameInfo->Name, FALSE)) {
-                    ExFreeToPagedLookasideList(&NarData.LookasideList, UnicodeStrBuffer);
-                    goto NAR_PREOP_END;
-                }
-                
-                RtlUnicodeStringPrintf(&UniStr, L"\\Device\\HarddiskVolume%i\\Users\\%S\\AppData\\Local\\Google\\Chrome\\User Data\\Default\\Cache", NarData.OsDeviceID, NarData.UserName);
-                if (RtlPrefixUnicodeString(&UniStr, &nameInfo->Name, FALSE)) {
-                    ExFreeToPagedLookasideList(&NarData.LookasideList, UnicodeStrBuffer);
-                    goto NAR_PREOP_END;
-                }
-                
-                RtlUnicodeStringPrintf(&UniStr, L"\\Device\\HarddiskVolume%i\\Users\\%S\\AppData\\Local\\Opera Software", NarData.OsDeviceID, NarData.UserName);
-                if (RtlPrefixUnicodeString(&UniStr, &nameInfo->Name, FALSE)) {
-                    ExFreeToPagedLookasideList(&NarData.LookasideList, UnicodeStrBuffer);
-                    goto NAR_PREOP_END;
-                }
-                
-                RtlUnicodeStringPrintf(&UniStr, L"\\Device\\HarddiskVolume%i\\Users\\%S\\AppData\\Local\\Mozilla\\Firefox\\Profiles", NarData.OsDeviceID, NarData.UserName);
-                if (RtlPrefixUnicodeString(&UniStr, &nameInfo->Name, FALSE)) {
-                    ExFreeToPagedLookasideList(&NarData.LookasideList, UnicodeStrBuffer);
-                    goto NAR_PREOP_END;
-                }
-                
-            
-#endif
-            
-            
-            //Suffix area
-            RtlUnicodeStringPrintf(&UniStr, L".tmp");
-            if (RtlSuffixUnicodeString(&UniStr, &nameInfo->Name, FALSE)) {
-                ExFreeToPagedLookasideList(&NarData.LookAsideList, UnicodeStrBuffer);
-                goto NAR_PREOP_END;
-            }
-            RtlUnicodeStringPrintf(&UniStr, L"~");
-            if (RtlSuffixUnicodeString(&UniStr, &nameInfo->Name, FALSE)) {
-                ExFreeToPagedLookasideList(&NarData.LookAsideList, UnicodeStrBuffer);
-                goto NAR_PREOP_END;
-            }
-            RtlUnicodeStringPrintf(&UniStr, L".tib.metadata");
-            if (RtlSuffixUnicodeString(&UniStr, &nameInfo->Name, FALSE)) {
-                ExFreeToPagedLookasideList(&NarData.LookAsideList, UnicodeStrBuffer);
-                goto NAR_PREOP_END;
-            }
-            RtlUnicodeStringPrintf(&UniStr, L".tib");
-            if (RtlSuffixUnicodeString(&UniStr, &nameInfo->Name, FALSE)) {
-                ExFreeToPagedLookasideList(&NarData.LookAsideList, UnicodeStrBuffer);
-                goto NAR_PREOP_END;
-            }
-            RtlUnicodeStringPrintf(&UniStr, L".pf");
-            if (RtlSuffixUnicodeString(&UniStr, &nameInfo->Name, FALSE)) {
-                ExFreeToPagedLookasideList(&NarData.LookAsideList, UnicodeStrBuffer);
-                goto NAR_PREOP_END;
-            }
-
-            
-            //NAR
-            
-            
-#if 1
-            ULONG BytesReturned = 0;
-#pragma warning(push)
-#pragma warning(disable:4090) //TODO what is this warning code
-            
-            STARTING_VCN_INPUT_BUFFER StartingInputVCNBuffer;
-            RETRIEVAL_POINTERS_BUFFER ClusterMapBuffer;
-            ClusterMapBuffer.StartingVcn.QuadPart = 0;
-            StartingInputVCNBuffer.StartingVcn.QuadPart = 0;
-            
-            UINT32 RegionLen = 0;
-            
-            ULONG ClusterSize = 512 * 8; //TODO cluster size might not be 8*sector. check this
-            
-            LARGE_INTEGER WriteOffsetLargeInt = Data->Iopb->Parameters.Write.ByteOffset;
-            ULONG WriteLen = Data->Iopb->Parameters.Write.Length;
-            UINT32 NClustersToWrite = (WriteLen / (ClusterSize)+1);
-            
-            UINT32 ClusterWriteStartOffset = (UINT32)(WriteOffsetLargeInt.QuadPart / (LONGLONG)(ClusterSize));
-            
-            
-            struct {
-                UINT32 S;
-                UINT32 L;
-            }P[10];
-            
-            UINT32 RecCount = 0;
-            UINT32 Error = 0;
-            
-            UINT32 MaxIteration = 0;
-            
-            BOOLEAN HeadFound = FALSE;
-            BOOLEAN CeilTest = FALSE;
-            
-            for (;;) {
-
-                MaxIteration++;
-                if (MaxIteration > 1024) {
-                    Error |= NAR_ERR_MAX_ITER;
-                    break;
-                }
-                
-                status = FltFsControlFile(FltObjects->Instance,
-                                          Data->Iopb->TargetFileObject,
-                                          FSCTL_GET_RETRIEVAL_POINTERS,
-                                          &StartingInputVCNBuffer,
-                                          sizeof(StartingInputVCNBuffer),
-                                          &ClusterMapBuffer,
-                                          sizeof(ClusterMapBuffer),
-                                          &BytesReturned
-                                          );
-                
-                if (status != STATUS_BUFFER_OVERFLOW
-                    && status != STATUS_SUCCESS
-                    && status != STATUS_END_OF_FILE) {
-                    Error |= NAR_ERR_TRINITY;
-                    break;
-                }
-                
-                /*
-                It is unlikely, but we should check overflows
-                */
-                
-                if (ClusterMapBuffer.Extents[0].Lcn.QuadPart > MAXUINT32 || ClusterMapBuffer.Extents[0].NextVcn.QuadPart > MAXUINT32 || ClusterMapBuffer.StartingVcn.QuadPart > MAXUINT32) {
-                    DbgPrint("OVERFLOW OCCURED lcn :%X, nextvcn : %X, starting vcn : %X, index %i, name %wZ\n",ClusterMapBuffer.Extents[0].Lcn.QuadPart, ClusterMapBuffer.Extents[0].NextVcn.QuadPart, ClusterMapBuffer.Extents[0].NextVcn.QuadPart, RecCount, &nameInfo->Name);
-                    Error |= NAR_ERR_REG_OVERFLOW;
-                    break;
-                }
-
-                if (ClusterMapBuffer.Extents[0].NextVcn.QuadPart - ClusterMapBuffer.StartingVcn.QuadPart < (UINT64)0) {
-                    DbgPrint("Region was lower than 0, reg len :%X, extents %X, StartingVcn : %X, name : %wZ\n", 
-                        ClusterMapBuffer.Extents[0].NextVcn.QuadPart - ClusterMapBuffer.StartingVcn.QuadPart, 
-                        ClusterMapBuffer.Extents[0].NextVcn.QuadPart, 
-                        ClusterMapBuffer.StartingVcn.QuadPart, &nameInfo->Name);
-                    
-                    for (int i = 0; i < RecCount; i++) {
-                        DbgPrint("Start: %X\tLen: %X\n", P[i].S, P[i].L);
-                    }
-
-                    Error |= NAR_ERR_REG_BELOW_ZERO;
-                    break;
-                }
-
-                if (!HeadFound) {
-                    CeilTest = ((LONGLONG)ClusterWriteStartOffset < ClusterMapBuffer.Extents[0].NextVcn.QuadPart);
-                }
-                else {
-                    CeilTest = TRUE;
-                }
-                
-                if ((LONGLONG)ClusterWriteStartOffset >= StartingInputVCNBuffer.StartingVcn.QuadPart && CeilTest) {
-                    
-                    RegionLen = (UINT32)(ClusterMapBuffer.Extents[0].NextVcn.QuadPart - ClusterMapBuffer.StartingVcn.QuadPart);
-                    
-                    if (!HeadFound) {
-                        
-                        //Starting position of the write operation
-                        UINT32 OffsetFromRegionStart = (ClusterWriteStartOffset - (UINT32)ClusterMapBuffer.StartingVcn.QuadPart);
-                        
-                        
-                        if (ClusterMapBuffer.Extents->NextVcn.QuadPart - OffsetFromRegionStart < NClustersToWrite) {
-                            //Region overflow
-                            P[RecCount].S = ((UINT32)ClusterMapBuffer.Extents[0].Lcn.QuadPart + OffsetFromRegionStart);//start
-                            P[RecCount].L = RegionLen - OffsetFromRegionStart;
-                            RecCount++;
-                            NClustersToWrite -= (RegionLen - OffsetFromRegionStart);
-                        }
-                        else {
-                            //Operation fits the region
-                            P[RecCount].S = (UINT32)ClusterMapBuffer.Extents[0].Lcn.QuadPart + OffsetFromRegionStart;
-                            P[RecCount].L = NClustersToWrite;
-                            RecCount++;
-                            NClustersToWrite = 0;
-                        }
-                        
-                        ClusterWriteStartOffset = (UINT32)ClusterMapBuffer.Extents[0].NextVcn.QuadPart;
-                        
-                        HeadFound = TRUE;
-                        
-                    }
-                    else { // HeadFound
-                        //Write operation falls over other region(s)
-                        if ((NClustersToWrite - RegionLen) > 0) {
-                            //write operation does not fit this region
-                            P[RecCount].S = (UINT32)ClusterMapBuffer.Extents[0].Lcn.QuadPart;
-                            P[RecCount].L = RegionLen;
-                            RecCount++;
-                            NClustersToWrite -= RegionLen;
-                        }
-                        else if (RecCount < 10) {
-                            /*
-                            Write operation fits that region
-                            */
-                            P[RecCount].S = (UINT32)ClusterMapBuffer.Extents[0].Lcn.QuadPart;
-                            P[RecCount].L = NClustersToWrite;
-                            RecCount++;
-                            NClustersToWrite = 0;
-                            break;
-                        }
-                        else {
-                            DbgPrint("Cant fill any more regions\n");
-                            break;
-                        }
-                        
-                        ClusterWriteStartOffset = (UINT32)ClusterMapBuffer.Extents[0].NextVcn.QuadPart;
-                    }
-                    
-                }
-                
-                if (NClustersToWrite <= 0) {
-                    break;
-                }
-                if (RecCount == 10) {
-                    DbgPrint("Record count = 10, breaking now\n");
-                    break;
-                }
-                
-                StartingInputVCNBuffer.StartingVcn = ClusterMapBuffer.Extents->NextVcn;
-                
-                if (status == STATUS_END_OF_FILE) {
-                    break;
-                }
-                
-            }
-            
-
-
-            // TODO(BATUHAN): try one loop via KeTestSpinLock, to fast check if volume is available for fast access, if it is available and matches GUID, immidiately flush all regions and return, if not available test higher elements in list.
-            void* CompareBuffer = ExAllocateFromPagedLookasideList(&NarData.GUIDComparePagedLookAsideList);
-            ULONG SizeNeededForGUIDStr = 0;
-            
-            UNICODE_STRING GUIDStringNPaged;
-            BOOLEAN Added = FALSE;
-            if(Error){
-                DbgPrint("Error flag(s) detected, %X\n", Error);
-            }
-            
-            if (RecCount > 0 && UniStr.MaximumLength >= NAR_GUID_STR_SIZE && Error == 0) {
-                INT32 SizeNeededForMemoryBuffer = 2 * RecCount * sizeof(UINT32);
-                INT32 RemainingSizeOnBuffer = 0;
-                RtlInitEmptyUnicodeString(&GUIDStringNPaged, CompareBuffer, NAR_GUID_STR_SIZE);
-                status = FltGetVolumeGuidName(FltObjects->Volume, &GUIDStringNPaged, &SizeNeededForGUIDStr);
-                if (NT_SUCCESS(status)) {
-                    
-                    
-                    
-                    for (int i = 0; i < NAR_MAX_VOLUME_COUNT; i++) {
-                        
-                        ExAcquireFastMutex(&NarData.VolumeRegionBuffer[i].FastMutex);
-                        
-                        if (RtlCompareMemory(CompareBuffer, NarData.VolumeRegionBuffer[i].GUIDStrVol.Buffer, NAR_GUID_STR_SIZE) == NAR_GUID_STR_SIZE) {
-                            RemainingSizeOnBuffer = NAR_MEMORYBUFFER_SIZE - NAR_MB_USED(NarData.VolumeRegionBuffer[i].MemoryBuffer);
-                            
-                            if (RemainingSizeOnBuffer >= SizeNeededForMemoryBuffer) {
-                                NAR_MB_PUSH(NarData.VolumeRegionBuffer[i].MemoryBuffer, &P[0], SizeNeededForMemoryBuffer);
-                                Added = TRUE;
-                            }
-                            else {
-                                NAR_MB_MARK_NOT_ENOUGH_SPACE(NarData.VolumeRegionBuffer[i].MemoryBuffer);
-                            }
-                            
-                            ExReleaseFastMutex(&NarData.VolumeRegionBuffer[i].FastMutex);
-                            break;
-                        }
-                        
-                        ExReleaseFastMutex(&NarData.VolumeRegionBuffer[i].FastMutex);
-                        
-                    }
-                    
-                    if (!Added) {
-                        DbgPrint("Couldnt add entry to memory buffer, %wZ\n", &GUIDStringNPaged);
-                    }
-                    
-                    
-                }
-                else {
-                    DbgPrint("Couldnt get volume GUID, status : %i, sizeneeded : %i", status, SizeNeededForGUIDStr);
-                }
-                
-                
-                
-            }
-            
-            
-            
-#pragma warning(pop)
-#endif
-            
-            ExFreeToPagedLookasideList(&NarData.LookAsideList, UnicodeStrBuffer);
-            ExFreeToPagedLookasideList(&NarData.GUIDComparePagedLookAsideList, CompareBuffer);
-            
-        }
-        else {
-            goto NAR_PREOP_END;
-        }
-        
-        
-    }
-    
-    
     return FLT_PREOP_SUCCESS_WITH_CALLBACK;
-#endif
     
-    //#define STRBUFFERSIZE 64
-    //char StrBuffer[STRBUFFERSIZE];
-    //size_t SizeNeeded = 0;
-    //RtlStringCbPrintfA(StrBuffer, STRBUFFERSIZE, "GUIDLEN : %i\n", 24);
-    //RtlStringCbLengthA(StrBuffer, STRBUFFERSIZE, &SizeNeeded);
-    //#undef STRBUFFERSIZE
-    
-    //KIRQL IRQL;
-    //KeAcquireSpinLock(&NarData.Spinlock, &IRQL);
-    //LARGE_INTEGER EntryTime;
-    //KeQuerySystemTimePrecise(&EntryTime);
-    //LARGE_INTEGER CurrentTime;
-    
-    //while (!ExTryToAcquireFastMutex(&NarData.FastMutex)) {
-    //  KeQuerySystemTimePrecise(&CurrentTime);
-    //  // 100 nenoseconds per unit, 100ns*10=1us, 1us*1000= 1ms
-    //  if ((CurrentTime.QuadPart - EntryTime.QuadPart) > 2LL * 10LL * 1000LL) {
-    //    DbgPrint("Waited too much(2ms) returning now, %wZ\n", &nameInfo->Name);
-    //    return FLT_PREOP_SUCCESS_NO_CALLBACK;
-    //  }
-    //}
-    //
-    //// Locked
-    //if (NarData.MemoryBufferUsed + SizeNeeded <= NAR_LOOKASIDE_SIZE) {
-    //  DbgPrint("Adding entry to buffer with size %i, new buffer size  %i\n", SizeNeeded, NarData.MemoryBufferUsed + SizeNeeded);
-    //  memcpy((char*)NarData.MemoryBuffer + NarData.MemoryBufferUsed, StrBuffer, SizeNeeded);
-    //  NarData.MemoryBufferUsed += (UINT32)SizeNeeded;
-    //  ExReleaseFastMutex(&NarData.FastMutex);
-    //  return FLT_PREOP_SUCCESS_NO_CALLBACK;
-    //}
-    
-    
-#if 0
-    void* TempBuffer = ExAllocateFromPagedLookasideList(&NarData.LookAsideList);
-    UINT32 TempBufferSize = NarData.MemoryBufferUsed;
-    memcpy(TempBuffer, NarData.MemoryBuffer, NarData.MemoryBufferUsed);
-    memset(NarData.MemoryBuffer, 0, NarData.MemoryBufferUsed);
-    
-    NarData.MemoryBufferUsed = 0;
-    ExReleaseFastMutex(&NarData.FastMutex);
-    
-    DbgPrint("Flushing all data cached so far %i\n", TempBufferSize);
-    {
-        //DbgPrint("Exceeded buffer, size %i\n", NarData.MemoryBufferUsed);
-        
-        
-        
-        UNICODE_STRING     uniName;
-        OBJECT_ATTRIBUTES  objAttr;
-        HANDLE FileHandle;
-        
-        RtlInitUnicodeString(&uniName, L"\\DosDevices\\D:\\Example.txt");  // or L"\\SystemRoot\\example.txt"
-        InitializeObjectAttributes(&objAttr, &uniName, OBJ_KERNEL_HANDLE | OBJ_CASE_INSENSITIVE, NULL, NULL);
-        
-        
-        IO_STATUS_BLOCK IOSB = { 0 };
-        
-        status = ZwCreateFile(
-                              &FileHandle,
-                              FILE_APPEND_DATA | SYNCHRONIZE,
-                              &objAttr, &IOSB, NULL,
-                              FILE_ATTRIBUTE_NORMAL,
-                              FILE_SHARE_READ | FILE_SHARE_WRITE,
-                              FILE_OPEN_IF,
-                              FILE_SEQUENTIAL_ONLY | FILE_WRITE_THROUGH | FILE_SYNCHRONOUS_IO_NONALERT,
-                              NULL, 0);
-        
-        if (NT_SUCCESS(status)) {
-            DbgPrint("Succ opened file\n");
-            
-            status = ZwWriteFile(FileHandle, 0, 0, 0, &IOSB, TempBuffer, TempBufferSize, 0, 0);
-            if (NT_SUCCESS(status)) {
-                DbgPrint("Successfully written to file\n");
-            }
-            else {
-                DbgPrint("couldnt write to file, err id %i\n", status);
-            }
-            
-            ZwClose(FileHandle);
-            
-        }
-        else {
-            DbgPrint("Couldnt open file\n");
-        }
-        //Flush to file
-        
-    }
-    
-    
-    //if (NarData.MemoryBuffer != NULL) {
-    //  memcpy((char*)NarData.MemoryBuffer + NarData.MemoryBufferUsed, StrBuffer, SizeNeeded);
-    //  NarData.MemoryBufferUsed += (UINT32)SizeNeeded;
-    //}
-    
-    //ExReleaseFastMutex(&NarData.FastMutex);
-    ExFreeToPagedLookasideList(&NarData.LookAsideList, TempBuffer);
-    
-#endif
-    
-    return FLT_PREOP_SUCCESS_NO_CALLBACK;
-    
-    NAR_PREOP_END:
-    //ExFreeToPagedLookasideList(&NarData.LookAsideList, Buffer);
-    
-    return FLT_PREOP_SUCCESS_NO_CALLBACK;
 }
 
 
@@ -1478,15 +1024,373 @@ Return Value:
     //  log this record, free it now.
     //
     
-    
-    if (FlagOn(Flags, FLTFL_POST_OPERATION_DRAINING)) {
-        
-        return FLT_POSTOP_FINISHED_PROCESSING;
+
+    ULONG PID = FltGetRequestorProcessId(Data);
+    // filter out temporary files and files that would be closed if last handle freed
+    if ((Data->Iopb->TargetFileObject->Flags & FO_TEMPORARY_FILE) == FO_TEMPORARY_FILE || (Data->Iopb->TargetFileObject->Flags & FO_DELETE_ON_CLOSE) == FO_DELETE_ON_CLOSE || PID == NarData.UserModePID) {
+        return  FLT_POSTOP_FINISHED_PROCESSING;
+    }
+
+    PFLT_FILE_NAME_INFORMATION nameInfo = NULL;
+
+#if 1
+
+
+    if (FltObjects->FileObject != NULL) {
+
+        status = FltGetFileNameInformation(Data,
+            FLT_FILE_NAME_NORMALIZED |
+            NarData.NameQueryMethod,
+            &nameInfo);
+        if (NT_SUCCESS(status)) {
+
+            // Harddiskdevice\path\asdfs\sdffsd\file
+            /*
+               C:\Users\adm\AppData\Local\Temp
+               C:\Users\adm\AppData\Local\Microsoft\Windows\Temporary Internet Files
+               C:\Users\adm\AppData\Local\Google\Chrome\User Data\Default\Cache
+               C:\Users\adm\AppData\Local\Opera Software
+               C:\Users\adm\AppData\Local\Mozilla\Firefox\Profiles
+               C:\Windows\CSC
+            */
+
+            //FltGetVolumeName(FltObjects->Volume, StringBuffer, 0);
+
+            UNICODE_STRING UniStr;
+            void* UnicodeStrBuffer = ExAllocateFromPagedLookasideList(&NarData.LookAsideList);
+            if (UnicodeStrBuffer == NULL) {
+                DbgPrint("Couldnt allocate memory for unicode string\n");
+                return FLT_POSTOP_FINISHED_PROCESSING;
+            }
+
+            RtlInitEmptyUnicodeString(&UniStr, UnicodeStrBuffer, NAR_LOOKASIDE_SIZE);
+
+            //
+#if 0
+
+            RtlUnicodeStringPrintf(&UniStr, L"\\Device\\HarddiskVolume%i\\Users\\%S\\AppData\\Local\\Temp", NarData.OsDeviceID, NarData.UserName);
+            if (RtlPrefixUnicodeString(&UniStr, &nameInfo->Name, FALSE)) {
+                ExFreeToPagedLookasideList(&NarData.LookasideList, UnicodeStrBuffer);
+                goto NAR_PREOP_END;
+            }
+
+            RtlUnicodeStringPrintf(&UniStr, L"\\Device\\HarddiskVolume%i\\Users\\%S\\AppData\\Local\\Microsoft\\Windows\\Temporary Internet Files", NarData.OsDeviceID, NarData.UserName);
+            if (RtlPrefixUnicodeString(&UniStr, &nameInfo->Name, FALSE)) {
+                ExFreeToPagedLookasideList(&NarData.LookasideList, UnicodeStrBuffer);
+                goto NAR_PREOP_END;
+            }
+
+            RtlUnicodeStringPrintf(&UniStr, L"\\Device\\HarddiskVolume%i\\Users\\%S\\AppData\\Local\\Google\\Chrome\\User Data\\Default\\Cache", NarData.OsDeviceID, NarData.UserName);
+            if (RtlPrefixUnicodeString(&UniStr, &nameInfo->Name, FALSE)) {
+                ExFreeToPagedLookasideList(&NarData.LookasideList, UnicodeStrBuffer);
+                goto NAR_PREOP_END;
+            }
+
+            RtlUnicodeStringPrintf(&UniStr, L"\\Device\\HarddiskVolume%i\\Users\\%S\\AppData\\Local\\Opera Software", NarData.OsDeviceID, NarData.UserName);
+            if (RtlPrefixUnicodeString(&UniStr, &nameInfo->Name, FALSE)) {
+                ExFreeToPagedLookasideList(&NarData.LookasideList, UnicodeStrBuffer);
+                goto NAR_PREOP_END;
+            }
+
+            RtlUnicodeStringPrintf(&UniStr, L"\\Device\\HarddiskVolume%i\\Users\\%S\\AppData\\Local\\Mozilla\\Firefox\\Profiles", NarData.OsDeviceID, NarData.UserName);
+            if (RtlPrefixUnicodeString(&UniStr, &nameInfo->Name, FALSE)) {
+                ExFreeToPagedLookasideList(&NarData.LookasideList, UnicodeStrBuffer);
+                goto NAR_PREOP_END;
+            }
+
+
+#endif
+
+
+            //Suffix area
+            RtlUnicodeStringPrintf(&UniStr, L".tmp");
+            if (RtlSuffixUnicodeString(&UniStr, &nameInfo->Name, FALSE)) {
+                ExFreeToPagedLookasideList(&NarData.LookAsideList, UnicodeStrBuffer);
+                goto NAR_PREOP_END;
+            }
+            RtlUnicodeStringPrintf(&UniStr, L"~");
+            if (RtlSuffixUnicodeString(&UniStr, &nameInfo->Name, FALSE)) {
+                ExFreeToPagedLookasideList(&NarData.LookAsideList, UnicodeStrBuffer);
+                goto NAR_PREOP_END;
+            }
+            RtlUnicodeStringPrintf(&UniStr, L".tib.metadata");
+            if (RtlSuffixUnicodeString(&UniStr, &nameInfo->Name, FALSE)) {
+                ExFreeToPagedLookasideList(&NarData.LookAsideList, UnicodeStrBuffer);
+                goto NAR_PREOP_END;
+            }
+            RtlUnicodeStringPrintf(&UniStr, L".tib");
+            if (RtlSuffixUnicodeString(&UniStr, &nameInfo->Name, FALSE)) {
+                ExFreeToPagedLookasideList(&NarData.LookAsideList, UnicodeStrBuffer);
+                goto NAR_PREOP_END;
+            }
+            RtlUnicodeStringPrintf(&UniStr, L".pf");
+            if (RtlSuffixUnicodeString(&UniStr, &nameInfo->Name, FALSE)) {
+                ExFreeToPagedLookasideList(&NarData.LookAsideList, UnicodeStrBuffer);
+                goto NAR_PREOP_END;
+            }
+
+
+            //NAR
+
+
+#if 1
+            ULONG BytesReturned = 0;
+#pragma warning(push)
+#pragma warning(disable:4090) //TODO what is this warning code
+
+            STARTING_VCN_INPUT_BUFFER StartingInputVCNBuffer;
+            RETRIEVAL_POINTERS_BUFFER ClusterMapBuffer;
+            ClusterMapBuffer.StartingVcn.QuadPart = 0;
+            StartingInputVCNBuffer.StartingVcn.QuadPart = 0;
+
+            UINT32 RegionLen = 0;
+
+            ULONG ClusterSize = 512 * 8; //TODO cluster size might not be 8*sector. check this
+
+            LARGE_INTEGER WriteOffsetLargeInt = Data->Iopb->Parameters.Write.ByteOffset;
+            ULONG WriteLen = Data->Iopb->Parameters.Write.Length;
+            UINT32 NClustersToWrite = (WriteLen / (ClusterSize)+1);
+
+            UINT32 ClusterWriteStartOffset = (UINT32)(WriteOffsetLargeInt.QuadPart / (LONGLONG)(ClusterSize));
+
+
+            struct {
+                UINT32 S;
+                UINT32 L;
+            }P[10];
+
+            UINT32 RecCount = 0;
+            UINT32 Error = 0;
+
+            UINT32 MaxIteration = 0;
+
+            BOOLEAN HeadFound = FALSE;
+            BOOLEAN CeilTest = FALSE;
+
+            for (;;) {
+
+                MaxIteration++;
+                if (MaxIteration > 1024) {
+                    Error |= NAR_ERR_MAX_ITER;
+                    break;
+                }
+
+                status = FltFsControlFile(FltObjects->Instance,
+                    Data->Iopb->TargetFileObject,
+                    FSCTL_GET_RETRIEVAL_POINTERS,
+                    &StartingInputVCNBuffer,
+                    sizeof(StartingInputVCNBuffer),
+                    &ClusterMapBuffer,
+                    sizeof(ClusterMapBuffer),
+                    &BytesReturned
+                );
+
+                if (status != STATUS_BUFFER_OVERFLOW
+                    && status != STATUS_SUCCESS
+                    && status != STATUS_END_OF_FILE) {
+                    Error |= NAR_ERR_TRINITY;
+                    break;
+                }
+
+                /*
+                It is unlikely, but we should check overflows
+                */
+
+                if (ClusterMapBuffer.Extents[0].Lcn.QuadPart > MAXUINT32 || ClusterMapBuffer.Extents[0].NextVcn.QuadPart > MAXUINT32 || ClusterMapBuffer.StartingVcn.QuadPart > MAXUINT32) {
+                    DbgPrint("OVERFLOW OCCURED lcn :%X, nextvcn : %X, starting vcn : %X, index %i, name %wZ\n", ClusterMapBuffer.Extents[0].Lcn.QuadPart, ClusterMapBuffer.Extents[0].NextVcn.QuadPart, ClusterMapBuffer.Extents[0].NextVcn.QuadPart, RecCount, &nameInfo->Name);
+                    Error |= NAR_ERR_REG_OVERFLOW;
+                    break;
+                }
+
+                if (ClusterMapBuffer.Extents[0].NextVcn.QuadPart - ClusterMapBuffer.StartingVcn.QuadPart < (UINT64)0) {
+                    DbgPrint("Region was lower than 0, reg len :%X, extents %X, StartingVcn : %X, name : %wZ\n",
+                        ClusterMapBuffer.Extents[0].NextVcn.QuadPart - ClusterMapBuffer.StartingVcn.QuadPart,
+                        ClusterMapBuffer.Extents[0].NextVcn.QuadPart,
+                        ClusterMapBuffer.StartingVcn.QuadPart, &nameInfo->Name);
+
+                    for (int i = 0; i < RecCount; i++) {
+                        DbgPrint("Start: %X\tLen: %X\n", P[i].S, P[i].L);
+                    }
+
+                    Error |= NAR_ERR_REG_BELOW_ZERO;
+                    break;
+                }
+
+                if (!HeadFound) {
+                    CeilTest = ((LONGLONG)ClusterWriteStartOffset < ClusterMapBuffer.Extents[0].NextVcn.QuadPart);
+                }
+                else {
+                    CeilTest = TRUE;
+                }
+
+                if ((LONGLONG)ClusterWriteStartOffset >= StartingInputVCNBuffer.StartingVcn.QuadPart && CeilTest) {
+
+                    RegionLen = (UINT32)(ClusterMapBuffer.Extents[0].NextVcn.QuadPart - ClusterMapBuffer.StartingVcn.QuadPart);
+
+                    if (!HeadFound) {
+
+                        //Starting position of the write operation
+                        UINT32 OffsetFromRegionStart = (ClusterWriteStartOffset - (UINT32)ClusterMapBuffer.StartingVcn.QuadPart);
+
+
+                        if (ClusterMapBuffer.Extents->NextVcn.QuadPart - OffsetFromRegionStart < NClustersToWrite) {
+                            //Region overflow
+                            P[RecCount].S = ((UINT32)ClusterMapBuffer.Extents[0].Lcn.QuadPart + OffsetFromRegionStart);//start
+                            P[RecCount].L = RegionLen - OffsetFromRegionStart;
+                            RecCount++;
+                            NClustersToWrite -= (RegionLen - OffsetFromRegionStart);
+                        }
+                        else {
+                            //Operation fits the region
+                            P[RecCount].S = (UINT32)ClusterMapBuffer.Extents[0].Lcn.QuadPart + OffsetFromRegionStart;
+                            P[RecCount].L = NClustersToWrite;
+                            RecCount++;
+                            NClustersToWrite = 0;
+                        }
+
+                        ClusterWriteStartOffset = (UINT32)ClusterMapBuffer.Extents[0].NextVcn.QuadPart;
+
+                        HeadFound = TRUE;
+
+                    }
+                    else { // HeadFound
+                        //Write operation falls over other region(s)
+                        if ((NClustersToWrite - RegionLen) > 0) {
+                            //write operation does not fit this region
+                            P[RecCount].S = (UINT32)ClusterMapBuffer.Extents[0].Lcn.QuadPart;
+                            P[RecCount].L = RegionLen;
+                            RecCount++;
+                            NClustersToWrite -= RegionLen;
+                        }
+                        else if (RecCount < 10) {
+                            /*
+                            Write operation fits that region
+                            */
+                            P[RecCount].S = (UINT32)ClusterMapBuffer.Extents[0].Lcn.QuadPart;
+                            P[RecCount].L = NClustersToWrite;
+                            RecCount++;
+                            NClustersToWrite = 0;
+                            break;
+                        }
+                        else {
+                            DbgPrint("Cant fill any more regions\n");
+                            break;
+                        }
+
+                        ClusterWriteStartOffset = (UINT32)ClusterMapBuffer.Extents[0].NextVcn.QuadPart;
+                    }
+
+                }
+
+                if (NClustersToWrite <= 0) {
+                    break;
+                }
+                if (RecCount == 10) {
+                    DbgPrint("Record count = 10, breaking now\n");
+                    break;
+                }
+
+                StartingInputVCNBuffer.StartingVcn = ClusterMapBuffer.Extents->NextVcn;
+
+                if (status == STATUS_END_OF_FILE) {
+                    break;
+                }
+
+            }
+
+
+
+            // TODO(BATUHAN): try one loop via KeTestSpinLock, to fast check if volume is available for fast access, if it is available and matches GUID, immidiately flush all regions and return, if not available test higher elements in list.
+            void* CompareBuffer = ExAllocateFromPagedLookasideList(&NarData.GUIDComparePagedLookAsideList);
+            ULONG SizeNeededForGUIDStr = 0;
+
+            UNICODE_STRING GUIDStringNPaged;
+            BOOLEAN Added = FALSE;
+            if (Error) {
+                if((Error & 0x1) != 0x1) DbgPrint("Error flag(s) detected, %X, %wZ\n", Error, &nameInfo->Name);
+            }
+            else{
+                if(RecCount == 0){
+                    DbgPrint("RECCOUNT WAS ZERO %wZ\n", &nameInfo->Name);
+                }
+            }
+
+            if (RecCount > 0 && UniStr.MaximumLength >= NAR_GUID_STR_SIZE && Error == 0) {
+                INT32 SizeNeededForMemoryBuffer = 2 * RecCount * sizeof(UINT32);
+                INT32 RemainingSizeOnBuffer = 0;
+                RtlInitEmptyUnicodeString(&GUIDStringNPaged, CompareBuffer, NAR_GUID_STR_SIZE);
+                status = FltGetVolumeGuidName(FltObjects->Volume, &GUIDStringNPaged, &SizeNeededForGUIDStr);
+                if (NT_SUCCESS(status)) {
+
+
+
+                    for (int i = 0; i < NAR_MAX_VOLUME_COUNT; i++) {
+
+                        ExAcquireFastMutex(&NarData.VolumeRegionBuffer[i].FastMutex);
+
+                        if (RtlCompareMemory(CompareBuffer, NarData.VolumeRegionBuffer[i].GUIDStrVol.Buffer, NAR_GUID_STR_SIZE) == NAR_GUID_STR_SIZE) {
+                            RemainingSizeOnBuffer = NAR_MEMORYBUFFER_SIZE - NAR_MB_USED(NarData.VolumeRegionBuffer[i].MemoryBuffer);
+
+                            if (RemainingSizeOnBuffer >= SizeNeededForMemoryBuffer) {
+                                NAR_MB_PUSH(NarData.VolumeRegionBuffer[i].MemoryBuffer, &P[0], SizeNeededForMemoryBuffer);
+                                Added = TRUE;
+                            }
+                            else {
+                                NAR_MB_MARK_NOT_ENOUGH_SPACE(NarData.VolumeRegionBuffer[i].MemoryBuffer);
+                            }
+
+                            ExReleaseFastMutex(&NarData.VolumeRegionBuffer[i].FastMutex);
+                            break;
+                        }
+
+                        ExReleaseFastMutex(&NarData.VolumeRegionBuffer[i].FastMutex);
+
+                    }
+
+                    if (!Added) {
+                        DbgPrint("Couldnt add entry to memory buffer, %wZ\n", &GUIDStringNPaged);
+                    }
+
+
+                }
+                else {
+                    DbgPrint("Couldnt get volume GUID, status : %i, sizeneeded : %i", status, SizeNeededForGUIDStr);
+                }
+
+
+
+            }
+
+
+
+#pragma warning(pop)
+#endif
+
+            ExFreeToPagedLookasideList(&NarData.LookAsideList, UnicodeStrBuffer);
+            ExFreeToPagedLookasideList(&NarData.GUIDComparePagedLookAsideList, CompareBuffer);
+
+        }
+        else {
+            goto NAR_PREOP_END;
+        }
+
+
     }
     
+
     
-    
+#endif
+
+
     return FLT_POSTOP_FINISHED_PROCESSING;
+
+NAR_PREOP_END:
+    //ExFreeToPagedLookasideList(&NarData.LookAsideList, Buffer);
+
+    return FLT_POSTOP_FINISHED_PROCESSING;
+
+    
+    
 }
 
 NTSTATUS
