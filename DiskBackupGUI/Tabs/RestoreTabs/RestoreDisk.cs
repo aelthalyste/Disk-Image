@@ -67,27 +67,17 @@ namespace DiskBackupGUI.Tabs.RestoreTabs
 
         private void btnRestore_Click(object sender, EventArgs e)
         {
-            //aşşağıdaki koda ihtiyaç olmayabilir... 
-            //**************************************************
-            //**************************************************
-            //              BURAYI TEKRAR DÜŞÜN
-            //**************************************************
-            //**************************************************
-
-            if (txtDiskName.Text != "")
+            if (txtDiskName.Text.Length == 1)
             {
-                List<DataGridViewRow> checkedDgvDisk = new List<DataGridViewRow>();
-                foreach (DataGridViewRow row in dgwDisk.Rows)
-                {
-                    if (Convert.ToBoolean(row.Cells["Checked"].Value) == true)
-                    {
-                        checkedDgvDisk.Add(row);
-                    }
-                }            }
+                char targetLetter = char.Parse(txtDiskName.Text);
+                var diskID = Convert.ToInt32(dgwDisk.Rows[dgwDisk.CurrentRow.Index].Cells["ID"].Value);
+                diskTracker.CW_RestoreToFreshDisk(targetLetter, myBackupMetadata.Letter, myBackupMetadata.Version, diskID, myMain.myPath);
+            }
             else
             {
-                myMain.RtReportWrite("Textbox boş bırakılamaz", false);
+                MessageBox.Show("Lütfen geçerli bir değer giriniz");
             }
+            
         }
 
         private void btnCancel_Click(object sender, EventArgs e)

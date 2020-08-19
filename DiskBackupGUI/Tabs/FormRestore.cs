@@ -20,7 +20,7 @@ namespace DiskBackupGUI.Tabs
         public int chooseDiskOrVolume = 2;
         private Form currentChildForm;
         public List<DataGridViewCell> viewCells;
-        
+
         public class MyBackupMetadata
         {
             public char Letter { get; set; }
@@ -35,27 +35,28 @@ namespace DiskBackupGUI.Tabs
             myMain = main;
             InitializeComponent();
             diskTracker = new DiskTracker();
-            //dgwRestore.DataSource = diskTracker.CW_GetBackupsInDirectory(myMain.myPath);
-            
-            //dummy
-            List<MyBackupMetadata> myBackups = new List<MyBackupMetadata>();
-            myBackups.Add(new MyBackupMetadata()
-            {
-                BackupType = 1111,
-                DiskType = 'a',
-                Letter = 'z',
-                OSVolume = 88888,
-                Version = 999
-            });
-            myBackups.Add(new MyBackupMetadata()
-            {
-                BackupType = 2222,
-                DiskType = 'b',
-                Letter = 'y',
-                OSVolume = 77777,
-                Version = 888
-            });
-            dgwRestore.DataSource = myBackups;
+            //wipe disk-volume hazır hale geldiğinde alttaki kodu uncomment hale getir............                                      <-----------
+            dgwRestore.DataSource = diskTracker.CW_GetBackupsInDirectory(myMain.myPath);
+
+            ////dummy veriler
+            //List<MyBackupMetadata> myBackups = new List<MyBackupMetadata>();
+            //myBackups.Add(new MyBackupMetadata()
+            //{
+            //    BackupType = 1111,
+            //    DiskType = 'a',
+            //    Letter = 'z',
+            //    OSVolume = 88888,
+            //    Version = 999
+            //});
+            //myBackups.Add(new MyBackupMetadata()
+            //{
+            //    BackupType = 2222,
+            //    DiskType = 'b',
+            //    Letter = 'y',
+            //    OSVolume = 77777,
+            //    Version = 888
+            //});
+            //dgwRestore.DataSource = myBackups;
 
             dgwRestore.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
         }
@@ -88,7 +89,7 @@ namespace DiskBackupGUI.Tabs
                 + "\nDiskType : " + dgwRestore.Rows[dgwRestore.CurrentRow.Index].Cells["DiskType"].Value.ToString()
                 , false);
         }
-        
+
         private void btnDisc_Click(object sender, EventArgs e)
         {
             MyBackupMetadata myBackup = new MyBackupMetadata();
@@ -97,8 +98,8 @@ namespace DiskBackupGUI.Tabs
             myBackup.Version = Convert.ToInt32(dgwRestore.Rows[dgwRestore.CurrentRow.Index].Cells["Version"].Value);
             myBackup.OSVolume = Convert.ToInt32(dgwRestore.Rows[dgwRestore.CurrentRow.Index].Cells["OSVolume"].Value);
             myBackup.DiskType = (char)dgwRestore.Rows[dgwRestore.CurrentRow.Index].Cells["DiskType"].Value;
-
-            OpenChildForm(new RestoreDisk(myMain , myBackup));
+            
+            OpenChildForm(new RestoreDisk(myMain, myBackup));
         }
 
         private void btnVolume_Click(object sender, EventArgs e)
@@ -110,9 +111,7 @@ namespace DiskBackupGUI.Tabs
             myBackup.OSVolume = Convert.ToInt32(dgwRestore.Rows[dgwRestore.CurrentRow.Index].Cells["OSVolume"].Value);
             myBackup.DiskType = (char)dgwRestore.Rows[dgwRestore.CurrentRow.Index].Cells["DiskType"].Value;
 
-            OpenChildForm(new RestoreVolume(myMain , myBackup));
+            OpenChildForm(new RestoreVolume(myMain, myBackup));
         }
-
-       
     }
 }

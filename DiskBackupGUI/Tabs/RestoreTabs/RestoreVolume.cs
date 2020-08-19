@@ -24,7 +24,6 @@ namespace DiskBackupGUI.Tabs.RestoreTabs
 
         public RestoreVolume(Main main, FormRestore.MyBackupMetadata myBackup)
         {
-            //volume listesini tekrar çağır mainden gelmesi sıkıntı olabilir
             InitializeComponent();
             formRestore = new FormRestore(myMain);
             myMain = main;
@@ -114,21 +113,13 @@ namespace DiskBackupGUI.Tabs.RestoreTabs
 
         private void btnRestore_Click(object sender, EventArgs e)
         {
-          //aşşağıdaki koda ihtiyaç olmayabilir... 
-          //**************************************************
-          //**************************************************
-          //              BURAYI TEKRAR DÜŞÜN
-          //**************************************************
-          //**************************************************
-
-          List<DataGridViewRow> checkedDgvVolume = new List<DataGridViewRow>();
-          foreach (DataGridViewRow row in dgwVolume.Rows)
-          {
-              if (Convert.ToBoolean(row.Cells["Checked"].Value) == true)
-              {
-                  checkedDgvVolume.Add(row);
-              }
-          }
+            if (myMain.myPath == "")
+                MessageBox.Show("Geçerli bir path bulunamadı");
+            else
+            {
+                var targetLetter = (char)dgwVolume.Rows[dgwVolume.CurrentRow.Index].Cells["Letter"].Value;
+                diskTracker.CW_RestoreToVolume(targetLetter, myBackupMetadata.Letter, myBackupMetadata.Version, true, myMain.myPath);
+            }
         }
 
         private void btnCancel_Click(object sender, EventArgs e)
