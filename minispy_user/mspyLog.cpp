@@ -220,10 +220,13 @@ Return Value:
                             
                             if (DataUsed > 0 && DataUsed < NAR_MEMORYBUFFER_SIZE) {
                                 
-                                for (int TempIndex = 0; TempIndex < DataUsed / sizeof(nar_record); TempIndex++) {
+                                UINT32 RecCount = NAR_MB_DATA_USED(OutBuffer)/sizeof(nar_record);
+                                nar_record *Recs = (nar_record*)NAR_MB_DATA(OutBuffer);
+
+                                for (int TempIndex = 0; TempIndex < RecCount; TempIndex++) {
                                     
-                                    if (((nar_record*)NAR_MB_DATA(OutBuffer))[TempIndex].StartPos + ((nar_record*)NAR_MB_DATA(OutBuffer))[TempIndex].Len < V->VolumeTotalClusterCount) {
-                                        FileDump(&((nar_record*)NAR_MB_DATA(OutBuffer))[TempIndex] , sizeof(nar_record), V->LogHandle);
+                                    if (Recs[TempIndex].StartPos + Recs[TempIndex].Len < V->VolumeTotalClusterCount) {
+                                        FileDump(&Recs[TempIndex] , sizeof(nar_record), V->LogHandle);
                                     }
                                     else{
                                         
@@ -257,11 +260,13 @@ Return Value:
                         }
                         else {
 
-                            INT32 RecCount = NAR_MB_DATA_USED(OutBuffer) / sizeof(nar_record);
+                            UINT32 RecCount = NAR_MB_DATA_USED(OutBuffer) / sizeof(nar_record);
                             nar_record* Recs = (nar_record*)NAR_MB_DATA(OutBuffer);
 
-                            for (int RecordIndex = 0; RecordIndex < RecCount; RecordIndex++) {
-                                V->RecordsMem.emplace_back(Recs[RecordIndex]);
+                            for (unsigned int RecordIndex = 0; RecordIndex < RecCount; RecordIndex++) {
+                                if(Recs[RecordIndex].StartPos + Recs[RecordIndex].Len < V->VolumeTotalClusterCount){
+                                    V->RecordsMem.emplace_back(Recs[RecordIndex]);
+                                }
                             }
 
                         }

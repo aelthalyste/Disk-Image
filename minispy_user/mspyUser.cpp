@@ -2691,11 +2691,11 @@ OfflineRestoreToVolume(restore_inf* R, BOOLEAN ShouldFormat) {
         else {
             printf("Couldnt read backup metadata\n");
             
-            printf("Error RegionsMetadata %i\n", BM.Errors.RegionsMetadata);
-            printf("Error Regions %i\n", BM.Errors.Regions);
-            printf("Error MFTMetadata %i\n", BM.Errors.MFTMetadata);
-            printf("Error MFT %i\n", BM.Errors.MFT);
-            printf("Error Recovery %i\n", BM.Errors.Recovery);
+            printf("Error RegionsMetadata %c\n", BM.Errors.RegionsMetadata);
+            printf("Error Regions %c\n", BM.Errors.Regions);
+            printf("Error MFTMetadata %c\n", BM.Errors.MFTMetadata);
+            printf("Error MFT %c\n", BM.Errors.MFT);
+            printf("Error Recovery %c\n", BM.Errors.Recovery);
 
             Result = FALSE;
         }
