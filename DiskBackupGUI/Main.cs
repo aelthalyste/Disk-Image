@@ -326,7 +326,7 @@ namespace DiskBackupGUI
         private void btnAdd_Click(object sender, EventArgs e)
         {
             ActiveButton(sender, activeColor);
-            OpenChildForm(new FormAdd());
+            OpenChildForm(new FormAdd(this));
         }
 
         //restore tab açma methodu
