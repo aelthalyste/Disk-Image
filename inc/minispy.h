@@ -57,11 +57,16 @@ Environment:
 #define NAR_BOOTFILE_NAME  "NARBOOTFILE"
 #define NAR_BOOTFILE_W_NAME L"NARBOOTFILE"
 
+// force 1 byte aligment
+#pragma pack(push ,1)
+
 typedef struct _nar_boot_track_data{
+    UINT64 LastBackupOffset;
     char Letter;
-    char Version;
+    unsigned char Version;
     char BackupType;
 }nar_boot_track_data;
+#pragma pack(pop)
 
 //
 //  FltMgr's IRP major codes

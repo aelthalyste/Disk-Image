@@ -198,6 +198,8 @@ Return Value:
                                 continue;
                             }
 
+                            FlushFileBuffers(V->LogHandle);
+                            SetFilePointer(V->LogHandle, 0, 0, FILE_END); // set it to the append mode
 
                             for (int TempIndex = 0; TempIndex < RecCount; TempIndex++) {
 

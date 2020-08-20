@@ -221,14 +221,15 @@ struct volume_backup_inf {
 
     ////Incremental change count of the volume, this value will be reseted after every SUCCESSFUL backup operation
     // this value times sizeof(nar_record) indicates how much data appended since last backup, useful when doing incremental backups
+    // we dont need that actually, possiblenewbackupregionoffsetmark - lastbackupoffset is equal to that thing
     //UINT32 IncRecordCount;  // IGNORED IF DIFF BACKUP
     
     // INdicates where last backup regions end in local metadata. bytes after that offset is non-backed up parts of the volume.
     // this value + increcordcount*sizeof(nar_record) is PossibleNewBackupRegionOffsetMark
-    UINT64 LastBackupRegionOffset;
+    INT64 LastBackupRegionOffset;
 
     struct{
-        UINT64 PossibleNewBackupRegionOffsetMark;
+        INT64 PossibleNewBackupRegionOffsetMark;
     }ActiveBackupInf;
 
     DWORD VolumeTotalClusterCount;

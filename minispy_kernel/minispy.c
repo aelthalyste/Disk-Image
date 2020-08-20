@@ -259,6 +259,7 @@ Return Value:
                     }
                     else if (FI.EndOfFile.QuadPart % sizeof(TrackedVolumes[0]) != 0) {
                         DbgPrint("File is not aligned\n");
+                        DbgPrint("Struct size %i\n", sizeof(TrackedVolumes[0]));
                     }
                     else {
                         FileSize = FI.EndOfFile.QuadPart;
@@ -364,14 +365,13 @@ Return Value:
                         
                         status = FltAttachVolume(NarData.Filter, Volume, NULL, NULL);
                         if (NT_SUCCESS(status)) {
-                            DbgPrint("Successfully attached volume %wZ\n", &NarData.VolumeRegionBuffer[i].GUIDStrVol);
+                            DbgPrint("Successfully attached volume %wZ\n", TrackedVolumes[i].Letter, &NarData.VolumeRegionBuffer[i].GUIDStrVol);
                         }
                         else {
-                            DbgPrint("Couldnt attach volume volume %wZ, status %i\n", &NarData.VolumeRegionBuffer[i].GUIDStrVol, status);
+                            DbgPrint("Couldnt attach volume volume %c, GUID: %wZ, status %i\n", &NarData.VolumeRegionBuffer[i].GUIDStrVol, status);
                             // revert guid str to null again
                             memset(NarData.VolumeRegionBuffer[i].Reserved, 0, NAR_GUID_STR_SIZE);
                             NarData.VolumeRegionBuffer[i].GUIDStrVol.Length = 0;
-                            
                         }
                         
                     }

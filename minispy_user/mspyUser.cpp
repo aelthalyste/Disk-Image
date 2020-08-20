@@ -38,13 +38,6 @@ _Analysis_mode_(_Analysis_code_type_user_code_)
 
 #include "mspyLog.h"
 
-//#define NAR_CONV_TO_BIG_END_4BYTE(n) ((n & 0x000000ff) << 24u) | ((n & 0x0000ff00) << 8u) | ((n & 0x00ff0000) >> 8u) | ((n & 0xff000000) >> 24u)
-//#define NAR_EXTRACT_3BYTE_BIG_END_FROM_LOW_END(n) NAR_CONV_TO_BIG_END_4BYTE(n) & 0x00ffffff
-//#define NAR_CONV_TO_BIG_END_2BYTE(n) ((n) << 8u) | ((n) >> 8u)
-//#define NAR_3BYTE_FROM4(n) (n) >> 8 // converts 4 byte little endian value to 3byte, but since there arent 3byte types in language, we keep using INT32 type. that wont be much problem since we truncated it
-
-                                                                                                                                                              
-
 
 void
 MergeRegions(data_array<nar_record>* R) {
@@ -874,7 +867,7 @@ InitVolumeInf(volume_backup_inf* VolInf, wchar_t Letter, BackupType Type) {
     
     
     
-    VolInf->Version = -4;
+    VolInf->Version = -1;
     VolInf->ClusterSize = 0;
     VolInf->VSSPTR = 0;
     
@@ -1174,8 +1167,7 @@ GetMFTLCN(char VolumeLetter, HANDLE VolumeHandle) {
 
     return Result;
     
-    //return Result;
-
+    
     UINT32 MEMORY_BUFFER_SIZE = 1024LL * 1024LL * 1024LL;
     UINT32 ClusterExtractedBufferSize = 1024 * 1024 * 5;
 
@@ -1878,63 +1870,35 @@ TerminateBackup(volume_backup_inf* V, BOOLEAN Succeeded) {
         }
         
         //Termination of fullbackup
-        //We should save records to file
         
+        //neccecary for incremental backup
+        V->LastBackupRegionOffset = 0;
+        V->ActiveBackupInf.PossibleNewBackupRegionOffsetMark = 0;
+        
+        // after 
+        V->Version = 0;
+
     }
     else {
         //Termination of diff-inc backup
         printf("Termination of diff-inc backup\n");
         
         if (Succeeded) {
+
             // NOTE(Batuhan):
             printf("Will save metadata to working directory, Version : %i\n", V->Version);
             SaveMetadata((char)V->Letter, V->Version, V->ClusterSize, V->BT, V->Stream.Records, V->Stream.Handle);
-            
-            if (V->BT == BackupType::Inc) {
-                
-                if (SetFilePointer(V->LogHandle, 0, 0, FILE_BEGIN) == 0) {
-                    
-                    DWORD BytesWritten = 0;
-                    DWORD BytesToWrite = V->Stream.Records.Count * sizeof(nar_record);
-                    if (WriteFile(V->LogHandle, V->Stream.Records.Data, BytesToWrite, &BytesWritten, 0) && BytesWritten == BytesToWrite) {
-                        
-                        if (!SetEndOfFile(V->LogHandle)) {
-                            printf("Can't set end of file [inc backup termination]\n");
-                        }
-                        
-                        Return = TRUE;
-                    }
-                    else {
-                        printf("Can't write to metadata file\n");
-                        DisplayError(GetLastError());
-                    }
-                    
-                }
-                else {
-                    printf("Can't set file pointer\n");
-                    DisplayError(GetLastError());
-                }
-            }
-            else {
-                //Diff backup
-                Return = TRUE;
-            }
-            
+
             /*
          Since merge algorithm may have change size of the record buffer,
             we should overwrite and truncate it
          */
-            
+            Return = TRUE;
+            printf("Swapping LastBackupRegionOffset and PossibleNewBackupRegionOffsetMark (%I64u, %I64u) \n", V->LastBackupRegionOffset, V->ActiveBackupInf.PossibleNewBackupRegionOffsetMark);
             V->Version++;
-            printf("YOU SHOULDNT BE SEEING THAT, GO TO LINE %i\n", __LINE__);
-            //if (InitNewLogFile(V)) {
-            //    Return = TRUE;
-            //}
-            //else {
-            //    printf("Couldn't create metadata file, this is fatal error\n");
-            //    DisplayError(GetLastError());
-            //}
-            
+            V->LastBackupRegionOffset = V->ActiveBackupInf.PossibleNewBackupRegionOffsetMark;
+            V->ActiveBackupInf.PossibleNewBackupRegionOffsetMark = 0;
+
             //backup operation succeeded condition end (for diff and inc)
         }
         
@@ -2019,6 +1983,7 @@ SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, DotNetStreamInf* SI) {
             //Incremental or diff stream
             BackupType T = VolInf->BT;
             
+
             if (T == BackupType::Diff) {
                 if (SetDiffRecords(VolInf)) {
                     Return = TRUE;
@@ -2162,7 +2127,9 @@ SetIncRecords(volume_backup_inf* VolInf) {
 
     DWORD RetVal = WaitForSingleObject(VolInf->FileWriteMutex, 500);
     if(RetVal == WAIT_OBJECT_0) {
-           
+
+        FlushFileBuffers(VolInf->LogHandle);       
+        
         // safe to read from V->LogHandle
 
         if(VolInf->ActiveBackupInf.PossibleNewBackupRegionOffsetMark - VolInf->LastBackupRegionOffset < 0xFFFFFFFFll){
@@ -2362,11 +2329,13 @@ SetDiffRecords(volume_backup_inf* V) {
     }
 
 
-    V->ActiveBackupInf.PossibleNewBackupRegionOffsetMark = NarGetFilePointer(V->LogHandle);
+
 
     DWORD WINAPIRetVAL = WaitForSingleObject(V->FileWriteMutex, 500);
     if(WINAPIRetVAL == WAIT_OBJECT_0){
-
+        FlushFileBuffers(V->LogHandle);
+        
+        V->ActiveBackupInf.PossibleNewBackupRegionOffsetMark = NarGetFilePointer(V->LogHandle);
         if(V->ActiveBackupInf.PossibleNewBackupRegionOffsetMark < 0xFFFFFFFFll){
             
             DWORD TargetReadSize = V->ActiveBackupInf.PossibleNewBackupRegionOffsetMark;
@@ -2478,8 +2447,15 @@ SetupStreamHandle(volume_backup_inf* VolInf) {
             DWORD RetVal = WaitForSingleObject(VolInf->FileWriteMutex, 500);
             if(RetVal == WAIT_OBJECT_0){
                 LARGE_INTEGER CurrentFilePtr = {0};
+                FlushFileBuffers(VolInf->LogHandle);
+
                 if(GetFileSizeEx(VolInf->LogHandle, &CurrentFilePtr) != 0){
                     VolInf->ActiveBackupInf.PossibleNewBackupRegionOffsetMark = CurrentFilePtr.QuadPart;
+                    printf("Current log file size %I64d\n", CurrentFilePtr.QuadPart);
+                }
+                else{
+                    printf("Couldnt get log file size\n");
+                    DisplayError(GetLastError());
                 }
 
                 ReleaseMutex(VolInf->FileWriteMutex);
@@ -2506,12 +2482,39 @@ SetupStreamHandle(volume_backup_inf* VolInf) {
         return FALSE;
     }
     
-    printf("YOU SHOULDNT BE SEEING THAT %i\n", __LINE__);
     if (!VolInf->FullBackupExists) {
-        //if (!InitNewLogFile(VolInf)) {
-        //    printf("Can't init new log file\n");
-        //    return FALSE;
-        //}
+        printf("!FullBackupExists");
+        std::wstring LogFileName = GenerateLogFileName(VolInf->Letter);
+        VolInf->LogHandle = CreateFileW(LogFileName.c_str(), GENERIC_WRITE | GENERIC_READ, 0, 0, CREATE_ALWAYS, 0, 0);
+        if(VolInf->LogHandle != INVALID_HANDLE_VALUE){
+
+            DWORD RetVal = WaitForSingleObject(VolInf->FileWriteMutex, 500);
+            if(RetVal == WAIT_OBJECT_0){
+
+                LARGE_INTEGER CurrentFilePtr = {0};
+                if(GetFileSizeEx(VolInf->LogHandle, &CurrentFilePtr) != 0){
+                    VolInf->ActiveBackupInf.PossibleNewBackupRegionOffsetMark = CurrentFilePtr.QuadPart;
+                    printf("Log file size %I64d\n", CurrentFilePtr.QuadPart);
+                }
+                else{
+                    printf("COuldnt get log file size, !VolInf->FullBackupExists\n");
+                    DisplayError(GetLastError());
+                }
+
+                ReleaseMutex(VolInf->FileWriteMutex);
+
+            }
+            else{
+                printf("Couldnt lock file write mutex @ setupstreamhandle, returning false\n");
+                return FALSE;
+            }
+
+        }
+        else{
+            printf("Couldnt create log file for volume %c\n", VolInf->Letter);            
+        }
+
+        
     }
     
     
@@ -3798,7 +3801,7 @@ RestoreVersionWithoutLoop(restore_inf R, BOOLEAN RestoreMFT, HANDLE Volume) {
     //NOTE(BATUHAN): Zero out fullbackup's MFT region if target version isnt fb, since its mft will be overwritten that shouldnt be a problem
     //Later, I should replace this code with smt that detects MFT regions from fullbackup metadata, then excudes it from it, so we dont have to zero it after at all.
     //For testing purpose this should do the work.
-#if 1
+#if 0
     if (!RestoreMFT && BMEX->M.Version != NAR_FULLBACKUP_VERSION) {
         
         HANDLE BMFile = CreateFile(BMEX->FilePath.c_str(), GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
@@ -4985,7 +4988,14 @@ NarLoadBootState() {
 
 
 /*
-    Saves the current program state into a file, so next time computer boots driver can recognize it and setup itself accordingly.
+    Saves the current program state into a file, so next time computer boots driver can recognize it 
+    and setup itself accordingly.
+
+    saved states:
+        - Letter (user-kernel)
+        - Version (user)
+        - BackupType (user)
+        - LastBackupRegionOffset (user)
 */
 
 BOOLEAN
@@ -5063,6 +5073,13 @@ main(
      int argc,
      CHAR* argv[]
      ) {
+    
+    HANDLE Mutex = CreateMutexA(0, 0, 0);
+    
+
+    DWORD RetVal = WaitForSingleObject(Mutex, 500);
+
+    RetVal = ReleaseMutex(Mutex);
     
     wchar_t test[500];
     
