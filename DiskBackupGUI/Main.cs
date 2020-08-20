@@ -37,11 +37,7 @@ namespace DiskBackupGUI
 
         public async Task InitSheduler()
         {
-            NameValueCollection props = new NameValueCollection
-                {
-                    { "quartz.serializer.type", "binary" }
-                };
-            StdSchedulerFactory factory = new StdSchedulerFactory(props);
+            StdSchedulerFactory factory = new StdSchedulerFactory();
             scheduler = await factory.GetScheduler();
             await scheduler.Start();
         }
@@ -114,7 +110,10 @@ namespace DiskBackupGUI
             dataGridView1.DataSource = volumes;
             dataGridView1.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
             Instance = this;
-            InitSheduler().Wait();
+            Task.Run(async()=> {
+                await InitSheduler();
+            }).Wait();
+
         }
 
         private void OpenChildForm(Form childForm)

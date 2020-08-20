@@ -85,9 +85,9 @@ namespace DiskBackupGUI
                 Close();
 
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                MessageBox.Show("Tekrarlanıcak Süreyi Dakika Cinsinden Yazınız!!!");
+                MessageBox.Show(ex.Message);
             }
             finally
             {
