@@ -35,11 +35,26 @@ namespace DiskBackupGUI.Tabs
             myMain = main;
             InitializeComponent();
             diskTracker = new DiskTracker();
-            //wipe disk-volume hazır hale geldiğinde alttaki kodu uncomment hale getir............                                      <-----------
-            dgwRestore.DataSource = diskTracker.CW_GetBackupsInDirectory(myMain.myPath);
+            
+            var ddddd = diskTracker.CW_GetBackupsInDirectory(myMain.myPath);
+            
+            List<MyBackupMetadata> myBackups = new List<MyBackupMetadata>();
+            foreach (var backup in diskTracker.CW_GetBackupsInDirectory(myMain.myPath))
+            {
+                myBackups.Add(new MyBackupMetadata()
+                {
+                    BackupType = backup.BackupType,
+                    DiskType = backup.DiskType,
+                    Letter = backup.Letter,
+                    OSVolume = backup.OSVolume,
+                    Version = backup.Version
+                });
+            }
+
+            dgwRestore.DataSource = myBackups;
 
             ////dummy veriler
-            //List<MyBackupMetadata> myBackups = new List<MyBackupMetadata>();
+
             //myBackups.Add(new MyBackupMetadata()
             //{
             //    BackupType = 1111,

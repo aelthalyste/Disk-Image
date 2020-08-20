@@ -25,7 +25,7 @@ namespace DiskBackupGUI
         public int type;
         public string myPath = "";
         public Dictionary<string, List<char>> taskParams = new Dictionary<string, List<char>>();
-
+        StreamWriter writer;
         public static Main Instance { get; private set; }
 
         public static Color activeColor = Color.FromArgb(37, 36, 81);
@@ -241,6 +241,20 @@ namespace DiskBackupGUI
                     checkedColumn.Add((char)row.Cells["Letter"].Value);
                 }
             }
+
+            string fileName = @"C:\Users\90553\Desktop\Example.txt";
+            writer = new StreamWriter(fileName,true);
+            var time = DateTime.Now;
+            try
+            {
+                writer.WriteLine("Differential Backup Alındı " + time.ToString());
+                writer.Close();
+            }
+            catch (Exception exp)
+            {
+                Console.Write(exp.Message);
+            }
+
             MyMessageBox myMessageBox = new MyMessageBox();
             myMessageBox.Scheduler = scheduler;
             myMessageBox.Letters = checkedColumn;
@@ -257,6 +271,19 @@ namespace DiskBackupGUI
                     checkedColumn.Add((char)row.Cells["Letter"].Value);
                 }
             }
+            string fileName = @"C:\Users\90553\Desktop\Example.txt";
+            writer = new StreamWriter(fileName,true);
+            var time = DateTime.Now;
+            try
+            {
+                writer.WriteLine("Incremental Backup Alındı " + time.ToString());
+                writer.Close();
+            }
+            catch (Exception exp)
+            {
+                Console.Write(exp.Message);
+            }
+
             MyMessageBox myMessageBox = new MyMessageBox();
             myMessageBox.Scheduler = scheduler;
             myMessageBox.Letters = checkedColumn;
@@ -308,7 +335,7 @@ namespace DiskBackupGUI
             ActiveButton(sender, activeColor);
             OpenChildForm(new FormRestore(this));
         }
-       
+
         //formu kapatma butonu
         private void btnExit_Click(object sender, EventArgs e)
         {
@@ -328,7 +355,7 @@ namespace DiskBackupGUI
         private extern static void ReleaseCapture();
         [DllImport("user32.DLL", EntryPoint = "SendMessage")]
         private extern static void SendMessage(System.IntPtr hWnd, int wMsg, int wParam, int lParam);
-        
+
         //formun üst kısmındaki panelden formu hareket ettirmek için
         private void panel4_MouseDown(object sender, MouseEventArgs e)
         {
@@ -343,7 +370,6 @@ namespace DiskBackupGUI
             SendMessage(this.Handle, 0x112, 0xf012, 0);
         }
 
-        //sol menüden formu hareket ettirmek için
         private void panelMenu_MouseDown(object sender, MouseEventArgs e)
         {
             ReleaseCapture();
