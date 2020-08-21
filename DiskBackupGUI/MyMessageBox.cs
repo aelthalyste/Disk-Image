@@ -23,9 +23,11 @@ namespace DiskBackupGUI
         public static int jobIdCounter = 0;
         public List<char> Letters { get; set; }
         StreamWriter writer;
+        private int IncOrDiff;
 
-        public MyMessageBox()
+        public MyMessageBox(int DiffOrInc)
         {
+            IncOrDiff = DiffOrInc;
             InitializeComponent();
         }
 
@@ -61,11 +63,22 @@ namespace DiskBackupGUI
             {
                 btnOkay.Enabled = true;
             }
-            string fileName = @"SystemLog.txt";
-            writer = new StreamWriter(fileName, true);
-            var time = DateTime.Now;
-            writer.WriteLine("Görev Oluşturuldu " + time.ToString() + "\n      -->Görev Başlangıç Tarihi : " + startDate + "\n      -->Görev Başlangıç Süresi : " + startTime);
-            writer.Close();
+            if (IncOrDiff == 1)
+            {
+                string fileName = @"SystemLog.txt";
+                writer = new StreamWriter(fileName, true);
+                var time = DateTime.Now;
+                writer.WriteLine("Incremental Görev Oluşturuldu " + time.ToString() + "\n      -->Görev Başlangıç Tarihi : " + startDate + "\n      -->Görev Başlangıç Süresi : " + startTime);
+                writer.Close();
+            }
+            else if (IncOrDiff == 0)
+            {
+                string fileName = @"SystemLog.txt";
+                writer = new StreamWriter(fileName, true);
+                var time = DateTime.Now;
+                writer.WriteLine("Differential Görev Oluşturuldu " + time.ToString() + "\n      -->Görev Başlangıç Tarihi : " + startDate + "\n      -->Görev Başlangıç Süresi : " + startTime);
+                writer.Close();
+            }
         }
 
         private async void btnRepeatOkay_Click(object sender, EventArgs e)
@@ -102,11 +115,23 @@ namespace DiskBackupGUI
             {
                 btnRepeatOkay.Enabled = true;
             }
-            string fileName = @"SystemLog.txt";
-            writer = new StreamWriter(fileName, true);
-            var time = DateTime.Now;
-            writer.WriteLine("Tekrarlanan Görev Oluşturuldu " + time.ToString() + "\n      -->Tekrar Sayısı : " + repeatCount + "\n      -->Tekrar Süresi : " + repeat);
-            writer.Close();
+            
+            if (IncOrDiff == 1)
+            {
+                string fileName = @"SystemLog.txt";
+                writer = new StreamWriter(fileName, true);
+                var time = DateTime.Now;
+                writer.WriteLine("Tekrarlanan Incremental Backup Görevi Oluşturuldu " + time.ToString() + "\n      -->Tekrar Sayısı : " + repeatCount + "\n      -->Tekrar Süresi : " + repeat);
+                writer.Close();
+            }
+            else if (IncOrDiff == 0)
+            {
+                string fileName = @"SystemLog.txt";
+                writer = new StreamWriter(fileName, true);
+                var time = DateTime.Now;
+                writer.WriteLine("Tekrarlanan Differential Backup Görevi Oluşturuldu " + time.ToString() + "\n      -->Tekrar Sayısı : " + repeatCount + "\n      -->Tekrar Süresi : " + repeat);
+                writer.Close();
+            }
         }
 
         #region Form Hareket 
@@ -165,12 +190,22 @@ namespace DiskBackupGUI
             Close();
 
             btnNowOkay.Enabled = true;
-
-            string fileName = @"SystemLog.txt";
-            writer = new StreamWriter(fileName, true);
-            var time = DateTime.Now;
-            writer.WriteLine("Şimdi Çalıştırılan Görev Oluşturuldu " + time.ToString());
-            writer.Close();
+            if (IncOrDiff == 1)
+            {
+                string fileName = @"SystemLog.txt";
+                writer = new StreamWriter(fileName, true);
+                var time = DateTime.Now;
+                writer.WriteLine("Şimdi Çalıştırılan Incremental Backup Oluşturuldu " + time.ToString());
+                writer.Close();
+            }
+            else if (IncOrDiff == 0)
+            {
+                string fileName = @"SystemLog.txt";
+                writer = new StreamWriter(fileName, true);
+                var time = DateTime.Now;
+                writer.WriteLine("Şimdi Çalıştırılan Differential Backup Oluşturuldu " + time.ToString());
+                writer.Close();
+            }
         }
 
         private void btnExit_Click(object sender, EventArgs e)

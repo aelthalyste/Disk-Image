@@ -241,14 +241,8 @@ namespace DiskBackupGUI
                     checkedColumn.Add((char)row.Cells["Letter"].Value);
                 }
             }
-
-            string fileName = @"SystemLog.txt";
-            writer = new StreamWriter(fileName, true);
-            var time = DateTime.Now;
-            writer.WriteLine("Differential Backup ; ");
-            writer.Close();
-
-            MyMessageBox myMessageBox = new MyMessageBox();
+            int diffNum = 0;
+            MyMessageBox myMessageBox = new MyMessageBox(diffNum);
             myMessageBox.Scheduler = scheduler;
             myMessageBox.Letters = checkedColumn;
             myMessageBox.Show();
@@ -264,14 +258,8 @@ namespace DiskBackupGUI
                     checkedColumn.Add((char)row.Cells["Letter"].Value);
                 }
             }
-            string fileName = @"SystemLog.txt";
-            writer = new StreamWriter(fileName, true);
-
-            writer.WriteLine("Incremental Backup ;" );
-            writer.Close();
-
-
-            MyMessageBox myMessageBox = new MyMessageBox();
+            int incNum = 1;
+            MyMessageBox myMessageBox = new MyMessageBox(incNum);
             myMessageBox.Scheduler = scheduler;
             myMessageBox.Letters = checkedColumn;
             myMessageBox.Show();
