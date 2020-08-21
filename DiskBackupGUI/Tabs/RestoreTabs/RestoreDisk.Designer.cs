@@ -30,12 +30,12 @@
         {
             this.components = new System.ComponentModel.Container();
             this.panelMain = new System.Windows.Forms.Panel();
+            this.label1 = new System.Windows.Forms.Label();
             this.btnRestore = new FontAwesome.Sharp.IconButton();
             this.txtDiskName = new System.Windows.Forms.TextBox();
             this.btnCancel = new FontAwesome.Sharp.IconButton();
             this.dgwDisk = new System.Windows.Forms.DataGridView();
             this.bunifuElipse2 = new Bunifu.Framework.UI.BunifuElipse(this.components);
-            this.label1 = new System.Windows.Forms.Label();
             this.panelMain.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dgwDisk)).BeginInit();
             this.SuspendLayout();
@@ -54,6 +54,17 @@
             this.panelMain.Size = new System.Drawing.Size(1054, 436);
             this.panelMain.TabIndex = 30;
             // 
+            // label1
+            // 
+            this.label1.AutoSize = true;
+            this.label1.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F);
+            this.label1.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(2)))), ((int)(((byte)(62)))), ((int)(((byte)(138)))));
+            this.label1.Location = new System.Drawing.Point(291, 236);
+            this.label1.Name = "label1";
+            this.label1.Size = new System.Drawing.Size(255, 20);
+            this.label1.TabIndex = 34;
+            this.label1.Text = "Hangi Volume\'e Restore Edilecek?";
+            // 
             // btnRestore
             // 
             this.btnRestore.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(150)))), ((int)(((byte)(199)))));
@@ -70,7 +81,7 @@
             this.btnRestore.Name = "btnRestore";
             this.btnRestore.Padding = new System.Windows.Forms.Padding(10, 0, 20, 0);
             this.btnRestore.Rotation = 0D;
-            this.btnRestore.Size = new System.Drawing.Size(247, 60);
+            this.btnRestore.Size = new System.Drawing.Size(228, 60);
             this.btnRestore.TabIndex = 33;
             this.btnRestore.Text = "Restore";
             this.btnRestore.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
@@ -102,7 +113,7 @@
             this.btnCancel.Name = "btnCancel";
             this.btnCancel.Padding = new System.Windows.Forms.Padding(10, 0, 20, 0);
             this.btnCancel.Rotation = 0D;
-            this.btnCancel.Size = new System.Drawing.Size(247, 60);
+            this.btnCancel.Size = new System.Drawing.Size(192, 60);
             this.btnCancel.TabIndex = 28;
             this.btnCancel.Text = "Cancel";
             this.btnCancel.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
@@ -123,17 +134,6 @@
             // 
             this.bunifuElipse2.ElipseRadius = 35;
             this.bunifuElipse2.TargetControl = this.dgwDisk;
-            // 
-            // label1
-            // 
-            this.label1.AutoSize = true;
-            this.label1.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F);
-            this.label1.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(2)))), ((int)(((byte)(62)))), ((int)(((byte)(138)))));
-            this.label1.Location = new System.Drawing.Point(274, 233);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(255, 20);
-            this.label1.TabIndex = 34;
-            this.label1.Text = "Hangi Volume\'e Restore Edilecek?";
             // 
             // RestoreDisk
             // 

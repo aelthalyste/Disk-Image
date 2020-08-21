@@ -127,7 +127,7 @@
             this.btnAdd.Flip = FontAwesome.Sharp.FlipOrientation.Normal;
             this.btnAdd.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(162)));
             this.btnAdd.ForeColor = System.Drawing.Color.Gainsboro;
-            this.btnAdd.IconChar = FontAwesome.Sharp.IconChar.PlusCircle;
+            this.btnAdd.IconChar = FontAwesome.Sharp.IconChar.History;
             this.btnAdd.IconColor = System.Drawing.Color.White;
             this.btnAdd.IconSize = 32;
             this.btnAdd.Location = new System.Drawing.Point(0, 68);
@@ -135,7 +135,7 @@
             this.btnAdd.Rotation = 0D;
             this.btnAdd.Size = new System.Drawing.Size(151, 60);
             this.btnAdd.TabIndex = 24;
-            this.btnAdd.Text = "Add";
+            this.btnAdd.Text = "Log";
             this.btnAdd.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
             this.btnAdd.UseVisualStyleBackColor = true;
             this.btnAdd.Click += new System.EventHandler(this.btnAdd_Click);
@@ -165,18 +165,19 @@
             // 
             // btnPath
             // 
+            this.btnPath.Dock = System.Windows.Forms.DockStyle.Left;
             this.btnPath.FlatAppearance.BorderSize = 0;
             this.btnPath.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnPath.Flip = FontAwesome.Sharp.FlipOrientation.Normal;
             this.btnPath.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(162)));
-            this.btnPath.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(2)))), ((int)(((byte)(62)))), ((int)(((byte)(138)))));
+            this.btnPath.ForeColor = System.Drawing.Color.White;
             this.btnPath.IconChar = FontAwesome.Sharp.IconChar.WindowRestore;
-            this.btnPath.IconColor = System.Drawing.Color.FromArgb(((int)(((byte)(2)))), ((int)(((byte)(62)))), ((int)(((byte)(138)))));
+            this.btnPath.IconColor = System.Drawing.Color.White;
             this.btnPath.IconSize = 32;
-            this.btnPath.Location = new System.Drawing.Point(534, 197);
+            this.btnPath.Location = new System.Drawing.Point(0, 0);
             this.btnPath.Name = "btnPath";
             this.btnPath.Rotation = 0D;
-            this.btnPath.Size = new System.Drawing.Size(176, 60);
+            this.btnPath.Size = new System.Drawing.Size(176, 68);
             this.btnPath.TabIndex = 25;
             this.btnPath.Text = " Path";
             this.btnPath.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
@@ -188,6 +189,7 @@
             this.panelTitleBar.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(2)))), ((int)(((byte)(62)))), ((int)(((byte)(138)))));
             this.panelTitleBar.Controls.Add(this.btnMinimize);
             this.panelTitleBar.Controls.Add(this.btnExit);
+            this.panelTitleBar.Controls.Add(this.btnPath);
             this.panelTitleBar.Dock = System.Windows.Forms.DockStyle.Top;
             this.panelTitleBar.Location = new System.Drawing.Point(151, 0);
             this.panelTitleBar.Name = "panelTitleBar";
@@ -234,7 +236,6 @@
             // 
             this.panelMain.Controls.Add(this.PBMain);
             this.panelMain.Controls.Add(this.panelBottomBar);
-            this.panelMain.Controls.Add(this.btnPath);
             this.panelMain.Controls.Add(this.btnCancel);
             this.panelMain.Controls.Add(this.btnDifferential);
             this.panelMain.Controls.Add(this.btnIncremental);
@@ -276,7 +277,7 @@
             this.btnCancel.IconChar = FontAwesome.Sharp.IconChar.Ban;
             this.btnCancel.IconColor = System.Drawing.Color.FromArgb(((int)(((byte)(2)))), ((int)(((byte)(62)))), ((int)(((byte)(138)))));
             this.btnCancel.IconSize = 32;
-            this.btnCancel.Location = new System.Drawing.Point(306, 197);
+            this.btnCancel.Location = new System.Drawing.Point(433, 197);
             this.btnCancel.Name = "btnCancel";
             this.btnCancel.Rotation = 0D;
             this.btnCancel.Size = new System.Drawing.Size(176, 60);

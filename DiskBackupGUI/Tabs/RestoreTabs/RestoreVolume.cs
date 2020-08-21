@@ -16,16 +16,18 @@ namespace DiskBackupGUI.Tabs.RestoreTabs
     {
         Main myMain;
         FormRestore formRestore;
+        FormRestore.MyBackupMetadata myBackupMetadata;
         public DiskTracker diskTracker;
         private int choseVolume = 0;
         public List<MyVolumeInformation> volumes;
         private Form currentChildForm;
 
-        public RestoreVolume(Main main)
+        public RestoreVolume(Main main, FormRestore.MyBackupMetadata myBackup)
         {
             InitializeComponent();
             formRestore = new FormRestore(myMain);
             myMain = main;
+            myBackupMetadata = myBackup;
             diskTracker = new DiskTracker();
             volumes = new List<MyVolumeInformation>();
 
@@ -74,6 +76,12 @@ namespace DiskBackupGUI.Tabs.RestoreTabs
         {
             dgwVolume.DataSource = volumes;
             dgwVolume.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
+
+            myMain.RtReportWrite("Letter : " + myBackupMetadata.Letter.ToString()
+                + "\nBackupType : " + myBackupMetadata.BackupType.ToString()
+                + "\nVersion  : " + myBackupMetadata.Version.ToString()
+                + "\nOSVolume : " + myBackupMetadata.OSVolume.ToString()
+                + "\nDiskType : " + myBackupMetadata.DiskType.ToString(), false);
         }
 
         private void OpenChildForm(Form childForm)
@@ -105,16 +113,13 @@ namespace DiskBackupGUI.Tabs.RestoreTabs
 
         private void btnRestore_Click(object sender, EventArgs e)
         {
-          List<DataGridViewRow> checkedDgvVolume = new List<DataGridViewRow>();
-          foreach (DataGridViewRow row in dgwVolume.Rows)
-          {
-              if (Convert.ToBoolean(row.Cells["Checked"].Value) == true)
-              {
-                  checkedDgvVolume.Add(row);
-              }
-          }
-         
-          myMain.RtReportWrite("Textbox boş bırakılamaz",false);
+            if (myMain.myPath == "")
+                MessageBox.Show("Geçerli bir path bulunamadı");
+            else
+            {
+                var targetLetter = (char)dgwVolume.Rows[dgwVolume.CurrentRow.Index].Cells["Letter"].Value;
+                diskTracker.CW_RestoreToVolume(targetLetter, myBackupMetadata.Letter, myBackupMetadata.Version, true, myMain.myPath);
+            }
         }
 
         private void btnCancel_Click(object sender, EventArgs e)

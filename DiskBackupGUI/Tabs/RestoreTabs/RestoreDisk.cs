@@ -15,16 +15,20 @@ namespace DiskBackupGUI.Tabs.RestoreTabs
     {
         Main myMain;
         FormRestore formRestore;
+        FormRestore.MyBackupMetadata myBackupMetadata;
         public DiskTracker diskTracker;
         private int choseDisk = 1;
         private Form currentChildForm;
 
-        public RestoreDisk(Main main)
+        public RestoreDisk(Main main, FormRestore.MyBackupMetadata backupMetadata)
         {
+            //buraya formRestore'dan seçili olan myBackupMetadata geliyor
             InitializeComponent();
             formRestore = new FormRestore(myMain);
             myMain = main;
+            myBackupMetadata = backupMetadata;
             diskTracker = new DiskTracker();
+            dgwDisk.DataSource = diskTracker.CW_GetDisksOnSystem();
         }
 
         private void OpenChildForm(Form childForm)
@@ -47,6 +51,13 @@ namespace DiskBackupGUI.Tabs.RestoreTabs
 
         private void RestoreDisk_Load(object sender, EventArgs e)
         {
+            dgwDisk.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
+
+            myMain.RtReportWrite("Letter : " + myBackupMetadata.Letter.ToString()
+                + "\nBackupType : " + myBackupMetadata.BackupType.ToString()
+                + "\nVersion  : " + myBackupMetadata.Version.ToString()
+                + "\nOSVolume : " + myBackupMetadata.OSVolume.ToString()
+                + "\nDiskType : " + myBackupMetadata.DiskType.ToString(), false);
         }
 
         private void dgwDisk_CellClick(object sender, DataGridViewCellEventArgs e)
@@ -56,20 +67,17 @@ namespace DiskBackupGUI.Tabs.RestoreTabs
 
         private void btnRestore_Click(object sender, EventArgs e)
         {
-            if (txtDiskName.Text != "")
+            if (txtDiskName.Text.Length == 1)
             {
-                List<DataGridViewRow> checkedDgvDisk = new List<DataGridViewRow>();
-                foreach (DataGridViewRow row in dgwDisk.Rows)
-                {
-                    if (Convert.ToBoolean(row.Cells["Checked"].Value) == true)
-                    {
-                        checkedDgvDisk.Add(row);
-                    }
-                }            }
+                char targetLetter = char.Parse(txtDiskName.Text);
+                var diskID = Convert.ToInt32(dgwDisk.Rows[dgwDisk.CurrentRow.Index].Cells["ID"].Value);
+                diskTracker.CW_RestoreToFreshDisk(targetLetter, myBackupMetadata.Letter, myBackupMetadata.Version, diskID, myMain.myPath);
+            }
             else
             {
-                myMain.RtReportWrite("Textbox boş bırakılamaz", false);
+                MessageBox.Show("Lütfen geçerli bir değer giriniz");
             }
+            
         }
 
         private void btnCancel_Click(object sender, EventArgs e)
