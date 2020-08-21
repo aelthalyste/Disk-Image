@@ -2570,8 +2570,6 @@ SetupVSS() {
 
 BOOLEAN
 ConnectDriver(PLOG_CONTEXT Ctx) {
-    system("net stop minispy");
-    system("net start minispy");
     BOOLEAN Result = FALSE;
     HRESULT hResult = FALSE;
     
