@@ -20,7 +20,7 @@ namespace NarDIWrapper {
 
   public ref class DiskInfo {
   public:
-    unsigned SizeGB;
+    unsigned Size;
     wchar_t Type; // MBR, RAW, GPT
     int ID;
   };

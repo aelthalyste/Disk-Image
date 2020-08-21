@@ -220,20 +220,27 @@ namespace NarDIWrapper {
     }
     
     List<DiskInfo^>^ DiskTracker::CW_GetDisksOnSystem() {
-        auto CResult = NarGetDisks();
-        if (CResult.Count == 0) return nullptr;
-
+        
+        data_array<disk_information> CResult = NarGetDisks();
+        if (CResult.Data == NULL || CResult.Count == 0) return nullptr;
+        
         List<DiskInfo^>^ Result = gcnew List<DiskInfo^>;
+        printf("Found %i disks on the system\n");
+
         for (int i = 0; i < CResult.Count; i++) {
+        
             DiskInfo^ temp = gcnew DiskInfo;
             temp->ID = CResult.Data[i].ID;
-            temp->SizeGB = CResult.Data[i].Size;
+            temp->Size = CResult.Data[i].Size;
             temp->Type = CResult.Data[i].Type;
             
             Result->Add(temp);
         }
 
         return Result;
+        
+        FreeDataArray(&CResult);
+
     }
 
     List<BackupMetadata^>^ DiskTracker::CW_GetBackupsInDirectory(System::String^ SystemStrRootDir) {
