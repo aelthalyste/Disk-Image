@@ -411,6 +411,7 @@
             this.btnRepeatOkay.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             this.btnRepeatOkay.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
             this.btnRepeatOkay.UseVisualStyleBackColor = false;
+            this.btnRepeatOkay.Click += new System.EventHandler(this.btnRepeatOkay_Click);
             // 
             // MyMessageBox
             // 

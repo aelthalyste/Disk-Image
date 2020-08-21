@@ -110,7 +110,8 @@ namespace DiskBackupGUI
             dataGridView1.DataSource = volumes;
             dataGridView1.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
             Instance = this;
-            Task.Run(async()=> {
+            Task.Run(async () =>
+            {
                 await InitSheduler();
             }).Wait();
 
@@ -241,18 +242,11 @@ namespace DiskBackupGUI
                 }
             }
 
-            string fileName = @"C:\Users\90553\Desktop\Example.txt";
-            writer = new StreamWriter(fileName,true);
+            string fileName = @"SystemLog.txt";
+            writer = new StreamWriter(fileName, true);
             var time = DateTime.Now;
-            try
-            {
-                writer.WriteLine("Differential Backup Alındı " + time.ToString());
-                writer.Close();
-            }
-            catch (Exception exp)
-            {
-                Console.Write(exp.Message);
-            }
+            writer.WriteLine("Differential Backup ; ");
+            writer.Close();
 
             MyMessageBox myMessageBox = new MyMessageBox();
             myMessageBox.Scheduler = scheduler;
@@ -270,18 +264,12 @@ namespace DiskBackupGUI
                     checkedColumn.Add((char)row.Cells["Letter"].Value);
                 }
             }
-            string fileName = @"C:\Users\90553\Desktop\Example.txt";
-            writer = new StreamWriter(fileName,true);
-            var time = DateTime.Now;
-            try
-            {
-                writer.WriteLine("Incremental Backup Alındı " + time.ToString());
-                writer.Close();
-            }
-            catch (Exception exp)
-            {
-                Console.Write(exp.Message);
-            }
+            string fileName = @"SystemLog.txt";
+            writer = new StreamWriter(fileName, true);
+
+            writer.WriteLine("Incremental Backup ;" );
+            writer.Close();
+
 
             MyMessageBox myMessageBox = new MyMessageBox();
             myMessageBox.Scheduler = scheduler;

@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -21,7 +22,8 @@ namespace DiskBackupGUI
         public IScheduler Scheduler { get; set; }
         public static int jobIdCounter = 0;
         public List<char> Letters { get; set; }
-        
+        StreamWriter writer;
+
         public MyMessageBox()
         {
             InitializeComponent();
@@ -29,11 +31,12 @@ namespace DiskBackupGUI
 
         private async void btnOkay_Click(object sender, EventArgs e)
         {
+            var startDate = datePicker.Value;
+            var startTime = timepicker.Value + (startDate - DateTime.Now);
             try
             {
                 btnOkay.Enabled = false;
-                var startDate = datePicker.Value;
-                var startTime = timepicker.Value + (startDate - DateTime.Now);
+
                 IJobDetail job = JobBuilder.Create<BackupJob>()
                                .WithIdentity("job" + jobIdCounter, "group1")
                                .Build();
@@ -58,15 +61,21 @@ namespace DiskBackupGUI
             {
                 btnOkay.Enabled = true;
             }
+            string fileName = @"SystemLog.txt";
+            writer = new StreamWriter(fileName, true);
+            var time = DateTime.Now;
+            writer.WriteLine("Görev Oluşturuldu " + time.ToString() + "\n      -->Görev Başlangıç Tarihi : " + startDate + "\n      -->Görev Başlangıç Süresi : " + startTime);
+            writer.Close();
         }
 
         private async void btnRepeatOkay_Click(object sender, EventArgs e)
         {
+            var repeat = Convert.ToInt32(txtRepeatTime.Text);
+            var repeatCount = Convert.ToInt32(txtRepeatCount.Text);
             try
             {
                 btnRepeatOkay.Enabled = false;
-                var repeat = Convert.ToInt32(txtRepeatTime.Text);
-                var repeatCount = Convert.ToInt32(txtRepeatCount.Text);
+
                 var startDate = repeatDatePicker.Value;
                 var startTime = repeatTimePicker.Value + (startDate - DateTime.Now);
                 IJobDetail job = JobBuilder.Create<BackupJob>()
@@ -92,8 +101,12 @@ namespace DiskBackupGUI
             finally
             {
                 btnRepeatOkay.Enabled = true;
-
             }
+            string fileName = @"SystemLog.txt";
+            writer = new StreamWriter(fileName, true);
+            var time = DateTime.Now;
+            writer.WriteLine("Tekrarlanan Görev Oluşturuldu " + time.ToString() + "\n      -->Tekrar Sayısı : " + repeatCount + "\n      -->Tekrar Süresi : " + repeat);
+            writer.Close();
         }
 
         #region Form Hareket 
@@ -152,6 +165,12 @@ namespace DiskBackupGUI
             Close();
 
             btnNowOkay.Enabled = true;
+
+            string fileName = @"SystemLog.txt";
+            writer = new StreamWriter(fileName, true);
+            var time = DateTime.Now;
+            writer.WriteLine("Şimdi Çalıştırılan Görev Oluşturuldu " + time.ToString());
+            writer.Close();
         }
 
         private void btnExit_Click(object sender, EventArgs e)

@@ -42,13 +42,16 @@ namespace DiskBackupGUI
                                 file.Write(buffer, 0, Read);
                                 BytesReadSoFar += Read;
                             }
-
                             result = (long)str.ClusterCount * (long)str.ClusterSize == BytesReadSoFar;
                             diskTracker.CW_TerminateBackup(result);
+                            
+                            if (result == true)
+                            {
+                                diskTracker.CW_SaveBootState();
+                            }
                         }
                     }
                 }
-
             }
             return Task.CompletedTask;
         }
