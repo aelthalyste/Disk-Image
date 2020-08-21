@@ -4924,6 +4924,7 @@ NarLoadBootState() {
 
 BOOLEAN
 NarSaveBootState(LOG_CONTEXT* CTX) {
+
     if (CTX == NULL && CTX->Volumes.Data == 0) return FALSE;
     
     BOOLEAN Result = TRUE;
@@ -4947,6 +4948,8 @@ NarSaveBootState(LOG_CONTEXT* CTX) {
                     Pack.Letter = (char)CTX->Volumes.Data[i].Letter;
                     Pack.Version = CTX->Volumes.Data[i].Version;
                     Pack.BackupType = (char)CTX->Volumes.Data[i].BT;
+                    Pack.LastBackupOffset = CTX->Volumes.Data[i].LastBackupRegionOffset;
+
                     DWORD BR = 0;
                     
                     if (WriteFile(File, &Pack, sizeof(Pack), &BR, 0) && BR == sizeof(Pack)) {
@@ -4998,6 +5001,9 @@ main(
      CHAR* argv[]
      ) {
     
+    LOG_CONTEXT *C = NarLoadBootState();
+
+
     data_array<disk_information> Disks = NarGetDisks();
 
     for(int i = 0; i<Disks.Count; i++){

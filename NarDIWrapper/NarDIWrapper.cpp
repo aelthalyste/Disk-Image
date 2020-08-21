@@ -170,6 +170,10 @@ namespace NarDIWrapper {
         
     }
     
+    bool DiskTracker::CW_SaveBootState() {
+        return NarSaveBootState(C);
+    }
+
     bool DiskTracker::CW_RestoreToFreshDisk(wchar_t TargetLetter, wchar_t SrcLetter, INT Version, int DiskID, System::String^ RootDir) {
         
         R->TargetLetter = TargetLetter;

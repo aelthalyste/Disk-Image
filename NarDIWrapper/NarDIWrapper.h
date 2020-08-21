@@ -65,6 +65,8 @@ namespace NarDIWrapper {
     
     bool CW_TerminateBackup(bool Succeeded);
 
+    bool CW_SaveBootState();
+
     bool CW_RestoreToVolume(
       wchar_t TargetLetter,
       wchar_t SrcLetter,
