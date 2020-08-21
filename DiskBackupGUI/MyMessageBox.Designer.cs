@@ -31,9 +31,9 @@
             this.components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MyMessageBox));
             this.panelTop = new System.Windows.Forms.Panel();
+            this.btnExit = new FontAwesome.Sharp.IconPictureBox();
             this.pictureBox1 = new System.Windows.Forms.PictureBox();
             this.btnOkay = new FontAwesome.Sharp.IconButton();
-            this.panelBottom = new System.Windows.Forms.Panel();
             this.bunifuElipse1 = new Bunifu.Framework.UI.BunifuElipse(this.components);
             this.datePicker = new System.Windows.Forms.DateTimePicker();
             this.timepicker = new System.Windows.Forms.DateTimePicker();
@@ -44,7 +44,6 @@
             this.label5 = new System.Windows.Forms.Label();
             this.btnNowOkay = new FontAwesome.Sharp.IconButton();
             this.panel2 = new System.Windows.Forms.Panel();
-            this.btnRepeatOkay = new FontAwesome.Sharp.IconButton();
             this.label10 = new System.Windows.Forms.Label();
             this.label9 = new System.Windows.Forms.Label();
             this.txtRepeatCount = new System.Windows.Forms.TextBox();
@@ -57,12 +56,14 @@
             this.label4 = new System.Windows.Forms.Label();
             this.label3 = new System.Windows.Forms.Label();
             this.repeatDatePicker = new System.Windows.Forms.DateTimePicker();
-            this.btnExit = new FontAwesome.Sharp.IconPictureBox();
+            this.panel3 = new System.Windows.Forms.Panel();
+            this.btnRepeatOkay = new FontAwesome.Sharp.IconButton();
             this.panelTop.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.btnExit)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             this.panel1.SuspendLayout();
             this.panel2.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.btnExit)).BeginInit();
+            this.panel3.SuspendLayout();
             this.SuspendLayout();
             // 
             // panelTop
@@ -76,6 +77,21 @@
             this.panelTop.Size = new System.Drawing.Size(660, 58);
             this.panelTop.TabIndex = 8;
             this.panelTop.MouseDown += new System.Windows.Forms.MouseEventHandler(this.panelTop_MouseDown);
+            // 
+            // btnExit
+            // 
+            this.btnExit.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnExit.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(2)))), ((int)(((byte)(62)))), ((int)(((byte)(138)))));
+            this.btnExit.ForeColor = System.Drawing.Color.Gainsboro;
+            this.btnExit.IconChar = FontAwesome.Sharp.IconChar.Times;
+            this.btnExit.IconColor = System.Drawing.Color.Gainsboro;
+            this.btnExit.IconSize = 23;
+            this.btnExit.Location = new System.Drawing.Point(620, 12);
+            this.btnExit.Name = "btnExit";
+            this.btnExit.Size = new System.Drawing.Size(24, 23);
+            this.btnExit.TabIndex = 6;
+            this.btnExit.TabStop = false;
+            this.btnExit.Click += new System.EventHandler(this.btnExit_Click);
             // 
             // pictureBox1
             // 
@@ -91,6 +107,7 @@
             // btnOkay
             // 
             this.btnOkay.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(150)))), ((int)(((byte)(199)))));
+            this.btnOkay.Dock = System.Windows.Forms.DockStyle.Left;
             this.btnOkay.FlatAppearance.BorderSize = 0;
             this.btnOkay.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnOkay.Flip = FontAwesome.Sharp.FlipOrientation.Normal;
@@ -100,26 +117,17 @@
             this.btnOkay.IconColor = System.Drawing.Color.FromArgb(((int)(((byte)(2)))), ((int)(((byte)(62)))), ((int)(((byte)(138)))));
             this.btnOkay.IconSize = 32;
             this.btnOkay.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            this.btnOkay.Location = new System.Drawing.Point(38, 174);
+            this.btnOkay.Location = new System.Drawing.Point(0, 0);
             this.btnOkay.Name = "btnOkay";
             this.btnOkay.Padding = new System.Windows.Forms.Padding(10, 0, 20, 0);
             this.btnOkay.Rotation = 0D;
-            this.btnOkay.Size = new System.Drawing.Size(186, 60);
+            this.btnOkay.Size = new System.Drawing.Size(203, 70);
             this.btnOkay.TabIndex = 7;
             this.btnOkay.Text = "Görev Oluştur";
             this.btnOkay.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             this.btnOkay.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
             this.btnOkay.UseVisualStyleBackColor = false;
             this.btnOkay.Click += new System.EventHandler(this.btnOkay_Click);
-            // 
-            // panelBottom
-            // 
-            this.panelBottom.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(2)))), ((int)(((byte)(62)))), ((int)(((byte)(138)))));
-            this.panelBottom.Dock = System.Windows.Forms.DockStyle.Bottom;
-            this.panelBottom.Location = new System.Drawing.Point(0, 298);
-            this.panelBottom.Name = "panelBottom";
-            this.panelBottom.Size = new System.Drawing.Size(660, 10);
-            this.panelBottom.TabIndex = 5;
             // 
             // bunifuElipse1
             // 
@@ -169,7 +177,6 @@
             // 
             this.panel1.Controls.Add(this.bunifuSeparator4);
             this.panel1.Controls.Add(this.label5);
-            this.panel1.Controls.Add(this.btnOkay);
             this.panel1.Controls.Add(this.timepicker);
             this.panel1.Controls.Add(this.label2);
             this.panel1.Controls.Add(this.datePicker);
@@ -177,7 +184,7 @@
             this.panel1.Dock = System.Windows.Forms.DockStyle.Left;
             this.panel1.Location = new System.Drawing.Point(0, 58);
             this.panel1.Name = "panel1";
-            this.panel1.Size = new System.Drawing.Size(294, 240);
+            this.panel1.Size = new System.Drawing.Size(294, 180);
             this.panel1.TabIndex = 14;
             this.panel1.MouseDown += new System.Windows.Forms.MouseEventHandler(this.panel1_MouseDown);
             // 
@@ -207,6 +214,7 @@
             // btnNowOkay
             // 
             this.btnNowOkay.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(150)))), ((int)(((byte)(199)))));
+            this.btnNowOkay.Dock = System.Windows.Forms.DockStyle.Left;
             this.btnNowOkay.FlatAppearance.BorderSize = 0;
             this.btnNowOkay.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnNowOkay.Flip = FontAwesome.Sharp.FlipOrientation.Normal;
@@ -216,11 +224,11 @@
             this.btnNowOkay.IconColor = System.Drawing.Color.FromArgb(((int)(((byte)(2)))), ((int)(((byte)(62)))), ((int)(((byte)(138)))));
             this.btnNowOkay.IconSize = 32;
             this.btnNowOkay.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            this.btnNowOkay.Location = new System.Drawing.Point(230, 235);
+            this.btnNowOkay.Location = new System.Drawing.Point(203, 0);
             this.btnNowOkay.Name = "btnNowOkay";
             this.btnNowOkay.Padding = new System.Windows.Forms.Padding(10, 0, 20, 0);
             this.btnNowOkay.Rotation = 0D;
-            this.btnNowOkay.Size = new System.Drawing.Size(210, 60);
+            this.btnNowOkay.Size = new System.Drawing.Size(227, 70);
             this.btnNowOkay.TabIndex = 25;
             this.btnNowOkay.Text = "Şimdi Çalıştır";
             this.btnNowOkay.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
@@ -230,7 +238,6 @@
             // 
             // panel2
             // 
-            this.panel2.Controls.Add(this.btnRepeatOkay);
             this.panel2.Controls.Add(this.label10);
             this.panel2.Controls.Add(this.label9);
             this.panel2.Controls.Add(this.txtRepeatCount);
@@ -246,33 +253,9 @@
             this.panel2.Dock = System.Windows.Forms.DockStyle.Right;
             this.panel2.Location = new System.Drawing.Point(356, 58);
             this.panel2.Name = "panel2";
-            this.panel2.Size = new System.Drawing.Size(304, 240);
+            this.panel2.Size = new System.Drawing.Size(304, 180);
             this.panel2.TabIndex = 15;
             this.panel2.MouseDown += new System.Windows.Forms.MouseEventHandler(this.panel2_MouseDown);
-            // 
-            // btnRepeatOkay
-            // 
-            this.btnRepeatOkay.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(150)))), ((int)(((byte)(199)))));
-            this.btnRepeatOkay.FlatAppearance.BorderSize = 0;
-            this.btnRepeatOkay.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.btnRepeatOkay.Flip = FontAwesome.Sharp.FlipOrientation.Normal;
-            this.btnRepeatOkay.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(162)));
-            this.btnRepeatOkay.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(2)))), ((int)(((byte)(62)))), ((int)(((byte)(138)))));
-            this.btnRepeatOkay.IconChar = FontAwesome.Sharp.IconChar.Check;
-            this.btnRepeatOkay.IconColor = System.Drawing.Color.FromArgb(((int)(((byte)(2)))), ((int)(((byte)(62)))), ((int)(((byte)(138)))));
-            this.btnRepeatOkay.IconSize = 32;
-            this.btnRepeatOkay.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            this.btnRepeatOkay.Location = new System.Drawing.Point(66, 180);
-            this.btnRepeatOkay.Name = "btnRepeatOkay";
-            this.btnRepeatOkay.Padding = new System.Windows.Forms.Padding(10, 0, 20, 0);
-            this.btnRepeatOkay.Rotation = 0D;
-            this.btnRepeatOkay.Size = new System.Drawing.Size(210, 60);
-            this.btnRepeatOkay.TabIndex = 19;
-            this.btnRepeatOkay.Text = "T. Görev Oluştur";
-            this.btnRepeatOkay.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            this.btnRepeatOkay.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
-            this.btnRepeatOkay.UseVisualStyleBackColor = false;
-            this.btnRepeatOkay.Click += new System.EventHandler(this.btnRepeatOkay_Click);
             // 
             // label10
             // 
@@ -394,20 +377,40 @@
             this.repeatDatePicker.Size = new System.Drawing.Size(158, 20);
             this.repeatDatePicker.TabIndex = 14;
             // 
-            // btnExit
+            // panel3
             // 
-            this.btnExit.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnExit.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(2)))), ((int)(((byte)(62)))), ((int)(((byte)(138)))));
-            this.btnExit.ForeColor = System.Drawing.Color.Gainsboro;
-            this.btnExit.IconChar = FontAwesome.Sharp.IconChar.Times;
-            this.btnExit.IconColor = System.Drawing.Color.Gainsboro;
-            this.btnExit.IconSize = 23;
-            this.btnExit.Location = new System.Drawing.Point(620, 12);
-            this.btnExit.Name = "btnExit";
-            this.btnExit.Size = new System.Drawing.Size(24, 23);
-            this.btnExit.TabIndex = 6;
-            this.btnExit.TabStop = false;
-            this.btnExit.Click += new System.EventHandler(this.btnExit_Click);
+            this.panel3.Controls.Add(this.btnRepeatOkay);
+            this.panel3.Controls.Add(this.btnNowOkay);
+            this.panel3.Controls.Add(this.btnOkay);
+            this.panel3.Dock = System.Windows.Forms.DockStyle.Bottom;
+            this.panel3.Location = new System.Drawing.Point(0, 238);
+            this.panel3.Name = "panel3";
+            this.panel3.Size = new System.Drawing.Size(660, 70);
+            this.panel3.TabIndex = 16;
+            // 
+            // btnRepeatOkay
+            // 
+            this.btnRepeatOkay.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(150)))), ((int)(((byte)(199)))));
+            this.btnRepeatOkay.Dock = System.Windows.Forms.DockStyle.Left;
+            this.btnRepeatOkay.FlatAppearance.BorderSize = 0;
+            this.btnRepeatOkay.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnRepeatOkay.Flip = FontAwesome.Sharp.FlipOrientation.Normal;
+            this.btnRepeatOkay.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(162)));
+            this.btnRepeatOkay.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(2)))), ((int)(((byte)(62)))), ((int)(((byte)(138)))));
+            this.btnRepeatOkay.IconChar = FontAwesome.Sharp.IconChar.Check;
+            this.btnRepeatOkay.IconColor = System.Drawing.Color.FromArgb(((int)(((byte)(2)))), ((int)(((byte)(62)))), ((int)(((byte)(138)))));
+            this.btnRepeatOkay.IconSize = 32;
+            this.btnRepeatOkay.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.btnRepeatOkay.Location = new System.Drawing.Point(430, 0);
+            this.btnRepeatOkay.Name = "btnRepeatOkay";
+            this.btnRepeatOkay.Padding = new System.Windows.Forms.Padding(10, 0, 20, 0);
+            this.btnRepeatOkay.Rotation = 0D;
+            this.btnRepeatOkay.Size = new System.Drawing.Size(227, 70);
+            this.btnRepeatOkay.TabIndex = 26;
+            this.btnRepeatOkay.Text = "T. Görev Oluştur";
+            this.btnRepeatOkay.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.btnRepeatOkay.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
+            this.btnRepeatOkay.UseVisualStyleBackColor = false;
             // 
             // MyMessageBox
             // 
@@ -415,11 +418,10 @@
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(150)))), ((int)(((byte)(199)))));
             this.ClientSize = new System.Drawing.Size(660, 308);
-            this.Controls.Add(this.btnNowOkay);
             this.Controls.Add(this.panel2);
             this.Controls.Add(this.panel1);
             this.Controls.Add(this.panelTop);
-            this.Controls.Add(this.panelBottom);
+            this.Controls.Add(this.panel3);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.None;
             this.Name = "MyMessageBox";
             this.Opacity = 0.96D;
@@ -427,12 +429,13 @@
             this.Text = "Form2";
             this.MouseDown += new System.Windows.Forms.MouseEventHandler(this.MyMessageBox_MouseDown);
             this.panelTop.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.btnExit)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
             this.panel1.ResumeLayout(false);
             this.panel1.PerformLayout();
             this.panel2.ResumeLayout(false);
             this.panel2.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.btnExit)).EndInit();
+            this.panel3.ResumeLayout(false);
             this.ResumeLayout(false);
 
         }
@@ -441,7 +444,6 @@
 
         private System.Windows.Forms.Panel panelTop;
         private FontAwesome.Sharp.IconButton btnOkay;
-        private System.Windows.Forms.Panel panelBottom;
         private Bunifu.Framework.UI.BunifuElipse bunifuElipse1;
         private System.Windows.Forms.PictureBox pictureBox1;
         private System.Windows.Forms.DateTimePicker timepicker;
@@ -460,12 +462,13 @@
         private Bunifu.Framework.UI.BunifuSeparator bunifuSeparator4;
         private System.Windows.Forms.Label label7;
         private System.Windows.Forms.TextBox txtRepeatTime;
-        private FontAwesome.Sharp.IconButton btnRepeatOkay;
         private System.Windows.Forms.TextBox txtRepeatCount;
         private System.Windows.Forms.Label label8;
         private System.Windows.Forms.Label label10;
         private System.Windows.Forms.Label label9;
         private FontAwesome.Sharp.IconButton btnNowOkay;
         private FontAwesome.Sharp.IconPictureBox btnExit;
+        private System.Windows.Forms.Panel panel3;
+        private FontAwesome.Sharp.IconButton btnRepeatOkay;
     }
 }
