@@ -42,6 +42,7 @@ namespace DiskBackupGUI
             await scheduler.Start();
         }
 
+        //c++ ile dönen değişkenlerin c# ile uyumlu olması için oluşturulan class
         public class MyVolumeInformation
         {
             public bool Checked { get; set; }
@@ -54,7 +55,7 @@ namespace DiskBackupGUI
 
         private void Main_Load(object sender, EventArgs e)
         {
-
+            PathLoader();
         }
 
         public Main()
@@ -62,6 +63,26 @@ namespace DiskBackupGUI
             InitializeComponent();
             diskTracker = new DiskTracker();
             volumes = new List<MyVolumeInformation>();
+
+            if (!diskTracker.CW_InitTracker())
+            {
+                MessageBox.Show("Driver initialize edilemedi");
+            }
+
+            string fileName = @"eyup_path.txt";
+            StreamReader sr = new StreamReader(fileName);
+            string lastPath = sr.ReadToEnd();
+
+            if (lastPath != "")
+            {
+                myPath = lastPath;
+                lblPath.Text = myPath;
+            }
+            else
+            {
+                lblPath.Text = "Dosya yolu yok!!";
+                MessageBox.Show("Seçili bir dosya yolu bulunmamakta");
+            }
 
             leftBorderBtn = new Panel();
             leftBorderBtn.Size = new Size(7, 60);
@@ -117,6 +138,7 @@ namespace DiskBackupGUI
 
         }
 
+        //panelMain içerisine diğer formları yerleştirmek için kullanılan method
         private void OpenChildForm(Form childForm)
         {
             //open only form
@@ -148,6 +170,20 @@ namespace DiskBackupGUI
             }
         }
 
+        //main formda lblPath objesini değişiklikten sonra yenilemek için
+        private void PathLoader()
+        {
+            if (myPath != "")
+            {
+                lblPath.Text = myPath;
+            }
+            else
+            {
+                lblPath.Text = "Dosya yolu yok!!";
+            }
+        }
+
+        //aktif olan ve içinde bulunduğumuz tab'ın belirginleşmesi için
         private void ActiveButton(object senderBtn, Color color)
         {
             if (senderBtn != null)
@@ -169,6 +205,7 @@ namespace DiskBackupGUI
             }
         }
 
+        //aktiflikten çıkan butonun eski haline dönmesi için
         private void DisableButton()
         {
             if (currentBtn != null)
@@ -221,6 +258,7 @@ namespace DiskBackupGUI
             }
         }
 
+        //bir satırın üzerindeyken aşşağıda bulunan log ekranına satırdaki bilgileri girmesi için çalışan event
         private void dataGridView1_CellClick(object sender, DataGridViewCellEventArgs e)
         {
             //rtReport textbox'una seçili row bilgilerini yazar
@@ -231,6 +269,7 @@ namespace DiskBackupGUI
                        + "\nBootable : " + dataGridView1.Rows[dataGridView1.CurrentRow.Index].Cells["Bootable"].Value.ToString(), false);
         }
 
+        //differential backup metodunu çalıştıran method
         private void btnDifferential_Click(object sender, EventArgs e)
         {
             List<char> checkedColumn = new List<char>();
@@ -248,6 +287,7 @@ namespace DiskBackupGUI
             myMessageBox.Show();
         }
 
+        //incremental backup metodunu çalıştıran method
         private void btnIncremental_Click(object sender, EventArgs e)
         {
             List<char> checkedColumn = new List<char>();
@@ -266,6 +306,7 @@ namespace DiskBackupGUI
 
         }
 
+        //checked olan satırları kapatmak için
         private void btnCancel_Click(object sender, EventArgs e)
         {
             //thread kapat
@@ -286,9 +327,15 @@ namespace DiskBackupGUI
         private void btnPath_Click(object sender, EventArgs e)
         {
             folderBrowserDialog1.ShowDialog();
-            myPath = folderBrowserDialog1.SelectedPath;
+            myPath = folderBrowserDialog1.SelectedPath + @"\";
+            string fileName = @"eyup_path.txt";
+            StreamWriter pathWriter = new StreamWriter(fileName);
+            pathWriter.Write(myPath);
+            pathWriter.Close();
+            PathLoader();
         }
 
+        //ana ekrana dönme methodu
         private void btnHome_Click(object sender, EventArgs e)
         {
             if (currentChildForm != null)
@@ -298,7 +345,8 @@ namespace DiskBackupGUI
             DisableButton();
         }
 
-        private void btnAdd_Click(object sender, EventArgs e)
+        //log tab açma methodu
+        private void btnLog_Click(object sender, EventArgs e)
         {
             ActiveButton(sender, activeColor);
             OpenChildForm(new FormAdd(this));
