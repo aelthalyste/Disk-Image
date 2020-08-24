@@ -72,6 +72,7 @@ namespace DiskBackupGUI
             string fileName = @"eyup_path.txt";
             StreamReader sr = new StreamReader(fileName);
             string lastPath = sr.ReadToEnd();
+            sr.Close();
 
             if (lastPath != "")
             {

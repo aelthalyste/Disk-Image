@@ -41,14 +41,14 @@ namespace DiskBackupGUI
                 btnOkay.Enabled = false;
 
                 IJobDetail job = JobBuilder.Create<BackupJob>()
-                               .WithIdentity("job" + jobIdCounter, "group1")
+                               .WithIdentity("job" + jobIdCounter, "group")
                                .Build();
                 var trigger = TriggerBuilder.Create()
-                   .WithIdentity("trigger" + jobIdCounter, "group1")
+                   .WithIdentity("trigger" + jobIdCounter, "group")
                    .StartAt(DateTimeOffset.Now.Add(startTime - DateTime.Now)) // if a start time is not given (if this line were omitted), "now" is implied
                    .WithSimpleSchedule(x => x
                        .WithIntervalInMinutes(1)
-                       .WithRepeatCount(1))
+                       .WithRepeatCount(0))
                    .Build();
                 await Scheduler.ScheduleJob(job, trigger);
                 Main.Instance.taskParams["job" + jobIdCounter] = Letters;
@@ -64,22 +64,20 @@ namespace DiskBackupGUI
             {
                 btnOkay.Enabled = true;
             }
+            string fileName = @"SystemLog.txt";
+            writer = new StreamWriter(fileName, true);
+            var time = DateTime.Now;
             if (IncOrDiff == 1)
             {
-                string fileName = @"SystemLog.txt";
-                writer = new StreamWriter(fileName, true);
-                var time = DateTime.Now;
                 writer.WriteLine("Incremental Görev Oluşturuldu " + time.ToString() + "\n      -->Görev Başlangıç Tarihi : " + startDate + "\n      -->Görev Başlangıç Süresi : " + startTime);
-                writer.Close();
             }
             else if (IncOrDiff == 0)
             {
-                string fileName = @"SystemLog.txt";
-                writer = new StreamWriter(fileName, true);
-                var time = DateTime.Now;
+               
                 writer.WriteLine("Differential Görev Oluşturuldu " + time.ToString() + "\n      -->Görev Başlangıç Tarihi : " + startDate + "\n      -->Görev Başlangıç Süresi : " + startTime);
-                writer.Close();
+               
             }
+            writer.Close();
         }
 
         //Tekrarlanan Görev Oluşturma
@@ -94,17 +92,17 @@ namespace DiskBackupGUI
                 var startDate = repeatDatePicker.Value;
                 var startTime = repeatTimePicker.Value + (startDate - DateTime.Now);
                 IJobDetail job = JobBuilder.Create<BackupJob>()
-                               .WithIdentity("job" + jobIdCounter, "group1")
+                               .WithIdentity("job2" + jobIdCounter, "group2")
                                .Build();
                 var trigger = TriggerBuilder.Create()
-                   .WithIdentity("trigger" + jobIdCounter, "group1")
+                   .WithIdentity("trigger2" + jobIdCounter, "group2")
                    .StartAt(DateTimeOffset.Now.Add(startTime - DateTime.Now)) // if a start time is not given (if this line were omitted), "now" is implied
                    .WithSimpleSchedule(x => x
                        .WithIntervalInMinutes(repeat)
                        .WithRepeatCount(repeatCount))
                    .Build();
                 await Scheduler.ScheduleJob(job, trigger);
-                Main.Instance.taskParams["job" + jobIdCounter] = Letters;
+                Main.Instance.taskParams["job2" + jobIdCounter] = Letters;
                 jobIdCounter++;
                 Close();
 
@@ -117,23 +115,21 @@ namespace DiskBackupGUI
             {
                 btnRepeatOkay.Enabled = true;
             }
-            
+
+            string fileName = @"SystemLog.txt";
+            writer = new StreamWriter(fileName, true);
+            var time = DateTime.Now;
+
             if (IncOrDiff == 1)
             {
-                string fileName = @"SystemLog.txt";
-                writer = new StreamWriter(fileName, true);
-                var time = DateTime.Now;
                 writer.WriteLine("Tekrarlanan Incremental Backup Görevi Oluşturuldu " + time.ToString() + "\n      -->Tekrar Sayısı : " + repeatCount + "\n      -->Tekrar Süresi : " + repeat);
-                writer.Close();
+                
             }
             else if (IncOrDiff == 0)
             {
-                string fileName = @"SystemLog.txt";
-                writer = new StreamWriter(fileName, true);
-                var time = DateTime.Now;
                 writer.WriteLine("Tekrarlanan Differential Backup Görevi Oluşturuldu " + time.ToString() + "\n      -->Tekrar Sayısı : " + repeatCount + "\n      -->Tekrar Süresi : " + repeat);
-                writer.Close();
             }
+            writer.Close();
         }
 
         //Şimdi çalıştır 
@@ -141,36 +137,32 @@ namespace DiskBackupGUI
         {
             btnNowOkay.Enabled = false;
             IJobDetail job = JobBuilder.Create<BackupJob>()
-                           .WithIdentity("job1" + jobIdCounter, "group11")
+                           .WithIdentity("job3" + jobIdCounter, "group3")
                            .Build();
             var trigger = TriggerBuilder.Create()
-               .WithIdentity("trigger1" + jobIdCounter, "group11")
+               .WithIdentity("trigger3" + jobIdCounter, "group3")
                .WithSimpleSchedule(x => x
                    .WithIntervalInMinutes(1)
-                   .WithRepeatCount(1))
+                   .WithRepeatCount(0))
                .Build();
             await Scheduler.ScheduleJob(job, trigger);
-            Main.Instance.taskParams["job1" + jobIdCounter] = Letters;
+            Main.Instance.taskParams["job3" + jobIdCounter] = Letters;
             jobIdCounter++;
             Close();
 
+            string fileName = @"SystemLog.txt";
+            writer = new StreamWriter(fileName, true);
+            var time = DateTime.Now;
             btnNowOkay.Enabled = true;
             if (IncOrDiff == 1)
             {
-                string fileName = @"SystemLog.txt";
-                writer = new StreamWriter(fileName, true);
-                var time = DateTime.Now;
                 writer.WriteLine("Şimdi Çalıştırılan Incremental Backup Oluşturuldu " + time.ToString());
-                writer.Close();
             }
             else if (IncOrDiff == 0)
             {
-                string fileName = @"SystemLog.txt";
-                writer = new StreamWriter(fileName, true);
-                var time = DateTime.Now;
                 writer.WriteLine("Şimdi Çalıştırılan Differential Backup Oluşturuldu " + time.ToString());
-                writer.Close();
             }
+            writer.Close();
         }
 
         //form kapatma
