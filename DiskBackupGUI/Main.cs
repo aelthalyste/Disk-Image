@@ -283,7 +283,7 @@ namespace DiskBackupGUI
             }
             int diffNum = 0;
             MyMessageBox myMessageBox = new MyMessageBox(diffNum);
-            myMessageBox.Scheduler = scheduler;
+            myMessageBox.MyScheduler = scheduler;
             myMessageBox.Letters = checkedColumn;
             myMessageBox.Show();
         }
@@ -301,7 +301,7 @@ namespace DiskBackupGUI
             }
             int incNum = 1;
             MyMessageBox myMessageBox = new MyMessageBox(incNum);
-            myMessageBox.Scheduler = scheduler;
+            myMessageBox.MyScheduler = scheduler;
             myMessageBox.Letters = checkedColumn;
             myMessageBox.Show();
 
