@@ -204,10 +204,7 @@ Return Value:
                             for (int TempIndex = 0; TempIndex < RecCount; TempIndex++) {
 
                                 if (Recs[TempIndex].StartPos + Recs[TempIndex].Len < V->VolumeTotalClusterCount) {
-                                    FileDump(&Recs[TempIndex] , sizeof(nar_record), V->LogHandle);        
-                                }
-                                else{
-
+                                    FileDump(&Recs[TempIndex], sizeof(nar_record), V->LogHandle);        
                                 }
 
                             }

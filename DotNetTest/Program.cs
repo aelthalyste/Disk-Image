@@ -47,6 +47,7 @@ namespace DotNetTest
                 PrintCommands();
                 DiskTracker tracker = new DiskTracker();
 
+                var  a = tracker.CW_GetDisksOnSystem();
 
                 if (tracker.CW_InitTracker())
                 {

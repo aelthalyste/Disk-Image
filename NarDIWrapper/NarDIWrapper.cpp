@@ -42,7 +42,8 @@ mesaj loopunda, threadinde, bir sorun yaşanırsa nasıl ana uygulamaya bildiril
 #include "pch.h"
 
 #include "NarDIWrapper.h"
-
+#include <msclr\marshal.h>
+#include <msclr\marshal_cppstd.h>
 
 #include "mspyLog.h"
 #include "mspyUser.cpp"
@@ -70,9 +71,11 @@ void SystemStringToWCharPtr(System::String ^SystemStr, wchar_t *Destination) {
 namespace NarDIWrapper {
     
     DiskTracker::DiskTracker() {
+
         C = NarLoadBootState();
         // when loading, always check for old states, if one is not presented, create new one from scratch
         if (C == NULL) {
+            printf("Coulndt load from boot file, initializing new CONTEXT\n");
             // couldnt find old state
             C = (LOG_CONTEXT*)malloc(sizeof(LOG_CONTEXT));
             memset(C, 0, sizeof(LOG_CONTEXT));
@@ -85,7 +88,7 @@ namespace NarDIWrapper {
         }
         else {
             // find old state
-            printf("Succ loaded boot state\n");
+            printf("Succ loaded boot state from file\n");
         }
 
         
@@ -112,10 +115,7 @@ namespace NarDIWrapper {
    
     
     bool DiskTracker::CW_InitTracker() {
-        if (SetupVSS()) {
-            return ConnectDriver(C);
-        }
-        return FALSE;
+        return ConnectDriver(C) && SetupVSS();
     }
     
     bool DiskTracker::CW_AddToTrack(wchar_t L, int Type) {
@@ -163,8 +163,8 @@ namespace NarDIWrapper {
             R->Version = NAR_FULLBACKUP_VERSION;
         }
         
+        R->RootDir = msclr::interop::marshal_as<std::wstring>(RootDir);
         
-        R->RootDir = L"";
         
         return OfflineRestoreToVolume(R, ShouldFormat);
         
@@ -179,12 +179,13 @@ namespace NarDIWrapper {
         R->TargetLetter = TargetLetter;
         R->SrcLetter = SrcLetter;
         R->Version = Version;
+        R->RootDir = msclr::interop::marshal_as<std::wstring>(RootDir);
+
         if (Version < 0) {
             R->Version = NAR_FULLBACKUP_VERSION;
         }
         
         
-        R->RootDir = L"";
         
         return OfflineRestoreCleanDisk(R, DiskID);
     }
@@ -222,10 +223,15 @@ namespace NarDIWrapper {
     List<DiskInfo^>^ DiskTracker::CW_GetDisksOnSystem() {
         
         data_array<disk_information> CResult = NarGetDisks();
-        if (CResult.Data == NULL || CResult.Count == 0) return nullptr;
+        if (CResult.Data == NULL || CResult.Count == 0) {
+            if (CResult.Count == 0) printf("Found 0 disks on the system\n");
+            if (CResult.Data == 0) printf("GetDisksOnSystem returned NULL\n");
+
+            return nullptr;
+        }
         
         List<DiskInfo^>^ Result = gcnew List<DiskInfo^>;
-        printf("Found %i disks on the system\n");
+        printf("Found %i disks on the system\n", CResult.Count);
 
         for (int i = 0; i < CResult.Count; i++) {
         
@@ -237,10 +243,11 @@ namespace NarDIWrapper {
             Result->Add(temp);
         }
 
-        return Result;
-        
         FreeDataArray(&CResult);
 
+        return Result;
+        
+        
     }
 
     List<BackupMetadata^>^ DiskTracker::CW_GetBackupsInDirectory(System::String^ SystemStrRootDir) {
