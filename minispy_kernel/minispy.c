@@ -807,6 +807,7 @@ Return Value:
                             
                         }
                         
+                        int VolumeAddIndex = -1;
                         // If volume doesnt exist, insert it to first empty space
                         if (VolumeAlreadyExists == FALSE) {
                             
@@ -824,9 +825,14 @@ Return Value:
                                     
                                     NAR_INIT_MEMORYBUFFER(NarData.VolumeRegionBuffer[i].MemoryBuffer);
                                     NarData.VolumeRegionBuffer[i].GUIDStrVol.MaximumLength = NAR_GUID_STR_SIZE;
+                                    NarData.VolumeRegionBuffer[i].GUIDStrVol.Length = 49;
                                     
                                     VolumeAdded = TRUE;
-                                    
+                                    VolumeAddIndex = i;
+
+                                    ExReleaseFastMutex(&NarData.VolumeRegionBuffer[i].FastMutex);
+                                    break;
+
                                 }
                                 
                                 ExReleaseFastMutex(&NarData.VolumeRegionBuffer[i].FastMutex);
@@ -845,7 +851,7 @@ Return Value:
                             DbgPrint("Couldnt add volume to list\n");
                         }
                         else {
-                            DbgPrint("Successfully added volume to list\n");
+                            DbgPrint("Successfully added volume to list at index %i\n", VolumeAddIndex);
                         }
                         if (VolumeAlreadyExists) {
                             DbgPrint("Volume already exist in the list\n");
@@ -962,73 +968,11 @@ Return Value:
     UNREFERENCED_PARAMETER(nameToUse);
     UNREFERENCED_PARAMETER(CompletionContext);
     
-    return FLT_PREOP_SUCCESS_WITH_CALLBACK;
-    
-}
-
-
-FLT_POSTOP_CALLBACK_STATUS
-SpyPostOperationCallback(
-                         _Inout_ PFLT_CALLBACK_DATA Data,
-                         _In_ PCFLT_RELATED_OBJECTS FltObjects,
-                         _In_ PVOID CompletionContext,
-                         _In_ FLT_POST_OPERATION_FLAGS Flags
-                         )
-/*++
-
-Routine Description:
-
-  This routine receives ALL post-operation callbacks.  This will take
-  the log record passed in the context parameter and update it with
-  the completion information.  It will then insert it on a list to be
-  sent to the usermode component.
-  ,
-  NOTE:  This routine must be NON-PAGED because it can be called at DPC level
-
-Arguments:
-
-  Data - Contains information about the given operation.
-
-  FltObjects - Contains pointers to the various objects that are pertinent
-    to this operation.
-
-  CompletionContext - Pointer to the RECORD_LIST structure in which we
-    store the information we are logging.  This was passed from the
-    pre-operation callback
-
-  Flags - Contains information as to why this routine was called.
-
-Return Value:
-
-  Identifies how processing should continue for this operation
-
---*/
-{
-    
-    
-    //PFLT_TAG_DATA_BUFFER tagData;
-    
-    ULONG copyLength;
-    
-    UNREFERENCED_PARAMETER(FltObjects);
-    UNREFERENCED_PARAMETER(copyLength);
-    UNREFERENCED_PARAMETER(Data);
-    UNREFERENCED_PARAMETER(CompletionContext);
-    
-    NTSTATUS status;
-    UNREFERENCED_PARAMETER(status);
-    
-    
-    //
-    //  If our instance is in the process of being torn down don't bother to
-    //  log this record, free it now.
-    //
-    
 
     ULONG PID = FltGetRequestorProcessId(Data);
     // filter out temporary files and files that would be closed if last handle freed
     if ((Data->Iopb->TargetFileObject->Flags & FO_TEMPORARY_FILE) == FO_TEMPORARY_FILE || (Data->Iopb->TargetFileObject->Flags & FO_DELETE_ON_CLOSE) == FO_DELETE_ON_CLOSE || PID == NarData.UserModePID) {
-        return  FLT_POSTOP_FINISHED_PROCESSING;
+        return  FLT_PREOP_SUCCESS_WITH_CALLBACK;
     }
 
     PFLT_FILE_NAME_INFORMATION nameInfo = NULL;
@@ -1316,13 +1260,13 @@ Return Value:
             }
 
             if (RecCount > 0 && UniStr.MaximumLength >= NAR_GUID_STR_SIZE && Error == 0) {
+                
                 INT32 SizeNeededForMemoryBuffer = 2 * RecCount * sizeof(UINT32);
                 INT32 RemainingSizeOnBuffer = 0;
                 RtlInitEmptyUnicodeString(&GUIDStringNPaged, CompareBuffer, NAR_GUID_STR_SIZE);
                 status = FltGetVolumeGuidName(FltObjects->Volume, &GUIDStringNPaged, &SizeNeededForGUIDStr);
+                
                 if (NT_SUCCESS(status)) {
-
-
 
                     for (int i = 0; i < NAR_MAX_VOLUME_COUNT; i++) {
 
@@ -1382,10 +1326,77 @@ Return Value:
 #endif
 
 
-    return FLT_POSTOP_FINISHED_PROCESSING;
+    return FLT_PREOP_SUCCESS_WITH_CALLBACK;
 
 NAR_PREOP_END:
     //ExFreeToPagedLookasideList(&NarData.LookAsideList, Buffer);
+
+
+
+
+
+    return FLT_PREOP_SUCCESS_WITH_CALLBACK;
+    
+}
+
+
+FLT_POSTOP_CALLBACK_STATUS
+SpyPostOperationCallback(
+                         _Inout_ PFLT_CALLBACK_DATA Data,
+                         _In_ PCFLT_RELATED_OBJECTS FltObjects,
+                         _In_ PVOID CompletionContext,
+                         _In_ FLT_POST_OPERATION_FLAGS Flags
+                         )
+/*++
+
+Routine Description:
+
+  This routine receives ALL post-operation callbacks.  This will take
+  the log record passed in the context parameter and update it with
+  the completion information.  It will then insert it on a list to be
+  sent to the usermode component.
+  ,
+  NOTE:  This routine must be NON-PAGED because it can be called at DPC level
+
+Arguments:
+
+  Data - Contains information about the given operation.
+
+  FltObjects - Contains pointers to the various objects that are pertinent
+    to this operation.
+
+  CompletionContext - Pointer to the RECORD_LIST structure in which we
+    store the information we are logging.  This was passed from the
+    pre-operation callback
+
+  Flags - Contains information as to why this routine was called.
+
+Return Value:
+
+  Identifies how processing should continue for this operation
+
+--*/
+{
+    
+    
+    //PFLT_TAG_DATA_BUFFER tagData;
+    
+    ULONG copyLength;
+    
+    UNREFERENCED_PARAMETER(FltObjects);
+    UNREFERENCED_PARAMETER(copyLength);
+    UNREFERENCED_PARAMETER(Data);
+    UNREFERENCED_PARAMETER(CompletionContext);
+    
+    NTSTATUS status;
+    UNREFERENCED_PARAMETER(status);
+    
+    
+    //
+    //  If our instance is in the process of being torn down don't bother to
+    //  log this record, free it now.
+    //
+    
 
     return FLT_POSTOP_FINISHED_PROCESSING;
 

@@ -34,6 +34,42 @@ Environment:
 #include <vsbackup.h>
 #include <vsmgmt.h>
 
+#include <stdio.h>
+
+static void
+NarLog(const char *str, ...){
+
+    const static HANDLE File = CreateFileA("NAR_APP_LOG_FILE.txt", GENERIC_WRITE|GENERIC_READ, FILE_SHARE_READ|FILE_SHARE_WRITE, 0, CREATE_ALWAYS, 0, 0);
+    static SYSTEMTIME Time = {};
+    
+    SetFilePointer(File, 0, 0, FILE_END);
+
+    va_list ap;
+    static char buf[1024];
+    static char TimeStrBuf[128];
+
+    memset(&Time, 0, sizeof(Time));
+    memset(buf, 0, sizeof(buf));
+    memset(TimeStrBuf, 0, sizeof(TimeStrBuf));
+    
+    GetLocalTime(&Time);
+    sprintf(TimeStrBuf, "[%i:%i:%i]: ", Time.wHour, Time.wMinute, Time.wSecond);
+
+    va_start(ap,str);
+    vsprintf(buf, str, ap);
+    va_end(ap);
+
+    int Len = strlen(buf);
+    DWORD H;
+
+    WriteFile(File, TimeStrBuf, strlen(TimeStrBuf), &H, 0);
+    WriteFile(File, buf, Len, &H, 0);
+    
+    FlushFileBuffers(File);
+
+}
+
+#define printf(fmt, ...) NarLog(fmt, __VA_ARGS__)
 
 enum rec_or {
     LEFT = 0,
@@ -133,6 +169,7 @@ typedef char NARDP;
 #define WideMetadataFileNameDraft L"NAR_M_"
 #define WideBackupFileNameDraft L"NAR_BACKUP_"
 
+#define NAR_EFI_PARTITION_LETTER 'R'
 
 inline BOOLEAN
 IsSameVolumes(const WCHAR* OpName, const WCHAR VolumeLetter);
@@ -305,6 +342,12 @@ struct backup_metadata {
     
     union {
         CHAR Reserved[128]; // Reserved for future usage
+        struct {
+            //FOR MBR things
+            INT64 GPT_EFIPartitionSize;
+            INT64 MBR_SystemPartitionSize;
+
+        };
     };
     
     ULONGLONG VolumeSize;
@@ -419,10 +462,14 @@ BOOLEAN
 NarCreateCleanGPTPartition(int DiskID, int VolumeSizeMB, char Letter);
 
 BOOLEAN
-NarCreateCleanMBRPartition();
+NarCreateCleanMBRPartition(int DiskID, char VolumeLetter, int VolumeSize);
+
 
 BOOLEAN
-NarCreateCleanMBRBootPartition();
+NarCreateCleanMBRBootPartition(int DiskID, char VolumeLetter, int VolumeSizeMB, int SystemPartitionSizeMB, int RecoveryPartitionSizeMB);
+
+BOOLEAN
+NarRemoveLetter(char Letter);
 
 void
 NarRepairBoot(char Letter);
@@ -561,6 +608,9 @@ NarCreatePrimaryPartition(int DiskID, char Letter);
 
 BOOLEAN
 SetupVSS();
+
+inline std::wstring
+GenerateMetadataName(wchar_t Letter, int Version);
 
 inline std::wstring
 GenerateLogFileName(wchar_t Letter);
@@ -1071,4 +1121,3 @@ typedef struct _FLT_TAG_DATA_BUFFER {
 #pragma warning(pop)
 
 #endif //__MSPYLOG_H__
-
