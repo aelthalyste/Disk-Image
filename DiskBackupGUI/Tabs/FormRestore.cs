@@ -30,16 +30,11 @@ namespace DiskBackupGUI.Tabs
             public char DiskType { get; set; }
         }
 
-        public FormRestore(Main main)
+        private void FormRestore_Load(object sender, EventArgs e)
         {
-            myMain = main;
-            InitializeComponent();
-            diskTracker = new DiskTracker();
-            
-            var ddddd = diskTracker.CW_GetBackupsInDirectory(myMain.myPath);
-            
             List<MyBackupMetadata> myBackups = new List<MyBackupMetadata>();
-            foreach (var backup in diskTracker.CW_GetBackupsInDirectory(myMain.myPath))
+            var deneme = diskTracker.CW_GetBackupsInDirectory(myMain.myPath);
+            foreach (var backup in deneme)
             {
                 myBackups.Add(new MyBackupMetadata()
                 {
@@ -52,26 +47,13 @@ namespace DiskBackupGUI.Tabs
             }
 
             dgwRestore.DataSource = myBackups;
+        }
 
-            ////dummy veriler
-
-            //myBackups.Add(new MyBackupMetadata()
-            //{
-            //    BackupType = 1111,
-            //    DiskType = 'a',
-            //    Letter = 'z',
-            //    OSVolume = 88888,
-            //    Version = 999
-            //});
-            //myBackups.Add(new MyBackupMetadata()
-            //{
-            //    BackupType = 2222,
-            //    DiskType = 'b',
-            //    Letter = 'y',
-            //    OSVolume = 77777,
-            //    Version = 888
-            //});
-            //dgwRestore.DataSource = myBackups;
+        public FormRestore(Main main)
+        {
+            myMain = main;
+            InitializeComponent();
+            diskTracker = new DiskTracker();  
 
             dgwRestore.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
         }
@@ -105,6 +87,7 @@ namespace DiskBackupGUI.Tabs
                 , false);
         }
 
+        //seçili satırdaki bilgilerin wipe-disk metoduna gitmeden önce MyBackupMetadata objesine dönüştürülmesi ve wipe-disk metoduna gönderilmesi
         private void btnDisc_Click(object sender, EventArgs e)
         {
             MyBackupMetadata myBackup = new MyBackupMetadata();
@@ -117,6 +100,7 @@ namespace DiskBackupGUI.Tabs
             OpenChildForm(new RestoreDisk(myMain, myBackup));
         }
 
+        //seçili satırdaki bilgilerin wipe-volume metoduna gitmeden önce MyBackupMetadata objesine dönüştürülmesi ve wipe-volume metoduna gönderilmesi
         private void btnVolume_Click(object sender, EventArgs e)
         {
             MyBackupMetadata myBackup = new MyBackupMetadata();
@@ -128,5 +112,7 @@ namespace DiskBackupGUI.Tabs
 
             OpenChildForm(new RestoreVolume(myMain, myBackup));
         }
+
+        
     }
 }

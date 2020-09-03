@@ -121,6 +121,7 @@
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.None;
             this.Name = "FormRestore";
             this.Text = "Restore";
+            this.Load += new System.EventHandler(this.FormRestore_Load);
             this.panelMain.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.dgwRestore)).EndInit();
             this.ResumeLayout(false);

@@ -34,7 +34,7 @@
             this.rtReport = new System.Windows.Forms.RichTextBox();
             this.panelMenu = new System.Windows.Forms.Panel();
             this.btnRestore = new FontAwesome.Sharp.IconButton();
-            this.btnAdd = new FontAwesome.Sharp.IconButton();
+            this.btnLog = new FontAwesome.Sharp.IconButton();
             this.panelPictures = new System.Windows.Forms.Panel();
             this.btnHome = new System.Windows.Forms.PictureBox();
             this.btnPath = new FontAwesome.Sharp.IconButton();
@@ -50,6 +50,7 @@
             this.btnIncremental = new FontAwesome.Sharp.IconButton();
             this.bunifuElipse3 = new Bunifu.Framework.UI.BunifuElipse(this.components);
             this.folderBrowserDialog1 = new System.Windows.Forms.FolderBrowserDialog();
+            this.lblPath = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).BeginInit();
             this.panelMenu.SuspendLayout();
             this.panelPictures.SuspendLayout();
@@ -89,7 +90,7 @@
             // 
             this.panelMenu.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(2)))), ((int)(((byte)(62)))), ((int)(((byte)(138)))));
             this.panelMenu.Controls.Add(this.btnRestore);
-            this.panelMenu.Controls.Add(this.btnAdd);
+            this.panelMenu.Controls.Add(this.btnLog);
             this.panelMenu.Controls.Add(this.panelPictures);
             this.panelMenu.Dock = System.Windows.Forms.DockStyle.Left;
             this.panelMenu.Location = new System.Drawing.Point(0, 0);
@@ -119,26 +120,26 @@
             this.btnRestore.UseVisualStyleBackColor = true;
             this.btnRestore.Click += new System.EventHandler(this.btnRestore_Click);
             // 
-            // btnAdd
+            // btnLog
             // 
-            this.btnAdd.Dock = System.Windows.Forms.DockStyle.Top;
-            this.btnAdd.FlatAppearance.BorderSize = 0;
-            this.btnAdd.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.btnAdd.Flip = FontAwesome.Sharp.FlipOrientation.Normal;
-            this.btnAdd.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(162)));
-            this.btnAdd.ForeColor = System.Drawing.Color.Gainsboro;
-            this.btnAdd.IconChar = FontAwesome.Sharp.IconChar.History;
-            this.btnAdd.IconColor = System.Drawing.Color.White;
-            this.btnAdd.IconSize = 32;
-            this.btnAdd.Location = new System.Drawing.Point(0, 68);
-            this.btnAdd.Name = "btnAdd";
-            this.btnAdd.Rotation = 0D;
-            this.btnAdd.Size = new System.Drawing.Size(151, 60);
-            this.btnAdd.TabIndex = 24;
-            this.btnAdd.Text = "Log";
-            this.btnAdd.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
-            this.btnAdd.UseVisualStyleBackColor = true;
-            this.btnAdd.Click += new System.EventHandler(this.btnAdd_Click);
+            this.btnLog.Dock = System.Windows.Forms.DockStyle.Top;
+            this.btnLog.FlatAppearance.BorderSize = 0;
+            this.btnLog.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnLog.Flip = FontAwesome.Sharp.FlipOrientation.Normal;
+            this.btnLog.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(162)));
+            this.btnLog.ForeColor = System.Drawing.Color.Gainsboro;
+            this.btnLog.IconChar = FontAwesome.Sharp.IconChar.History;
+            this.btnLog.IconColor = System.Drawing.Color.White;
+            this.btnLog.IconSize = 32;
+            this.btnLog.Location = new System.Drawing.Point(0, 68);
+            this.btnLog.Name = "btnLog";
+            this.btnLog.Rotation = 0D;
+            this.btnLog.Size = new System.Drawing.Size(151, 60);
+            this.btnLog.TabIndex = 24;
+            this.btnLog.Text = "Log";
+            this.btnLog.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
+            this.btnLog.UseVisualStyleBackColor = true;
+            this.btnLog.Click += new System.EventHandler(this.btnLog_Click);
             // 
             // panelPictures
             // 
@@ -177,7 +178,7 @@
             this.btnPath.Location = new System.Drawing.Point(0, 0);
             this.btnPath.Name = "btnPath";
             this.btnPath.Rotation = 0D;
-            this.btnPath.Size = new System.Drawing.Size(176, 68);
+            this.btnPath.Size = new System.Drawing.Size(133, 68);
             this.btnPath.TabIndex = 25;
             this.btnPath.Text = " Path";
             this.btnPath.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
@@ -187,6 +188,7 @@
             // panelTitleBar
             // 
             this.panelTitleBar.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(2)))), ((int)(((byte)(62)))), ((int)(((byte)(138)))));
+            this.panelTitleBar.Controls.Add(this.lblPath);
             this.panelTitleBar.Controls.Add(this.btnMinimize);
             this.panelTitleBar.Controls.Add(this.btnExit);
             this.panelTitleBar.Controls.Add(this.btnPath);
@@ -340,6 +342,17 @@
             this.bunifuElipse3.ElipseRadius = 35;
             this.bunifuElipse3.TargetControl = this.dataGridView1;
             // 
+            // lblPath
+            // 
+            this.lblPath.AutoSize = true;
+            this.lblPath.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F);
+            this.lblPath.ForeColor = System.Drawing.Color.White;
+            this.lblPath.Location = new System.Drawing.Point(139, 27);
+            this.lblPath.Name = "lblPath";
+            this.lblPath.Size = new System.Drawing.Size(32, 15);
+            this.lblPath.TabIndex = 26;
+            this.lblPath.Text = "Path";
+            // 
             // Main
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -360,6 +373,7 @@
             this.panelPictures.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.btnHome)).EndInit();
             this.panelTitleBar.ResumeLayout(false);
+            this.panelTitleBar.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.btnMinimize)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.btnExit)).EndInit();
             this.panelMain.ResumeLayout(false);
@@ -387,9 +401,10 @@
         private FontAwesome.Sharp.IconButton btnCancel;
         private FontAwesome.Sharp.IconButton btnRestore;
         private FontAwesome.Sharp.IconButton btnPath;
-        private FontAwesome.Sharp.IconButton btnAdd;
+        private FontAwesome.Sharp.IconButton btnLog;
         private System.Windows.Forms.FolderBrowserDialog folderBrowserDialog1;
         private Bunifu.Framework.UI.BunifuProgressBar PBMain;
+        private System.Windows.Forms.Label lblPath;
     }
 }
 

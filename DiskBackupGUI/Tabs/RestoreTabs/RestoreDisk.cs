@@ -19,6 +19,7 @@ namespace DiskBackupGUI.Tabs.RestoreTabs
         public DiskTracker diskTracker;
         private int choseDisk = 1;
         private Form currentChildForm;
+        List<MyDiskInfo> myDiskInfo;
 
         public RestoreDisk(Main main, FormRestore.MyBackupMetadata backupMetadata)
         {
@@ -28,7 +29,48 @@ namespace DiskBackupGUI.Tabs.RestoreTabs
             myMain = main;
             myBackupMetadata = backupMetadata;
             diskTracker = new DiskTracker();
-            dgwDisk.DataSource = diskTracker.CW_GetDisksOnSystem();
+            myDiskInfo = new List<MyDiskInfo>();
+
+            foreach (var item in diskTracker.CW_GetDisksOnSystem())
+            {
+                if (item.Type == 'R')
+                {
+                    myDiskInfo.Add(new MyDiskInfo(){
+                        Size = item.Size,
+                        ID = item.ID,
+                        MyType = "RAW"
+                    });
+                }
+                else if (item.Type == 'M')
+                {
+                    myDiskInfo.Add(new MyDiskInfo()
+                    {
+                        Size = item.Size,
+                        ID = item.ID,
+                        MyType = "MBR"
+                    });
+                }
+                else if (item.Type == 'G')
+                {
+                    myDiskInfo.Add(new MyDiskInfo()
+                    {
+                        Size = item.Size,
+                        ID = item.ID,
+                        MyType = "GPT"
+                    });
+                }
+                myDiskInfo.Add(new MyDiskInfo()
+                {
+                    
+                });
+            }
+            dgwDisk.DataSource = myDiskInfo;
+        }
+        public class MyDiskInfo
+        {
+            public long Size { get; set; }
+            public string MyType { get; set; }
+            public int ID { get; set; }
         }
 
         private void OpenChildForm(Form childForm)
@@ -77,7 +119,7 @@ namespace DiskBackupGUI.Tabs.RestoreTabs
             {
                 MessageBox.Show("Lütfen geçerli bir değer giriniz");
             }
-            
+
         }
 
         private void btnCancel_Click(object sender, EventArgs e)

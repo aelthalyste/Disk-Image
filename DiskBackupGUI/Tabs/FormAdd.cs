@@ -24,7 +24,7 @@ namespace DiskBackupGUI.Tabs
 
         private void FileRead()
         {
-            string fileName = @"C:\Users\90553\Desktop\Example.txt";
+            string fileName = @"SystemLog.txt";
             StreamReader sr = new StreamReader(fileName);
             rtxtLog.Text = sr.ReadToEnd();
         }
