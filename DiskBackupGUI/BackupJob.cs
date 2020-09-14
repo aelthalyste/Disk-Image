@@ -44,11 +44,21 @@ namespace DiskBackupGUI
                             }
                             result = (long)str.ClusterCount * (long)str.ClusterSize == BytesReadSoFar;
                             diskTracker.CW_TerminateBackup(result);
-                            
+
+                            try
+                            {
+                                File.Copy(str.MetadataFileName, Main.Instance.myPath + str.MetadataFileName);
+                            }
+                            catch (IOException iox)
+                            {
+                                MessageBox.Show(iox.Message);
+                            }
+
                             if (result == true)
                             {
                                 diskTracker.CW_SaveBootState();
                             }
+                            file.Close();
                         }
                     }
                 }

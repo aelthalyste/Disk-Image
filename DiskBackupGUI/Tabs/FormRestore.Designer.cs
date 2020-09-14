@@ -77,7 +77,7 @@
             this.btnVolume.Rotation = 0D;
             this.btnVolume.Size = new System.Drawing.Size(247, 60);
             this.btnVolume.TabIndex = 21;
-            this.btnVolume.Text = "Wipe Volume";
+            this.btnVolume.Text = "Volume Restore";
             this.btnVolume.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             this.btnVolume.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
             this.btnVolume.UseVisualStyleBackColor = false;
@@ -101,7 +101,7 @@
             this.btnDisc.Rotation = 0D;
             this.btnDisc.Size = new System.Drawing.Size(247, 60);
             this.btnDisc.TabIndex = 27;
-            this.btnDisc.Text = "Wipe Disk";
+            this.btnDisc.Text = "Disk Restore";
             this.btnDisc.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             this.btnDisc.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
             this.btnDisc.UseVisualStyleBackColor = false;

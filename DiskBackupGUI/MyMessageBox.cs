@@ -2,6 +2,7 @@
 using NarDIWrapper;
 using Quartz;
 using Quartz.Impl;
+using Quartz.Impl.Matchers;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -19,7 +20,7 @@ namespace DiskBackupGUI
 {
     public partial class MyMessageBox : Form
     {
-        public IScheduler Scheduler { get; set; }
+        public IScheduler MyScheduler { get; set; }
         public static int jobIdCounter = 0;
         public List<char> Letters { get; set; }
         StreamWriter writer;
@@ -50,11 +51,11 @@ namespace DiskBackupGUI
                        .WithIntervalInMinutes(1)
                        .WithRepeatCount(0))
                    .Build();
-                await Scheduler.ScheduleJob(job, trigger);
+                await MyScheduler.ScheduleJob(job, trigger);
                 Main.Instance.taskParams["job" + jobIdCounter] = Letters;
                 jobIdCounter++;
                 Close();
-
+                ISchedulerFactory sf = new StdSchedulerFactory();
             }
             catch (Exception)
             {
@@ -64,6 +65,15 @@ namespace DiskBackupGUI
             {
                 btnOkay.Enabled = true;
             }
+
+            var allTriggerKeys = MyScheduler.GetTriggerKeys(GroupMatcher<TriggerKey>.AnyGroup());
+            foreach (var triggerKey in allTriggerKeys.Result)
+            {
+                var triggerdetails = MyScheduler.GetTrigger(triggerKey);
+                var Jobdetails = MyScheduler.GetJobDetail(triggerdetails.Result.JobKey);
+                Console.WriteLine("IsCompleted -" + triggerdetails.IsCompleted + " |  TriggerKey  - " + triggerdetails.Result.Key.Name + " Job key -" + triggerdetails.Result.JobKey.Name + "| Deneme |" + Jobdetails.Result.Key.Name);
+            }
+
             string fileName = @"SystemLog.txt";
             writer = new StreamWriter(fileName, true);
             var time = DateTime.Now;
@@ -101,7 +111,7 @@ namespace DiskBackupGUI
                        .WithIntervalInMinutes(repeat)
                        .WithRepeatCount(repeatCount))
                    .Build();
-                await Scheduler.ScheduleJob(job, trigger);
+                await MyScheduler.ScheduleJob(job, trigger);
                 Main.Instance.taskParams["job2" + jobIdCounter] = Letters;
                 jobIdCounter++;
                 Close();
@@ -145,7 +155,7 @@ namespace DiskBackupGUI
                    .WithIntervalInMinutes(1)
                    .WithRepeatCount(0))
                .Build();
-            await Scheduler.ScheduleJob(job, trigger);
+            await MyScheduler.ScheduleJob(job, trigger);
             Main.Instance.taskParams["job3" + jobIdCounter] = Letters;
             jobIdCounter++;
             Close();
