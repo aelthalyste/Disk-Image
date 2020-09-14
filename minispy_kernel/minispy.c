@@ -1124,6 +1124,12 @@ Return Value:
                 goto NAR_PREOP_END;
             }
 
+            RtlUnicodeStringPrintf(&UniStr, L"\\AppData\\Local\\Microsoft\\Windows\\INetCache\\IE");
+            if (NarSubMemoryExists(nameInfo->Name.Buffer, UniStr.Buffer, nameInfo->Name.Length, UniStr.Length)) {
+                ExFreeToPagedLookasideList(&NarData.LookAsideList, UnicodeStrBuffer);
+                goto NAR_PREOP_END;
+            }
+
 #endif
 
 
@@ -1153,7 +1159,11 @@ Return Value:
                 ExFreeToPagedLookasideList(&NarData.LookAsideList, UnicodeStrBuffer);
                 goto NAR_PREOP_END;
             }
-
+            RtlUnicodeStringPrintf(&UniStr, L".cookie");
+            if (RtlSuffixUnicodeString(&UniStr, &nameInfo->Name, FALSE)) {
+                ExFreeToPagedLookasideList(&NarData.LookAsideList, UnicodeStrBuffer);
+                goto NAR_PREOP_END;
+            }
 
             //NAR
 
@@ -1178,10 +1188,12 @@ Return Value:
             UINT32 ClusterWriteStartOffset = (UINT32)(WriteOffsetLargeInt.QuadPart / (LONGLONG)(ClusterSize));
 
 
+#define NAR_PREOP_MAX_RECORD_COUNT 100
+
             struct {
                 UINT32 S;
                 UINT32 L;
-            }P[10];
+            }P[NAR_PREOP_MAX_RECORD_COUNT];
 
             UINT32 RecCount = 0;
             UINT32 Error = 0;
@@ -1286,7 +1298,7 @@ Return Value:
                             RecCount++;
                             NClustersToWrite -= RegionLen;
                         }
-                        else if (RecCount < 10) {
+                        else if (RecCount < NAR_PREOP_MAX_RECORD_COUNT) {
                             /*
                             Write operation fits that region
                             */
@@ -1309,8 +1321,8 @@ Return Value:
                 if (NClustersToWrite <= 0) {
                     break;
                 }
-                if (RecCount == 10) {
-                    DbgPrint("Record count = 10, breaking now\n");
+                if (RecCount == NAR_PREOP_MAX_RECORD_COUNT) {
+                    DbgPrint("Record count = %i, breaking now\n", NAR_PREOP_MAX_RECORD_COUNT);
                     break;
                 }
 
@@ -1411,11 +1423,7 @@ Return Value:
 NAR_PREOP_END:
     //ExFreeToPagedLookasideList(&NarData.LookAsideList, Buffer);
 
-
-
-
-
-    return FLT_PREOP_SUCCESS_WITH_CALLBACK;
+    return FLT_PREOP_SUCCESS_NO_CALLBACK;
     
 }
 

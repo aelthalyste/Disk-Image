@@ -70,7 +70,7 @@ NarLog(const char *str, ...){
 
 }
 
-// #define printf(fmt, ...) NarLog(fmt, __VA_ARGS__)
+#define printf(fmt, ...) NarLog(fmt, __VA_ARGS__)
 
 enum rec_or {
     LEFT = 0,
@@ -130,7 +130,7 @@ RecordEqual(nar_record* N1, nar_record* N2) {
     return N1->Len == N2->Len && N1->StartPos == N2->StartPos;
 }
 
-#define printf(format,...) LogFile((format),__VA_ARGS__)
+//#define printf(format,...) LogFile((format),__VA_ARGS__)
 
 
 #define BUFFER_SIZE     4096

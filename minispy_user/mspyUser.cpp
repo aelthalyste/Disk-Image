@@ -2940,7 +2940,7 @@ OfflineRestoreCleanDisk(restore_inf* R, int DiskID) {
                 NarRepairBoot((char)R->TargetLetter);
                 NarRemoveLetter(NAR_EFI_PARTITION_LETTER);
                 NarRemoveLetter(NAR_RECOVERY_PARTITION_LETTER);
-                
+
                 printf("Restored to volume %c, to version %i\n", (char)R->TargetLetter, R->Version);
 
 
@@ -4936,101 +4936,51 @@ NarGetFilePointer(HANDLE F) {
 
 BOOLEAN
 RestoreRecoveryFile(restore_inf R) {
-    GUID GREC = { 0 }; // recovery partition guid
-    StrToGUID("{de94bba4-06d1-4d40-a16a-bfd50179d6ac}", &GREC);
+    //GUID GREC = { 0 }; // recovery partition guid
+    //StrToGUID("{de94bba4-06d1-4d40-a16a-bfd50179d6ac}", &GREC);
     
     BOOLEAN Result = FALSE;
-    DWORD BufferSize = 1024 * 1;
-    
-    DRIVE_LAYOUT_INFORMATION_EX* DL = (DRIVE_LAYOUT_INFORMATION_EX*)malloc(BufferSize);
-    HANDLE Disk = INVALID_HANDLE_VALUE;
+    HANDLE MetadataFile = INVALID_HANDLE_VALUE;
     
     backup_metadata B = ReadMetadata(R.SrcLetter, NAR_FULLBACKUP_VERSION, R.RootDir);
     //TODO(Batuhan) check integrity of B
     std::wstring MFN = R.RootDir;
     MFN += GenerateMetadataName(R.SrcLetter, NAR_FULLBACKUP_VERSION);
     
-    HANDLE MetadataFile = CreateFileW(MFN.c_str(), GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, 0, 0);
-    if (MetadataFile != INVALID_HANDLE_VALUE) {
+    HANDLE RecoveryPartitionHandle = NarOpenVolume(NAR_RECOVERY_PARTITION_LETTER);
+    if (RecoveryPartitionHandle == INVALID_HANDLE_VALUE) {
         
-        int DiskID = NarGetVolumeDiskID(B.Letter);
-        
-        
-        if (DiskID != NAR_INVALID_DISK_ID) {
-            char DiskPath[512];
-            sprintf(DiskPath, "\\\\?\\PhysicalDrive%i", DiskID);
-            
-            Disk = CreateFileA(DiskPath, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_WRITE | FILE_SHARE_READ, 0, OPEN_EXISTING, 0, 0);
-            if (Disk != INVALID_HANDLE_VALUE) {
-                
-                DWORD Hell = 0;
-                if (DeviceIoControl(Disk, IOCTL_DISK_GET_DRIVE_LAYOUT_EX, 0, 0, DL, BufferSize, &Hell, 0)) {
-                    if (DL->PartitionStyle == PARTITION_STYLE_GPT) {
-                        for (unsigned int PartitionIndex = 0; PartitionIndex < DL->PartitionCount; PartitionIndex++) {
-                            PARTITION_INFORMATION_EX* PI = &DL->PartitionEntry[PartitionIndex];
-                            
-                            // NOTE(Batuhan): Finding recovery partition via GUID
-                            if (IsEqualGUID(PI->Gpt.PartitionType, GREC)) {
-                                
-                                if (PI->PartitionLength.QuadPart != B.Size.Recovery) {
-                                    printf("Recovery partition size on disk and partition size on metadata doesnt match, on disk %I64d, on metadata %I64d\n", PI->PartitionLength.QuadPart, B.Size.Recovery);
-                                }
+        HANDLE MetadataFile = CreateFileW(MFN.c_str(), GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, 0, 0);
+        if (MetadataFile != INVALID_HANDLE_VALUE) {
 
-                                // assign letter to partition, then write to it, then remove letter
+            if (NarSetFilePointer(MetadataFile, B.Offset.Recovery)) {
+                if (CopyData(RecoveryPartitionHandle, MetadataFile, B.Size.Recovery)) {
+                    //NOTE(Batuhan): Success
+                    printf("Successfully restored recovery partition from backup metadata\n");
+                    Result = TRUE;
 
-
-
-                                if(NarSetFilePointer(Disk, (ULONGLONG)PI->StartingOffset.QuadPart)){
-
-                                    if(NarSetFilePointer(MetadataFile, B.Offset.Recovery)){
-                                        if (CopyData(MetadataFile, Disk, B.Size.Recovery)) {
-                                            //NOTE(Batuhan): Success
-                                            printf("Successfully restored recovery partition from backup metadata\n");
-                                            Result = TRUE;
-
-                                        }
-                                        else {
-                                            printf("Couldnt copy recovery file to disk\n");
-                                        }
-                                    }
-                                    else{
-                                        printf("Couldnt set metadata file pointer to where recovery partition resides\n");
-                                    }
-
-                                }
-                                else{
-                                    printf("Couldnt set disk file pointer to where recovery partition must be residing\n");
-                                }
-    
-                                
-                            }
-                            
-                        }
-                    }
-                    
                 }
                 else {
-                    printf("DeviceIoControl with argument IOCTL_DISK_GET_DRIVE_LAYOUT_EX failed for drive %i, cant restore recovery partition\n", B.Letter);
+                    printf("Couldnt copy recovery file to disk\n");
                 }
-                
             }
             else {
-                printf("Couldnt open disk %s as file, cant restore recovery partition\n", DiskPath);
+                printf("Couldnt set metadata file pointer to where recovery partition resides\n");
             }
-            
+
         }
         else {
-            printf("Couldnt find valid Disk ID for volume letter %c\n", B.Letter);
+            printf("Cant open metadata file %S\n", MFN.c_str());
         }
+
     }
     else {
-        printf("Cant open metadata file %S\n", MFN.c_str());
+        printf("Couldnt open recovery partition's volume (%c) as volume", NAR_RECOVERY_PARTITION_LETTER);
     }
     
-    
-    free(DL);
-    CloseHandle(Disk);
     CloseHandle(MetadataFile);
+    CloseHandle(RecoveryPartitionHandle);
+
     return Result;
 }
 
@@ -5525,7 +5475,7 @@ main(
 
     
     // tests
-
+#if 0
     char s1[] = "denemestringi";
     char s2[] = "ingi";
     char s3[] = "denem";
@@ -5558,6 +5508,7 @@ main(
     if (StrFind(s1, s7, strlen(s1), strlen(s7))) {
         printf("Found substring s7 in s1\n");
     }
+#endif
 
     data_array<disk_information> Disks = NarGetDisks();
 
