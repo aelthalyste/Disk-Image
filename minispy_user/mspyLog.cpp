@@ -152,7 +152,7 @@ Return Value:
         static WCHAR wStrBuffer[256];
         memset(wStrBuffer, 0, WSTRBUFFERLEN * sizeof(WCHAR));
         
-        for (int VolumeIndex = 0; VolumeIndex < context->Volumes.Count; VolumeIndex++) {
+        for (unsigned int VolumeIndex = 0; VolumeIndex < context->Volumes.Count; VolumeIndex++) {
 
             volume_backup_inf* V = &context->Volumes.Data[VolumeIndex];
 
@@ -184,7 +184,7 @@ Return Value:
                         }
 
 
-                        INT32 DataUsed = NAR_MB_DATA_USED(OutBuffer);
+                        INT32 DataUsed = (INT32)NAR_MB_DATA_USED(OutBuffer);
 
                         if (DataUsed > 0 && DataUsed < NAR_MEMORYBUFFER_SIZE) {
 
@@ -201,7 +201,7 @@ Return Value:
                             FlushFileBuffers(V->LogHandle);
                             SetFilePointer(V->LogHandle, 0, 0, FILE_END); // set it to the append mode
 
-                            for (int TempIndex = 0; TempIndex < RecCount; TempIndex++) {
+                            for (unsigned int TempIndex = 0; TempIndex < RecCount; TempIndex++) {
 
                                 if (Recs[TempIndex].StartPos + Recs[TempIndex].Len < V->VolumeTotalClusterCount) {
                                     FileDump(&Recs[TempIndex], sizeof(nar_record), V->LogHandle);        
@@ -217,7 +217,7 @@ Return Value:
                             if (DataUsed < 0) {
                                 printf("Data used was lower than zero %i, GUID : %S\n", DataUsed, Command.VolumeGUIDStr);
                             }
-                            if (DataUsed > NAR_MEMORYBUFFER_SIZE - 2 * sizeof(INT32)) {
+                            if (DataUsed > NAR_MEMORYBUFFER_SIZE) {
                                 printf("Data size exceeded buffer size itself, this is a fatal error(size = %i), GUID : %S\n", DataUsed, Command.VolumeGUIDStr);
                             }
 
@@ -353,10 +353,10 @@ Return Value:
 --*/
 {
     DWORD BytesWritten = 0;
-    BOOL Result = TRUE;
+    DWORD Result = TRUE;
 
     Result = WriteFile(File, Data, DataSize, &BytesWritten, 0);
-    if (!SUCCEEDED(Result) || BytesWritten != DataSize) {
+    if (!SUCCEEDED(Result) || BytesWritten != (DWORD)DataSize) {
         printf("Error occured!\n");
         printf("Bytes written -> %d, BytesToWrite -> %d\n", BytesWritten, DataSize);
         DisplayError(GetLastError());
@@ -393,30 +393,14 @@ Return Value:
 
 --*/
 {
+    UNREFERENCED_PARAMETER(SequenceNumber);
+    UNREFERENCED_PARAMETER(Name);
+    UNREFERENCED_PARAMETER(RecordData);
 
-
-    printf("%S\t", Name);
-    if (RecordData->Error == NAR_ERR_TRINITY) {
-        printf("Holy Trinity error! ");
-    }
-    if (RecordData->Error == NAR_ERR_REG_OVERFLOW) {
-        printf("REG OVERFLOW!!! error ! ");
-    }
-    if (RecordData->Error == NAR_ERR_REG_CANT_FILL) {
-        printf("CANT_FILL error! ");
-    }
-    if (RecordData->Error == NAR_ERR_ALIGN) {
-        printf("Align error! ");
-    }
-    if (RecordData->Error == NAR_ERR_MAX_ITER) {
-        printf("MAX_ITER ERROR! ");
-    }
-    {
-        for (int i = 0; i < RecordData->RecCount; i++) {
-            printf("%d\t%d\t", RecordData->P[i].S, RecordData->P[i].L);
-        }
-        printf("\n");
-    }
+#if _DEBUG
+    // deprecated
+    DebugBreak();
+#endif
 
 }
 

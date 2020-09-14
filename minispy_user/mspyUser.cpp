@@ -72,7 +72,7 @@ MergeRegions(data_array<nar_record>* R) {
     
 }
 
-#if 1 // OPTIMIZED INCREMENTAL MERGE ALORITHM
+#if 0 // OPTIMIZED INCREMENTAL MERGE ALORITHM
 
 void
 MergeRegions(region_chain* Chain) {
@@ -155,7 +155,7 @@ RemoveFromList(region_chain* R) {
     //  R->Next = 0;
 }
 
-void
+inline void
 PrintList(region_chain* Temp) {
     printf("\n######\n");
     while (Temp != NULL) {
@@ -165,7 +165,7 @@ PrintList(region_chain* Temp) {
     printf("\n######\n");
 }
 
-void
+inline void
 PrintListReverse(region_chain* Temp) {
     printf("###\n");
     while (Temp->Next) Temp = Temp->Next;
@@ -642,6 +642,7 @@ CopyData(HANDLE S, HANDLE D, ULONGLONG Len) {
 
 #pragma warning(push)
 #pragma warning(disable:4477)
+
 inline void
 StrToGUID(const char* guid, GUID* G) {
     if (!G) return;
@@ -1150,6 +1151,7 @@ Split(std::wstring str, std::wstring delimiter) {
 data_array<nar_record>
 GetMFTLCN(char VolumeLetter, HANDLE VolumeHandle) {
 
+    BOOLEAN JustExtractMFTRegions = TRUE;
 
     UINT32 MEMORY_BUFFER_SIZE = 1024LL * 1024LL * 1024LL;
     UINT32 ClusterExtractedBufferSize = 1024 * 1024 * 5;
@@ -1160,8 +1162,12 @@ GetMFTLCN(char VolumeLetter, HANDLE VolumeHandle) {
     }DEBUG_CLUSTER_INFORMATION;
     
     nar_record* ClustersExtracted = (nar_record*)malloc(ClusterExtractedBufferSize);
-    int ClusterExtractedCount = 0;
-    memset(ClustersExtracted, 0, ClusterExtractedBufferSize);
+    unsigned int ClusterExtractedCount = 0;
+
+    if (ClustersExtracted != 0) {
+        memset(ClustersExtracted, 0, ClusterExtractedBufferSize);
+    }
+    
 #define NAR_INSERT_CLUSTER(START, LEN) ClustersExtracted[ClusterExtractedCount++] = {(UINT32)(START), (UINT32)(LEN) };
 
 
@@ -1171,7 +1177,7 @@ GetMFTLCN(char VolumeLetter, HANDLE VolumeHandle) {
 #if NAR_MFT_DBG_INFO
 #define DBG_INC(v) (v)++;
 #else
-#define DBG_INC
+#define DBG_INC(v) (v);
 #endif
 
     int DBG_INDX_FOUND = 0;
@@ -1179,11 +1185,17 @@ GetMFTLCN(char VolumeLetter, HANDLE VolumeHandle) {
     int DBG_CLUSTER_COUNT = 0;
     int DBG_TOTAL_FILES_FOUND = 0;
 
+    UNREFERENCED_PARAMETER(DBG_INDX_FOUND);
+    UNREFERENCED_PARAMETER(DBG_TOTAL_DIR_FOUND);
+    UNREFERENCED_PARAMETER(DBG_CLUSTER_COUNT);
+    UNREFERENCED_PARAMETER(DBG_TOTAL_FILES_FOUND);
+
+
     memset(&DEBUG_CLUSTER_INFORMATION, 0, sizeof(DEBUG_CLUSTER_INFORMATION));
 
 //#define DBG_INSERT(START,COUNT) DEBUG_CLUSTER_INFORMATION.Start[DBG_CLUSTER_COUNT] = (UINT32)(START); DEBUG_CLUSTER_INFORMATION.Count[DBG_CLUSTER_COUNT] = (UINT32)(COUNT); (DBG_CLUSTER_COUNT)++;
-#define DBG_INSERT
-
+#define DBG_INSERT(START,COUNT) do{(START);(COUNT);}while(0);
+    
     void* FileBuffer = malloc(MEMORY_BUFFER_SIZE);
     UINT32 FileBufferCount = MEMORY_BUFFER_SIZE / 1024LL;
 
@@ -1306,11 +1318,6 @@ GetMFTLCN(char VolumeLetter, HANDLE VolumeHandle) {
                                 }
 
 
-                                //if(TempVariable > 1 && FirstCluster < 0){
-                                //    dbgbreak
-                                //}
-
-
                                 FirstCluster += OldClusterStart;
                                 // Update tail
                                 OldClusterStart = FirstCluster;
@@ -1346,13 +1353,17 @@ GetMFTLCN(char VolumeLetter, HANDLE VolumeHandle) {
 
             }
 
-            
 
+            // TODO (Batuhan): remove this after testing on windows server, looks like rest of the code finds some invalid regions on volume.
+            if (JustExtractMFTRegions) {
+                goto EARLY_TERMINATION;
+            }
+            
 
             //nar_region *MFTRegions = 0;
             //goto EARLY_TERMINATION;
 
-            INT16 MFTRegionCount = ClusterExtractedCount;
+            unsigned int MFTRegionCount = ClusterExtractedCount;
             
             for (unsigned int MFTOffsetIndex = 0; MFTOffsetIndex < MFTRegionCount; MFTOffsetIndex++) {
 
@@ -1671,8 +1682,8 @@ GetVolumesOnTrack(PLOG_CONTEXT C, volume_information* Out, unsigned int BufferSi
         return FALSE;
     }
     
-    int VolumesFound = 0;
-    int MaxFit = BufferSize / sizeof(*Out);
+    unsigned int VolumesFound = 0;
+    unsigned int MaxFit = BufferSize / (unsigned int)sizeof(*Out);
     BOOLEAN Result = FALSE;
     
     for (unsigned int i = 0; i < C->Volumes.Count; i++) {
@@ -1690,7 +1701,7 @@ GetVolumesOnTrack(PLOG_CONTEXT C, volume_information* Out, unsigned int BufferSi
         Out[VolumesFound].Letter = (char)V->Letter;
         Out[VolumesFound].Bootable = V->IsOSVolume;
         Out[VolumesFound].DiskID = NarGetVolumeDiskID((char)V->Letter);
-        Out[VolumesFound].DiskType = NarGetVolumeDiskType((char)V->Letter);
+        Out[VolumesFound].DiskType = (char)NarGetVolumeDiskType((char)V->Letter);
         Out[VolumesFound].Size = NarGetVolumeSize((char)V->Letter);
         
         VolumesFound++;
@@ -1701,7 +1712,7 @@ GetVolumesOnTrack(PLOG_CONTEXT C, volume_information* Out, unsigned int BufferSi
         memset(Out, 0, BufferSize); //If any error occured, clear given buffer
     }
     else {
-        *OutCount = VolumesFound;
+        *OutCount = (int)VolumesFound;
     }
     
     return Result;
@@ -1748,7 +1759,7 @@ NarGetVolumeGUIDKernelCompatible(wchar_t Letter, wchar_t *VolumeGUID) {
 /*
  Just removes volume entry from kernel memory, does not unattaches it.
 */
-BOOLEAN
+inline BOOLEAN
 NarRemoveVolumeFromKernelList(wchar_t Letter, HANDLE CommPort) {
     
     if(CommPort == INVALID_HANDLE_VALUE) return FALSE;
@@ -1830,7 +1841,7 @@ DetachVolume(volume_backup_inf* VolInf) {
     else {
         printf("Can't detach filter\n");
         printf("Result was -> %d\n", Result);
-        DisplayError(Result);
+        DisplayError((DWORD)Result);
         Return = FALSE;
     }
     
@@ -1873,7 +1884,7 @@ GetVolumeID(PLOG_CONTEXT C, wchar_t Letter) {
         if (C->Volumes.Count != 0) {
             for (unsigned int i = 0; i < C->Volumes.Count; i++) {
                 if (C->Volumes.Data[i].Letter == Letter) {
-                    ID = i;
+                    ID = (int)i; // safe conversion
                     break;
                 }
             }
@@ -1896,9 +1907,9 @@ ReadStream(volume_backup_inf* VolInf, void* Buffer, unsigned int TotalSize) {
     UINT32 Result = 0;
     BOOLEAN ErrorOccured = FALSE;
 
-    int ClustersToRead = TotalSize / VolInf->ClusterSize;
-    int BufferOffset = 0;
-    DWORD BytesOperated = 0;
+    // int ClustersToRead = (int)TotalSize / (int)VolInf->ClusterSize;
+
+
     if (TotalSize == 0) {
         printf("Passed totalsize as 0, terminating now\n");
         return TRUE;
@@ -1908,14 +1919,14 @@ ReadStream(volume_backup_inf* VolInf, void* Buffer, unsigned int TotalSize) {
     unsigned int RemainingSize = TotalSize;
     void* CurrentBufferOffset = Buffer;
     
-    if (VolInf->Stream.RecIndex >= VolInf->Stream.Records.Count) {
+    if ((UINT)VolInf->Stream.RecIndex >= VolInf->Stream.Records.Count) {
         printf("End of the stream\n", VolInf->Stream.RecIndex, VolInf->Stream.Records.Count);
         return Result;
     }
 
     while (RemainingSize) {
 
-        if (VolInf->Stream.RecIndex >= VolInf->Stream.Records.Count) {
+        if ((UINT)VolInf->Stream.RecIndex >= VolInf->Stream.Records.Count) {
             printf("Rec index was higher than record's count, result %u, rec_index %i rec_count %i\n", Result, VolInf->Stream.RecIndex, VolInf->Stream.Records.Count);
             return Result;
         }
@@ -1925,7 +1936,8 @@ ReadStream(volume_backup_inf* VolInf, void* Buffer, unsigned int TotalSize) {
         UINT64 ClustersRemainingByteSize = (UINT64)VolInf->Stream.Records.Data[VolInf->Stream.RecIndex].Len - (UINT64)VolInf->Stream.ClusterIndex;
         ClustersRemainingByteSize *= VolInf->ClusterSize;
 
-        DWORD ReadSize = MIN((UINT64)RemainingSize, ClustersRemainingByteSize);
+        DWORD ReadSize = (DWORD)MIN((UINT64)RemainingSize, ClustersRemainingByteSize); // safe to truncate, since remainingsize's max value is UINT32_MAX, and its MIN macro
+        // we expect max value of DWORD.
 
         ULONGLONG FilePtrTarget = (ULONGLONG)VolInf->ClusterSize * ((ULONGLONG)VolInf->Stream.Records.Data[VolInf->Stream.RecIndex].StartPos + (ULONGLONG)VolInf->Stream.ClusterIndex);
         if (NarSetFilePointer(VolInf->Stream.Handle, FilePtrTarget)) {
@@ -1949,14 +1961,14 @@ ReadStream(volume_backup_inf* VolInf, void* Buffer, unsigned int TotalSize) {
             ErrorOccured = TRUE;
         }
 
-        int ClusterToIterate = BytesReadAfterOperation / 4096;
+        INT32 ClusterToIterate = (INT32)(BytesReadAfterOperation / 4096);
         VolInf->Stream.ClusterIndex += ClusterToIterate;
 
-        if (VolInf->Stream.ClusterIndex == VolInf->Stream.Records.Data[VolInf->Stream.RecIndex].Len) {
+        if ((UINT32)VolInf->Stream.ClusterIndex == VolInf->Stream.Records.Data[VolInf->Stream.RecIndex].Len) {
             VolInf->Stream.ClusterIndex = 0;
             VolInf->Stream.RecIndex++;
         }
-        if (VolInf->Stream.ClusterIndex > VolInf->Stream.Records.Data[VolInf->Stream.RecIndex].Len) {
+        if ((UINT32)VolInf->Stream.ClusterIndex > VolInf->Stream.Records.Data[VolInf->Stream.RecIndex].Len) {
             printf("ClusterIndex exceeded region len, that MUST NOT happen at any circumstance\n");
             ErrorOccured = TRUE;
         }
@@ -2114,7 +2126,7 @@ SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, DotNetStreamInf* SI) {
             if (SI && Return) {
                 
                 SI->ClusterCount = 0;
-                SI->ClusterSize = VolInf->ClusterSize;
+                SI->ClusterSize = (INT32)VolInf->ClusterSize;
                 SI->MetadataFileName = GenerateMetadataName(VolInf->Letter, NAR_FULLBACKUP_VERSION);
                 SI->FileName = GenerateBinaryFileName(VolInf->Letter, NAR_FULLBACKUP_VERSION);
                 for (unsigned int i = 0; i < VolInf->Stream.Records.Count; i++) {
@@ -2151,9 +2163,9 @@ SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, DotNetStreamInf* SI) {
             if (SI && Return) {
                 
                 SI->ClusterCount = 0;
-                SI->ClusterSize = VolInf->ClusterSize;
+                SI->ClusterSize = (INT32)VolInf->ClusterSize;
                 SI->FileName = GenerateBinaryFileName(VolInf->Letter, VolInf->Version);
-                SI->MetadataFileName = GenerateMetadataName(VolInf->Letter, NAR_FULLBACKUP_VERSION);
+                SI->MetadataFileName = GenerateMetadataName(VolInf->Letter, VolInf->Version);
                 for (unsigned int i = 0; i < VolInf->Stream.Records.Count; i++) {
                     SI->ClusterCount += VolInf->Stream.Records.Data[i].Len;
                 }
@@ -2169,8 +2181,8 @@ SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, DotNetStreamInf* SI) {
 
     {
         volume_backup_inf* V = VolInf;
-        int TruncateIndex = -1;
-        for(int RecordIndex = 0; RecordIndex < V->Stream.Records.Count; RecordIndex++){
+        unsigned int TruncateIndex = 0;
+        for(unsigned int RecordIndex = 0; RecordIndex < V->Stream.Records.Count; RecordIndex++){
             
             if((INT64)V->Stream.Records.Data[RecordIndex].StartPos + (INT64)V->Stream.Records.Data[RecordIndex].Len > (INT64)V->VolumeTotalClusterCount){
                 TruncateIndex = RecordIndex;
@@ -2213,8 +2225,6 @@ GetVolumeRegionsFromBitmap(HANDLE VolumeHandle, UINT32* OutRecordCount) {
     nar_record* Records = NULL;
     UINT32 RecordCount = 0;
 
-    
-    UINT* ClusterIndices = 0;
 
     STARTING_LCN_INPUT_BUFFER StartingLCN;
     StartingLCN.StartingLcn.QuadPart = 0;
@@ -2228,11 +2238,11 @@ GetVolumeRegionsFromBitmap(HANDLE VolumeHandle, UINT32* OutRecordCount) {
         HRESULT R = DeviceIoControl(VolumeHandle, FSCTL_GET_VOLUME_BITMAP, &StartingLCN, sizeof(StartingLCN), Bitmap, BufferSize, 0, 0);
         if (SUCCEEDED(R)) {
             
-            MaxClusterCount = Bitmap->BitmapSize.QuadPart;
+            MaxClusterCount = (ULONGLONG)Bitmap->BitmapSize.QuadPart;
             DWORD ClustersRead = 0;
             UCHAR* BitmapIndex = Bitmap->Buffer;
             UCHAR BitmapMask = 1;
-            UINT32 CurrentIndex = 0;
+            //UINT32 CurrentIndex = 0;
             UINT32 LastActiveCluster = 0;
             
             UINT32 RecordBufferSize = 128 * 1024 * 1024;
@@ -2301,8 +2311,7 @@ GetVolumeRegionsFromBitmap(HANDLE VolumeHandle, UINT32* OutRecordCount) {
 BOOLEAN
 SetFullRecords(volume_backup_inf* V) {
     
-    BOOLEAN Return = FALSE;
-    UINT* ClusterIndices = 0;
+    //UINT* ClusterIndices = 0;
     
     UINT32 Count = 0;
     V->Stream.Records.Data  = GetVolumeRegionsFromBitmap(V->Stream.Handle, &Count);
@@ -2315,7 +2324,6 @@ BOOLEAN
 SetIncRecords(volume_backup_inf* VolInf) {
     
     BOOLEAN Result = FALSE;
-    DWORD BytesOperated = 0;
     if(VolInf == NULL){
         printf("SetIncRecords: VolInf was null\n");
         return FALSE;
@@ -2335,9 +2343,10 @@ SetIncRecords(volume_backup_inf* VolInf) {
         // safe to read from V->LogHandle
 
         if(VolInf->ActiveBackupInf.PossibleNewBackupRegionOffsetMark - VolInf->LastBackupRegionOffset < 0xFFFFFFFFll){
-            TargetReadSize = VolInf->ActiveBackupInf.PossibleNewBackupRegionOffsetMark - VolInf->LastBackupRegionOffset;
+            // NOTE(Batuhan): Assumption made here, change in log file size does not exceed 32 bit max integer value.
+            TargetReadSize = (DWORD)(VolInf->ActiveBackupInf.PossibleNewBackupRegionOffsetMark - VolInf->LastBackupRegionOffset);
         
-            if(NarSetFilePointer(VolInf->LogHandle, VolInf->LastBackupRegionOffset)){
+            if(NarSetFilePointer(VolInf->LogHandle, (UINT64)VolInf->LastBackupRegionOffset)){
                 
                 VolInf->Stream.Records.Data = (nar_record*)malloc(TargetReadSize);
                 memset(VolInf->Stream.Records.Data, 0, TargetReadSize);
@@ -2534,10 +2543,15 @@ SetDiffRecords(volume_backup_inf* V) {
     if(WINAPIRetVAL == WAIT_OBJECT_0){
         FlushFileBuffers(V->LogHandle);
         
-        V->ActiveBackupInf.PossibleNewBackupRegionOffsetMark = NarGetFilePointer(V->LogHandle);
+        // we are safe to assume file ptr has lower value than 63 bit integer value
+        V->ActiveBackupInf.PossibleNewBackupRegionOffsetMark = (INT64)NarGetFilePointer(V->LogHandle);
         if(V->ActiveBackupInf.PossibleNewBackupRegionOffsetMark < 0xFFFFFFFFll){
             
-            DWORD TargetReadSize = V->ActiveBackupInf.PossibleNewBackupRegionOffsetMark;
+            // NOTE (Batuhan): IMPORTANT, so if total log size exceeds 4GB, we cant backup succcessfully, since reading file larger than 4GB is 
+            // problem by itself, one can do partially load file and continuously compress it via qsort & mergeregions. then final log size drastically
+            // becames lower.
+
+            DWORD TargetReadSize = (DWORD)V->ActiveBackupInf.PossibleNewBackupRegionOffsetMark; // not so safe to truncate
             DWORD BytesRead = 0;
 
             if(NarSetFilePointer(V->LogHandle, 0)){
@@ -2636,9 +2650,6 @@ SetupStreamHandle(volume_backup_inf* VolInf) {
     }
     VolInf->VSSPTR.Release();
     
-    
-    BOOLEAN ErrorOccured = FALSE;
-    HRESULT Result = 0;
     
     VolInf->FilterFlags.IsActive = TRUE;
     
@@ -2824,7 +2835,7 @@ ConnectDriver(PLOG_CONTEXT Ctx) {
         else {
             printf("Could not connect to filter: 0x%08x\n", hResult);
             printf("Program PID is %d\n", PID);
-            DisplayError(hResult);
+            DisplayError((DWORD)hResult);
         }
         
     }
@@ -2861,7 +2872,7 @@ OfflineRestoreCleanDisk(restore_inf* R, int DiskID) {
             
             printf("GPT Disk will be formatted as (Volume size %I64d, EFIPartitionSizeMB %u, RecoverySize %u)\n", M.VolumeSize, M.GPT_EFIPartitionSize/ (1024 * 1024), M.Size.Recovery);
 
-            if (NarCreateCleanGPTBootablePartition(DiskID, M.VolumeSize / (1024 * 1024), M.GPT_EFIPartitionSize/ (1024 * 1024), M.Size.Recovery/(1024 * 1024), (char)R->TargetLetter)) {
+            if (NarCreateCleanGPTBootablePartition(DiskID, (int)(M.VolumeSize / (1024ull * 1024ull)), (int)(M.GPT_EFIPartitionSize / (1024ull * 1024ull)), (int)(M.Size.Recovery / (1024ull * 1024ull)), (char)R->TargetLetter)) {
                 Result = TRUE;
                 printf("Successfully created bootable gpt partition\n");
             }
@@ -2874,7 +2885,7 @@ OfflineRestoreCleanDisk(restore_inf* R, int DiskID) {
             
             printf("MBR Disk will be formatted as (Volume size %I64d, SystemPartitionMB %u, RecoverySize %u)\n", M.VolumeSize, M.MBR_SystemPartitionSize/ (1024 * 1024), M.Size.Recovery);
 
-            if (NarCreateCleanMBRBootPartition(DiskID, R->TargetLetter, M.VolumeSize/(1024 * 1024), M.MBR_SystemPartitionSize/(1024*1024), M.Size.Recovery/ (1024*1024))) {
+            if (NarCreateCleanMBRBootPartition(DiskID, (char)R->TargetLetter, (int)(M.VolumeSize / (1024ull * 1024ull)), (int)(M.MBR_SystemPartitionSize / (1024ull * 1024ull)), (int)(M.Size.Recovery / (1024ull * 1024ull)))) {
                 Result = TRUE;
             }
             else {
@@ -2886,7 +2897,7 @@ OfflineRestoreCleanDisk(restore_inf* R, int DiskID) {
     else { //Is not OS volume
         if (M.DiskType == NAR_DISKTYPE_GPT) {
             
-            if (NarCreateCleanGPTPartition(DiskID, M.VolumeSize / (1024 * 1024), R->TargetLetter)) {
+            if (NarCreateCleanGPTPartition(DiskID, M.VolumeSize / (1024 * 1024), (char)R->TargetLetter)) {
                 Result = TRUE;
             }
             else {
@@ -2899,7 +2910,7 @@ OfflineRestoreCleanDisk(restore_inf* R, int DiskID) {
 
             if ( FALSE) {
                 // TODO(Batuhan):
-                Result;
+                // Result;
             }
             else {
                 printf("Can't create MBR partition to restore\n");
@@ -2928,6 +2939,8 @@ OfflineRestoreCleanDisk(restore_inf* R, int DiskID) {
 
                 NarRepairBoot((char)R->TargetLetter);
                 NarRemoveLetter(NAR_EFI_PARTITION_LETTER);
+                NarRemoveLetter(NAR_RECOVERY_PARTITION_LETTER);
+                
                 printf("Restored to volume %c, to version %i\n", (char)R->TargetLetter, R->Version);
 
 
@@ -2952,7 +2965,7 @@ BOOLEAN
 OfflineRestoreToVolume(restore_inf* R, BOOLEAN ShouldFormat) {
     
     BOOLEAN Result = FALSE;
-    HANDLE VolumeToRestore = INVALID_HANDLE_VALUE;
+    //HANDLE VolumeToRestore = INVALID_HANDLE_VALUE;
     
     int Version = -10;
     ULONGLONG VolumeSize = 0;
@@ -2983,8 +2996,8 @@ OfflineRestoreToVolume(restore_inf* R, BOOLEAN ShouldFormat) {
         
         if (ShouldFormat) {
             
-            if (NarFormatVolume(R->TargetLetter)) {
-                if (NarSetVolumeSize((char)R->TargetLetter, VolumeSize / (1024 * 1024))) {
+            if (NarFormatVolume((char)R->TargetLetter)) {
+                if (NarSetVolumeSize((char)R->TargetLetter, (int)(VolumeSize / (1024ull * 1024ull)))) {
                     //Success
                 }
                 else {
@@ -3001,7 +3014,7 @@ OfflineRestoreToVolume(restore_inf* R, BOOLEAN ShouldFormat) {
         // Wait for diskpart operation to complete
         Sleep(500);
 
-        HANDLE Volume = NarOpenVolume(R->TargetLetter);
+        HANDLE Volume = NarOpenVolume((char)R->TargetLetter);
         if (Volume != INVALID_HANDLE_VALUE) {
             if (Version == NAR_FULLBACKUP_VERSION) {
                 printf("Fullbackup version will be restored\n");
@@ -3034,7 +3047,7 @@ OfflineRestoreToVolume(restore_inf* R, BOOLEAN ShouldFormat) {
     return Result;
 }
 
-BOOLEAN
+inline BOOLEAN
 NarRemoveLetter(char Letter){
     char Buffer[128];
 
@@ -3045,7 +3058,7 @@ NarRemoveLetter(char Letter){
 
 
     char InputFN[] = "NARDPINPUT";
-    if(NarDumpToFile(InputFN, Buffer, strlen(Buffer))){
+    if(NarDumpToFile(InputFN, Buffer, (unsigned int)strlen(Buffer))){
         sprintf(Buffer, "diskpart /s %s", InputFN);
         printf(Buffer);
         system(Buffer);
@@ -3056,7 +3069,7 @@ NarRemoveLetter(char Letter){
     return FALSE;
 }
 
-BOOLEAN
+inline BOOLEAN
 NarFormatVolume(char Letter) {
     
     char Buffer[2096];
@@ -3068,7 +3081,7 @@ NarFormatVolume(char Letter) {
             "exit\n", Letter);
     
     char InputFN[] = "NARDPINPUT";
-    if (NarDumpToFile(InputFN, Buffer, strlen(Buffer))) {
+    if (NarDumpToFile(InputFN, Buffer, (unsigned int)strlen(Buffer))) {
         sprintf(Buffer, "diskpart /s %s", InputFN);
         printf(Buffer);
         system(Buffer);
@@ -3078,7 +3091,7 @@ NarFormatVolume(char Letter) {
     return FALSE;
 }
 
-void
+inline void
 NarRepairBoot(char OSVolumeLetter) {
     char Buffer[2096];
     sprintf(Buffer, "bcdboot %c:\\Windows /s R: /f ALL", OSVolumeLetter);
@@ -3099,12 +3112,12 @@ NarReadFile(const char* FileName) {
     HANDLE File = CreateFileA(FileName, GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
     if (File != INVALID_HANDLE_VALUE) {
         DWORD BytesRead = 0;
-        Result.Len = GetFileSize(File, 0);
+        Result.Len = (int)GetFileSize(File, 0); // safe to assume file size < 2 GB
         if (Result.Len == 0) return Result;
-        Result.Data = malloc(Result.Len);
+        Result.Data = malloc((size_t)Result.Len);
         if (Result.Data) {
-            ReadFile(File, Result.Data, Result.Len, &BytesRead, 0);
-            if (BytesRead == Result.Len) {
+            ReadFile(File, Result.Data, (DWORD)Result.Len, &BytesRead, 0);
+            if (BytesRead == (DWORD)Result.Len) {
                 // NOTE success
             }
             else {
@@ -3128,12 +3141,12 @@ NarReadFile(const wchar_t* FileName) {
     HANDLE File = CreateFileW(FileName, GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
     if (File != INVALID_HANDLE_VALUE) {
         DWORD BytesRead = 0;
-        Result.Len = GetFileSize(File, 0);
+        Result.Len = (DWORD)GetFileSize(File, 0); // safe conversion
         if (Result.Len == 0) return Result;
-        Result.Data = malloc(Result.Len);
+        Result.Data = malloc((size_t)Result.Len);
         if (Result.Data) {
             ReadFile(File, Result.Data, Result.Len, &BytesRead, 0);
-            if (BytesRead == Result.Len) {
+            if (BytesRead == (DWORD)Result.Len) {
                 // NOTE success
             }
             else {
@@ -3155,7 +3168,7 @@ FreeFileRead(file_read FR) {
 }
 
 
-BOOLEAN
+inline BOOLEAN
 NarDumpToFile(const char* FileName, void* Data, unsigned int Size) {
     BOOLEAN Result = FALSE;
     HANDLE File = CreateFileA(FileName, GENERIC_WRITE, 0, 0, CREATE_ALWAYS, 0, 0);
@@ -3181,20 +3194,19 @@ NarDumpToFile(const char* FileName, void* Data, unsigned int Size) {
 BOOLEAN
 NarSetVolumeSize(char Letter, int TargetSizeMB) {
     BOOLEAN Result = 0;
-    ULONGLONG VolSizeMB = 0;
+    int VolSizeMB = 0;
     char Buffer[1024];
     char FNAME[] = "NARDPSCRPT";
     sprintf(Buffer, "%c:\\", Letter);
     
     ULARGE_INTEGER TOTAL_SIZE = { 0 };
-    ULARGE_INTEGER A, B;
     GetDiskFreeSpaceExA(Buffer, 0, &TOTAL_SIZE, 0);
-    VolSizeMB = TOTAL_SIZE.QuadPart / (1024 * 1024); // byte to MB
+    VolSizeMB = (int)(TOTAL_SIZE.QuadPart / (1024ull * 1024ull)); // byte to MB
 
     printf("Volume size is %i, target size %i\n", VolSizeMB, TargetSizeMB);
 
     if (VolSizeMB == TargetSizeMB) {
-        return TRUE;;
+        return TRUE;
     }
     
     /*
@@ -3203,12 +3215,12 @@ NarSetVolumeSize(char Letter, int TargetSizeMB) {
   */
     if (VolSizeMB > TargetSizeMB) {
         // shrink volume
-        ULONGLONG Diff = VolSizeMB - TargetSizeMB;
+        ULONGLONG Diff = (unsigned int)(VolSizeMB - TargetSizeMB);
         sprintf(Buffer, "select volume %c\nshrink desired = %I64u\nexit\n", Letter, Diff);
     }
     else if(VolSizeMB < TargetSizeMB){
         // extend volume
-        ULONGLONG Diff = TargetSizeMB - VolSizeMB;
+        ULONGLONG Diff = (unsigned int)(TargetSizeMB - VolSizeMB);
         sprintf(Buffer, "select volume %c\nextend size = %I64u\nexit\n", Letter, Diff);
     }
     else {
@@ -3247,7 +3259,7 @@ CreatePartition(int Disk, char Letter, unsigned size) {
             "assign letter = \"%c\"\n", Disk, size, Letter);
     char FileName[] = "NARDPSCRPT";
     
-    if (NarDumpToFile(FileName, Buffer, strlen(Buffer))) {
+    if (NarDumpToFile(FileName, Buffer, (unsigned int)strlen(Buffer))) {
         char CMDBuffer[1024];
         sprintf(CMDBuffer, "diskpart /s %s", FileName);
         system(CMDBuffer);
@@ -3266,7 +3278,8 @@ NarGetDisks() {
     data_array<disk_information> Result = { 0, 0 };
     Result.Data = (disk_information*)malloc(sizeof(disk_information) * 32);
     Result.Count = 32;
-    
+    memset(Result.Data, 0, sizeof(disk_information) * 32);
+
     DWORD DriveLayoutSize = 1024 * 4;
     int DGEXSize = 1024 * 4;
     
@@ -3289,9 +3302,10 @@ NarGetDisks() {
             continue;
         }
 
-        Result.Data[Found].ID = DiskID;
+        Result.Data[Found].ID = (int)DiskID;
         
         if (DeviceIoControl(Disk, IOCTL_DISK_GET_DRIVE_LAYOUT_EX, 0, 0, DriveLayout, DriveLayoutSize, &HELL, 0)) {
+
             if (DriveLayout->PartitionStyle == PARTITION_STYLE_MBR) {
                 Result.Data[Found].Type = NAR_DISKTYPE_MBR;
             }
@@ -3302,20 +3316,27 @@ NarGetDisks() {
                 Result.Data[Found].Type = NAR_DISKTYPE_RAW;
             }
 
+            if(DriveLayout->PartitionStyle != PARTITION_STYLE_RAW
+                && DriveLayout->PartitionStyle != PARTITION_STYLE_GPT
+                && DriveLayout->PartitionStyle != PARTITION_STYLE_MBR){
+                printf("Drive layout style was undefined, %s\n", StrBuf);
+                continue;
+            }
 
         }
         else {
             printf("Can't get drive layout for disk %s\n", StrBuf);
         }
 
-        if (DeviceIoControl(Disk, IOCTL_DISK_GET_DRIVE_GEOMETRY_EX, 0, 0, DGEX, DGEXSize, &HELL, 0)) {
-            Result.Data[Found].Size = DGEX->DiskSize.QuadPart;
+        if (DeviceIoControl(Disk, IOCTL_DISK_GET_DRIVE_GEOMETRY_EX, 0, 0, DGEX, (DWORD)DGEXSize, &HELL, 0)) {
+            Result.Data[Found].Size = (ULONGLONG)DGEX->DiskSize.QuadPart;
         }
         else {
             printf("Can't get drive layout for disk %s\n", StrBuf);
         }
 
         CloseHandle(Disk);
+        memset(Memory, 0, MemorySize);
         Found++;
 
     }
@@ -3324,7 +3345,7 @@ NarGetDisks() {
     VirtualFree(Memory, 0, MEM_RELEASE);
     
     Result.Count = Found;
-    Result.Data = (disk_information*)realloc(Result.Data, sizeof(nar_record) * Result.Count);
+    Result.Data = (disk_information*)realloc(Result.Data, sizeof(disk_information) * Result.Count);
 
     return Result;
     
@@ -3416,7 +3437,7 @@ NarGetDiskTotalSize(int DiskID) {
     
     if (Disk != INVALID_HANDLE_VALUE) {
         if (DeviceIoControl(Disk, IOCTL_DISK_GET_DRIVE_GEOMETRY_EX, 0, 0, DGEX, DGEXSize, &Temp, 0)) {
-            Result = DGEX->DiskSize.QuadPart;
+            Result = (ULONGLONG)DGEX->DiskSize.QuadPart;
         }
         else {
             printf("Failed to call DeviceIoControl with IOCTL_DISK_GET_DRIVE_GEOMETRY_EX parameter for disk %i\n", DiskID);
@@ -3434,9 +3455,8 @@ NarGetDiskTotalSize(int DiskID) {
 }
 
 
-BOOLEAN
+inline BOOLEAN
 NarCreateCleanGPTBootablePartition(int DiskID, int VolumeSizeMB, int EFISizeMB, int RecoverySizeMB, char Letter) {
-    //TODO win10 MSR partition created by default, take it as parameter and format accordingly.
     
     char Buffer[2096];
     memset(Buffer, 0, 2096);
@@ -3457,12 +3477,12 @@ NarCreateCleanGPTBootablePartition(int DiskID, int VolumeSizeMB, int EFISizeMB, 
             "create partition primary size = %i\n" // recovery partition, ARG1 RecoveryPartitionSize
             "assign letter R\n"
             "format fs = ntfs quick\n"
-            "remove letter R\n"
+            //"remove letter R\n"
             "set id = \"de94bba4-06d1-4d40-a16a-bfd50179d6ac\"\n"
             "gpt attributes = 0x8000000000000001\n"
             "create partition efi size = %i\n" //efi partition, ARG3 EFIPartitionSize
             "format fs = fat32 quick\n"
-            "assign letter R\n"
+            "assign letter S\n"
             "create partition msr size = 16\n" // win10
             "create partition primary size = %i\n" // ARG4 PrimaryPartitionSize
             "assign letter = %c\n" // ARG5 VolumeLetter
@@ -3481,7 +3501,7 @@ NarCreateCleanGPTBootablePartition(int DiskID, int VolumeSizeMB, int EFISizeMB, 
     
 }
 
-BOOLEAN
+inline BOOLEAN
 NarCreateCleanGPTPartition(int DiskID, int VolumeSizeMB, char Letter) {
     char Buffer[2096];
     memset(Buffer, 0, 2096);
@@ -3546,7 +3566,7 @@ NarCreateCleanMBRPartition(int DiskID, char VolumeLetter, int VolumeSize) {
 }
 
 
-BOOLEAN
+inline BOOLEAN
 NarCreateCleanMBRBootPartition(int DiskID, char VolumeLetter, int VolumeSizeMB, int SystemPartitionSizeMB, int RecoveryPartitionSizeMB) {
     
     char Buffer[2048];
@@ -3863,7 +3883,7 @@ GenerateMetadataName(wchar_t Letter, int Version) {
     else {
         Result += std::to_wstring(Version);
     }
-    //printf("Generated metadata name %S\n", Result.c_str());
+    
     return Result;
 }
 
@@ -4107,7 +4127,7 @@ RestoreVersionWithoutLoop(restore_inf R, BOOLEAN RestoreMFT, HANDLE Volume) {
 }
 
 
-
+#if 0
 data_array<nar_record>
 NARDEBUGResolveShadow(nar_record Src, nar_record* Shadow, int N, int* NewN) {
     data_array<nar_record> Result = { 0 };
@@ -4255,6 +4275,7 @@ NARDEBUGExcludeRegions(data_array<nar_record> S, data_array<nar_record> E) {
     
 }
 
+#endif
 
 // Volume optional, might pass INVALID_HANDLE_VALUE
 BOOLEAN
@@ -4633,12 +4654,27 @@ SaveMetadata(char Letter, int Version, int ClusterSize, BackupType BT,
     
     /*
     // NOTE(Batuhan): MFT metadata and it's binary sizes, checks if non-fullbackup, otherwise skips it
-  Since it metadata file must contain MFT for non-full backups, we forwardly declare it's size here, then try to
-  write it to the file, if any error occurs during this operation, BM.Size.MFT wil be corrected and marked as corrupt
-  @BM.Errors.MFT
+    Since it metadata file must contain MFT for non-full backups, we forwardly declare it's size here, then try to
+    write it to the file, if any error occurs during this operation, BM.Size.MFT wil be corrected and marked as corrupt
+    @BM.Errors.MFT
       */
+
     MFTLCN = GetMFTLCN(Letter, VSSHandle);
-    
+
+    LONGLONG MFTLCNSize = 0;
+    for(int i = 0; i<MFTLCN.Count; i++){
+        MFTLCNSize += MFTLCN.Data[i].Len; 
+    }
+    MFTLCNSize *= ClusterSize;
+    printf("MFTLCN, count %i, total bytes %i\n", MFTLCN.Count, MFTLCNSize*(LONGLONG)ClusterSize);
+
+    if(NarDumpToFile("MFTLCN_REGIONS_DATA", MFTLCN.Data, MFTLCN.Count * sizeof(nar_record))){
+        printf("Dumped MFTLCN regions data to file\n");
+    }
+    else{
+        printf("Couldnt dump MFTLCN regions to file\n");
+    }
+
     if (MFTLCN.Count > 0) {
         BM.Size.MFTMetadata = MFTLCN.Count * sizeof(nar_record);
         for (int i = 0; i < MFTLCN.Count; i++) {
@@ -4890,7 +4926,7 @@ NarGetFileSize(const char* Path) {
     return Result;
 }
 
-ULONGLONG
+inline ULONGLONG
 NarGetFilePointer(HANDLE F) {
     LARGE_INTEGER M = { 0 };
     LARGE_INTEGER N = { 0 };
@@ -4935,10 +4971,16 @@ RestoreRecoveryFile(restore_inf R) {
                             
                             // NOTE(Batuhan): Finding recovery partition via GUID
                             if (IsEqualGUID(PI->Gpt.PartitionType, GREC)) {
+                                
                                 if (PI->PartitionLength.QuadPart != B.Size.Recovery) {
                                     printf("Recovery partition size on disk and partition size on metadata doesnt match, on disk %I64d, on metadata %I64d\n", PI->PartitionLength.QuadPart, B.Size.Recovery);
                                 }
-                                if(NarSetFilePointer(Disk, PI->StartingOffset.QuadPart)){
+
+                                // assign letter to partition, then write to it, then remove letter
+
+
+
+                                if(NarSetFilePointer(Disk, (ULONGLONG)PI->StartingOffset.QuadPart)){
 
                                     if(NarSetFilePointer(MetadataFile, B.Offset.Recovery)){
                                         if (CopyData(MetadataFile, Disk, B.Size.Recovery)) {
@@ -5024,8 +5066,8 @@ AppendRecoveryToFile(HANDLE File, char Letter) {
                         // NOTE(Batuhan): Finding recovery partition via GUID
                         if (IsEqualGUID(PI->Gpt.PartitionType, GREC)) {
                             
-                            NarSetFilePointer(Disk, PI->StartingOffset.QuadPart);
-                            if (CopyData(Disk, File, PI->PartitionLength.QuadPart)) {
+                            NarSetFilePointer(Disk, (ULONGLONG)PI->StartingOffset.QuadPart);
+                            if (CopyData(Disk, File, (ULONGLONG)PI->PartitionLength.QuadPart)) {
                                 Result = TRUE;
                                 printf("[AppendRecoveryToFile]: Successfully appended recovery partition to given handle\n");
                                 //NOTE(Batuhan): Success
@@ -5092,7 +5134,7 @@ NarGetBackupsInDirectory(const wchar_t* Directory, backup_metadata* B, int Buffe
     HANDLE FileIterator = FindFirstFileW(WildcardDir, &FDATA);
     
     int BackupFound = 0;
-    int MaxBackupCount = BufferSize / sizeof(*B);
+    int MaxBackupCount = BufferSize / (int)sizeof(*B);
     
     if (FileIterator != INVALID_HANDLE_VALUE) {
         
@@ -5175,7 +5217,7 @@ NarGetBackupsInDirectory(const wchar_t* Directory, backup_metadata* B, int Buffe
 
 
 
-BOOLEAN
+inline BOOLEAN
 AppendMFTFile(HANDLE File, HANDLE VSSHandle, data_array<nar_record> MFTLCN, int ClusterSize) {
     
     BOOLEAN Return = FALSE;
@@ -5185,9 +5227,8 @@ AppendMFTFile(HANDLE File, HANDLE VSSHandle, data_array<nar_record> MFTLCN, int 
         LARGE_INTEGER MoveTo = { 0 };
         LARGE_INTEGER NewFilePointer = { 0 };
         BOOL Result = 0;
-        DWORD BytesOperated = 0;
         for (unsigned int i = 0; i < MFTLCN.Count; i++) {
-            MoveTo.QuadPart = (ULONGLONG)MFTLCN.Data[i].StartPos * (ULONGLONG)ClusterSize;
+            MoveTo.QuadPart = (LONGLONG)MFTLCN.Data[i].StartPos * (LONGLONG)ClusterSize;
             
             Result = SetFilePointerEx(VSSHandle, MoveTo, &NewFilePointer, FILE_BEGIN);
             if (!SUCCEEDED(Result) || MoveTo.QuadPart != NewFilePointer.QuadPart) {
@@ -5198,6 +5239,8 @@ AppendMFTFile(HANDLE File, HANDLE VSSHandle, data_array<nar_record> MFTLCN, int 
                 goto Exit;
             }
             
+            printf("Will copy %I64u bytes to append MFT to file\n", (ULONGLONG)MFTLCN.Data[i].Len * (ULONGLONG)ClusterSize);
+
             if (!CopyData(VSSHandle, File, (ULONGLONG)MFTLCN.Data[i].Len * (ULONGLONG)ClusterSize)) {
                 printf("Error occured while copying MFT file\n");
                 goto Exit;
@@ -5268,12 +5311,12 @@ NarLoadBootState() {
                     if (ReadFile(File, BootTrackData, Size, &BR, 0) && BR == Size) {
                         volume_backup_inf VolInf;
                         memset(&VolInf, 0, sizeof(VolInf));
-                        int BootTrackDataCount = Size / sizeof(BootTrackData[0]);
+                        int BootTrackDataCount = (int)(Size / (DWORD)sizeof(BootTrackData[0]));
                         
-                        for (unsigned int i = 0; i < BootTrackDataCount; i++) {
+                        for (int i = 0; i < BootTrackDataCount; i++) {
                             
                             
-                            bResult = InitVolumeInf(&VolInf, BootTrackData[i].Letter, (BackupType)BootTrackData[i].BackupType);
+                            bResult = InitVolumeInf(&VolInf, (char)BootTrackData[i].Letter, (BackupType)BootTrackData[i].BackupType);
                             if (bResult) {
                                 
                                 VolInf.FilterFlags.IsActive = TRUE;
@@ -5356,10 +5399,12 @@ NarLoadBootState() {
 BOOLEAN
 NarSaveBootState(LOG_CONTEXT* CTX) {
 
-    if (CTX == NULL && CTX->Volumes.Data == 0) return FALSE;
+    if (CTX == NULL || CTX->Volumes.Data == NULL){
+         printf("Either CTX or its volume data was NULL, terminating NarSaveBootState\n");
+         return FALSE;
+    }
     
     BOOLEAN Result = TRUE;
-    
     nar_boot_track_data Pack;
     
     char FileNameBuffer[64];
@@ -5369,17 +5414,17 @@ NarSaveBootState(LOG_CONTEXT* CTX) {
 
         HANDLE File = CreateFileA(FileNameBuffer, GENERIC_WRITE, 0, 0, CREATE_ALWAYS, 0, 0);
         if (File != INVALID_HANDLE_VALUE) {
-            
+            printf("Created file to write boot information\n");
             for (unsigned int i = 0; i < CTX->Volumes.Count; i++) {
                 Pack.Letter = 0;
                 Pack.Version = -2;
                 
-                if (CTX->Volumes.Data[i].INVALIDATEDENTRY) {
+                if (!CTX->Volumes.Data[i].INVALIDATEDENTRY) {
                     
                     Pack.Letter = (char)CTX->Volumes.Data[i].Letter;
-                    Pack.Version = CTX->Volumes.Data[i].Version;
+                    Pack.Version = (char)CTX->Volumes.Data[i].Version; // for testing purposes, 128 version looks like fine
                     Pack.BackupType = (char)CTX->Volumes.Data[i].BT;
-                    Pack.LastBackupOffset = CTX->Volumes.Data[i].LastBackupRegionOffset;
+                    Pack.LastBackupOffset = (UINT64)CTX->Volumes.Data[i].LastBackupRegionOffset;
 
                     DWORD BR = 0;
                     
@@ -5389,19 +5434,20 @@ NarSaveBootState(LOG_CONTEXT* CTX) {
                     else {
                         printf("Coulndt save volume [%c]'s [%i]th version information to boot file\n", Pack.Letter, Pack.Version);
                         Result = FALSE;
-                        // TODO error
                     }
                     
                 }
-                
-                continue;
+                else{
+                    continue;    
+                }
+
                 
             }
             
             
         }
         else {
-            printf("Couldnt open file %s, can not save boot information\n", FileNameBuffer)
+            printf("Couldnt open file %s, can not save boot information\n", FileNameBuffer);
             Result = FALSE;
         }
         
@@ -5422,6 +5468,53 @@ NarSaveBootState(LOG_CONTEXT* CTX) {
 
 #define REGION(Start, End) nar_record{(Start), (End) - (Start)}
 
+// Intented usage: strings, not optimized for big buffers, used only in kernel mode to detect some special directory activity
+BOOLEAN
+NarSubMemoryExists(void *mem1, void* mem2, int mem1len, int mem2len){
+    
+    char *S1 = (char*)mem1;
+    char *S2 = (char*)mem2;
+
+
+    int k = 0;
+    int j = 0;
+
+    while (k < mem1len && j < mem2len){
+        
+        if(S1[k] == S2[j]){
+            
+            int temp = k;
+            int found = FALSE;
+            
+            while(k < mem1len && j < mem2len){
+                if(S1[k] == S2[j]){
+                    j++;
+                    k++;
+                }
+                else {
+                    break;
+                }
+            }
+
+            if(j == mem2len){
+                return TRUE;
+            }
+            
+            k = temp;
+
+        }
+        else{
+            k++;
+            j = 0;
+        }
+
+    }
+
+    return FALSE;
+}
+
+
+
 
 int
 main(
@@ -5429,37 +5522,53 @@ main(
      CHAR* argv[]
      ) {
     
-    NarLoadBootState();
 
-    //NarRepairBoot('M');
-    return 0;
+    
+    // tests
 
-    WCHAR DirectoryString[MAX_PATH];
-    GetCurrentDirectoryW(MAX_PATH, DirectoryString);
+    char s1[] = "denemestringi";
+    char s2[] = "ingi";
+    char s3[] = "denem";
+    char s4[] = "nonexistentstringhere";
+    char s5[] = "estri";
+    char s6[] = "ingix";
+    char s7[] = "edenem";
 
-    backup_metadata BM[10];
-    int Count = 0;
-    if(NarGetBackupsInDirectory(DirectoryString, &BM[0], 10, &Count)){
-        printf("Found %i backups in directory %s\n", Count, DirectoryString);
+
+    if(StrFind(s1,s2,strlen(s1),strlen(s2))){
+        printf("Found substring s2 in s1\n");
     }
-    else{
-        printf("NarGetBackupsInDirectory returned FALSE\n");
+
+    if(StrFind(s1,s3,strlen(s1),strlen(s3))){
+        printf("Found substring s3 in s1\n");
+    }
+    
+    if(StrFind(s1,s4,strlen(s1),strlen(s4))){
+        printf("Found substring s4 in s1\n");
+    }
+    
+    if(StrFind(s1,s5,strlen(s1),strlen(s5))){
+        printf("Found substring s5 in s1\n");
     }
 
-    return 0;
+    if (StrFind(s1, s6, strlen(s1), strlen(s6))) {
+        printf("Found substring s6 in s1\n");
+    }
 
+    if (StrFind(s1, s7, strlen(s1), strlen(s7))) {
+        printf("Found substring s7 in s1\n");
+    }
 
-    LOG_CONTEXT* C = NarLoadBootState();
     data_array<disk_information> Disks = NarGetDisks();
 
-    for(int i = 0; i<Disks.Count; i++){
+    for(unsigned int i = 0; i<Disks.Count; i++){
         printf("ID:   %i\n", Disks.Data[i].ID);
         printf("Type: %c\n", Disks.Data[i].Type);
         printf("Size: %I64u\n", Disks.Data[i].Size);
-        printf("###############");
+        printf("###############\n");
     }
 
-    
+    return 0;    
    
     
     
@@ -5487,22 +5596,7 @@ main(
         DebugBreak();
     }
 
-    
-    
     return 0;
-
-    union nar_long{
-        char b[4];
-        LONG l;
-    };
-
-    nar_long a;
-    a.l = 0xaabbccdd;
-    nar_long b;
-    b = a;
-    long number = 0xaabbccdd;
-
-
     
     {
         LOG_CONTEXT* CTX = NarLoadBootState();
@@ -5609,25 +5703,8 @@ main(
     
     int BufferSize = 1024 * 1024 * 128; // 128KB
     int Found = 0;
-    backup_metadata* B = (backup_metadata*)malloc(BufferSize);
-    
-    NarGetBackupsInDirectory(L"C:\\Users\\Batuhan\\Desktop\\termproject", B, BufferSize, &Found);
-    
-    data_array<nar_record> S = { 0 };
-    data_array<nar_record> E = { 0 };
-    
-    S.Insert(REGION(0, 150));
-    S.Insert(REGION(220, 340));
-    S.Insert(REGION(400, 600));
-    S.Insert(REGION(750, 800));
-    
-    E.Insert(REGION(80, 140));
-    E.Insert(REGION(200, 250));
-    E.Insert(REGION(385, 520));
-    E.Insert(REGION(550, 800));
-    
-    NARDEBUGExcludeRegions(S, E);
-    return 0;
+    backup_metadata* B = (backup_metadata*)malloc((size_t)BufferSize);
+
     
     return 0;
 }

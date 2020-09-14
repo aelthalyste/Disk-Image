@@ -94,7 +94,9 @@ NarReadFile(const char* FileName) {
         Result.Len = GetFileSize(File, 0);
         if (Result.Len == 0) return Result;
         Result.Data = malloc(Result.Len);
+        
         if (Result.Data) {
+            memset(Result.Data, 0, Result.Len);
             ReadFile(File, Result.Data, Result.Len, &BytesRead, 0);
             if (BytesRead == Result.Len) {
                 // NOTE success
@@ -138,6 +140,7 @@ NarOpenVolume(char Letter) {
 }
 
 
+#if 0
 
 /*
   From given volume handle, extracts region information from volume
@@ -147,7 +150,7 @@ NarOpenVolume(char Letter) {
 nar_record*
 GetVolumeRegionsFromBitmap(HANDLE VolumeHandle, UINT32* OutRecordCount) {
 
-    if(RetCount == NULL) return NULL;
+    if(OutRetCount == NULL) return NULL;
 
     nar_record* Record = NULL;
 
@@ -237,6 +240,7 @@ GetVolumeRegionsFromBitmap(HANDLE VolumeHandle, UINT32* OutRecordCount) {
 }
 
 
+#endif
 
 /*
     Buffer = starting of the index allocation's data run offet
@@ -249,7 +253,7 @@ GetFileListFromIndexAllocationTable(void *Buffer, int BufferSize){
 
     Buffer = (BYTE*)Buffer + 64;
     
-
+    return FALSE;
 }
 
 
@@ -257,11 +261,11 @@ GetFileListFromIndexAllocationTable(void *Buffer, int BufferSize){
 int main() {
   
   
-  SetFullRecords('D');
+  
+  file_read F = NarReadFile("MFTLCN_REGIONS_DATA");
+  nar_record Records[1024 * 52 / sizeof(nar_record)];
 
-  file_read F = NarReadFile("STR_ERR");
-  nar_record Records[1024 * 814 / sizeof(nar_record)];
-
+  memset(Records, 0, sizeof(Records));
   memcpy(Records, F.Data, F.Len);
 
   DWORD SectorsPerCluster   = 0;

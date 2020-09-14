@@ -63,7 +63,7 @@ Environment:
 typedef struct _nar_boot_track_data{
     UINT64 LastBackupOffset;
     char Letter;
-    unsigned char Version;
+    char Version;
     char BackupType;
 }nar_boot_track_data;
 #pragma pack(pop)

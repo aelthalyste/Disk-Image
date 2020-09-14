@@ -186,6 +186,7 @@ typedef struct _nar_kernel_data {
 
 
     HANDLE MetadataHandle;
+    UNICODE_STRING UserName;
     ULONG UserModePID;
     int OsDeviceID;
 

@@ -58,18 +58,19 @@ NarLog(const char *str, ...){
     va_start(ap,str);
     vsprintf(buf, str, ap);
     va_end(ap);
+    
+    // safe cast
+    DWORD Len = (DWORD)strlen(buf);
+    DWORD H = 0;
 
-    int Len = strlen(buf);
-    DWORD H;
-
-    WriteFile(File, TimeStrBuf, strlen(TimeStrBuf), &H, 0);
+    WriteFile(File, TimeStrBuf, (DWORD)strlen(TimeStrBuf), &H, 0);
     WriteFile(File, buf, Len, &H, 0);
     
     FlushFileBuffers(File);
 
 }
 
-#define printf(fmt, ...) NarLog(fmt, __VA_ARGS__)
+// #define printf(fmt, ...) NarLog(fmt, __VA_ARGS__)
 
 enum rec_or {
     LEFT = 0,
@@ -114,7 +115,7 @@ inline void Append(data_array<T> *Destination, data_array<T> App) {
     
 }
 
-template<typename T> void
+template<typename T> inline void
 FreeDataArray(data_array<T>* V) {
     if (V) {
         free(V->Data);
@@ -129,7 +130,7 @@ RecordEqual(nar_record* N1, nar_record* N2) {
     return N1->Len == N2->Len && N1->StartPos == N2->StartPos;
 }
 
-//#define printf(format,...) LogFile((format),__VA_ARGS__)
+#define printf(format,...) LogFile((format),__VA_ARGS__)
 
 
 #define BUFFER_SIZE     4096
@@ -169,7 +170,8 @@ typedef char NARDP;
 #define WideMetadataFileNameDraft L"NAR_M_"
 #define WideBackupFileNameDraft L"NAR_BACKUP_"
 
-#define NAR_EFI_PARTITION_LETTER 'R'
+#define NAR_EFI_PARTITION_LETTER 'S'
+#define NAR_RECOVERY_PARTITION_LETTER 'R'
 
 inline BOOLEAN
 IsSameVolumes(const WCHAR* OpName, const WCHAR VolumeLetter);
@@ -214,10 +216,10 @@ AppendToList(region_chain* AnyPoint, nar_record Rec);
 void
 RemoveFromList(region_chain* R);
 
-void
+inline void
 PrintList(region_chain* Temp);
 
-void
+inline void
 PrintListReverse(region_chain* Temp);
 #endif
 
@@ -250,7 +252,7 @@ struct volume_backup_inf {
     // eventually cause bugs. This mutex ensures there are no more than one thread using LogHandle
     HANDLE FileWriteMutex;
 
-    UINT32 Version;
+    INT32 Version;
     DWORD ClusterSize;    
     
     
@@ -446,7 +448,7 @@ IsNumeric(char val) {
 file_read
 NarReadFile(const char* FileName);
 
-BOOLEAN
+inline BOOLEAN
 NarDumpToFile(const char* FileName, void* Data, unsigned int Size);
 
 BOOLEAN
@@ -455,23 +457,23 @@ NarSetVolumeSize(char Letter, int TargetSizeMB);
 BOOLEAN
 CreatePartition(int Disk, char Letter, unsigned size);
 
-BOOLEAN
+inline BOOLEAN
 NarCreateCleanGPTBootablePartition(int DiskID, int VolumeSizeMB, int EFISizeMB, int RecoverySizeMB, char Letter);
 
-BOOLEAN
+inline BOOLEAN
 NarCreateCleanGPTPartition(int DiskID, int VolumeSizeMB, char Letter);
 
 BOOLEAN
 NarCreateCleanMBRPartition(int DiskID, char VolumeLetter, int VolumeSize);
 
 
-BOOLEAN
+inline BOOLEAN
 NarCreateCleanMBRBootPartition(int DiskID, char VolumeLetter, int VolumeSizeMB, int SystemPartitionSizeMB, int RecoveryPartitionSizeMB);
 
-BOOLEAN
+inline BOOLEAN
 NarRemoveLetter(char Letter);
 
-void
+inline void
 NarRepairBoot(char Letter);
 
 data_array<disk_information>
@@ -489,7 +491,7 @@ NarGetVolumeDiskType(char Letter);
 inline unsigned char
 NarGetVolumeDiskID(char Letter);
 
-BOOLEAN
+inline BOOLEAN
 NarFormatVolume(char Letter);
 
 
@@ -642,10 +644,10 @@ RestoreDiffVersion(restore_inf R, HANDLE Volume); // Volume optional, might pass
 BOOLEAN
 NarTruncateFile(HANDLE F, ULONGLONG TargetSize);
 
-ULONGLONG
+inline ULONGLONG
 NarGetFilePointer(HANDLE F);
 
-BOOLEAN
+inline BOOLEAN
 AppendMFTFile(HANDLE File, HANDLE VSSHANDLE, data_array<nar_record> MFTLCN, int ClusterSize);
 
 BOOLEAN

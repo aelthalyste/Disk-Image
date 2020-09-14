@@ -398,7 +398,6 @@ Return Value:
         
         
         
-        
     }
     finally {
         
@@ -482,6 +481,9 @@ Return Value
     NAR_CONNECTION_CONTEXT* CTX = ConnectionContext;
     NarData.ClientPort = ClientPort;
     NarData.UserModePID = CTX->PID;
+
+
+
     //Copy user name
     
     return STATUS_SUCCESS;
@@ -920,6 +922,54 @@ Return Value:
 }
 
 
+
+
+// Intented usage: strings, not optimized for big buffers, used only in kernel mode to detect some special directory activity
+BOOLEAN
+NarSubMemoryExists(void *mem1, void* mem2, int mem1len, int mem2len){
+    
+    char *S1 = (char*)mem1;
+    char *S2 = (char*)mem2;
+
+
+    int k = 0;
+    int j = 0;
+
+    while (k < mem1len && j < mem2len){
+        
+        if(S1[k] == S2[j]){
+            
+            int temp = k;
+            int found = FALSE;
+            
+            while(k < mem1len && j < mem2len){
+                if(S1[k] == S2[j]){
+                    j++;
+                    k++;
+                }
+                else {
+                    break;
+                }
+            }
+
+            if(j == mem2len){
+                return TRUE;
+            }
+            
+            k = temp;
+
+        }
+        else{
+            k++;
+            j = 0;
+        }
+
+    }
+
+    return FALSE;
+}
+
+
 //---------------------------------------------------------------------------
 //              Operation filtering routines
 //---------------------------------------------------------------------------
@@ -1042,6 +1092,37 @@ Return Value:
                 goto NAR_PREOP_END;
             }
 
+#else
+
+            RtlUnicodeStringPrintf(&UniStr, L"\\AppData\\Local\\Temp");
+            if (NarSubMemoryExists(nameInfo->Name.Buffer, UniStr.Buffer, nameInfo->Name.Length, UniStr.Length)) {
+                ExFreeToPagedLookasideList(&NarData.LookAsideList, UnicodeStrBuffer);
+                goto NAR_PREOP_END;
+            }
+
+            RtlUnicodeStringPrintf(&UniStr, L"\\AppData\\Local\\Microsoft\\Windows\\Temporary Internet Files");
+            if (NarSubMemoryExists(nameInfo->Name.Buffer, UniStr.Buffer, nameInfo->Name.Length, UniStr.Length)) {
+                ExFreeToPagedLookasideList(&NarData.LookAsideList, UnicodeStrBuffer);
+                goto NAR_PREOP_END;
+            }
+
+            RtlUnicodeStringPrintf(&UniStr, L"\\AppData\\Local\\Google\\Chrome\\User Data\\Default\\Cache");
+            if (NarSubMemoryExists(nameInfo->Name.Buffer, UniStr.Buffer, nameInfo->Name.Length, UniStr.Length)) {
+                ExFreeToPagedLookasideList(&NarData.LookAsideList, UnicodeStrBuffer);
+                goto NAR_PREOP_END;
+            }
+
+            RtlUnicodeStringPrintf(&UniStr, L"\\AppData\\Local\\Opera Software");
+            if (NarSubMemoryExists(nameInfo->Name.Buffer, UniStr.Buffer, nameInfo->Name.Length, UniStr.Length)) {
+                ExFreeToPagedLookasideList(&NarData.LookAsideList, UnicodeStrBuffer);
+                goto NAR_PREOP_END;
+            }
+
+            RtlUnicodeStringPrintf(&UniStr, L"\\AppData\\Local\\Mozilla\\Firefox\\Profiles");
+            if (NarSubMemoryExists(nameInfo->Name.Buffer, UniStr.Buffer, nameInfo->Name.Length, UniStr.Length)) {
+                ExFreeToPagedLookasideList(&NarData.LookAsideList, UnicodeStrBuffer);
+                goto NAR_PREOP_END;
+            }
 
 #endif
 
@@ -1075,7 +1156,6 @@ Return Value:
 
 
             //NAR
-
 
 #if 1
             ULONG BytesReturned = 0;
