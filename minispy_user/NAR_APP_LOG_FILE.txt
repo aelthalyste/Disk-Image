@@ -1,4 +1,6 @@
-[15:28:56]: ID:   0
-[15:29:7]: Type: G
-[15:29:7]: Size: 250059350016
-[15:29:8]: ###############
+[18:51:50]: Couldn't open volume C
+[18:51:50]:     Cannot create a file when that file already exists.
+
+[18:51:52]: VSSVolumeHandle was invalid 
+[18:51:52]:     Cannot create a file when that file already exists.
+

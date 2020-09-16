@@ -65,7 +65,8 @@ NarLog(const char *str, ...){
 
     WriteFile(File, TimeStrBuf, (DWORD)strlen(TimeStrBuf), &H, 0);
     WriteFile(File, buf, Len, &H, 0);
-    
+    printf(buf);
+        
     FlushFileBuffers(File);
 
 }

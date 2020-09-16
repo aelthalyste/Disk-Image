@@ -343,9 +343,12 @@ Return Value:
         
         
         char UniBuffer[32];
+        DbgPrint("Found %i volumes at boot file, will initialize accordingly\n", TrackedVolumesCount);
         
         for (int i = 0; i < TrackedVolumesCount; i++) {
             
+            DbgPrint("Will try to add volume %c to filter\n", TrackedVolumes[i].Letter);
+
             memset(UniBuffer, 0, 32);
             UNICODE_STRING VolumeNameUniStr;
             RtlInitEmptyUnicodeString(&VolumeNameUniStr, UniBuffer, 32);
@@ -745,6 +748,7 @@ Return Value:
                             DEBUG_COPIED_DATA = NAR_MB_USED(NarData.VolumeRegionBuffer[i].MemoryBuffer);
 
                             memset(NarData.VolumeRegionBuffer[i].MemoryBuffer, 0, NAR_MEMORYBUFFER_SIZE);
+                            
                             NAR_INIT_MEMORYBUFFER(NarData.VolumeRegionBuffer[i].MemoryBuffer);
                             
                             // reset memory buffer.
@@ -1092,8 +1096,8 @@ Return Value:
                 goto NAR_PREOP_END;
             }
 
-#else
 
+            
             RtlUnicodeStringPrintf(&UniStr, L"\\AppData\\Local\\Temp");
             if (NarSubMemoryExists(nameInfo->Name.Buffer, UniStr.Buffer, nameInfo->Name.Length, UniStr.Length)) {
                 ExFreeToPagedLookasideList(&NarData.LookAsideList, UnicodeStrBuffer);
@@ -1129,6 +1133,9 @@ Return Value:
                 ExFreeToPagedLookasideList(&NarData.LookAsideList, UnicodeStrBuffer);
                 goto NAR_PREOP_END;
             }
+#else
+
+           
 
 #endif
 
@@ -1174,8 +1181,13 @@ Return Value:
 
             STARTING_VCN_INPUT_BUFFER StartingInputVCNBuffer;
             RETRIEVAL_POINTERS_BUFFER ClusterMapBuffer;
+
+            DWORD WholeFileMapBufferSize = sizeof(RETRIEVAL_POINTERS_BUFFER) * 1024;
+            RETRIEVAL_POINTERS_BUFFER* WholeFileMapBuffer = (RETRIEVAL_POINTERS_BUFFER*)ExAllocatePoolWithTag(PagedPool, WholeFileMapBufferSize, NAR_TAG);
+            
             ClusterMapBuffer.StartingVcn.QuadPart = 0;
             StartingInputVCNBuffer.StartingVcn.QuadPart = 0;
+            
 
             UINT32 RegionLen = 0;
 
@@ -1203,7 +1215,28 @@ Return Value:
             BOOLEAN HeadFound = FALSE;
             BOOLEAN CeilTest = FALSE;
 
-            for (;;) {
+            status = FltFsControlFile(FltObjects->Instance,
+                Data->Iopb->TargetFileObject,
+                FSCTL_GET_RETRIEVAL_POINTERS,
+                &StartingInputVCNBuffer,
+                sizeof(StartingInputVCNBuffer),
+                WholeFileMapBuffer,
+                WholeFileMapBufferSize,
+                &BytesReturned
+            );
+
+            
+            if (!NT_SUCCESS(status)) {
+                DbgPrint("FltFsControl failed with code %i\n", status);
+                ExFreePoolWithTag(WholeFileMapBuffer, NAR_TAG);
+                ExFreeToPagedLookasideList(&NarData.LookAsideList, UnicodeStrBuffer);
+
+                goto NAR_PREOP_END;
+            }
+
+            for (int i = 0; i< WholeFileMapBuffer->ExtentCount ;i++) {
+
+                ClusterMapBuffer.Extents[0] = WholeFileMapBuffer->Extents[i];
 
                 MaxIteration++;
                 if (MaxIteration > 1024) {
@@ -1211,15 +1244,6 @@ Return Value:
                     break;
                 }
 
-                status = FltFsControlFile(FltObjects->Instance,
-                    Data->Iopb->TargetFileObject,
-                    FSCTL_GET_RETRIEVAL_POINTERS,
-                    &StartingInputVCNBuffer,
-                    sizeof(StartingInputVCNBuffer),
-                    &ClusterMapBuffer,
-                    sizeof(ClusterMapBuffer),
-                    &BytesReturned
-                );
 
                 if (status != STATUS_BUFFER_OVERFLOW
                     && status != STATUS_SUCCESS
@@ -1326,14 +1350,10 @@ Return Value:
                     break;
                 }
 
-                StartingInputVCNBuffer.StartingVcn = ClusterMapBuffer.Extents->NextVcn;
-
-                if (status == STATUS_END_OF_FILE) {
-                    break;
-                }
 
             }
 
+            ExFreePoolWithTag(WholeFileMapBuffer, NAR_TAG);
 
 
             // TODO(BATUHAN): try one loop via KeTestSpinLock, to fast check if volume is available for fast access, if it is available and matches GUID, immidiately flush all regions and return, if not available test higher elements in list.

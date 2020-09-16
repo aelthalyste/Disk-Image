@@ -1143,6 +1143,110 @@ Split(std::wstring str, std::wstring delimiter) {
 }
 
 
+// 
+nar_record*
+NarGetMFTRegionsByCommandLine(char Letter, int* OutRecordCount){
+    
+    char CmdBuffer[512];
+    char OutputName[] = "naroutput.txt";
+
+    sprintf(CmdBuffer, "fsutil file queryextents %c:\\$MFT > %s", Letter, OutputName);
+    system(CmdBuffer);
+
+    file_read FileContents = NarReadFile(OutputName);
+
+    char* str = (char*)FileContents.Data;
+    int StrLen = FileContents.Len;
+
+    if (str == NULL || OutRecordCount == NULL) return 0;
+
+
+    size_t ResultSize = 128 * sizeof(nar_record);
+    nar_record* Result = (nar_record*)malloc(ResultSize);
+    memset(Result, 0, ResultSize);
+
+    int RecordFound = 0;
+
+    char *prev = str;
+    char *next = str;
+    
+    char ClustersHexStr[64];
+    char LCNHexStr[64];
+    char Line[128];
+    memset(ClustersHexStr, 0, sizeof(ClustersHexStr));
+    memset(LCNHexStr, 0, sizeof(LCNHexStr));
+    memset(Line, 0, sizeof(Line));
+
+    while(TRUE){
+
+        while(*next != '\n' && *next != 0 && *next != -3){
+            next++;
+        }
+
+        if(next != prev){
+        
+            // some lines might be ending with /r/n depending on if file is created as text file in windows. delete /r to make parsing easier 
+            int StrLen = (next - prev);
+
+            if (*(next - 1) == '\r') StrLen--;
+
+            memcpy(Line, prev, StrLen);
+            Line[StrLen] = 0; // null termination by hand
+            
+
+            // there isnt any overheat to search all of them at once, we are dealing with very short strings here
+            char *p1 = strstr(Line, "VCN:");
+            char *p2 = strstr(Line, "Clusters:");
+            char *p3 = strstr(Line, "LCN:");
+                        
+
+            if (p1 && p2 && p3) {
+                
+                p2 += sizeof("Clusters:");
+                size_t LCNHexStrLen = (size_t)(p3 - p2) + 1;
+                memcpy(LCNHexStr, p2, LCNHexStrLen);
+                LCNHexStr[LCNHexStrLen] = 0;
+
+
+                p3 += sizeof("LCN:");
+                size_t ClustersHexStrLen = strlen(p3);
+                memcpy(ClustersHexStr, p3, ClustersHexStrLen);
+                ClustersHexStr[ClustersHexStrLen] = 0;
+                
+                long LCNStart = strtol(ClustersHexStr, 0, 16);
+                long LCNLen = strtol(LCNHexStr, 0, 16);
+
+
+                Result[RecordFound].StartPos = LCNStart;
+                Result[RecordFound].Len = LCNLen;
+                RecordFound++;
+
+                // valid line
+            }
+            else {
+                printf("HEL\nL");
+                // invalid line
+            }
+
+            prev = (++next);
+
+
+        }
+        else{
+            break;
+        }
+
+    }
+
+    *OutRecordCount = RecordFound;
+
+    Result = (nar_record*)realloc(Result, RecordFound * sizeof(nar_record));
+
+    return Result;
+
+}
+
+
 #pragma warning(push)
 #pragma warning(disable:4365)
 #pragma warning(disable:4244)
@@ -1153,7 +1257,7 @@ GetMFTLCN(char VolumeLetter, HANDLE VolumeHandle) {
 
     BOOLEAN JustExtractMFTRegions = TRUE;
 
-    UINT32 MEMORY_BUFFER_SIZE = 1024LL * 1024LL * 1024LL;
+    UINT32 MEMORY_BUFFER_SIZE = 1024LL * 512;
     UINT32 ClusterExtractedBufferSize = 1024 * 1024 * 5;
 
     struct {
@@ -1218,6 +1322,8 @@ GetMFTLCN(char VolumeLetter, HANDLE VolumeHandle) {
             // on my machine it always starts from 0x10th sector. which is second cluster if your sector size is 512
             // and cluster size is 8*sector
 
+
+#if 0
             DWORD MFTOffset = 8192; // 0x10th Offset
             if(NarSetFilePointer(VolumeHandle, MFTOffset)){
 
@@ -1247,14 +1353,15 @@ GetMFTLCN(char VolumeLetter, HANDLE VolumeHandle) {
                             // winapi's deviceiocontrol routine, maybe the reason for fetching VCN-LCN maps from winapi is weird because 
                             // thats how its implemented at ntfs at first place. who knows
                             // so thats how it looks
+                            
                             /*
-                            first one is always absolute LCN in the volume. rest of it is addition to previous one. if file is fragmanted, value will be
-                            negative. so we dont have to check some edge cases here.
-                            second data run will be lets say 0x11 04 43
-                            and first one                    0x11 10 10
-                            starting lcn is 0x10, but second data run does not start from 0x43, it starts from 0x10 + 0x43
+                                first one is always absolute LCN in the volume. rest of it is addition to previous one. if file is fragmanted, value will be
+                                negative. so we dont have to check some edge cases here.
+                                second data run will be lets say 0x11 04 43
+                                and first one                    0x11 10 10
+                                starting lcn is 0x10, but second data run does not start from 0x43, it starts from 0x10 + 0x43
 
-                            LCN[n] = LCN[n-1] + datarun cluster
+                                LCN[n] = LCN[n-1] + datarun cluster
                             */
 
                             char Size = *(BYTE*)DataRuns;
@@ -1294,8 +1401,7 @@ GetMFTLCN(char VolumeLetter, HANDLE VolumeHandle) {
                                 // but since data run's size is not constant, it might finish at not exact multiple of 8, like 75, so rest of the 5 bytes are 0
                                 // We can keep track how many bytes we read so far etc etc, but rather than that, if we just check if size is 0, which means rest is just filler 
                                 // bytes to aligment border, we can break early.
-                                if (Size == 0) break;
-
+                                if (Size == 0) break;  
 
 
                                 // extract 4bit nibbles from size
@@ -1353,9 +1459,22 @@ GetMFTLCN(char VolumeLetter, HANDLE VolumeHandle) {
 
             }
 
+#endif
+
+
+            int RecCountByCommandLine = 0;
+            nar_record* TempRecords = NarGetMFTRegionsByCommandLine(VolumeLetter, &RecCountByCommandLine);
+            if (TempRecords != 0 && RecCountByCommandLine != 0) {
+                memcpy(ClustersExtracted, TempRecords, RecCountByCommandLine*sizeof(nar_record));
+                ClusterExtractedCount = RecCountByCommandLine;
+            }
 
             // TODO (Batuhan): remove this after testing on windows server, looks like rest of the code finds some invalid regions on volume.
             if (JustExtractMFTRegions) {
+                printf("Found %i regions\n", ClusterExtractedCount);
+                for(int indx = 0; indx < ClusterExtractedCount; indx++){
+                    printf("0x%X\t0x%X\n", ClustersExtracted[indx].StartPos, ClustersExtracted[indx].Len);
+                }
                 goto EARLY_TERMINATION;
             }
             
@@ -1456,7 +1575,6 @@ GetMFTLCN(char VolumeLetter, HANDLE VolumeHandle) {
                                             if ((FirstCluster >> ((FirstClusterSize - 1) * 8 + 7)) & 1U) {
                                                 FirstCluster = FirstCluster | ((0xFFFFFFFFFFFFFFFULL << (FirstClusterSize * 8)));
                                             }
-
 
 
                                             INT64 OldClusterStart = FirstCluster;
@@ -1578,8 +1696,6 @@ GetMFTLCN(char VolumeLetter, HANDLE VolumeHandle) {
 
 
 
-
-
         }
         else {
             // couldnt open volume as file
@@ -1596,7 +1712,7 @@ GetMFTLCN(char VolumeLetter, HANDLE VolumeHandle) {
     
     EARLY_TERMINATION:
 
-    data_array<nar_record> Result;
+    data_array<nar_record> Result = { 0 };
     ClustersExtracted = (nar_record*)realloc(ClustersExtracted, ClusterExtractedCount * sizeof(nar_record));
     Result.Data = ClustersExtracted;
     Result.Count = ClusterExtractedCount;
@@ -2926,20 +3042,21 @@ OfflineRestoreCleanDisk(restore_inf* R, int DiskID) {
             
             if (M.IsOSVolume) {
 
+/*
                 if (!RestoreRecoveryFile(*R)) {
                     printf("Couldnt restore recovery partition\n");
                 }
                 else {
                     printf("Successfully restored recovery partition, continuing on boot repair\n");
                 }
-
+*/
 
                 // TODO (Batuhan): wait 2 second prior to bcdboot to ensure volume is usable after diskpart operations 
-                Sleep(2000); 
+                Sleep(1500); 
 
                 NarRepairBoot((char)R->TargetLetter);
                 NarRemoveLetter(NAR_EFI_PARTITION_LETTER);
-                NarRemoveLetter(NAR_RECOVERY_PARTITION_LETTER);
+                //NarRemoveLetter(NAR_RECOVERY_PARTITION_LETTER);
 
                 printf("Restored to volume %c, to version %i\n", (char)R->TargetLetter, R->Version);
 
@@ -3094,7 +3211,7 @@ NarFormatVolume(char Letter) {
 inline void
 NarRepairBoot(char OSVolumeLetter) {
     char Buffer[2096];
-    sprintf(Buffer, "bcdboot %c:\\Windows /s R: /f ALL", OSVolumeLetter);
+    sprintf(Buffer, "bcdboot %c:\\Windows /s %c: /f ALL", OSVolumeLetter, NAR_EFI_PARTITION_LETTER);
     system(Buffer);
 }
 
@@ -3203,7 +3320,7 @@ NarSetVolumeSize(char Letter, int TargetSizeMB) {
     GetDiskFreeSpaceExA(Buffer, 0, &TOTAL_SIZE, 0);
     VolSizeMB = (int)(TOTAL_SIZE.QuadPart / (1024ull * 1024ull)); // byte to MB
 
-    printf("Volume size is %i, target size %i\n", VolSizeMB, TargetSizeMB);
+    printf("Volume %c's size is %i, target size %i\n", Letter, VolSizeMB, TargetSizeMB);
 
     if (VolSizeMB == TargetSizeMB) {
         return TRUE;
@@ -3343,10 +3460,12 @@ NarGetDisks() {
     
     
     VirtualFree(Memory, 0, MEM_RELEASE);
-    
-    Result.Count = Found;
-    Result.Data = (disk_information*)realloc(Result.Data, sizeof(disk_information) * Result.Count);
+    if (Found) {
+        Result.Count = Found;
+        Result.Data = (disk_information*)realloc(Result.Data, sizeof(Result.Data[0]) * Result.Count);
+    }
 
+    
     return Result;
     
 }
@@ -3477,7 +3596,7 @@ NarCreateCleanGPTBootablePartition(int DiskID, int VolumeSizeMB, int EFISizeMB, 
             "create partition primary size = %i\n" // recovery partition, ARG1 RecoveryPartitionSize
             "assign letter R\n"
             "format fs = ntfs quick\n"
-            //"remove letter R\n"
+            "remove letter R\n"
             "set id = \"de94bba4-06d1-4d40-a16a-bfd50179d6ac\"\n"
             "gpt attributes = 0x8000000000000001\n"
             "create partition efi size = %i\n" //efi partition, ARG3 EFIPartitionSize
@@ -4054,7 +4173,7 @@ RestoreVersionWithoutLoop(restore_inf R, BOOLEAN RestoreMFT, HANDLE Volume) {
     //NOTE(BATUHAN): Zero out fullbackup's MFT region if target version isnt fb, since its mft will be overwritten that shouldnt be a problem
     //Later, I should replace this code with smt that detects MFT regions from fullbackup metadata, then excudes it from it, so we dont have to zero it after at all.
     //For testing purpose this should do the work.
-#if 0
+#if 1
     if (!RestoreMFT && BMEX->M.Version != NAR_FULLBACKUP_VERSION) {
         
         HANDLE BMFile = CreateFile(BMEX->FilePath.c_str(), GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
@@ -4661,19 +4780,6 @@ SaveMetadata(char Letter, int Version, int ClusterSize, BackupType BT,
 
     MFTLCN = GetMFTLCN(Letter, VSSHandle);
 
-    LONGLONG MFTLCNSize = 0;
-    for(int i = 0; i<MFTLCN.Count; i++){
-        MFTLCNSize += MFTLCN.Data[i].Len; 
-    }
-    MFTLCNSize *= ClusterSize;
-    printf("MFTLCN, count %i, total bytes %i\n", MFTLCN.Count, MFTLCNSize*(LONGLONG)ClusterSize);
-
-    if(NarDumpToFile("MFTLCN_REGIONS_DATA", MFTLCN.Data, MFTLCN.Count * sizeof(nar_record))){
-        printf("Dumped MFTLCN regions data to file\n");
-    }
-    else{
-        printf("Couldnt dump MFTLCN regions to file\n");
-    }
 
     if (MFTLCN.Count > 0) {
         BM.Size.MFTMetadata = MFTLCN.Count * sizeof(nar_record);
@@ -4703,6 +4809,7 @@ SaveMetadata(char Letter, int Version, int ClusterSize, BackupType BT,
     
     // NOTE(Batuhan): since MFT size is > 0 if only non-full backup, we dont need to check Version < 0
     if (BM.Size.MFT && !BM.Errors.MFT && MFTLCN.Data != NULL) {
+
         //Save current file pointer in case of failure, so we can roll back to old pointer.
         ULONGLONG OldFilePointer = NarGetFilePointer(MetadataFile);
         if (WriteFile(MetadataFile, MFTLCN.Data, BM.Size.MFTMetadata, &BytesWritten, 0) && BytesWritten == BM.Size.MFTMetadata) {
@@ -4768,6 +4875,11 @@ recovery
 
     */
     // NOTE(Batuhan): Recovery partition's data is stored on metadata only if it's both full and OS volume backup
+
+    
+
+#if 0
+
     if (BM.IsOSVolume && BM.Version == NAR_FULLBACKUP_VERSION) {
         
         // recovery partition exists for both GPT and MBR, AppendRecoveryToFile can detect disk type and append it accordingly
@@ -4784,6 +4896,10 @@ recovery
             BM.Errors.Recovery = TRUE;
         }
         
+    }
+
+    if(BM.IsOSVolume && BM.Version == NAR_FULLBACKUP_VERSION){
+
         GUID GUIDMSRPartition = { 0 }; // microsoft reserved partition guid
         GUID GUIDSystemPartition = { 0 }; // efi-system partition guid
         GUID GUIDRecoveryPartition = { 0 }; // recovery partition guid
@@ -4851,12 +4967,13 @@ recovery
 
         }
         else{
-
+            printf("Couldn't open disk %i as file, for volume %c's metadata @ version %i\n", DiskID, BM.Letter, BM.Version);
         }
         
-
     }
-    
+
+#endif
+
     /*
     // NOTE(Batuhan): fill BM.Offset struct
     offset[n] = offset[n-1] + size[n-1]
@@ -5189,7 +5306,7 @@ AppendMFTFile(HANDLE File, HANDLE VSSHandle, data_array<nar_record> MFTLCN, int 
                 goto Exit;
             }
             
-            printf("Will copy %I64u bytes to append MFT to file\n", (ULONGLONG)MFTLCN.Data[i].Len * (ULONGLONG)ClusterSize);
+            //printf("Will copy %I64u bytes to append MFT to file\n", (ULONGLONG)MFTLCN.Data[i].Len * (ULONGLONG)ClusterSize);
 
             if (!CopyData(VSSHandle, File, (ULONGLONG)MFTLCN.Data[i].Len * (ULONGLONG)ClusterSize)) {
                 printf("Error occured while copying MFT file\n");
@@ -5379,7 +5496,7 @@ NarSaveBootState(LOG_CONTEXT* CTX) {
                     DWORD BR = 0;
                     
                     if (WriteFile(File, &Pack, sizeof(Pack), &BR, 0) && BR == sizeof(Pack)) {
-                        printf("Successfully saved volume [%c]'s [%i]th version information to boot file\n");
+                        printf("Successfully saved volume [%c]'s [%i]th version information to boot file\n", Pack.Letter, Pack.Version);
                     }
                     else {
                         printf("Coulndt save volume [%c]'s [%i]th version information to boot file\n", Pack.Letter, Pack.Version);
@@ -5472,6 +5589,16 @@ main(
      CHAR* argv[]
      ) {
     
+    
+    
+    data_array<nar_record> R = GetMFTLCN('C', NarOpenVolume('C'));
+    
+    for(int i= 0; i<R.Count;i++){
+        printf("%i\t%i\n", R.Data[i].StartPos, R.Data[i].Len);
+    }
+
+
+    return 0;
 
     
     // tests
@@ -5643,20 +5770,7 @@ main(
     CloseHandle(Port);
     
     return 0;
-    
-    restore_inf R;
-    R.RootDir = std::wstring();
-    R.TargetLetter = 'G';
-    R.SrcLetter = 'C';
-    R.Version = 1;
-    RestoreRecoveryFile(R);
-    return 0;
-    
-    int BufferSize = 1024 * 1024 * 128; // 128KB
-    int Found = 0;
-    backup_metadata* B = (backup_metadata*)malloc((size_t)BufferSize);
 
-    
     return 0;
 }
 

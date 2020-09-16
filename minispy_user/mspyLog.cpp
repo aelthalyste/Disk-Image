@@ -396,7 +396,7 @@ Return Value:
     UNREFERENCED_PARAMETER(SequenceNumber);
     UNREFERENCED_PARAMETER(Name);
     UNREFERENCED_PARAMETER(RecordData);
-
+    
 #if _DEBUG
     // deprecated
     DebugBreak();
