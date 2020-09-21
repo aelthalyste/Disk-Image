@@ -5,8 +5,55 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:DiskBackupWpfGUI"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
+        Title="{DynamicResource appFullName}" Icon="Resources/Icon/u62.png" Height="689" Width="1037" BorderThickness="0,1,0,0" BorderBrush="#D7D7D7" ResizeMode="CanMinimize">
+    <Window.Resources>
+        <ResourceDictionary Source="Resources\Lang\string_tr.xaml"/>
+    </Window.Resources>
     <Grid>
-        
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="904*"/>
+            <ColumnDefinition Width="127*"/>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="40"/>
+            <RowDefinition/>
+        </Grid.RowDefinitions>
+        <Rectangle Grid.Row="0" Fill="White" Grid.ColumnSpan="2"/>
+        <Rectangle Fill="DarkGray" Margin="0,618,0,1" Grid.ColumnSpan="2" Grid.Row="1" />
+
+        <Button Name="startButton" Width="32" Height="32" HorizontalAlignment="Right" Margin="0,4,47,4" Style="{StaticResource ImageButton}" Grid.Column="1">
+            <Button.Content>
+                <Image Height="40" Width="40" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <Image.Style>
+                        <Style TargetType="Image">
+                            <Setter Property="Source" Value="Resources/Icon/icons8_stop_8.ico"/>
+                        </Style>
+                    </Image.Style>
+                </Image>
+            </Button.Content>
+        </Button>
+        <Button Name="stopButton" Width="32" Height="32" HorizontalAlignment="Right" Margin="0,4,10,4" Style="{StaticResource ImageButton}" Grid.Column="1">
+            <Button.Content>
+                <Image Height="28">
+                    <Image.Style>
+                        <Style TargetType="Image">
+                            <Setter Property="Source" Value="Resources/Icon/icons8_refresh.ico" />
+                        </Style>
+                    </Image.Style>
+                </Image>
+            </Button.Content>
+        </Button>
+        <Button Name="refreshPolicyButton" HorizontalAlignment="Right" Margin="0,4,85,4" Style="{StaticResource ImageButton}" Width="32" Height="32" Grid.Column="1">
+            <Button.Content>
+                <Image Height="22">
+                    <Image.Style>
+                        <Style TargetType="Image">
+                            <Setter Property="Source" Value="Resources/Icon/icons8_play.ico" />
+                        </Style>
+                    </Image.Style>
+                </Image>
+            </Button.Content>
+
+        </Button>
     </Grid>
 </Window>

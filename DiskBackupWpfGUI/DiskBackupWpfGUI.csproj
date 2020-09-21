@@ -67,6 +67,10 @@
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Page Include="Resources\Lang\string_tr.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs">
@@ -93,6 +97,50 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\Icon\u62.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\Icon\10166081.jpg" />
+    <Resource Include="Resources\Icon\Circle-icons-computer.svg.png" />
+    <Resource Include="Resources\Icon\Dtafalonso-Modern-Xp-ModernXP-45-Network-Drive.ico" />
+    <Resource Include="Resources\Icon\icons8_cancel.ico" />
+    <Resource Include="Resources\Icon\icons8_clock_2.ico" />
+    <Resource Include="Resources\Icon\icons8_copy_2.ico" />
+    <Resource Include="Resources\Icon\icons8_create_2.ico" />
+    <Resource Include="Resources\Icon\icons8_c_drive_2.png" />
+    <Resource Include="Resources\Icon\icons8_database_backup_2.ico" />
+    <Resource Include="Resources\Icon\icons8_edit_file.ico" />
+    <Resource Include="Resources\Icon\icons8_edit_property_1.ico" />
+    <Resource Include="Resources\Icon\icons8_edit_property_2.ico" />
+    <Resource Include="Resources\Icon\icons8_edit_property_3.ico" />
+    <Resource Include="Resources\Icon\icons8_edit_property_4.ico" />
+    <Resource Include="Resources\Icon\icons8_edit_property_5.ico" />
+    <Resource Include="Resources\Icon\icons8_hdd_2.ico" />
+    <Resource Include="Resources\Icon\icons8_help_2.ico" />
+    <Resource Include="Resources\Icon\icons8_network_drive.ico" />
+    <Resource Include="Resources\Icon\icons8_ok_3.ico" />
+    <Resource Include="Resources\Icon\icons8_ok_4.ico" />
+    <Resource Include="Resources\Icon\icons8_paste.ico" />
+    <Resource Include="Resources\Icon\icons8_paste_4.ico" />
+    <Resource Include="Resources\Icon\icons8_pie_chart.ico" />
+    <Resource Include="Resources\Icon\icons8_play.ico" />
+    <Resource Include="Resources\Icon\icons8_refresh.ico" />
+    <Resource Include="Resources\Icon\icons8_restore_2.ico" />
+    <Resource Include="Resources\Icon\icons8_schedule.ico" />
+    <Resource Include="Resources\Icon\icons8_search_property_3.ico" />
+    <Resource Include="Resources\Icon\icons8_settings_4.ico" />
+    <Resource Include="Resources\Icon\icons8_ssd_3.ico" />
+    <Resource Include="Resources\Icon\icons8_stack_3.ico" />
+    <Resource Include="Resources\Icon\icons8_stop.ico" />
+    <Resource Include="Resources\Icon\icons8_stop_7.ico" />
+    <Resource Include="Resources\Icon\icons8_stop_8.ico" />
+    <Resource Include="Resources\Icon\icons8_system_task_3.ico" />
+    <Resource Include="Resources\Icon\icons8_unavailable_1.ico" />
+    <Resource Include="Resources\Icon\icons8_upload_1.ico" />
+    <Resource Include="Resources\Icon\icons8_windows_client_2.ico" />
+    <Resource Include="Resources\Icon\icons8_windows_client_4.ico" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
