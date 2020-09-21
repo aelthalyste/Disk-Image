@@ -14,10 +14,10 @@
             <RowDefinition Height="40"/>
             <RowDefinition/>
         </Grid.RowDefinitions>
-        <Rectangle Grid.Row="0" Fill="#F3F2F3" Grid.ColumnSpan="2"/>
+        <Rectangle Grid.Row="0" Fill="#F3F2F3" Grid.ColumnSpan="2" Stroke="Blue"/>
         <Rectangle Fill="DarkGray" Margin="0,618,0,1" Grid.ColumnSpan="2" Grid.Row="1" />
 
-        <Button Name="startButton" Width="32" Height="32" HorizontalAlignment="Right" Margin="0,4,47,4" Style="{StaticResource ImageButton}" Grid.Column="1">
+        <Button Name="btnStopButton" Width="32" Height="32" HorizontalAlignment="Right" Margin="0,4,47,4" Style="{StaticResource ImageButton}" Grid.Column="1">
             <Button.Content>
                 <Image Height="40" Width="40" HorizontalAlignment="Center" VerticalAlignment="Center">
                     <Image.Style>
@@ -29,7 +29,7 @@
             </Button.Content>
         </Button>
         
-        <Button Name="stopButton" Width="32" Height="32" HorizontalAlignment="Right" Margin="0,4,10,4" Style="{StaticResource ImageButton}" Grid.Column="1">
+        <Button Name="btnRefreshButton" Width="32" Height="32" HorizontalAlignment="Right" Margin="0,4,10,4" Style="{StaticResource ImageButton}" Grid.Column="1">
             <Button.Content>
                 <Image Height="28">
                     <Image.Style>
@@ -41,7 +41,7 @@
             </Button.Content>
         </Button>
         
-        <Button Name="refreshPolicyButton" HorizontalAlignment="Right" Margin="0,4,85,4" Style="{StaticResource ImageButton}" Width="32" Height="32" Grid.Column="1">
+        <Button Name="btnPlayButton" HorizontalAlignment="Right" Margin="0,4,85,4" Style="{StaticResource ImageButton}" Width="32" Height="32" Grid.Column="1">
             <Button.Content>
                 <Image Height="22">
                     <Image.Style>
@@ -53,7 +53,7 @@
             </Button.Content>
         </Button>
 
-        <Button Name="gorevOlustur" HorizontalAlignment="Left" Margin="10,4,85,4" Style="{StaticResource FolderButton}" Width="100" Height="32" Grid.Column="0">
+        <Button Name="btnCreateTask" HorizontalAlignment="Left" Margin="10,4,85,4" Style="{StaticResource CreateTaskButton}" Width="100" Height="32" Grid.Column="0">
             <Button.Content>
                 <StackPanel Orientation="Horizontal">
                     <Image Height="22">
@@ -69,8 +69,96 @@
         </Button>
 
         <StackPanel Orientation="Vertical">
-            <TextBlock Name="runningStateBlock" Text="Yedek Alnıyor, C, 270 MB, %80"  FontSize="14" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="0,10,0,0" />
+            <TextBlock Name="makeABackup" Text="{DynamicResource makeABackup}"  FontSize="14" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="0,10,0,0" />
         </StackPanel>
+
+        <TabControl Name="tabControl" TabStripPlacement="Left" BorderThickness="1,0,0,0" Grid.Row="1" BorderBrush="Blue">
+            <TabItem Name="diskTab">
+                <TabItem.Header>
+                    <StackPanel Height="48" Width="175" Orientation="Horizontal">
+                        <TextBlock Text="{DynamicResource disks}" Margin="5,0" VerticalAlignment="Center" FontWeight="Bold" Style="{StaticResource TabItemText}"/>
+                    </StackPanel>
+                </TabItem.Header>
+                <Grid Background="White">
+                    <StackPanel Grid.Row="1" HorizontalAlignment="Stretch">
+                        <ListView Name="diskListBox" Height="432" Margin="5" DisplayMemberPath="Name" AllowDrop="True">
+                            <ListView.View>
+                                <GridView>
+                                    <GridViewColumn Width="40">
+                                        <GridViewColumn.Header>
+                                            <CheckBox Name="selectAllChechbox"/>
+                                        </GridViewColumn.Header>
+                                    </GridViewColumn>
+                                    <GridViewColumn Header="{DynamicResource volume}" Width="100">
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding Name}" TextAlignment="Left"/>
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                    <GridViewColumn Header="{DynamicResource letter}" Width="100" >
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding TotalLength}" TextAlignment="Center"/>
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                    <GridViewColumn Header="{DynamicResource diskSize}" Width="100" >
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding VersionLength}" TextAlignment="Center"/>
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                    <GridViewColumn Header="{DynamicResource freeSize}" Width="100" >
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding VersionLength}" TextAlignment="Center"/>
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                    <GridViewColumn Header="{DynamicResource diskType}" Width="100" >
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding VersionLength}" TextAlignment="Center"/>
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                    <GridViewColumn Header="{DynamicResource fileSystem}" Width="100" >
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding VersionLength}" TextAlignment="Center"/>
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                    <GridViewColumn Header="{DynamicResource diskStatu}" Width="100" >
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding VersionLength}" TextAlignment="Center"/>
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                </GridView>
+                            </ListView.View>
+                            <ListView.ItemContainerStyle>
+                                <Style TargetType="ListViewItem">
+                                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsPolicyFolder}" Value="false">
+                                            <Setter Property="IsEnabled" Value="True"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding IsPolicyFolder}" Value="true">
+                                            <Setter Property="IsEnabled" Value="False"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </ListView.ItemContainerStyle>
+                        </ListView>
+                        <StackPanel Orientation="Horizontal"/>
+                    </StackPanel>
+                </Grid>
+            </TabItem>
+        </TabControl>
 
     </Grid>
 </Window>

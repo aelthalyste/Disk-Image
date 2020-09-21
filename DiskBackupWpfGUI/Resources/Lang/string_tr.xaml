@@ -5,5 +5,14 @@
     
     <system:String x:Key="appFullName">Narbulut Disk Yedekleme Uygulaması</system:String>
     <system:String x:Key="createTask">Görev Oluştur</system:String>
-    
+    <system:String x:Key="disks">Diskler</system:String>
+    <system:String x:Key="makeABackup">Yedek Alnıyor, C, 270 MB, %80</system:String>
+    <system:String x:Key="volume">Volume</system:String>
+    <system:String x:Key="letter">Harf</system:String>
+    <system:String x:Key="diskSize">Alan</system:String>
+    <system:String x:Key="freeSize">Boş Alan</system:String>
+    <system:String x:Key="diskType">Türü</system:String>
+    <system:String x:Key="fileSystem">Dosya Sistemi</system:String>
+    <system:String x:Key="diskStatu">Durum</system:String>
+
 </ResourceDictionary>
