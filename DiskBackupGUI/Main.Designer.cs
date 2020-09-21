@@ -39,6 +39,7 @@
             this.btnHome = new System.Windows.Forms.PictureBox();
             this.btnPath = new FontAwesome.Sharp.IconButton();
             this.panelTitleBar = new System.Windows.Forms.Panel();
+            this.lblPath = new System.Windows.Forms.Label();
             this.btnMinimize = new FontAwesome.Sharp.IconPictureBox();
             this.btnExit = new FontAwesome.Sharp.IconPictureBox();
             this.bunifuElipse1 = new Bunifu.Framework.UI.BunifuElipse(this.components);
@@ -50,7 +51,7 @@
             this.btnIncremental = new FontAwesome.Sharp.IconButton();
             this.bunifuElipse3 = new Bunifu.Framework.UI.BunifuElipse(this.components);
             this.folderBrowserDialog1 = new System.Windows.Forms.FolderBrowserDialog();
-            this.lblPath = new System.Windows.Forms.Label();
+            this.notifyIcon1 = new System.Windows.Forms.NotifyIcon(this.components);
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).BeginInit();
             this.panelMenu.SuspendLayout();
             this.panelPictures.SuspendLayout();
@@ -199,6 +200,17 @@
             this.panelTitleBar.TabIndex = 24;
             this.panelTitleBar.MouseDown += new System.Windows.Forms.MouseEventHandler(this.panel4_MouseDown);
             // 
+            // lblPath
+            // 
+            this.lblPath.AutoSize = true;
+            this.lblPath.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F);
+            this.lblPath.ForeColor = System.Drawing.Color.White;
+            this.lblPath.Location = new System.Drawing.Point(139, 27);
+            this.lblPath.Name = "lblPath";
+            this.lblPath.Size = new System.Drawing.Size(32, 15);
+            this.lblPath.TabIndex = 26;
+            this.lblPath.Text = "Path";
+            // 
             // btnMinimize
             // 
             this.btnMinimize.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
@@ -342,16 +354,10 @@
             this.bunifuElipse3.ElipseRadius = 35;
             this.bunifuElipse3.TargetControl = this.dataGridView1;
             // 
-            // lblPath
+            // notifyIcon1
             // 
-            this.lblPath.AutoSize = true;
-            this.lblPath.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F);
-            this.lblPath.ForeColor = System.Drawing.Color.White;
-            this.lblPath.Location = new System.Drawing.Point(139, 27);
-            this.lblPath.Name = "lblPath";
-            this.lblPath.Size = new System.Drawing.Size(32, 15);
-            this.lblPath.TabIndex = 26;
-            this.lblPath.Text = "Path";
+            this.notifyIcon1.Text = "notifyIcon1";
+            this.notifyIcon1.Visible = true;
             // 
             // Main
             // 
@@ -405,6 +411,7 @@
         private System.Windows.Forms.FolderBrowserDialog folderBrowserDialog1;
         private Bunifu.Framework.UI.BunifuProgressBar PBMain;
         private System.Windows.Forms.Label lblPath;
+        private System.Windows.Forms.NotifyIcon notifyIcon1;
     }
 }
 

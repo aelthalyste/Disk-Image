@@ -24,6 +24,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DiskBackupGUI", "DiskBackup
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OfflineTestGUI", "OfflineTestGUI\OfflineTestGUI.vcxproj", "{EEE4E91C-0C5A-4A94-89F1-366B951F4AD4}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DiskBackupWpfGUI", "DiskBackupWpfGUI\DiskBackupWpfGUI.csproj", "{9A1408AC-8914-4FC1-85D4-61EBBEAF9AF2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -192,6 +194,26 @@ Global
 		{EEE4E91C-0C5A-4A94-89F1-366B951F4AD4}.Release|x64.Build.0 = Release|x64
 		{EEE4E91C-0C5A-4A94-89F1-366B951F4AD4}.Release|x86.ActiveCfg = Release|Win32
 		{EEE4E91C-0C5A-4A94-89F1-366B951F4AD4}.Release|x86.Build.0 = Release|Win32
+		{9A1408AC-8914-4FC1-85D4-61EBBEAF9AF2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9A1408AC-8914-4FC1-85D4-61EBBEAF9AF2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9A1408AC-8914-4FC1-85D4-61EBBEAF9AF2}.Debug|ARM.ActiveCfg = Debug|Any CPU
+		{9A1408AC-8914-4FC1-85D4-61EBBEAF9AF2}.Debug|ARM.Build.0 = Debug|Any CPU
+		{9A1408AC-8914-4FC1-85D4-61EBBEAF9AF2}.Debug|ARM64.ActiveCfg = Debug|Any CPU
+		{9A1408AC-8914-4FC1-85D4-61EBBEAF9AF2}.Debug|ARM64.Build.0 = Debug|Any CPU
+		{9A1408AC-8914-4FC1-85D4-61EBBEAF9AF2}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{9A1408AC-8914-4FC1-85D4-61EBBEAF9AF2}.Debug|x64.Build.0 = Debug|Any CPU
+		{9A1408AC-8914-4FC1-85D4-61EBBEAF9AF2}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{9A1408AC-8914-4FC1-85D4-61EBBEAF9AF2}.Debug|x86.Build.0 = Debug|Any CPU
+		{9A1408AC-8914-4FC1-85D4-61EBBEAF9AF2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9A1408AC-8914-4FC1-85D4-61EBBEAF9AF2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9A1408AC-8914-4FC1-85D4-61EBBEAF9AF2}.Release|ARM.ActiveCfg = Release|Any CPU
+		{9A1408AC-8914-4FC1-85D4-61EBBEAF9AF2}.Release|ARM.Build.0 = Release|Any CPU
+		{9A1408AC-8914-4FC1-85D4-61EBBEAF9AF2}.Release|ARM64.ActiveCfg = Release|Any CPU
+		{9A1408AC-8914-4FC1-85D4-61EBBEAF9AF2}.Release|ARM64.Build.0 = Release|Any CPU
+		{9A1408AC-8914-4FC1-85D4-61EBBEAF9AF2}.Release|x64.ActiveCfg = Release|Any CPU
+		{9A1408AC-8914-4FC1-85D4-61EBBEAF9AF2}.Release|x64.Build.0 = Release|Any CPU
+		{9A1408AC-8914-4FC1-85D4-61EBBEAF9AF2}.Release|x86.ActiveCfg = Release|Any CPU
+		{9A1408AC-8914-4FC1-85D4-61EBBEAF9AF2}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

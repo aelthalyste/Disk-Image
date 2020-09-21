@@ -14,11 +14,11 @@ namespace DiskBackupGUI
     {
         public Task Execute(IJobExecutionContext context)
         {
-            //liste varmış gibi kabul ediyoruz
             List<char> letters = Main.Instance.taskParams[context.JobDetail.Key.Name];
             var diskTracker = Main.Instance.diskTracker;
             int typeParam = context.PreviousFireTimeUtc == null? 0 : 1;
-
+            int paramType = Main.Instance.BackupNum;
+            
             int bufferSize = 64 * 1024 * 1024;
             byte[] buffer = new byte[bufferSize];
             StreamInfo str = new StreamInfo();
@@ -27,7 +27,7 @@ namespace DiskBackupGUI
             bool result = false;
             foreach (var letter in letters)
             {
-                if (diskTracker.CW_SetupStream(letter, typeParam, str))
+                if (diskTracker.CW_SetupStream(letter, paramType, str))
                 {
                     unsafe
                     {
