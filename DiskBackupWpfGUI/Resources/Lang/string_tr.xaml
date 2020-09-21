@@ -4,5 +4,6 @@
                     xmlns:system="clr-namespace:System;assembly=mscorlib">
     
     <system:String x:Key="appFullName">Narbulut Disk Yedekleme Uygulaması</system:String>
+    <system:String x:Key="createTask">Görev Oluştur</system:String>
     
 </ResourceDictionary>

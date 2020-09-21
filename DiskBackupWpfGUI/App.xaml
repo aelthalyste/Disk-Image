@@ -118,6 +118,7 @@
         </Style>
 
         <Style x:Key="FolderButton" TargetType="{x:Type Button}">
+
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
@@ -131,12 +132,19 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Border"  Property="BorderBrush" Value="DarkGray"/>
+                                <Setter TargetName="Border" Property="BorderBrush" Value="#FF4B9A4E"/>
+                                <!--<Setter Property="Background" Value="#FF4B9A4E"/>-->
                             </Trigger>
+
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
+            <!--<Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#FF4B9A4E"/>
+                </Trigger>
+            </Style.Triggers>-->
 
         </Style>
 
@@ -162,12 +170,13 @@
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
-
         </Style>
-        <Style x:Key="FolderButtonText" TargetType="{x:Type TextBlock}">
+        
+        <Style x:Key="CreateTaskButtonText" TargetType="{x:Type TextBlock}">
             <Style.Triggers>
                 <DataTrigger Binding="{Binding IsEnabled, RelativeSource={RelativeSource AncestorType=Button}}" Value="True">
-                    <Setter Property="Foreground" Value="#3367D6"/>
+                    <!-- -->
+                    <Setter Property="Foreground" Value="Black"/>
                 </DataTrigger>
                 <DataTrigger Binding="{Binding IsEnabled, RelativeSource={RelativeSource AncestorType=TabItem}}" Value="False">
                     <Setter Property="Foreground" Value="DarkGray"/>
@@ -182,5 +191,6 @@
             </Style.Resources>
 
         </Style>
+        
     </Application.Resources>
 </Application>

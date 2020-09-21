@@ -142,5 +142,8 @@
     <Resource Include="Resources\Icon\icons8_windows_client_2.ico" />
     <Resource Include="Resources\Icon\icons8_windows_client_4.ico" />
   </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\Icon\u58.png" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
