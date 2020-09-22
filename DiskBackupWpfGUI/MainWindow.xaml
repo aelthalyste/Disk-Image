@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:DiskBackupWpfGUI"
         mc:Ignorable="d"
-        Title="{DynamicResource appFullName}" Icon="Resources/Icon/u62.png" Height="689" Width="1037" BorderThickness="0,1,0,0" BorderBrush="#D7D7D7" ResizeMode="CanMinimize">
+        Title="{DynamicResource appFullName}" Icon="Resources/Icon/u62.png" Height="689" Width="1094" BorderThickness="0,1,0,0" BorderBrush="#D7D7D7" ResizeMode="CanMinimize" Visibility="Visible">
     <Window.Resources>
         <ResourceDictionary Source="Resources\Lang\string_tr.xaml"/>
     </Window.Resources>
@@ -17,7 +17,7 @@
         <Rectangle Grid.Row="0" Fill="#F3F2F3" Grid.ColumnSpan="2" Stroke="#194771"/>
         <Rectangle Fill="DarkGray" Margin="0,618,0,1" Grid.ColumnSpan="2" Grid.Row="1" />
 
-        <Button Name="btnStopButton" Width="32" Height="32" HorizontalAlignment="Right" Margin="0,4,47,4" Style="{StaticResource ImageButton}" Grid.Column="1">
+        <Button Name="btnStopButton" ToolTip="{DynamicResource stop}" Width="32" Height="32" HorizontalAlignment="Right" Margin="0,4,47,4" Style="{StaticResource ImageButton}" Grid.Column="1">
             <Button.Content>
                 <Image Height="40" Width="40" HorizontalAlignment="Center" VerticalAlignment="Center">
                     <Image.Style>
@@ -29,7 +29,7 @@
             </Button.Content>
         </Button>
 
-        <Button Name="btnRefreshButton" Width="32" Height="32" HorizontalAlignment="Right" Margin="0,4,10,4" Style="{StaticResource ImageButton}" Grid.Column="1">
+        <Button Name="btnRefreshButton" ToolTip="{DynamicResource refresh}" Width="32" Height="32" HorizontalAlignment="Right" Margin="0,4,10,4" Style="{StaticResource ImageButton}" Grid.Column="1">
             <Button.Content>
                 <Image Height="28">
                     <Image.Style>
@@ -41,7 +41,7 @@
             </Button.Content>
         </Button>
 
-        <Button Name="btnPlayButton" HorizontalAlignment="Right" Margin="0,4,85,4" Style="{StaticResource ImageButton}" Width="32" Height="32" Grid.Column="1">
+        <Button Name="btnPlayButton" ToolTip="{DynamicResource start}" HorizontalAlignment="Right" Margin="0,4,85,4" Style="{StaticResource ImageButton}" Width="32" Height="32" Grid.Column="1">
             <Button.Content>
                 <Image Height="22">
                     <Image.Style>
@@ -53,7 +53,7 @@
             </Button.Content>
         </Button>
 
-        <Button Name="btnCreateTask" HorizontalAlignment="Left" Margin="10,4,85,4" Style="{StaticResource CreateTaskButton}" Width="100" Height="32" Grid.Column="0">
+        <Button Name="btnCreateTask" HorizontalAlignment="Left" Margin="10,4,85,4" Style="{StaticResource CreateTaskButton}" Width="110" Height="32" Grid.Column="0">
             <Button.Content>
                 <StackPanel Orientation="Horizontal">
                     <Image Height="22">
@@ -193,93 +193,205 @@
                     </StackPanel>
                 </TabItem.Header>
                 <Grid Background="White">
-                    <!--<Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="40"/>
-                        <ColumnDefinition/>
-                    </Grid.ColumnDefinitions>
-                    <Rectangle ></Rectangle>-->
+                    <StackPanel Grid.Row="1" HorizontalAlignment="Stretch">
+                        <StackPanel HorizontalAlignment="Stretch" Orientation="Horizontal">
+
+                            <ListView Name="taskListBox" Height="432" Margin="5,5,0,5" DisplayMemberPath="Name" AllowDrop="True" VerticalAlignment="Top">
+                                <ListView.View>
+                                    <GridView>
+                                        <GridViewColumn Width="40">
+                                            <GridViewColumn.Header>
+                                                <CheckBox Name="selectAllTasksChechbox"/>
+                                            </GridViewColumn.Header>
+                                        </GridViewColumn>
+                                        <GridViewColumn Header="{DynamicResource taskName}" Width="100">
+                                            <GridViewColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding Name}" TextAlignment="Left"/>
+                                                </DataTemplate>
+                                            </GridViewColumn.CellTemplate>
+                                        </GridViewColumn>
+                                        <GridViewColumn Header="{DynamicResource object}" Width="80" >
+                                            <GridViewColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding TotalLength}" TextAlignment="Center"/>
+                                                </DataTemplate>
+                                            </GridViewColumn.CellTemplate>
+                                        </GridViewColumn>
+                                        <GridViewColumn Header="{DynamicResource statu}" Width="100" >
+                                            <GridViewColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding VersionLength}" TextAlignment="Center"/>
+                                                </DataTemplate>
+                                            </GridViewColumn.CellTemplate>
+                                        </GridViewColumn>
+                                        <GridViewColumn Header="{DynamicResource lastStudy}" Width="100" >
+                                            <GridViewColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding VersionLength}" TextAlignment="Center"/>
+                                                </DataTemplate>
+                                            </GridViewColumn.CellTemplate>
+                                        </GridViewColumn>
+                                        <GridViewColumn Header="{DynamicResource nextStudy}" Width="100" >
+                                            <GridViewColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding VersionLength}" TextAlignment="Center"/>
+                                                </DataTemplate>
+                                            </GridViewColumn.CellTemplate>
+                                        </GridViewColumn>
+                                        <GridViewColumn Header="{DynamicResource target}" Width="150" >
+                                            <GridViewColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding VersionLength}" TextAlignment="Center"/>
+                                                </DataTemplate>
+                                            </GridViewColumn.CellTemplate>
+                                        </GridViewColumn>
+                                        <GridViewColumn Header="{DynamicResource statement}" Width="150" >
+                                            <GridViewColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding VersionLength}" TextAlignment="Center"/>
+                                                </DataTemplate>
+                                            </GridViewColumn.CellTemplate>
+                                        </GridViewColumn>
+                                    </GridView>
+                                </ListView.View>
+                                <ListView.ItemContainerStyle>
+                                    <Style TargetType="ListViewItem">
+                                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsPolicyFolder}" Value="false">
+                                                <Setter Property="IsEnabled" Value="True"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding IsPolicyFolder}" Value="true">
+                                                <Setter Property="IsEnabled" Value="False"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ListView.ItemContainerStyle>
+                            </ListView>
+                            <StackPanel Margin="0,5,5,5" Height="432" Width="50" VerticalAlignment="Top" Background="#F3F2F3">
+
+                                <Button Name="btnTaskEdit" ToolTip="{DynamicResource edit}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5,5,5" Style="{StaticResource ImageButton}" Grid.Column="1">
+                                    <Button.Content>
+                                        <Image Height="25" Width="25" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                            <Image.Style>
+                                                <Style TargetType="Image">
+                                                    <Setter Property="Source" Value="Resources/Icon/icons8_edit_property_1.ico"/>
+                                                </Style>
+                                            </Image.Style>
+                                        </Image>
+                                    </Button.Content>
+                                </Button>
+
+                                <Button Name="btnTaskStart" ToolTip="{DynamicResource start}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5,5,5"  Style="{StaticResource ImageButton}" Grid.Column="1">
+                                    <Button.Content>
+                                        <Image Height="25" Width="25" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                            <Image.Style>
+                                                <Style TargetType="Image">
+                                                    <Setter Property="Source" Value="Resources/Icon/icons8_play.ico"/>
+                                                </Style>
+                                            </Image.Style>
+                                        </Image>
+                                    </Button.Content>
+                                </Button>
+
+                                <Button Name="btnTaskStop" ToolTip="{DynamicResource stop}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5,5,5" Style="{StaticResource ImageButton}" Grid.Column="1">
+                                    <Button.Content>
+                                        <Image Height="40" Width="40" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                            <Image.Style>
+                                                <Style TargetType="Image">
+                                                    <Setter Property="Source" Value="Resources/Icon/icons8_stop_8.ico"/>
+                                                </Style>
+                                            </Image.Style>
+                                        </Image>
+                                    </Button.Content>
+                                </Button>
+
+                                <Button Name="btnTaskClose" ToolTip="{DynamicResource close}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5,5,5" Style="{StaticResource ImageButton}" Grid.Column="1">
+                                    <Button.Content>
+                                        <Image Height="25" Width="25" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                            <Image.Style>
+                                                <Style TargetType="Image">
+                                                    <Setter Property="Source" Value="Resources/Icon/icons8_unavailable_1.ico"/>
+                                                </Style>
+                                            </Image.Style>
+                                        </Image>
+                                    </Button.Content>
+                                </Button>
+
+                                <Button Name="btnTaskOpen" ToolTip="{DynamicResource open}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5,5,5" Style="{StaticResource ImageButton}" Grid.Column="1">
+                                    <Button.Content>
+                                        <Image Height="25" Width="25" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                            <Image.Style>
+                                                <Style TargetType="Image">
+                                                    <Setter Property="Source" Value="Resources/Icon/icons8_ok_4.ico"/>
+                                                </Style>
+                                            </Image.Style>
+                                        </Image>
+                                    </Button.Content>
+                                </Button>
+
+                                <Button Name="btnTaskCopy" ToolTip="{DynamicResource copy}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5,5,5" Style="{StaticResource ImageButton}" Grid.Column="1">
+                                    <Button.Content>
+                                        <Image Height="25" Width="25" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                            <Image.Style>
+                                                <Style TargetType="Image">
+                                                    <Setter Property="Source" Value="Resources/Icon/icons8_copy_2.ico"/>
+                                                </Style>
+                                            </Image.Style>
+                                        </Image>
+                                    </Button.Content>
+                                </Button>
+
+                                <Button Name="btnTaskPaste" ToolTip="{DynamicResource paste}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5,5,5" Style="{StaticResource ImageButton}" Grid.Column="1">
+                                    <Button.Content>
+                                        <Image Height="25" Width="25" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                            <Image.Style>
+                                                <Style TargetType="Image">
+                                                    <Setter Property="Source" Value="Resources/Icon/icons8_paste.ico"/>
+                                                </Style>
+                                            </Image.Style>
+                                        </Image>
+                                    </Button.Content>
+                                </Button>
+
+                                <Button Name="btnTaskDelete" ToolTip="{DynamicResource delete}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5,5,5" Style="{StaticResource ImageButton}" Grid.Column="1">
+                                    <Button.Content>
+                                        <Image Height="30" Width="30" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                            <Image.Style>
+                                                <Style TargetType="Image">
+                                                    <Setter Property="Source" Value="Resources/Icon/icons8_cancel.ico"/>
+                                                </Style>
+                                            </Image.Style>
+                                        </Image>
+                                    </Button.Content>
+                                </Button>
+
+                            </StackPanel>
+
+                        </StackPanel>
+                        <GroupBox>
+                            
+                        </GroupBox>
+                    </StackPanel>
+
+                </Grid>
+            </TabItem>
+
+            <TabItem Name="restoreTab">
+                <TabItem.Header>
+                    <StackPanel Height="48" Width="175" Orientation="Horizontal">
+                        <TextBlock Text="{DynamicResource restore}" Margin="5,0" VerticalAlignment="Center" FontWeight="Bold" Style="{StaticResource TabItemText}"/>
+                    </StackPanel>
+                </TabItem.Header>
+                <Grid Background="White">
                     <StackPanel Grid.Row="1" HorizontalAlignment="Stretch">
 
-                        <ListView Name="taskListBox" Height="432" Margin="5" DisplayMemberPath="Name" AllowDrop="True">
-                            <ListView.View>
-                                <GridView>
-                                    <GridViewColumn Width="40">
-                                        <GridViewColumn.Header>
-                                            <CheckBox Name="selectAllTasksChechbox"/>
-                                        </GridViewColumn.Header>
-                                    </GridViewColumn>
-                                    <GridViewColumn Header="{DynamicResource taskName}" Width="100">
-                                        <GridViewColumn.CellTemplate>
-                                            <DataTemplate>
-                                                <TextBlock Text="{Binding Name}" TextAlignment="Left"/>
-                                            </DataTemplate>
-                                        </GridViewColumn.CellTemplate>
-                                    </GridViewColumn>
-                                    <GridViewColumn Header="{DynamicResource object}" Width="80" >
-                                        <GridViewColumn.CellTemplate>
-                                            <DataTemplate>
-                                                <TextBlock Text="{Binding TotalLength}" TextAlignment="Center"/>
-                                            </DataTemplate>
-                                        </GridViewColumn.CellTemplate>
-                                    </GridViewColumn>
-                                    <GridViewColumn Header="{DynamicResource statu}" Width="100" >
-                                        <GridViewColumn.CellTemplate>
-                                            <DataTemplate>
-                                                <TextBlock Text="{Binding VersionLength}" TextAlignment="Center"/>
-                                            </DataTemplate>
-                                        </GridViewColumn.CellTemplate>
-                                    </GridViewColumn>
-                                    <GridViewColumn Header="{DynamicResource lastStudy}" Width="100" >
-                                        <GridViewColumn.CellTemplate>
-                                            <DataTemplate>
-                                                <TextBlock Text="{Binding VersionLength}" TextAlignment="Center"/>
-                                            </DataTemplate>
-                                        </GridViewColumn.CellTemplate>
-                                    </GridViewColumn>
-                                    <GridViewColumn Header="{DynamicResource nextStudy}" Width="100" >
-                                        <GridViewColumn.CellTemplate>
-                                            <DataTemplate>
-                                                <TextBlock Text="{Binding VersionLength}" TextAlignment="Center"/>
-                                            </DataTemplate>
-                                        </GridViewColumn.CellTemplate>
-                                    </GridViewColumn>
-                                    <GridViewColumn Header="{DynamicResource target}" Width="150" >
-                                        <GridViewColumn.CellTemplate>
-                                            <DataTemplate>
-                                                <TextBlock Text="{Binding VersionLength}" TextAlignment="Center"/>
-                                            </DataTemplate>
-                                        </GridViewColumn.CellTemplate>
-                                    </GridViewColumn>
-                                    <GridViewColumn Header="{DynamicResource statement}" Width="150" >
-                                        <GridViewColumn.CellTemplate>
-                                            <DataTemplate>
-                                                <TextBlock Text="{Binding VersionLength}" TextAlignment="Center"/>
-                                            </DataTemplate>
-                                        </GridViewColumn.CellTemplate>
-                                    </GridViewColumn>
-                                </GridView>
-                            </ListView.View>
-                            <ListView.ItemContainerStyle>
-                                <Style TargetType="ListViewItem">
-                                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding IsPolicyFolder}" Value="false">
-                                            <Setter Property="IsEnabled" Value="True"/>
-                                        </DataTrigger>
-                                        <DataTrigger Binding="{Binding IsPolicyFolder}" Value="true">
-                                            <Setter Property="IsEnabled" Value="False"/>
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </ListView.ItemContainerStyle>
-                        </ListView>
-                        
-                        <Rectangle Grid.Row="0" Fill="Black" Grid.ColumnSpan="2" Stroke="#194771" Height="30"/>
-                        <Rectangle Fill="DarkGray" Margin="0,618,0,1" Grid.ColumnSpan="1" Grid.Row="1" />
-                        <GroupBox >
-
-                        </GroupBox >
+                        <GroupBox>
+                            Geri yükle
+                        </GroupBox>
                     </StackPanel>
+
                 </Grid>
             </TabItem>
 

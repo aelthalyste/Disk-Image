@@ -21,4 +21,14 @@
     <system:String x:Key="nextStudy">Sonraki Çalışma</system:String>
     <system:String x:Key="target">Hedef</system:String>
     <system:String x:Key="statement">Açıklama</system:String>
+    <system:String x:Key="edit">Düzenle</system:String>
+    <system:String x:Key="start">Başla</system:String>
+    <system:String x:Key="stop">Durdur</system:String>
+    <system:String x:Key="close">Kapat</system:String>
+    <system:String x:Key="open">Aç</system:String>
+    <system:String x:Key="copy">Kopyala</system:String>
+    <system:String x:Key="paste">Yapıştır</system:String>
+    <system:String x:Key="delete">Sil</system:String>
+    <system:String x:Key="refresh">Yenile</system:String>
+    <system:String x:Key="restore">Geri Yükleme</system:String>
 </ResourceDictionary>
