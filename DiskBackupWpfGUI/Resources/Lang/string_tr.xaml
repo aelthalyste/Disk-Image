@@ -11,7 +11,7 @@
     <system:String x:Key="letter">Harf</system:String>
     <system:String x:Key="diskSize">Alan</system:String>
     <system:String x:Key="freeSize">Boş Alan</system:String>
-    <system:String x:Key="diskType">Türü</system:String>
+    <system:String x:Key="type">Tür</system:String>
     <system:String x:Key="fileSystem">Dosya Sistemi</system:String>
     <system:String x:Key="statu">Durum</system:String>
     <system:String x:Key="tasks">Görevler</system:String>
@@ -20,15 +20,25 @@
     <system:String x:Key="lastStudy">Son Çalışma</system:String>
     <system:String x:Key="nextStudy">Sonraki Çalışma</system:String>
     <system:String x:Key="target">Hedef</system:String>
-    <system:String x:Key="statement">Açıklama</system:String>
+    <system:String x:Key="description">Açıklama</system:String>
     <system:String x:Key="edit">Düzenle</system:String>
     <system:String x:Key="start">Başla</system:String>
     <system:String x:Key="stop">Durdur</system:String>
     <system:String x:Key="close">Kapat</system:String>
     <system:String x:Key="open">Aç</system:String>
     <system:String x:Key="copy">Kopyala</system:String>
+    <system:String x:Key="restore">Geri Yükleme</system:String>
     <system:String x:Key="paste">Yapıştır</system:String>
     <system:String x:Key="delete">Sil</system:String>
     <system:String x:Key="refresh">Yenile</system:String>
-    <system:String x:Key="restore">Geri Yükleme</system:String>
+    <system:String x:Key="filesName">Dosya Adı</system:String>
+    <system:String x:Key="createdDate">Oluşturma Tarihi</system:String>
+    <system:String x:Key="size">Boyut</system:String>
+    <system:String x:Key="browseFiles">Dosyalara Gözat</system:String>
+    <system:String x:Key="domainName">Alan Adı</system:String>
+    <system:String x:Key="totalSize">Toplam Alan</system:String>
+    <system:String x:Key="usedSize">Kullanılan Alan</system:String>
+    <system:String x:Key="localPath">Yerel Yol</system:String>
+    <system:String x:Key="cloudPath">Bulut Alan</system:String>
+    <system:String x:Key="backupAreas">Yedekleme Alanları</system:String>
 </ResourceDictionary>
