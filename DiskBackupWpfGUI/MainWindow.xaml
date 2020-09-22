@@ -115,7 +115,7 @@
                                             <CheckBox Name="selectDiskAllChechbox"/>
                                         </GridViewColumn.Header>
                                     </GridViewColumn>
-                                    <GridViewColumn Header="{DynamicResource volume}" Width="100">
+                                    <GridViewColumn Header="{DynamicResource volume}" Width="150">
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
                                                 <TextBlock Text="{Binding Name}" TextAlignment="Left"/>
@@ -129,7 +129,7 @@
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
-                                    <GridViewColumn Header="{DynamicResource diskSize}" Width="100" >
+                                    <GridViewColumn Header="{DynamicResource diskSize}" Width="110" >
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
                                                 <TextBlock Text="{Binding VersionLength}" TextAlignment="Center"/>
@@ -143,21 +143,21 @@
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
-                                    <GridViewColumn Header="{DynamicResource type}" Width="100" >
+                                    <GridViewColumn Header="{DynamicResource type}" Width="110" >
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
                                                 <TextBlock Text="{Binding VersionLength}" TextAlignment="Center"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
-                                    <GridViewColumn Header="{DynamicResource fileSystem}" Width="100" >
+                                    <GridViewColumn Header="{DynamicResource fileSystem}" Width="110" >
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
                                                 <TextBlock Text="{Binding VersionLength}" TextAlignment="Center"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
-                                    <GridViewColumn Header="{DynamicResource statu}" Width="100" >
+                                    <GridViewColumn Header="{DynamicResource statu}" Width="150" >
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
                                                 <TextBlock Text="{Binding VersionLength}" TextAlignment="Center"/>
@@ -181,7 +181,7 @@
                             </ListView.ItemContainerStyle>
                         </ListView>
                         <GroupBox >
-
+                            <TextBlock Text=" BURAYA PROGRESS BAR GELİCEK " TextAlignment="Center" FontSize="30"></TextBlock>
                         </GroupBox >
                     </StackPanel>
                 </Grid>
@@ -383,7 +383,7 @@
                     <StackPanel Grid.Row="1" HorizontalAlignment="Stretch">
 
                         <GroupBox>
-                            Geri yükle
+                            <TextBlock Text="GERİ YÜKLE" FontSize="40" TextAlignment="Center"></TextBlock>
                         </GroupBox>
                     </StackPanel>
                 </Grid>
@@ -522,7 +522,7 @@
                                                 </DataTemplate>
                                             </GridViewColumn.CellTemplate>
                                         </GridViewColumn>
-                                        <GridViewColumn Header="{DynamicResource freeSize}" Width="110" >
+                                        <GridViewColumn Header="{DynamicResource freeSize}" Width="100" >
                                             <GridViewColumn.CellTemplate>
                                                 <DataTemplate>
                                                     <TextBlock Text="{Binding VersionLength}" TextAlignment="Center"/>
@@ -594,6 +594,169 @@
                             </StackPanel>
 
                         </StackPanel>
+                    </StackPanel>
+                </Grid>
+            </TabItem>
+            <TabItem Name="logTab">
+                <TabItem.Header>
+                    <StackPanel Height="48" Width="175" Orientation="Horizontal">
+                        <TextBlock Text="{DynamicResource pastActivities}" Margin="5,0" VerticalAlignment="Center" FontWeight="Bold" Style="{StaticResource TabItemText}"/>
+                    </StackPanel>
+                </TabItem.Header>
+                <Grid Background="White">
+                    <StackPanel Grid.Row="1" HorizontalAlignment="Stretch">
+                        <StackPanel HorizontalAlignment="Stretch" Orientation="Horizontal">
+                            <ListView Name="logListBox" Height="432" Margin="5,5,0,5" DisplayMemberPath="Name" AllowDrop="True" VerticalAlignment="Top">
+                                <ListView.View>
+                                    <GridView>
+                                        <GridViewColumn Width="40">
+                                        </GridViewColumn>
+                                        <GridViewColumn Header="{DynamicResource startDate}" Width="100">
+                                            <GridViewColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding Name}" TextAlignment="Left"/>
+                                                </DataTemplate>
+                                            </GridViewColumn.CellTemplate>
+                                        </GridViewColumn>
+                                        <GridViewColumn Header="{DynamicResource endDate}" Width="130" >
+                                            <GridViewColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding TotalLength}" TextAlignment="Center"/>
+                                                </DataTemplate>
+                                            </GridViewColumn.CellTemplate>
+                                        </GridViewColumn>
+                                        <GridViewColumn Header="{DynamicResource type}" Width="100" >
+                                            <GridViewColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding VersionLength}" TextAlignment="Center"/>
+                                                </DataTemplate>
+                                            </GridViewColumn.CellTemplate>
+                                        </GridViewColumn>
+                                        <GridViewColumn Header="{DynamicResource source}" Width="110" >
+                                            <GridViewColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding VersionLength}" TextAlignment="Center"/>
+                                                </DataTemplate>
+                                            </GridViewColumn.CellTemplate>
+                                        </GridViewColumn>
+                                        <GridViewColumn Header="{DynamicResource target}" Width="190" >
+                                            <GridViewColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding VersionLength}" TextAlignment="Center"/>
+                                                </DataTemplate>
+                                            </GridViewColumn.CellTemplate>
+                                        </GridViewColumn>
+                                        <GridViewColumn Header="{DynamicResource statu}" Width="150" >
+                                            <GridViewColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding VersionLength}" TextAlignment="Center"/>
+                                                </DataTemplate>
+                                            </GridViewColumn.CellTemplate>
+                                        </GridViewColumn>
+                                    </GridView>
+                                </ListView.View>
+                                <ListView.ItemContainerStyle>
+                                    <Style TargetType="ListViewItem">
+                                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsPolicyFolder}" Value="false">
+                                                <Setter Property="IsEnabled" Value="True"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding IsPolicyFolder}" Value="true">
+                                                <Setter Property="IsEnabled" Value="False"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ListView.ItemContainerStyle>
+                            </ListView>
+                            <StackPanel Margin="0,5,5,5" Height="432" Width="50" VerticalAlignment="Top" Background="#F3F2F3">
+                                <Button Name="btnLogDelete" ToolTip="{DynamicResource delete}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5,5,5" Style="{StaticResource ImageButton}" Grid.Column="1">
+                                    <Button.Content>
+                                        <Image Height="25" Width="25" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                            <Image.Style>
+                                                <Style TargetType="Image">
+                                                    <Setter Property="Source" Value="Resources/Icon/icons8_cancel.ico"/>
+                                                </Style>
+                                            </Image.Style>
+                                        </Image>
+                                    </Button.Content>
+                                </Button>
+                            </StackPanel>
+                        </StackPanel>
+                        <!--asdasfa-->
+                        <ListView Name="logDownListBox" Height="432" Margin="5,5,0,5" DisplayMemberPath="Name" AllowDrop="True" VerticalAlignment="Top">
+                            <ListView.View>
+                                <GridView>
+                                    <GridViewColumn Header="{DynamicResource time}" Width="300">
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding Name}" TextAlignment="Left"/>
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                    <GridViewColumn Header="{DynamicResource statusCode}" Width="300" >
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding TotalLength}" TextAlignment="Center"/>
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                    <GridViewColumn Header="{DynamicResource detail}" Width="300" >
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding VersionLength}" TextAlignment="Center"/>
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                </GridView>
+                            </ListView.View>
+                            <ListView.ItemContainerStyle>
+                                <Style TargetType="ListViewItem">
+                                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsPolicyFolder}" Value="false">
+                                            <Setter Property="IsEnabled" Value="True"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding IsPolicyFolder}" Value="true">
+                                            <Setter Property="IsEnabled" Value="False"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </ListView.ItemContainerStyle>
+                        </ListView>
+                    </StackPanel>
+                </Grid>
+            </TabItem>
+            <TabItem  Name="settingsTab">
+                <TabItem.Header>
+                    <StackPanel  Height="48" Width="175" Orientation="Horizontal ">
+                        <TextBlock Text="{DynamicResource settings}" Margin="5,0" VerticalAlignment="Center" FontWeight="Bold" Style="{StaticResource TabItemText}"/>
+                    </StackPanel>
+                </TabItem.Header>
+                <Grid Background="White">
+                    <StackPanel Grid.Row="1" HorizontalAlignment="Stretch">
+                        <TextBlock Text="Kullanıcı Adı" FontSize="40" TextAlignment="Center"></TextBlock>
+                        <TextBlock Text="Kota Durumu" FontSize="40" TextAlignment="Center"></TextBlock>
+                        <TextBlock Text="Lisans Bilgisi" FontSize="40" TextAlignment="Center"></TextBlock>
+                        <TextBlock Text="Versiyon Bilgisi" FontSize="40" TextAlignment="Center"></TextBlock>
+                        <TextBlock Text="Uygulama Task Bilgisi" FontSize="40" TextAlignment="Center"></TextBlock>
+                        <TextBlock Text="Update Butonu" FontSize="40" TextAlignment="Center"></TextBlock>
+                        <TextBlock Text="Bandwith Tanımı" FontSize="40" TextAlignment="Center"></TextBlock>
+                    </StackPanel>
+                </Grid>
+            </TabItem>
+            <TabItem  Name="helpTab">
+                <TabItem.Header>
+                    <StackPanel  Height="48" Width="175" Orientation="Horizontal ">
+                        <TextBlock Text="{DynamicResource help}" Margin="5,0" VerticalAlignment="Center" FontWeight="Bold" Style="{StaticResource TabItemText}"/>
+                    </StackPanel>
+                </TabItem.Header>
+                <Grid Background="White">
+                    <StackPanel Grid.Row="1" HorizontalAlignment="Stretch">
+
+                        <GroupBox>
+                            <TextBlock Text="YARDIM" FontSize="40" TextAlignment="Center"></TextBlock>
+                        </GroupBox>
                     </StackPanel>
                 </Grid>
             </TabItem>
