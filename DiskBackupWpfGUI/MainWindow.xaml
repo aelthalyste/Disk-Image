@@ -14,65 +14,57 @@
             <RowDefinition Height="40"/>
             <RowDefinition/>
         </Grid.RowDefinitions>
-        <Rectangle Grid.Row="0" Fill="#F3F2F3" Grid.ColumnSpan="2" Stroke="#194771"/>
-        <Rectangle Fill="DarkGray" Margin="0,618,0,1" Grid.ColumnSpan="2" Grid.Row="1" />
+        <Rectangle Fill="#F2F2F2"/>
+        <!--<Rectangle Fill="DarkGray" Margin="0,618,0,1" Grid.ColumnSpan="2" Grid.Row="1" />-->
 
-        <Button Name="btnStopButton" ToolTip="{DynamicResource stop}" Width="32" Height="32" HorizontalAlignment="Right" Margin="0,4,47,4" Style="{StaticResource ImageButton}" Grid.Column="1">
-            <Button.Content>
-                <Image Height="40" Width="40" HorizontalAlignment="Center" VerticalAlignment="Center">
-                    <Image.Style>
-                        <Style TargetType="Image">
-                            <Setter Property="Source" Value="Resources/Icon/icons8_stop_8.ico"/>
-                        </Style>
-                    </Image.Style>
-                </Image>
-            </Button.Content>
-        </Button>
-
-        <Button Name="btnRefreshButton" ToolTip="{DynamicResource refresh}" Width="32" Height="32" HorizontalAlignment="Right" Margin="0,4,10,4" Style="{StaticResource ImageButton}" Grid.Column="1">
-            <Button.Content>
-                <Image Height="28">
-                    <Image.Style>
-                        <Style TargetType="Image">
-                            <Setter Property="Source" Value="Resources/Icon/icons8_refresh.ico" />
-                        </Style>
-                    </Image.Style>
-                </Image>
-            </Button.Content>
-        </Button>
-
-        <Button Name="btnPlayButton" ToolTip="{DynamicResource start}" HorizontalAlignment="Right" Margin="0,4,85,4" Style="{StaticResource ImageButton}" Width="32" Height="32" Grid.Column="1">
-            <Button.Content>
-                <Image Height="22">
-                    <Image.Style>
-                        <Style TargetType="Image">
-                            <Setter Property="Source" Value="Resources/Icon/icons8_play.ico" />
-                        </Style>
-                    </Image.Style>
-                </Image>
-            </Button.Content>
-        </Button>
-
-        <Button Name="btnCreateTask" HorizontalAlignment="Left" Margin="10,4,85,4" Style="{StaticResource CreateTaskButton}" Width="110" Height="32" Grid.Column="0">
-            <Button.Content>
-                <StackPanel Orientation="Horizontal">
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button Name="btnPlayButton" ToolTip="{DynamicResource start}" HorizontalAlignment="Right" Margin="5,4,0,4" Style="{StaticResource ImageButton}" Width="32" Height="32" Grid.Column="1">
+                <Button.Content>
                     <Image Height="22">
                         <Image.Style>
                             <Style TargetType="Image">
-                                <Setter Property="Source" Value="Resources/Icon/u58.png" />
+                                <Setter Property="Source" Value="Resources/Icon/icons8_play.ico" />
                             </Style>
                         </Image.Style>
                     </Image>
-                    <TextBlock Text="{DynamicResource createTask}" VerticalAlignment="Center" Margin="2,2" Style="{StaticResource CreateTaskButtonText}"/>
-                </StackPanel>
-            </Button.Content>
-        </Button>
-
-        <StackPanel Orientation="Vertical">
-            <TextBlock Name="makeABackup" Text="{DynamicResource makeABackup}"  FontSize="14" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="0,10,0,0" />
+                </Button.Content>
+            </Button>
+            <Button Name="btnStopButton" ToolTip="{DynamicResource stop}" Width="32" Height="32" HorizontalAlignment="Right" Margin="5,4,0,4" Style="{StaticResource ImageButton}" Grid.Column="1">
+                <Button.Content>
+                    <Image Height="40" Width="40" HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <Image.Style>
+                            <Style TargetType="Image">
+                                <Setter Property="Source" Value="Resources/Icon/icons8_stop_8.ico"/>
+                            </Style>
+                        </Image.Style>
+                    </Image>
+                </Button.Content>
+            </Button>
+            <Button Name="btnRefreshButton" ToolTip="{DynamicResource refresh}" Width="32" Height="32" HorizontalAlignment="Right" Margin="5,4,10,4" Style="{StaticResource ImageButton}" Grid.Column="1">
+                <Button.Content>
+                    <Image Height="28">
+                        <Image.Style>
+                            <Style TargetType="Image">
+                                <Setter Property="Source" Value="Resources/Icon/icons8_refresh.ico" />
+                            </Style>
+                        </Image.Style>
+                    </Image>
+                </Button.Content>
+            </Button>
         </StackPanel>
 
-        <TabControl Name="tabControl" TabStripPlacement="Left" BorderThickness="1,0,0,0" Grid.Row="1" BorderBrush="#194771">
+        <StackPanel Orientation="Horizontal">
+            <TextBlock Text="{DynamicResource lastBackup}" FontSize="14" FontWeight="Bold" VerticalAlignment="Center" Margin="15,0,0,0"/>
+            <TextBlock Name="runningStateBlock" FontWeight="Bold" FontSize="14" VerticalAlignment="Center" Margin="10,0,0,0" />
+        </StackPanel>
+        
+        <StackPanel Orientation="Vertical">
+            <TextBlock Name="makeABackup" Text="{DynamicResource makeABackup}" FontWeight="Bold" Foreground="#3A80BB" FontSize="14" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="0,10,0,0" />
+        </StackPanel>
+
+        <Rectangle Height="1" Fill="#428BCA" VerticalAlignment="Bottom"/>
+
+        <TabControl Name="tabControl" TabStripPlacement="Left" BorderThickness="1,0,0,0" Grid.Row="1" BorderBrush="#428BCA">
             <TabControl.Resources>
                 <Style TargetType="TabItem">
                     <Setter Property="Template">
@@ -99,14 +91,38 @@
                     </Setter>
                 </Style>
             </TabControl.Resources>
-            <TabItem Name="diskTab">
+            
+            <TabItem Name="createTaskTab">
                 <TabItem.Header>
                     <StackPanel Height="48" Width="175" Orientation="Horizontal">
-                        <TextBlock Text="{DynamicResource disks}" Margin="5,0" VerticalAlignment="Center" FontWeight="Bold" Style="{StaticResource TabItemText}"/>
+                        <Image Width="38" Margin="-3,0,0,0">
+                            <Image.Style>
+                                <Style TargetType="Image">
+                                    <Setter Property="Source" Value="Resources\Icon\icons8_create_2.ico" />
+                                </Style>
+                            </Image.Style>
+                        </Image>
+                        <TextBlock Text="{DynamicResource createTask}" Margin="10,0" VerticalAlignment="Center" Style="{StaticResource TabItemText}"/>
                     </StackPanel>
                 </TabItem.Header>
                 <Grid Background="White">
                     <StackPanel Grid.Row="1" HorizontalAlignment="Stretch">
+                        <StackPanel Grid.Row="0" HorizontalAlignment="Stretch">
+                            <Button Name="btnCreateTask" HorizontalAlignment="Left" Margin="10,4,85,4" Style="{StaticResource CreateTaskButton}" Width="110" Height="32" Grid.Column="0">
+                                <Button.Content>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Image Height="22">
+                                            <Image.Style>
+                                                <Style TargetType="Image">
+                                                    <Setter Property="Source" Value="Resources/Icon/u58.png" />
+                                                </Style>
+                                            </Image.Style>
+                                        </Image>
+                                        <TextBlock Text="{DynamicResource createTask}" VerticalAlignment="Center" Margin="2,2" Style="{StaticResource CreateTaskButtonText}"/>
+                                    </StackPanel>
+                                </Button.Content>
+                            </Button>
+                        </StackPanel>
                         <ListView Name="diskListBox" Height="432" Margin="5" DisplayMemberPath="Name" AllowDrop="True">
                             <ListView.View>
                                 <GridView>
@@ -190,14 +206,21 @@
             <TabItem Name="taskTab">
                 <TabItem.Header>
                     <StackPanel Height="48" Width="175" Orientation="Horizontal">
-                        <TextBlock Text="{DynamicResource tasks}" Margin="5,0" VerticalAlignment="Center" FontWeight="Bold" Style="{StaticResource TabItemText}"/>
+                        <Image Width="30">
+                            <Image.Style>
+                                <Style TargetType="Image">
+                                    <Setter Property="Source" Value="Resources\Icon\icons8_system_task_3.ico" />
+                                </Style>
+                            </Image.Style>
+                        </Image>
+                        <TextBlock Text="{DynamicResource tasks}" Margin="14,0" VerticalAlignment="Center" Style="{StaticResource TabItemText}"/>
                     </StackPanel>
                 </TabItem.Header>
                 <Grid Background="White">
                     <StackPanel Grid.Row="1" HorizontalAlignment="Stretch">
                         <StackPanel HorizontalAlignment="Stretch" Orientation="Horizontal">
 
-                            <ListView Name="taskListBox" Height="432" Margin="5,5,0,5" DisplayMemberPath="Name" AllowDrop="True" VerticalAlignment="Top">
+                            <ListView Name="taskListBox" Height="432" Margin="5,0,0,5" DisplayMemberPath="Name" AllowDrop="True" VerticalAlignment="Top">
                                 <ListView.View>
                                     <GridView>
                                         <GridViewColumn Width="40">
@@ -270,9 +293,9 @@
                                     </Style>
                                 </ListView.ItemContainerStyle>
                             </ListView>
-                            <StackPanel Margin="0,5,5,5" Height="432" Width="50" VerticalAlignment="Top" Background="#F3F2F3">
-
-                                <Button Name="btnTaskEdit" ToolTip="{DynamicResource edit}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5,5,5" Style="{StaticResource ImageButton}" Grid.Column="1">
+                            
+                            <StackPanel Margin="0,0,5,5" Height="432" Width="50" VerticalAlignment="Top" Background="#F2F2F2">
+                                <Button Name="btnTaskEdit" ToolTip="{DynamicResource edit}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,25,5,5" Style="{StaticResource ImageButton}" Grid.Column="1">
                                     <Button.Content>
                                         <Image Height="25" Width="25" HorizontalAlignment="Center" VerticalAlignment="Center">
                                             <Image.Style>
@@ -283,7 +306,6 @@
                                         </Image>
                                     </Button.Content>
                                 </Button>
-
                                 <Button Name="btnTaskStart" ToolTip="{DynamicResource start}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5,5,5"  Style="{StaticResource ImageButton}" Grid.Column="1">
                                     <Button.Content>
                                         <Image Height="25" Width="25" HorizontalAlignment="Center" VerticalAlignment="Center">
@@ -295,7 +317,6 @@
                                         </Image>
                                     </Button.Content>
                                 </Button>
-
                                 <Button Name="btnTaskStop" ToolTip="{DynamicResource stop}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5,5,5" Style="{StaticResource ImageButton}" Grid.Column="1">
                                     <Button.Content>
                                         <Image Height="40" Width="40" HorizontalAlignment="Center" VerticalAlignment="Center">
@@ -307,7 +328,6 @@
                                         </Image>
                                     </Button.Content>
                                 </Button>
-
                                 <Button Name="btnTaskClose" ToolTip="{DynamicResource close}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5,5,5" Style="{StaticResource ImageButton}" Grid.Column="1">
                                     <Button.Content>
                                         <Image Height="25" Width="25" HorizontalAlignment="Center" VerticalAlignment="Center">
@@ -319,7 +339,6 @@
                                         </Image>
                                     </Button.Content>
                                 </Button>
-
                                 <Button Name="btnTaskOpen" ToolTip="{DynamicResource open}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5,5,5" Style="{StaticResource ImageButton}" Grid.Column="1">
                                     <Button.Content>
                                         <Image Height="25" Width="25" HorizontalAlignment="Center" VerticalAlignment="Center">
@@ -331,7 +350,6 @@
                                         </Image>
                                     </Button.Content>
                                 </Button>
-
                                 <Button Name="btnTaskCopy" ToolTip="{DynamicResource copy}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5,5,5" Style="{StaticResource ImageButton}" Grid.Column="1">
                                     <Button.Content>
                                         <Image Height="25" Width="25" HorizontalAlignment="Center" VerticalAlignment="Center">
@@ -343,7 +361,6 @@
                                         </Image>
                                     </Button.Content>
                                 </Button>
-
                                 <Button Name="btnTaskPaste" ToolTip="{DynamicResource paste}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5,5,5" Style="{StaticResource ImageButton}" Grid.Column="1">
                                     <Button.Content>
                                         <Image Height="25" Width="25" HorizontalAlignment="Center" VerticalAlignment="Center">
@@ -355,7 +372,6 @@
                                         </Image>
                                     </Button.Content>
                                 </Button>
-
                                 <Button Name="btnTaskDelete" ToolTip="{DynamicResource delete}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5,5,5" Style="{StaticResource ImageButton}" Grid.Column="1">
                                     <Button.Content>
                                         <Image Height="30" Width="30" HorizontalAlignment="Center" VerticalAlignment="Center">
@@ -368,6 +384,7 @@
                                     </Button.Content>
                                 </Button>
                             </StackPanel>
+                            
                         </StackPanel>
                     </StackPanel>
                 </Grid>
@@ -376,12 +393,18 @@
             <TabItem  Name="restoreTab">
                 <TabItem.Header>
                     <StackPanel  Height="48" Width="175" Orientation="Horizontal ">
-                        <TextBlock Text="{DynamicResource restore}" Margin="5,0" VerticalAlignment="Center" FontWeight="Bold" Style="{StaticResource TabItemText}"/>
+                        <Image Width="30">
+                            <Image.Style>
+                                <Style TargetType="Image">
+                                    <Setter Property="Source" Value="Resources\Icon\icons8_restore_2.ico" />
+                                </Style>
+                            </Image.Style>
+                        </Image>
+                        <TextBlock Text="{DynamicResource restore}" Margin="15,0" VerticalAlignment="Center" Style="{StaticResource TabItemText}"/>
                     </StackPanel>
                 </TabItem.Header>
                 <Grid Background="White">
                     <StackPanel Grid.Row="1" HorizontalAlignment="Stretch">
-
                         <GroupBox>
                             <TextBlock Text="GERİ YÜKLE" FontSize="40" TextAlignment="Center"></TextBlock>
                         </GroupBox>
@@ -389,17 +412,23 @@
                 </Grid>
             </TabItem>
 
-            <TabItem Name="browseFilesTab">
+            <TabItem Name="viexBackupsTab">
                 <TabItem.Header>
                     <StackPanel Height="48" Width="175" Orientation="Horizontal">
-                        <TextBlock Text="{DynamicResource browseFiles}" Margin="5,0" VerticalAlignment="Center" FontWeight="Bold" Style="{StaticResource TabItemText}"/>
+                        <Image Width="30">
+                            <Image.Style>
+                                <Style TargetType="Image">
+                                    <Setter Property="Source" Value="Resources\Icon\icons8_search_property_3.ico" />
+                                </Style>
+                            </Image.Style>
+                        </Image>
+                        <TextBlock Text="{DynamicResource viewBackups}" Margin="15,0" VerticalAlignment="Center" Style="{StaticResource TabItemText}"/>
                     </StackPanel>
                 </TabItem.Header>
                 <Grid Background="White">
                     <StackPanel Grid.Row="1" HorizontalAlignment="Stretch">
                         <StackPanel HorizontalAlignment="Stretch" Orientation="Horizontal">
-
-                            <ListView Name="browseFilesListBox" Height="432" Margin="5,5,0,5" DisplayMemberPath="Name" AllowDrop="True" VerticalAlignment="Top">
+                            <ListView Name="viewBackupsListBox" Height="432" Margin="5,0,0,5" DisplayMemberPath="Name" AllowDrop="True" VerticalAlignment="Top">
                                 <ListView.View>
                                     <GridView>
                                         <GridViewColumn Width="40">
@@ -465,11 +494,10 @@
                                     </Style>
                                 </ListView.ItemContainerStyle>
                             </ListView>
-                            <StackPanel Margin="0,5,5,5" Height="432" Width="50" VerticalAlignment="Top" Background="#F3F2F3">
-
-                                <Button Name="btnFilesDelete" ToolTip="{DynamicResource delete}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5,5,5" Style="{StaticResource ImageButton}" Grid.Column="1">
+                            <StackPanel Margin="0,0,5,5" Height="432" Width="50" VerticalAlignment="Top" Background="#F2F2F2">
+                                <Button Name="btnFilesDelete" ToolTip="{DynamicResource delete}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,25,5,5" Style="{StaticResource ImageButton}" Grid.Column="1">
                                     <Button.Content>
-                                        <Image Height="25" Width="25" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <Image Height="30" Width="30" HorizontalAlignment="Center" VerticalAlignment="Center">
                                             <Image.Style>
                                                 <Style TargetType="Image">
                                                     <Setter Property="Source" Value="Resources/Icon/icons8_cancel.ico"/>
@@ -486,14 +514,20 @@
             <TabItem Name="backupAreaTab">
                 <TabItem.Header>
                     <StackPanel Height="48" Width="175" Orientation="Horizontal">
-                        <TextBlock Text="{DynamicResource backupAreas}" Margin="5,0" VerticalAlignment="Center" FontWeight="Bold" Style="{StaticResource TabItemText}"/>
+                        <Image Width="35" Margin="-4, 0, 0, 0">
+                            <Image.Style>
+                                <Style TargetType="Image">
+                                    <Setter Property="Source" Value="Resources\Icon\icons8_stack_3.ico" />
+                                </Style>
+                            </Image.Style>
+                        </Image>
+                        <TextBlock Text="{DynamicResource backupAreas}" Margin="13,0" VerticalAlignment="Center" Style="{StaticResource TabItemText}"/>
                     </StackPanel>
                 </TabItem.Header>
                 <Grid Background="White">
                     <StackPanel Grid.Row="1" HorizontalAlignment="Stretch">
                         <StackPanel HorizontalAlignment="Stretch" Orientation="Horizontal">
-
-                            <ListView Name="backupAreaListBox" Height="432" Margin="5,5,0,5" DisplayMemberPath="Name" AllowDrop="True" VerticalAlignment="Top">
+                            <ListView Name="backupAreaListBox" Height="432" Margin="5,0,0,5" DisplayMemberPath="Name" AllowDrop="True" VerticalAlignment="Top">
                                 <ListView.View>
                                     <GridView>
                                         <GridViewColumn Width="40">
@@ -566,9 +600,8 @@
                                     </Style>
                                 </ListView.ItemContainerStyle>
                             </ListView>
-                            <StackPanel Margin="0,5,5,5" Height="432" Width="50" VerticalAlignment="Top" Background="#F3F2F3">
-
-                                <Button Name="btnBackupAreaEdit" ToolTip="{DynamicResource edit}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5,5,5" Style="{StaticResource ImageButton}" Grid.Column="1">
+                            <StackPanel Margin="0,0,5,5" Height="432" Width="50" VerticalAlignment="Top" Background="#F2F2F2">
+                                <Button Name="btnBackupAreaEdit" ToolTip="{DynamicResource edit}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,25,5,5" Style="{StaticResource ImageButton}" Grid.Column="1">
                                     <Button.Content>
                                         <Image Height="25" Width="25" HorizontalAlignment="Center" VerticalAlignment="Center">
                                             <Image.Style>
@@ -581,7 +614,7 @@
                                 </Button>
                                 <Button Name="btnBackupAreaDelete" ToolTip="{DynamicResource delete}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5,5,5" Style="{StaticResource ImageButton}" Grid.Column="1">
                                     <Button.Content>
-                                        <Image Height="25" Width="25" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <Image Height="30" Width="30" HorizontalAlignment="Center" VerticalAlignment="Center">
                                             <Image.Style>
                                                 <Style TargetType="Image">
                                                     <Setter Property="Source" Value="Resources/Icon/icons8_cancel.ico"/>
@@ -590,23 +623,29 @@
                                         </Image>
                                     </Button.Content>
                                 </Button>
-
                             </StackPanel>
-
                         </StackPanel>
                     </StackPanel>
                 </Grid>
             </TabItem>
+            
             <TabItem Name="logTab">
                 <TabItem.Header>
                     <StackPanel Height="48" Width="175" Orientation="Horizontal">
-                        <TextBlock Text="{DynamicResource pastActivities}" Margin="5,0" VerticalAlignment="Center" FontWeight="Bold" Style="{StaticResource TabItemText}"/>
+                        <Image Width="35" Margin="-3,0,0,0">
+                            <Image.Style>
+                                <Style TargetType="Image">
+                                    <Setter Property="Source" Value="Resources\Icon\icons8_clock_2.ico" />
+                                </Style>
+                            </Image.Style>
+                        </Image>
+                        <TextBlock Text="{DynamicResource pastActivities}" Margin="12,0" VerticalAlignment="Center" Style="{StaticResource TabItemText}"/>
                     </StackPanel>
                 </TabItem.Header>
                 <Grid Background="White">
                     <StackPanel Grid.Row="1" HorizontalAlignment="Stretch">
                         <StackPanel HorizontalAlignment="Stretch" Orientation="Horizontal">
-                            <ListView Name="logListBox" Height="432" Margin="5,5,0,5" DisplayMemberPath="Name" AllowDrop="True" VerticalAlignment="Top">
+                            <ListView Name="logListBox" Height="432" Margin="5,0,0,5" DisplayMemberPath="Name" AllowDrop="True" VerticalAlignment="Top">
                                 <ListView.View>
                                     <GridView>
                                         <GridViewColumn Width="40">
@@ -669,10 +708,10 @@
                                     </Style>
                                 </ListView.ItemContainerStyle>
                             </ListView>
-                            <StackPanel Margin="0,5,5,5" Height="432" Width="50" VerticalAlignment="Top" Background="#F3F2F3">
-                                <Button Name="btnLogDelete" ToolTip="{DynamicResource delete}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5,5,5" Style="{StaticResource ImageButton}" Grid.Column="1">
+                            <StackPanel Margin="0,0,5,5" Height="432" Width="50" VerticalAlignment="Top" Background="#F2F2F2">
+                                <Button Name="btnLogDelete" ToolTip="{DynamicResource delete}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,25,5,5" Style="{StaticResource ImageButton}" Grid.Column="1">
                                     <Button.Content>
-                                        <Image Height="25" Width="25" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <Image Height="30" Width="30" HorizontalAlignment="Center" VerticalAlignment="Center">
                                             <Image.Style>
                                                 <Style TargetType="Image">
                                                     <Setter Property="Source" Value="Resources/Icon/icons8_cancel.ico"/>
@@ -683,8 +722,7 @@
                                 </Button>
                             </StackPanel>
                         </StackPanel>
-                        <!--asdasfa-->
-                        <ListView Name="logDownListBox" Height="432" Margin="5,5,0,5" DisplayMemberPath="Name" AllowDrop="True" VerticalAlignment="Top">
+                        <ListView Name="logDownListBox" Height="160" Margin="5,5,10,5" DisplayMemberPath="Name" AllowDrop="True" VerticalAlignment="Top">
                             <ListView.View>
                                 <GridView>
                                     <GridViewColumn Header="{DynamicResource time}" Width="300">
@@ -730,7 +768,14 @@
             <TabItem  Name="settingsTab">
                 <TabItem.Header>
                     <StackPanel  Height="48" Width="175" Orientation="Horizontal ">
-                        <TextBlock Text="{DynamicResource settings}" Margin="5,0" VerticalAlignment="Center" FontWeight="Bold" Style="{StaticResource TabItemText}"/>
+                        <Image Width="32">
+                            <Image.Style>
+                                <Style TargetType="Image">
+                                    <Setter Property="Source" Value="Resources\Icon\icons8_settings_4.ico" />
+                                </Style>
+                            </Image.Style>
+                        </Image>
+                        <TextBlock Text="{DynamicResource settings}" Margin="14,0" VerticalAlignment="Center" Style="{StaticResource TabItemText}"/>
                     </StackPanel>
                 </TabItem.Header>
                 <Grid Background="White">
@@ -748,12 +793,18 @@
             <TabItem  Name="helpTab">
                 <TabItem.Header>
                     <StackPanel  Height="48" Width="175" Orientation="Horizontal ">
-                        <TextBlock Text="{DynamicResource help}" Margin="5,0" VerticalAlignment="Center" FontWeight="Bold" Style="{StaticResource TabItemText}"/>
+                        <Image Width="40" Margin="-5,0,0,0">
+                            <Image.Style>
+                                <Style TargetType="Image">
+                                    <Setter Property="Source" Value="Resources\Icon\icons8_help_2.ico" />
+                                </Style>
+                            </Image.Style>
+                        </Image>
+                        <TextBlock Text="{DynamicResource help}" Margin="12,0" VerticalAlignment="Center" Style="{StaticResource TabItemText}"/>
                     </StackPanel>
                 </TabItem.Header>
                 <Grid Background="White">
                     <StackPanel Grid.Row="1" HorizontalAlignment="Stretch">
-
                         <GroupBox>
                             <TextBlock Text="YARDIM" FontSize="40" TextAlignment="Center"></TextBlock>
                         </GroupBox>

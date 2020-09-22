@@ -27,7 +27,7 @@
     <system:String x:Key="close">Kapat</system:String>
     <system:String x:Key="open">Aç</system:String>
     <system:String x:Key="copy">Kopyala</system:String>
-    <system:String x:Key="restore">Geri Yükleme</system:String>
+    <system:String x:Key="restore">Geri Yükle</system:String>
     <system:String x:Key="paste">Yapıştır</system:String>
     <system:String x:Key="delete">Sil</system:String>
     <system:String x:Key="refresh">Yenile</system:String>
@@ -36,7 +36,7 @@
     <system:String x:Key="size">Boyut</system:String>
     <system:String x:Key="browseFiles">Dosyalara Gözat</system:String>
     <system:String x:Key="domainName">Alan Adı</system:String>
-    <system:String x:Key="totalSize">Toplam Alan</system:String>
+    <system:String x:Key="totalSize">Toplam Alan B/Y</system:String>
     <system:String x:Key="usedSize">Kullanılan Alan</system:String>
     <system:String x:Key="localPath">Yerel Yol</system:String>
     <system:String x:Key="cloudPath">Bulut Alan</system:String>
@@ -50,4 +50,6 @@
     <system:String x:Key="detail">Detay</system:String>
     <system:String x:Key="settings">Ayarlar</system:String>
     <system:String x:Key="help">Yardım</system:String>
+    <system:String x:Key="viewBackups">Yedekleri Görüntüle</system:String>
+    <system:String x:Key="lastBackup">Son Yedekleme : </system:String>
 </ResourceDictionary>
