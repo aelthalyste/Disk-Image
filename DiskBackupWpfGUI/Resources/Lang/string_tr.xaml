@@ -13,6 +13,12 @@
     <system:String x:Key="freeSize">Boş Alan</system:String>
     <system:String x:Key="diskType">Türü</system:String>
     <system:String x:Key="fileSystem">Dosya Sistemi</system:String>
-    <system:String x:Key="diskStatu">Durum</system:String>
-
+    <system:String x:Key="statu">Durum</system:String>
+    <system:String x:Key="tasks">Görevler</system:String>
+    <system:String x:Key="taskName">Görev Adı</system:String>
+    <system:String x:Key="object">Obje</system:String>
+    <system:String x:Key="lastStudy">Son Çalışma</system:String>
+    <system:String x:Key="nextStudy">Sonraki Çalışma</system:String>
+    <system:String x:Key="target">Hedef</system:String>
+    <system:String x:Key="statement">Açıklama</system:String>
 </ResourceDictionary>
