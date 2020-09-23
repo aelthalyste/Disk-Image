@@ -108,7 +108,7 @@
                 <Grid Background="White">
                     <StackPanel Grid.Row="1" HorizontalAlignment="Stretch">
                         <StackPanel Grid.Row="0" HorizontalAlignment="Stretch">
-                            <Button Name="btnCreateTask" HorizontalAlignment="Left" Margin="10,4,85,4" Style="{StaticResource CreateTaskButton}" Width="110" Height="32" Grid.Column="0">
+                            <Button Name="btnCreateTask" HorizontalAlignment="Left" Margin="10,4,85,4" Style="{StaticResource CreateTaskButton}" Width="110" Height="32" Grid.Column="0" Click="btnCreateTask_Click">
                                 <Button.Content>
                                     <StackPanel Orientation="Horizontal">
                                         <Image Height="22">

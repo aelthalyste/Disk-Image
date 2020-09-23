@@ -1,6 +1,5 @@
 ﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                    xmlns:local="clr-namespace:DiskBackupWpfGUI.Resources.Lang" 
                     xmlns:system="clr-namespace:System;assembly=mscorlib">
     
     <system:String x:Key="appFullName">Narbulut Disk Yedekleme Uygulaması</system:String>
@@ -52,4 +51,44 @@
     <system:String x:Key="help">Yardım</system:String>
     <system:String x:Key="viewBackups">Yedekleri Görüntüle</system:String>
     <system:String x:Key="lastBackup">Son Yedekleme : </system:String>
+    <system:String x:Key="name">İsim</system:String>
+    <system:String x:Key="nameWithDot">İsim : </system:String>
+    <system:String x:Key="tempFolder">Geçici Klasör</system:String>
+    <system:String x:Key="sourceSelection">Kaynak Seçimi </system:String>
+    <system:String x:Key="scheduler">Zamanlama</system:String>
+    <system:String x:Key="abstarct">Özet</system:String>
+    <system:String x:Key="diff">Differential</system:String>
+    <system:String x:Key="diffDescription">Seçilen dosyanızı ilk yedeğinize göre alır</system:String>
+    <system:String x:Key="incDescription">Seçilen dosyanızı son yedeğinize göre alır</system:String>
+    <system:String x:Key="inc">Incremental</system:String>
+    <system:String x:Key="back">Geri</system:String>
+    <system:String x:Key="next">İleri</system:String>
+    <system:String x:Key="cancel">İptal</system:String>
+    <system:String x:Key="okay">Tamam</system:String>
+    <system:String x:Key="dbType">Veritabanı Türü</system:String>
+    <system:String x:Key="space2Backup">Yedeklenecek Alan</system:String>
+    <system:String x:Key="space2Backups">Yedeklenecek Alanlar : </system:String>
+    <system:String x:Key="fullSize">Dolu Alan</system:String>
+    <system:String x:Key="autoRun">Otomatik Çalıştır</system:String>
+    <system:String x:Key="autoTry">Otomatik Deneme</system:String>
+    <system:String x:Key="auto">Otomatik</system:String>
+    <system:String x:Key="dailyTime">Günlük Zaman</system:String>
+    <system:String x:Key="weeklyTime">Haftalık Zaman</system:String>
+    <system:String x:Key="periodic">Periyodik</system:String>
+    <system:String x:Key="days">Günler</system:String>
+    <system:String x:Key="months">Aylar</system:String>
+    <system:String x:Key="try">Deneme</system:String>
+    <system:String x:Key="times">Kez</system:String>
+    <system:String x:Key="minute">Dakika</system:String>
+    <system:String x:Key="timeFailDesc">Eğer başarısız olursa tekrar dene</system:String>
+    <system:String x:Key="timeWait">Her denemeden önce bekle</system:String>
+    <system:String x:Key="monday">Pazartesi</system:String>
+    <system:String x:Key="tuesday">Salı</system:String>
+    <system:String x:Key="wednesday">Çarşamba</system:String>
+    <system:String x:Key="thursday">Perşembe</system:String>
+    <system:String x:Key="friday">Cuma</system:String>
+    <system:String x:Key="saturday">Cumartesi</system:String>
+    <system:String x:Key="sunday">Pazar</system:String>
+    <system:String x:Key="backupType">Yedekleme Türü : </system:String>
+    <system:String x:Key="schedulerTasks">Zamanlaştırılmış Görevler : </system:String>
 </ResourceDictionary>

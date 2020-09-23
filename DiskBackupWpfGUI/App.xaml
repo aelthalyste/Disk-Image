@@ -4,7 +4,7 @@
              xmlns:local="clr-namespace:ManagementUI"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
-
+        
         <!--original start-->
         <Style TargetType="TabItem">
             <Setter Property="Template">
@@ -47,7 +47,25 @@
 
             </Style.Triggers>
         </Style>
-        
+
+        <Style x:Key="NCTTabItemText" TargetType="{x:Type TextBlock}">
+            <Setter Property="FontFamily" Value="Calibri"/>
+            <Setter Property="FontSize" Value="16"/>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=TabItem}}" Value="True">
+                    <Setter Property="Foreground" Value="DarkGoldenrod"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=TabItem}}" Value="False">
+                    <Setter Property="Foreground" Value="Black"/>
+                </DataTrigger>
+
+                <DataTrigger Binding="{Binding IsEnabled, RelativeSource={RelativeSource AncestorType=TabItem}}" Value="False">
+                    <Setter Property="Foreground" Value="Purple"/>
+                </DataTrigger>
+
+            </Style.Triggers>
+        </Style>
+
         <!--<Style x:Key="BlueButton" TargetType="{x:Type Button}">
             <Setter Property="Template">
                 <Setter.Value>
