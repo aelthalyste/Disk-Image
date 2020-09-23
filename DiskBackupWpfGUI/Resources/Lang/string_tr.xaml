@@ -78,8 +78,8 @@
     <system:String x:Key="days">Günler</system:String>
     <system:String x:Key="months">Aylar</system:String>
     <system:String x:Key="try">Deneme</system:String>
-    <system:String x:Key="times">Kez</system:String>
-    <system:String x:Key="minute">Dakika</system:String>
+    <system:String x:Key="times">kez</system:String>
+    <system:String x:Key="minute">dakika</system:String>
     <system:String x:Key="timeFailDesc">Eğer başarısız olursa tekrar dene</system:String>
     <system:String x:Key="timeWait">Her denemeden önce bekle</system:String>
     <system:String x:Key="monday">Pazartesi</system:String>
