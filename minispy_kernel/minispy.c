@@ -191,7 +191,6 @@ Return Value:
             }
             if (status == STATUS_FLT_DELETING_OBJECT) {
                 DbgPrint("FLT_DELETING_OBJECT");
-                
             }
             DbgPrint("Create comm failed %i\n", status);
             
@@ -262,7 +261,7 @@ Return Value:
                         DbgPrint("Struct size %i\n", sizeof(TrackedVolumes[0]));
                     }
                     else {
-                        FileSize = FI.EndOfFile.QuadPart;
+                        FileSize = (INT32)(FI.EndOfFile.QuadPart); // safe conversion
                     }
                     DbgPrint("File size %i\n", FI.EndOfFile.QuadPart);
                     
@@ -313,7 +312,6 @@ Return Value:
         //Initializing each volume entry
         for (int i = 0; i < NAR_MAX_VOLUME_COUNT; i++) {
             
-            
             ExInitializeFastMutex(&NarData.VolumeRegionBuffer[i].FastMutex);
             NarData.VolumeRegionBuffer[i].MemoryBuffer = 0;
             NarData.VolumeRegionBuffer[i].MemoryBuffer = ExAllocatePoolWithTag(PagedPool, NAR_MEMORYBUFFER_SIZE, NAR_TAG);
@@ -341,17 +339,17 @@ Return Value:
         status = FltStartFiltering(NarData.Filter);
         
         
-        
         char UniBuffer[32];
         DbgPrint("Found %i volumes at boot file, will initialize accordingly\n", TrackedVolumesCount);
-        
+        int AddedVolumeIndex = 0;
+
         for (int i = 0; i < TrackedVolumesCount; i++) {
             
             DbgPrint("Will try to add volume %c to filter\n", TrackedVolumes[i].Letter);
 
-            memset(UniBuffer, 0, 32);
-            UNICODE_STRING VolumeNameUniStr;
-            RtlInitEmptyUnicodeString(&VolumeNameUniStr, UniBuffer, 32);
+            memset(UniBuffer, 0, sizeof(UniBuffer));
+            UNICODE_STRING VolumeNameUniStr = {0};
+            RtlInitEmptyUnicodeString(&VolumeNameUniStr, UniBuffer, sizeof(UniBuffer));
             
             status = RtlUnicodeStringPrintf(&VolumeNameUniStr, L"%c:", TrackedVolumes[i].Letter);
             if (NT_SUCCESS(status)) {
@@ -361,17 +359,25 @@ Return Value:
                 status = FltGetVolumeFromName(NarData.Filter, &VolumeNameUniStr, &Volume);
                 if (NT_SUCCESS(status)) {
                     
+                    DbgPrint("Succ get volume name from volume letter (%c)\n", TrackedVolumes[i].Letter);
+
                     ULONG BufferNeeded = 0;
                     status = FltGetVolumeGuidName(Volume, &NarData.VolumeRegionBuffer[i].GUIDStrVol, &BufferNeeded);
                     
                     if (NT_SUCCESS(status)) {
                         
+                        DbgPrint("Before fltattach \n");
                         status = FltAttachVolume(NarData.Filter, Volume, NULL, NULL);
-                        if (NT_SUCCESS(status)) {
-                            DbgPrint("Successfully attached volume %wZ\n", TrackedVolumes[i].Letter, &NarData.VolumeRegionBuffer[i].GUIDStrVol);
+                        DbgPrint("After FltAttachVolume, status %X\n", status);
+                        if (status == STATUS_SUCCESS) {
+                            
+                            DbgPrint("Hell is other people\n");
+                            DbgPrint("Successfully attached volume (%c) GUID : (%wZ)\n", TrackedVolumes[i].Letter, &NarData.VolumeRegionBuffer[i].GUIDStrVol);
+                            DbgPrint("GUID len %i, max len %i\n", NarData.VolumeRegionBuffer[i].GUIDStrVol.Length, NarData.VolumeRegionBuffer[i].GUIDStrVol.MaximumLength);
+
                         }
                         else {
-                            DbgPrint("Couldnt attach volume volume %c, GUID: %wZ, status %i\n", &NarData.VolumeRegionBuffer[i].GUIDStrVol, status);
+                            DbgPrint("Couldnt attach volume volume %c, GUID: %wZ, status %i\n", TrackedVolumes[i].Letter, &NarData.VolumeRegionBuffer[i].GUIDStrVol, status);
                             // revert guid str to null again
                             memset(NarData.VolumeRegionBuffer[i].Reserved, 0, NAR_GUID_STR_SIZE);
                             NarData.VolumeRegionBuffer[i].GUIDStrVol.Length = 0;
@@ -566,17 +572,15 @@ Return Value:
     FltCloseCommunicationPort(NarData.ServerPort);
     DbgPrint("Communication port closed\n");
     
-    
+
     if (NarData.VolumeRegionBuffer != NULL) {
         
         for (int i = 0; i < NAR_MAX_VOLUME_COUNT; i++) {
             if (NarData.VolumeRegionBuffer[i].MemoryBuffer != NULL) {
                 DbgPrint("Freeing volume memory buffer %i\n", i);
                 ExFreePoolWithTag(NarData.VolumeRegionBuffer[i].MemoryBuffer, NAR_TAG);
-                NarData.VolumeRegionBuffer[i].MemoryBuffer = 0;
             }
             else {
-                DbgPrint("Volume entry %i was null\n", i);
                 break;
             }
         }
@@ -593,9 +597,11 @@ Return Value:
     ExDeletePagedLookasideList(&NarData.GUIDComparePagedLookAsideList);
     DbgPrint("GUID compare paged lookaside list deleted\n");
     
+    
     FltUnregisterFilter(NarData.Filter);
     DbgPrint("Filter unregistered\n");
     
+
     
     return STATUS_SUCCESS;
 }
@@ -613,6 +619,19 @@ SpyTeardownStart(
     return STATUS_SUCCESS;
 }
 
+
+void
+SpyTeardownComplete(
+        _In_ PCFLT_RELATED_OBJECTS FltObjects,
+        _In_ FLT_INSTANCE_TEARDOWN_FLAGS Reason
+ ){
+
+  UNREFERENCED_PARAMETER(FltObjects);
+  UNREFERENCED_PARAMETER(Reason);
+  DbgPrint("Teardown complete\n");
+  
+  return;
+}
 
 NTSTATUS
 SpyQueryTeardown(
@@ -944,7 +963,6 @@ NarSubMemoryExists(void *mem1, void* mem2, int mem1len, int mem2len){
         if(S1[k] == S2[j]){
             
             int temp = k;
-            int found = FALSE;
             
             while(k < mem1len && j < mem2len){
                 if(S1[k] == S2[j]){
@@ -1026,7 +1044,7 @@ Return Value:
     ULONG PID = FltGetRequestorProcessId(Data);
     // filter out temporary files and files that would be closed if last handle freed
     if ((Data->Iopb->TargetFileObject->Flags & FO_TEMPORARY_FILE) == FO_TEMPORARY_FILE || (Data->Iopb->TargetFileObject->Flags & FO_DELETE_ON_CLOSE) == FO_DELETE_ON_CLOSE || PID == NarData.UserModePID) {
-        return  FLT_PREOP_SUCCESS_WITH_CALLBACK;
+        return  FLT_PREOP_SUCCESS_NO_CALLBACK;
     }
 
     PFLT_FILE_NAME_INFORMATION nameInfo = NULL;
@@ -1058,7 +1076,7 @@ Return Value:
             void* UnicodeStrBuffer = ExAllocateFromPagedLookasideList(&NarData.LookAsideList);
             if (UnicodeStrBuffer == NULL) {
                 DbgPrint("Couldnt allocate memory for unicode string\n");
-                return FLT_POSTOP_FINISHED_PROCESSING;
+                return FLT_PREOP_SUCCESS_NO_CALLBACK;
             }
 
             RtlInitEmptyUnicodeString(&UniStr, UnicodeStrBuffer, NAR_LOOKASIDE_SIZE);
@@ -1098,6 +1116,10 @@ Return Value:
 
 
             
+           
+#else
+
+
             RtlUnicodeStringPrintf(&UniStr, L"\\AppData\\Local\\Temp");
             if (NarSubMemoryExists(nameInfo->Name.Buffer, UniStr.Buffer, nameInfo->Name.Length, UniStr.Length)) {
                 ExFreeToPagedLookasideList(&NarData.LookAsideList, UnicodeStrBuffer);
@@ -1133,8 +1155,6 @@ Return Value:
                 ExFreeToPagedLookasideList(&NarData.LookAsideList, UnicodeStrBuffer);
                 goto NAR_PREOP_END;
             }
-#else
-
            
 
 #endif
@@ -1227,14 +1247,15 @@ Return Value:
 
             
             if (!NT_SUCCESS(status)) {
-                DbgPrint("FltFsControl failed with code %i\n", status);
+                DbgPrint("FltFsControl failed with code %i,  file name %wZ\n", status, &nameInfo->Name);
+
                 ExFreePoolWithTag(WholeFileMapBuffer, NAR_TAG);
                 ExFreeToPagedLookasideList(&NarData.LookAsideList, UnicodeStrBuffer);
 
                 goto NAR_PREOP_END;
             }
 
-            for (int i = 0; i< WholeFileMapBuffer->ExtentCount ;i++) {
+            for (unsigned int i = 0; i < WholeFileMapBuffer->ExtentCount ;i++) {
 
                 ClusterMapBuffer.Extents[0] = WholeFileMapBuffer->Extents[i];
 
@@ -1267,10 +1288,6 @@ Return Value:
                         ClusterMapBuffer.Extents[0].NextVcn.QuadPart - ClusterMapBuffer.StartingVcn.QuadPart,
                         ClusterMapBuffer.Extents[0].NextVcn.QuadPart,
                         ClusterMapBuffer.StartingVcn.QuadPart, &nameInfo->Name);
-
-                    for (int i = 0; i < RecCount; i++) {
-                        DbgPrint("Start: %X\tLen: %X\n", P[i].S, P[i].L);
-                    }
 
                     Error |= NAR_ERR_REG_BELOW_ZERO;
                     break;
@@ -1416,6 +1433,9 @@ Return Value:
 
 
             }
+            else{
+                DbgPrint("Temporary if failed 1293123\n");
+            }
 
 
 
@@ -1438,7 +1458,7 @@ Return Value:
 #endif
 
 
-    return FLT_PREOP_SUCCESS_WITH_CALLBACK;
+    return FLT_PREOP_SUCCESS_NO_CALLBACK;
 
 NAR_PREOP_END:
     //ExFreeToPagedLookasideList(&NarData.LookAsideList, Buffer);
@@ -1485,6 +1505,8 @@ Return Value:
 
 --*/
 {
+
+
     
     
     //PFLT_TAG_DATA_BUFFER tagData;
@@ -1495,7 +1517,8 @@ Return Value:
     UNREFERENCED_PARAMETER(copyLength);
     UNREFERENCED_PARAMETER(Data);
     UNREFERENCED_PARAMETER(CompletionContext);
-    
+    UNREFERENCED_PARAMETER(Flags);
+
     NTSTATUS status;
     UNREFERENCED_PARAMETER(status);
     
@@ -1526,7 +1549,7 @@ SpyVolumeInstanceSetup(
     
     PAGED_CODE();
     
-    if (Flags & FLTFL_INSTANCE_SETUP_MANUAL_ATTACHMENT
+    if ((Flags & FLTFL_INSTANCE_SETUP_MANUAL_ATTACHMENT)
         && VolumeFilesystemType == FLT_FSTYPE_NTFS
         && VolumeDeviceType == FILE_DEVICE_DISK_FILE_SYSTEM) {
         

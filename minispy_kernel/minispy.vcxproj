@@ -109,6 +109,7 @@
       </ExceptionHandling>
       <Optimization>MaxSpeed</Optimization>
       <FavorSizeOrSpeed>Size</FavorSizeOrSpeed>
+      <AssemblerOutput>AssemblyAndSourceCode</AssemblerOutput>
     </ClCompile>
     <ResourceCompile>
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);..\inc</AdditionalIncludeDirectories>
@@ -131,6 +132,7 @@
       <PreprocessorDefinitions>%(PreprocessorDefinitions);_WIN2K_COMPAT_SLIST_USAGE</PreprocessorDefinitions>
       <ExceptionHandling>
       </ExceptionHandling>
+      <AssemblerOutput>AssemblyAndSourceCode</AssemblerOutput>
     </ClCompile>
     <ResourceCompile>
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);..\inc</AdditionalIncludeDirectories>
@@ -153,6 +155,7 @@
       <PreprocessorDefinitions>%(PreprocessorDefinitions);_WIN2K_COMPAT_SLIST_USAGE</PreprocessorDefinitions>
       <ExceptionHandling>
       </ExceptionHandling>
+      <AssemblerOutput>AssemblyAndSourceCode</AssemblerOutput>
     </ClCompile>
     <ResourceCompile>
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);..\inc</AdditionalIncludeDirectories>
@@ -175,6 +178,7 @@
       <PreprocessorDefinitions>%(PreprocessorDefinitions);_WIN2K_COMPAT_SLIST_USAGE</PreprocessorDefinitions>
       <ExceptionHandling>
       </ExceptionHandling>
+      <AssemblerOutput>AssemblyAndSourceCode</AssemblerOutput>
     </ClCompile>
     <ResourceCompile>
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);..\inc</AdditionalIncludeDirectories>

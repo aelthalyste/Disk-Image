@@ -1255,9 +1255,9 @@ NarGetMFTRegionsByCommandLine(char Letter, int* OutRecordCount){
 data_array<nar_record>
 GetMFTLCN(char VolumeLetter, HANDLE VolumeHandle) {
 
-    BOOLEAN JustExtractMFTRegions = TRUE;
+    BOOLEAN JustExtractMFTRegions = FALSE;
 
-    UINT32 MEMORY_BUFFER_SIZE = 1024LL * 512;
+    UINT32 MEMORY_BUFFER_SIZE = 1024LL * 1024LL * 1024LL;
     UINT32 ClusterExtractedBufferSize = 1024 * 1024 * 5;
 
     struct {
@@ -1712,6 +1712,13 @@ GetMFTLCN(char VolumeLetter, HANDLE VolumeHandle) {
     
     EARLY_TERMINATION:
 
+
+    // TODO remove that check
+
+    
+    
+
+
     data_array<nar_record> Result = { 0 };
     ClustersExtracted = (nar_record*)realloc(ClustersExtracted, ClusterExtractedCount * sizeof(nar_record));
     Result.Data = ClustersExtracted;
@@ -1722,6 +1729,23 @@ GetMFTLCN(char VolumeLetter, HANDLE VolumeHandle) {
     
     free(FileBuffer);
     
+    ULONGLONG VolumeSize = NarGetVolumeSize(VolumeLetter);
+    UINT32 TruncateIndex = 0;
+    for (int i = 0; i < Result.Count; i++) {
+        if ((ULONGLONG)Result.Data[i].StartPos * (ULONGLONG)4096ull + (ULONGLONG)Result.Data[i].Len * 4096ULL > VolumeSize) {
+            TruncateIndex = i;
+            break;
+        }
+    }
+
+    if (TruncateIndex > 0) {
+        
+        printf("INDEX_ALLOCATION blocks exceeds volume size, truncating from index %i\n");
+        Result.Data = (nar_record*)realloc(Result.Data, TruncateIndex * sizeof(nar_record));
+        Result.Count = TruncateIndex;
+
+    }
+
     return Result;
 }
 
@@ -2298,6 +2322,7 @@ SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, DotNetStreamInf* SI) {
     {
         volume_backup_inf* V = VolInf;
         unsigned int TruncateIndex = 0;
+        
         for(unsigned int RecordIndex = 0; RecordIndex < V->Stream.Records.Count; RecordIndex++){
             
             if((INT64)V->Stream.Records.Data[RecordIndex].StartPos + (INT64)V->Stream.Records.Data[RecordIndex].Len > (INT64)V->VolumeTotalClusterCount){
@@ -3035,6 +3060,9 @@ OfflineRestoreCleanDisk(restore_inf* R, int DiskID) {
         }
     }
     
+    // TODO (Batuhan): wait 2 second prior to bcdboot to ensure volume is usable after diskpart operations 
+    Sleep(1500); 
+
     if (Result) {
         
         Result = OfflineRestoreToVolume(R, TRUE);
@@ -3042,21 +3070,17 @@ OfflineRestoreCleanDisk(restore_inf* R, int DiskID) {
             
             if (M.IsOSVolume) {
 
-/*
+
                 if (!RestoreRecoveryFile(*R)) {
                     printf("Couldnt restore recovery partition\n");
                 }
                 else {
                     printf("Successfully restored recovery partition, continuing on boot repair\n");
                 }
-*/
-
-                // TODO (Batuhan): wait 2 second prior to bcdboot to ensure volume is usable after diskpart operations 
-                Sleep(1500); 
 
                 NarRepairBoot((char)R->TargetLetter);
                 NarRemoveLetter(NAR_EFI_PARTITION_LETTER);
-                //NarRemoveLetter(NAR_RECOVERY_PARTITION_LETTER);
+                NarRemoveLetter(NAR_RECOVERY_PARTITION_LETTER);
 
                 printf("Restored to volume %c, to version %i\n", (char)R->TargetLetter, R->Version);
 
@@ -3129,7 +3153,7 @@ OfflineRestoreToVolume(restore_inf* R, BOOLEAN ShouldFormat) {
         }
         
         // Wait for diskpart operation to complete
-        Sleep(500);
+        Sleep(2500);
 
         HANDLE Volume = NarOpenVolume((char)R->TargetLetter);
         if (Volume != INVALID_HANDLE_VALUE) {
@@ -4104,6 +4128,7 @@ RestoreVersionWithoutLoop(restore_inf R, BOOLEAN RestoreMFT, HANDLE Volume) {
             R.RootDir += L"\\";
         }
     }
+
     if (Volume == INVALID_HANDLE_VALUE) {
         printf("Volume handle was invalid for backup ID %i, creating new handle\n", R.Version);
         Volume = NarOpenVolume((char)R.TargetLetter);
@@ -4452,11 +4477,10 @@ RestoreIncVersion(restore_inf R, HANDLE Volume) {
             Result = FALSE;
         }
     }
-    
-    
-    
-    // NOTE(Batuhan): restores to full first, then incrementally builds volume to version
-    
+
+
+    // NOTE(Batuhan): restores to full first, then incrementally builds volume to version    
+
     restore_inf SubVersionR;
     SubVersionR.RootDir = R.RootDir;
     SubVersionR.SrcLetter = R.SrcLetter;
@@ -4878,7 +4902,7 @@ recovery
 
     
 
-#if 0
+#if 1
 
     if (BM.IsOSVolume && BM.Version == NAR_FULLBACKUP_VERSION) {
         
@@ -4898,7 +4922,7 @@ recovery
         
     }
 
-    if(BM.IsOSVolume && BM.Version == NAR_FULLBACKUP_VERSION){
+    if(BM.IsOSVolume){
 
         GUID GUIDMSRPartition = { 0 }; // microsoft reserved partition guid
         GUID GUIDSystemPartition = { 0 }; // efi-system partition guid
@@ -4923,23 +4947,20 @@ recovery
                 if (DL->PartitionStyle == PARTITION_STYLE_GPT) {
 
                     for (unsigned int PartitionIndex = 0; PartitionIndex < DL->PartitionCount; PartitionIndex++) {
-                
+
                         PARTITION_INFORMATION_EX* PI = &DL->PartitionEntry[PartitionIndex];
                         // NOTE(Batuhan): Finding recovery partition via GUID
                         if (IsEqualGUID(PI->Gpt.PartitionType, GUIDRecoveryPartition)) {
                             BM.Size.Recovery = PI->PartitionLength.QuadPart;
                         }
-                        else if(IsEqualGUID(PI->Gpt.PartitionType, GUIDSystemPartition)){
+                        if(IsEqualGUID(PI->Gpt.PartitionType, GUIDSystemPartition)){
                             BM.GPT_EFIPartitionSize = PI->PartitionLength.QuadPart;
                         }
 
-                        
                     }
 
                 }
                 else if(DL->PartitionStyle == PARTITION_STYLE_MBR){
-                    // TODO
-                    
 
                     for (unsigned int PartitionIndex = 0; PartitionIndex < DL->PartitionCount; ++PartitionIndex){
                         
@@ -5387,10 +5408,10 @@ NarLoadBootState() {
                             if (bResult) {
                                 
                                 VolInf.FilterFlags.IsActive = TRUE;
-                                
                                 VolInf.FullBackupExists = TRUE;
                                 VolInf.Version = BootTrackData[i].Version;
                                 std::wstring LogFileName = GenerateLogFileName(VolInf.Letter);
+
                                 VolInf.LogHandle = CreateFileW(LogFileName.c_str(), GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, 0, 0);
                                 
                                 if (VolInf.LogHandle != INVALID_HANDLE_VALUE) {
@@ -5582,15 +5603,238 @@ NarSubMemoryExists(void *mem1, void* mem2, int mem1len, int mem2len){
 
 
 
+void foo(){
+
+    nar_record *VolumeRecords;
+    file_read f = NarReadFile("records");
+    VolumeRecords = (nar_record*)f.Data; 
+    UINT32 RecordCount = f.Len / sizeof(nar_record);
+
+    ULONGLONG TargetFilePointer = 0;
+
+    NarCreateCleanGPTBootablePartition(1, 61440, 100, 529, 'E');
+
+    HANDLE OutputFile = CreateFile(L"BinaryFile", GENERIC_WRITE | GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, 0, 0);
+    if(OutputFile == INVALID_HANDLE_VALUE) {
+        printf("Couldnt open outputfile \n");
+        return;
+    }
+    
+    if (NarSetFilePointer(OutputFile, 0)) {
+
+        HANDLE VolumeHandle = NarOpenVolume('E');
+        
+        if (VolumeHandle != INVALID_HANDLE_VALUE) {
+
+            for (int i = 0; i < RecordCount; i++) {
+
+                TargetFilePointer = (ULONGLONG)VolumeRecords[i].StartPos * (ULONGLONG)4096;
+                if (NarSetFilePointer(VolumeHandle, TargetFilePointer)) {
+
+                    ULONGLONG CopyLen = (ULONGLONG)VolumeRecords[i].Len * (ULONGLONG)4096;
+                    if (!CopyData(OutputFile, VolumeHandle, CopyLen)) {
+                        printf("Couldnt copy %I64d bytes from starting pos of %I64d\n", (ULONGLONG)VolumeRecords[i].Len * (ULONGLONG)4096, TargetFilePointer);
+                    }
+
+                }
+
+            }
+
+            printf("DONE RESTORE OPERATION\n");
+
+        }
+        else {
+
+        }
+
+    }
+    else {
+        printf("Couldnt set file pointer to beginning of the file\n");
+    }
+
+
+}
+
 
 int
 main(
      int argc,
      CHAR* argv[]
      ) {
+
+    HRESULT hResult = 0;
+    hResult = CoInitializeEx(NULL, COINIT_MULTITHREADED);
+    if (!SUCCEEDED(hResult)) {
+        printf("Failed CoInitialize function %d\n", hResult);
+        DisplayError(GetLastError());
+        return FALSE;
+    }
+    
+    hResult = CoInitializeSecurity(
+                                   NULL,                           //  Allow *all* VSS writers to communicate back!
+                                   -1,                             //  Default COM authentication service
+                                   NULL,                           //  Default COM authorization service
+                                   NULL,                           //  reserved parameter
+                                   RPC_C_AUTHN_LEVEL_PKT_PRIVACY,  //  Strongest COM authentication level
+                                   RPC_C_IMP_LEVEL_IMPERSONATE,    //  Minimal impersonation abilities
+                                   NULL,                           //  Default COM authentication settings
+                                   EOAC_DYNAMIC_CLOAKING,          //  Cloaking
+                                   NULL                            //  Reserved parameter
+                                   );
+    
+    if (!SUCCEEDED(hResult)) {
+        printf("Failed CoInitializeSecurity function %d\n", hResult);
+        DisplayError(GetLastError());
+        return FALSE;
+    }
+
+    // force bluescreen
+
+    WCHAR Temp[] = L"!:\\";
+    Temp[0] = L'C';
+    
+    HRESULT Result = FilterAttach(MINISPY_NAME, Temp, 0, 0, 0);
+    
+    if(Result == S_OK) {    
+        printf("Successfully attaced volume %c to driver\n");
+    }
+    else{
+        printf("Couldnt attach volume %c to driver, error code %X\n", Temp[0], Result);
+    }
+    
+    CComPtr<IVssBackupComponents> IVSSPTR;
+
+    wchar_t* A = GetShadowPath(Temp, IVSSPTR);
+
+    printf("%S\n", A);
+
+    while (1) {
+        Sleep(250);
+    }
+
+    
+    return 0;
+
+    printf("r to restore\n");
+    if(getchar() == 'r') {
+        foo();
+        return 0;
+    }
     
     
+   
+
+
+    wchar_t OutputBinaryFileName[] = L"BinaryFile";
+    CComPtr<IVssBackupComponents> VSSPTR;
     
+    wchar_t *ShadowPath = GetShadowPath(L"C:\\", VSSPTR);
+
+    HANDLE VolumeHandle = CreateFile(ShadowPath, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, 0, 0);
+    if(VolumeHandle != INVALID_HANDLE_VALUE){
+
+        UINT32 RecordCount = 0;
+        nar_record* VolumeRecords = GetVolumeRegionsFromBitmap(VolumeHandle, &RecordCount);
+        
+        HANDLE OutputFile = CreateFile(OutputBinaryFileName, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, CREATE_ALWAYS, 0, 0);
+
+        BOOLEAN Result = 0;
+        ULONGLONG TargetFilePointer = 0;
+        for(int i = 0; i<RecordCount; i++){
+            
+            TargetFilePointer = (ULONGLONG)VolumeRecords[i].StartPos*(ULONGLONG)4096;
+
+            Result = NarSetFilePointer(VolumeHandle, TargetFilePointer);
+            if(Result){
+
+                if(!CopyData(VolumeHandle, OutputFile, (ULONGLONG)VolumeRecords[i].Len*(ULONGLONG)4096)){
+                    printf("Couldnt copy %I64d bytes from starting pos of %I64d\n", (ULONGLONG)VolumeRecords[i].Len*(ULONGLONG)4096, TargetFilePointer);
+                }
+                printf("Copied %i regions out of %i\r", i, RecordCount);
+
+            }
+            else{
+                printf("Couldnt set file pointer to %I64d, region len was %I64d\n",TargetFilePointer);
+            }
+
+
+        }
+
+        NarDumpToFile("records", VolumeRecords, RecordCount*sizeof(nar_record));
+
+
+        printf("\n");
+        printf("DONE BACKING UP VOLUME C\n");
+        
+        CloseHandle(VolumeHandle);
+        VSSPTR.Release();
+        
+        while(1){
+            
+            char input = getchar();
+            input = tolower(input);
+            if (input != 'r' && input != 'q') {
+                printf("Press R to restore volume to volume E, press q to exit\n");
+            }
+
+            if (input == 'q') {
+                break;
+            }
+
+            if (input == 'r') {
+                
+
+                NarCreateCleanGPTBootablePartition(1, 61440, 100, 529, 'E');
+
+                if (NarSetFilePointer(OutputFile, 0)) {
+                    
+                    VolumeHandle = NarOpenVolume('E');
+                    if (VolumeHandle != INVALID_HANDLE_VALUE) {
+                        
+                        
+                        for (int i = 0; i < RecordCount; i++) {
+                            TargetFilePointer = (ULONGLONG)VolumeRecords[i].StartPos * (ULONGLONG)4096;
+                            if (NarSetFilePointer(VolumeHandle, TargetFilePointer)) {
+                                
+                                ULONGLONG CopyLen = (ULONGLONG)VolumeRecords[i].Len * (ULONGLONG)4096;
+                                if (!CopyData(OutputFile, VolumeHandle, CopyLen)) {
+                                    printf("Couldnt copy %I64d bytes from starting pos of %I64d\n", (ULONGLONG)VolumeRecords[i].Len * (ULONGLONG)4096, TargetFilePointer);
+                                }
+
+                            }
+
+                        }
+
+                        printf("DONE RESTORE OPERATION\n");
+                        
+                        break;
+
+                    }
+                    else {
+                    
+                    }
+
+                }
+                else {
+                    printf("Couldnt set file pointer to beginning of the file\n");
+                }
+
+            }
+
+            Sleep(250);
+        }
+
+
+    }
+    else{
+        printf("Couldnt open volume C's shadow path\n");
+    }
+
+
+    printf("DONE WHOLE OPERATION\n");
+
+    return 0;
+
     data_array<nar_record> R = GetMFTLCN('C', NarOpenVolume('C'));
     
     for(int i= 0; i<R.Count;i++){
@@ -5701,7 +5945,7 @@ main(
     //system("net stop minispy");
     //system("net start minispy");
     
-    HRESULT hResult = FALSE;
+    hResult = FALSE;
     
     HANDLE Port = INVALID_HANDLE_VALUE;
     
