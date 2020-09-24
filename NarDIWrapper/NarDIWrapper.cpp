@@ -79,17 +79,17 @@ namespace NarDIWrapper {
             // couldnt find old state
             C = (LOG_CONTEXT*)malloc(sizeof(LOG_CONTEXT));
             memset(C, 0, sizeof(LOG_CONTEXT));
-            C->Port = INVALID_HANDLE_VALUE;
-            C->ShutDown = NULL;
-            C->Thread = NULL;
-            C->CleaningUp = FALSE;
-            C->Volumes = { 0,0 };
-
         }
         else {
             // find old state
             printf("Succ loaded boot state from file\n");
         }
+
+        C->Port = INVALID_HANDLE_VALUE;
+        C->ShutDown = NULL;
+        C->Thread = NULL;
+        C->CleaningUp = FALSE;
+        C->Volumes = { 0,0 };
 
         
         //R = (restore_inf*)malloc(sizeof(restore_inf*));

@@ -1,6 +1,2 @@
-[18:51:50]: Couldn't open volume C
-[18:51:50]:     Cannot create a file when that file already exists.
-
-[18:51:52]: VSSVolumeHandle was invalid 
-[18:51:52]:     Cannot create a file when that file already exists.
-
+[9:44:12]: Couldn't lock volume C, returning INVALID_HANDLE_VALUE
+[9:44:13]: Couldnt dismount volume

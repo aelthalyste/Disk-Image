@@ -75,8 +75,8 @@ CONST FLT_REGISTRATION FilterRegistration = {
 
     SpyVolumeInstanceSetup,                 //  InstanceSetup
     SpyQueryTeardown,                       //  InstanceQueryTeardown
-    SpyTeardownStart,                                   //  InstanceTeardownStart
-    NULL,                                   //  InstanceTeardownComplete
+    SpyTeardownStart,                       //  InstanceTeardownStart
+    SpyTeardownComplete,                    //  InstanceTeardownComplete
 
     NULL,                                   //  GenerateFileName
     NULL,                                   //  GenerateDestinationFileName

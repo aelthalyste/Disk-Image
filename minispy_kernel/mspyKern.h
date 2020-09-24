@@ -182,7 +182,7 @@ typedef struct _nar_kernel_data {
         // First 4 byte used to indicate used size, first 4 bytes included as used, so memorybuffers max usable size is NAR_MEMORYBUFFER_SIZE - sizeof*(INT32)
         // Do not directly call this to push data, instead use NAR_PUSH_MB macro
         void* MemoryBuffer;
-    } *VolumeRegionBuffer; //32 bytes total, but must allocate extra 32 bytes to hold 16 wide character GUIDString
+    } *VolumeRegionBuffer;
 
 
     HANDLE MetadataHandle;
@@ -278,6 +278,14 @@ SpyTeardownStart(
     _In_ PCFLT_RELATED_OBJECTS FltObjects,
     _In_ FLT_INSTANCE_TEARDOWN_FLAGS Reason
 );
+
+void
+SpyTeardownComplete(
+    _In_ PCFLT_RELATED_OBJECTS FltObjects,
+    _In_ FLT_INSTANCE_TEARDOWN_FLAGS Reason
+);
+
+
 
 NTSTATUS
 SpyVolumeInstanceSetup(
