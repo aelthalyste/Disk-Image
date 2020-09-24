@@ -22,6 +22,7 @@ namespace DiskBackupGUI
     {
         public List<MyVolumeInformation> volumes;
         public DiskTracker diskTracker;
+        public int BackupNum = 2;
         public int type;
         public string myPath = "";
         public Dictionary<string, List<char>> taskParams = new Dictionary<string, List<char>>();
@@ -282,6 +283,7 @@ namespace DiskBackupGUI
                 }
             }
             int diffNum = 0;
+            BackupNum = 0;
             MyMessageBox myMessageBox = new MyMessageBox(diffNum);
             myMessageBox.MyScheduler = scheduler;
             myMessageBox.Letters = checkedColumn;
@@ -300,11 +302,11 @@ namespace DiskBackupGUI
                 }
             }
             int incNum = 1;
+            BackupNum = 1;
             MyMessageBox myMessageBox = new MyMessageBox(incNum);
             myMessageBox.MyScheduler = scheduler;
             myMessageBox.Letters = checkedColumn;
             myMessageBox.Show();
-
         }
 
         //checked olan satırları kapatmak için

@@ -33,6 +33,6 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="*.txt;*.htm;*.html" />
+    <None Include="NAR_APP_LOG_FILE.txt" />
   </ItemGroup>
 </Project>
