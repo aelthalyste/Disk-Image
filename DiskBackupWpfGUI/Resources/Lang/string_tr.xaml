@@ -4,6 +4,7 @@
     
     <system:String x:Key="appFullName">Narbulut Disk Yedekleme Uygulaması</system:String>
     <system:String x:Key="createTask">Görev Oluştur</system:String>
+    <system:String x:Key="createNewTask">Yeni Görev Oluştur</system:String>
     <system:String x:Key="disks">Diskler</system:String>
     <system:String x:Key="makeABackup">Yedek Alnıyor, C, 270 MB, %80</system:String>
     <system:String x:Key="volume">Volume</system:String>
@@ -54,7 +55,6 @@
     <system:String x:Key="name">İsim</system:String>
     <system:String x:Key="nameWithDot">İsim : </system:String>
     <system:String x:Key="tempFolder">Geçici Klasör</system:String>
-    <system:String x:Key="sourceSelection">Kaynak Seçimi </system:String>
     <system:String x:Key="scheduler">Zamanlama</system:String>
     <system:String x:Key="abstarct">Özet</system:String>
     <system:String x:Key="diff">Differential</system:String>
@@ -70,7 +70,6 @@
     <system:String x:Key="space2Backups">Yedeklenecek Alanlar : </system:String>
     <system:String x:Key="fullSize">Dolu Alan</system:String>
     <system:String x:Key="autoRun">Otomatik Çalıştır</system:String>
-    <system:String x:Key="autoTry">Otomatik Deneme</system:String>
     <system:String x:Key="auto">Otomatik</system:String>
     <system:String x:Key="dailyTime">Günlük Zaman</system:String>
     <system:String x:Key="weeklyTime">Haftalık Zaman</system:String>
@@ -90,5 +89,15 @@
     <system:String x:Key="saturday">Cumartesi</system:String>
     <system:String x:Key="sunday">Pazar</system:String>
     <system:String x:Key="backupType">Yedekleme Türü : </system:String>
+    <system:String x:Key="BackupType">Yedekleme Türü</system:String>
     <system:String x:Key="schedulerTasks">Zamanlaştırılmış Görevler : </system:String>
+    <system:String x:Key="first">Birinci</system:String>
+    <system:String x:Key="second">İkinci</system:String>
+    <system:String x:Key="third">Üçüncü</system:String>
+    <system:String x:Key="fourth">Dördüncü</system:String>
+    <system:String x:Key="everyday">Her Gün</system:String>
+    <system:String x:Key="weekdays">Hafta İçi</system:String>
+    <system:String x:Key="certainDays">Belirli Günler</system:String>
+    <system:String x:Key="hour">Saat</system:String>
+    <system:String x:Key="Minute">Dakika</system:String>
 </ResourceDictionary>
