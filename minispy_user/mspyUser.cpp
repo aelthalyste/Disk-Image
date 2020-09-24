@@ -2795,36 +2795,44 @@ SetupStreamHandle(volume_backup_inf* VolInf) {
     VolInf->FilterFlags.IsActive = TRUE;
     
     if (VolInf->FullBackupExists) {
+
+        DWORD RetVal = WaitForSingleObject(VolInf->FileWriteMutex, 500);
+        if(RetVal == WAIT_OBJECT_0){
+
+            LARGE_INTEGER CurrentFilePtr = {0};
+            FlushFileBuffers(VolInf->LogHandle);
+
+            if(GetFileSizeEx(VolInf->LogHandle, &CurrentFilePtr) != 0){
+                VolInf->ActiveBackupInf.PossibleNewBackupRegionOffsetMark = CurrentFilePtr.QuadPart;
+                printf("Current log file size %I64d\n", CurrentFilePtr.QuadPart);
+            }
+            else{
+                printf("Couldnt get log file size\n");
+                DisplayError(GetLastError());
+            }
+
+            ReleaseMutex(VolInf->FileWriteMutex);
+
+        }
+        else{
+            printf("Couldnt lock file write mutex @ setupstreamhandle, returning false\n");
+            return FALSE;
+        }
+    
+
+
+#if 0
         if (!DetachVolume(VolInf)) {
             printf("Detach volume failed\n");
             return FALSE;
         }
         else{
 
-            DWORD RetVal = WaitForSingleObject(VolInf->FileWriteMutex, 500);
-            if(RetVal == WAIT_OBJECT_0){
-                LARGE_INTEGER CurrentFilePtr = {0};
-                FlushFileBuffers(VolInf->LogHandle);
-
-                if(GetFileSizeEx(VolInf->LogHandle, &CurrentFilePtr) != 0){
-                    VolInf->ActiveBackupInf.PossibleNewBackupRegionOffsetMark = CurrentFilePtr.QuadPart;
-                    printf("Current log file size %I64d\n", CurrentFilePtr.QuadPart);
-                }
-                else{
-                    printf("Couldnt get log file size\n");
-                    DisplayError(GetLastError());
-                }
-
-                ReleaseMutex(VolInf->FileWriteMutex);
-
-            }
-            else{
-                printf("Couldnt lock file write mutex @ setupstreamhandle, returning false\n");
-                return FALSE;
-            }
+            
 
         }
-        
+#endif
+
         printf("Volume %c detached!\n", VolInf->Letter);
 
     }
