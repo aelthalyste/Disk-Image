@@ -100,4 +100,5 @@
     <system:String x:Key="certainDays">Belirli Günler</system:String>
     <system:String x:Key="hour">Saat</system:String>
     <system:String x:Key="Minute">Dakika</system:String>
+    <system:String x:Key="add">Ekle</system:String>
 </ResourceDictionary>

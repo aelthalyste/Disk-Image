@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:DiskBackupWpfGUI"
         mc:Ignorable="d"
-        Title="{DynamicResource appFullName}" Icon="Resources/Icon/u62.png" Height="689" Width="1094" BorderThickness="0,1,0,0" BorderBrush="#D7D7D7" ResizeMode="CanMinimize" Visibility="Visible">
+        Title="{DynamicResource appFullName}" Icon="Resources/Icon/u62.png" Height="689" Width="1094" BorderThickness="0,1,0,0" BorderBrush="#D7D7D7" Visibility="Visible">
     <Window.Resources>
         <ResourceDictionary Source="Resources\Lang\string_tr.xaml"/>
     </Window.Resources>
@@ -196,70 +196,71 @@
                                 </Style>
                             </ListView.ItemContainerStyle>
                         </ListView>
-                        
-                        <GroupBox BorderBrush="#D7D7D7" Margin="5,0" Height="120">
-                            <StackPanel Orientation="Horizontal">
-                                
-                                <StackPanel Margin="10,5,20,5" VerticalAlignment="Center">
-                                    <StackPanel Orientation="Horizontal">
-                                        <Image Source="Resources\Icon\u79.png" Width="25" Height="30" Margin="0,0,5,0"></Image>
-                                        <TextBlock VerticalAlignment="Center" FontWeight="Bold" FontSize="14">Disk 1</TextBlock>
+
+                        <StackPanel Height="120" Margin="5,0" Orientation="Vertical">
+                            <Border BorderBrush="#D7D7D7" Background="Transparent" BorderThickness="1" Height="120" CornerRadius="3">
+                                <StackPanel Orientation="Horizontal">
+                                    <StackPanel Margin="10,5,20,5" VerticalAlignment="Center">
+                                        <StackPanel Orientation="Horizontal">
+                                            <Image Source="Resources\Icon\u79.png" Width="25" Height="30" Margin="0,0,5,0"></Image>
+                                            <TextBlock VerticalAlignment="Center" FontWeight="Bold" FontSize="14">Disk 1</TextBlock>
+                                        </StackPanel>
+                                        <TextBlock FontSize="14">MBR</TextBlock>
+                                        <TextBlock FontSize="14">700 GB</TextBlock>
                                     </StackPanel>
-                                    <TextBlock FontSize="14">MBR</TextBlock>
-                                    <TextBlock FontSize="14">700 GB</TextBlock>
+                                    <StackPanel Height="100" Orientation="Horizontal" Margin="0,0,3,0">
+                                        <Border BorderBrush="#9ACFEA" Background="#F2F2F2" BorderThickness="1" Height="90" CornerRadius="3">
+                                            <StackPanel VerticalAlignment="Center">
+                                                <ProgressBar Minimum="0" Maximum="100" Value="75" Height="20" Width="300" Margin="10,10,10,0">
+                                                    <ProgressBar.Background>
+                                                        <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
+                                                            <GradientStop Color="#FF94C683" Offset="0"/>
+                                                            <GradientStop Color="#D8ECD1" Offset="1"/>
+                                                        </LinearGradientBrush>
+                                                    </ProgressBar.Background>
+                                                    <ProgressBar.Foreground>
+                                                        <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
+                                                            <GradientStop Color="#FF093C59"/>
+                                                            <GradientStop Color="#74AAC8" Offset="1"/>
+                                                        </LinearGradientBrush>
+                                                    </ProgressBar.Foreground>
+                                                </ProgressBar>
+                                                <StackPanel Margin="10,0,0,0">
+                                                    <TextBlock FontWeight="Bold" FontSize="14">System Reserved</TextBlock>
+                                                    <TextBlock FontSize="14">NTFS</TextBlock>
+                                                    <TextBlock FontSize="14">700 GB, Primary</TextBlock>
+                                                </StackPanel>
+                                            </StackPanel>
+                                        </Border>
+                                    </StackPanel>
+                                    <StackPanel Height="100" Orientation="Horizontal">
+                                        <Border BorderBrush="#9ACFEA" Background="#F2F2F2" BorderThickness="1" Height="90" CornerRadius="3">
+                                            <StackPanel>
+                                                <ProgressBar Minimum="0" Maximum="100" Value="40" Height="20" Width="410" Margin="10,10,10,0">
+                                                    <ProgressBar.Background>
+                                                        <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
+                                                            <GradientStop Color="#FF94C683" Offset="0"/>
+                                                            <GradientStop Color="#D8ECD1" Offset="1"/>
+                                                        </LinearGradientBrush>
+                                                    </ProgressBar.Background>
+                                                    <ProgressBar.Foreground>
+                                                        <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
+                                                            <GradientStop Color="#FF093C59"/>
+                                                            <GradientStop Color="#74AAC8" Offset="1"/>
+                                                        </LinearGradientBrush>
+                                                    </ProgressBar.Foreground>
+                                                </ProgressBar>
+                                                <StackPanel Margin="10,0,0,0">
+                                                    <TextBlock FontWeight="Bold" FontSize="14">Local Volume (C:)</TextBlock>
+                                                    <TextBlock FontSize="14">NTFS</TextBlock>
+                                                    <TextBlock FontSize="14">700 GB, Primary</TextBlock>
+                                                </StackPanel>
+                                            </StackPanel>
+                                        </Border>
+                                    </StackPanel>
                                 </StackPanel>
-
-                                <GroupBox VerticalAlignment="Center" BorderBrush="#9ACFEA">
-                                    <StackPanel>
-                                        <ProgressBar Minimum="0" Maximum="100" Value="75" Height="20" Width="300" Margin="10,10,0,0">
-                                            <ProgressBar.Background>
-                                                <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
-                                                    <GradientStop Color="#FF94C683" Offset="0"/>
-                                                    <GradientStop Color="#D8ECD1" Offset="1"/>
-                                                </LinearGradientBrush>
-                                            </ProgressBar.Background>
-                                            <ProgressBar.Foreground>
-                                                <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
-                                                    <GradientStop Color="#FF093C59"/>
-                                                    <GradientStop Color="#74AAC8" Offset="1"/>
-                                                </LinearGradientBrush>
-                                            </ProgressBar.Foreground>
-                                        </ProgressBar>
-                                        <StackPanel Margin="10,0,0,0">
-                                            <TextBlock FontWeight="Bold" FontSize="14">System Reserved</TextBlock>
-                                            <TextBlock FontSize="14">NTFS</TextBlock>
-                                            <TextBlock FontSize="14">700 GB, Primary</TextBlock>
-                                        </StackPanel>
-                                    </StackPanel>
-                                </GroupBox>
-
-                                <GroupBox VerticalAlignment="Center" BorderBrush="#9ACFEA">
-                                    <StackPanel>
-                                        <ProgressBar Minimum="0" Maximum="100" Value="40" Height="20" Width="410" Margin="10,10,0,0">
-                                            <ProgressBar.Background>
-                                                <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
-                                                    <GradientStop Color="#FF94C683" Offset="0"/>
-                                                    <GradientStop Color="#D8ECD1" Offset="1"/>
-                                                </LinearGradientBrush>
-                                            </ProgressBar.Background>
-                                            <ProgressBar.Foreground>
-                                                <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
-                                                    <GradientStop Color="#FF093C59"/>
-                                                    <GradientStop Color="#74AAC8" Offset="1"/>
-                                                </LinearGradientBrush>
-                                            </ProgressBar.Foreground>
-                                        </ProgressBar>
-                                        <StackPanel Margin="10,0,0,0">
-                                            <TextBlock FontWeight="Bold" FontSize="14">Local Volume (C:)</TextBlock>
-                                            <TextBlock FontSize="14">NTFS</TextBlock>
-                                            <TextBlock FontSize="14">700 GB, Primary</TextBlock>
-                                        </StackPanel>
-                                    </StackPanel>
-                                </GroupBox>
-
-                            </StackPanel>
-
-                        </GroupBox >
+                            </Border>
+                        </StackPanel>
                     </StackPanel>
                 </Grid>
             </TabItem>
@@ -400,7 +401,7 @@
                                         </Image>
                                     </Button.Content>
                                 </Button>
-                                <Button Name="btnTaskOpen" ToolTip="{DynamicResource open}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5,5,5" Style="{StaticResource ImageButton}" Grid.Column="1">
+                                <Button Name="btnTaskOpen" ToolTip="{DynamicResource open}" Click="btnTaskOpen_Click" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5,5,5" Style="{StaticResource ImageButton}" Grid.Column="1">
                                     <Button.Content>
                                         <Image Height="25" Width="25" HorizontalAlignment="Center" VerticalAlignment="Center">
                                             <Image.Style>

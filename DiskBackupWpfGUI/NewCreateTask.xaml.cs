@@ -7,6 +7,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Documents;
+using System.Windows.Forms.VisualStyles;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -125,6 +126,61 @@ namespace DiskBackupWpfGUI
             //double time = p1 + (p2 / 100);
             //time += 0.01;
             //txtDaysTime.Text = time.ToString();
+        }
+
+        private void NCTTabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (NCTTabControl.SelectedIndex == 0)
+            {
+                lblTabHeader.Text = Resources["name"].ToString();
+                lblTabContent.Text = "Yedekleme profili için bir isim ve açıklama giriniz";
+            }
+            else if (NCTTabControl.SelectedIndex == 1)
+            {
+                lblTabHeader.Text = Resources["BackupType"].ToString();
+                lblTabContent.Text = "Yedekleme istediğiniz türü seçin";
+            }
+            else if (NCTTabControl.SelectedIndex == 2)
+            {
+                lblTabHeader.Text = Resources["target"].ToString();
+                lblTabContent.Text = "Yedeklemek istediğiniz veri tabanı türünü seçiniz erişimi doğrulayınız";
+            }
+            else if (NCTTabControl.SelectedIndex == 3)
+            {
+                lblTabHeader.Text = Resources["scheduler"].ToString();
+                lblTabContent.Text = "Yedeklemek istediğiniz veri tabanı türünü seçiniz erişimi doğrulayınız";
+            }
+            else
+            {
+                lblTabHeader.Text = Resources["abstarct"].ToString();
+                lblTabContent.Text = "Yedeklemek istediğiniz veri tabanı türünü seçiniz erişimi doğrulayınız";
+            }
+        }
+
+        private void btnCreateTaskBack_Click(object sender, RoutedEventArgs e)
+        {
+            if(NCTTabControl.SelectedIndex != 0)
+            {
+                NCTTabControl.SelectedIndex -= 1;
+            }
+        }
+
+        private void btnCreateTaskNext_Click(object sender, RoutedEventArgs e)
+        {
+            if (NCTTabControl.SelectedIndex != 4)
+            {
+                NCTTabControl.SelectedIndex += 1;
+            }
+        }
+
+        private void btnCreateTaskOk_Click(object sender, RoutedEventArgs e)
+        {
+            //kaydet
+        }
+
+        private void btnCreateTaskCancel_Click(object sender, RoutedEventArgs e)
+        {
+            Close();
         }
     }
 }

@@ -34,5 +34,11 @@ namespace DiskBackupWpfGUI
             NewCreateTask newCreateTask = new NewCreateTask();
             newCreateTask.ShowDialog();
         }
+
+        private void btnTaskOpen_Click(object sender, RoutedEventArgs e)
+        {
+            TaskStatus taskStatus = new TaskStatus();
+            taskStatus.ShowDialog();
+        }
     }
 }

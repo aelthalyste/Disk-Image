@@ -1,0 +1,26 @@
+﻿<Window x:Class="DiskBackupWpfGUI.TaskStatus"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:DiskBackupWpfGUI"
+        mc:Ignorable="d"
+        Title="TaskStatus" Height="450" Width="800" ResizeMode="CanMinimize" WindowStyle="None">
+    <Grid>
+        <StackPanel Orientation="Vertical">
+            <StackPanel Name="MyTitleBar" VerticalAlignment="Top" MouseDown="MyTitleBar_MouseDown">
+                <Border Background="#27527B" Height="30" Width="800">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                        <Button Name="btnTaskStatusMin" Content="—" FontSize="14" VerticalContentAlignment="Top" FontWeight="Bold" Click="btnTaskStatusMin_Click" Style="{StaticResource TitleButton}" Width="40" ></Button>
+                        <Button Name="btnTaskStatusClose" Content="X" FontSize="15" FontWeight="Bold" Click="btnTaskStatusClose_Click" Style="{StaticResource TitleButton}" Width="40" ></Button>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+
+            <StackPanel>
+                <TextBlock>İÇERİK</TextBlock>
+            </StackPanel>
+
+        </StackPanel>
+    </Grid>
+</Window>

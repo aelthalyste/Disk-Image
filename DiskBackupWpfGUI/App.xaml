@@ -131,11 +131,11 @@
             </Setter>
         </Style>
 
-        <Style x:Key="ArrowButton" TargetType="{x:Type Button}">
+        <Style x:Key="TitleButton" TargetType="{x:Type Button}">
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border Name="Border" BorderThickness="1,0,1,1" BorderBrush="#D7D7D7" CornerRadius="3" Background="Transparent">
+                        <Border Name="Border" Background="Transparent">
                             <ContentPresenter x:Name="ContentSite"                                            
                                                         VerticalAlignment="Center"
                                                         HorizontalAlignment="Center"
@@ -143,21 +143,17 @@
                                                         Margin="0,0"/>
                         </Border>
                         <ControlTemplate.Triggers>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter TargetName="Border" Property="Background" Value="LightGray"/>
-                                <Setter Property="Foreground" Value="Black" />
-                            </Trigger>
                             <Trigger Property="IsEnabled" Value="True">
                                 <Setter TargetName="Border" Property="Background" Value="Transparent"/>
-                                <Setter Property="Foreground" Value="Black" />
-                            </Trigger>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Border" Property="Background" Value="#3367D6"/>
                                 <Setter Property="Foreground" Value="White" />
                             </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
+                            <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="Border" Property="Background" Value="#BCE4FF"/>
                                 <Setter Property="Foreground" Value="#FF4D4D4D" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Border" Property="Background" Value="#3367D6"/>
+                                <Setter Property="Foreground" Value="White" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
