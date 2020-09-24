@@ -182,5 +182,23 @@ namespace DiskBackupWpfGUI
         {
             Close();
         }
+
+        private void btnNewCreateTaskClose_Click(object sender, RoutedEventArgs e)
+        {
+            Close();
+        }
+
+        private void btnNewCreateTaskMin_Click(object sender, RoutedEventArgs e)
+        {
+            WindowState = WindowState.Minimized;
+        }
+
+        private void MyTitleBar_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            if (e.ChangedButton == MouseButton.Left)
+            {
+                DragMove();
+            }
+        }
     }
 }

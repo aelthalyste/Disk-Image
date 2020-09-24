@@ -101,4 +101,5 @@
     <system:String x:Key="hour">Saat</system:String>
     <system:String x:Key="Minute">Dakika</system:String>
     <system:String x:Key="add">Ekle</system:String>
+    <system:String x:Key="taskStatus">Görev Durumu</system:String>
 </ResourceDictionary>

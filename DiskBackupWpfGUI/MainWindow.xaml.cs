@@ -40,5 +40,23 @@ namespace DiskBackupWpfGUI
             TaskStatus taskStatus = new TaskStatus();
             taskStatus.ShowDialog();
         }
+
+        private void btnMainClose_Click(object sender, RoutedEventArgs e)
+        {
+            Close();
+        }
+
+        private void btnMainMin_Click(object sender, RoutedEventArgs e)
+        {
+            WindowState = WindowState.Minimized;
+        }
+
+        private void MyTitleBar_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            if (e.ChangedButton == MouseButton.Left)
+            {
+                DragMove();
+            }
+        }
     }
 }

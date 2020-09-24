@@ -5,29 +5,43 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:DiskBackupWpfGUI"
         mc:Ignorable="d"
-        Title="{DynamicResource createNewTask}" ResizeMode="CanMinimize" HorizontalAlignment="Center" Height="450" Width="800" Icon="Resources/Icon/favicon_mavi.ico">
+        Title="{DynamicResource createNewTask}" WindowStyle="None" BorderBrush="#194771" BorderThickness="1" ResizeMode="CanMinimize" HorizontalAlignment="Center" Height="450" Width="800" Icon="Resources/Icon/favicon_mavi.ico">
     <Window.Resources>
         <ResourceDictionary Source="Resources\Lang\string_tr.xaml"/>
     </Window.Resources>
-    <Grid Background="White"> <!-- içerideki ufak grilik yok oldu -->
+    <Grid Background="White">
+        <!-- içerideki ufak grilik yok oldu -->
         <Grid.RowDefinitions>
-            <RowDefinition Height="40"/>
+            <RowDefinition Height="30"/>
+            <RowDefinition Height="45"/>
             <RowDefinition/>
         </Grid.RowDefinitions>
-        <Rectangle Grid.Row="0" Fill="White"/>
-        <Rectangle Height="1" Fill="DarkGray" VerticalAlignment="Bottom" />
 
-        <StackPanel Orientation="Horizontal">
+        <TextBlock Text="{DynamicResource createNewTask}" Background="Transparent" Grid.Row="0" Panel.ZIndex="1" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="13" Foreground="White"></TextBlock>
+
+        <StackPanel Name="MyTitleBar" VerticalAlignment="Top" MouseDown="MyTitleBar_MouseDown">
+            <Border Background="#27527B" Height="30">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button Name="btnNewCreateTaskMin" Content="—" FontSize="15" Margin="0,-2,0,0" VerticalContentAlignment="Top" FontWeight="Bold" Click="btnNewCreateTaskMin_Click" Style="{StaticResource TitleButton}" Width="40" ></Button>
+                    <Button Name="btnNewCreateTaskClose" Content="🗙" FontSize="20" Margin="0,-2,0,0" Click="btnNewCreateTaskClose_Click" Style="{StaticResource TitleButton}" Width="40" ></Button>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+
+        <Rectangle Grid.Row="1" Fill="White"/>
+        <Rectangle Grid.Row="1" Height="1" Fill="DarkGray" VerticalAlignment="Bottom" />
+
+        <StackPanel Orientation="Horizontal" Grid.Row="1">
             <!--Menü açıklamaları dynmaic olucak-->
             <Image Margin="10,0,0,0" Source="Resources/Icon/u58.png"></Image>
-            <StackPanel>
+            <StackPanel VerticalAlignment="Center">
                 <TextBlock Name="lblTabHeader" FontSize="12" VerticalAlignment="Center" Margin="10,0,0,0"/>
                 <TextBlock Name="lblTabContent" FontWeight="Bold" FontSize="12" VerticalAlignment="Center" Margin="10,0,0,0" />
             </StackPanel>
 
         </StackPanel>
 
-        <TabControl Name="NCTTabControl" TabStripPlacement="Left" BorderThickness="1,0,0,0" Grid.Row="1" BorderBrush="#AAAAAA" SelectionChanged="NCTTabControl_SelectionChanged">
+        <TabControl Name="NCTTabControl" TabStripPlacement="Left" BorderThickness="1,0,0,0" Grid.Row="2" BorderBrush="#AAAAAA" SelectionChanged="NCTTabControl_SelectionChanged">
             <TabControl.Resources>
                 <Style TargetType="TabItem">
                     <Setter Property="Template">
@@ -74,7 +88,7 @@
                     </StackPanel>
                 </Grid>
             </TabItem>
-            
+
             <TabItem Name="backupTypeTab" >
                 <TabItem.Header>
                     <StackPanel Height="35" Width="130" Orientation="Horizontal" >
@@ -92,7 +106,7 @@
 
                 </Grid>
             </TabItem>
-            
+
             <TabItem Name="targetTab">
                 <TabItem.Header>
                     <StackPanel Height="35" Width="130" Orientation="Horizontal">
@@ -154,7 +168,7 @@
                     </StackPanel>
                 </Grid>
             </TabItem>
-            
+
             <TabItem Name="schedulerTab">
                 <TabItem.Header>
                     <StackPanel Height="35" Width="130" Orientation="Horizontal">
@@ -254,7 +268,7 @@
                     </StackPanel>
                 </Grid>
             </TabItem>
-            
+
             <TabItem Name="abstractTab">
                 <TabItem.Header>
                     <StackPanel Height="35" Width="130" Orientation="Horizontal">
