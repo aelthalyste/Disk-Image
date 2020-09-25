@@ -132,6 +132,8 @@
         </Style>
 
         <Style x:Key="TitleButton" TargetType="{x:Type Button}">
+            <Setter Property="FontFamily" Value="Calibri"/>
+            <Setter Property="FontSize" Value="20"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
@@ -275,7 +277,15 @@
                 </Setter.Value>
             </Setter>
         </Style>
-        
+
+        <Style x:Key="TitleBarText" TargetType="{x:Type TextBlock}">
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+
+
         <Style x:Key="CreateTaskButtonText" TargetType="{x:Type TextBlock}">
             <Style.Triggers>
                 <!-- -->

@@ -5,28 +5,38 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:DiskBackupWpfGUI"
         mc:Ignorable="d"
-        Title="TaskStatus" Height="450" Width="800" ResizeMode="CanMinimize" BorderBrush="#194771" BorderThickness="1" WindowStyle="None">
+        Title="TaskStatus" Height="500" Width="950" ResizeMode="CanMinimize" BorderBrush="#194771" BorderThickness="1" WindowStyle="None">
     <Window.Resources>
         <ResourceDictionary Source="Resources\Lang\string_tr.xaml"/>
     </Window.Resources>
-    <Grid>
+    <Grid Background="#F2F2F2">
         <Grid.RowDefinitions>
             <RowDefinition Height="30"/>
             <RowDefinition/>
         </Grid.RowDefinitions>
 
-        <TextBlock Text="{DynamicResource taskStatus}" Grid.Row="0" Panel.ZIndex="1" Background="Transparent" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="13" Foreground="White"></TextBlock>
-        <StackPanel Name="MyTitleBar" VerticalAlignment="Top" MouseDown="MyTitleBar_MouseDown" Grid.Row="0">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition />
+            <ColumnDefinition />
+        </Grid.ColumnDefinitions>
+
+        <TextBlock Text="{DynamicResource taskStatus}" Style="{StaticResource TitleBarText}" Panel.ZIndex="1" Grid.Row="0" Grid.ColumnSpan="2" ></TextBlock>
+
+        <StackPanel Name="MyTitleBar" VerticalAlignment="Top" MouseDown="MyTitleBar_MouseDown" Grid.Row="0" Grid.ColumnSpan="2">
             <Border Background="#27527B" Height="30">
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                    <Button Name="btnTaskStatusMin" Content="—" FontSize="15" Margin="0,-2,0,0" VerticalContentAlignment="Top" FontWeight="Bold" Click="btnTaskStatusMin_Click" Style="{StaticResource TitleButton}" Width="40" ></Button>
-                    <Button Name="btnTaskStatusClose" Content="🗙" FontSize="20" Margin="0,-2,0,0" Click="btnTaskStatusClose_Click" Style="{StaticResource TitleButton}" Width="40" ></Button>
+                    <Button Name="btnTaskStatusMin" Content="—" Margin="0,-2,0,0" VerticalContentAlignment="Top" FontWeight="Bold" Click="btnTaskStatusMin_Click" Style="{StaticResource TitleButton}" Width="40" ></Button>
+                    <Button Name="btnTaskStatusClose" Content="🗙" Margin="0,-2,0,0" Click="btnTaskStatusClose_Click" Style="{StaticResource TitleButton}" Width="40" ></Button>
                 </StackPanel>
             </Border>
         </StackPanel>
 
-        <StackPanel Grid.Row="1">
-            <TextBlock>İÇERİK</TextBlock>
+        <StackPanel Grid.Row="1" Grid.Column="0" VerticalAlignment="Center">
+            <TextBlock FontSize="60" HorizontalAlignment="Center">First</TextBlock>
+        </StackPanel>
+
+        <StackPanel Grid.Row="1" Grid.Column="1" VerticalAlignment="Center">
+            <TextBlock FontSize="60" HorizontalAlignment="Center">Second</TextBlock>
         </StackPanel>
 
     </Grid>

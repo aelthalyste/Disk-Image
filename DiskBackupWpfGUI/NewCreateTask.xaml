@@ -17,13 +17,13 @@
             <RowDefinition/>
         </Grid.RowDefinitions>
 
-        <TextBlock Text="{DynamicResource createNewTask}" Background="Transparent" Grid.Row="0" Panel.ZIndex="1" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="13" Foreground="White"></TextBlock>
+        <TextBlock Text="{DynamicResource createNewTask}" Grid.Row="0" Panel.ZIndex="1" Style="{StaticResource TitleBarText}"></TextBlock>
 
         <StackPanel Name="MyTitleBar" VerticalAlignment="Top" MouseDown="MyTitleBar_MouseDown">
             <Border Background="#27527B" Height="30">
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                    <Button Name="btnNewCreateTaskMin" Content="—" FontSize="15" Margin="0,-2,0,0" VerticalContentAlignment="Top" FontWeight="Bold" Click="btnNewCreateTaskMin_Click" Style="{StaticResource TitleButton}" Width="40" ></Button>
-                    <Button Name="btnNewCreateTaskClose" Content="🗙" FontSize="20" Margin="0,-2,0,0" Click="btnNewCreateTaskClose_Click" Style="{StaticResource TitleButton}" Width="40" ></Button>
+                    <Button Name="btnNewCreateTaskMin" Content="—" Margin="0,-2,0,0" VerticalContentAlignment="Top" FontWeight="Bold" Click="btnNewCreateTaskMin_Click" Style="{StaticResource TitleButton}" Width="40" ></Button>
+                    <Button Name="btnNewCreateTaskClose" Content="🗙" Margin="0,-2,0,0" Click="btnNewCreateTaskClose_Click" Style="{StaticResource TitleButton}" Width="40" ></Button>
                 </StackPanel>
             </Border>
         </StackPanel>
@@ -118,7 +118,7 @@
                         <TextBlock Text="{DynamicResource target}" Margin="0,0,0,20" />
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="{DynamicResource space2Backup}" VerticalAlignment="Center" />
-                            <TextBox Name="txtTarget" Width="350" Height="26" Margin="25,0,0,0" VerticalContentAlignment="Center" MaxLength="50" />
+                            <TextBox Name="txtTarget" Width="350" Height="26" Margin="25,0,0,0" VerticalContentAlignment="Center" Padding="0,0,22,0" />
                             <StackPanel Margin="-22,0,0,0" VerticalAlignment="Center">
                                 <Button Name="btnTargetUp" Style="{StaticResource ArrowUpButton}" Content="▲" Width="20" Height="12" FontSize="8"/>
                                 <Button Name="btnTargetDown" Style="{StaticResource ArrowDownButton}" Content="▼" Width="20" Height="12" FontSize="8"/>
@@ -272,12 +272,12 @@
             <TabItem Name="abstractTab">
                 <TabItem.Header>
                     <StackPanel Height="35" Width="130" Orientation="Horizontal">
-                        <TextBlock Text="{DynamicResource abstarct}" Margin="5,0" VerticalAlignment="Center" Style="{StaticResource NCTTabItemText}"/>
+                        <TextBlock Text="{DynamicResource summary}" Margin="5,0" VerticalAlignment="Center" Style="{StaticResource NCTTabItemText}"/>
                     </StackPanel>
                 </TabItem.Header>
                 <Grid Background="White">
                     <StackPanel Margin="10,10,20,10">
-                        <TextBlock Text="{DynamicResource abstarct}"></TextBlock>
+                        <TextBlock Text="{DynamicResource summary}"></TextBlock>
                         <StackPanel Orientation="Horizontal" Margin="20,10,0,0">
                             <TextBlock Text="{DynamicResource nameWithDot}" Margin="0,0,5,0" />
                             <TextBlock>İŞLETİM SİSTEMİ YEDEĞİ</TextBlock>

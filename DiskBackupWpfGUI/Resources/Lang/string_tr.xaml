@@ -56,7 +56,7 @@
     <system:String x:Key="nameWithDot">İsim : </system:String>
     <system:String x:Key="tempFolder">Geçici Klasör</system:String>
     <system:String x:Key="scheduler">Zamanlama</system:String>
-    <system:String x:Key="abstarct">Özet</system:String>
+    <system:String x:Key="summary">Özet</system:String>
     <system:String x:Key="diff">Differential</system:String>
     <system:String x:Key="diffDescription">Seçilen dosyanızı ilk yedeğinize göre alır</system:String>
     <system:String x:Key="incDescription">Seçilen dosyanızı son yedeğinize göre alır</system:String>

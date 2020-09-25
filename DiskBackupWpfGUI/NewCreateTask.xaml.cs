@@ -152,7 +152,7 @@ namespace DiskBackupWpfGUI
             }
             else
             {
-                lblTabHeader.Text = Resources["abstarct"].ToString();
+                lblTabHeader.Text = Resources["summary"].ToString();
                 lblTabContent.Text = "Yedeklemek istediğiniz veri tabanı türünü seçiniz erişimi doğrulayınız";
             }
         }
