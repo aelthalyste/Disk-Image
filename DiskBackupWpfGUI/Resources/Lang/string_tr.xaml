@@ -105,7 +105,7 @@
     <system:String x:Key="Minute">Dakika</system:String>
     <system:String x:Key="add">Ekle</system:String>
     <system:String x:Key="taskStatus">Görev Durumu</system:String>
-    <system:String x:Key="localArea">Görev Durumu</system:String>
+    <system:String x:Key="localArea">Yerel Alan</system:String>
     <system:String x:Key="sendingToCloud">Bulut'a Gönderim</system:String>
     <system:String x:Key="sourceConsumption">Kaynak Tüketimi</system:String>
     <system:String x:Key="deliverySpeed">Gönderim Hızı</system:String>
@@ -124,4 +124,13 @@
     <system:String x:Key="fullOverwrite">Yetersiz alanda üzerine yaz</system:String>
     <system:String x:Key="fullBackup">Full Yedek</system:String>
     <system:String x:Key="perWeek">Haftada</system:String>
+    <system:String x:Key="fileName">Dosya Adı</system:String>
+    <system:String x:Key="duration">Süre</system:String>
+    <system:String x:Key="averageDataTransfer">Ortalama Veri Aktarımı</system:String>
+    <system:String x:Key="processedData">İşlenen Veri</system:String>
+    <system:String x:Key="instantDataTransfer">Anlık Veri Aktarımı</system:String>
+    <system:String x:Key="zip">Sıkıştırma</system:String>
+    <system:String x:Key="sourceInfo">Kaynak Bilgisi</system:String>
+    <system:String x:Key="processedTotal">İşlenen Veri Toplam</system:String>
+    <system:String x:Key="narTransfer">Narbulut'a aktarım</system:String>
 </ResourceDictionary>
