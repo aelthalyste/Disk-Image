@@ -133,4 +133,25 @@
     <system:String x:Key="sourceInfo">Kaynak Bilgisi</system:String>
     <system:String x:Key="processedTotal">İşlenen Veri Toplam</system:String>
     <system:String x:Key="narTransfer">Narbulut'a aktarım</system:String>
+    <system:String x:Key="settingsContent">Hesaplar alan yönetimi diğer tanımları bu alandan yönetin</system:String>
+    <system:String x:Key="appLicense">Uygulama Lisansı :</system:String>
+    <system:String x:Key="endDateDot">Bitiş Tarihi :</system:String>
+    <system:String x:Key="active">Aktif</system:String>
+    <system:String x:Key="inactive">Aktif Değil</system:String>
+    <system:String x:Key="licenseNotActive">Lisans Aktif Değil</system:String>
+    <system:String x:Key="languageDot">Dil :</system:String>
+    <system:String x:Key="turkish">Türkçe</system:String>
+    <system:String x:Key="english">İngilizce</system:String>
+    <system:String x:Key="cloudLicenseDot">Bulut Lisans :</system:String>
+    <system:String x:Key="totalCapacity">Toplam Kapasite</system:String>
+    <system:String x:Key="usedCapacity">Kullanılan Kapasite</system:String>
+    <system:String x:Key="bandwithSetting">Bant Genişliği Ayarları</system:String>
+    <system:String x:Key="uploadSpeed">Yükleme Hızı</system:String>
+    <system:String x:Key="downloadSpeed">İndirme Hızı</system:String>
+    <system:String x:Key="limit">Şu değerde sınırlandır</system:String>
+    <system:String x:Key="delimitation">Sınırlandırma</system:String>
+    <system:String x:Key="versionDot">Versiyon :</system:String>
+    <system:String x:Key="error">Hata</system:String>
+    <system:String x:Key="successful">Başarılı</system:String>
+    <system:String x:Key="firstBackupExpected">İlk yedek bekleniyor</system:String>
 </ResourceDictionary>

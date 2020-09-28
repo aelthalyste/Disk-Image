@@ -152,7 +152,7 @@ namespace DiskBackupWpfGUI
         }
         #endregion
 
-        #region UpDownClics
+        #region UpDownClicks
         private void btnTimeFailDescUp_Click(object sender, RoutedEventArgs e)
         {
             var count = Convert.ToInt32(txtTimeFailDesc.Text);

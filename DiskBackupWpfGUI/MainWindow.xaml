@@ -16,8 +16,11 @@
             <RowDefinition Height="40"/>
             <RowDefinition/>
         </Grid.RowDefinitions>
-
-        <TextBlock Text="{DynamicResource appFullName}" Grid.Row="0" Panel.ZIndex="2" Style="{StaticResource TitleBarText}"></TextBlock>
+        
+        <StackPanel Panel.ZIndex="2" Orientation="Horizontal" HorizontalAlignment="Center">
+            <Image Source="Resources/Icon/u62.png" Height="35" Width="40" Margin="0,0,5,0"></Image>
+            <TextBlock Text="{DynamicResource appFullName}" Panel.ZIndex="2" Style="{StaticResource TitleBarText}"></TextBlock>
+        </StackPanel>
         <StackPanel Name="MyTitleBar" VerticalAlignment="Top" MouseDown="MyTitleBar_MouseDown" Panel.ZIndex="1">
             <Border Background="#27527B" Height="32" >
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
@@ -26,17 +29,17 @@
                 </StackPanel>
             </Border>
         </StackPanel>
-
         <Rectangle Grid.Row="1" Fill="#F2F2F2"/>
         <StackPanel Grid.Row="1" Orientation="Horizontal">
             <TextBlock Text="{DynamicResource lastBackup}" FontSize="14" FontWeight="Bold" VerticalAlignment="Center" Margin="15,0,0,0"/>
-            <TextBlock Name="runningStateBlock" FontWeight="Bold" FontSize="14" VerticalAlignment="Center" Margin="10,0,0,0" />
+            <TextBlock Name="txtRunningStateBlock" FontWeight="Bold" FontSize="14" VerticalAlignment="Center" Margin="10,0,0,0" />
         </StackPanel>
         <StackPanel Orientation="Vertical" Grid.Row="1">
             <TextBlock Name="makeABackup" Text="{DynamicResource makeABackup}" FontWeight="Bold" Foreground="#3A80BB" FontSize="14" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="0,10,0,0" />
         </StackPanel>
         <Rectangle Height="1" Fill="#428BCA" VerticalAlignment="Bottom" Grid.Row="1" />
         <StackPanel Orientation="Horizontal" Grid.Row="1" HorizontalAlignment="Right">
+            <TextBlock Name="txtLicenseNotActive" Text="{DynamicResource licenseNotActive}" Foreground="#FF0000" FontSize="14" FontWeight="Bold" VerticalAlignment="Center" Margin="0,0,10,0"/>
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                 <Button Name="btnPlayButton" ToolTip="{DynamicResource start}" HorizontalAlignment="Right" Margin="5,4,0,4" Style="{StaticResource ImageButton}" Width="32" Height="32" Grid.Column="1">
                     <Button.Content>
@@ -908,6 +911,7 @@
                     </StackPanel>
                 </Grid>
             </TabItem>
+
             <TabItem  Name="settingsTab">
                 <TabItem.Header>
                     <StackPanel  Height="48" Width="175" Orientation="Horizontal ">
@@ -927,15 +931,14 @@
                         <ColumnDefinition/>
                     </Grid.ColumnDefinitions>
                     <Grid.RowDefinitions>
-                        <RowDefinition/>
+                        <RowDefinition Height="150"/>
                         <RowDefinition/>
                         <RowDefinition/>
                     </Grid.RowDefinitions>
-                    <!--#region 1.Row-->
                     <StackPanel Grid.Row="0" HorizontalAlignment="Stretch">
-                        <TextBlock Text="{DynamicResource settings}" FontSize="20" Margin="20,0,0,0" TextAlignment="Left" FontWeight="Bold"/>
-                        <TextBlock Text="Hesaplar Alan yönetimi diğer tanımları bu alandan yönetin " Foreground="#A1A1A1"  Margin="30,0,0,0" TextAlignment="Left"/>
-                        <StackPanel Orientation="Horizontal" Margin="10,10,0,0">
+                        <TextBlock Text="{DynamicResource settings}" FontSize="20" Margin="10,0,0,5" TextAlignment="Left" FontWeight="Bold"/>
+                        <TextBlock Text="{DynamicResource settingsContent}" Foreground="#A1A1A1"  Margin="20,0,0,0" TextAlignment="Left"/>
+                        <StackPanel Orientation="Horizontal" Margin="20,30,0,0">
                             <Image Height="42" Margin="0,0,15,0" >
                                 <Image.Style>
                                     <Style TargetType="Image">
@@ -945,12 +948,12 @@
                             </Image>
                             <StackPanel VerticalAlignment="Center">
                                 <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="{DynamicResource fileName}"/>
-                                    <TextBlock Text="{DynamicResource fileName}"/>
+                                    <TextBlock Text="{DynamicResource appLicense}"/>
+                                    <TextBlock Text="{DynamicResource active}" Margin="3,0"/>
                                 </StackPanel>
                                 <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="{DynamicResource fileName}"/>
-                                    <TextBlock Text="{DynamicResource fileName}"/>
+                                    <TextBlock Text="{DynamicResource endDateDot}"/>
+                                    <TextBlock Text="21/12/2021" Margin="3,0"/>
                                 </StackPanel>
                             </StackPanel>
                         </StackPanel>
@@ -961,17 +964,18 @@
                                 <ColumnDefinition/>
                                 <ColumnDefinition/>
                             </Grid.ColumnDefinitions>
-                            <StackPanel Orientation="Horizontal" Grid.Column="0" HorizontalAlignment="Left">
-                                <TextBlock VerticalAlignment="Center" Text="Language :  "/>
-                                <ComboBox Margin="30,0,0,0" Name="cbLang" Width="100" Height="20" SelectedItem="0">
-                                    <ComboBoxItem Content="Türkçe"/>
-                                    <ComboBoxItem Content="İnglizce"/>
+                            <StackPanel Orientation="Horizontal" Grid.Column="0" HorizontalAlignment="Left" Margin="0,30,0,0">
+                                <TextBlock VerticalAlignment="Center" Text="{DynamicResource languageDot}"/>
+                                <ComboBox Margin="30,0,0,0" Name="cbLang" Width="100" Height="22" SelectedIndex="0">
+                                    <ComboBoxItem Content="{DynamicResource turkish}"/>
+                                    <ComboBoxItem Content="{DynamicResource english}"/>
                                 </ComboBox>
                             </StackPanel>
-                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,24,0" Grid.Column="1">
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,30,20,0" Grid.Column="1">
                                 <StackPanel VerticalAlignment="Center">
                                     <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="{DynamicResource fileName}"/>
+                                        <TextBlock Text="{DynamicResource versionDot}"/>
+                                        <TextBlock Name="txtVersion" Text="1.0" Margin="3,0"/>
                                     </StackPanel>
                                 </StackPanel>
                                 <Image Height="32" Margin="15,0,0,0" >
@@ -984,30 +988,20 @@
                             </StackPanel>
                         </Grid>
                     </StackPanel>
-                    <!--#endregion-->
-
-                    <!--#region 2.Row-->
-                    <StackPanel Grid.Row="1" Grid.Column="0" Height="200" Orientation="Horizontal" Margin="15,0,3,0">                        <Border BorderBrush="#9ACFEA" Width="420"  BorderThickness="2" CornerRadius="3">                            <StackPanel>
-                                <StackPanel Orientation="Horizontal" Margin="10,5,0,10" >
-                                    <Image Height="42" Margin="0,0,15,0" >
+                    <StackPanel Grid.Row="1" Grid.Column="0" Height="200" Orientation="Horizontal" Margin="15,0,3,0">
+                        <Border BorderBrush="#9ACFEA" Width="420"  BorderThickness="2" CornerRadius="3">
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="10,5,0,0" >
+                                    <Image Height="42" Margin="0,5,15,0" >
                                         <Image.Style>
                                             <Style TargetType="Image">
                                                 <Setter Property="Source" Value="Resources/Icon/icons8_play.ico" />
                                             </Style>
                                         </Image.Style>
                                     </Image>
-                                    <StackPanel VerticalAlignment="Center">
-                                        <StackPanel Orientation="Horizontal">
-                                            <TextBlock Text="{DynamicResource fileName}"/>
-                                            <TextBlock Text="{DynamicResource fileName}"/>
-                                        </StackPanel>
-                                        <StackPanel Orientation="Horizontal">
-                                            <TextBlock Text="{DynamicResource fileName}"/>
-                                            <TextBlock Text="{DynamicResource fileName}"/>
-                                        </StackPanel>
-                                    </StackPanel>
+                                    <TextBlock VerticalAlignment="Center" FontSize="15" Text="abdurrahim.vural@bilisimcenter.com"/>
                                 </StackPanel>
-                                <StackPanel Orientation="Horizontal" Margin="10,15,0,10" >
+                                <StackPanel Orientation="Horizontal" Margin="10,20,0,10" >
                                     <Image Height="42" Margin="0,0,15,0" >
                                         <Image.Style>
                                             <Style TargetType="Image">
@@ -1017,77 +1011,79 @@
                                     </Image>
                                     <StackPanel VerticalAlignment="Center">
                                         <StackPanel Orientation="Horizontal">
-                                            <TextBlock Text="{DynamicResource fileName}"/>
-                                            <TextBlock Text="{DynamicResource fileName}"/>
+                                            <TextBlock Text="{DynamicResource cloudLicenseDot}"/>
+                                            <TextBlock Text="{DynamicResource active}" Margin="3,0"/>
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal">
-                                            <TextBlock Text="{DynamicResource fileName}"/>
-                                            <TextBlock Text="{DynamicResource fileName}"/>
+                                            <TextBlock Text="{DynamicResource endDateDot}"/>
+                                            <TextBlock Text="12.12.2020" Margin="3,0"/>
                                         </StackPanel>
                                     </StackPanel>
                                 </StackPanel>
                                 <StackPanel Orientation="Horizontal" Margin="10,15,0,10" >
                                     <Grid Height="42" Width="42">
-                                        <xctk:Pie StartAngle="0" EndAngle="360" Height="42" Width="42" Fill="#B8DABC" Stroke="#7A917D"/>
-                                        <xctk:Pie Name="pieDiskSize" StartAngle="-90" EndAngle="150" Height="42" Width="42" Fill="#87B5F2" Stroke="#5A78A1"/>
-                                    </Grid>
-                                    <StackPanel VerticalAlignment="Center" Margin="15,0,0,0">
-                                        <StackPanel Orientation="Horizontal">
-                                            <TextBlock Text="{DynamicResource fileName}"/>
-                                            <TextBlock Text="{DynamicResource fileName}"/>
+                                        <xctk:Pie StartAngle="0" EndAngle="360" Height="42" Width="42" Fill="#B8DABC" Stroke="#7A917D"/>
+                                        <xctk:Pie Name="pieSize" StartAngle="-90" EndAngle="0" Height="42" Width="42" Fill="#87B5F2" Stroke="#5A78A1"/>
+                                    </Grid>
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="15,0,0,0">
+                                        <StackPanel>
+                                            <TextBlock Text="{DynamicResource totalCapacity}"/>
+                                            <TextBlock Text="{DynamicResource usedCapacity}"/>
                                         </StackPanel>
-                                        <StackPanel Orientation="Horizontal">
-                                            <TextBlock Text="{DynamicResource fileName}"/>
-                                            <TextBlock Text="{DynamicResource fileName}"/>
+                                        <StackPanel Margin="20,0">
+                                            <TextBlock Text="200 GB" Name="txtTotalCapacity"/>
+                                            <TextBlock Text="50 GB" Name="txtUsedCapacity"/>
                                         </StackPanel>
                                     </StackPanel>
                                 </StackPanel>
                             </StackPanel>
                         </Border>
                     </StackPanel>
-                    <!--#endregion-->
 
-                    <!--#region 3.Row-->
-                    <GroupBox Grid.Row="2" Header="Bant Genişliği Ayarları" Grid.ColumnSpan="2" Margin="10">
-                        <StackPanel>
+                    <GroupBox Grid.Row="2" Grid.ColumnSpan="2" Margin="10" BorderBrush="#9ACFEA" BorderThickness="2">
+                        <GroupBox.Header>
+                            <TextBlock Text="{DynamicResource bandwithSetting}" Foreground="Black" FontWeight="Bold"/>
+                        </GroupBox.Header>
+                        <StackPanel Margin="10,20,0,0">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition/>
                                     <ColumnDefinition/>
                                 </Grid.ColumnDefinitions>
                                 <StackPanel Grid.Column="0">
-                                    <TextBlock Text="İndirme Hızı" ></TextBlock>
-                                    <RadioButton Height="15" Content="Sınırlandırma"  Name="fullUpRadioBtn" Checked="fullUpRadioBtn_Checked" GroupName="upload"  Margin="20,10,0,0" Width="100" HorizontalAlignment="Left" Background="LightGray"/>
+                                    <TextBlock Text="{DynamicResource downloadSpeed}" ></TextBlock>
+                                    <RadioButton Content="{DynamicResource delimitation}" Name="rbtnDownloadDelimitation" GroupName="download" IsChecked="True" Margin="20,10,0,0" />
                                     <StackPanel Orientation="Horizontal">
-                                        <RadioButton Height="15" Content="Şu değerde sınırlandır" Name="limitedUpRadioBtn" Checked="limitedUpRadioBtn_Checked" GroupName="upload"  Margin="20,5,0,0" Width="100" Background="LightGray"/>
-                                        <TextBox Name="upspeedTextBox" FontSize="16" Width="50" Margin="50,5,0,0" PreviewTextInput="NumberTextInput" TextChanged="upspeedTextBox_TextChanged" MaxLength="4" IsEnabled="False"/>
-                                        <ComboBox Name="upspeedUnit" Width="60" Height="25" Margin="5,5,0,0" SelectionChanged="upspeedUnit_SelectionChanged" SelectedIndex="0" IsEnabled="False">
-                                            <ComboBoxItem>Kbps</ComboBoxItem>
-                                            <ComboBoxItem>Mbps</ComboBoxItem>
-                                            <ComboBoxItem>Gbps</ComboBoxItem>
-                                        </ComboBox>
+                                        <RadioButton Height="15" Content="{DynamicResource limit}" Name="rbtnDownload" GroupName="download" Checked="rbtnDownload_Checked" Unchecked="rbtnDownload_Unchecked"  Margin="20,5,0,0" />
+                                        <StackPanel Name="stackDownload" Orientation="Horizontal" IsEnabled="False">
+                                            <TextBox Name="txtDownload" Text="100" Width="50" Height="28" FontSize="13" Margin="20,0,0,0" VerticalContentAlignment="Center" MaxLength="3"/>
+                                            <StackPanel Margin="-21,0,0,0" VerticalAlignment="Center">
+                                                <Button Name="btnDownloadUp" Style="{StaticResource ArrowUpButton}" Content="▲" Width="20" Height="13" FontSize="8" VerticalContentAlignment="Top" BorderThickness="0" Click="btnDownloadUp_Click" />
+                                                <Button Name="btnDownloadDown" Style="{StaticResource ArrowDownButton}" Content="▼" Width="20" Height="13" FontSize="8" VerticalContentAlignment="Top" BorderThickness="0" Click="btnDownloadDown_Click" />
+                                            </StackPanel>
+                                        </StackPanel>
                                     </StackPanel>
                                 </StackPanel>
                                 <StackPanel Grid.Column="1">
-                                    <TextBlock Text="Yükleme Hızı" ></TextBlock>
-                                    <RadioButton Height="15" Content="Sınırlandırma"  Name="fullDownRadioButton" Checked="fullDownRadioButton_Checked" GroupName="download"  Margin="20,10,0,0" Width="100" HorizontalAlignment="Left" Background="LightGray"/>
-                                        <StackPanel Orientation="Horizontal">
-                                            <RadioButton Height="15" Content="Şu değerde sınırlandır"  Name="limitedDownRadioBtn" Checked="limitedDownRadioBtn_Checked" GroupName="download"  Margin="20,5,0,0" Width="100" Background="LightGray"/>
-                                            <TextBox Name="downspeedTextBox" FontSize="16" TextChanged="upspeedTextBox_TextChanged" Width="50" Margin="50,5,0,0" MaxLength="4" PreviewTextInput="NumberTextInput" IsEnabled="False"/>
-                                            <ComboBox Name="downspeedUnit" Width="60" SelectionChanged="upspeedUnit_SelectionChanged" Height="25" Margin="5,5,0,0" SelectedIndex="0" IsEnabled="False">
-                                                <ComboBoxItem>Kbps</ComboBoxItem>
-                                                <ComboBoxItem>Mbps</ComboBoxItem>
-                                                <ComboBoxItem>Gbps</ComboBoxItem>
-                                            </ComboBox>
+                                    <TextBlock Text="{DynamicResource uploadSpeed}" ></TextBlock>
+                                    <RadioButton Content="{DynamicResource delimitation}" Name="rbtnUploadDelimitation" GroupName="upload" Margin="20,10,0,0" IsChecked="True" />
+                                    <StackPanel Orientation="Horizontal">
+                                        <RadioButton Content="{DynamicResource limit}" Name="rbtnUpload" GroupName="upload" Checked="rbtnUpload_Checked" Unchecked="rbtnUpload_Unchecked" Margin="20,5,0,0"  />
+                                        <StackPanel Name="stackUpload" Orientation="Horizontal" IsEnabled="False">
+                                            <TextBox Name="txtUpload" Text="100" Width="50" Height="28" FontSize="13" Margin="20,0,0,0" VerticalContentAlignment="Center" MaxLength="3"/>
+                                            <StackPanel Margin="-21,0,0,0" VerticalAlignment="Center">
+                                                <Button Name="btnUploadUp" Style="{StaticResource ArrowUpButton}" Content="▲" Width="20" Height="13" FontSize="8" VerticalContentAlignment="Top" BorderThickness="0" Click="btnUploadUp_Click" />
+                                                <Button Name="btnUploadDown" Style="{StaticResource ArrowDownButton}" Content="▼" Width="20" Height="13" FontSize="8" VerticalContentAlignment="Top" BorderThickness="0" Click="btnUploadDown_Click" />
+                                            </StackPanel>
                                         </StackPanel>
-
+                                    </StackPanel>
                                 </StackPanel>
                             </Grid>
                         </StackPanel>
                     </GroupBox>
-                    <!--#endregion-->
                 </Grid>
             </TabItem>
+
             <TabItem  Name="helpTab">
                 <TabItem.Header>
                     <StackPanel  Height="48" Width="175" Orientation="Horizontal ">

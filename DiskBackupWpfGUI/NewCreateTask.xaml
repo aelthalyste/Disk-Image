@@ -11,15 +11,16 @@
         <ResourceDictionary Source="Resources\Lang\string_tr.xaml"/>
     </Window.Resources>
     <Grid Background="White">
-        <!-- içerideki ufak grilik yok oldu -->
         <Grid.RowDefinitions>
             <RowDefinition Height="30"/>
             <RowDefinition Height="45"/>
             <RowDefinition/>
         </Grid.RowDefinitions>
 
-        <TextBlock Text="{DynamicResource createNewTask}" Grid.Row="0" Panel.ZIndex="1" Style="{StaticResource TitleBarText}"></TextBlock>
-
+        <StackPanel Panel.ZIndex="1" Orientation="Horizontal" HorizontalAlignment="Center">
+            <Image Source="Resources/Icon/u62.png" Height="35" Width="40" Margin="0,0,5,0"></Image>
+            <TextBlock Text="{DynamicResource createNewTask}" Style="{StaticResource TitleBarText}"></TextBlock>
+        </StackPanel>
         <StackPanel Name="MyTitleBar" VerticalAlignment="Top" MouseDown="MyTitleBar_MouseDown">
             <Border Background="#27527B" Height="30">
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
@@ -39,7 +40,6 @@
                 <TextBlock Name="lblTabHeader" FontSize="12" VerticalAlignment="Center" Margin="10,0,0,0"/>
                 <TextBlock Name="lblTabContent" FontWeight="Bold" FontSize="12" VerticalAlignment="Center" Margin="10,0,0,0" />
             </StackPanel>
-
         </StackPanel>
 
         <TabControl Name="NCTTabControl" TabStripPlacement="Left" BorderThickness="1,0,0,0" Grid.Row="2" BorderBrush="#AAAAAA" SelectionChanged="NCTTabControl_SelectionChanged">
@@ -77,10 +77,6 @@
                     </StackPanel>
                 </TabItem.Header>
                 <Grid Background="White">
-                    <!--<Grid.RowDefinitions>
-                        <RowDefinition Height="70"/>
-                        <RowDefinition />
-                    </Grid.RowDefinitions>-->
                     <StackPanel Margin="10,10,20,10">
                         <TextBlock Text="{DynamicResource taskName}" Margin="0,0,0,5"/>
                         <TextBox Name="txtTaskName" Height="25" VerticalContentAlignment="Center"/>
@@ -104,7 +100,6 @@
                         <RadioButton Name="rbBTIncremental" GroupName="rbBackupType" Content="{DynamicResource inc}"></RadioButton>
                         <TextBlock Text="{DynamicResource incDescription}" Margin="40,10,0,20" />
                     </StackPanel>
-
                 </Grid>
             </TabItem>
 
@@ -222,7 +217,6 @@
                                 </StackPanel>
                             </StackPanel>
                         </StackPanel>
-
                     </StackPanel>
                 </Grid>
             </TabItem>
@@ -253,7 +247,6 @@
                                     </ComboBox>
                                     <Button Name="btnDaysTimeDays" Content="{DynamicResource days}" Style="{StaticResource WhiteButton}" Width="60" ></Button>
                                 </StackPanel>
-
                             </StackPanel>
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
                                 <RadioButton Name="rbWeeklyTime" GroupName="rbtnSchedular" Content="{DynamicResource weeklyTime}" Checked="rbWeeklyTime_Checked" Unchecked="rbWeeklyTime_Unchecked" VerticalContentAlignment="Center" Margin="5,0,0,0" />
@@ -296,7 +289,6 @@
                                     </ComboBox>
                                     <Button Name="btnPeriodicTime" Content="{DynamicResource time}" Style="{StaticResource WhiteButton}" Width="60"/>
                                 </StackPanel>
-
                             </StackPanel>
                         </StackPanel>
 
@@ -356,13 +348,10 @@
                                     </ComboBox>
                                 </StackPanel>
                             </StackPanel>
-
                         </StackPanel>
-
                         <StackPanel Margin="0,20,0,0">
                             <TextBlock Text="{DynamicResource notifications}"/>
                         </StackPanel>
-                        
                     </StackPanel>
                 </Grid>
             </TabItem>
