@@ -9,7 +9,9 @@
     <system:String x:Key="makeABackup">Yedek Alnıyor, C, 270 MB, %80</system:String>
     <system:String x:Key="volume">Volume</system:String>
     <system:String x:Key="letter">Harf</system:String>
-    <system:String x:Key="diskSize">Alan</system:String>
+    <system:String x:Key="area">Alan</system:String>
+    <system:String x:Key="diskSize">Disk Boyutu</system:String>
+    <system:String x:Key="folderSize">Dosya Boyutu</system:String>
     <system:String x:Key="freeSize">Boş Alan</system:String>
     <system:String x:Key="type">Tür</system:String>
     <system:String x:Key="fileSystem">Dosya Sistemi</system:String>
@@ -74,6 +76,7 @@
     <system:String x:Key="dailyTime">Günlük Zaman</system:String>
     <system:String x:Key="weeklyTime">Haftalık Zaman</system:String>
     <system:String x:Key="periodic">Periyodik</system:String>
+    <system:String x:Key="day">Gün</system:String>
     <system:String x:Key="days">Günler</system:String>
     <system:String x:Key="months">Aylar</system:String>
     <system:String x:Key="try">Deneme</system:String>
@@ -102,4 +105,23 @@
     <system:String x:Key="Minute">Dakika</system:String>
     <system:String x:Key="add">Ekle</system:String>
     <system:String x:Key="taskStatus">Görev Durumu</system:String>
+    <system:String x:Key="localArea">Görev Durumu</system:String>
+    <system:String x:Key="sendingToCloud">Bulut'a Gönderim</system:String>
+    <system:String x:Key="sourceConsumption">Kaynak Tüketimi</system:String>
+    <system:String x:Key="deliverySpeed">Gönderim Hızı</system:String>
+    <system:String x:Key="low">Düşük</system:String>
+    <system:String x:Key="medium">Orta</system:String>
+    <system:String x:Key="high">Yüksek</system:String>
+    <system:String x:Key="notifications">Bildirimler</system:String>
+    <system:String x:Key="unlimited">Sınırsız</system:String>
+    <system:String x:Key="NCTNameContent">Yedekleme profili için bir isim ve açıklama giriniz</system:String>
+    <system:String x:Key="NCTBackupTypeContent">Yedekleme istediğiniz türü seçin</system:String>
+    <system:String x:Key="NCTTargetContent">Yedekleri kaydedeceğiniz alanı seçiniz</system:String>
+    <system:String x:Key="NCTSchedulerContent">Yedeklemelerin zamanlamasını seçiniz</system:String>
+    <system:String x:Key="NCTSettingsContent">Yedeklemelerin ayarlamasını seçiniz</system:String>
+    <system:String x:Key="NCTSummaryContent">Oluşturulan görevin özet bilgisi</system:String>
+    <system:String x:Key="retentionTime">Saklama Süresi</system:String>
+    <system:String x:Key="fullOverwrite">Yetersiz alanda üzerine yaz</system:String>
+    <system:String x:Key="fullBackup">Full Yedek</system:String>
+    <system:String x:Key="perWeek">Haftada</system:String>
 </ResourceDictionary>

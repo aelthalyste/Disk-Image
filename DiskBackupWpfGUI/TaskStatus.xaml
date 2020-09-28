@@ -31,12 +31,28 @@
             </Border>
         </StackPanel>
 
-        <StackPanel Grid.Row="1" Grid.Column="0" VerticalAlignment="Center">
-            <TextBlock FontSize="60" HorizontalAlignment="Center">First</TextBlock>
+        <StackPanel Grid.Row="1" Grid.Column="0">
+            <TextBlock Text="{DynamicResource localArea}" Margin="0,40,0,10" HorizontalAlignment="Center"></TextBlock>
+            <StackPanel Orientation="Horizontal">
+                <StackPanel Width="230">
+                    <TextBlock>başlıklar</TextBlock>
+                </StackPanel>
+                <StackPanel>
+                    <TextBlock>dummy</TextBlock>
+                </StackPanel>
+            </StackPanel>
         </StackPanel>
 
-        <StackPanel Grid.Row="1" Grid.Column="1" VerticalAlignment="Center">
-            <TextBlock FontSize="60" HorizontalAlignment="Center">Second</TextBlock>
+        <StackPanel Grid.Row="1" Grid.Column="1">
+            <TextBlock Text="{DynamicResource sendingToCloud}" Margin="0,40,0,10" HorizontalAlignment="Center"></TextBlock>
+            <StackPanel Orientation="Horizontal">
+                <StackPanel Width="230">
+                    <TextBlock>başlıklar</TextBlock>
+                </StackPanel>
+                <StackPanel>
+                    <TextBlock>dummy</TextBlock>
+                </StackPanel>
+            </StackPanel>
         </StackPanel>
 
     </Grid>
