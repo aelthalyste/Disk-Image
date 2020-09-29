@@ -1065,6 +1065,8 @@ Return Value:
 #if 1
 
 
+    void* UnicodeStrBuffer = 0;
+
     if (FltObjects->FileObject != NULL) {
 
         status = FltGetFileNameInformation(Data,
@@ -1086,7 +1088,7 @@ Return Value:
             //FltGetVolumeName(FltObjects->Volume, StringBuffer, 0);
             
             UNICODE_STRING UniStr;
-            void* UnicodeStrBuffer = ExAllocatePoolWithTag(PagedPool, NAR_LOOKASIDE_SIZE, NAR_TAG);
+            UnicodeStrBuffer = ExAllocatePoolWithTag(PagedPool, NAR_LOOKASIDE_SIZE, NAR_TAG);
             if (UnicodeStrBuffer == NULL) {
                 DbgPrint("Couldnt allocate memory for unicode string\n");
                 return FLT_PREOP_SUCCESS_NO_CALLBACK;
@@ -1099,32 +1101,27 @@ Return Value:
 
             RtlUnicodeStringPrintf(&UniStr, L"\\Device\\HarddiskVolume%i\\Users\\%S\\AppData\\Local\\Temp", NarData.OsDeviceID, NarData.UserName);
             if (RtlPrefixUnicodeString(&UniStr, &nameInfo->Name, FALSE)) {
-                ExFreePoolWithTag(UnicodeStrBuffer, NAR_TAG);
-                goto NAR_PREOP_END;
+                goto NAR_PREOP_FAILED_END;
             }
 
             RtlUnicodeStringPrintf(&UniStr, L"\\Device\\HarddiskVolume%i\\Users\\%S\\AppData\\Local\\Microsoft\\Windows\\Temporary Internet Files", NarData.OsDeviceID, NarData.UserName);
             if (RtlPrefixUnicodeString(&UniStr, &nameInfo->Name, FALSE)) {
-                ExFreePoolWithTag(UnicodeStrBuffer, NAR_TAG);
-                goto NAR_PREOP_END;
+                goto NAR_PREOP_FAILED_END;
             }
 
             RtlUnicodeStringPrintf(&UniStr, L"\\Device\\HarddiskVolume%i\\Users\\%S\\AppData\\Local\\Google\\Chrome\\User Data\\Default\\Cache", NarData.OsDeviceID, NarData.UserName);
             if (RtlPrefixUnicodeString(&UniStr, &nameInfo->Name, FALSE)) {
-                ExFreePoolWithTag(UnicodeStrBuffer, NAR_TAG);
-                goto NAR_PREOP_END;
+                goto NAR_PREOP_FAILED_END;
             }
 
             RtlUnicodeStringPrintf(&UniStr, L"\\Device\\HarddiskVolume%i\\Users\\%S\\AppData\\Local\\Opera Software", NarData.OsDeviceID, NarData.UserName);
             if (RtlPrefixUnicodeString(&UniStr, &nameInfo->Name, FALSE)) {
-                ExFreePoolWithTag(UnicodeStrBuffer, NAR_TAG);
-                goto NAR_PREOP_END;
+                goto NAR_PREOP_FAILED_END;
             }
 
             RtlUnicodeStringPrintf(&UniStr, L"\\Device\\HarddiskVolume%i\\Users\\%S\\AppData\\Local\\Mozilla\\Firefox\\Profiles", NarData.OsDeviceID, NarData.UserName);
             if (RtlPrefixUnicodeString(&UniStr, &nameInfo->Name, FALSE)) {
-                ExFreePoolWithTag(UnicodeStrBuffer, NAR_TAG);
-                goto NAR_PREOP_END;
+                goto NAR_PREOP_FAILED_END;
             }
 
 
@@ -1135,38 +1132,32 @@ Return Value:
 
             RtlUnicodeStringPrintf(&UniStr, L"\\AppData\\Local\\Temp");
             if (NarSubMemoryExists(nameInfo->Name.Buffer, UniStr.Buffer, nameInfo->Name.Length, UniStr.Length)) {
-                ExFreePoolWithTag(UnicodeStrBuffer, NAR_TAG);
-                goto NAR_PREOP_END;
+                goto NAR_PREOP_FAILED_END;
             }
 
             RtlUnicodeStringPrintf(&UniStr, L"\\AppData\\Local\\Microsoft\\Windows\\Temporary Internet Files");
             if (NarSubMemoryExists(nameInfo->Name.Buffer, UniStr.Buffer, nameInfo->Name.Length, UniStr.Length)) {
-                ExFreePoolWithTag(UnicodeStrBuffer, NAR_TAG);
-                goto NAR_PREOP_END;
+                goto NAR_PREOP_FAILED_END;
             }
 
             RtlUnicodeStringPrintf(&UniStr, L"\\AppData\\Local\\Google\\Chrome\\User Data\\Default\\Cache");
             if (NarSubMemoryExists(nameInfo->Name.Buffer, UniStr.Buffer, nameInfo->Name.Length, UniStr.Length)) {
-                ExFreePoolWithTag(UnicodeStrBuffer, NAR_TAG);
-                goto NAR_PREOP_END;
+                goto NAR_PREOP_FAILED_END;
             }
 
             RtlUnicodeStringPrintf(&UniStr, L"\\AppData\\Local\\Opera Software");
             if (NarSubMemoryExists(nameInfo->Name.Buffer, UniStr.Buffer, nameInfo->Name.Length, UniStr.Length)) {
-                ExFreePoolWithTag(UnicodeStrBuffer, NAR_TAG);
-                goto NAR_PREOP_END;
+                goto NAR_PREOP_FAILED_END;
             }
 
             RtlUnicodeStringPrintf(&UniStr, L"\\AppData\\Local\\Mozilla\\Firefox\\Profiles");
             if (NarSubMemoryExists(nameInfo->Name.Buffer, UniStr.Buffer, nameInfo->Name.Length, UniStr.Length)) {
-                ExFreePoolWithTag(UnicodeStrBuffer, NAR_TAG);
-                goto NAR_PREOP_END;
+                goto NAR_PREOP_FAILED_END;
             }
 
             RtlUnicodeStringPrintf(&UniStr, L"\\AppData\\Local\\Microsoft\\Windows\\INetCache\\IE");
             if (NarSubMemoryExists(nameInfo->Name.Buffer, UniStr.Buffer, nameInfo->Name.Length, UniStr.Length)) {
-                ExFreePoolWithTag(UnicodeStrBuffer, NAR_TAG);
-                goto NAR_PREOP_END;
+                goto NAR_PREOP_FAILED_END;
             }
 
 
@@ -1176,33 +1167,27 @@ Return Value:
             //Suffix area
             RtlUnicodeStringPrintf(&UniStr, L".tmp");
             if (RtlSuffixUnicodeString(&UniStr, &nameInfo->Name, FALSE)) {
-                ExFreePoolWithTag(UnicodeStrBuffer, NAR_TAG);
-                goto NAR_PREOP_END;
+                goto NAR_PREOP_FAILED_END;
             }
             RtlUnicodeStringPrintf(&UniStr, L"~");
             if (RtlSuffixUnicodeString(&UniStr, &nameInfo->Name, FALSE)) {
-                ExFreePoolWithTag(UnicodeStrBuffer, NAR_TAG);
-                goto NAR_PREOP_END;
+                goto NAR_PREOP_FAILED_END;
             }
             RtlUnicodeStringPrintf(&UniStr, L".tib.metadata");
             if (RtlSuffixUnicodeString(&UniStr, &nameInfo->Name, FALSE)) {
-                ExFreePoolWithTag(UnicodeStrBuffer, NAR_TAG);
-                goto NAR_PREOP_END;
+                goto NAR_PREOP_FAILED_END;
             }
             RtlUnicodeStringPrintf(&UniStr, L".tib");
             if (RtlSuffixUnicodeString(&UniStr, &nameInfo->Name, FALSE)) {
-                ExFreePoolWithTag(UnicodeStrBuffer, NAR_TAG);
-                goto NAR_PREOP_END;
+                goto NAR_PREOP_FAILED_END;
             }
             RtlUnicodeStringPrintf(&UniStr, L".pf");
             if (RtlSuffixUnicodeString(&UniStr, &nameInfo->Name, FALSE)) {
-                ExFreePoolWithTag(UnicodeStrBuffer, NAR_TAG);
-                goto NAR_PREOP_END;
+                goto NAR_PREOP_FAILED_END;
             }
             RtlUnicodeStringPrintf(&UniStr, L".cookie");
             if (RtlSuffixUnicodeString(&UniStr, &nameInfo->Name, FALSE)) {
-                ExFreePoolWithTag(UnicodeStrBuffer, NAR_TAG);
-                goto NAR_PREOP_END;
+                goto NAR_PREOP_FAILED_END;
             }
 
             //NAR
@@ -1263,9 +1248,8 @@ Return Value:
                 DbgPrint("FltFsControl failed with code %i,  file name %wZ\n", status, &nameInfo->Name);
 
                 ExFreePoolWithTag(WholeFileMapBuffer, NAR_TAG);
-                ExFreePoolWithTag(UnicodeStrBuffer, NAR_TAG);
 
-                goto NAR_PREOP_END;
+                goto NAR_PREOP_FAILED_END;
             }
 
             for (unsigned int i = 0; i < WholeFileMapBuffer->ExtentCount; i++) {
@@ -1423,7 +1407,7 @@ Return Value:
                                 Added = TRUE;
                             }
                             else {
-
+                                
                                 DbgPrint("not enought memory, will flush contents to file\n");
 
                                 UNICODE_STRING FileName;
@@ -1496,12 +1480,11 @@ Return Value:
 #pragma warning(pop)
 #endif
 
-            ExFreePoolWithTag(UnicodeStrBuffer, NAR_TAG);
             ExFreePoolWithTag(CompareBuffer, NAR_TAG);
 
         }
         else {
-            goto NAR_PREOP_END;
+            goto NAR_PREOP_FAILED_END;
         }
 
 
@@ -1511,11 +1494,17 @@ Return Value:
 
 #endif
 
+    if (UnicodeStrBuffer) {
+        ExFreePoolWithTag(UnicodeStrBuffer, NAR_TAG);
+    }
 
     return FLT_PREOP_SUCCESS_NO_CALLBACK;
 
-NAR_PREOP_END:
-    //ExFreeToPagedLookasideList(&NarData.LookAsideList, Buffer);
+NAR_PREOP_FAILED_END:
+
+    if (UnicodeStrBuffer) {
+        ExFreePoolWithTag(UnicodeStrBuffer, NAR_TAG);
+    }
 
     return FLT_PREOP_SUCCESS_NO_CALLBACK;
 

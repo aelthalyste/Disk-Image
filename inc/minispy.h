@@ -38,7 +38,7 @@ Environment:
 
 #define NAR_GUID_STR_SIZE 96
 
-#define NAR_MEMORYBUFFER_SIZE       (1024*128*1) // 1k
+#define NAR_MEMORYBUFFER_SIZE       (1024*1024*1) // 1k
 #define NAR_MAX_VOLUME_COUNT        (8)
 #define NAR_REGIONBUFFER_SIZE       (sizeof(*NarData.VolumeRegionBuffer)) //struct itself
 #define NAR_VOLUMEREGIONBUFFERSIZE  (NAR_MAX_VOLUME_COUNT)*(NAR_REGIONBUFFER_SIZE)

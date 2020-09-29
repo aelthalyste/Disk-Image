@@ -1715,10 +1715,6 @@ GetMFTLCN(char VolumeLetter, HANDLE VolumeHandle) {
 
     // TODO remove that check
 
-    
-    
-
-
     data_array<nar_record> Result = { 0 };
     ClustersExtracted = (nar_record*)realloc(ClustersExtracted, ClusterExtractedCount * sizeof(nar_record));
     Result.Data = ClustersExtracted;
@@ -1732,7 +1728,7 @@ GetMFTLCN(char VolumeLetter, HANDLE VolumeHandle) {
     ULONGLONG VolumeSize = NarGetVolumeSize(VolumeLetter);
     UINT32 TruncateIndex = 0;
     for (int i = 0; i < Result.Count; i++) {
-        if ((ULONGLONG)Result.Data[i].StartPos * (ULONGLONG)4096ull + (ULONGLONG)Result.Data[i].Len * 4096ULL > VolumeSize) {
+        if ((ULONGLONG)Result.Data[i].StartPos * (ULONGLONG)4096ULL + (ULONGLONG)Result.Data[i].Len * 4096ULL > VolumeSize) {
             TruncateIndex = i;
             break;
         }
@@ -1740,7 +1736,7 @@ GetMFTLCN(char VolumeLetter, HANDLE VolumeHandle) {
 
     if (TruncateIndex > 0) {
         
-        printf("INDEX_ALLOCATION blocks exceeds volume size, truncating from index %i\n");
+        printf("INDEX_ALLOCATION blocks exceeds volume size, truncating from index %i\n", TruncateIndex);
         Result.Data = (nar_record*)realloc(Result.Data, TruncateIndex * sizeof(nar_record));
         Result.Count = TruncateIndex;
 
@@ -2878,7 +2874,9 @@ SetupStreamHandle(volume_backup_inf* VolInf) {
 
         }
         else{
-            printf("Couldnt create log file for volume %c\n", VolInf->Letter);            
+            printf("Couldnt create log file for volume %c\n", VolInf->Letter);      
+            DisplayError(GetLastError());
+            return FALSE;  
         }
 
         
@@ -4118,6 +4116,8 @@ GenerateMetadataName(char Letter, int Version) {
     return Result;
 }
 
+
+#define GENERATE_LOG_FILE_NAME(letter) L"LOGFILE_##letter"
 inline std::wstring
 GenerateLogFileName(wchar_t Letter) {
     std::wstring Result = L"LOGFILE_";
@@ -5019,10 +5019,17 @@ recovery
     if (BytesWritten == sizeof(BM)) {
         Result = TRUE;
     }
+    else{
+        printf("Couldnt write %i bytes to metadata, instead written %i bytes\n", sizeof(BM), BytesWritten);
+        DisplayError(GetLastError());
+    }
     
     Exit:
     CloseHandle(MetadataFile);
     FreeDataArray(&MFTLCN);
+    
+    printf("SaveMetadata returns %i\n", Result);
+        
     return Result;
     
 }
@@ -5664,12 +5671,15 @@ void foo(){
 }
 
 
+
+
 int
 main(
      int argc,
      CHAR* argv[]
      ) {
 
+    
     HRESULT hResult = 0;
     hResult = CoInitializeEx(NULL, COINIT_MULTITHREADED);
     if (!SUCCEEDED(hResult)) {
