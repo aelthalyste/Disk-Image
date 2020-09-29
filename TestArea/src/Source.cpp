@@ -73,7 +73,7 @@ static void nlog(const char* str, ...) {
 
 }
 
-#define printf(fmt, ...)  nlog(fmt, __VA_ARGS__)
+//#define printf(fmt, ...)  nlog(fmt, __VA_ARGS__)
 
 struct nar_record{
   UINT32 Start;
@@ -256,11 +256,78 @@ GetFileListFromIndexAllocationTable(void *Buffer, int BufferSize){
     return FALSE;
 }
 
+#define DH_UNINITIALIZED -1
+#define DH_PRIME 1
+#define DH_NOT_PRIME 0
+
+inline BOOLEAN 
+IsPrime(unsigned int n){
+
+    if(n % 2 == 0) return FALSE;
+
+    unsigned int floor = (unsigned int)sqrt(n);
+    for(unsigned int i = 3; i < floor; i+=2){
+        if(n % i == 0){
+            return FALSE;
+        }
+    }
+
+    return TRUE;
+}
+
+inline unsigned int
+ReverseNumber(unsigned int Number){
+    unsigned int ReversedNumber = 0;
+    while(Number > 0){
+        ReversedNumber = ReversedNumber*10 + Number % 10;
+        Number = Number / 10;
+    }
+    return ReversedNumber;
+}
+
 
 
 int main() {
   
-  
+    unsigned int Semirp[256];
+    memset(Semirp, DH_UNINITIALIZED, sizeof(Semirp));
+
+    int Primes[1000];
+    memset(Primes, DH_UNINITIALIZED, sizeof(Primes));
+
+    unsigned int SemirpIndex = 0;
+
+    for(unsigned int n = 11; n < 1000; n+=2){
+
+        if (Primes[n] != DH_UNINITIALIZED) {
+            continue;
+        }
+
+        if(IsPrime(n)){
+            
+            Primes[n] = DH_PRIME;
+
+            unsigned int R = ReverseNumber(n);
+
+            Primes[R] = IsPrime(R) ? DH_PRIME : DH_NOT_PRIME;
+
+            if (R > n && Primes[R] == DH_PRIME) {
+                Semirp[SemirpIndex++] = n;
+                Semirp[SemirpIndex++] = R;
+            }
+
+        }
+        else{
+            Primes[n] = DH_NOT_PRIME;
+        }
+
+    }
+
+    for(int i = 0; i< SemirpIndex; i+=2){
+        printf("%i\t%i\n", Semirp[i], Semirp[i+1]);
+    }
+    
+    return 0;
   
   file_read F = NarReadFile("MFTLCN_REGIONS_DATA");
   nar_record Records[1024 * 52 / sizeof(nar_record)];

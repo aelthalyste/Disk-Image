@@ -160,15 +160,16 @@ typedef struct _nar_kernel_data {
     //
     // Lookaside list to allocate pre-operation UNICODE STRINGS and maybe to early fetch all regions, each entry size is LookAsideSize
     //
-
-    PAGED_LOOKASIDE_LIST LookAsideList;
-
+#define LOOKASIDE_ACTIVE 0
+#if LOOKASIDE_ACTIVE
+    // PAGED_LOOKASIDE_LIST LookAsideList;
+#endif
 
     //
     // In order to compare volume guid strings in list and preop strings, they MUST be allocated in non-paged pool. This nonpaged lookaside list handles this allocation
     //
-    PAGED_LOOKASIDE_LIST GUIDComparePagedLookAsideList;
 
+    //PAGED_LOOKASIDE_LIST GUIDComparePagedLookAsideList;
 
     // this struct's members lays on non-paged memory.
     struct volume_region_buffer {
