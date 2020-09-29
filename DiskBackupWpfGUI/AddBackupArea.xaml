@@ -1,0 +1,252 @@
+﻿<Window x:Class="DiskBackupWpfGUI.AddBackupArea"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:DiskBackupWpfGUI"
+        mc:Ignorable="d"
+        Title="{DynamicResource addBackupArea}" WindowStartupLocation="CenterScreen" WindowStyle="None" BorderBrush="#194771" BorderThickness="1" ResizeMode="CanMinimize" HorizontalAlignment="Center" Height="450" Width="800" Icon="Resources/Icon/favicon_mavi.ico">
+    <Window.Resources>
+        <ResourceDictionary Source="Resources\Lang\string_tr.xaml"/>
+    </Window.Resources>
+    <Grid Background="White">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="30"/>
+            <RowDefinition Height="45"/>
+            <RowDefinition/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Panel.ZIndex="1" Orientation="Horizontal" HorizontalAlignment="Center">
+            <Image Source="Resources/Icon/u62.png" Height="35" Width="40" Margin="0,0,5,0"></Image>
+            <TextBlock Text="{DynamicResource addBackupArea}" Style="{StaticResource TitleBarText}"></TextBlock>
+        </StackPanel>
+        <StackPanel Name="MyTitleBar" VerticalAlignment="Top" MouseDown="MyTitleBar_MouseDown">
+            <Border Background="#27527B" Height="30">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button Name="btnNewCreateTaskMin" Content="—" Margin="0,-2,0,0" VerticalContentAlignment="Top" FontWeight="Bold" Click="btnNewCreateTaskMin_Click" Style="{StaticResource TitleButton}" Width="40" ></Button>
+                    <Button Name="btnNewCreateTaskClose" Content="🗙" Margin="0,-2,0,0" Click="btnNewCreateTaskClose_Click" Style="{StaticResource TitleButton}" Width="40" ></Button>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+
+        <Rectangle Grid.Row="1" Fill="White"/>
+        <Rectangle Grid.Row="1" Height="1" Fill="DarkGray" VerticalAlignment="Bottom" />
+
+        <StackPanel Orientation="Horizontal" Grid.Row="1">
+            <!--Menü açıklamaları dynmaic olucak-->
+            <Image Margin="10,0,0,0" Source="Resources/Icon/u58.png"></Image>
+            <StackPanel VerticalAlignment="Center">
+                <TextBlock Name="lblTabHeader" Text="{DynamicResource name}" FontSize="12" VerticalAlignment="Center" Margin="10,0,0,0"/>
+                <TextBlock Name="lblTabContent" Text="{DynamicResource ABANameContent}" FontWeight="Bold" FontSize="12" VerticalAlignment="Center" Margin="10,0,0,0" />
+            </StackPanel>
+        </StackPanel>
+
+        <TabControl Name="ABATabControl" TabStripPlacement="Left" BorderThickness="1,0,0,0" Grid.Row="2" BorderBrush="#AAAAAA" SelectionChanged="ABATabControl_SelectionChanged">
+            <TabControl.Resources>
+                <Style TargetType="TabItem">
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="TabItem">
+                                <Grid Name="Panel">
+                                    <ContentPresenter x:Name="ContentSite"
+                                        VerticalAlignment="Center"
+                                        HorizontalAlignment="Center"
+                                        ContentSource="Header"
+                                        Margin="10,2"/>
+
+                                </Grid>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsSelected" Value="True">
+                                        <Setter TargetName="Panel" Property="Background" Value="#3367D6" />
+                                    </Trigger>
+                                    <Trigger Property="IsSelected" Value="False">
+                                        <Setter TargetName="Panel" Property="Background" Value="#FFFFFF"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </TabControl.Resources>
+
+            <TabItem Name="nameTab" Margin="0,20,0,0" IsEnabled="False">
+                <TabItem.Header>
+                    <StackPanel Height="60" Width="130" Orientation="Horizontal">
+                        <TextBlock Text="{DynamicResource name}" Margin="5,-20,0,0" VerticalAlignment="Center" HorizontalAlignment="Center" Style="{StaticResource NCTTabItemText}"/>
+                    </StackPanel>
+                </TabItem.Header>
+                <Grid Background="White">
+                    <StackPanel Margin="10,10,20,10">
+                        <TextBlock Text="{DynamicResource backupAreaName}" Margin="0,0,0,5"/>
+                        <TextBox Name="txtBackupAreaName" Height="25" VerticalContentAlignment="Center"/>
+                        <TextBlock Text="{DynamicResource description}" Margin="0,10,0,5"/>
+                        <RichTextBox Name="txtBackupAreaDescription" Height="200" />
+                    </StackPanel>
+                </Grid>
+            </TabItem>
+
+            <TabItem Name="targetTab" IsEnabled="False">
+                <TabItem.Header>
+                    <StackPanel Height="35" Width="130" Orientation="Horizontal" >
+                        <TextBlock Text="{DynamicResource target}" Margin="5,0" VerticalAlignment="Center" Style="{StaticResource NCTTabItemText}"/>
+                    </StackPanel>
+                </TabItem.Header>
+                <Grid Background="White">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition/>
+                        <ColumnDefinition Width="220"/>
+                    </Grid.ColumnDefinitions>
+                    <Rectangle Grid.Column="0" Stroke="#AAAAAA" StrokeThickness="0.7" HorizontalAlignment="Right"/>
+                    <StackPanel Margin="10,10,20,10">
+                        <TextBlock Text="{DynamicResource target}" Margin="0,0,0,20" />
+                        <RadioButton Content="{DynamicResource localDisc}" Name="rbLocalDisc" GroupName="rbTarget" Checked="rbLocalDisc_Checked" IsChecked="True"/>
+                        <TextBlock Text="{DynamicResource localDiscDesc}" Margin="40,10,0,20" />
+                        <RadioButton Content="{DynamicResource NASorSharing}" Name="rbNAS" GroupName="rbTarget" Checked="rbNAS_Checked"/>
+                        <TextBlock Text="{DynamicResource NASorSharindDesc}" Margin="40,10,0,20" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Margin="5,20,10,0" HorizontalAlignment="Center">
+                        <CheckBox Content="{DynamicResource backupToCloud}" Name="cbBackupToCloud" IsChecked="True" HorizontalAlignment="Center" Margin="0,0,0,10"/>
+                        <TextBlock Text="{DynamicResource backupToCloudDesc}" TextWrapping="WrapWithOverflow" Margin="0,0,0,10"/>
+                        <TextBlock Text="{DynamicResource licenseNotActive}" Name="NotLisance" Margin="0,0,0,10"/>
+                        <Image Source="Resources/Icon/favicon_mavi.ico" Height="100"/>
+                        <Grid Margin="0,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition/>
+                                <ColumnDefinition />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <TextBlock Text="{DynamicResource area}" Margin="0,0,0,5"/>
+                                <TextBlock Text="{DynamicResource usedSize}" Margin="0,0,0,5"/>
+                                <TextBlock Text="{DynamicResource freeSize}"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="1">
+                                <TextBlock Name="txtArea" Text="100 GB" Margin="0,0,0,5"/>
+                                <TextBlock Name="txtUsedArea" Text="2 GB" Margin="0,0,0,5"/>
+                                <TextBlock Name="txtFreeArea" Text="98 GB"/>
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+                </Grid>
+            </TabItem>
+
+            <TabItem Name="settingsTab" IsEnabled="False">
+                <TabItem.Header>
+                    <StackPanel Height="35" Width="130" Orientation="Horizontal">
+                        <TextBlock Text="{DynamicResource settings}" Margin="5,0" VerticalAlignment="Center" Style="{StaticResource NCTTabItemText}"/>
+                    </StackPanel>
+                </TabItem.Header>
+                <Grid Background="White">
+                    <Grid.RowDefinitions>
+                        <RowDefinition/>
+                    </Grid.RowDefinitions>
+                    <StackPanel Name="stackLocalDisc" Grid.Row="0" Margin="10,30,20,10" Visibility="Hidden">
+                        <TextBlock Text="{DynamicResource localDisc}" />
+                        <Grid Margin="20,20,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="150"/>
+                                <ColumnDefinition/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition/>
+                                <RowDefinition/>
+                                <RowDefinition/>
+                                <RowDefinition/>
+                            </Grid.RowDefinitions>
+                            <TextBlock Text="{DynamicResource name2}" Grid.Row="0" Grid.Column="0" />
+                            <TextBlock Text="{DynamicResource folderPath}" Grid.Row="1" Grid.Column="0"/>
+                            <TextBlock Text="{DynamicResource userName}" Grid.Row="2" Grid.Column="0"/>
+                            <TextBlock Text="{DynamicResource password}" Grid.Row="3" Grid.Column="0"/>
+
+                            <TextBox Name="txtSettingsName" Grid.Row="0" Grid.Column="1" Width="250" Height="22" Margin="0,0,0,10" HorizontalAlignment="Left"/>
+                            <TextBox Name="txtSettingsFolderPath" Grid.Row="1" Grid.Column="1" Width="250" Height="22" Margin="0,0,0,10" Padding="0,0,22,0" HorizontalAlignment="Left"/>
+                            <StackPanel Grid.Row="1" Grid.Column="1" HorizontalAlignment="Left" Margin="229,1,0,0">
+                                <Button Name="btnSettingsFolder" Style="{StaticResource ArrowUpButton}" Content="..." Width="20" Height="20" FontSize="15" />
+                            </StackPanel>
+                            <TextBox Name="txtSettingsUserName" Grid.Row="2" Grid.Column="1" Width="250" Height="22" Margin="0,0,0,10" HorizontalAlignment="Left"/>
+                            <TextBox Name="txtSettingsPassword" Grid.Row="3" Grid.Column="1" Width="250" Height="22" Margin="0,0,0,10" HorizontalAlignment="Left"/>
+                        </Grid>
+                    </StackPanel>
+                    
+                    <StackPanel Name="stackNAS" Grid.Row="0" Margin="10,30,20,10" Visibility="Hidden">
+                        <TextBlock Text="{DynamicResource NASorSharing}" />
+                        <Grid Margin="20,20,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="150"/>
+                                <ColumnDefinition/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition/>
+                                <RowDefinition/>
+                                <RowDefinition/>
+                                <RowDefinition/>
+                                <RowDefinition/>
+                            </Grid.RowDefinitions>
+                            <TextBlock Text="{DynamicResource name2}" Grid.Row="0" Grid.Column="0" />
+                            <TextBlock Text="{DynamicResource folderPath}" Grid.Row="1" Grid.Column="0"/>
+                            <TextBlock Text="{DynamicResource domainIP}" Grid.Row="2" Grid.Column="0"/>
+                            <TextBlock Text="{DynamicResource userName}" Grid.Row="3" Grid.Column="0"/>
+                            <TextBlock Text="{DynamicResource password}" Grid.Row="4" Grid.Column="0"/>
+
+                            <TextBox Name="txtSettingsNASName" Grid.Row="0" Grid.Column="1" Width="250" Height="22" Margin="0,0,0,10" HorizontalAlignment="Left" VerticalContentAlignment="Center"/>
+                            <TextBox Name="txtSettingsNASFolderPath" Grid.Row="1" Grid.Column="1" Width="250" Height="22" Margin="0,0,0,10" Padding="0,0,22,0" HorizontalAlignment="Left" VerticalContentAlignment="Center"/>
+                            <StackPanel Grid.Row="1" Grid.Column="1" HorizontalAlignment="Left" Margin="229,1,0,0">
+                                <Button Name="btnSettingsNASFolder" Style="{StaticResource ArrowUpButton}" Click="btnSettingsNASFolder_Click" Content="..." Width="20" Height="20" FontSize="15" />
+                            </StackPanel>
+                            <TextBox Name="txtSettingsNASDomain" Grid.Row="2" Grid.Column="1" Width="250" Height="22" Margin="0,0,0,10" HorizontalAlignment="Left" VerticalContentAlignment="Center"/>
+                            <TextBox Name="txtSettingsNASUserName" Grid.Row="3" Grid.Column="1" Width="250" Height="22" Margin="0,0,0,10" HorizontalAlignment="Left" VerticalContentAlignment="Center"/>
+                            <TextBox Name="txtSettingsNASPassword" Grid.Row="4" Grid.Column="1" Width="250" Height="22" Margin="0,0,0,10" HorizontalAlignment="Left" VerticalContentAlignment="Center"/>
+                        </Grid>
+                    </StackPanel>
+                </Grid>
+            </TabItem>
+
+            <TabItem Name="abstractTab" IsEnabled="False">
+                <TabItem.Header>
+                    <StackPanel Height="35" Width="130" Orientation="Horizontal">
+                        <TextBlock Text="{DynamicResource summary}" Margin="5,0" VerticalAlignment="Center" Style="{StaticResource NCTTabItemText}"/>
+                    </StackPanel>
+                </TabItem.Header>
+                <Grid Background="White">
+                    <StackPanel Margin="10,10,20,10">
+                        <TextBlock Text="{DynamicResource summary}"></TextBlock>
+                        <StackPanel Margin="20,20,0,0">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="150"/>
+                                    <ColumnDefinition Width="10"/>
+                                    <ColumnDefinition/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel>
+                                    <TextBlock Text="{DynamicResource name2}" Margin="0,0,0,5" />
+                                    <TextBlock Text="{DynamicResource target}" Margin="0,0,0,5" />
+                                    <TextBlock Text="{DynamicResource folderPath}" Margin="0,0,0,5" />
+                                    <TextBlock Text="{DynamicResource backupCloud}" Margin="0,0,0,5" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="1">
+                                    <TextBlock Text=":" Margin="0,0,0,5" />
+                                    <TextBlock Text=":" Margin="0,0,0,5" />
+                                    <TextBlock Text=":" Margin="0,0,0,5" />
+                                    <TextBlock Text=":" Margin="0,0,0,5" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Name="txtName" Text="Bulut Alanı" Margin="0,0,0,5" />
+                                    <TextBlock Name="txtTarget" Text="NAS Cihazı" Margin="0,0,0,5" />
+                                    <TextBlock Name="txtFolderPath" Text="C:\Yedeklerim" Margin="0,0,0,5" />
+                                    <TextBlock Name="txtBackupCloud" Text="Aktif" Margin="0,0,0,5" />
+                                </StackPanel>
+                            </Grid>
+                        </StackPanel>
+                    </StackPanel>
+                </Grid>
+            </TabItem>
+        </TabControl>
+        <Rectangle Fill="White" Grid.Row="2" Height="60" VerticalAlignment="Bottom"/>
+        <Rectangle Height="1" Fill="#AAAAAA" Grid.Row="2" VerticalAlignment="Bottom" Margin="0,0,0,60" />
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Grid.Row="2" >
+            <Button Name="btnBackupAreaBack" Content="{DynamicResource back}" Click="btnBackupAreaBack_Click" Style="{StaticResource WhiteButton}" Width="70" Height="20" VerticalAlignment="Bottom" Margin="0,0,0,20"></Button>
+            <Button Name="btnBackupAreaNext" Content="{DynamicResource next}" Click="btnBackupAreaNext_Click" Style="{StaticResource WhiteButton}" Width="70" Height="20" VerticalAlignment="Bottom" Margin="10,0,0,20"></Button>
+            <Button Name="btnBackupAreaOk" Content="{DynamicResource okay}" Click="btnBackupAreaOk_Click" Style="{StaticResource WhiteButton}" Width="70" Height="20" VerticalAlignment="Bottom" Margin="10,0,0,20"></Button>
+            <Button Name="btnBackupAreaCancel" Content="{DynamicResource cancel}" Click="btnBackupAreaCancel_Click" Style="{StaticResource WhiteButton}" Width="70" Height="20" VerticalAlignment="Bottom" Margin="10,0,30,20"></Button>
+        </StackPanel>
+    </Grid>
+</Window>
