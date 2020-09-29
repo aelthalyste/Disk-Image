@@ -1,0 +1,254 @@
+﻿<Window x:Class="DiskBackupWpfGUI.TaskStatus"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:DiskBackupWpfGUI"
+        mc:Ignorable="d"
+        Title="TaskStatus" Height="500" Width="950" ResizeMode="CanMinimize" BorderBrush="#194771" BorderThickness="1" WindowStyle="None">
+    <Window.Resources>
+        <ResourceDictionary Source="Resources\Lang\string_tr.xaml"/>
+    </Window.Resources>
+    <Grid Background="#F2F2F2">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="30"/>
+            <RowDefinition Height="255"/>
+            <RowDefinition/>
+        </Grid.RowDefinitions>
+
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition />
+            <ColumnDefinition />
+        </Grid.ColumnDefinitions>
+
+        <TextBlock Text="{DynamicResource taskStatus}" Style="{StaticResource TitleBarText}" Panel.ZIndex="1" Grid.Row="0" Grid.ColumnSpan="2" ></TextBlock>
+
+        <StackPanel Name="MyTitleBar" VerticalAlignment="Top" MouseDown="MyTitleBar_MouseDown" Grid.Row="0" Grid.ColumnSpan="2">
+            <Border Background="#27527B" Height="30">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button Name="btnTaskStatusMin" Content="—" Margin="0,-2,0,0" VerticalContentAlignment="Top" FontWeight="Bold" Click="btnTaskStatusMin_Click" Style="{StaticResource TitleButton}" Width="40" ></Button>
+                    <Button Name="btnTaskStatusClose" Content="🗙" Margin="0,-2,0,0" Click="btnTaskStatusClose_Click" Style="{StaticResource TitleButton}" Width="40" ></Button>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+
+        <StackPanel Grid.Row="1" Grid.Column="0">
+            <TextBlock Text="{DynamicResource localArea}" Margin="0,35,0,10" FontSize="16" HorizontalAlignment="Center"></TextBlock>
+            <StackPanel Orientation="Horizontal">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition/>
+                        <ColumnDefinition/>
+                    </Grid.ColumnDefinitions>
+                    <Rectangle Grid.Column="1" VerticalAlignment="Center" Stroke="#B5ADAD" StrokeThickness="2" HorizontalAlignment="Right" Height="300"/>
+                    <StackPanel Width="230" Grid.Column="0">
+                        <StackPanel Name="Sol" Orientation="Horizontal">
+                            <Image Height="22" Margin="10,0">
+                                <Image.Style>
+                                    <Style TargetType="Image">
+                                        <Setter Property="Source" Value="Resources/Icon/icons8_play.ico" />
+                                    </Style>
+                                </Image.Style>
+                            </Image>
+                            <TextBlock Text="{DynamicResource fileName}"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,4,0,4">
+                            <Image Height="22" Margin="10,0">
+                                <Image.Style>
+                                    <Style TargetType="Image">
+                                        <Setter Property="Source" Value="Resources/Icon/icons8_play.ico" />
+                                    </Style>
+                                </Image.Style>
+                            </Image>
+                            <TextBlock Text="{DynamicResource duration}"></TextBlock>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                            <Image Height="22" Margin="10,0">
+                                <Image.Style>
+                                    <Style TargetType="Image">
+                                        <Setter Property="Source" Value="Resources/Icon/icons8_play.ico" />
+                                    </Style>
+                                </Image.Style>
+                            </Image>
+                            <TextBlock Text="{DynamicResource averageDataTransfer}"></TextBlock>
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                            <Image Height="22" Margin="10,0">
+                                <Image.Style>
+                                    <Style TargetType="Image">
+                                        <Setter Property="Source" Value="Resources/Icon/icons8_play.ico" />
+                                    </Style>
+                                </Image.Style>
+                            </Image>
+                            <TextBlock Text="{DynamicResource processedData}"></TextBlock>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                            <Image Height="22" Margin="10,0">
+                                <Image.Style>
+                                    <Style TargetType="Image">
+                                        <Setter Property="Source" Value="Resources/Icon/icons8_play.ico" />
+                                    </Style>
+                                </Image.Style>
+                            </Image>
+                            <TextBlock Text="{DynamicResource instantDataTransfer}"></TextBlock>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                            <Image Height="22" Margin="10,0">
+                                <Image.Style>
+                                    <Style TargetType="Image">
+                                        <Setter Property="Source" Value="Resources/Icon/icons8_play.ico" />
+                                    </Style>
+                                </Image.Style>
+                            </Image>
+                            <TextBlock Text="{DynamicResource zip}"></TextBlock>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                            <Image Height="22" Margin="10,0">
+                                <Image.Style>
+                                    <Style TargetType="Image">
+                                        <Setter Property="Source" Value="Resources/Icon/icons8_play.ico" />
+                                    </Style>
+                                </Image.Style>
+                            </Image>
+                            <TextBlock Text="{DynamicResource sourceInfo}"></TextBlock>
+                        </StackPanel>
+
+                        <StackPanel Name="Sağ" Orientation="Horizontal">
+                        </StackPanel>
+                    </StackPanel>
+                    <StackPanel Width="244" Grid.Column="1">
+                        <TextBlock Height="22" Margin="0,0,0,4">\\10.0.0.145\backup1.nb</TextBlock>
+                        <TextBlock Height="22" Margin="0,0,0,4">01:20</TextBlock>
+                        <TextBlock Height="22" Margin="0,0,0,4">74 MB/s</TextBlock>
+                        <TextBlock Height="22" Margin="0,0,0,4">12 GB</TextBlock>
+                        <TextBlock Height="22" Margin="0,0,0,4">01:20</TextBlock>
+                        <TextBlock Height="22" Margin="0,0,0,4">Standart</TextBlock>
+                        <TextBlock Height="22" Margin="0,0,0,4">C:</TextBlock>
+                    </StackPanel>
+                </Grid>
+            </StackPanel>
+        </StackPanel>
+
+        <StackPanel Grid.Row="1" Grid.Column="1">
+            <TextBlock Text="{DynamicResource sendingToCloud}" FontSize="16" Margin="0,35,0,10" HorizontalAlignment="Center"></TextBlock>
+            <StackPanel Orientation="Horizontal">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition/>
+                        <ColumnDefinition/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Width="230" Grid.Column="0">
+                        <StackPanel Name="S2ol" Orientation="Horizontal">
+                            <Image Height="22" Margin="10,0">
+                                <Image.Style>
+                                    <Style TargetType="Image">
+                                        <Setter Property="Source" Value="Resources/Icon/icons8_play.ico" />
+                                    </Style>
+                                </Image.Style>
+                            </Image>
+                            <TextBlock Text="{DynamicResource fileName}"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,4,0,4">
+                            <Image Height="22" Margin="10,0">
+                                <Image.Style>
+                                    <Style TargetType="Image">
+                                        <Setter Property="Source" Value="Resources/Icon/icons8_play.ico" />
+                                    </Style>
+                                </Image.Style>
+                            </Image>
+                            <TextBlock Text="{DynamicResource duration}"></TextBlock>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                            <Image Height="22" Margin="10,0">
+                                <Image.Style>
+                                    <Style TargetType="Image">
+                                        <Setter Property="Source" Value="Resources/Icon/icons8_play.ico" />
+                                    </Style>
+                                </Image.Style>
+                            </Image>
+                            <TextBlock Text="{DynamicResource averageDataTransfer}"></TextBlock>
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                            <Image Height="22" Margin="10,0">
+                                <Image.Style>
+                                    <Style TargetType="Image">
+                                        <Setter Property="Source" Value="Resources/Icon/icons8_play.ico" />
+                                    </Style>
+                                </Image.Style>
+                            </Image>
+                            <TextBlock Text="{DynamicResource processedData}"></TextBlock>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                            <Image Height="22" Margin="10,0">
+                                <Image.Style>
+                                    <Style TargetType="Image">
+                                        <Setter Property="Source" Value="Resources/Icon/icons8_play.ico" />
+                                    </Style>
+                                </Image.Style>
+                            </Image>
+                            <TextBlock Text="{DynamicResource instantDataTransfer}"></TextBlock>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                            <Image Height="22" Margin="10,0">
+                                <Image.Style>
+                                    <Style TargetType="Image">
+                                        <Setter Property="Source" Value="Resources/Icon/icons8_play.ico" />
+                                    </Style>
+                                </Image.Style>
+                            </Image>
+                            <TextBlock Text="{DynamicResource zip}"></TextBlock>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                            <Image Height="22" Margin="10,0">
+                                <Image.Style>
+                                    <Style TargetType="Image">
+                                        <Setter Property="Source" Value="Resources/Icon/icons8_play.ico" />
+                                    </Style>
+                                </Image.Style>
+                            </Image>
+                            <TextBlock Text="{DynamicResource sourceInfo}"></TextBlock>
+                        </StackPanel>
+                        <StackPanel Name="Sa2ğ" Orientation="Horizontal">
+                        </StackPanel>
+                    </StackPanel>
+
+                </Grid>
+                <StackPanel>
+                    <StackPanel Width="244" Grid.Column="1">
+                        <TextBlock Height="22" Margin="0,0,0,4">\\10.0.0.145\backup1.nb</TextBlock>
+                        <TextBlock Height="22" Margin="0,0,0,4">01:20</TextBlock>
+                        <TextBlock Height="22" Margin="0,0,0,4">74 MB/s</TextBlock>
+                        <TextBlock Height="22" Margin="0,0,0,4">12 GB</TextBlock>
+                        <TextBlock Height="22" Margin="0,0,0,4">01:20</TextBlock>
+                        <TextBlock Height="22" Margin="0,0,0,4">Standart</TextBlock>
+                        <TextBlock Height="22" Margin="0,0,0,4">C:</TextBlock>
+                    </StackPanel>
+                </StackPanel>
+            </StackPanel>
+        </StackPanel>
+        <StackPanel Grid.Row="2" Grid.ColumnSpan="2" Grid.Column="0">
+
+            <TextBlock Text="{DynamicResource processedTotal}" Margin="30,8"/>
+
+            <ProgressBar Minimum="0" Name="asd" Maximum="100" Value="50" Height="30" Margin="30,0">
+
+            </ProgressBar>
+
+            <TextBlock Text="50%" FontSize="20" Margin="0,-30,0,0" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+
+            <TextBlock Text="{DynamicResource processedTotal}" Margin="30,8"/>
+            <ProgressBar Minimum="0" Maximum="100" Value="60" Height="30" Margin="30,0">
+
+            </ProgressBar>
+            <TextBlock Text="60%" FontSize="20" Margin="0,-30,0,0" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+
+            <TextBlock Text="{DynamicResource narTransfer}" Margin="30,8"/>
+            <ProgressBar Minimum="0" Maximum="100" Value="70" Height="30" Margin="30,0">
+
+            </ProgressBar>
+            <TextBlock Text="70%" FontSize="20" Margin="0,-30,0,0" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+        </StackPanel>
+    </Grid>
+</Window>

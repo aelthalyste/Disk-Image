@@ -3,32 +3,46 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
         xmlns:local="clr-namespace:DiskBackupWpfGUI"
         mc:Ignorable="d"
-        Title="{DynamicResource createNewTask}" ResizeMode="CanMinimize" HorizontalAlignment="Center" Height="450" Width="800">
+        Title="{DynamicResource createNewTask}" WindowStyle="None" BorderBrush="#194771" BorderThickness="1" ResizeMode="CanMinimize" HorizontalAlignment="Center" Height="450" Width="800" Icon="Resources/Icon/favicon_mavi.ico">
     <Window.Resources>
         <ResourceDictionary Source="Resources\Lang\string_tr.xaml"/>
     </Window.Resources>
-    <Grid Background="White"> <!-- içerideki ufak grilik yok oldu -->
+    <Grid Background="White">
         <Grid.RowDefinitions>
-            <RowDefinition Height="40"/>
+            <RowDefinition Height="30"/>
+            <RowDefinition Height="45"/>
             <RowDefinition/>
         </Grid.RowDefinitions>
-        <Rectangle Grid.Row="0" Fill="White"/>
-        <Rectangle Height="1" Fill="DarkGray" VerticalAlignment="Bottom" />
 
-        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Right"  Margin="0,0,170,0" >
-            <TextBlock Name="rwDetectedTextBlock" Visibility="Hidden" VerticalAlignment="Center" HorizontalAlignment="Right" FontSize="14" FontWeight="DemiBold" Foreground="Red" Text="TEST" Margin="5,0,0,0"/>
+        <StackPanel Panel.ZIndex="1" Orientation="Horizontal" HorizontalAlignment="Center">
+            <Image Source="Resources/Icon/u62.png" Height="35" Width="40" Margin="0,0,5,0"></Image>
+            <TextBlock Text="{DynamicResource createNewTask}" Style="{StaticResource TitleBarText}"></TextBlock>
+        </StackPanel>
+        <StackPanel Name="MyTitleBar" VerticalAlignment="Top" MouseDown="MyTitleBar_MouseDown">
+            <Border Background="#27527B" Height="30">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button Name="btnNewCreateTaskMin" Content="—" Margin="0,-2,0,0" VerticalContentAlignment="Top" FontWeight="Bold" Click="btnNewCreateTaskMin_Click" Style="{StaticResource TitleButton}" Width="40" ></Button>
+                    <Button Name="btnNewCreateTaskClose" Content="🗙" Margin="0,-2,0,0" Click="btnNewCreateTaskClose_Click" Style="{StaticResource TitleButton}" Width="40" ></Button>
+                </StackPanel>
+            </Border>
         </StackPanel>
 
-        <StackPanel Orientation="Horizontal">
-            <!--Menü ismi dynmaic olucak-->
-            <Image Source="Resources/Icon/u58.png"></Image>
-            <TextBlock Text="dddddd" FontSize="14" VerticalAlignment="Center" Margin="5,0,0,0"/>
-            <TextBlock Name="runningStateBlock" FontWeight="Bold" FontSize="14" VerticalAlignment="Center" Margin="10,0,0,0" />
+        <Rectangle Grid.Row="1" Fill="White"/>
+        <Rectangle Grid.Row="1" Height="1" Fill="DarkGray" VerticalAlignment="Bottom" />
+
+        <StackPanel Orientation="Horizontal" Grid.Row="1">
+            <!--Menü açıklamaları dynmaic olucak-->
+            <Image Margin="10,0,0,0" Source="Resources/Icon/u58.png"></Image>
+            <StackPanel VerticalAlignment="Center">
+                <TextBlock Name="lblTabHeader" FontSize="12" VerticalAlignment="Center" Margin="10,0,0,0"/>
+                <TextBlock Name="lblTabContent" FontWeight="Bold" FontSize="12" VerticalAlignment="Center" Margin="10,0,0,0" />
+            </StackPanel>
         </StackPanel>
 
-        <TabControl Name="NCTTabControl" TabStripPlacement="Left" BorderThickness="1,0,0,0" Grid.Row="1" BorderBrush="#AAAAAA">
+        <TabControl Name="NCTTabControl" TabStripPlacement="Left" BorderThickness="1,0,0,0" Grid.Row="2" BorderBrush="#AAAAAA" SelectionChanged="NCTTabControl_SelectionChanged">
             <TabControl.Resources>
                 <Style TargetType="TabItem">
                     <Setter Property="Template">
@@ -55,18 +69,14 @@
                     </Setter>
                 </Style>
             </TabControl.Resources>
-            
-            <TabItem Name="nameTab" Margin="0,20,0,0">
+
+            <TabItem Name="nameTab" Margin="0,20,0,0" IsEnabled="False">
                 <TabItem.Header>
                     <StackPanel Height="60" Width="130" Orientation="Horizontal">
                         <TextBlock Text="{DynamicResource name}" Margin="5,-20,0,0" VerticalAlignment="Center" HorizontalAlignment="Center" Style="{StaticResource NCTTabItemText}"/>
                     </StackPanel>
                 </TabItem.Header>
                 <Grid Background="White">
-                    <!--<Grid.RowDefinitions>
-                        <RowDefinition Height="70"/>
-                        <RowDefinition />
-                    </Grid.RowDefinitions>-->
                     <StackPanel Margin="10,10,20,10">
                         <TextBlock Text="{DynamicResource taskName}" Margin="0,0,0,5"/>
                         <TextBox Name="txtTaskName" Height="25" VerticalContentAlignment="Center"/>
@@ -75,8 +85,8 @@
                     </StackPanel>
                 </Grid>
             </TabItem>
-            
-            <TabItem Name="tempFolderTab" >
+
+            <TabItem Name="backupTypeTab" IsEnabled="False">
                 <TabItem.Header>
                     <StackPanel Height="35" Width="130" Orientation="Horizontal" >
                         <TextBlock Text="{DynamicResource BackupType}" Margin="5,0" VerticalAlignment="Center" Style="{StaticResource NCTTabItemText}"/>
@@ -84,17 +94,16 @@
                 </TabItem.Header>
                 <Grid Background="White">
                     <StackPanel Margin="10,10,20,10">
-                        <TextBlock Text="{DynamicResource tempFolder}" Margin="0,0,0,20" />
-                        <RadioButton GroupName="rbtntempFolder" x:Name="Differential" Content="{DynamicResource diff}" />
+                        <TextBlock Text="{DynamicResource BackupType}" Margin="0,0,0,20" />
+                        <RadioButton Name="rbBTDifferential" GroupName="rbBackupType" Content="{DynamicResource diff}" />
                         <TextBlock Text="{DynamicResource diffDescription}" Margin="40,10,0,20" />
-                        <RadioButton GroupName="rbtntempFolder" x:Name="Incremental" Content="{DynamicResource inc}"></RadioButton>
+                        <RadioButton Name="rbBTIncremental" GroupName="rbBackupType" Content="{DynamicResource inc}"></RadioButton>
                         <TextBlock Text="{DynamicResource incDescription}" Margin="40,10,0,20" />
                     </StackPanel>
-
                 </Grid>
             </TabItem>
-            
-            <TabItem Name="sourceSelectionTab">
+
+            <TabItem Name="targetTab" IsEnabled="False">
                 <TabItem.Header>
                     <StackPanel Height="35" Width="130" Orientation="Horizontal">
                         <TextBlock Text="{DynamicResource target}" Margin="5,0" VerticalAlignment="Center" Style="{StaticResource NCTTabItemText}"/>
@@ -102,51 +111,117 @@
                 </TabItem.Header>
                 <Grid Background="White">
                     <StackPanel Margin="10,10,20,10">
-                        <TextBlock Text="{DynamicResource dbType}" Margin="0,0,0,20" />
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="{DynamicResource space2Backup}" VerticalAlignment="Center" />
-                            <TextBox Name="txtSourceSelection" Width="350" Height="26" Margin="25,0,0,0" VerticalContentAlignment="Center" MaxLength="50" />
+                            <TextBox Name="txtTarget" Width="400" Height="26" Margin="25,0,0,0" VerticalContentAlignment="Center" Padding="0,0,22,0" />
                             <StackPanel Margin="-22,0,0,0" VerticalAlignment="Center">
-                                <Button Name="btnSelectionUp" Style="{StaticResource ArrowUpButton}" Content="▲" Width="20" Height="12" FontSize="8"/>
-                                <Button Name="btnSelectionDown" Style="{StaticResource ArrowDownButton}" Content="▼" Width="20" Height="12" FontSize="8"/>
+                                <Button Name="btnTargetUp" Style="{StaticResource ArrowUpButton}" Content="▲" Width="20" Height="12" FontSize="8"/>
+                                <Button Name="btnTargetDown" Style="{StaticResource ArrowDownButton}" Content="▼" Width="20" Height="12" FontSize="8"/>
                             </StackPanel>
-                            
+                            <Button Name="btnTargetAdd" ToolTip="{DynamicResource add}" HorizontalAlignment="Right" Margin="5,4,0,4" Style="{StaticResource ImageButton}" Width="32" Height="32" Grid.Column="1">
+                                <Button.Content>
+                                    <Image Height="22">
+                                        <Image.Style>
+                                            <Style TargetType="Image">
+                                                <Setter Property="Source" Value="Resources/Icon/icons8_plus.ico" />
+                                            </Style>
+                                        </Image.Style>
+                                    </Image>
+                                </Button.Content>
+                            </Button>
                         </StackPanel>
                         <!--DUMMİES-->
-                        <StackPanel Margin="125,10,0,0">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Name="lblSelectionTotalSize">3 TB</TextBlock>
-                                <TextBlock Text="{DynamicResource diskSize}" Margin="3,0,0,0"></TextBlock>
+                        <StackPanel Orientation="Horizontal">
+                            <Grid Height="70" Width="70" Margin="10,0,0,0">
+                                <xctk:Pie StartAngle="0" EndAngle="360" Height="64" Width="64" Fill="#B8DABC" Stroke="#7A917D"/>
+                                <xctk:Pie Name="pieDiskSize" StartAngle="-90" EndAngle="150" Height="64" Width="64" Fill="#87B5F2" Stroke="#5A78A1"/>
+                            </Grid>
+                            <StackPanel Margin="45,10,0,0">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Name="lblTargetTotalSize">3 TB</TextBlock>
+                                    <TextBlock Text="{DynamicResource area}" Margin="3,0,0,0"></TextBlock>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Name="lblTargetFreeSize">350 GB</TextBlock>
+                                    <TextBlock Text="{DynamicResource freeSize}" Margin="3,0,0,0"></TextBlock>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Name="lblTargetFullSize">2.2 TB</TextBlock>
+                                    <TextBlock Text="{DynamicResource fullSize}" Margin="3,0,0,0"></TextBlock>
+                                </StackPanel>
                             </StackPanel>
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Name="lblSelectionFreeSize">350 GB</TextBlock>
-                                <TextBlock Text="{DynamicResource freeSize}" Margin="3,0,0,0"></TextBlock>
-                            </StackPanel>
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Name="lblSelectionFullSize">2.2 TB</TextBlock>
-                                <TextBlock Text="{DynamicResource fullSize}" Margin="3,0,0,0"></TextBlock>
+                            <StackPanel Margin="50,0,0,0">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <TextBlock Text="{DynamicResource retentionTime}" VerticalAlignment="Center"/>
+                                    <TextBox Name="txtRetentionTime" Text="14" Width="50" Height="28" FontSize="13" Margin="10,0,0,0" VerticalContentAlignment="Center" MaxLength="3"/>
+                                    <StackPanel Margin="-21,0,0,0" VerticalAlignment="Center">
+                                        <Button Name="btnRetentionUp" Style="{StaticResource ArrowUpButton}" Click="btnRetentionUp_Click" Content="▲" Width="20" Height="13" FontSize="8" />
+                                        <Button Name="btnRetentionDown" Style="{StaticResource ArrowDownButton}" Click="btnRetentionDown_Click" Content="▼" Width="20" Height="13" FontSize="8" />
+                                    </StackPanel>
+                                    <TextBlock Text="{DynamicResource day}" Margin="10,0,0,0" VerticalAlignment="Center"></TextBlock>
+                                </StackPanel>
+                                <CheckBox Content="{DynamicResource fullOverwrite}" Margin="0,10" IsChecked="True"/>
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <TextBlock Text="{DynamicResource fullBackup}" VerticalAlignment="Center"/>
+                                    <TextBox Name="txtFullBackup" Text="2" Width="50" Height="28" FontSize="13" Margin="35,0,0,0" VerticalContentAlignment="Center" MaxLength="3"/>
+                                    <StackPanel Margin="-21,0,0,0" VerticalAlignment="Center">
+                                        <Button Name="btnFullBackupUp" Style="{StaticResource ArrowUpButton}" Click="btnFullBackupUp_Click" Content="▲" Width="20" Height="13" FontSize="8" />
+                                        <Button Name="btnFullBackupDown" Style="{StaticResource ArrowDownButton}" Click="btnFullBackupDown_Click" Content="▼" Width="20" Height="13" FontSize="8" />
+                                    </StackPanel>
+                                    <TextBlock Text="{DynamicResource perWeek}" Margin="10,0,0,0" VerticalAlignment="Center"></TextBlock>
+                                </StackPanel>
                             </StackPanel>
                         </StackPanel>
-                        <TextBlock Margin="0,30,0,0">Narbulut</TextBlock>
-                        <StackPanel Margin="125,10,0,0">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Name="lblSelectionNarbulutTotalSize">3 TB</TextBlock>
-                                <TextBlock Text="{DynamicResource diskSize}" Margin="3,0,0,0"></TextBlock>
+
+                        <TextBlock Name="txtTargetLicence" Foreground="Red" Margin="0,10,0,0">Lisans Aktif Değil</TextBlock>
+
+                        <TextBlock Margin="0,20,0,0">Narbulut</TextBlock>
+                        <StackPanel Orientation="Horizontal">
+                            <Grid Height="70" Width="70" Margin="10,0,0,0">
+                                <xctk:Pie StartAngle="0" EndAngle="360" Height="64" Width="64" Fill="#B8DABC" Stroke="#7A917D"/>
+                                <xctk:Pie Name="pieCloudSize" StartAngle="-90" EndAngle="150" Height="64" Width="64" Fill="#87B5F2" Stroke="#5A78A1"/>
+                            </Grid>
+                            <StackPanel Margin="45,10,0,0">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Name="lblTargetNarbulutTotalSize">3 TB</TextBlock>
+                                    <TextBlock Text="{DynamicResource area}" Margin="3,0,0,0"></TextBlock>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Name="lblTargetnNarbulutFreeSize">350 GB</TextBlock>
+                                    <TextBlock Text="{DynamicResource freeSize}" Margin="3,0,0,0"></TextBlock>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Name="lblTargetNarbulutFullSize">2.2 TB</TextBlock>
+                                    <TextBlock Text="{DynamicResource fullSize}" Margin="3,0,0,0"></TextBlock>
+                                </StackPanel>
                             </StackPanel>
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Name="lblSelectionNarbulutFreeSize">350 GB</TextBlock>
-                                <TextBlock Text="{DynamicResource freeSize}" Margin="3,0,0,0"></TextBlock>
-                            </StackPanel>
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Name="lblSelectionNarbulutFullSize">2.2 TB</TextBlock>
-                                <TextBlock Text="{DynamicResource fullSize}" Margin="3,0,0,0"></TextBlock>
+                            <StackPanel Margin="50,0,0,0">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <TextBlock Text="{DynamicResource retentionTime}" VerticalAlignment="Center"/>
+                                    <TextBox Name="txtNarRetentionTime" Text="14" Width="50" Height="28" FontSize="13" Margin="10,0,0,0" VerticalContentAlignment="Center" MaxLength="3"/>
+                                    <StackPanel Margin="-21,0,0,0" VerticalAlignment="Center">
+                                        <Button Name="btnNarRetentionUp" Style="{StaticResource ArrowUpButton}" Click="btnNarRetentionUp_Click" Content="▲" Width="20" Height="13" FontSize="8" />
+                                        <Button Name="btnNarRetentionDown" Style="{StaticResource ArrowDownButton}" Click="btnNarRetentionDown_Click" Content="▼" Width="20" Height="13" FontSize="8" />
+                                    </StackPanel>
+                                    <TextBlock Text="{DynamicResource day}" Margin="10,0,0,0" VerticalAlignment="Center"></TextBlock>
+                                </StackPanel>
+                                <CheckBox Content="{DynamicResource fullOverwrite}" Margin="0,10" IsChecked="True"/>
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <TextBlock Text="{DynamicResource fullBackup}" VerticalAlignment="Center"/>
+                                    <TextBox Name="txtNarFullBackup" Text="2" Width="50" Height="28" FontSize="13" Margin="35,0,0,0" VerticalContentAlignment="Center" MaxLength="3"/>
+                                    <StackPanel Margin="-21,0,0,0" VerticalAlignment="Center">
+                                        <Button Name="btnNarFullBackupUp" Style="{StaticResource ArrowUpButton}" Click="btnNarFullBackupUp_Click" Content="▲" Width="20" Height="13" FontSize="8" />
+                                        <Button Name="btnNarFullBackupDown" Style="{StaticResource ArrowDownButton}" Click="btnNarFullBackupDown_Click" Content="▼" Width="20" Height="13" FontSize="8" />
+                                    </StackPanel>
+                                    <TextBlock Text="{DynamicResource perWeek}" Margin="10,0,0,0" VerticalAlignment="Center"></TextBlock>
+                                </StackPanel>
                             </StackPanel>
                         </StackPanel>
                     </StackPanel>
                 </Grid>
             </TabItem>
-            
-            <TabItem Name="schedulerTab">
+
+            <TabItem Name="schedulerTab" IsEnabled="False">
                 <TabItem.Header>
                     <StackPanel Height="35" Width="130" Orientation="Horizontal">
                         <TextBlock Text="{DynamicResource scheduler}" Margin="5,0" VerticalAlignment="Center" Style="{StaticResource NCTTabItemText}"/>
@@ -172,7 +247,6 @@
                                     </ComboBox>
                                     <Button Name="btnDaysTimeDays" Content="{DynamicResource days}" Style="{StaticResource WhiteButton}" Width="60" ></Button>
                                 </StackPanel>
-
                             </StackPanel>
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
                                 <RadioButton Name="rbWeeklyTime" GroupName="rbtnSchedular" Content="{DynamicResource weeklyTime}" Checked="rbWeeklyTime_Checked" Unchecked="rbWeeklyTime_Unchecked" VerticalContentAlignment="Center" Margin="5,0,0,0" />
@@ -215,7 +289,6 @@
                                     </ComboBox>
                                     <Button Name="btnPeriodicTime" Content="{DynamicResource time}" Style="{StaticResource WhiteButton}" Width="60"/>
                                 </StackPanel>
-
                             </StackPanel>
                         </StackPanel>
 
@@ -245,16 +318,53 @@
                     </StackPanel>
                 </Grid>
             </TabItem>
-            
-            <TabItem Name="abstractTab">
+
+            <TabItem Name="settingsTab" IsEnabled="False">
                 <TabItem.Header>
                     <StackPanel Height="35" Width="130" Orientation="Horizontal">
-                        <TextBlock Text="{DynamicResource abstarct}" Margin="5,0" VerticalAlignment="Center" Style="{StaticResource NCTTabItemText}"/>
+                        <TextBlock Text="{DynamicResource settings}" Margin="5,0" VerticalAlignment="Center" Style="{StaticResource NCTTabItemText}"/>
+                    </StackPanel>
+                </TabItem.Header>
+                <Grid Background="White">
+                    <StackPanel Margin="10,30,20,10">
+                        <StackPanel Orientation="Horizontal">
+                            <StackPanel>
+                                <TextBlock Text="{DynamicResource sourceConsumption}"/>
+                                <RadioButton Content="{DynamicResource low}" GroupName="sourceCon" Margin="90,5,80,0"/>
+                                <RadioButton Content="{DynamicResource medium}" GroupName="sourceCon" Margin="90,10,80,0"/>
+                                <RadioButton Content="{DynamicResource high}" GroupName="sourceCon" IsChecked="True" Margin="90,10,80,0"/>
+                            </StackPanel>
+
+                            <StackPanel>
+                                <TextBlock Text="{DynamicResource deliverySpeed}"/>
+                                <StackPanel Orientation="Horizontal" Margin="90,5,80,0">
+                                    <ComboBox Name="cbBantWidth" Width="80" SelectedIndex="0" Margin="0,0,20,0">
+                                        <ComboBoxItem Content="{DynamicResource unlimited}"></ComboBoxItem>
+                                    </ComboBox>
+                                    <ComboBox Name="cbByte" SelectedIndex="1">
+                                        <ComboBoxItem Content="KB"></ComboBoxItem>
+                                        <ComboBoxItem Content="MB"></ComboBoxItem>
+                                        <ComboBoxItem Content="GB"></ComboBoxItem>
+                                    </ComboBox>
+                                </StackPanel>
+                            </StackPanel>
+                        </StackPanel>
+                        <StackPanel Margin="0,20,0,0">
+                            <TextBlock Text="{DynamicResource notifications}"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Grid>
+            </TabItem>
+
+            <TabItem Name="abstractTab" IsEnabled="False">
+                <TabItem.Header>
+                    <StackPanel Height="35" Width="130" Orientation="Horizontal">
+                        <TextBlock Text="{DynamicResource summary}" Margin="5,0" VerticalAlignment="Center" Style="{StaticResource NCTTabItemText}"/>
                     </StackPanel>
                 </TabItem.Header>
                 <Grid Background="White">
                     <StackPanel Margin="10,10,20,10">
-                        <TextBlock Text="{DynamicResource abstarct}"></TextBlock>
+                        <TextBlock Text="{DynamicResource summary}"></TextBlock>
                         <StackPanel Orientation="Horizontal" Margin="20,10,0,0">
                             <TextBlock Text="{DynamicResource nameWithDot}" Margin="0,0,5,0" />
                             <TextBlock>İŞLETİM SİSTEMİ YEDEĞİ</TextBlock>
@@ -278,10 +388,10 @@
         <Rectangle Fill="White" Grid.Row="2" Height="60" VerticalAlignment="Bottom"/>
         <Rectangle Height="1" Fill="#AAAAAA" Grid.Row="2" VerticalAlignment="Bottom" Margin="0,0,0,60" />
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Grid.Row="2" >
-            <Button Name="btnCreateTaskBack" Content="{DynamicResource back}" Style="{StaticResource WhiteButton}" Width="70" Height="20" VerticalAlignment="Bottom" Margin="0,0,0,20"></Button>
-            <Button Name="btnCreateTaskNext" Content="{DynamicResource next}" Style="{StaticResource WhiteButton}" Width="70" Height="20" VerticalAlignment="Bottom" Margin="10,0,0,20"></Button>
-            <Button Name="btnCreateTaskOk" Content="{DynamicResource okay}" Style="{StaticResource WhiteButton}" Width="70" Height="20" VerticalAlignment="Bottom" Margin="10,0,0,20"></Button>
-            <Button Name="btnCreateTaskCancel" Content="{DynamicResource cancel}" Style="{StaticResource WhiteButton}" Width="70" Height="20" VerticalAlignment="Bottom" Margin="10,0,30,20"></Button>
+            <Button Name="btnCreateTaskBack" Content="{DynamicResource back}" Click="btnCreateTaskBack_Click" Style="{StaticResource WhiteButton}" Width="70" Height="20" VerticalAlignment="Bottom" Margin="0,0,0,20"></Button>
+            <Button Name="btnCreateTaskNext" Content="{DynamicResource next}" Click="btnCreateTaskNext_Click" Style="{StaticResource WhiteButton}" Width="70" Height="20" VerticalAlignment="Bottom" Margin="10,0,0,20"></Button>
+            <Button Name="btnCreateTaskOk" Content="{DynamicResource okay}" Click="btnCreateTaskOk_Click" Style="{StaticResource WhiteButton}" Width="70" Height="20" VerticalAlignment="Bottom" Margin="10,0,0,20"></Button>
+            <Button Name="btnCreateTaskCancel" Content="{DynamicResource cancel}" Click="btnCreateTaskCancel_Click" Style="{StaticResource WhiteButton}" Width="70" Height="20" VerticalAlignment="Bottom" Margin="10,0,30,20"></Button>
         </StackPanel>
     </Grid>
 </Window>
