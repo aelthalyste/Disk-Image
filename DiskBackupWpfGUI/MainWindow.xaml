@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:DiskBackupWpfGUI"
         xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
         mc:Ignorable="d"
-        Title="{DynamicResource appFullName}" WindowStyle="None" Icon="Resources/Icon/u62.png" Height="689" Width="1094" ResizeMode="CanMinimize" >
+        Title="{DynamicResource appFullName}" WindowStartupLocation="CenterScreen" WindowStyle="None" Icon="Resources/Icon/u62.png" Height="689" Width="1094" ResizeMode="CanMinimize" >
     <Window.Resources>
         <ResourceDictionary Source="Resources\Lang\string_tr.xaml"/>
     </Window.Resources>

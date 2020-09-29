@@ -41,6 +41,7 @@
     <system:String x:Key="totalSize">Toplam Alan B/Y</system:String>
     <system:String x:Key="usedSize">Kullanılan Alan</system:String>
     <system:String x:Key="localPath">Yerel Yol</system:String>
+    <system:String x:Key="folderPath">Klasör Yolu</system:String>
     <system:String x:Key="cloudPath">Bulut Alan</system:String>
     <system:String x:Key="backupAreas">Yedekleme Alanları</system:String>
     <system:String x:Key="startDate">Başlangıç Tarihi</system:String>
@@ -56,6 +57,7 @@
     <system:String x:Key="lastBackup">Son Yedekleme : </system:String>
     <system:String x:Key="name">İsim</system:String>
     <system:String x:Key="nameWithDot">İsim : </system:String>
+    <system:String x:Key="name2">Adı</system:String>
     <system:String x:Key="tempFolder">Geçici Klasör</system:String>
     <system:String x:Key="scheduler">Zamanlama</system:String>
     <system:String x:Key="summary">Özet</system:String>
@@ -106,7 +108,10 @@
     <system:String x:Key="add">Ekle</system:String>
     <system:String x:Key="taskStatus">Görev Durumu</system:String>
     <system:String x:Key="localArea">Yerel Alan</system:String>
+    <system:String x:Key="localDisc">Yerel Disk</system:String>
     <system:String x:Key="sendingToCloud">Bulut'a Gönderim</system:String>
+    <system:String x:Key="backupToCloud">Bulut'a Yedek</system:String>
+    <system:String x:Key="backupCloud">Bulut Yedekleme</system:String>
     <system:String x:Key="sourceConsumption">Kaynak Tüketimi</system:String>
     <system:String x:Key="deliverySpeed">Gönderim Hızı</system:String>
     <system:String x:Key="low">Düşük</system:String>
@@ -154,4 +159,17 @@
     <system:String x:Key="error">Hata</system:String>
     <system:String x:Key="successful">Başarılı</system:String>
     <system:String x:Key="firstBackupExpected">İlk yedek bekleniyor</system:String>
+    <system:String x:Key="addBackupArea">Yedekleme Alanı Ekle</system:String>
+    <system:String x:Key="backupAreaName">Yedekleme Alanı Adı</system:String>
+    <system:String x:Key="NASorSharing">NAS veya Paylaşım</system:String>
+    <system:String x:Key="localDiscDesc">Yerel Diskinizdeki bir alanı yedekleme için burayı seçiniz</system:String>
+    <system:String x:Key="NASorSharindDesc">Ağ üzerindeki bir alana yedekleme için burayı seçiniz</system:String>
+    <system:String x:Key="backupToCloudDesc">Bulut üzerinde yedekleriniz saklamak için bu alanı seçin</system:String>
+    <system:String x:Key="userName">Kullanıcı Adı</system:String>
+    <system:String x:Key="password">Şifre</system:String>
+    <system:String x:Key="domainIP">Domain, IP</system:String>
+    <system:String x:Key="ABANameContent">Yedekleme alanı için bir isim ve açıklama giriniz</system:String>
+    <system:String x:Key="ABATargetContent">Yedeği kaydedeceğiniz alanı seçiniz</system:String>
+    <system:String x:Key="ABASettingsContent">Yedek alanının ayarlamasını yapınız</system:String>
+    <system:String x:Key="ABASummaryContent">Oluşturulan yedekleme alanının özet bilgisi</system:String>
 </ResourceDictionary>

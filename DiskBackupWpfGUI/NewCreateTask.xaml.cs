@@ -127,11 +127,27 @@ namespace DiskBackupWpfGUI
             //kaydet
         }
 
-        #region titleBar
+        private void btnCreateTaskBack_Click(object sender, RoutedEventArgs e)
+        {
+            if (NCTTabControl.SelectedIndex != 0)
+            {
+                NCTTabControl.SelectedIndex -= 1;
+            }
+        }
+
+        private void btnCreateTaskNext_Click(object sender, RoutedEventArgs e)
+        {
+            if (NCTTabControl.SelectedIndex != 5)
+            {
+                NCTTabControl.SelectedIndex += 1;
+            }
+        }
         private void btnCreateTaskCancel_Click(object sender, RoutedEventArgs e)
         {
             Close();
         }
+
+        #region titleBar
 
         private void btnNewCreateTaskClose_Click(object sender, RoutedEventArgs e)
         {
@@ -190,22 +206,6 @@ namespace DiskBackupWpfGUI
             {
                 count -= 1;
                 txtTimeWait.Text = count.ToString();
-            }
-        }
-
-        private void btnCreateTaskBack_Click(object sender, RoutedEventArgs e)
-        {
-            if(NCTTabControl.SelectedIndex != 0)
-            {
-                NCTTabControl.SelectedIndex -= 1;
-            }
-        }
-
-        private void btnCreateTaskNext_Click(object sender, RoutedEventArgs e)
-        {
-            if (NCTTabControl.SelectedIndex != 5)
-            {
-                NCTTabControl.SelectedIndex += 1;
             }
         }
 
@@ -290,5 +290,11 @@ namespace DiskBackupWpfGUI
             }
         }
         #endregion
+
+        private void btnTargetAdd_Click(object sender, RoutedEventArgs e)
+        {
+            AddBackupArea addBackupArea = new AddBackupArea();
+            addBackupArea.ShowDialog();
+        }
     }
 }

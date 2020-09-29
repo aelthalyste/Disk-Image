@@ -6,7 +6,7 @@
         xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
         xmlns:local="clr-namespace:DiskBackupWpfGUI"
         mc:Ignorable="d"
-        Title="{DynamicResource createNewTask}" WindowStyle="None" BorderBrush="#194771" BorderThickness="1" ResizeMode="CanMinimize" HorizontalAlignment="Center" Height="450" Width="800" Icon="Resources/Icon/favicon_mavi.ico">
+        Title="{DynamicResource createNewTask}" WindowStartupLocation="CenterScreen" WindowStyle="None" BorderBrush="#194771" BorderThickness="1" ResizeMode="CanMinimize" HorizontalAlignment="Center" Height="450" Width="800" Icon="Resources/Icon/favicon_mavi.ico">
     <Window.Resources>
         <ResourceDictionary Source="Resources\Lang\string_tr.xaml"/>
     </Window.Resources>
@@ -37,8 +37,8 @@
             <!--Menü açıklamaları dynmaic olucak-->
             <Image Margin="10,0,0,0" Source="Resources/Icon/u58.png"></Image>
             <StackPanel VerticalAlignment="Center">
-                <TextBlock Name="lblTabHeader" FontSize="12" VerticalAlignment="Center" Margin="10,0,0,0"/>
-                <TextBlock Name="lblTabContent" FontWeight="Bold" FontSize="12" VerticalAlignment="Center" Margin="10,0,0,0" />
+                <TextBlock Name="lblTabHeader" Text="{DynamicResource name}" FontSize="12" VerticalAlignment="Center" Margin="10,0,0,0"/>
+                <TextBlock Name="lblTabContent" Text="{DynamicResource NCTNameContent}" FontWeight="Bold" FontSize="12" VerticalAlignment="Center" Margin="10,0,0,0" />
             </StackPanel>
         </StackPanel>
 
@@ -118,7 +118,7 @@
                                 <Button Name="btnTargetUp" Style="{StaticResource ArrowUpButton}" Content="▲" Width="20" Height="12" FontSize="8"/>
                                 <Button Name="btnTargetDown" Style="{StaticResource ArrowDownButton}" Content="▼" Width="20" Height="12" FontSize="8"/>
                             </StackPanel>
-                            <Button Name="btnTargetAdd" ToolTip="{DynamicResource add}" HorizontalAlignment="Right" Margin="5,4,0,4" Style="{StaticResource ImageButton}" Width="32" Height="32" Grid.Column="1">
+                            <Button Name="btnTargetAdd" ToolTip="{DynamicResource add}" Click="btnTargetAdd_Click" HorizontalAlignment="Right" Margin="5,4,0,4" Style="{StaticResource ImageButton}" Width="32" Height="32" Grid.Column="1">
                                 <Button.Content>
                                     <Image Height="22">
                                         <Image.Style>
