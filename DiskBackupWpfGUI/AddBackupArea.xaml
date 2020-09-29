@@ -34,7 +34,7 @@
 
         <StackPanel Orientation="Horizontal" Grid.Row="1">
             <!--Menü açıklamaları dynmaic olucak-->
-            <Image Margin="10,0,0,0" Source="Resources/Icon/u58.png"></Image>
+            <Image Margin="10,0,0,0" Source="Resources/Icon/icons8_software_installer_1.ico"></Image>
             <StackPanel VerticalAlignment="Center">
                 <TextBlock Name="lblTabHeader" Text="{DynamicResource name}" FontSize="12" VerticalAlignment="Center" Margin="10,0,0,0"/>
                 <TextBlock Name="lblTabContent" Text="{DynamicResource ABANameContent}" FontWeight="Bold" FontSize="12" VerticalAlignment="Center" Margin="10,0,0,0" />

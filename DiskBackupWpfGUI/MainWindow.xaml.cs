@@ -23,10 +23,6 @@ namespace DiskBackupWpfGUI
         public MainWindow()
         {
             InitializeComponent();
-            /*using (var dialog = new System.Windows.Forms.FolderBrowserDialog())
-            {
-                var result = dialog.ShowDialog();
-            }*/
         }
 
         private void btnCreateTask_Click(object sender, RoutedEventArgs e)

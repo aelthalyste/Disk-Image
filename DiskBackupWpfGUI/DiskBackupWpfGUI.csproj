@@ -194,5 +194,11 @@
   <ItemGroup>
     <Resource Include="Resources\Icon\favicon_mavi.ico" />
   </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\Icon\icons8_licence_4.ico" />
+    <Resource Include="Resources\Icon\icons8_software_installer_1.ico" />
+    <Resource Include="Resources\Icon\icons8_software_installer_3.ico" />
+    <Resource Include="Resources\Icon\icons8_user_2.ico" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

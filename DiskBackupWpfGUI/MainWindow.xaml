@@ -6,22 +6,34 @@
         xmlns:local="clr-namespace:DiskBackupWpfGUI"
         xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
         mc:Ignorable="d"
-        Title="{DynamicResource appFullName}" WindowStartupLocation="CenterScreen" WindowStyle="None" Icon="Resources/Icon/u62.png" Height="689" Width="1094" ResizeMode="CanMinimize" >
+        
+        Title="{DynamicResource appFullName}" 
+        WindowStartupLocation="CenterScreen" 
+        WindowStyle="None" 
+        Icon="Resources/Icon/u62.png" 
+        Height="689" Width="1294" 
+        ResizeMode="CanMinimize" >
+
     <Window.Resources>
         <ResourceDictionary Source="Resources\Lang\string_tr.xaml"/>
     </Window.Resources>
     <Grid>
+        <!-- Gerek yoksa uçurucaz
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="233*"/>
+            <ColumnDefinition Width="314*"/>
+        </Grid.ColumnDefinitions>-->
         <Grid.RowDefinitions>
             <RowDefinition Height="30"/>
             <RowDefinition Height="40"/>
             <RowDefinition/>
         </Grid.RowDefinitions>
-        
-        <StackPanel Panel.ZIndex="2" Orientation="Horizontal" HorizontalAlignment="Center">
+
+        <StackPanel Panel.ZIndex="2" Orientation="Horizontal" HorizontalAlignment="Center" Grid.ColumnSpan="2" Margin="418,0">
             <Image Source="Resources/Icon/u62.png" Height="35" Width="40" Margin="0,0,5,0"></Image>
             <TextBlock Text="{DynamicResource appFullName}" Panel.ZIndex="2" Style="{StaticResource TitleBarText}"></TextBlock>
         </StackPanel>
-        <StackPanel Name="MyTitleBar" VerticalAlignment="Top" MouseDown="MyTitleBar_MouseDown" Panel.ZIndex="1">
+        <StackPanel Name="MyTitleBar" VerticalAlignment="Top" MouseDown="MyTitleBar_MouseDown" Panel.ZIndex="1" Grid.ColumnSpan="2" Grid.RowSpan="2">
             <Border Background="#27527B" Height="32" >
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                     <Button Name="btnMainMin" Content="—" Margin="0,-2,0,0" VerticalContentAlignment="Top" FontWeight="Bold" Click="btnMainMin_Click" Style="{StaticResource TitleButton}" Width="40" ></Button>
@@ -29,16 +41,16 @@
                 </StackPanel>
             </Border>
         </StackPanel>
-        <Rectangle Grid.Row="1" Fill="#F2F2F2"/>
-        <StackPanel Grid.Row="1" Orientation="Horizontal">
+        <Rectangle Grid.Row="1" Fill="#F2F2F2" Grid.ColumnSpan="2"/>
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Grid.ColumnSpan="2">
             <TextBlock Text="{DynamicResource lastBackup}" FontSize="14" FontWeight="Bold" VerticalAlignment="Center" Margin="15,0,0,0"/>
             <TextBlock Name="txtRunningStateBlock" FontWeight="Bold" FontSize="14" VerticalAlignment="Center" Margin="10,0,0,0" />
         </StackPanel>
-        <StackPanel Orientation="Vertical" Grid.Row="1">
+        <StackPanel Orientation="Vertical" Grid.Row="1" Grid.ColumnSpan="2">
             <TextBlock Name="makeABackup" Text="{DynamicResource makeABackup}" FontWeight="Bold" Foreground="#3A80BB" FontSize="14" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="0,10,0,0" />
         </StackPanel>
-        <Rectangle Height="1" Fill="#428BCA" VerticalAlignment="Bottom" Grid.Row="1" />
-        <StackPanel Orientation="Horizontal" Grid.Row="1" HorizontalAlignment="Right">
+        <Rectangle Height="1" Fill="#428BCA" VerticalAlignment="Bottom" Grid.Row="1" Grid.ColumnSpan="2" />
+        <StackPanel Orientation="Horizontal" Grid.Row="1" HorizontalAlignment="Right" Grid.Column="1">
             <TextBlock Name="txtLicenseNotActive" Text="{DynamicResource licenseNotActive}" Foreground="#FF0000" FontSize="14" FontWeight="Bold" VerticalAlignment="Center" Margin="0,0,10,0"/>
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                 <Button Name="btnPlayButton" ToolTip="{DynamicResource start}" HorizontalAlignment="Right" Margin="5,4,0,4" Style="{StaticResource ImageButton}" Width="32" Height="32" Grid.Column="1">
@@ -77,7 +89,7 @@
             </StackPanel>
         </StackPanel>
 
-        <TabControl Name="tabControl" TabStripPlacement="Left" BorderThickness="1,0,0,0" Grid.Row="2" BorderBrush="#428BCA">
+        <TabControl Name="tabControl" TabStripPlacement="Left" BorderThickness="1,0,0,0" Grid.Row="2" BorderBrush="#428BCA" Grid.ColumnSpan="2">
             <TabControl.Resources>
                 <Style TargetType="TabItem">
                     <Setter Property="Template">
@@ -144,7 +156,7 @@
                                             <CheckBox Name="selectDiskAllChechbox"/>
                                         </GridViewColumn.Header>
                                     </GridViewColumn>
-                                    <GridViewColumn Header="{DynamicResource volume}" Width="150">
+                                    <GridViewColumn Header="{DynamicResource volume}" Width="250">
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
                                                 <TextBlock Text="{Binding Volume}" TextAlignment="Left"/>
@@ -164,8 +176,8 @@
                                                 <TextBlock Text="{Binding DiskSize}" TextAlignment="Center"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
-                                    </GridViewColumn>
-                                    <GridViewColumn Header="{DynamicResource freeSize}" Width="100" >
+                                    </GridViewColumn >
+                                    <GridViewColumn Header="{DynamicResource freeSize}" Width="110" >
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
                                                 <TextBlock Text="{Binding FreeSize}" TextAlignment="Center"/>
@@ -179,14 +191,14 @@
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
-                                    <GridViewColumn Header="{DynamicResource fileSystem}" Width="110" >
+                                    <GridViewColumn Header="{DynamicResource fileSystem}" Width="140" >
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
                                                 <TextBlock Text="{Binding FileSystem}" TextAlignment="Center"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
-                                    <GridViewColumn Header="{DynamicResource statu}" Width="150" >
+                                    <GridViewColumn Header="{DynamicResource statu}" Width="210" >
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
                                                 <TextBlock Text="{Binding Statu}" TextAlignment="Center"/>
@@ -294,58 +306,57 @@
                 <Grid Background="White">
                     <StackPanel Grid.Row="1" HorizontalAlignment="Stretch">
                         <StackPanel HorizontalAlignment="Stretch" Orientation="Horizontal">
-
-                            <ListView Name="taskListBox" Height="415" Width="842" Margin="5,0,0,5" DisplayMemberPath="Name" AllowDrop="True" VerticalAlignment="Top">
+                            <ListView Name="taskListBox" Grid.ColumnSpan="2" Height="415" Width="1042" Margin="5,0,0,5" DisplayMemberPath="Name" AllowDrop="True" VerticalAlignment="Top">
                                 <ListView.View>
                                     <GridView>
-                                        <GridViewColumn Width="40">
+                                        <GridViewColumn Width="65">
                                             <GridViewColumn.Header>
                                                 <CheckBox Name="selectAllTasksChechbox"/>
                                             </GridViewColumn.Header>
                                         </GridViewColumn>
-                                        <GridViewColumn Header="{DynamicResource taskName}" Width="110">
+                                        <GridViewColumn Header="{DynamicResource taskName}" Width="135">
                                             <GridViewColumn.CellTemplate>
                                                 <DataTemplate>
                                                     <TextBlock Text="{Binding TaskName}" TextAlignment="Left"/>
                                                 </DataTemplate>
                                             </GridViewColumn.CellTemplate>
                                         </GridViewColumn>
-                                        <GridViewColumn Header="{DynamicResource object}" Width="80" >
+                                        <GridViewColumn Header="{DynamicResource object}" Width="105" >
                                             <GridViewColumn.CellTemplate>
                                                 <DataTemplate>
                                                     <TextBlock Text="{Binding Object}" TextAlignment="Center"/>
                                                 </DataTemplate>
                                             </GridViewColumn.CellTemplate>
                                         </GridViewColumn>
-                                        <GridViewColumn Header="{DynamicResource statu}" Width="100" >
+                                        <GridViewColumn Header="{DynamicResource statu}" Width="125" >
                                             <GridViewColumn.CellTemplate>
                                                 <DataTemplate>
                                                     <TextBlock Text="{Binding Statu}" TextAlignment="Center"/>
                                                 </DataTemplate>
                                             </GridViewColumn.CellTemplate>
                                         </GridViewColumn>
-                                        <GridViewColumn Header="{DynamicResource lastStudy}" Width="100" >
+                                        <GridViewColumn Header="{DynamicResource lastStudy}" Width="125" >
                                             <GridViewColumn.CellTemplate>
                                                 <DataTemplate>
                                                     <TextBlock Text="{Binding LastStudy}" TextAlignment="Center"/>
                                                 </DataTemplate>
                                             </GridViewColumn.CellTemplate>
                                         </GridViewColumn>
-                                        <GridViewColumn Header="{DynamicResource nextStudy}" Width="100" >
+                                        <GridViewColumn Header="{DynamicResource nextStudy}" Width="125" >
                                             <GridViewColumn.CellTemplate>
                                                 <DataTemplate>
                                                     <TextBlock Text="{Binding NextStudy}" TextAlignment="Center"/>
                                                 </DataTemplate>
                                             </GridViewColumn.CellTemplate>
                                         </GridViewColumn>
-                                        <GridViewColumn Header="{DynamicResource target}" Width="150" >
+                                        <GridViewColumn Header="{DynamicResource target}" Width="175" >
                                             <GridViewColumn.CellTemplate>
                                                 <DataTemplate>
                                                     <TextBlock Text="{Binding Target}" TextAlignment="Center"/>
                                                 </DataTemplate>
                                             </GridViewColumn.CellTemplate>
                                         </GridViewColumn>
-                                        <GridViewColumn Header="{DynamicResource description}" Width="150" >
+                                        <GridViewColumn Header="{DynamicResource description}" Width="175" >
                                             <GridViewColumn.CellTemplate>
                                                 <DataTemplate>
                                                     <TextBlock Text="{Binding Description}" TextAlignment="Center"/>
@@ -369,7 +380,7 @@
                                 </ListView.ItemContainerStyle>
                             </ListView>
 
-                            <StackPanel Margin="0,0,5,5" Height="415" Width="50" VerticalAlignment="Top" Background="#F2F2F2">
+                            <StackPanel Grid.Column="1" Margin="0,0,5,5" Height="415" Width="50" VerticalAlignment="Top" Background="#F2F2F2">
                                 <Button Name="btnTaskEdit" ToolTip="{DynamicResource edit}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,25,5,5" Style="{StaticResource ImageButton}" Grid.Column="1">
                                     <Button.Content>
                                         <Image Height="25" Width="25" HorizontalAlignment="Center" VerticalAlignment="Center">
@@ -567,57 +578,57 @@
                 <Grid Background="White">
                     <StackPanel Grid.Row="1" HorizontalAlignment="Stretch">
                         <StackPanel HorizontalAlignment="Stretch" Orientation="Horizontal">
-                            <ListView Name="viewBackupsListBox" Height="415" Width="842" Margin="5,0,0,5" DisplayMemberPath="Name" AllowDrop="True" VerticalAlignment="Top">
+                            <ListView Name="viewBackupsListBox" Height="415" Width="1042" Margin="5,0,0,5" DisplayMemberPath="Name" AllowDrop="True" VerticalAlignment="Top">
                                 <ListView.View>
                                     <GridView>
-                                        <GridViewColumn Width="40">
+                                        <GridViewColumn Width="65">
                                             <GridViewColumn.Header>
                                                 <CheckBox Name="selectAllFilesChecbox"/>
                                             </GridViewColumn.Header>
                                         </GridViewColumn>
-                                        <GridViewColumn Header="{DynamicResource type}" Width="100">
+                                        <GridViewColumn Header="{DynamicResource type}" Width="125">
                                             <GridViewColumn.CellTemplate>
                                                 <DataTemplate>
                                                     <TextBlock Text="{Binding Name}" TextAlignment="Left"/>
                                                 </DataTemplate>
                                             </GridViewColumn.CellTemplate>
                                         </GridViewColumn>
-                                        <GridViewColumn Header="{DynamicResource filesName}" Width="130" >
+                                        <GridViewColumn Header="{DynamicResource filesName}" Width="155" >
                                             <GridViewColumn.CellTemplate>
                                                 <DataTemplate>
                                                     <TextBlock Text="{Binding TotalLength}" TextAlignment="Center"/>
                                                 </DataTemplate>
                                             </GridViewColumn.CellTemplate>
                                         </GridViewColumn>
-                                        <GridViewColumn Header="{DynamicResource createdDate}" Width="140" >
+                                        <GridViewColumn Header="{DynamicResource createdDate}" Width="165" >
                                             <GridViewColumn.CellTemplate>
                                                 <DataTemplate>
                                                     <TextBlock Text="{Binding VersionLength}" TextAlignment="Center"/>
                                                 </DataTemplate>
                                             </GridViewColumn.CellTemplate>
                                         </GridViewColumn>
-                                        <GridViewColumn Header="{DynamicResource taskName}" Width="120" >
+                                        <GridViewColumn Header="{DynamicResource taskName}" Width="145" >
                                             <GridViewColumn.CellTemplate>
                                                 <DataTemplate>
                                                     <TextBlock Text="{Binding VersionLength}" TextAlignment="Center"/>
                                                 </DataTemplate>
                                             </GridViewColumn.CellTemplate>
                                         </GridViewColumn>
-                                        <GridViewColumn Header="{DynamicResource diskSize}" Width="100" >
+                                        <GridViewColumn Header="{DynamicResource diskSize}" Width="125" >
                                             <GridViewColumn.CellTemplate>
                                                 <DataTemplate>
                                                     <TextBlock Text="{Binding VersionLength}" TextAlignment="Center"/>
                                                 </DataTemplate>
                                             </GridViewColumn.CellTemplate>
                                         </GridViewColumn>
-                                        <GridViewColumn Header="{DynamicResource folderSize}" Width="100" >
+                                        <GridViewColumn Header="{DynamicResource folderSize}" Width="125" >
                                             <GridViewColumn.CellTemplate>
                                                 <DataTemplate>
                                                     <TextBlock Text="{Binding FolderSize}" TextAlignment="Center"/>
                                                 </DataTemplate>
                                             </GridViewColumn.CellTemplate>
                                         </GridViewColumn>
-                                        <GridViewColumn Header="{DynamicResource description}" Width="100" >
+                                        <GridViewColumn Header="{DynamicResource description}" Width="125" >
                                             <GridViewColumn.CellTemplate>
                                                 <DataTemplate>
                                                     <TextBlock Text="{Binding VersionLength}" TextAlignment="Center"/>
@@ -673,57 +684,57 @@
                 <Grid Background="White">
                     <StackPanel Grid.Row="1" HorizontalAlignment="Stretch">
                         <StackPanel HorizontalAlignment="Stretch" Orientation="Horizontal">
-                            <ListView Name="backupAreaListBox" Height="415" Width="842" Margin="5,0,0,5" DisplayMemberPath="Name" AllowDrop="True" VerticalAlignment="Top">
+                            <ListView Name="backupAreaListBox" Height="415" Width="1042" Margin="5,0,0,5" DisplayMemberPath="Name" AllowDrop="True" VerticalAlignment="Top">
                                 <ListView.View>
                                     <GridView>
-                                        <GridViewColumn Width="40">
+                                        <GridViewColumn Width="65">
                                             <GridViewColumn.Header>
                                                 <CheckBox Name="selectAllBackupAreaChecbox"/>
                                             </GridViewColumn.Header>
                                         </GridViewColumn>
-                                        <GridViewColumn Header="{DynamicResource domainName}" Width="100">
+                                        <GridViewColumn Header="{DynamicResource domainName}" Width="125">
                                             <GridViewColumn.CellTemplate>
                                                 <DataTemplate>
                                                     <TextBlock Text="{Binding Name}" TextAlignment="Left"/>
                                                 </DataTemplate>
                                             </GridViewColumn.CellTemplate>
                                         </GridViewColumn>
-                                        <GridViewColumn Header="{DynamicResource totalSize}" Width="130" >
+                                        <GridViewColumn Header="{DynamicResource totalSize}" Width="155" >
                                             <GridViewColumn.CellTemplate>
                                                 <DataTemplate>
                                                     <TextBlock Text="{Binding TotalLength}" TextAlignment="Center"/>
                                                 </DataTemplate>
                                             </GridViewColumn.CellTemplate>
                                         </GridViewColumn>
-                                        <GridViewColumn Header="{DynamicResource usedSize}" Width="100" >
+                                        <GridViewColumn Header="{DynamicResource usedSize}" Width="125" >
                                             <GridViewColumn.CellTemplate>
                                                 <DataTemplate>
                                                     <TextBlock Text="{Binding VersionLength}" TextAlignment="Center"/>
                                                 </DataTemplate>
                                             </GridViewColumn.CellTemplate>
                                         </GridViewColumn>
-                                        <GridViewColumn Header="{DynamicResource freeSize}" Width="100" >
+                                        <GridViewColumn Header="{DynamicResource freeSize}" Width="125" >
                                             <GridViewColumn.CellTemplate>
                                                 <DataTemplate>
                                                     <TextBlock Text="{Binding VersionLength}" TextAlignment="Center"/>
                                                 </DataTemplate>
                                             </GridViewColumn.CellTemplate>
                                         </GridViewColumn>
-                                        <GridViewColumn Header="{DynamicResource localPath}" Width="110" >
+                                        <GridViewColumn Header="{DynamicResource localPath}" Width="135" >
                                             <GridViewColumn.CellTemplate>
                                                 <DataTemplate>
                                                     <TextBlock Text="{Binding VersionLength}" TextAlignment="Center"/>
                                                 </DataTemplate>
                                             </GridViewColumn.CellTemplate>
                                         </GridViewColumn>
-                                        <GridViewColumn Header="{DynamicResource cloudPath}" Width="100" >
+                                        <GridViewColumn Header="{DynamicResource cloudPath}" Width="125" >
                                             <GridViewColumn.CellTemplate>
                                                 <DataTemplate>
                                                     <TextBlock Text="{Binding VersionLength}" TextAlignment="Center"/>
                                                 </DataTemplate>
                                             </GridViewColumn.CellTemplate>
                                         </GridViewColumn>
-                                        <GridViewColumn Header="{DynamicResource description}" Width="150" >
+                                        <GridViewColumn Header="{DynamicResource description}" Width="175" >
                                             <GridViewColumn.CellTemplate>
                                                 <DataTemplate>
                                                     <TextBlock Text="{Binding VersionLength}" TextAlignment="Center"/>
@@ -791,47 +802,48 @@
                 <Grid Background="White">
                     <StackPanel Grid.Row="1" HorizontalAlignment="Stretch">
                         <StackPanel HorizontalAlignment="Stretch" Orientation="Horizontal">
-                            <ListView Name="logListBox" Height="415" Width="842" Margin="5,0,0,5" DisplayMemberPath="Name" AllowDrop="True" VerticalAlignment="Top">
+                            <ListView Name="logListBox" Height="415" Width="1042" Margin="5,0,0,5" DisplayMemberPath="Name" AllowDrop="True" VerticalAlignment="Top">
                                 <ListView.View>
                                     <GridView>
-                                        <GridViewColumn Width="40">
+                                        <GridViewColumn Width="85">
+                                            <!--Bu sütuna iconlar gelicek-->
                                         </GridViewColumn>
-                                        <GridViewColumn Header="{DynamicResource startDate}" Width="120">
+                                        <GridViewColumn Header="{DynamicResource startDate}" Width="145">
                                             <GridViewColumn.CellTemplate>
                                                 <DataTemplate>
                                                     <TextBlock Text="{Binding Name}" TextAlignment="Left"/>
                                                 </DataTemplate>
                                             </GridViewColumn.CellTemplate>
                                         </GridViewColumn>
-                                        <GridViewColumn Header="{DynamicResource endDate}" Width="120" >
+                                        <GridViewColumn Header="{DynamicResource endDate}" Width="145" >
                                             <GridViewColumn.CellTemplate>
                                                 <DataTemplate>
                                                     <TextBlock Text="{Binding TotalLength}" TextAlignment="Center"/>
                                                 </DataTemplate>
                                             </GridViewColumn.CellTemplate>
                                         </GridViewColumn>
-                                        <GridViewColumn Header="{DynamicResource type}" Width="100" >
+                                        <GridViewColumn Header="{DynamicResource type}" Width="125" >
                                             <GridViewColumn.CellTemplate>
                                                 <DataTemplate>
                                                     <TextBlock Text="{Binding VersionLength}" TextAlignment="Center"/>
                                                 </DataTemplate>
                                             </GridViewColumn.CellTemplate>
                                         </GridViewColumn>
-                                        <GridViewColumn Header="{DynamicResource source}" Width="110" >
+                                        <GridViewColumn Header="{DynamicResource source}" Width="135" >
                                             <GridViewColumn.CellTemplate>
                                                 <DataTemplate>
                                                     <TextBlock Text="{Binding VersionLength}" TextAlignment="Center"/>
                                                 </DataTemplate>
                                             </GridViewColumn.CellTemplate>
                                         </GridViewColumn>
-                                        <GridViewColumn Header="{DynamicResource target}" Width="190" >
+                                        <GridViewColumn Header="{DynamicResource target}" Width="215" >
                                             <GridViewColumn.CellTemplate>
                                                 <DataTemplate>
                                                     <TextBlock Text="{Binding VersionLength}" TextAlignment="Center"/>
                                                 </DataTemplate>
                                             </GridViewColumn.CellTemplate>
                                         </GridViewColumn>
-                                        <GridViewColumn Header="{DynamicResource statu}" Width="150" >
+                                        <GridViewColumn Header="{DynamicResource statu}" Width="175" >
                                             <GridViewColumn.CellTemplate>
                                                 <DataTemplate>
                                                     <TextBlock Text="{Binding VersionLength}" TextAlignment="Center"/>
@@ -942,7 +954,7 @@
                             <Image Height="42" Margin="0,0,15,0" >
                                 <Image.Style>
                                     <Style TargetType="Image">
-                                        <Setter Property="Source" Value="Resources/Icon/icons8_play.ico" />
+                                        <Setter Property="Source" Value="Resources/Icon/icons8_licence_4.ico" />
                                     </Style>
                                 </Image.Style>
                             </Image>
@@ -981,7 +993,7 @@
                                 <Image Height="32" Margin="15,0,0,0" >
                                     <Image.Style>
                                         <Style TargetType="Image">
-                                            <Setter Property="Source" Value="Resources/Icon/icons8_play.ico" />
+                                            <Setter Property="Source" Value="Resources/Icon/icons8_software_installer_3.ico" />
                                         </Style>
                                     </Image.Style>
                                 </Image>
@@ -995,7 +1007,7 @@
                                     <Image Height="42" Margin="0,5,15,0" >
                                         <Image.Style>
                                             <Style TargetType="Image">
-                                                <Setter Property="Source" Value="Resources/Icon/icons8_play.ico" />
+                                                <Setter Property="Source" Value="Resources/Icon/icons8_user_2.ico" />
                                             </Style>
                                         </Image.Style>
                                     </Image>
