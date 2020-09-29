@@ -33,6 +33,7 @@
     <system:String x:Key="paste">Yapıştır</system:String>
     <system:String x:Key="delete">Sil</system:String>
     <system:String x:Key="refresh">Yenile</system:String>
+    <system:String x:Key="browse">Gözat</system:String>
     <system:String x:Key="filesName">Dosya Adı</system:String>
     <system:String x:Key="createdDate">Oluşturma Tarihi</system:String>
     <system:String x:Key="size">Boyut</system:String>
@@ -149,6 +150,7 @@
     <system:String x:Key="english">İngilizce</system:String>
     <system:String x:Key="cloudLicenseDot">Bulut Lisans :</system:String>
     <system:String x:Key="totalCapacity">Toplam Kapasite</system:String>
+    <system:String x:Key="capacity">Kapasite</system:String>
     <system:String x:Key="usedCapacity">Kullanılan Kapasite</system:String>
     <system:String x:Key="bandwithSetting">Bant Genişliği Ayarları</system:String>
     <system:String x:Key="uploadSpeed">Yükleme Hızı</system:String>

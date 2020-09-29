@@ -200,5 +200,29 @@
     <Resource Include="Resources\Icon\icons8_software_installer_3.ico" />
     <Resource Include="Resources\Icon\icons8_user_2.ico" />
   </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\Icon\icons8_info.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\Icon\icons8_time_machine.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\Icon\icons8_up_down_arrow.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\Icon\icons8_services_2.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\Icon\icons8_forward_button.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\Icon\icons8_winrar.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\Icon\icons8_google_code_1.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\Icon\icons8_search_property.ico" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

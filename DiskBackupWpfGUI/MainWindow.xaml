@@ -12,17 +12,11 @@
         WindowStyle="None" 
         Icon="Resources/Icon/u62.png" 
         Height="689" Width="1294" 
-        ResizeMode="CanMinimize" >
-
+        ResizeMode="CanMinimize">
     <Window.Resources>
         <ResourceDictionary Source="Resources\Lang\string_tr.xaml"/>
     </Window.Resources>
     <Grid>
-        <!-- Gerek yoksa uçurucaz
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="233*"/>
-            <ColumnDefinition Width="314*"/>
-        </Grid.ColumnDefinitions>-->
         <Grid.RowDefinitions>
             <RowDefinition Height="30"/>
             <RowDefinition Height="40"/>
@@ -131,8 +125,12 @@
                     </StackPanel>
                 </TabItem.Header>
                 <Grid Background="White">
-                    <StackPanel Grid.Row="1" HorizontalAlignment="Stretch">
-                        <StackPanel Grid.Row="0" HorizontalAlignment="Stretch">
+                    <Grid.RowDefinitions>
+                        <RowDefinition/>
+                        <RowDefinition Height="0.43*"/>
+                    </Grid.RowDefinitions>
+                    <DockPanel>
+                        <StackPanel>
                             <Button Name="btnCreateTask" HorizontalAlignment="Left" Margin="10,4,85,4" Style="{StaticResource CreateTaskButton}" Width="110" Height="32" Grid.Column="0" Click="btnCreateTask_Click">
                                 <Button.Content>
                                     <StackPanel Orientation="Horizontal">
@@ -147,219 +145,60 @@
                                     </StackPanel>
                                 </Button.Content>
                             </Button>
-                        </StackPanel>
-                        <ListView Name="diskListBox" Height="370" Margin="5" DisplayMemberPath="Name" AllowDrop="True">
-                            <ListView.View>
-                                <GridView>
-                                    <GridViewColumn Width="40">
-                                        <GridViewColumn.Header>
-                                            <CheckBox Name="selectDiskAllChechbox"/>
-                                        </GridViewColumn.Header>
-                                    </GridViewColumn>
-                                    <GridViewColumn Header="{DynamicResource volume}" Width="250">
-                                        <GridViewColumn.CellTemplate>
-                                            <DataTemplate>
-                                                <TextBlock Text="{Binding Volume}" TextAlignment="Left"/>
-                                            </DataTemplate>
-                                        </GridViewColumn.CellTemplate>
-                                    </GridViewColumn>
-                                    <GridViewColumn Header="{DynamicResource letter}" Width="100" >
-                                        <GridViewColumn.CellTemplate>
-                                            <DataTemplate>
-                                                <TextBlock Text="{Binding Letter}" TextAlignment="Center"/>
-                                            </DataTemplate>
-                                        </GridViewColumn.CellTemplate>
-                                    </GridViewColumn>
-                                    <GridViewColumn Header="{DynamicResource area}" Width="110" >
-                                        <GridViewColumn.CellTemplate>
-                                            <DataTemplate>
-                                                <TextBlock Text="{Binding DiskSize}" TextAlignment="Center"/>
-                                            </DataTemplate>
-                                        </GridViewColumn.CellTemplate>
-                                    </GridViewColumn >
-                                    <GridViewColumn Header="{DynamicResource freeSize}" Width="110" >
-                                        <GridViewColumn.CellTemplate>
-                                            <DataTemplate>
-                                                <TextBlock Text="{Binding FreeSize}" TextAlignment="Center"/>
-                                            </DataTemplate>
-                                        </GridViewColumn.CellTemplate>
-                                    </GridViewColumn>
-                                    <GridViewColumn Header="{DynamicResource type}" Width="110" >
-                                        <GridViewColumn.CellTemplate>
-                                            <DataTemplate>
-                                                <TextBlock Text="{Binding Type}" TextAlignment="Center"/>
-                                            </DataTemplate>
-                                        </GridViewColumn.CellTemplate>
-                                    </GridViewColumn>
-                                    <GridViewColumn Header="{DynamicResource fileSystem}" Width="140" >
-                                        <GridViewColumn.CellTemplate>
-                                            <DataTemplate>
-                                                <TextBlock Text="{Binding FileSystem}" TextAlignment="Center"/>
-                                            </DataTemplate>
-                                        </GridViewColumn.CellTemplate>
-                                    </GridViewColumn>
-                                    <GridViewColumn Header="{DynamicResource statu}" Width="210" >
-                                        <GridViewColumn.CellTemplate>
-                                            <DataTemplate>
-                                                <TextBlock Text="{Binding Statu}" TextAlignment="Center"/>
-                                            </DataTemplate>
-                                        </GridViewColumn.CellTemplate>
-                                    </GridViewColumn>
-                                </GridView>
-                            </ListView.View>
-                            <ListView.ItemContainerStyle>
-                                <Style TargetType="ListViewItem">
-                                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding IsPolicyFolder}" Value="false">
-                                            <Setter Property="IsEnabled" Value="True"/>
-                                        </DataTrigger>
-                                        <DataTrigger Binding="{Binding IsPolicyFolder}" Value="true">
-                                            <Setter Property="IsEnabled" Value="False"/>
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </ListView.ItemContainerStyle>
-                        </ListView>
-
-                        <StackPanel Height="120" Margin="5,0" Orientation="Vertical">
-                            <Border BorderBrush="#D7D7D7" Background="Transparent" BorderThickness="1" Height="120" CornerRadius="3">
-                                <StackPanel Orientation="Horizontal">
-                                    <StackPanel Margin="10,5,20,5" VerticalAlignment="Center">
-                                        <StackPanel Orientation="Horizontal">
-                                            <Image Source="Resources\Icon\u79.png" Width="25" Height="30" Margin="0,0,5,0"></Image>
-                                            <TextBlock VerticalAlignment="Center" FontWeight="Bold" FontSize="14">Disk 1</TextBlock>
-                                        </StackPanel>
-                                        <TextBlock FontSize="14">MBR</TextBlock>
-                                        <TextBlock FontSize="14">700 GB</TextBlock>
-                                    </StackPanel>
-                                    <StackPanel Height="100" Orientation="Horizontal" Margin="0,0,3,0">
-                                        <Border BorderBrush="#9ACFEA" Background="#F2F2F2" BorderThickness="1" Height="90" CornerRadius="3">
-                                            <StackPanel VerticalAlignment="Center">
-                                                <ProgressBar Minimum="0" Maximum="100" Value="75" Height="20" Width="300" Margin="10,10,10,0">
-                                                    <ProgressBar.Background>
-                                                        <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
-                                                            <GradientStop Color="#FF94C683" Offset="0"/>
-                                                            <GradientStop Color="#D8ECD1" Offset="1"/>
-                                                        </LinearGradientBrush>
-                                                    </ProgressBar.Background>
-                                                    <ProgressBar.Foreground>
-                                                        <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
-                                                            <GradientStop Color="#FF093C59"/>
-                                                            <GradientStop Color="#74AAC8" Offset="1"/>
-                                                        </LinearGradientBrush>
-                                                    </ProgressBar.Foreground>
-                                                </ProgressBar>
-                                                <StackPanel Margin="10,0,0,0">
-                                                    <TextBlock FontWeight="Bold" FontSize="14">System Reserved</TextBlock>
-                                                    <TextBlock FontSize="14">NTFS</TextBlock>
-                                                    <TextBlock FontSize="14">700 GB, Primary</TextBlock>
-                                                </StackPanel>
-                                            </StackPanel>
-                                        </Border>
-                                    </StackPanel>
-                                    <StackPanel Height="100" Orientation="Horizontal">
-                                        <Border BorderBrush="#9ACFEA" Background="#F2F2F2" BorderThickness="1" Height="90" CornerRadius="3">
-                                            <StackPanel>
-                                                <ProgressBar Minimum="0" Maximum="100" Value="40" Height="20" Width="420" Margin="10,10,10,0">
-                                                    <ProgressBar.Background>
-                                                        <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
-                                                            <GradientStop Color="#FF94C683" Offset="0"/>
-                                                            <GradientStop Color="#D8ECD1" Offset="1"/>
-                                                        </LinearGradientBrush>
-                                                    </ProgressBar.Background>
-                                                    <ProgressBar.Foreground>
-                                                        <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
-                                                            <GradientStop Color="#FF093C59"/>
-                                                            <GradientStop Color="#74AAC8" Offset="1"/>
-                                                        </LinearGradientBrush>
-                                                    </ProgressBar.Foreground>
-                                                </ProgressBar>
-                                                <StackPanel Margin="10,0,0,0">
-                                                    <TextBlock FontWeight="Bold" FontSize="14">Local Volume (C:)</TextBlock>
-                                                    <TextBlock FontSize="14">NTFS</TextBlock>
-                                                    <TextBlock FontSize="14">700 GB, Primary</TextBlock>
-                                                </StackPanel>
-                                            </StackPanel>
-                                        </Border>
-                                    </StackPanel>
-                                </StackPanel>
-                            </Border>
-                        </StackPanel>
-                    </StackPanel>
-                </Grid>
-            </TabItem>
-
-            <TabItem Name="taskTab">
-                <TabItem.Header>
-                    <StackPanel Height="48" Width="175" Orientation="Horizontal">
-                        <Image Width="30">
-                            <Image.Style>
-                                <Style TargetType="Image">
-                                    <Setter Property="Source" Value="Resources\Icon\icons8_system_task_3.ico" />
-                                </Style>
-                            </Image.Style>
-                        </Image>
-                        <TextBlock Text="{DynamicResource tasks}" Margin="14,0" VerticalAlignment="Center" Style="{StaticResource TabItemText}"/>
-                    </StackPanel>
-                </TabItem.Header>
-                <Grid Background="White">
-                    <StackPanel Grid.Row="1" HorizontalAlignment="Stretch">
-                        <StackPanel HorizontalAlignment="Stretch" Orientation="Horizontal">
-                            <ListView Name="taskListBox" Grid.ColumnSpan="2" Height="415" Width="1042" Margin="5,0,0,5" DisplayMemberPath="Name" AllowDrop="True" VerticalAlignment="Top">
+                            <ListView Name="diskListBox" MinHeight="370" Margin="5" DisplayMemberPath="Name" AllowDrop="True">
                                 <ListView.View>
                                     <GridView>
-                                        <GridViewColumn Width="65">
+                                        <GridViewColumn Width="40">
                                             <GridViewColumn.Header>
-                                                <CheckBox Name="selectAllTasksChechbox"/>
+                                                <CheckBox Name="selectDiskAllChechbox"/>
                                             </GridViewColumn.Header>
                                         </GridViewColumn>
-                                        <GridViewColumn Header="{DynamicResource taskName}" Width="135">
+                                        <GridViewColumn Header="{DynamicResource volume}" Width="250">
                                             <GridViewColumn.CellTemplate>
                                                 <DataTemplate>
-                                                    <TextBlock Text="{Binding TaskName}" TextAlignment="Left"/>
+                                                    <TextBlock Text="{Binding Volume}" TextAlignment="Left"/>
                                                 </DataTemplate>
                                             </GridViewColumn.CellTemplate>
                                         </GridViewColumn>
-                                        <GridViewColumn Header="{DynamicResource object}" Width="105" >
+                                        <GridViewColumn Header="{DynamicResource letter}" Width="100" >
                                             <GridViewColumn.CellTemplate>
                                                 <DataTemplate>
-                                                    <TextBlock Text="{Binding Object}" TextAlignment="Center"/>
+                                                    <TextBlock Text="{Binding Letter}" TextAlignment="Center"/>
                                                 </DataTemplate>
                                             </GridViewColumn.CellTemplate>
                                         </GridViewColumn>
-                                        <GridViewColumn Header="{DynamicResource statu}" Width="125" >
+                                        <GridViewColumn Header="{DynamicResource area}" Width="110" >
+                                            <GridViewColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding DiskSize}" TextAlignment="Center"/>
+                                                </DataTemplate>
+                                            </GridViewColumn.CellTemplate>
+                                        </GridViewColumn >
+                                        <GridViewColumn Header="{DynamicResource freeSize}" Width="110" >
+                                            <GridViewColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding FreeSize}" TextAlignment="Center"/>
+                                                </DataTemplate>
+                                            </GridViewColumn.CellTemplate>
+                                        </GridViewColumn>
+                                        <GridViewColumn Header="{DynamicResource type}" Width="110" >
+                                            <GridViewColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding Type}" TextAlignment="Center"/>
+                                                </DataTemplate>
+                                            </GridViewColumn.CellTemplate>
+                                        </GridViewColumn>
+                                        <GridViewColumn Header="{DynamicResource fileSystem}" Width="140" >
+                                            <GridViewColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding FileSystem}" TextAlignment="Center"/>
+                                                </DataTemplate>
+                                            </GridViewColumn.CellTemplate>
+                                        </GridViewColumn>
+                                        <GridViewColumn Header="{DynamicResource statu}" Width="210" >
                                             <GridViewColumn.CellTemplate>
                                                 <DataTemplate>
                                                     <TextBlock Text="{Binding Statu}" TextAlignment="Center"/>
-                                                </DataTemplate>
-                                            </GridViewColumn.CellTemplate>
-                                        </GridViewColumn>
-                                        <GridViewColumn Header="{DynamicResource lastStudy}" Width="125" >
-                                            <GridViewColumn.CellTemplate>
-                                                <DataTemplate>
-                                                    <TextBlock Text="{Binding LastStudy}" TextAlignment="Center"/>
-                                                </DataTemplate>
-                                            </GridViewColumn.CellTemplate>
-                                        </GridViewColumn>
-                                        <GridViewColumn Header="{DynamicResource nextStudy}" Width="125" >
-                                            <GridViewColumn.CellTemplate>
-                                                <DataTemplate>
-                                                    <TextBlock Text="{Binding NextStudy}" TextAlignment="Center"/>
-                                                </DataTemplate>
-                                            </GridViewColumn.CellTemplate>
-                                        </GridViewColumn>
-                                        <GridViewColumn Header="{DynamicResource target}" Width="175" >
-                                            <GridViewColumn.CellTemplate>
-                                                <DataTemplate>
-                                                    <TextBlock Text="{Binding Target}" TextAlignment="Center"/>
-                                                </DataTemplate>
-                                            </GridViewColumn.CellTemplate>
-                                        </GridViewColumn>
-                                        <GridViewColumn Header="{DynamicResource description}" Width="175" >
-                                            <GridViewColumn.CellTemplate>
-                                                <DataTemplate>
-                                                    <TextBlock Text="{Binding Description}" TextAlignment="Center"/>
                                                 </DataTemplate>
                                             </GridViewColumn.CellTemplate>
                                         </GridViewColumn>
@@ -379,164 +218,338 @@
                                     </Style>
                                 </ListView.ItemContainerStyle>
                             </ListView>
-
-                            <StackPanel Grid.Column="1" Margin="0,0,5,5" Height="415" Width="50" VerticalAlignment="Top" Background="#F2F2F2">
-                                <Button Name="btnTaskEdit" ToolTip="{DynamicResource edit}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,25,5,5" Style="{StaticResource ImageButton}" Grid.Column="1">
-                                    <Button.Content>
-                                        <Image Height="25" Width="25" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                            <Image.Style>
-                                                <Style TargetType="Image">
-                                                    <Setter Property="Source" Value="Resources/Icon/icons8_edit_property_1.ico"/>
-                                                </Style>
-                                            </Image.Style>
-                                        </Image>
-                                    </Button.Content>
-                                </Button>
-                                <Button Name="btnTaskStart" ToolTip="{DynamicResource start}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5,5,5"  Style="{StaticResource ImageButton}" Grid.Column="1">
-                                    <Button.Content>
-                                        <Image Height="25" Width="25" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                            <Image.Style>
-                                                <Style TargetType="Image">
-                                                    <Setter Property="Source" Value="Resources/Icon/icons8_play.ico"/>
-                                                </Style>
-                                            </Image.Style>
-                                        </Image>
-                                    </Button.Content>
-                                </Button>
-                                <Button Name="btnTaskStop" ToolTip="{DynamicResource stop}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5,5,5" Style="{StaticResource ImageButton}" Grid.Column="1">
-                                    <Button.Content>
-                                        <Image Height="40" Width="40" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                            <Image.Style>
-                                                <Style TargetType="Image">
-                                                    <Setter Property="Source" Value="Resources/Icon/icons8_stop_8.ico"/>
-                                                </Style>
-                                            </Image.Style>
-                                        </Image>
-                                    </Button.Content>
-                                </Button>
-                                <Button Name="btnTaskClose" ToolTip="{DynamicResource close}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5,5,5" Style="{StaticResource ImageButton}" Grid.Column="1">
-                                    <Button.Content>
-                                        <Image Height="25" Width="25" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                            <Image.Style>
-                                                <Style TargetType="Image">
-                                                    <Setter Property="Source" Value="Resources/Icon/icons8_unavailable_1.ico"/>
-                                                </Style>
-                                            </Image.Style>
-                                        </Image>
-                                    </Button.Content>
-                                </Button>
-                                <Button Name="btnTaskOpen" ToolTip="{DynamicResource open}" Click="btnTaskOpen_Click" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5,5,5" Style="{StaticResource ImageButton}" Grid.Column="1">
-                                    <Button.Content>
-                                        <Image Height="25" Width="25" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                            <Image.Style>
-                                                <Style TargetType="Image">
-                                                    <Setter Property="Source" Value="Resources/Icon/icons8_ok_4.ico"/>
-                                                </Style>
-                                            </Image.Style>
-                                        </Image>
-                                    </Button.Content>
-                                </Button>
-                                <Button Name="btnTaskCopy" ToolTip="{DynamicResource copy}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5,5,5" Style="{StaticResource ImageButton}" Grid.Column="1">
-                                    <Button.Content>
-                                        <Image Height="25" Width="25" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                            <Image.Style>
-                                                <Style TargetType="Image">
-                                                    <Setter Property="Source" Value="Resources/Icon/icons8_copy_2.ico"/>
-                                                </Style>
-                                            </Image.Style>
-                                        </Image>
-                                    </Button.Content>
-                                </Button>
-                                <Button Name="btnTaskPaste" ToolTip="{DynamicResource paste}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5,5,5" Style="{StaticResource ImageButton}" Grid.Column="1">
-                                    <Button.Content>
-                                        <Image Height="25" Width="25" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                            <Image.Style>
-                                                <Style TargetType="Image">
-                                                    <Setter Property="Source" Value="Resources/Icon/icons8_paste.ico"/>
-                                                </Style>
-                                            </Image.Style>
-                                        </Image>
-                                    </Button.Content>
-                                </Button>
-                                <Button Name="btnTaskDelete" ToolTip="{DynamicResource delete}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5,5,5" Style="{StaticResource ImageButton}" Grid.Column="1">
-                                    <Button.Content>
-                                        <Image Height="30" Width="30" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                            <Image.Style>
-                                                <Style TargetType="Image">
-                                                    <Setter Property="Source" Value="Resources/Icon/icons8_cancel.ico"/>
-                                                </Style>
-                                            </Image.Style>
-                                        </Image>
-                                    </Button.Content>
-                                </Button>
-                            </StackPanel>
                         </StackPanel>
-
-                        <StackPanel Height="120" Margin="5,0" Orientation="Vertical">
-                            <Border BorderBrush="#D7D7D7" Background="Transparent" BorderThickness="1" Height="120" CornerRadius="3">
-                                <StackPanel Orientation="Horizontal">
-                                    <StackPanel Margin="10,5,20,5" VerticalAlignment="Center">
-                                        <StackPanel Orientation="Horizontal">
-                                            <Image Source="Resources\Icon\u79.png" Width="25" Height="30" Margin="0,0,5,0"></Image>
-                                            <TextBlock VerticalAlignment="Center" FontWeight="Bold" FontSize="14">Disk 1</TextBlock>
-                                        </StackPanel>
-                                        <TextBlock FontSize="14">MBR</TextBlock>
-                                        <TextBlock FontSize="14">700 GB</TextBlock>
+                    </DockPanel>
+                    <DockPanel Grid.Row="1" Margin="5,0" VerticalAlignment="Top">
+                        <Border Padding="10" BorderBrush="#D7D7D7" Background="Transparent" BorderThickness="1" Height="120" CornerRadius="3">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="100"/>
+                                    <ColumnDefinition Width="0.45*"/>
+                                    <ColumnDefinition/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Margin="10,5,10,5" VerticalAlignment="Center">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Image Source="Resources\Icon\u79.png" Width="25" Height="30" Margin="0,0,5,0"></Image>
+                                        <TextBlock VerticalAlignment="Center" FontWeight="Bold" FontSize="14">Disk 1</TextBlock>
                                     </StackPanel>
-                                    <StackPanel Height="100" Orientation="Horizontal" Margin="0,0,3,0">
-                                        <Border BorderBrush="#9ACFEA" Background="#F2F2F2" BorderThickness="1" Height="90" CornerRadius="3">
-                                            <StackPanel VerticalAlignment="Center">
-                                                <ProgressBar Minimum="0" Maximum="100" Value="75" Height="20" Width="300" Margin="10,10,10,0">
-                                                    <ProgressBar.Background>
-                                                        <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
-                                                            <GradientStop Color="#FF94C683" Offset="0"/>
-                                                            <GradientStop Color="#D8ECD1" Offset="1"/>
-                                                        </LinearGradientBrush>
-                                                    </ProgressBar.Background>
-                                                    <ProgressBar.Foreground>
-                                                        <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
-                                                            <GradientStop Color="#FF093C59"/>
-                                                            <GradientStop Color="#74AAC8" Offset="1"/>
-                                                        </LinearGradientBrush>
-                                                    </ProgressBar.Foreground>
-                                                </ProgressBar>
-                                                <StackPanel Margin="10,0,0,0">
-                                                    <TextBlock FontWeight="Bold" FontSize="14">System Reserved</TextBlock>
-                                                    <TextBlock FontSize="14">NTFS</TextBlock>
-                                                    <TextBlock FontSize="14">700 GB, Primary</TextBlock>
-                                                </StackPanel>
-                                            </StackPanel>
-                                        </Border>
-                                    </StackPanel>
-                                    <StackPanel Height="100" Orientation="Horizontal">
-                                        <Border BorderBrush="#9ACFEA" Background="#F2F2F2" BorderThickness="1" Height="90" CornerRadius="3">
-                                            <StackPanel>
-                                                <ProgressBar Minimum="0" Maximum="100" Value="40" Height="20" Width="420" Margin="10,10,10,0">
-                                                    <ProgressBar.Background>
-                                                        <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
-                                                            <GradientStop Color="#FF94C683" Offset="0"/>
-                                                            <GradientStop Color="#D8ECD1" Offset="1"/>
-                                                        </LinearGradientBrush>
-                                                    </ProgressBar.Background>
-                                                    <ProgressBar.Foreground>
-                                                        <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
-                                                            <GradientStop Color="#FF093C59"/>
-                                                            <GradientStop Color="#74AAC8" Offset="1"/>
-                                                        </LinearGradientBrush>
-                                                    </ProgressBar.Foreground>
-                                                </ProgressBar>
-                                                <StackPanel Margin="10,0,0,0">
-                                                    <TextBlock FontWeight="Bold" FontSize="14">Local Volume (C:)</TextBlock>
-                                                    <TextBlock FontSize="14">NTFS</TextBlock>
-                                                    <TextBlock FontSize="14">700 GB, Primary</TextBlock>
-                                                </StackPanel>
-                                            </StackPanel>
-                                        </Border>
-                                    </StackPanel>
+                                    <TextBlock FontSize="14">MBR</TextBlock>
+                                    <TextBlock FontSize="14">700 GB</TextBlock>
                                 </StackPanel>
-                            </Border>
-                        </StackPanel>
+                                <DockPanel Grid.Column="1">
+                                    <Border BorderBrush="#9ACFEA" Background="#F2F2F2" BorderThickness="1" Height="90" CornerRadius="3">
+                                        <Grid>
+                                            <ProgressBar Minimum="0" Maximum="100" Value="75" Height="20" Margin="10,10,10,0" VerticalAlignment="Top">
+                                                <ProgressBar.Background>
+                                                    <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
+                                                        <GradientStop Color="#FF94C683" Offset="0"/>
+                                                        <GradientStop Color="#D8ECD1" Offset="1"/>
+                                                    </LinearGradientBrush>
+                                                </ProgressBar.Background>
+                                                <ProgressBar.Foreground>
+                                                    <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
+                                                        <GradientStop Color="#FF093C59"/>
+                                                        <GradientStop Color="#74AAC8" Offset="1"/>
+                                                    </LinearGradientBrush>
+                                                </ProgressBar.Foreground>
+                                            </ProgressBar>
+                                            <StackPanel Margin="10,0,0,0" VerticalAlignment="Bottom">
+                                                <TextBlock FontWeight="Bold" FontSize="14">System Reserved</TextBlock>
+                                                <TextBlock FontSize="14">NTFS</TextBlock>
+                                                <TextBlock FontSize="14">700 GB, Primary</TextBlock>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+                                </DockPanel>
+                                <DockPanel Grid.Column="2">
+                                    <Border BorderBrush="#9ACFEA" Background="#F2F2F2" BorderThickness="1" Height="90" CornerRadius="3">
+                                        <Grid>
+                                            <ProgressBar Minimum="0" Maximum="100" Value="40" Height="20" Margin="10,10,10,0" VerticalAlignment="Top">
+                                                <ProgressBar.Background>
+                                                    <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
+                                                        <GradientStop Color="#FF94C683" Offset="0"/>
+                                                        <GradientStop Color="#D8ECD1" Offset="1"/>
+                                                    </LinearGradientBrush>
+                                                </ProgressBar.Background>
+                                                <ProgressBar.Foreground>
+                                                    <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
+                                                        <GradientStop Color="#FF093C59"/>
+                                                        <GradientStop Color="#74AAC8" Offset="1"/>
+                                                    </LinearGradientBrush>
+                                                </ProgressBar.Foreground>
+                                            </ProgressBar>
+                                            <StackPanel Margin="10,0,0,0" VerticalAlignment="Bottom">
+                                                <TextBlock FontWeight="Bold" FontSize="14">Local Volume (C:)</TextBlock>
+                                                <TextBlock FontSize="14">NTFS</TextBlock>
+                                                <TextBlock FontSize="14">700 GB, Primary</TextBlock>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+                                </DockPanel>
+                            </Grid>
+                        </Border>
+                    </DockPanel>
+                </Grid>
+            </TabItem>
+
+            <TabItem Name="taskTab">
+                <TabItem.Header>
+                    <StackPanel Height="48" Width="175" Orientation="Horizontal">
+                        <Image Width="30">
+                            <Image.Style>
+                                <Style TargetType="Image">
+                                    <Setter Property="Source" Value="Resources\Icon\icons8_system_task_3.ico" />
+                                </Style>
+                            </Image.Style>
+                        </Image>
+                        <TextBlock Text="{DynamicResource tasks}" Margin="14,0" VerticalAlignment="Center" Style="{StaticResource TabItemText}"/>
                     </StackPanel>
+                </TabItem.Header>
+                <Grid Background="White">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition/>
+                        <ColumnDefinition Width="50"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition/>
+                        <RowDefinition Height="0.43*"/>
+                    </Grid.RowDefinitions>
+                    <DockPanel>
+                        <ListView Name="taskListBox" Grid.ColumnSpan="2" MinHeight="415" Margin="5,0,0,5" DisplayMemberPath="Name" AllowDrop="True" VerticalAlignment="Top">
+                            <ListView.View>
+                                <GridView>
+                                    <GridViewColumn Width="65">
+                                        <GridViewColumn.Header>
+                                            <CheckBox Name="selectAllTasksChechbox"/>
+                                        </GridViewColumn.Header>
+                                    </GridViewColumn>
+                                    <GridViewColumn Header="{DynamicResource taskName}" Width="135">
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding TaskName}" TextAlignment="Left"/>
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                    <GridViewColumn Header="{DynamicResource object}" Width="105" >
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding Object}" TextAlignment="Center"/>
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                    <GridViewColumn Header="{DynamicResource statu}" Width="125" >
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding Statu}" TextAlignment="Center"/>
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                    <GridViewColumn Header="{DynamicResource lastStudy}" Width="125" >
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding LastStudy}" TextAlignment="Center"/>
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                    <GridViewColumn Header="{DynamicResource nextStudy}" Width="125" >
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding NextStudy}" TextAlignment="Center"/>
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                    <GridViewColumn Header="{DynamicResource target}" Width="175" >
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding Target}" TextAlignment="Center"/>
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                    <GridViewColumn Header="{DynamicResource description}" Width="175" >
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding Description}" TextAlignment="Center"/>
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                </GridView>
+                            </ListView.View>
+                            <ListView.ItemContainerStyle>
+                                <Style TargetType="ListViewItem">
+                                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsPolicyFolder}" Value="false">
+                                            <Setter Property="IsEnabled" Value="True"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding IsPolicyFolder}" Value="true">
+                                            <Setter Property="IsEnabled" Value="False"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </ListView.ItemContainerStyle>
+                        </ListView>
+                    </DockPanel>
+                    <DockPanel Grid.Column="1" VerticalAlignment="Top" Height="415" Background="#F2F2F2">
+                        <StackPanel Margin="0,0,5,5">
+                            <Button Name="btnTaskEdit" ToolTip="{DynamicResource edit}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,25,5,5" Style="{StaticResource ImageButton}" Grid.Column="1">
+                                <Button.Content>
+                                    <Image Height="25" Width="25" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <Image.Style>
+                                            <Style TargetType="Image">
+                                                <Setter Property="Source" Value="Resources/Icon/icons8_edit_property_1.ico"/>
+                                            </Style>
+                                        </Image.Style>
+                                    </Image>
+                                </Button.Content>
+                            </Button>
+                            <Button Name="btnTaskStart" ToolTip="{DynamicResource start}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5,5,5"  Style="{StaticResource ImageButton}" Grid.Column="1">
+                                <Button.Content>
+                                    <Image Height="25" Width="25" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <Image.Style>
+                                            <Style TargetType="Image">
+                                                <Setter Property="Source" Value="Resources/Icon/icons8_play.ico"/>
+                                            </Style>
+                                        </Image.Style>
+                                    </Image>
+                                </Button.Content>
+                            </Button>
+                            <Button Name="btnTaskStop" ToolTip="{DynamicResource stop}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5,5,5" Style="{StaticResource ImageButton}" Grid.Column="1">
+                                <Button.Content>
+                                    <Image Height="40" Width="40" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <Image.Style>
+                                            <Style TargetType="Image">
+                                                <Setter Property="Source" Value="Resources/Icon/icons8_stop_8.ico"/>
+                                            </Style>
+                                        </Image.Style>
+                                    </Image>
+                                </Button.Content>
+                            </Button>
+                            <Button Name="btnTaskClose" ToolTip="{DynamicResource close}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5,5,5" Style="{StaticResource ImageButton}" Grid.Column="1">
+                                <Button.Content>
+                                    <Image Height="25" Width="25" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <Image.Style>
+                                            <Style TargetType="Image">
+                                                <Setter Property="Source" Value="Resources/Icon/icons8_unavailable_1.ico"/>
+                                            </Style>
+                                        </Image.Style>
+                                    </Image>
+                                </Button.Content>
+                            </Button>
+                            <Button Name="btnTaskOpen" ToolTip="{DynamicResource open}" Click="btnTaskOpen_Click" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5,5,5" Style="{StaticResource ImageButton}" Grid.Column="1">
+                                <Button.Content>
+                                    <Image Height="25" Width="25" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <Image.Style>
+                                            <Style TargetType="Image">
+                                                <Setter Property="Source" Value="Resources/Icon/icons8_ok_4.ico"/>
+                                            </Style>
+                                        </Image.Style>
+                                    </Image>
+                                </Button.Content>
+                            </Button>
+                            <Button Name="btnTaskCopy" ToolTip="{DynamicResource copy}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5,5,5" Style="{StaticResource ImageButton}" Grid.Column="1">
+                                <Button.Content>
+                                    <Image Height="25" Width="25" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <Image.Style>
+                                            <Style TargetType="Image">
+                                                <Setter Property="Source" Value="Resources/Icon/icons8_copy_2.ico"/>
+                                            </Style>
+                                        </Image.Style>
+                                    </Image>
+                                </Button.Content>
+                            </Button>
+                            <Button Name="btnTaskPaste" ToolTip="{DynamicResource paste}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5,5,5" Style="{StaticResource ImageButton}" Grid.Column="1">
+                                <Button.Content>
+                                    <Image Height="25" Width="25" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <Image.Style>
+                                            <Style TargetType="Image">
+                                                <Setter Property="Source" Value="Resources/Icon/icons8_paste.ico"/>
+                                            </Style>
+                                        </Image.Style>
+                                    </Image>
+                                </Button.Content>
+                            </Button>
+                            <Button Name="btnTaskDelete" ToolTip="{DynamicResource delete}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5,5,5" Style="{StaticResource ImageButton}" Grid.Column="1">
+                                <Button.Content>
+                                    <Image Height="30" Width="30" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <Image.Style>
+                                            <Style TargetType="Image">
+                                                <Setter Property="Source" Value="Resources/Icon/icons8_cancel.ico"/>
+                                            </Style>
+                                        </Image.Style>
+                                    </Image>
+                                </Button.Content>
+                            </Button>
+                        </StackPanel>
+                    </DockPanel>
+                    <DockPanel Grid.Row="1" Grid.ColumnSpan="2" Margin="5,0" VerticalAlignment="Top">
+                        <Border Padding="10" BorderBrush="#D7D7D7" Background="Transparent" BorderThickness="1" Height="120" CornerRadius="3">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="100"/>
+                                    <ColumnDefinition Width="0.45*"/>
+                                    <ColumnDefinition/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Margin="10,5,10,5" VerticalAlignment="Center">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Image Source="Resources\Icon\u79.png" Width="25" Height="30" Margin="0,0,5,0"></Image>
+                                        <TextBlock VerticalAlignment="Center" FontWeight="Bold" FontSize="14">Disk 1</TextBlock>
+                                    </StackPanel>
+                                    <TextBlock FontSize="14">MBR</TextBlock>
+                                    <TextBlock FontSize="14">700 GB</TextBlock>
+                                </StackPanel>
+                                <DockPanel Grid.Column="1">
+                                    <Border BorderBrush="#9ACFEA" Background="#F2F2F2" BorderThickness="1" Height="90" CornerRadius="3">
+                                        <Grid>
+                                            <ProgressBar Minimum="0" Maximum="100" Value="75" Height="20" Margin="10,10,10,0" VerticalAlignment="Top">
+                                                <ProgressBar.Background>
+                                                    <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
+                                                        <GradientStop Color="#FF94C683" Offset="0"/>
+                                                        <GradientStop Color="#D8ECD1" Offset="1"/>
+                                                    </LinearGradientBrush>
+                                                </ProgressBar.Background>
+                                                <ProgressBar.Foreground>
+                                                    <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
+                                                        <GradientStop Color="#FF093C59"/>
+                                                        <GradientStop Color="#74AAC8" Offset="1"/>
+                                                    </LinearGradientBrush>
+                                                </ProgressBar.Foreground>
+                                            </ProgressBar>
+                                            <StackPanel Margin="10,0,0,0" VerticalAlignment="Bottom">
+                                                <TextBlock FontWeight="Bold" FontSize="14">System Reserved</TextBlock>
+                                                <TextBlock FontSize="14">NTFS</TextBlock>
+                                                <TextBlock FontSize="14">700 GB, Primary</TextBlock>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+                                </DockPanel>
+                                <DockPanel Grid.Column="2">
+                                    <Border BorderBrush="#9ACFEA" Background="#F2F2F2" BorderThickness="1" Height="90" CornerRadius="3">
+                                        <Grid>
+                                            <ProgressBar Minimum="0" Maximum="100" Value="40" Height="20" Margin="10,10,10,0" VerticalAlignment="Top">
+                                                <ProgressBar.Background>
+                                                    <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
+                                                        <GradientStop Color="#FF94C683" Offset="0"/>
+                                                        <GradientStop Color="#D8ECD1" Offset="1"/>
+                                                    </LinearGradientBrush>
+                                                </ProgressBar.Background>
+                                                <ProgressBar.Foreground>
+                                                    <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
+                                                        <GradientStop Color="#FF093C59"/>
+                                                        <GradientStop Color="#74AAC8" Offset="1"/>
+                                                    </LinearGradientBrush>
+                                                </ProgressBar.Foreground>
+                                            </ProgressBar>
+                                            <StackPanel Margin="10,0,0,0" VerticalAlignment="Bottom">
+                                                <TextBlock FontWeight="Bold" FontSize="14">Local Volume (C:)</TextBlock>
+                                                <TextBlock FontSize="14">NTFS</TextBlock>
+                                                <TextBlock FontSize="14">700 GB, Primary</TextBlock>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+                                </DockPanel>
+                            </Grid>
+                        </Border>
+                    </DockPanel>
                 </Grid>
             </TabItem>
 
@@ -576,328 +589,62 @@
                     </StackPanel>
                 </TabItem.Header>
                 <Grid Background="White">
-                    <StackPanel Grid.Row="1" HorizontalAlignment="Stretch">
-                        <StackPanel HorizontalAlignment="Stretch" Orientation="Horizontal">
-                            <ListView Name="viewBackupsListBox" Height="415" Width="1042" Margin="5,0,0,5" DisplayMemberPath="Name" AllowDrop="True" VerticalAlignment="Top">
-                                <ListView.View>
-                                    <GridView>
-                                        <GridViewColumn Width="65">
-                                            <GridViewColumn.Header>
-                                                <CheckBox Name="selectAllFilesChecbox"/>
-                                            </GridViewColumn.Header>
-                                        </GridViewColumn>
-                                        <GridViewColumn Header="{DynamicResource type}" Width="125">
-                                            <GridViewColumn.CellTemplate>
-                                                <DataTemplate>
-                                                    <TextBlock Text="{Binding Name}" TextAlignment="Left"/>
-                                                </DataTemplate>
-                                            </GridViewColumn.CellTemplate>
-                                        </GridViewColumn>
-                                        <GridViewColumn Header="{DynamicResource filesName}" Width="155" >
-                                            <GridViewColumn.CellTemplate>
-                                                <DataTemplate>
-                                                    <TextBlock Text="{Binding TotalLength}" TextAlignment="Center"/>
-                                                </DataTemplate>
-                                            </GridViewColumn.CellTemplate>
-                                        </GridViewColumn>
-                                        <GridViewColumn Header="{DynamicResource createdDate}" Width="165" >
-                                            <GridViewColumn.CellTemplate>
-                                                <DataTemplate>
-                                                    <TextBlock Text="{Binding VersionLength}" TextAlignment="Center"/>
-                                                </DataTemplate>
-                                            </GridViewColumn.CellTemplate>
-                                        </GridViewColumn>
-                                        <GridViewColumn Header="{DynamicResource taskName}" Width="145" >
-                                            <GridViewColumn.CellTemplate>
-                                                <DataTemplate>
-                                                    <TextBlock Text="{Binding VersionLength}" TextAlignment="Center"/>
-                                                </DataTemplate>
-                                            </GridViewColumn.CellTemplate>
-                                        </GridViewColumn>
-                                        <GridViewColumn Header="{DynamicResource diskSize}" Width="125" >
-                                            <GridViewColumn.CellTemplate>
-                                                <DataTemplate>
-                                                    <TextBlock Text="{Binding VersionLength}" TextAlignment="Center"/>
-                                                </DataTemplate>
-                                            </GridViewColumn.CellTemplate>
-                                        </GridViewColumn>
-                                        <GridViewColumn Header="{DynamicResource folderSize}" Width="125" >
-                                            <GridViewColumn.CellTemplate>
-                                                <DataTemplate>
-                                                    <TextBlock Text="{Binding FolderSize}" TextAlignment="Center"/>
-                                                </DataTemplate>
-                                            </GridViewColumn.CellTemplate>
-                                        </GridViewColumn>
-                                        <GridViewColumn Header="{DynamicResource description}" Width="125" >
-                                            <GridViewColumn.CellTemplate>
-                                                <DataTemplate>
-                                                    <TextBlock Text="{Binding VersionLength}" TextAlignment="Center"/>
-                                                </DataTemplate>
-                                            </GridViewColumn.CellTemplate>
-                                        </GridViewColumn>
-                                    </GridView>
-                                </ListView.View>
-                                <ListView.ItemContainerStyle>
-                                    <Style TargetType="ListViewItem">
-                                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding IsPolicyFolder}" Value="false">
-                                                <Setter Property="IsEnabled" Value="True"/>
-                                            </DataTrigger>
-                                            <DataTrigger Binding="{Binding IsPolicyFolder}" Value="true">
-                                                <Setter Property="IsEnabled" Value="False"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </ListView.ItemContainerStyle>
-                            </ListView>
-                            <StackPanel Margin="0,0,5,5" Height="415" Width="50" VerticalAlignment="Top" Background="#F2F2F2">
-                                <Button Name="btnFilesDelete" ToolTip="{DynamicResource delete}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,25,5,5" Style="{StaticResource ImageButton}" Grid.Column="1">
-                                    <Button.Content>
-                                        <Image Height="30" Width="30" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                            <Image.Style>
-                                                <Style TargetType="Image">
-                                                    <Setter Property="Source" Value="Resources/Icon/icons8_cancel.ico"/>
-                                                </Style>
-                                            </Image.Style>
-                                        </Image>
-                                    </Button.Content>
-                                </Button>
-                            </StackPanel>
-                        </StackPanel>
-                    </StackPanel>
-                </Grid>
-            </TabItem>
-            <TabItem Name="backupAreaTab">
-                <TabItem.Header>
-                    <StackPanel Height="48" Width="175" Orientation="Horizontal">
-                        <Image Width="35" Margin="-4, 0, 0, 0">
-                            <Image.Style>
-                                <Style TargetType="Image">
-                                    <Setter Property="Source" Value="Resources\Icon\icons8_stack_3.ico" />
-                                </Style>
-                            </Image.Style>
-                        </Image>
-                        <TextBlock Text="{DynamicResource backupAreas}" Margin="13,0" VerticalAlignment="Center" Style="{StaticResource TabItemText}"/>
-                    </StackPanel>
-                </TabItem.Header>
-                <Grid Background="White">
-                    <StackPanel Grid.Row="1" HorizontalAlignment="Stretch">
-                        <StackPanel HorizontalAlignment="Stretch" Orientation="Horizontal">
-                            <ListView Name="backupAreaListBox" Height="415" Width="1042" Margin="5,0,0,5" DisplayMemberPath="Name" AllowDrop="True" VerticalAlignment="Top">
-                                <ListView.View>
-                                    <GridView>
-                                        <GridViewColumn Width="65">
-                                            <GridViewColumn.Header>
-                                                <CheckBox Name="selectAllBackupAreaChecbox"/>
-                                            </GridViewColumn.Header>
-                                        </GridViewColumn>
-                                        <GridViewColumn Header="{DynamicResource domainName}" Width="125">
-                                            <GridViewColumn.CellTemplate>
-                                                <DataTemplate>
-                                                    <TextBlock Text="{Binding Name}" TextAlignment="Left"/>
-                                                </DataTemplate>
-                                            </GridViewColumn.CellTemplate>
-                                        </GridViewColumn>
-                                        <GridViewColumn Header="{DynamicResource totalSize}" Width="155" >
-                                            <GridViewColumn.CellTemplate>
-                                                <DataTemplate>
-                                                    <TextBlock Text="{Binding TotalLength}" TextAlignment="Center"/>
-                                                </DataTemplate>
-                                            </GridViewColumn.CellTemplate>
-                                        </GridViewColumn>
-                                        <GridViewColumn Header="{DynamicResource usedSize}" Width="125" >
-                                            <GridViewColumn.CellTemplate>
-                                                <DataTemplate>
-                                                    <TextBlock Text="{Binding VersionLength}" TextAlignment="Center"/>
-                                                </DataTemplate>
-                                            </GridViewColumn.CellTemplate>
-                                        </GridViewColumn>
-                                        <GridViewColumn Header="{DynamicResource freeSize}" Width="125" >
-                                            <GridViewColumn.CellTemplate>
-                                                <DataTemplate>
-                                                    <TextBlock Text="{Binding VersionLength}" TextAlignment="Center"/>
-                                                </DataTemplate>
-                                            </GridViewColumn.CellTemplate>
-                                        </GridViewColumn>
-                                        <GridViewColumn Header="{DynamicResource localPath}" Width="135" >
-                                            <GridViewColumn.CellTemplate>
-                                                <DataTemplate>
-                                                    <TextBlock Text="{Binding VersionLength}" TextAlignment="Center"/>
-                                                </DataTemplate>
-                                            </GridViewColumn.CellTemplate>
-                                        </GridViewColumn>
-                                        <GridViewColumn Header="{DynamicResource cloudPath}" Width="125" >
-                                            <GridViewColumn.CellTemplate>
-                                                <DataTemplate>
-                                                    <TextBlock Text="{Binding VersionLength}" TextAlignment="Center"/>
-                                                </DataTemplate>
-                                            </GridViewColumn.CellTemplate>
-                                        </GridViewColumn>
-                                        <GridViewColumn Header="{DynamicResource description}" Width="175" >
-                                            <GridViewColumn.CellTemplate>
-                                                <DataTemplate>
-                                                    <TextBlock Text="{Binding VersionLength}" TextAlignment="Center"/>
-                                                </DataTemplate>
-                                            </GridViewColumn.CellTemplate>
-                                        </GridViewColumn>
-                                    </GridView>
-                                </ListView.View>
-                                <ListView.ItemContainerStyle>
-                                    <Style TargetType="ListViewItem">
-                                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding IsPolicyFolder}" Value="false">
-                                                <Setter Property="IsEnabled" Value="True"/>
-                                            </DataTrigger>
-                                            <DataTrigger Binding="{Binding IsPolicyFolder}" Value="true">
-                                                <Setter Property="IsEnabled" Value="False"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </ListView.ItemContainerStyle>
-                            </ListView>
-                            <StackPanel Margin="0,0,5,5" Height="415" Width="50" VerticalAlignment="Top" Background="#F2F2F2">
-                                <Button Name="btnBackupAreaEdit" ToolTip="{DynamicResource edit}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,25,5,5" Style="{StaticResource ImageButton}" Grid.Column="1">
-                                    <Button.Content>
-                                        <Image Height="25" Width="25" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                            <Image.Style>
-                                                <Style TargetType="Image">
-                                                    <Setter Property="Source" Value="Resources/Icon/icons8_edit_property_1.ico"/>
-                                                </Style>
-                                            </Image.Style>
-                                        </Image>
-                                    </Button.Content>
-                                </Button>
-                                <Button Name="btnBackupAreaDelete" ToolTip="{DynamicResource delete}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5,5,5" Style="{StaticResource ImageButton}" Grid.Column="1">
-                                    <Button.Content>
-                                        <Image Height="30" Width="30" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                            <Image.Style>
-                                                <Style TargetType="Image">
-                                                    <Setter Property="Source" Value="Resources/Icon/icons8_cancel.ico"/>
-                                                </Style>
-                                            </Image.Style>
-                                        </Image>
-                                    </Button.Content>
-                                </Button>
-                            </StackPanel>
-                        </StackPanel>
-                    </StackPanel>
-                </Grid>
-            </TabItem>
-
-            <TabItem Name="logTab">
-                <TabItem.Header>
-                    <StackPanel Height="48" Width="175" Orientation="Horizontal">
-                        <Image Width="35" Margin="-3,0,0,0">
-                            <Image.Style>
-                                <Style TargetType="Image">
-                                    <Setter Property="Source" Value="Resources\Icon\icons8_clock_2.ico" />
-                                </Style>
-                            </Image.Style>
-                        </Image>
-                        <TextBlock Text="{DynamicResource pastActivities}" Margin="12,0" VerticalAlignment="Center" Style="{StaticResource TabItemText}"/>
-                    </StackPanel>
-                </TabItem.Header>
-                <Grid Background="White">
-                    <StackPanel Grid.Row="1" HorizontalAlignment="Stretch">
-                        <StackPanel HorizontalAlignment="Stretch" Orientation="Horizontal">
-                            <ListView Name="logListBox" Height="415" Width="1042" Margin="5,0,0,5" DisplayMemberPath="Name" AllowDrop="True" VerticalAlignment="Top">
-                                <ListView.View>
-                                    <GridView>
-                                        <GridViewColumn Width="85">
-                                            <!--Bu sütuna iconlar gelicek-->
-                                        </GridViewColumn>
-                                        <GridViewColumn Header="{DynamicResource startDate}" Width="145">
-                                            <GridViewColumn.CellTemplate>
-                                                <DataTemplate>
-                                                    <TextBlock Text="{Binding Name}" TextAlignment="Left"/>
-                                                </DataTemplate>
-                                            </GridViewColumn.CellTemplate>
-                                        </GridViewColumn>
-                                        <GridViewColumn Header="{DynamicResource endDate}" Width="145" >
-                                            <GridViewColumn.CellTemplate>
-                                                <DataTemplate>
-                                                    <TextBlock Text="{Binding TotalLength}" TextAlignment="Center"/>
-                                                </DataTemplate>
-                                            </GridViewColumn.CellTemplate>
-                                        </GridViewColumn>
-                                        <GridViewColumn Header="{DynamicResource type}" Width="125" >
-                                            <GridViewColumn.CellTemplate>
-                                                <DataTemplate>
-                                                    <TextBlock Text="{Binding VersionLength}" TextAlignment="Center"/>
-                                                </DataTemplate>
-                                            </GridViewColumn.CellTemplate>
-                                        </GridViewColumn>
-                                        <GridViewColumn Header="{DynamicResource source}" Width="135" >
-                                            <GridViewColumn.CellTemplate>
-                                                <DataTemplate>
-                                                    <TextBlock Text="{Binding VersionLength}" TextAlignment="Center"/>
-                                                </DataTemplate>
-                                            </GridViewColumn.CellTemplate>
-                                        </GridViewColumn>
-                                        <GridViewColumn Header="{DynamicResource target}" Width="215" >
-                                            <GridViewColumn.CellTemplate>
-                                                <DataTemplate>
-                                                    <TextBlock Text="{Binding VersionLength}" TextAlignment="Center"/>
-                                                </DataTemplate>
-                                            </GridViewColumn.CellTemplate>
-                                        </GridViewColumn>
-                                        <GridViewColumn Header="{DynamicResource statu}" Width="175" >
-                                            <GridViewColumn.CellTemplate>
-                                                <DataTemplate>
-                                                    <TextBlock Text="{Binding VersionLength}" TextAlignment="Center"/>
-                                                </DataTemplate>
-                                            </GridViewColumn.CellTemplate>
-                                        </GridViewColumn>
-                                    </GridView>
-                                </ListView.View>
-                                <ListView.ItemContainerStyle>
-                                    <Style TargetType="ListViewItem">
-                                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding IsPolicyFolder}" Value="false">
-                                                <Setter Property="IsEnabled" Value="True"/>
-                                            </DataTrigger>
-                                            <DataTrigger Binding="{Binding IsPolicyFolder}" Value="true">
-                                                <Setter Property="IsEnabled" Value="False"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </ListView.ItemContainerStyle>
-                            </ListView>
-                            <StackPanel Margin="0,0,5,5" Height="415" Width="50" VerticalAlignment="Top" Background="#F2F2F2">
-                                <Button Name="btnLogDelete" ToolTip="{DynamicResource delete}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,25,5,5" Style="{StaticResource ImageButton}" Grid.Column="1">
-                                    <Button.Content>
-                                        <Image Height="30" Width="30" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                            <Image.Style>
-                                                <Style TargetType="Image">
-                                                    <Setter Property="Source" Value="Resources/Icon/icons8_cancel.ico"/>
-                                                </Style>
-                                            </Image.Style>
-                                        </Image>
-                                    </Button.Content>
-                                </Button>
-                            </StackPanel>
-                        </StackPanel>
-                        <ListView Name="logDownListBox" Height="178" Margin="5,5,10,5" DisplayMemberPath="Name" AllowDrop="True" VerticalAlignment="Top">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition/>
+                        <ColumnDefinition Width="50"/>
+                    </Grid.ColumnDefinitions>
+                    <DockPanel>
+                        <ListView Name="viewBackupsListBox" Height="415" Margin="5,0,0,5" DisplayMemberPath="Name" AllowDrop="True" VerticalAlignment="Top">
                             <ListView.View>
                                 <GridView>
-                                    <GridViewColumn Header="{DynamicResource time}" Width="300">
+                                    <GridViewColumn Width="65">
+                                        <GridViewColumn.Header>
+                                            <CheckBox Name="selectAllFilesChecbox"/>
+                                        </GridViewColumn.Header>
+                                    </GridViewColumn>
+                                    <GridViewColumn Header="{DynamicResource type}" Width="100">
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
                                                 <TextBlock Text="{Binding Name}" TextAlignment="Left"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
-                                    <GridViewColumn Header="{DynamicResource statusCode}" Width="300" >
+                                    <GridViewColumn Header="{DynamicResource filesName}" Width="155" >
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
                                                 <TextBlock Text="{Binding TotalLength}" TextAlignment="Center"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
-                                    <GridViewColumn Header="{DynamicResource detail}" Width="300" >
+                                    <GridViewColumn Header="{DynamicResource createdDate}" Width="165" >
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding VersionLength}" TextAlignment="Center"/>
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                    <GridViewColumn Header="{DynamicResource taskName}" Width="145" >
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding VersionLength}" TextAlignment="Center"/>
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                    <GridViewColumn Header="{DynamicResource diskSize}" Width="125" >
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding VersionLength}" TextAlignment="Center"/>
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                    <GridViewColumn Header="{DynamicResource folderSize}" Width="125" >
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding FolderSize}" TextAlignment="Center"/>
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                    <GridViewColumn Header="{DynamicResource description}" Width="150" >
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
                                                 <TextBlock Text="{Binding VersionLength}" TextAlignment="Center"/>
@@ -920,7 +667,303 @@
                                 </Style>
                             </ListView.ItemContainerStyle>
                         </ListView>
+                    </DockPanel>
+                    <DockPanel Grid.Column="1" VerticalAlignment="Top" Height="415" Background="#F2F2F2">
+                        <StackPanel Margin="0,0,5,5">
+                            <Button Name="btnFilesBrowse" ToolTip="{DynamicResource browse}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,25,5,5" Style="{StaticResource ImageButton}" Grid.Column="1">
+                                <Button.Content>
+                                    <Image Height="26" Width="26" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <Image.Style>
+                                            <Style TargetType="Image">
+                                                <Setter Property="Source" Value="Resources/Icon/icons8_search_property.ico"/>
+                                            </Style>
+                                        </Image.Style>
+                                    </Image>
+                                </Button.Content>
+                            </Button>
+                            <Button Name="btnFilesDelete" ToolTip="{DynamicResource delete}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5,5,5" Style="{StaticResource ImageButton}" Grid.Column="1">
+                                <Button.Content>
+                                    <Image Height="30" Width="30" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <Image.Style>
+                                            <Style TargetType="Image">
+                                                <Setter Property="Source" Value="Resources/Icon/icons8_cancel.ico"/>
+                                            </Style>
+                                        </Image.Style>
+                                    </Image>
+                                </Button.Content>
+                            </Button>
+                        </StackPanel>
+                    </DockPanel>
+                </Grid>
+            </TabItem>
+            
+            <TabItem Name="backupAreaTab">
+                <TabItem.Header>
+                    <StackPanel Height="48" Width="175" Orientation="Horizontal">
+                        <Image Width="35" Margin="-4, 0, 0, 0">
+                            <Image.Style>
+                                <Style TargetType="Image">
+                                    <Setter Property="Source" Value="Resources\Icon\icons8_stack_3.ico" />
+                                </Style>
+                            </Image.Style>
+                        </Image>
+                        <TextBlock Text="{DynamicResource backupAreas}" Margin="13,0" VerticalAlignment="Center" Style="{StaticResource TabItemText}"/>
                     </StackPanel>
+                </TabItem.Header>
+                <Grid Background="White">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition/>
+                        <ColumnDefinition Width="50"/>
+                    </Grid.ColumnDefinitions>
+                    <DockPanel>
+                        <ListView Name="backupAreaListBox" Height="415" Margin="5,0,0,5" DisplayMemberPath="Name" AllowDrop="True" VerticalAlignment="Top">
+                            <ListView.View>
+                                <GridView>
+                                    <GridViewColumn Width="65">
+                                        <GridViewColumn.Header>
+                                            <CheckBox Name="selectAllBackupAreaChecbox"/>
+                                        </GridViewColumn.Header>
+                                    </GridViewColumn>
+                                    <GridViewColumn Header="{DynamicResource domainName}" Width="125">
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding Name}" TextAlignment="Left"/>
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                    <GridViewColumn Header="{DynamicResource type}" Width="100" >
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding TotalLength}" TextAlignment="Center"/>
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                    <GridViewColumn Header="{DynamicResource capacity}" Width="125" >
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding VersionLength}" TextAlignment="Center"/>
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                    <GridViewColumn Header="{DynamicResource usedSize}" Width="125" >
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding hhhhhh}" TextAlignment="Center"/>
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                    <GridViewColumn Header="{DynamicResource freeSize}" Width="125" >
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding VersionLength}" TextAlignment="Center"/>
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                    <GridViewColumn Header="{DynamicResource folderPath}" Width="170" >
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding VersionLength}" TextAlignment="Center"/>
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                    <GridViewColumn Header="{DynamicResource description}" Width="185" >
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding VersionLength}" TextAlignment="Center"/>
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                </GridView>
+                            </ListView.View>
+                            <ListView.ItemContainerStyle>
+                                <Style TargetType="ListViewItem">
+                                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsPolicyFolder}" Value="false">
+                                            <Setter Property="IsEnabled" Value="True"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding IsPolicyFolder}" Value="true">
+                                            <Setter Property="IsEnabled" Value="False"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </ListView.ItemContainerStyle>
+                        </ListView>
+                    </DockPanel>
+                    <DockPanel Grid.Column="1" VerticalAlignment="Top" Height="415" Background="#F2F2F2">
+                        <StackPanel Margin="0,0,5,5">
+                            <Button Name="btnBackupAreaEdit" ToolTip="{DynamicResource edit}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,25,5,5" Style="{StaticResource ImageButton}" Grid.Column="1">
+                                <Button.Content>
+                                    <Image Height="25" Width="25" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <Image.Style>
+                                            <Style TargetType="Image">
+                                                <Setter Property="Source" Value="Resources/Icon/icons8_edit_property_1.ico"/>
+                                            </Style>
+                                        </Image.Style>
+                                    </Image>
+                                </Button.Content>
+                            </Button>
+                            <Button Name="btnBackupAreaDelete" ToolTip="{DynamicResource delete}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5,5,5" Style="{StaticResource ImageButton}" Grid.Column="1">
+                                <Button.Content>
+                                    <Image Height="30" Width="30" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <Image.Style>
+                                            <Style TargetType="Image">
+                                                <Setter Property="Source" Value="Resources/Icon/icons8_cancel.ico"/>
+                                            </Style>
+                                        </Image.Style>
+                                    </Image>
+                                </Button.Content>
+                            </Button>
+                        </StackPanel>
+                    </DockPanel>
+                </Grid>
+            </TabItem>
+
+            <TabItem Name="logTab">
+                <TabItem.Header>
+                    <StackPanel Height="48" Width="175" Orientation="Horizontal">
+                        <Image Width="35" Margin="-3,0,0,0">
+                            <Image.Style>
+                                <Style TargetType="Image">
+                                    <Setter Property="Source" Value="Resources\Icon\icons8_clock_2.ico" />
+                                </Style>
+                            </Image.Style>
+                        </Image>
+                        <TextBlock Text="{DynamicResource pastActivities}" Margin="12,0" VerticalAlignment="Center" Style="{StaticResource TabItemText}"/>
+                    </StackPanel>
+                </TabItem.Header>
+                <Grid Background="White">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition/>
+                        <ColumnDefinition Width="50"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition/>
+                        <RowDefinition Height="0.43*"/>
+                    </Grid.RowDefinitions>
+                    <DockPanel>
+                        <ListView Name="logListBox" MinHeight="415" Margin="5,0,0,5" DisplayMemberPath="Name" AllowDrop="True" VerticalAlignment="Top">
+                            <ListView.View>
+                                <GridView>
+                                    <GridViewColumn Width="85">
+                                        <!--buraya ikonlar gelecek-->
+                                    </GridViewColumn>
+                                    <GridViewColumn Header="{DynamicResource startDate}" Width="145">
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding Name}" TextAlignment="Left"/>
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                    <GridViewColumn Header="{DynamicResource endDate}" Width="145" >
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding TotalLength}" TextAlignment="Center"/>
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                    <GridViewColumn Header="{DynamicResource type}" Width="125" >
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding VersionLength}" TextAlignment="Center"/>
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                    <GridViewColumn Header="{DynamicResource source}" Width="135" >
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding VersionLength}" TextAlignment="Center"/>
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                    <GridViewColumn Header="{DynamicResource target}" Width="215" >
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding VersionLength}" TextAlignment="Center"/>
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                    <GridViewColumn Header="{DynamicResource statu}" Width="175" >
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding VersionLength}" TextAlignment="Center"/>
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                </GridView>
+                            </ListView.View>
+                            <ListView.ItemContainerStyle>
+                                <Style TargetType="ListViewItem">
+                                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsPolicyFolder}" Value="false">
+                                            <Setter Property="IsEnabled" Value="True"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding IsPolicyFolder}" Value="true">
+                                            <Setter Property="IsEnabled" Value="False"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </ListView.ItemContainerStyle>
+                        </ListView>
+                    </DockPanel>
+                    <DockPanel Grid.Column="1" VerticalAlignment="Top" Height="415" Background="#F2F2F2">
+                        <StackPanel Margin="0,0,5,5">
+                            <Button Name="btnLogDelete" ToolTip="{DynamicResource delete}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,25,5,5" Style="{StaticResource ImageButton}" Grid.Column="1">
+                                <Button.Content>
+                                    <Image Height="30" Width="30" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <Image.Style>
+                                            <Style TargetType="Image">
+                                                <Setter Property="Source" Value="Resources/Icon/icons8_cancel.ico"/>
+                                            </Style>
+                                        </Image.Style>
+                                    </Image>
+                                </Button.Content>
+                            </Button>
+                        </StackPanel>
+                    </DockPanel>
+                    <DockPanel Grid.Row="1" Grid.ColumnSpan="2">
+                        <ListView Name="logDownListBox" MinHeight="165" Margin="5,5,10,5" DisplayMemberPath="Name" AllowDrop="True" VerticalAlignment="Top">
+                            <ListView.View>
+                                <GridView>
+                                    <GridViewColumn Header="{DynamicResource time}" Width="300">
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding Name}" TextAlignment="Left"/>
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                    <GridViewColumn Header="{DynamicResource statusCode}" Width="300" >
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding TotalLength}" TextAlignment="Center"/>
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                    <GridViewColumn Header="{DynamicResource detail}" Width="500" >
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding VersionLength}" TextAlignment="Center"/>
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                </GridView>
+                            </ListView.View>
+                            <ListView.ItemContainerStyle>
+                                <Style TargetType="ListViewItem">
+                                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsPolicyFolder}" Value="false">
+                                            <Setter Property="IsEnabled" Value="True"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding IsPolicyFolder}" Value="true">
+                                            <Setter Property="IsEnabled" Value="False"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </ListView.ItemContainerStyle>
+                        </ListView>
+                    </DockPanel>
                 </Grid>
             </TabItem>
 
@@ -948,10 +991,10 @@
                         <RowDefinition/>
                     </Grid.RowDefinitions>
                     <StackPanel Grid.Row="0" HorizontalAlignment="Stretch">
-                        <TextBlock Text="{DynamicResource settings}" FontSize="20" Margin="10,0,0,5" TextAlignment="Left" FontWeight="Bold"/>
-                        <TextBlock Text="{DynamicResource settingsContent}" Foreground="#A1A1A1"  Margin="20,0,0,0" TextAlignment="Left"/>
-                        <StackPanel Orientation="Horizontal" Margin="20,30,0,0">
-                            <Image Height="42" Margin="0,0,15,0" >
+                        <TextBlock Text="{DynamicResource settings}" FontSize="22" Margin="10,0,0,5" TextAlignment="Left" FontWeight="Bold"/>
+                        <TextBlock Text="{DynamicResource settingsContent}" FontSize="14" Foreground="#A1A1A1" Margin="20,0,0,0" TextAlignment="Left"/>
+                        <StackPanel Orientation="Horizontal" Margin="20,25,0,0">
+                            <Image Height="50" Margin="0,0,15,0" >
                                 <Image.Style>
                                     <Style TargetType="Image">
                                         <Setter Property="Source" Value="Resources/Icon/icons8_licence_4.ico" />
@@ -960,12 +1003,12 @@
                             </Image>
                             <StackPanel VerticalAlignment="Center">
                                 <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="{DynamicResource appLicense}"/>
-                                    <TextBlock Text="{DynamicResource active}" Margin="3,0"/>
+                                    <TextBlock Text="{DynamicResource appLicense}" FontSize="14"/>
+                                    <TextBlock Text="{DynamicResource active}" FontSize="14" Margin="3,0"/>
                                 </StackPanel>
                                 <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="{DynamicResource endDateDot}"/>
-                                    <TextBlock Text="21/12/2021" Margin="3,0"/>
+                                    <TextBlock Text="{DynamicResource endDateDot}" FontSize="14"/>
+                                    <TextBlock Text="21/12/2021" FontSize="14" Margin="3,0"/>
                                 </StackPanel>
                             </StackPanel>
                         </StackPanel>
@@ -977,8 +1020,8 @@
                                 <ColumnDefinition/>
                             </Grid.ColumnDefinitions>
                             <StackPanel Orientation="Horizontal" Grid.Column="0" HorizontalAlignment="Left" Margin="0,30,0,0">
-                                <TextBlock VerticalAlignment="Center" Text="{DynamicResource languageDot}"/>
-                                <ComboBox Margin="30,0,0,0" Name="cbLang" Width="100" Height="22" SelectedIndex="0">
+                                <TextBlock VerticalAlignment="Center" Text="{DynamicResource languageDot}" FontSize="14" />
+                                <ComboBox Margin="30,0,0,0" Name="cbLang" Width="100" Height="24" SelectedIndex="0" FontSize="14" >
                                     <ComboBoxItem Content="{DynamicResource turkish}"/>
                                     <ComboBoxItem Content="{DynamicResource english}"/>
                                 </ComboBox>
@@ -986,8 +1029,8 @@
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,30,20,0" Grid.Column="1">
                                 <StackPanel VerticalAlignment="Center">
                                     <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="{DynamicResource versionDot}"/>
-                                        <TextBlock Name="txtVersion" Text="1.0" Margin="3,0"/>
+                                        <TextBlock Text="{DynamicResource versionDot}" FontSize="14" />
+                                        <TextBlock Name="txtVersion" Text="1.0" FontSize="14" Margin="3,0"/>
                                     </StackPanel>
                                 </StackPanel>
                                 <Image Height="32" Margin="15,0,0,0" >
@@ -1004,17 +1047,17 @@
                         <Border BorderBrush="#9ACFEA" Width="420"  BorderThickness="2" CornerRadius="3">
                             <StackPanel>
                                 <StackPanel Orientation="Horizontal" Margin="10,5,0,0" >
-                                    <Image Height="42" Margin="0,5,15,0" >
+                                    <Image Height="50" Margin="0,5,15,0" >
                                         <Image.Style>
                                             <Style TargetType="Image">
                                                 <Setter Property="Source" Value="Resources/Icon/icons8_user_2.ico" />
                                             </Style>
                                         </Image.Style>
                                     </Image>
-                                    <TextBlock VerticalAlignment="Center" FontSize="15" Text="abdurrahim.vural@bilisimcenter.com"/>
+                                    <TextBlock VerticalAlignment="Center" FontSize="17" Text="abdurrahim.vural@bilisimcenter.com"/>
                                 </StackPanel>
-                                <StackPanel Orientation="Horizontal" Margin="10,20,0,10" >
-                                    <Image Height="42" Margin="0,0,15,0" >
+                                <StackPanel Orientation="Horizontal" Margin="10,10,0,10" >
+                                    <Image Height="50" Margin="0,0,15,0" >
                                         <Image.Style>
                                             <Style TargetType="Image">
                                                 <Setter Property="Source" Value="Resources/Icon/favicon_mavi.ico" />
@@ -1023,28 +1066,28 @@
                                     </Image>
                                     <StackPanel VerticalAlignment="Center">
                                         <StackPanel Orientation="Horizontal">
-                                            <TextBlock Text="{DynamicResource cloudLicenseDot}"/>
-                                            <TextBlock Text="{DynamicResource active}" Margin="3,0"/>
+                                            <TextBlock Text="{DynamicResource cloudLicenseDot}" FontSize="14"/>
+                                            <TextBlock Text="{DynamicResource active}" FontSize="14" Margin="3,0"/>
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal">
-                                            <TextBlock Text="{DynamicResource endDateDot}"/>
-                                            <TextBlock Text="12.12.2020" Margin="3,0"/>
+                                            <TextBlock Text="{DynamicResource endDateDot}" FontSize="14"/>
+                                            <TextBlock Text="12.12.2020" FontSize="14" Margin="3,0"/>
                                         </StackPanel>
                                     </StackPanel>
                                 </StackPanel>
-                                <StackPanel Orientation="Horizontal" Margin="10,15,0,10" >
-                                    <Grid Height="42" Width="42">
+                                <StackPanel Orientation="Horizontal" Margin="10,10,0,10" >
+                                    <Grid Height="50" Width="42">
                                         <xctk:Pie StartAngle="0" EndAngle="360" Height="42" Width="42" Fill="#B8DABC" Stroke="#7A917D"/>
                                         <xctk:Pie Name="pieSize" StartAngle="-90" EndAngle="0" Height="42" Width="42" Fill="#87B5F2" Stroke="#5A78A1"/>
                                     </Grid>
-                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="15,0,0,0">
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="22,0,0,0">
                                         <StackPanel>
-                                            <TextBlock Text="{DynamicResource totalCapacity}"/>
-                                            <TextBlock Text="{DynamicResource usedCapacity}"/>
+                                            <TextBlock Text="{DynamicResource totalCapacity}" FontSize="14"/>
+                                            <TextBlock Text="{DynamicResource usedCapacity}" FontSize="14"/>
                                         </StackPanel>
                                         <StackPanel Margin="20,0">
-                                            <TextBlock Text="200 GB" Name="txtTotalCapacity"/>
-                                            <TextBlock Text="50 GB" Name="txtUsedCapacity"/>
+                                            <TextBlock Text="200 GB" Name="txtTotalCapacity" FontSize="14"/>
+                                            <TextBlock Text="50 GB" Name="txtUsedCapacity" FontSize="14"/>
                                         </StackPanel>
                                     </StackPanel>
                                 </StackPanel>
@@ -1052,7 +1095,7 @@
                         </Border>
                     </StackPanel>
 
-                    <GroupBox Grid.Row="2" Grid.ColumnSpan="2" Margin="10" BorderBrush="#9ACFEA" BorderThickness="2">
+                    <GroupBox Grid.Row="2" Grid.ColumnSpan="2" Margin="10" BorderBrush="#9ACFEA" BorderThickness="2" FontSize="14" >
                         <GroupBox.Header>
                             <TextBlock Text="{DynamicResource bandwithSetting}" Foreground="Black" FontWeight="Bold"/>
                         </GroupBox.Header>
@@ -1066,7 +1109,7 @@
                                     <TextBlock Text="{DynamicResource downloadSpeed}" ></TextBlock>
                                     <RadioButton Content="{DynamicResource delimitation}" Name="rbtnDownloadDelimitation" GroupName="download" IsChecked="True" Margin="20,10,0,0" />
                                     <StackPanel Orientation="Horizontal">
-                                        <RadioButton Height="15" Content="{DynamicResource limit}" Name="rbtnDownload" GroupName="download" Checked="rbtnDownload_Checked" Unchecked="rbtnDownload_Unchecked"  Margin="20,5,0,0" />
+                                        <RadioButton Content="{DynamicResource limit}" Name="rbtnDownload" GroupName="download" Checked="rbtnDownload_Checked" Unchecked="rbtnDownload_Unchecked" Margin="20,5,0,0" />
                                         <StackPanel Name="stackDownload" Orientation="Horizontal" IsEnabled="False">
                                             <TextBox Name="txtDownload" Text="100" Width="50" Height="28" FontSize="13" Margin="20,0,0,0" VerticalContentAlignment="Center" MaxLength="3"/>
                                             <StackPanel Margin="-21,0,0,0" VerticalAlignment="Center">
