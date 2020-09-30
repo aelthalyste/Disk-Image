@@ -76,10 +76,18 @@
     <Compile Include="AddBackupArea.xaml.cs">
       <DependentUpon>AddBackupArea.xaml</DependentUpon>
     </Compile>
+    <Compile Include="DiskInfoPage.xaml.cs">
+      <DependentUpon>DiskInfoPage.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Model\DiskInfo.cs" />
     <Compile Include="TaskStatus.xaml.cs">
       <DependentUpon>TaskStatus.xaml</DependentUpon>
     </Compile>
     <Page Include="AddBackupArea.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="DiskInfoPage.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -223,6 +231,9 @@
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Resources\Icon\icons8_search_property.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\Icon\blue_icon.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

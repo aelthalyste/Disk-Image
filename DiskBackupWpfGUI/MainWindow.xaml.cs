@@ -1,4 +1,5 @@
-﻿using System;
+﻿using DiskBackupWpfGUI.Model;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -25,9 +26,23 @@ namespace DiskBackupWpfGUI
         {
             InitializeComponent();
 
+            DiskInfo diskInfo = new DiskInfo { Size = "55 GB", BootType = "MBR", Format = "NTFS", Name = "Disk 1", VolumeSize = "100 GB", VolumeName = "Local Volume (D:)" };
+            var page = new DiskInfoPage(diskInfo);
+            var frame = new Frame();
+            frame.Content = page;
+            frame.VerticalAlignment = VerticalAlignment.Top;
+            diskInfoStackPanel.Children.Add(frame);
+            diskInfo.Name = "Disk 2";
+            page = new DiskInfoPage(diskInfo);
+            frame = new Frame();
+            frame.Content = page;
+            frame.VerticalAlignment = VerticalAlignment.Top;
+            diskInfoStackPanel.Children.Add(frame);
+            //stackTasksDiskInfo.Children.Add(frame);
+
+
             List<Discs> discsItems = new List<Discs>();
             discsItems.Add(new Discs() { 
-                checkSelect = false, 
                 Volume = "System Reserverd", 
                 Letter = 'A', 
                 Area = "2 GB", 
@@ -39,7 +54,6 @@ namespace DiskBackupWpfGUI
             });
             discsItems.Add(new Discs()
             {
-                checkSelect = false,
                 Volume = "Local Volume",
                 Letter = 'B',
                 Area = "75 GB",
@@ -51,7 +65,6 @@ namespace DiskBackupWpfGUI
             });
             discsItems.Add(new Discs()
             {
-                checkSelect = false,
                 Volume = "System Reserverd",
                 Letter = 'C',
                 Area = "2 GB",
@@ -63,7 +76,6 @@ namespace DiskBackupWpfGUI
             });
             discsItems.Add(new Discs()
             {
-                checkSelect = true,
                 Volume = "Local Volume",
                 Letter = 'D',
                 Area = "75 GB",
@@ -83,7 +95,6 @@ namespace DiskBackupWpfGUI
 
         public class Discs
         {
-            public bool checkSelect { get; set; }
             public string Volume { get; set; }
             public char Letter { get; set; }
             public string Area { get; set; }
@@ -96,22 +107,22 @@ namespace DiskBackupWpfGUI
 
         private void chbDiskSelectDiskAll_Checked(object sender, RoutedEventArgs e)
         {
-            foreach (Discs item in diskListBox.ItemsSource)
+            if (!diskAllControl)
             {
-                item.checkSelect = true;
-                diskListBox.SelectedItems.Add(item);
+                foreach (Discs item in diskListBox.ItemsSource)
+                {
+                    diskListBox.SelectedItems.Add(item);
+                }
+                diskAllControl = true;
             }
         }
 
         private void chbDiskSelectDiskAll_Unchecked(object sender, RoutedEventArgs e)
         {
-            if (diskAllControl == false)
+            if (diskAllControl)
             {
-                foreach (Discs item in diskListBox.ItemsSource)
-                {
-                    item.checkSelect = false;
-                    diskListBox.SelectedItems.Remove(item);
-                }
+                diskListBox.SelectedItems.Clear();
+                diskAllControl = false;
             }
         }
 
@@ -119,27 +130,15 @@ namespace DiskBackupWpfGUI
         {
             if (chbDiskSelectDiskAll.IsChecked == false)
             {
-                bool diskControl = true;
-                foreach (Discs item in diskListBox.ItemsSource)
-                {
-                    MessageBox.Show(item.Letter.ToString() + " " + item.checkSelect.ToString());
-                    if (item.checkSelect == false)
-                    {
-                        diskControl = false;
-                        break;
-                    }
-                }
-                if (diskControl == true)
-                {
-                    chbDiskSelectDiskAll.IsChecked = true;
-                }
+                diskAllControl = diskListBox.SelectedItems.Count == diskListBox.Items.Count;
+                chbDiskSelectDiskAll.IsChecked = diskAllControl;
             }
         }
 
         private void chbDisk_Unchecked(object sender, RoutedEventArgs e)
         {
+            diskAllControl = false;
             chbDiskSelectDiskAll.IsChecked = false;
-            diskAllControl = true;
         }
 
         /*
@@ -238,5 +237,10 @@ namespace DiskBackupWpfGUI
             stackUpload.IsEnabled = false;
         }
 
+        private void btnBackupAreaAdd_Click(object sender, RoutedEventArgs e)
+        {
+            AddBackupArea addBackupArea = new AddBackupArea();
+            addBackupArea.ShowDialog();
+        }
     }
 }
