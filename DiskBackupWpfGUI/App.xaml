@@ -248,6 +248,10 @@
                                 <Setter TargetName="Border" Property="BorderBrush" Value="#FF4B9A4E"/>
                                 <Setter TargetName="Border" Property="Background" Value="#FF4B9A4E"/>
                             </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Border" Property="BorderBrush" Value="#FF4B9A4E"/>
+                                <Setter TargetName="Border" Property="Background" Value="#D8ECD1"/>
+                            </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>

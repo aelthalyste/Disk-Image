@@ -174,4 +174,5 @@
     <system:String x:Key="ABATargetContent">Yedeği kaydedeceğiniz alanı seçiniz</system:String>
     <system:String x:Key="ABASettingsContent">Yedek alanının ayarlamasını yapınız</system:String>
     <system:String x:Key="ABASummaryContent">Oluşturulan yedekleme alanının özet bilgisi</system:String>
+    <system:String x:Key="items">adet</system:String>
 </ResourceDictionary>
