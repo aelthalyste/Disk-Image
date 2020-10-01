@@ -76,10 +76,28 @@
     <Compile Include="AddBackupArea.xaml.cs">
       <DependentUpon>AddBackupArea.xaml</DependentUpon>
     </Compile>
+    <Compile Include="ChooseDayAndMounths.xaml.cs">
+      <DependentUpon>ChooseDayAndMounths.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="DiskInfoPage.xaml.cs">
+      <DependentUpon>DiskInfoPage.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Model\DiskInfo.cs" />
+    <Compile Include="Restore.xaml.cs">
+      <DependentUpon>Restore.xaml</DependentUpon>
+    </Compile>
     <Compile Include="TaskStatus.xaml.cs">
       <DependentUpon>TaskStatus.xaml</DependentUpon>
     </Compile>
     <Page Include="AddBackupArea.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="ChooseDayAndMounths.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="DiskInfoPage.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -100,6 +118,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Resources\Lang\string_tr.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Restore.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -193,6 +215,42 @@
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Resources\Icon\favicon_mavi.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\Icon\icons8_licence_4.ico" />
+    <Resource Include="Resources\Icon\icons8_software_installer_1.ico" />
+    <Resource Include="Resources\Icon\icons8_software_installer_3.ico" />
+    <Resource Include="Resources\Icon\icons8_user_2.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\Icon\icons8_info.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\Icon\icons8_time_machine.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\Icon\icons8_up_down_arrow.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\Icon\icons8_services_2.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\Icon\icons8_forward_button.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\Icon\icons8_winrar.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\Icon\icons8_google_code_1.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\Icon\icons8_search_property.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\Icon\blue_icon.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\Icon\icons8_computer_support_4.ico" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

@@ -23,8 +23,8 @@
         <StackPanel Name="MyTitleBar" VerticalAlignment="Top" MouseDown="MyTitleBar_MouseDown">
             <Border Background="#27527B" Height="30">
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                    <Button Name="btnNewCreateTaskMin" Content="—" Margin="0,-2,0,0" VerticalContentAlignment="Top" FontWeight="Bold" Click="btnNewCreateTaskMin_Click" Style="{StaticResource TitleButton}" Width="40" ></Button>
-                    <Button Name="btnNewCreateTaskClose" Content="🗙" Margin="0,-2,0,0" Click="btnNewCreateTaskClose_Click" Style="{StaticResource TitleButton}" Width="40" ></Button>
+                    <Button Name="btnABAMin" Content="—" Margin="0,-2,0,0" VerticalContentAlignment="Top" FontWeight="Bold" Click="btnABAMin_Click" Style="{StaticResource TitleButton}" Width="40" ></Button>
+                    <Button Name="btnABAClose" Content="🗙" Margin="0,-2,0,0" Click="btnABAClose_Click" Style="{StaticResource TitleButton}" Width="40" ></Button>
                 </StackPanel>
             </Border>
         </StackPanel>
@@ -34,7 +34,7 @@
 
         <StackPanel Orientation="Horizontal" Grid.Row="1">
             <!--Menü açıklamaları dynmaic olucak-->
-            <Image Margin="10,0,0,0" Source="Resources/Icon/u58.png"></Image>
+            <Image Margin="10,0,0,0" Source="Resources/Icon/icons8_software_installer_1.ico"></Image>
             <StackPanel VerticalAlignment="Center">
                 <TextBlock Name="lblTabHeader" Text="{DynamicResource name}" FontSize="12" VerticalAlignment="Center" Margin="10,0,0,0"/>
                 <TextBlock Name="lblTabContent" Text="{DynamicResource ABANameContent}" FontWeight="Bold" FontSize="12" VerticalAlignment="Center" Margin="10,0,0,0" />
@@ -80,7 +80,7 @@
                         <TextBlock Text="{DynamicResource backupAreaName}" Margin="0,0,0,5"/>
                         <TextBox Name="txtBackupAreaName" Height="25" VerticalContentAlignment="Center"/>
                         <TextBlock Text="{DynamicResource description}" Margin="0,10,0,5"/>
-                        <RichTextBox Name="txtBackupAreaDescription" Height="200" />
+                        <TextBox Name="txtBackupAreaDescription" ScrollViewer.VerticalScrollBarVisibility="Auto" VerticalContentAlignment="Top" TextWrapping="Wrap" AcceptsReturn="True" Height="200" />
                     </StackPanel>
                 </Grid>
             </TabItem>
@@ -108,7 +108,7 @@
                         <CheckBox Content="{DynamicResource backupToCloud}" Name="cbBackupToCloud" IsChecked="True" HorizontalAlignment="Center" Margin="0,0,0,10"/>
                         <TextBlock Text="{DynamicResource backupToCloudDesc}" TextWrapping="WrapWithOverflow" Margin="0,0,0,10"/>
                         <TextBlock Text="{DynamicResource licenseNotActive}" Name="NotLisance" Margin="0,0,0,10"/>
-                        <Image Source="Resources/Icon/favicon_mavi.ico" Height="100"/>
+                        <Image Source="Resources/Icon/blue_icon.png" Height="100"/>
                         <Grid Margin="0,10">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition/>
@@ -160,7 +160,7 @@
                             <TextBox Name="txtSettingsName" Grid.Row="0" Grid.Column="1" Width="250" Height="22" Margin="0,0,0,10" HorizontalAlignment="Left"/>
                             <TextBox Name="txtSettingsFolderPath" Grid.Row="1" Grid.Column="1" Width="250" Height="22" Margin="0,0,0,10" Padding="0,0,22,0" HorizontalAlignment="Left"/>
                             <StackPanel Grid.Row="1" Grid.Column="1" HorizontalAlignment="Left" Margin="229,1,0,0">
-                                <Button Name="btnSettingsFolder" Style="{StaticResource ArrowUpButton}" Content="..." Width="20" Height="20" FontSize="15" />
+                                <Button Name="btnSettingsFolder" Style="{StaticResource ArrowUpButton}" Click="btnSettingsFolder_Click" Content="..." Width="20" Height="20" FontSize="15" />
                             </StackPanel>
                             <TextBox Name="txtSettingsUserName" Grid.Row="2" Grid.Column="1" Width="250" Height="22" Margin="0,0,0,10" HorizontalAlignment="Left"/>
                             <TextBox Name="txtSettingsPassword" Grid.Row="3" Grid.Column="1" Width="250" Height="22" Margin="0,0,0,10" HorizontalAlignment="Left"/>

@@ -81,7 +81,7 @@
                         <TextBlock Text="{DynamicResource taskName}" Margin="0,0,0,5"/>
                         <TextBox Name="txtTaskName" Height="25" VerticalContentAlignment="Center"/>
                         <TextBlock Text="{DynamicResource description}" Margin="0,10,0,5"/>
-                        <RichTextBox Name="txtTaskDescription" Height="200" />
+                        <TextBox Name="txtTaskDescription" ScrollViewer.VerticalScrollBarVisibility="Auto" VerticalContentAlignment="Top" TextWrapping="Wrap" AcceptsReturn="True" Height="200" />
                     </StackPanel>
                 </Grid>
             </TabItem>
@@ -234,28 +234,19 @@
                             <StackPanel Orientation="Horizontal" Margin="0,20,0,10">
                                 <RadioButton Name="rbDaysTime" GroupName="rbtnSchedular" Content="{DynamicResource dailyTime}" Checked="rbDaysTime_Checked" Unchecked="rbDaysTime_Unchecked" VerticalContentAlignment="Center" Margin="5,0,0,0" />
                                 <StackPanel Name="stackDaysTime" Orientation="Horizontal" IsEnabled="False">
-                                    <TextBox Name="txtDaysTime" Text="22:00" Width="60" Height="28" FontSize="13" Margin="50,0,0,0" VerticalContentAlignment="Center" MaxLength="5" />
-                                    <StackPanel Margin="-21,0,0,0" VerticalAlignment="Center">
-                                        <Button Name="btnDaysTimeUp" Style="{StaticResource ArrowUpButton}" Click="btnDaysTimeUp_Click" Content="▲" Width="20" Height="13" FontSize="8" />
-                                        <Button Name="btnDaysTimeDown" Style="{StaticResource ArrowDownButton}" Content="▼" Width="20" Height="13" FontSize="8" />
-                                    </StackPanel>
-                                    <!--DOLDURULACAK-->
-                                    <ComboBox Name="cbDaysTime" Width="280" Margin="20,0,20,0" SelectedIndex="0">
+                                    <xctk:TimePicker Name="tpDaysTime" Margin="50,0,0,0" MouseWheelActiveTrigger="Focused" Width="80" Height="26" Value="22:00" />
+                                    <ComboBox Name="cbDaysTime" Width="280" Margin="20,0,20,0" SelectedIndex="0" SelectionChanged="cbDaysTime_SelectionChanged">
                                         <ComboBoxItem Content="{DynamicResource everyday}"></ComboBoxItem>
                                         <ComboBoxItem Content="{DynamicResource weekdays}"></ComboBoxItem>
                                         <ComboBoxItem Content="{DynamicResource certainDays}"></ComboBoxItem>
                                     </ComboBox>
-                                    <Button Name="btnDaysTimeDays" Content="{DynamicResource days}" Style="{StaticResource WhiteButton}" Width="60" ></Button>
+                                    <Button Name="btnDaysTimeDays" Content="{DynamicResource days}" Style="{StaticResource WhiteButton}" Click="btnDaysTimeDays_Click" Width="60" IsEnabled="False"></Button>
                                 </StackPanel>
                             </StackPanel>
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
                                 <RadioButton Name="rbWeeklyTime" GroupName="rbtnSchedular" Content="{DynamicResource weeklyTime}" Checked="rbWeeklyTime_Checked" Unchecked="rbWeeklyTime_Unchecked" VerticalContentAlignment="Center" Margin="5,0,0,0" />
                                 <StackPanel Name="stackWeeklyTime" Orientation="Horizontal" IsEnabled="False">
-                                    <TextBox Name="txtWeeklyTime" Text="22:00" Width="60" Height="28" FontSize="13" Margin="47,0,0,0" VerticalContentAlignment="Center" MaxLength="5" />
-                                    <StackPanel Margin="-21,0,0,0" VerticalAlignment="Center">
-                                        <Button Name="btnWeeklyTimeUp" Style="{StaticResource ArrowUpButton}" Content="▲" Width="20" Height="13" FontSize="8" />
-                                        <Button Name="btnWeeklyTimeDown" Style="{StaticResource ArrowDownButton}" Content="▼" Width="20" Height="13" FontSize="8" />
-                                    </StackPanel>
+                                    <xctk:TimePicker Name="tpWeeklyTime" Margin="47,0,0,0" MouseWheelActiveTrigger="Focused" Width="80" Height="26" Value="22:00" />
                                     <ComboBox Name="cbWeeklyTimeWeek" Width="110" Margin="20,0,20,0" SelectedIndex="0">
                                         <ComboBoxItem Content="{DynamicResource first}"></ComboBoxItem>
                                         <ComboBoxItem Content="{DynamicResource second}"></ComboBoxItem>
@@ -271,23 +262,18 @@
                                         <ComboBoxItem Content="{DynamicResource saturday}"></ComboBoxItem>
                                         <ComboBoxItem Content="{DynamicResource sunday}"></ComboBoxItem>
                                     </ComboBox>
-                                    <Button Name="btnWeeklyTimeWeek" Content="{DynamicResource months}" Style="{StaticResource WhiteButton}" Width="60"></Button>
+                                    <Button Name="btnWeeklyTimeWeek" Content="{DynamicResource mounths}" Style="{StaticResource WhiteButton}" Click="btnWeeklyTimeWeek_Click" Width="60"></Button>
                                 </StackPanel>
                             </StackPanel>
                             <StackPanel Orientation="Horizontal">
                                 <RadioButton Name="rbPeriodic" GroupName="rbtnSchedular" Content="{DynamicResource periodic}" Checked="rbPeriodic_Checked" Unchecked="rbPeriodic_Unchecked" VerticalContentAlignment="Center" Margin="5,0,0,0" />
                                 <StackPanel Name="stackPeriodic" Orientation="Horizontal" IsEnabled="False">
-                                    <TextBox Name="txtPeriodic" Text="23:00" Width="60" Height="28" FontSize="13" Margin="79,0,0,0" VerticalContentAlignment="Center" MaxLength="5" />
-                                    <StackPanel Margin="-22,0,0,0" VerticalAlignment="Center">
-                                        <Button Name="btnPeriodicUp" Style="{StaticResource ArrowUpButton}" Content="▲" Width="20" Height="13" FontSize="8" />
-                                        <Button Name="btnPeriodicDown" Style="{StaticResource ArrowDownButton}" Content="▼" Width="20" Height="13" FontSize="8" />
-                                    </StackPanel>
-                                    <!--DOLDURULACAK-->
+                                    <xctk:TimePicker Name="tpPeriodic" Margin="79,0,0,0" MouseWheelActiveTrigger="Focused" Width="80" Height="26" Value="23:00" />
                                     <ComboBox Name="cbPeriodicTime" Width="280" Margin="20,0,20,0" SelectedIndex="0">
                                         <ComboBoxItem Content="{DynamicResource hour}"></ComboBoxItem>
                                         <ComboBoxItem Content="{DynamicResource Minute}"></ComboBoxItem>
                                     </ComboBox>
-                                    <Button Name="btnPeriodicTime" Content="{DynamicResource time}" Style="{StaticResource WhiteButton}" Width="60"/>
+                                    <Button Name="btnPeriodicTime" Content="{DynamicResource time}" Style="{StaticResource WhiteButton}" Width="60" Visibility="Hidden"/>
                                 </StackPanel>
                             </StackPanel>
                         </StackPanel>
@@ -365,21 +351,33 @@
                 <Grid Background="White">
                     <StackPanel Margin="10,10,20,10">
                         <TextBlock Text="{DynamicResource summary}"></TextBlock>
-                        <StackPanel Orientation="Horizontal" Margin="20,10,0,0">
-                            <TextBlock Text="{DynamicResource nameWithDot}" Margin="0,0,5,0" />
-                            <TextBlock>İŞLETİM SİSTEMİ YEDEĞİ</TextBlock>
-                        </StackPanel>
-                        <StackPanel Orientation="Horizontal" Margin="20,10,0,0">
-                            <TextBlock Text="{DynamicResource backupType}" Margin="0,0,5,0" />
-                            <TextBlock>DUMMY DATA</TextBlock>
-                        </StackPanel>
-                        <StackPanel Orientation="Horizontal" Margin="20,10,0,0">
-                            <TextBlock Text="{DynamicResource space2Backups}" Margin="0,0,5,0" />
-                            <TextBlock>C_D_E</TextBlock>
-                        </StackPanel>
-                        <StackPanel Orientation="Horizontal" Margin="20,10,0,0">
-                            <TextBlock Text="{DynamicResource schedulerTasks}" Margin="0,0,5,0" />
-                            <TextBlock>BUGÜN ŞU SAAT HAFTADA 2 AYDA 4 YILDA 1</TextBlock>
+                        <StackPanel Margin="20,20,0,0">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="200"/>
+                                    <ColumnDefinition Width="10"/>
+                                    <ColumnDefinition/>
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel>
+                                    <TextBlock Text="{DynamicResource name}" Margin="0,0,0,5" />
+                                    <TextBlock Text="{DynamicResource BackupType}" Margin="0,0,0,5" />
+                                    <TextBlock Text="{DynamicResource space2Backups}" Margin="0,0,0,5" />
+                                    <TextBlock Text="{DynamicResource schedulerTasks}" Margin="0,0,0,5" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="1">
+                                    <TextBlock Text=":" Margin="0,0,0,5" />
+                                    <TextBlock Text=":" Margin="0,0,0,5" />
+                                    <TextBlock Text=":" Margin="0,0,0,5" />
+                                    <TextBlock Text=":" Margin="0,0,0,5" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="2" >
+                                    <TextBlock Margin="0,0,0,5">İŞLETİM SİSTEMİ YEDEĞİ</TextBlock>
+                                    <TextBlock Margin="0,0,0,5">DUMMY DATA</TextBlock>
+                                    <TextBlock Margin="0,0,0,5">C_D_E</TextBlock>
+                                    <TextBlock Margin="0,0,0,5">BUGÜN ŞU SAAT HAFTADA 2 AYDA 4 YILDA 1</TextBlock>
+                                </StackPanel>
+                            </Grid>
                         </StackPanel>
                     </StackPanel>
                 </Grid>

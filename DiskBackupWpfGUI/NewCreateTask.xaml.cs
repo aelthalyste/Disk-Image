@@ -78,16 +78,6 @@ namespace DiskBackupWpfGUI
             stackTimeFailDesc.IsEnabled = true;
         }
 
-        private void btnDaysTimeUp_Click(object sender, RoutedEventArgs e)
-        {
-            //string[] parcalar = txtDaysTime.Text.Split(',');
-            //int p1 = Convert.ToInt32(parcalar[0]);
-            //int p2 = Convert.ToInt32(parcalar[1]);
-            //double time = p1 + (p2 / 100);
-            //time += 0.01;
-            //txtDaysTime.Text = time.ToString();
-        }
-
         private void NCTTabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (NCTTabControl.SelectedIndex == 0)
@@ -295,6 +285,36 @@ namespace DiskBackupWpfGUI
         {
             AddBackupArea addBackupArea = new AddBackupArea();
             addBackupArea.ShowDialog();
+        }
+
+        private void btnDaysTimeDays_Click(object sender, RoutedEventArgs e)
+        {
+            ChooseDayAndMounths chooseDays = new ChooseDayAndMounths(true);
+            chooseDays.ShowDialog();
+        }
+
+        private bool _daysBtnControl = false;
+        private void cbDaysTime_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (cbDaysTime.SelectedIndex == 2)
+            {
+                btnDaysTimeDays.IsEnabled = true;
+                _daysBtnControl = true;
+            }
+            else
+            {
+                if (_daysBtnControl) //btnDaysTimeDays.IsEnabled sorulacak booldan kaçamadık null aldık
+                {
+                    btnDaysTimeDays.IsEnabled = false;
+                    _daysBtnControl = false;
+                }
+            }
+        }
+
+        private void btnWeeklyTimeWeek_Click(object sender, RoutedEventArgs e)
+        {
+            ChooseDayAndMounths chooseMounths = new ChooseDayAndMounths(false);
+            chooseMounths.ShowDialog();
         }
     }
 }

@@ -128,5 +128,22 @@ namespace DiskBackupWpfGUI
         {
             ShowSettings = true;
         }
+
+        private void btnSettingsFolder_Click(object sender, RoutedEventArgs e)
+        {
+            var dialog = new System.Windows.Forms.FolderBrowserDialog();
+            System.Windows.Forms.DialogResult result = dialog.ShowDialog();
+            txtSettingsNASFolderPath.Text = dialog.SelectedPath;
+        }
+
+        private void btnABAMin_Click(object sender, RoutedEventArgs e)
+        {
+            WindowState = WindowState.Minimized;
+        }
+
+        private void btnABAClose_Click(object sender, RoutedEventArgs e)
+        {
+            Close();
+        }
     }
 }

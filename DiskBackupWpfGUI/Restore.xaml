@@ -1,0 +1,176 @@
+﻿<Window x:Class="DiskBackupWpfGUI.Restore"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
+        xmlns:local="clr-namespace:DiskBackupWpfGUI"
+        mc:Ignorable="d"
+        Title="{DynamicResource restore}" WindowStartupLocation="CenterScreen" WindowStyle="None" BorderBrush="#194771" BorderThickness="1" ResizeMode="CanMinimize" HorizontalAlignment="Center" Height="450" Width="800" Icon="Resources/Icon/favicon_mavi.ico">
+    <Window.Resources>
+        <ResourceDictionary Source="Resources\Lang\string_tr.xaml"/>
+    </Window.Resources>
+    <Grid Background="White">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="30"/>
+            <RowDefinition Height="45"/>
+            <RowDefinition/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Panel.ZIndex="1" Orientation="Horizontal" HorizontalAlignment="Center">
+            <Image Source="Resources/Icon/u62.png" Height="35" Width="40" Margin="0,0,5,0"></Image>
+            <TextBlock Text="{DynamicResource restoreAppName}" Style="{StaticResource TitleBarText}"></TextBlock>
+        </StackPanel>
+        <StackPanel Name="MyTitleBar" VerticalAlignment="Top" MouseDown="MyTitleBar_MouseDown">
+            <Border Background="#27527B" Height="30">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button Name="btnRestoreMin" Content="—" Margin="0,-2,0,0"  Click="btnRestoreMin_Click" VerticalContentAlignment="Top" FontWeight="Bold"  Style="{StaticResource TitleButton}" Width="40" ></Button>
+                    <Button Name="btnRestoreClose" Content="🗙" Margin="0,-2,0,0" Click="btnRestoreClose_Click" Style="{StaticResource TitleButton}" Width="40" ></Button>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+
+        <Rectangle Grid.Row="1" Fill="White"/>
+        <Rectangle Grid.Row="1" Height="1" Fill="DarkGray" VerticalAlignment="Bottom" />
+
+        <StackPanel Orientation="Horizontal" Grid.Row="1">
+            <!--Menü açıklamaları dynmaic olucak-->
+            <Image Margin="10,0,0,0" Source="Resources/Icon/icons8_computer_support_4.ico"></Image>
+            <StackPanel VerticalAlignment="Center">
+                <TextBlock Name="lblTabHeader" Text="{DynamicResource name}" FontSize="12" VerticalAlignment="Center" Margin="10,0,0,0"/>
+                <TextBlock Name="lblTabContent" Text="{DynamicResource ABANameContent}" FontWeight="Bold" FontSize="12" VerticalAlignment="Center" Margin="10,0,0,0" />
+            </StackPanel>
+        </StackPanel>
+
+        <TabControl Name="RTabControl" SelectionChanged="RTabControl_SelectionChanged" TabStripPlacement="Left" BorderThickness="1,0,0,0" Grid.Row="2" BorderBrush="#AAAAAA">
+            <TabControl.Resources>
+                <Style TargetType="TabItem">
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="TabItem">
+                                <Grid Name="Panel">
+                                    <ContentPresenter x:Name="ContentSite"
+                                        VerticalAlignment="Center"
+                                        HorizontalAlignment="Center"
+                                        ContentSource="Header"
+                                        Margin="10,2"/>
+
+                                </Grid>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsSelected" Value="True">
+                                        <Setter TargetName="Panel" Property="Background" Value="#3367D6" />
+                                    </Trigger>
+                                    <Trigger Property="IsSelected" Value="False">
+                                        <Setter TargetName="Panel" Property="Background" Value="#FFFFFF"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </TabControl.Resources>
+
+            <TabItem Name="nameTab" Margin="0,20,0,0" IsEnabled="False">
+                <TabItem.Header>
+                    <StackPanel Height="60" Width="130" Orientation="Horizontal">
+                        <TextBlock Text="{DynamicResource name}" Margin="5,-20,0,0" VerticalAlignment="Center" HorizontalAlignment="Center" Style="{StaticResource NCTTabItemText}"/>
+                    </StackPanel>
+                </TabItem.Header>
+                <Grid Background="White">
+                    <StackPanel Margin="10,10,20,10">
+                        <TextBlock Text="{DynamicResource taskName}" Margin="0,0,0,5"/>
+                        <TextBox Name="txtBackupAreaName" Height="25" VerticalContentAlignment="Center"/>
+                        <TextBlock Text="{DynamicResource description}" Margin="0,10,0,5"/>
+                        <TextBox Name="txtBackupAreaDescription" ScrollViewer.VerticalScrollBarVisibility="Auto" VerticalContentAlignment="Top" TextWrapping="Wrap" AcceptsReturn="True" Height="200" />
+                    </StackPanel>
+                </Grid>
+            </TabItem>
+
+            <TabItem Name="schedulerTab" IsEnabled="False">
+                <TabItem.Header>
+                    <StackPanel Height="35" Width="130" Orientation="Horizontal" >
+                        <TextBlock Text="{DynamicResource scheduler}" Margin="5,0" VerticalAlignment="Center" Style="{StaticResource NCTTabItemText}"/>
+                    </StackPanel>
+                </TabItem.Header>
+                <Grid Background="White">
+                    <Rectangle Grid.Column="0" Stroke="#AAAAAA" StrokeThickness="0.7" HorizontalAlignment="Right"/>
+                    <StackPanel Margin="10,10,20,10">
+                        <TextBlock Text="{DynamicResource scheduler}" Margin="0,0,0,20" />
+                        <CheckBox Name="chbAutoRun" Margin="0,0,0,15" Content="{DynamicResource autoRun}" Checked="chbAutoRun_Checked" Unchecked="chbAutoRun_Unchecked"/>
+                        <StackPanel IsEnabled="False" Name="stackAutoRun" Margin="20,0,0,10">
+                            <RadioButton Name="rbStartNow" GroupName="rbAutoRun" Margin="0,0,0,10" Content="{DynamicResource startNow}"/>
+                            <StackPanel Orientation="Horizontal">
+                                <RadioButton Name="rbSetTime" GroupName="rbAutoRun" Content="{DynamicResource setTime}" VerticalAlignment="Center" Checked="rbSetTime_Checked" Unchecked="rbSetTime_Unchecked"/>
+                                <StackPanel Name="stackSetTime" Orientation="Horizontal" IsEnabled="False">
+                                    <TextBlock Text="{DynamicResource dateSelection}" VerticalAlignment="Center" Margin="40,0,0,0"/>
+                                    <TextBlock Text=":" VerticalAlignment="Center" Margin="3,0,10,0"/>
+                                    <xctk:DateTimePicker Name="dtpSetTime" Width="220" Height="26" MouseWheelActiveTrigger="Focused" />
+                                </StackPanel>
+                            </StackPanel>
+                        </StackPanel>
+                    </StackPanel>
+                </Grid>
+            </TabItem>
+
+            <TabItem Name="summaryTab" IsEnabled="False">
+                <TabItem.Header>
+                    <StackPanel Height="35" Width="130" Orientation="Horizontal">
+                        <TextBlock Text="{DynamicResource summary}" Margin="5,0" VerticalAlignment="Center" Style="{StaticResource NCTTabItemText}"/>
+                    </StackPanel>
+                </TabItem.Header>
+                <Grid Background="White">
+                    <StackPanel Margin="10,10,20,10">
+                        <TextBlock Text="{DynamicResource summary}"></TextBlock>
+                        <StackPanel Margin="20,20,0,0">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="200"/>
+                                    <ColumnDefinition Width="10"/>
+                                    <ColumnDefinition/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel>
+                                    <TextBlock Text="{DynamicResource name2}" Margin="0,0,0,5" />
+                                    <TextBlock Text="{DynamicResource area2Restore}" Margin="0,0,0,5" />
+                                    <TextBlock Text="{DynamicResource disk2Restore}" Margin="0,0,0,5" />
+                                    <TextBlock Text="{DynamicResource bootableArea}" Margin="0,0,0,5" />
+                                    <TextBlock Text="{DynamicResource folderSize2Restore}" Margin="0,0,0,5" />
+                                    <TextBlock Text="{DynamicResource volumeSize2Restore}" Margin="0,0,0,5" />
+                                    <TextBlock Text="{DynamicResource areaSize2Restore}" Margin="0,0,0,5" />
+                                    <TextBlock Text="{DynamicResource schedulerTasks}" Margin="0,0,0,5" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="1">
+                                    <TextBlock Text=":" Margin="0,0,0,5" />
+                                    <TextBlock Text=":" Margin="0,0,0,5" />
+                                    <TextBlock Text=":" Margin="0,0,0,5" />
+                                    <TextBlock Text=":" Margin="0,0,0,5" />
+                                    <TextBlock Text=":" Margin="0,0,0,5" />
+                                    <TextBlock Text=":" Margin="0,0,0,5" />
+                                    <TextBlock Text=":" Margin="0,0,0,5" />
+                                    <TextBlock Text=":" Margin="0,0,0,5" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Name="txtName" Text="İşletim Sistemi Yedeği" Margin="0,0,0,5" />
+                                    <TextBlock Name="txtArea2Restore" Text="C:" Margin="0,0,0,5" />
+                                    <TextBlock Name="txtDisk2Restore" Text="1" Margin="0,0,0,5" />
+                                    <TextBlock Name="txtBootableArea" Text="Evet" Margin="0,0,0,5" />
+                                    <TextBlock Name="txtFolderSize2Restore" Text="12 GB" Margin="0,0,0,5" />
+                                    <TextBlock Name="txtVolumeSize2Restore" Text="100 GB" Margin="0,0,0,5" />
+                                    <TextBlock Name="txtAreaSize2Restore" Text="90 GB" Margin="0,0,0,5" />
+                                    <TextBlock Name="txtSchedulerTasks" Text="Hemen Çalıştır / Şu Saatte Çalıştır" Margin="0,0,0,5" />
+                                </StackPanel>
+                            </Grid>
+                        </StackPanel>
+                    </StackPanel>
+                </Grid>
+            </TabItem>
+        </TabControl>
+        <Rectangle Fill="White" Grid.Row="2" Height="60" VerticalAlignment="Bottom"/>
+        <Rectangle Height="1" Fill="#AAAAAA" Grid.Row="2" VerticalAlignment="Bottom" Margin="0,0,0,60" />
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Grid.Row="2" >
+            <Button Name="btnRestoreBack" Content="{DynamicResource back}" Click="btnRestoreBack_Click" Style="{StaticResource WhiteButton}" Width="70" Height="20" VerticalAlignment="Bottom" Margin="0,0,0,20"></Button>
+            <Button Name="btnRestoreNext" Content="{DynamicResource next}" Click="btnRestoreNext_Click" Style="{StaticResource WhiteButton}" Width="70" Height="20" VerticalAlignment="Bottom" Margin="10,0,0,20"></Button>
+            <Button Name="btnRestoreOk" Content="{DynamicResource okay}" Click="btnRestoreOk_Click" Style="{StaticResource WhiteButton}" Width="70" Height="20" VerticalAlignment="Bottom" Margin="10,0,0,20"></Button>
+            <Button Name="btnRestoreCancel" Content="{DynamicResource cancel}" Click="btnRestoreCancel_Click" Style="{StaticResource WhiteButton}" Width="70" Height="20" VerticalAlignment="Bottom" Margin="10,0,30,20"></Button>
+        </StackPanel>
+    </Grid>
+</Window>
