@@ -1,7 +1,7 @@
 ﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:system="clr-namespace:System;assembly=mscorlib">
-    
+
     <system:String x:Key="appFullName">Narbulut Disk Yedekleme Uygulaması</system:String>
     <system:String x:Key="createTask">Görev Oluştur</system:String>
     <system:String x:Key="createNewTask">Yeni Görev Oluştur</system:String>
@@ -30,6 +30,7 @@
     <system:String x:Key="open">Aç</system:String>
     <system:String x:Key="copy">Kopyala</system:String>
     <system:String x:Key="restore">Geri Yükle</system:String>
+    <system:String x:Key="restoreAppName">Geri Yükleme Görevi Oluştur</system:String>
     <system:String x:Key="paste">Yapıştır</system:String>
     <system:String x:Key="delete">Sil</system:String>
     <system:String x:Key="refresh">Yenile</system:String>
@@ -55,9 +56,9 @@
     <system:String x:Key="settings">Ayarlar</system:String>
     <system:String x:Key="help">Yardım</system:String>
     <system:String x:Key="viewBackups">Yedekleri Görüntüle</system:String>
-    <system:String x:Key="lastBackup">Son Yedekleme : </system:String>
+    <system:String x:Key="lastBackup">Son Yedekleme :</system:String>
     <system:String x:Key="name">İsim</system:String>
-    <system:String x:Key="nameWithDot">İsim : </system:String>
+    <system:String x:Key="nameWithDot">İsim :</system:String>
     <system:String x:Key="name2">Adı</system:String>
     <system:String x:Key="tempFolder">Geçici Klasör</system:String>
     <system:String x:Key="scheduler">Zamanlama</system:String>
@@ -72,10 +73,13 @@
     <system:String x:Key="okay">Tamam</system:String>
     <system:String x:Key="dbType">Veritabanı Türü</system:String>
     <system:String x:Key="space2Backup">Yedeklenecek Alan</system:String>
-    <system:String x:Key="space2Backups">Yedeklenecek Alanlar : </system:String>
+    <system:String x:Key="space2Backups">Yedeklenecek Alanlar</system:String>
     <system:String x:Key="fullSize">Dolu Alan</system:String>
     <system:String x:Key="autoRun">Otomatik Çalıştır</system:String>
+    <system:String x:Key="area2Restore">Geri Yüklenecek Alan</system:String>
+    <system:String x:Key="disk2Restore">Geri Yüklenecek Disk</system:String>
     <system:String x:Key="auto">Otomatik</system:String>
+    <system:String x:Key="startNow">Hemen Çalıştır</system:String>
     <system:String x:Key="dailyTime">Günlük Zaman</system:String>
     <system:String x:Key="weeklyTime">Haftalık Zaman</system:String>
     <system:String x:Key="periodic">Periyodik</system:String>
@@ -94,9 +98,9 @@
     <system:String x:Key="friday">Cuma</system:String>
     <system:String x:Key="saturday">Cumartesi</system:String>
     <system:String x:Key="sunday">Pazar</system:String>
-    <system:String x:Key="backupType">Yedekleme Türü : </system:String>
+    <system:String x:Key="backupType">Yedekleme Türü :</system:String>
     <system:String x:Key="BackupType">Yedekleme Türü</system:String>
-    <system:String x:Key="schedulerTasks">Zamanlaştırılmış Görevler : </system:String>
+    <system:String x:Key="schedulerTasks">Zamanlaştırılmış Görevler</system:String>
     <system:String x:Key="first">Birinci</system:String>
     <system:String x:Key="second">İkinci</system:String>
     <system:String x:Key="third">Üçüncü</system:String>
@@ -105,8 +109,10 @@
     <system:String x:Key="weekdays">Hafta İçi</system:String>
     <system:String x:Key="certainDays">Belirli Günler</system:String>
     <system:String x:Key="hour">Saat</system:String>
+    <system:String x:Key="setTime">Zaman Belirle</system:String>
     <system:String x:Key="Minute">Dakika</system:String>
     <system:String x:Key="add">Ekle</system:String>
+    <system:String x:Key="dateSelection">Tarih Seçimi</system:String>
     <system:String x:Key="taskStatus">Görev Durumu</system:String>
     <system:String x:Key="localArea">Yerel Alan</system:String>
     <system:String x:Key="localDisc">Yerel Disk</system:String>
@@ -142,6 +148,7 @@
     <system:String x:Key="settingsContent">Hesaplar alan yönetimi diğer tanımları bu alandan yönetin</system:String>
     <system:String x:Key="appLicense">Uygulama Lisansı :</system:String>
     <system:String x:Key="endDateDot">Bitiş Tarihi :</system:String>
+    <system:String x:Key="items">adet</system:String>
     <system:String x:Key="active">Aktif</system:String>
     <system:String x:Key="inactive">Aktif Değil</system:String>
     <system:String x:Key="licenseNotActive">Lisans Aktif Değil</system:String>
@@ -174,5 +181,18 @@
     <system:String x:Key="ABATargetContent">Yedeği kaydedeceğiniz alanı seçiniz</system:String>
     <system:String x:Key="ABASettingsContent">Yedek alanının ayarlamasını yapınız</system:String>
     <system:String x:Key="ABASummaryContent">Oluşturulan yedekleme alanının özet bilgisi</system:String>
-    <system:String x:Key="items">adet</system:String>
+    <system:String x:Key="restoreContent">Yedeği geri yükleyeceğiniz dosyayı ve geri yükleyeceğiniz diski veya volume seçiniz</system:String>
+    <system:String x:Key="forHelp">Yardım için</system:String>
+    <system:String x:Key="plsContact">üzerinden iletişime geçebilirsiniz.</system:String>
+    <system:String x:Key="contactUs">Bize Ulaşın</system:String>
+    <system:String x:Key="msgType">Mesaj Tipi:</system:String>
+    <system:String x:Key="message">Mesaj:</system:String>
+    <system:String x:Key="send">Gönder</system:String>
+    <system:String x:Key="RNameContent">Yedekleme profili için bir isim ve açıklama giriniz</system:String>
+    <system:String x:Key="RSchedulerContent">Yedeklemelerin zamanlamasını seçiniz</system:String>
+    <system:String x:Key="RSummaryContent">Oluşturulan görevin özet bilgisi</system:String>
+    <system:String x:Key="bootableArea">Boot edilebilen alan</system:String>
+    <system:String x:Key="folderSize2Restore">Geri yüklenecek dosya boyutu</system:String>
+    <system:String x:Key="volumeSize2Restore">Geri yüklenecek volume boyutu</system:String>
+    <system:String x:Key="areaSize2Restore">Geri yüklenecek alan boyutu</system:String>
 </ResourceDictionary>

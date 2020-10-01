@@ -23,8 +23,8 @@
         <StackPanel Name="MyTitleBar" VerticalAlignment="Top" MouseDown="MyTitleBar_MouseDown">
             <Border Background="#27527B" Height="30">
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                    <Button Name="btnNewCreateTaskMin" Content="—" Margin="0,-2,0,0" VerticalContentAlignment="Top" FontWeight="Bold" Click="btnNewCreateTaskMin_Click" Style="{StaticResource TitleButton}" Width="40" ></Button>
-                    <Button Name="btnNewCreateTaskClose" Content="🗙" Margin="0,-2,0,0" Click="btnNewCreateTaskClose_Click" Style="{StaticResource TitleButton}" Width="40" ></Button>
+                    <Button Name="btnABAMin" Content="—" Margin="0,-2,0,0" VerticalContentAlignment="Top" FontWeight="Bold" Click="btnABAMin_Click" Style="{StaticResource TitleButton}" Width="40" ></Button>
+                    <Button Name="btnABAClose" Content="🗙" Margin="0,-2,0,0" Click="btnABAClose_Click" Style="{StaticResource TitleButton}" Width="40" ></Button>
                 </StackPanel>
             </Border>
         </StackPanel>
@@ -80,7 +80,7 @@
                         <TextBlock Text="{DynamicResource backupAreaName}" Margin="0,0,0,5"/>
                         <TextBox Name="txtBackupAreaName" Height="25" VerticalContentAlignment="Center"/>
                         <TextBlock Text="{DynamicResource description}" Margin="0,10,0,5"/>
-                        <RichTextBox Name="txtBackupAreaDescription" Height="200" />
+                        <TextBox Name="txtBackupAreaDescription" ScrollViewer.VerticalScrollBarVisibility="Auto" VerticalContentAlignment="Top" TextWrapping="Wrap" AcceptsReturn="True" Height="200" />
                     </StackPanel>
                 </Grid>
             </TabItem>

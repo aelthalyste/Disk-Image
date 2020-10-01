@@ -81,7 +81,7 @@
                         <TextBlock Text="{DynamicResource taskName}" Margin="0,0,0,5"/>
                         <TextBox Name="txtTaskName" Height="25" VerticalContentAlignment="Center"/>
                         <TextBlock Text="{DynamicResource description}" Margin="0,10,0,5"/>
-                        <RichTextBox Name="txtTaskDescription" Height="200" />
+                        <TextBox Name="txtTaskDescription" ScrollViewer.VerticalScrollBarVisibility="Auto" VerticalContentAlignment="Top" TextWrapping="Wrap" AcceptsReturn="True" Height="200" />
                     </StackPanel>
                 </Grid>
             </TabItem>
@@ -365,21 +365,33 @@
                 <Grid Background="White">
                     <StackPanel Margin="10,10,20,10">
                         <TextBlock Text="{DynamicResource summary}"></TextBlock>
-                        <StackPanel Orientation="Horizontal" Margin="20,10,0,0">
-                            <TextBlock Text="{DynamicResource nameWithDot}" Margin="0,0,5,0" />
-                            <TextBlock>İŞLETİM SİSTEMİ YEDEĞİ</TextBlock>
-                        </StackPanel>
-                        <StackPanel Orientation="Horizontal" Margin="20,10,0,0">
-                            <TextBlock Text="{DynamicResource backupType}" Margin="0,0,5,0" />
-                            <TextBlock>DUMMY DATA</TextBlock>
-                        </StackPanel>
-                        <StackPanel Orientation="Horizontal" Margin="20,10,0,0">
-                            <TextBlock Text="{DynamicResource space2Backups}" Margin="0,0,5,0" />
-                            <TextBlock>C_D_E</TextBlock>
-                        </StackPanel>
-                        <StackPanel Orientation="Horizontal" Margin="20,10,0,0">
-                            <TextBlock Text="{DynamicResource schedulerTasks}" Margin="0,0,5,0" />
-                            <TextBlock>BUGÜN ŞU SAAT HAFTADA 2 AYDA 4 YILDA 1</TextBlock>
+                        <StackPanel Margin="20,20,0,0">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="200"/>
+                                    <ColumnDefinition Width="10"/>
+                                    <ColumnDefinition/>
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel>
+                                    <TextBlock Text="{DynamicResource name}" Margin="0,0,0,5" />
+                                    <TextBlock Text="{DynamicResource BackupType}" Margin="0,0,0,5" />
+                                    <TextBlock Text="{DynamicResource space2Backups}" Margin="0,0,0,5" />
+                                    <TextBlock Text="{DynamicResource schedulerTasks}" Margin="0,0,0,5" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="1">
+                                    <TextBlock Text=":" Margin="0,0,0,5" />
+                                    <TextBlock Text=":" Margin="0,0,0,5" />
+                                    <TextBlock Text=":" Margin="0,0,0,5" />
+                                    <TextBlock Text=":" Margin="0,0,0,5" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="2" >
+                                    <TextBlock Margin="0,0,0,5">İŞLETİM SİSTEMİ YEDEĞİ</TextBlock>
+                                    <TextBlock Margin="0,0,0,5">DUMMY DATA</TextBlock>
+                                    <TextBlock Margin="0,0,0,5">C_D_E</TextBlock>
+                                    <TextBlock Margin="0,0,0,5">BUGÜN ŞU SAAT HAFTADA 2 AYDA 4 YILDA 1</TextBlock>
+                                </StackPanel>
+                            </Grid>
                         </StackPanel>
                     </StackPanel>
                 </Grid>

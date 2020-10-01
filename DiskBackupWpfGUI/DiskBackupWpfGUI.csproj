@@ -80,6 +80,9 @@
       <DependentUpon>DiskInfoPage.xaml</DependentUpon>
     </Compile>
     <Compile Include="Model\DiskInfo.cs" />
+    <Compile Include="Restore.xaml.cs">
+      <DependentUpon>Restore.xaml</DependentUpon>
+    </Compile>
     <Compile Include="TaskStatus.xaml.cs">
       <DependentUpon>TaskStatus.xaml</DependentUpon>
     </Compile>
@@ -108,6 +111,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Resources\Lang\string_tr.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Restore.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

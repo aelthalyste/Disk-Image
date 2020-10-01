@@ -155,7 +155,7 @@
                                             <GridViewColumn.CellTemplate>
                                                 <DataTemplate>
                                                     <CheckBox IsChecked="{Binding Path=IsSelected, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ListViewItem}}}"
-                                                              Checked="chbDisk_Checked" Unchecked="chbDisk_Unchecked" HorizontalAlignment="Center"/>
+                                                              Checked="chbDisk_Checked" Unchecked="chbDisk_Unchecked" />
                                                 </DataTemplate>
                                             </GridViewColumn.CellTemplate>
                                         </GridViewColumn>
@@ -204,7 +204,7 @@
                                                 </DataTemplate>
                                             </GridViewColumn.CellTemplate>
                                         </GridViewColumn>
-                                        <GridViewColumn Header="{DynamicResource statu}" Width="210" >
+                                        <GridViewColumn Header="{DynamicResource statu}" Width="200" >
                                             <GridViewColumn.CellTemplate>
                                                 <DataTemplate>
                                                     <TextBlock Text="{Binding Statu}" TextAlignment="Center"/>
@@ -221,9 +221,9 @@
                                                 <Setter Property="Template">
                                                     <Setter.Value>
                                                         <ControlTemplate>
-                                                            <Expander IsExpanded="True" Margin="0,10,0,0">
+                                                            <Expander IsExpanded="True" Margin="5,10,0,0">
                                                                 <Expander.Header>
-                                                                    <WrapPanel Orientation="Horizontal" Margin="20,0,0,0">
+                                                                    <WrapPanel Orientation="Horizontal" Margin="15,0,0,0">
                                                                         <TextBlock Text="{Binding Name}" FontWeight="Bold" FontSize="18" VerticalAlignment="Center" />
                                                                         <TextBlock Text="{Binding ItemCount}" FontSize="14" Foreground="Silver" Margin="10,0,0,0" VerticalAlignment="Center" />
                                                                         <TextBlock Text="{DynamicResource items}" FontSize="14" Foreground="Silver" Margin="5,0,0,0" VerticalAlignment="Center" />
@@ -554,11 +554,232 @@
                     </StackPanel>
                 </TabItem.Header>
                 <Grid Background="White">
-                    <StackPanel Grid.Row="1" HorizontalAlignment="Stretch">
-                        <GroupBox>
-                            <TextBlock Text="GERİ YÜKLE" FontSize="40" TextAlignment="Center"></TextBlock>
-                        </GroupBox>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="415"/>
+                        <RowDefinition/>
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition/>
+                        <ColumnDefinition Width="350"/>
+                    </Grid.ColumnDefinitions>
+                    <Rectangle VerticalAlignment="Center" Stroke="#D7D7D7" StrokeThickness="1" HorizontalAlignment="Right" Height="420"/>
+                    <DockPanel>
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal">
+                                <Button Name="btnRestore" HorizontalAlignment="Left" Margin="10,4,30,4" Style="{StaticResource CreateTaskButton}" Width="110" Height="32" Grid.Column="0" Click="btnRestore_Click">
+                                    <Button.Content>
+                                        <StackPanel Orientation="Horizontal">
+                                            <Image Height="22">
+                                                <Image.Style>
+                                                    <Style TargetType="Image">
+                                                        <Setter Property="Source" Value="Resources/Icon/u58.png" />
+                                                    </Style>
+                                                </Image.Style>
+                                            </Image>
+                                            <TextBlock Text="{DynamicResource restore}" VerticalAlignment="Center" Margin="2,2" Style="{StaticResource CreateTaskButtonText}"/>
+                                        </StackPanel>
+                                    </Button.Content>
+                                </Button>
+                                <TextBlock Text="{DynamicResource restoreContent}" VerticalAlignment="Center" />
+                            </StackPanel>
+                            
+                            
+                            <ListView Name="listViewRestore" MinHeight="370" Margin="5" DisplayMemberPath="Name" AllowDrop="True">
+                                <ListView.View>
+                                    <GridView>
+                                        <GridViewColumn Width="60">
+                                        </GridViewColumn>
+                                        <GridViewColumn Header="{DynamicResource fileName}" Width="200">
+                                            <GridViewColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding FolderName}" TextAlignment="Center"/>
+                                                </DataTemplate>
+                                            </GridViewColumn.CellTemplate>
+                                        </GridViewColumn>
+                                        <GridViewColumn Header="{DynamicResource createdDate}" Width="160" >
+                                            <GridViewColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding CreatedDate}" TextAlignment="Center"/>
+                                                </DataTemplate>
+                                            </GridViewColumn.CellTemplate>
+                                        </GridViewColumn>
+                                        <GridViewColumn Header="{DynamicResource diskSize}" Width="150" >
+                                            <GridViewColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding DiskSize}" TextAlignment="Center"/>
+                                                </DataTemplate>
+                                            </GridViewColumn.CellTemplate>
+                                        </GridViewColumn >
+                                        <GridViewColumn Header="{DynamicResource folderSize}" Width="150" >
+                                            <GridViewColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding FolderSize}" TextAlignment="Center"/>
+                                                </DataTemplate>
+                                            </GridViewColumn.CellTemplate>
+                                        </GridViewColumn>
+                                    </GridView>
+                                </ListView.View>
+                                <!-- Gruplama işlemi-->
+                                <ListView.GroupStyle>
+                                    <GroupStyle>
+                                        <GroupStyle.ContainerStyle>
+                                            <Style TargetType="{x:Type GroupItem}">
+                                                <Setter Property="Template">
+                                                    <Setter.Value>
+                                                        <ControlTemplate>
+                                                            <Expander IsExpanded="True" Margin="0,10,0,0">
+                                                                <Expander.Header>
+                                                                    <WrapPanel Orientation="Horizontal" Margin="20,0,0,0">
+                                                                        <TextBlock Text="{Binding Name}" FontWeight="Bold" FontSize="18" VerticalAlignment="Center" />
+                                                                        <TextBlock Text="{Binding ItemCount}" FontSize="14" Foreground="Silver" Margin="10,0,0,0" VerticalAlignment="Center" />
+                                                                        <TextBlock Text="{DynamicResource items}" FontSize="14" Foreground="Silver" Margin="5,0,0,0" VerticalAlignment="Center" />
+                                                                        <Rectangle Margin="10,0,0,0" Width="900" Stroke="Silver" StrokeThickness="1" VerticalAlignment="Center"/>
+                                                                    </WrapPanel>
+                                                                </Expander.Header>
+                                                                <ItemsPresenter />
+                                                            </Expander>
+                                                        </ControlTemplate>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </Style>
+                                        </GroupStyle.ContainerStyle>
+                                    </GroupStyle>
+                                </ListView.GroupStyle>
+                                <ListView.ItemContainerStyle>
+                                    <Style TargetType="ListViewItem">
+                                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsPolicyFolder}" Value="false">
+                                                <Setter Property="IsEnabled" Value="True"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding IsPolicyFolder}" Value="true">
+                                                <Setter Property="IsEnabled" Value="False"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ListView.ItemContainerStyle>
+                            </ListView>
+                        </StackPanel>
+                    </DockPanel>
+                    <ListView Grid.Row="1" Grid.ColumnSpan="2" Name="listViewRestoreDisk" MinHeight="150" Margin="5" DisplayMemberPath="Name" AllowDrop="True">
+                        <ListView.View>
+                            <GridView>
+                                <GridViewColumn Width="40">
+                                    <GridViewColumn.Header>
+                                        <CheckBox Name="chbRestoreDiskSelectAll" Checked="chbRestoreDiskSelectAll_Checked" Unchecked="chbRestoreDiskSelectAll_Unchecked"/>
+                                    </GridViewColumn.Header>
+                                    <GridViewColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <CheckBox IsChecked="{Binding Path=IsSelected, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ListViewItem}}}"
+                                                              Checked="chbRestoreDisk_Checked" Unchecked="chbRestoreDisk_Unchecked" />
+                                        </DataTemplate>
+                                    </GridViewColumn.CellTemplate>
+                                </GridViewColumn>
+                                <GridViewColumn Header="{DynamicResource volume}" Width="250">
+                                    <GridViewColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Orientation="Horizontal">
+                                                <Image Source="Resources/Icon/icons8_c_drive_2.png" Height="22" Width="Auto" Margin="0,0,10,0"/>
+                                                <TextBlock Text="{Binding Volume}" TextAlignment="Left" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </GridViewColumn.CellTemplate>
+                                </GridViewColumn>
+                                <GridViewColumn Header="{DynamicResource letter}" Width="100" >
+                                    <GridViewColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding Letter}" TextAlignment="Center"/>
+                                        </DataTemplate>
+                                    </GridViewColumn.CellTemplate>
+                                </GridViewColumn>
+                                <GridViewColumn Header="{DynamicResource area}" Width="110" >
+                                    <GridViewColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding Area}" TextAlignment="Center"/>
+                                        </DataTemplate>
+                                    </GridViewColumn.CellTemplate>
+                                </GridViewColumn >
+                                <GridViewColumn Header="{DynamicResource freeSize}" Width="110" >
+                                    <GridViewColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding FreeSize}" TextAlignment="Center"/>
+                                        </DataTemplate>
+                                    </GridViewColumn.CellTemplate>
+                                </GridViewColumn>
+                                <GridViewColumn Header="{DynamicResource type}" Width="110" >
+                                    <GridViewColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding Type}" TextAlignment="Center"/>
+                                        </DataTemplate>
+                                    </GridViewColumn.CellTemplate>
+                                </GridViewColumn>
+                                <GridViewColumn Header="{DynamicResource fileSystem}" Width="140" >
+                                    <GridViewColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding FileSystem}" TextAlignment="Center"/>
+                                        </DataTemplate>
+                                    </GridViewColumn.CellTemplate>
+                                </GridViewColumn>
+                                <GridViewColumn Header="{DynamicResource statu}" Width="180" >
+                                    <GridViewColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding Statu}" TextAlignment="Center"/>
+                                        </DataTemplate>
+                                    </GridViewColumn.CellTemplate>
+                                </GridViewColumn>
+                            </GridView>
+                        </ListView.View>
+                        <!-- Gruplama işlemi-->
+                        <ListView.GroupStyle>
+                            <GroupStyle>
+                                <GroupStyle.ContainerStyle>
+                                    <Style TargetType="{x:Type GroupItem}">
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate>
+                                                    <Expander IsExpanded="True" Margin="5,10,0,0">
+                                                        <Expander.Header>
+                                                            <WrapPanel Orientation="Horizontal" Margin="15,0,0,0">
+                                                                <TextBlock Text="{Binding Name}" FontWeight="Bold" FontSize="18" VerticalAlignment="Center" />
+                                                                <TextBlock Text="{Binding ItemCount}" FontSize="14" Foreground="Silver" Margin="10,0,0,0" VerticalAlignment="Center" />
+                                                                <TextBlock Text="{DynamicResource items}" FontSize="14" Foreground="Silver" Margin="5,0,0,0" VerticalAlignment="Center" />
+                                                                <Rectangle Margin="10,0,0,0" Width="880" Stroke="Silver" StrokeThickness="1" VerticalAlignment="Center"/>
+                                                            </WrapPanel>
+                                                        </Expander.Header>
+                                                        <ItemsPresenter />
+                                                    </Expander>
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </Style>
+                                </GroupStyle.ContainerStyle>
+                            </GroupStyle>
+                        </ListView.GroupStyle>
+                        <ListView.ItemContainerStyle>
+                            <Style TargetType="ListViewItem">
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsPolicyFolder}" Value="false">
+                                        <Setter Property="IsEnabled" Value="True"/>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding IsPolicyFolder}" Value="true">
+                                        <Setter Property="IsEnabled" Value="False"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ListView.ItemContainerStyle>
+                    </ListView>
+                    
+                    <StackPanel Grid.Column="1" Margin="10">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition/>
+                                <ColumnDefinition/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.ColumnSpan="2" Text="DOSYA BİLGİLERİ" FontSize="18" HorizontalAlignment="Center" FontWeight="Bold"/>
+                        </Grid>
                     </StackPanel>
+                    
                 </Grid>
             </TabItem>
 
@@ -1163,10 +1384,30 @@
                     </StackPanel>
                 </TabItem.Header>
                 <Grid Background="White">
-                    <StackPanel Grid.Row="1" HorizontalAlignment="Stretch">
-                        <GroupBox>
-                            <TextBlock Text="YARDIM" FontSize="40" TextAlignment="Center"></TextBlock>
-                        </GroupBox>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="80"/>
+                        <RowDefinition/>
+                    </Grid.RowDefinitions>
+                    <StackPanel >
+                        <TextBlock Text="{DynamicResource help}" HorizontalAlignment="Left" FontSize="18" Margin="5,5,0,0"/>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="{DynamicResource forHelp}" HorizontalAlignment="Left" FontWeight="Normal" Foreground="#A1A1A1" FontSize="12" Margin="5,5,0,0"/>
+                            <TextBlock FontSize="12" Margin="5,5,0,0">           
+                                <!--<Hyperlink NavigateUri="mailto:destek@narbulut.com?subject=Yardim&amp;body=Test" RequestNavigate="OnNavigate">
+                                    destek@narbulut.com
+                                </Hyperlink>-->
+                           </TextBlock>
+                            <TextBlock Text="{DynamicResource plsContact}" HorizontalAlignment="Left" FontWeight="Normal" Foreground="#A1A1A1" FontSize="12" Margin="5,5,0,0"/>
+                        </StackPanel>
+                    </StackPanel>
+                    <StackPanel Grid.Row="1">
+                        <TextBlock Text="{DynamicResource contactUs}" FontSize="14" FontWeight="SemiBold" Margin="15,15,0,0"/>
+                        <TextBlock Text="{DynamicResource msgType}" FontSize="12" Margin="15,15,0,0" />
+                        <ComboBox Name="maaaaoBox" FontSize="12" Height="30" VerticalContentAlignment="Center" Width="300" HorizontalAlignment="Left" Margin="15,15,0,0" DisplayMemberPath="Value" SelectedValuePath="Key" />
+                            <TextBlock Text="{DynamicResource message}" FontSize="12" Margin="15,15,0,0" />
+
+                        <TextBox Name="bodyTexBox" ScrollViewer.VerticalScrollBarVisibility="Auto" Height="300" FontSize="12" VerticalContentAlignment="Top" Width="600" HorizontalAlignment="Left" Margin="15,15,0,0" TextWrapping="Wrap" AcceptsReturn="True" MinLines="16" />
+                            <Button Name="sendFeedBackBtn" Style="{StaticResource WhiteButton}" Content="{DynamicResource send}" Height="30" Width="60" Margin="555,15,0,0" HorizontalAlignment="Left" />
                     </StackPanel>
                 </Grid>
             </TabItem>

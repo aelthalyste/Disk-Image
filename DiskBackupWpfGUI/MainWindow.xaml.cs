@@ -21,7 +21,9 @@ namespace DiskBackupWpfGUI
     /// </summary>
     public partial class MainWindow : Window
     {
-        private bool diskAllControl = false;
+        private bool _diskAllControl = false;
+        private bool _restoreDiskAllControl = false;
+
         public MainWindow()
         {
             InitializeComponent();
@@ -87,6 +89,7 @@ namespace DiskBackupWpfGUI
             });
 
             diskListBox.ItemsSource = discsItems;
+            listViewRestoreDisk.ItemsSource = discsItems;
 
             CollectionView view = (CollectionView)CollectionViewSource.GetDefaultView(diskListBox.ItemsSource);
             PropertyGroupDescription groupDescription = new PropertyGroupDescription("DiscName");
@@ -105,24 +108,27 @@ namespace DiskBackupWpfGUI
             public string DiscName { get; set; }
         }
 
+        #region Checbox Select Operations
+
+        //Disk CheckBox 
         private void chbDiskSelectDiskAll_Checked(object sender, RoutedEventArgs e)
         {
-            if (!diskAllControl)
+            if (!_diskAllControl)
             {
                 foreach (Discs item in diskListBox.ItemsSource)
                 {
                     diskListBox.SelectedItems.Add(item);
                 }
-                diskAllControl = true;
+                _diskAllControl = true;
             }
         }
 
         private void chbDiskSelectDiskAll_Unchecked(object sender, RoutedEventArgs e)
         {
-            if (diskAllControl)
+            if (_diskAllControl)
             {
                 diskListBox.SelectedItems.Clear();
-                diskAllControl = false;
+                _diskAllControl = false;
             }
         }
 
@@ -130,20 +136,55 @@ namespace DiskBackupWpfGUI
         {
             if (chbDiskSelectDiskAll.IsChecked == false)
             {
-                diskAllControl = diskListBox.SelectedItems.Count == diskListBox.Items.Count;
-                chbDiskSelectDiskAll.IsChecked = diskAllControl;
+                _diskAllControl = diskListBox.SelectedItems.Count == diskListBox.Items.Count;
+                chbDiskSelectDiskAll.IsChecked = _diskAllControl;
             }
         }
 
         private void chbDisk_Unchecked(object sender, RoutedEventArgs e)
         {
-            diskAllControl = false;
+            _diskAllControl = false;
             chbDiskSelectDiskAll.IsChecked = false;
         }
 
-        /*
-         *
-         */
+        //Restore Disk CheckBox 
+        private void chbRestoreDiskSelectAll_Checked(object sender, RoutedEventArgs e)
+        {
+            if (!_restoreDiskAllControl)
+            {
+                foreach (Discs item in listViewRestoreDisk.ItemsSource)
+                {
+                    listViewRestoreDisk.SelectedItems.Add(item);
+                }
+                _restoreDiskAllControl = true;
+            }
+        }
+
+        private void chbRestoreDiskSelectAll_Unchecked(object sender, RoutedEventArgs e)
+        {
+            if (_restoreDiskAllControl)
+            {
+                listViewRestoreDisk.SelectedItems.Clear();
+                _restoreDiskAllControl = false;
+            }
+        }
+
+        private void chbRestoreDisk_Checked(object sender, RoutedEventArgs e)
+        {
+            if (chbRestoreDiskSelectAll.IsChecked == false)
+            {
+                _restoreDiskAllControl = listViewRestoreDisk.SelectedItems.Count == listViewRestoreDisk.Items.Count;
+                chbRestoreDiskSelectAll.IsChecked = _restoreDiskAllControl;
+            }
+        }
+
+        private void chbRestoreDisk_Unchecked(object sender, RoutedEventArgs e)
+        {
+            _restoreDiskAllControl = false;
+            chbRestoreDiskSelectAll.IsChecked = false;
+        }
+
+        #endregion
 
         private void btnCreateTask_Click(object sender, RoutedEventArgs e)
         {
@@ -241,6 +282,17 @@ namespace DiskBackupWpfGUI
         {
             AddBackupArea addBackupArea = new AddBackupArea();
             addBackupArea.ShowDialog();
+        }
+
+        private void btnRestore_Click(object sender, RoutedEventArgs e)
+        {
+            Restore restore = new Restore();
+            restore.ShowDialog();
+        }
+
+        private void maaaaoBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+
         }
     }
 }
