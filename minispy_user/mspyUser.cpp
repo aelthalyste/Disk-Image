@@ -5671,6 +5671,428 @@ void foo(){
 }
 
 
+// could be either file or dir
+struct NarFileEntry {
+
+    BOOLEAN Flags;
+
+    UINT64 MFTFileIndex;
+    UINT64 Size; // file size in bytes
+
+    UINT64 CreationTime;
+    UINT64 LastModifiedTime;
+
+    wchar_t Name[MAX_PATH + 1]; // max path + 1 for null termination
+};
+
+// represents files in directory
+struct FileEntriesList {
+    UINT32 MFTIndex;
+    UINT32 EntryCount;
+    NarFileEntry* Entries;
+};
+
+struct NarBackupFileExplorerContext {
+
+    char Letter;
+    INT32 ClusterSize = 4096;
+    wchar_t RootDir[256];
+
+    UINT32 LastIndx;
+
+    int MFTRecordsCount;
+
+#define NAR_PUSH_HIST_STACK(stack, id) (stack)[I++] = id;  
+#define NAR_POP_HIST_STACK(stack) (stack)[I--] = 0; 
+
+    struct {
+        UINT32 I;
+        UINT64 S[1024];
+    }HistoryStack;
+
+    nar_record *MFTRecords;
+    
+    FileEntriesList EList;
+
+};
+
+inline void
+NarReleaseFileExplorerContext(NarBackupFileExplorerContext* Ctx) {
+    if (!Ctx) return;
+
+    free(Ctx->EList.Entries);
+    
+}
+
+inline void
+NarGetFileListFromMFTID(FileEntriesList* EList, UINT64 TargetMFTID, nar_record* MFTRegions, UINT32 MFTRegionCount, UINT32 ClusterSize, HANDLE VolumeHandle) {
+
+    if (!EList) return;
+
+    if (ClusterSize < 1024) {
+        *(int*)0 = 0;
+    }
+
+    UINT64 FileCountInRegion = 0;
+    UINT32 FileCountPerCluster = ClusterSize / 1024;
+    UINT64 AdvancedFileCountSoFar = 0;
+
+    UINT64 FileOffsetFromRegion = 0;
+    UINT64 FileOffsetAtVolume = 0;
+
+    for (UINT32 RegionIndex = 0; RegionIndex < MFTRegionCount; RegionIndex++) {
+
+        FileCountInRegion = (UINT64)MFTRegions[RegionIndex].Len * (UINT64)FileCountPerCluster;
+        if (FileCountInRegion + AdvancedFileCountSoFar >= TargetMFTID) {
+            // found
+            FileOffsetFromRegion = TargetMFTID - AdvancedFileCountSoFar;
+
+            FileOffsetAtVolume = (UINT64)MFTRegions[RegionIndex].StartPos * (UINT64)ClusterSize + FileOffsetFromRegion * 1024;
+            break;
+        }
+
+        AdvancedFileCountSoFar += FileCountInRegion;
+
+    }
+
+
+    if (NarSetFilePointer(VolumeHandle, FileOffsetAtVolume)) {
+
+        BYTE Buffer[1024];
+        memset(Buffer, 0, sizeof(Buffer));
+
+        UINT32 IndexRegionsFound = 0;
+
+        struct {
+            UINT32 Start;
+            UINT32 Len;
+        }INDX_ALL_REGIONS[64];
+
+        DWORD BytesRead = 0;
+        if (ReadFile(VolumeHandle, Buffer, 1024, &BytesRead, 0) && BytesRead == 1024) {
+
+            // do parsing stuff
+            void* FileRecord = &Buffer[0];
+
+            INT16 FlagOffset = 22;
+            INT32 NAR_INDEX_ALLOCATION_FLAG = 0xA0;
+
+            INT16 Flags = *(INT16*)((BYTE*)FileRecord + FlagOffset);
+
+
+            {
+
+                INT16 FirstAttributeOffset = (*(INT16*)((BYTE*)FileRecord + 20));
+                void* FileAttribute = (char*)FileRecord + FirstAttributeOffset;
+
+                INT32 RemainingLen = *(INT32*)((BYTE*)FileRecord + 24); // Real size of the file record
+                RemainingLen -= (FirstAttributeOffset + 8); //8 byte for end of record mark, remaining len includes it too.
+
+                // iterate until file attr 0xA0 found, which is INDEX_ALLOCATION
+                // maybe some dir does not contain INDEX_ALLOCATION, like empty dirs, or other things i am not aware of.
+                // its better write solid solution
+
+                while (RemainingLen > 0) {
+
+                    if ((*(INT32*)FileAttribute & NAR_INDEX_ALLOCATION_FLAG) == NAR_INDEX_ALLOCATION_FLAG) {
+
+                        INT32 DataRunsOffset = *(INT32*)((BYTE*)FileAttribute + 32);
+
+                        void* DataRuns = (char*)FileAttribute + DataRunsOffset;
+
+                        // So it looks like dataruns doesnt actually tells you LCN, to save up space, they kinda use smt like 
+                        // winapi's deviceiocontrol routine, maybe the reason for fetching VCN-LCN maps from winapi is weird because 
+                        // thats how its implemented at ntfs at first place. who knows
+                        // so thats how it looks
+                        /*
+                        first one is always absolute LCN in the volume. rest of it is addition to previous one. if file is fragmanted, value will be
+                        negative. so we dont have to check some edge cases here.
+                        second data run will be lets say 0x11 04 43
+                        and first one                    0x11 10 10
+                        starting lcn is 0x10, but second data run does not start from 0x43, it starts from 0x10 + 0x43
+
+                        LCN[n] = LCN[n-1] + datarun cluster
+                        */
+
+                        char Size = *(BYTE*)DataRuns;
+                        INT8 ClusterCountSize = (Size & 0x0F);
+                        INT8 FirstClusterSize = (Size & 0xF0) >> 4;
+
+                        // Swipe to left to clear extra bits, then swap back to get correct result.
+                        INT64 ClusterCount = *(INT64*)((char*)DataRuns + 1); // 1 byte for size variable
+                        ClusterCount = ClusterCount & ~(0xFFFFFFFFFFFFFFFFULL << (ClusterCountSize * 8));
+                        // cluster count must be > 0, no need to do 2s complement on it
+
+                        //same operation
+                        INT64 FirstCluster = *(INT64*)((char*)DataRuns + 1 + ClusterCountSize);
+                        FirstCluster = FirstCluster & ~(0xFFFFFFFFFFFFFFFFULL << (FirstClusterSize * 8));
+                        // 2s complement to support negative values
+                        if ((FirstCluster >> ((FirstClusterSize - 1) * 8 + 7)) & 1U) {
+                            FirstCluster = FirstCluster | ((0xFFFFFFFFFFFFFFFULL << (FirstClusterSize * 8)));
+                        }
+
+
+                        INT64 OldClusterStart = FirstCluster;
+                        void* D = (BYTE*)DataRuns + FirstClusterSize + ClusterCountSize + 1;
+
+
+                        INDX_ALL_REGIONS[IndexRegionsFound].Start = FirstCluster;
+                        INDX_ALL_REGIONS[IndexRegionsFound].Len = ClusterCount;
+                        IndexRegionsFound++;
+
+                        //DBG_INC(DBG_INDX_FOUND);
+                        while (*(BYTE*)D) {
+
+                            Size = *(BYTE*)D;
+
+                            //UPDATE: Even tho entry finishes at 8 byte aligment, it doesnt finish itself here, adds at least 1 byte for zero termination to indicate its end
+                            //so rather than tracking how much we read so far, we can check if we encountered zero termination
+                            // NOTE(Batuhan): Each entry is at 8byte aligment, so lets say we thought there must be smt like 80 bytes reserved for 0xA0 attribute
+                            // but since data run's size is not constant, it might finish at not exact multiple of 8, like 75, so rest of the 5 bytes are 0
+                            // We can keep track how many bytes we read so far etc etc, but rather than that, if we just check if size is 0, which means rest is just filler 
+                            // bytes to aligment border, we can break early.
+                            if (Size == 0) break;
+
+
+
+                            // extract 4bit nibbles from size
+                            ClusterCountSize = (Size & 0x0F);
+                            FirstClusterSize = (Size & 0xF0) >> 4;
+
+                            // Sparse files may cause that, but not sure about what is sparse and if it effects directories. 
+                            // If not, nothing to worry about, branch predictor should take care of that
+                            if (ClusterCountSize == 0 || FirstClusterSize == 0)break;
+
+                            // Swipe to left to clear extra bits, then swap back to get correct result.
+                            ClusterCount = *(INT64*)((BYTE*)D + 1);
+                            ClusterCount = ClusterCount & ~(0xFFFFFFFFFFFFFFFFULL << (ClusterCountSize * 8));
+
+                            //same operation
+                            FirstCluster = *(INT64*)((BYTE*)D + 1 + ClusterCountSize);
+                            FirstCluster = FirstCluster & ~(0xFFFFFFFFFFFFFFFFULL << (FirstClusterSize * 8));
+                            if ((FirstCluster >> ((FirstClusterSize - 1) * 8 + 7)) & 1U) {
+                                FirstCluster = FirstCluster | (0xFFFFFFFFFFFFFFFFULL << (FirstClusterSize * 8));
+                            }
+
+
+                            //if(TempVariable > 1 && FirstCluster < 0){
+                            //    dbgbreak
+                            //}
+
+
+                            FirstCluster += OldClusterStart;
+                            // Update tail
+                            OldClusterStart = FirstCluster;
+
+                            D = (BYTE*)D + (FirstClusterSize + ClusterCountSize + 1);
+                            DBG_INSERT(FirstCluster, ClusterCount);
+
+                            INDX_ALL_REGIONS[IndexRegionsFound].Start = FirstCluster;
+                            INDX_ALL_REGIONS[IndexRegionsFound].Len = ClusterCount;
+                            IndexRegionsFound++;
+
+                            //DBG_INC(DBG_INDX_FOUND);
+
+                        }
+
+
+                        // found INDEX_ALLOCATION attribute
+                        break;
+                    }
+
+                    if ((*(INT32*)FileAttribute & NAR_INDEX_ALLOCATION_FLAG) > NAR_INDEX_ALLOCATION_FLAG) break;// early termination
+
+
+                    // found neither indexallocation nor attr bigger than it, just substract attribute size from remaininglen to determine if we should keep iterating
+                    INT32 AttrSize = (*(unsigned short*)((BYTE*)FileAttribute + 4));
+                    RemainingLen -= AttrSize;
+                    FileAttribute = (BYTE*)FileAttribute + AttrSize;
+                    if (AttrSize == 0) break;
+
+                }
+
+
+            }
+
+
+
+            for (UINT32 IndexRegionIndex = 0; IndexRegionIndex < IndexRegionsFound; IndexRegionIndex++) {
+
+                if (NarSetFilePointer(VolumeHandle, (UINT64)INDX_ALL_REGIONS[IndexRegionIndex].Start * (UINT64)ClusterSize)) {
+
+                    size_t IndxBufferSize = (UINT64)INDX_ALL_REGIONS[IndexRegionIndex].Len * (UINT64)ClusterSize;
+
+                    void* IndxBuffer = malloc(IndxBufferSize);
+
+                    if (IndxBuffer) {
+
+                        if (ReadFile(VolumeHandle, IndxBuffer, (DWORD)IndxBufferSize, &BytesRead, 0) && BytesRead == IndxBufferSize) {
+
+                            // inspect each clusters in region
+                            for (UINT32 IndxRegionClusterIndex = 0; IndxRegionClusterIndex < (IndxBufferSize / 4096); IndxRegionClusterIndex++) {
+
+                                void* IndxCluster = (char*)IndxBuffer + (UINT64)IndxRegionClusterIndex * 4096;
+
+                                // skip first 64 bytes, first file entry, 88 if ROOT's first region, i hate ntfs
+                                if (TargetMFTID == 5 && IndexRegionIndex == 0 && IndxRegionClusterIndex == 0) {
+                                    IndxCluster = (char*)IndxCluster + 88;
+                                }
+                                else {
+                                    IndxCluster = (char*)IndxCluster + 64;
+                                }
+                                
+                                char ZeroBytes[24];
+                                memset(ZeroBytes, 0, sizeof(ZeroBytes));
+
+                                while (1) {
+
+                                    // check if end of records
+                                    if (memcmp(IndxCluster, &ZeroBytes[0], 24) == 0) {
+                                        // end of records
+                                        break;
+                                    }
+
+                                    UINT16 EntrySize = *(UINT32*)((char*)IndxCluster + 8);
+                                    if (EntrySize == 16) { 
+                                        break; 
+                                    }
+#define NAR_POSIX 2
+#define NAR_ENTRY_SIZE_OFFSET 8
+#define NAR_TIME_OFFSET 28
+#define NAR_SIZE_OFFSET 60
+#define NAR_NAME_LEN_OFFSET 80 
+#define NAR_POSIX_OFFSET 81
+#define NAR_NAME_OFFSET 82
+
+                                    // check if POSIX entry
+                                    if (*((char*)IndxCluster + NAR_POSIX_OFFSET) == NAR_POSIX) {
+                                        IndxCluster = (char*)IndxCluster + EntrySize;
+                                        continue;
+                                    }
+
+                                    UINT8 NameLen = *(UINT8*)((char*)IndxCluster + NAR_NAME_LEN_OFFSET);
+                                    UINT64 MagicNumber = *(UINT64*)IndxCluster;
+                                    // DO MASK AND TRUNCATE 2 BYTES TO FIND MFTINDEX OF THE FILE
+
+
+                                    // useful information here
+                                    UINT64 CreationTime = *(UINT64*)((char*)IndxCluster + NAR_TIME_OFFSET);
+                                    UINT64 ModificationTime = *(UINT64*)((char*)IndxCluster + NAR_TIME_OFFSET + 8);
+                                    UINT64 FileSize = *(UINT64*)((char*)IndxCluster + NAR_SIZE_OFFSET);
+
+                                    char* NamePtr = ((char*)IndxCluster + NAR_NAME_OFFSET);
+
+                                    memcpy(&EList->Entries[EList->EntryCount].Name[0], NamePtr, NameLen * sizeof(wchar_t));
+                                    
+                                    // extracted all useful information, push it to the list and continue
+
+                                    // push stuff
+                                    // represents files in directory
+
+                                    EList->Entries[EList->EntryCount].MFTFileIndex = 0;
+                                    EList->Entries[EList->EntryCount].Size = FileSize;
+                                    EList->Entries[EList->EntryCount].CreationTime = CreationTime;
+                                    EList->Entries[EList->EntryCount].LastModifiedTime = ModificationTime;
+
+                                    EList->EntryCount++;
+
+                                    
+                                    /*
+                                    struct FileEntriesList{
+                                     UINT32 MFTIndex;
+                                     UINT32 EntryCount;
+                                     NarFileEntry *Entries;
+                                    };
+
+
+                                    // could be either file or dir
+                                    struct NarFileEntry{
+
+                                     BOOLEAN Flags;
+
+                                     UINT64 MFTFileIndex;
+                                     UINT64 Size; // file size in bytes
+
+                                     UINT64 CreationTime;
+                                     UINT64 LastModifiedTime;
+
+                                     wchar_t Name[MAX_PATH + 1]; // max path + 1 for null termination
+                                    };
+                                    */
+
+                                    IndxCluster = (char*)IndxCluster + EntrySize;
+
+                                }
+
+
+                            }
+
+
+
+                        }
+                        else {
+                            // readfile failed for indx region
+                        }
+
+                        free(IndxBuffer);
+                    }
+                    else {
+                        // printf("Couldnt allocate memory");
+                    }
+
+                }
+                else {
+                    // couldnt set file pointer for index's ith region
+                }
+
+            }
+
+
+        }
+        else {
+            // couldnt read file entry
+        }
+
+    }
+    else {
+        // set file pointer failed
+    }
+
+    for (int i = 0; i < EList->EntryCount; i++) {
+        printf("Name : %S, size %I64u\n", EList->Entries[i].Name);
+    }
+
+
+}
+
+
+
+inline void
+NarInitFileExplorerContext(NarBackupFileExplorerContext* Ctx, char Letter) {
+
+    if (!Ctx) return;
+
+    memset(Ctx, 0, sizeof(Ctx));
+
+    Ctx->MFTRecords = (nar_record*)NarGetMFTRegionsByCommandLine(Letter, &Ctx->MFTRecordsCount);
+    Ctx->EList.Entries = (NarFileEntry*)malloc(10000 * sizeof(NarFileEntry));
+    memset(Ctx->EList.Entries, 0, 10000 * sizeof(NarFileEntry));
+
+    HANDLE VolumeHandle = INVALID_HANDLE_VALUE;
+    VolumeHandle = NarOpenVolume(Letter);
+
+    if (VolumeHandle != INVALID_HANDLE_VALUE) {
+        
+        Ctx->EList.EntryCount = 0;
+        NarGetFileListFromMFTID(&Ctx->EList, 98328, Ctx->MFTRecords, Ctx->MFTRecordsCount, 4096, VolumeHandle);
+
+    }
+    else {
+
+    }
+
+}
+
 
 
 int
@@ -5679,7 +6101,20 @@ main(
      CHAR* argv[]
      ) {
 
+    NarBackupFileExplorerContext ctx;
+    NarInitFileExplorerContext(&ctx, 'C');
+    getchar();
+    return 0;
+
+    wchar_t B[50];
+    if(NarGetVolumeGUIDKernelCompatible(L'C', &B[0])){
+        printf("%s\n", B);
+    }
+
+
+    return 0;
     
+
     HRESULT hResult = 0;
     hResult = CoInitializeEx(NULL, COINIT_MULTITHREADED);
     if (!SUCCEEDED(hResult)) {

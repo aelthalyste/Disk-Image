@@ -1,2 +1,58 @@
-[9:44:12]: Couldn't lock volume C, returning INVALID_HANDLE_VALUE
-[9:44:13]: Couldnt dismount volume
+[19:5:38]: HEL
+L[19:5:38]: Couldn't lock volume C, returning INVALID_HANDLE_VALUE
+[19:5:38]: Couldnt dismount volume
+[19:5:39]: Name : Application Verifier, size 2066666881281
+[19:5:39]: Name : CE Remote Tools, size 779077080088
+[19:5:39]: Name : Common Files, size 779077080088
+[19:5:39]: Name : desktop.ini, size 779077080088
+[19:5:39]: Name : dotnet, size 779077080088
+[19:5:39]: Name : EasyAnFiCheat, size 779077080088
+[19:5:39]: Name : F1 2014, size 779077080088
+[19:5:39]: Name : Google, size 779077080088
+[19:5:39]: Name : HiSuitF, size 779077080088
+[19:5:39]: Name : HTML Help Workshop, size 779077080088
+[19:5:39]: Name : InstallShield Installation Information, size 779077080088
+[19:5:39]: Name : Intel, size 779077080088
+[19:5:39]: Name : Internet Download Manager, size 779077080088
+[19:5:39]: Name : Rockstar Games, size 779077080088
+[19:5:39]: Name : Samsung, size 779077080088
+[19:5:39]: Name : Silabs, size 779077080088
+[19:5:39]: Name : Spectro, size 779077080088
+[19:5:39]: Name : Teams Installer, size 779077080088
+[19:5:39]: Name : VulkanRT, size 779077080088
+[19:5:39]: Name : Web Publish, size 779077080088
+[19:5:39]: Name : Windows Defender, size 779077080088
+[19:5:39]: Name : Windows Kits, size 779077080088
+[19:5:39]: Name : Windows Mail, size 779077080088
+[19:5:39]: Name : Widows Media Player, size 779077080088
+[19:5:39]: Name : Windows Mobile 5.0 SDK R2, size 779077080088
+[19:5:39]: Name : Windows Multimedia Platform, size 779077080088
+[19:5:39]: Name : Windows NT, size 779077080088
+[19:5:40]: Name : Window Photo Viewer, size 779077080088
+[19:5:40]: Name : Windows Portable Devices, size 779077080088
+[19:5:40]: Name : Windows Sidebar, size 779077080088
+[19:5:40]: Name : WindowsPowerShell, size 779077080088
+[19:5:40]: Name : Microsoft Visual Studio, size 779077080088
+[19:5:40]: Name : Microsoft Visual Studio 8, size 779077080088
+[19:5:40]: Name : Microsoft Web Designer Tools, size 779077080088
+[19:5:40]: Name : Microsoft XNA, size 779077080088
+[19:5:40]: Name : Microsoft.NET, size 779077080088
+[19:5:40]: Name : Mozilla Maintenance Service, size 779077080088
+[19:5:40]: Name : MSBuild, size 779077080088
+[19:5:40]: Name : NuGet, size 779077080088
+[19:5:40]: Name : NVIDIA Corporation, size 779077080088
+[19:5:40]: Name : Origin Games, size 779077080088
+[19:5:40]: Name : Panasonic-ID SUNX Control, size 779077080088
+[19:5:40]: Name : PxMEWNET, size 779077080088
+[19:5:40]: Name : LogMeIn Hamachi, size 779077080088
+[19:5:40]: Name : Microsoft Device Emulator, size 779077080088
+[19:5:40]: Name : Microsoft GameInput, size 779077080088
+[19:5:40]: Name : Microsoft Office, size 779077080088
+[19:5:40]: Name : Microsoft SDKs, size 779077080088
+[19:5:40]: Name : Microsoft SQL Server, size 779077080088
+[19:5:40]: Name : Microsoft SQL Server 2005 Mobile Edition, size 779077080088
+[19:5:40]: Name : Microsoft SQL Server Compact Editi	n, size 779077080088
+[19:5:40]: Name : Internet Explorer, size 779077080088
+[19:5:40]: Name : Microsoft Synchronization Services, size 779077080088
+[19:5:40]: Name : Reference Assemblies, size 779077080088
+[19:5:40]: Name : , size 779077080088

@@ -1052,7 +1052,6 @@ Return Value:
     UNREFERENCED_PARAMETER(nameToUse);
     UNREFERENCED_PARAMETER(CompletionContext);
 
-
     ULONG PID = FltGetRequestorProcessId(Data);
     // filter out temporary files and files that would be closed if last handle freed
     if ((Data->Iopb->TargetFileObject->Flags & FO_TEMPORARY_FILE) == FO_TEMPORARY_FILE || (Data->Iopb->TargetFileObject->Flags & FO_DELETE_ON_CLOSE) == FO_DELETE_ON_CLOSE || PID == NarData.UserModePID) {
@@ -1371,8 +1370,8 @@ Return Value:
 
 
             // TODO(BATUHAN): try one loop via KeTestSpinLock, to fast check if volume is available for fast access, if it is available and matches GUID, immidiately flush all regions and return, if not available test higher elements in list.
-            void* CompareBuffer = ExAllocatePoolWithTag(PagedPool, NAR_GUID_STR_SIZE, NAR_TAG);
-            
+            char CompareBuffer[NAR_GUID_STR_SIZE];
+
             ULONG SizeNeededForGUIDStr = 0;
 
             UNICODE_STRING GUIDStringNPaged;
@@ -1390,7 +1389,7 @@ Return Value:
 
                 INT32 SizeNeededForMemoryBuffer = 2 * RecCount * sizeof(UINT32);
                 INT32 RemainingSizeOnBuffer = 0;
-                RtlInitEmptyUnicodeString(&GUIDStringNPaged, CompareBuffer, NAR_GUID_STR_SIZE);
+                RtlInitEmptyUnicodeString(&GUIDStringNPaged, &CompareBuffer[0], NAR_GUID_STR_SIZE);
                 status = FltGetVolumeGuidName(FltObjects->Volume, &GUIDStringNPaged, &SizeNeededForGUIDStr);
 
                 if (NT_SUCCESS(status)) {
@@ -1399,7 +1398,7 @@ Return Value:
 
                         ExAcquireFastMutex(&NarData.VolumeRegionBuffer[i].FastMutex);
 
-                        if (RtlCompareMemory(CompareBuffer, NarData.VolumeRegionBuffer[i].GUIDStrVol.Buffer, NAR_GUID_STR_SIZE) == NAR_GUID_STR_SIZE) {
+                        if (RtlCompareMemory(&CompareBuffer[0], NarData.VolumeRegionBuffer[i].GUIDStrVol.Buffer, NAR_GUID_STR_SIZE) == NAR_GUID_STR_SIZE) {
                             RemainingSizeOnBuffer = NAR_MEMORYBUFFER_SIZE - NAR_MB_USED(NarData.VolumeRegionBuffer[i].MemoryBuffer);
 
                             if (RemainingSizeOnBuffer >= SizeNeededForMemoryBuffer) {
@@ -1407,12 +1406,29 @@ Return Value:
                                 Added = TRUE;
                             }
                             else {
-                                
+
                                 DbgPrint("not enought memory, will flush contents to file\n");
+                                UNICODE_STRING FileName = { 0 };
 
-                                UNICODE_STRING FileName;
+#if 0
+                                wchar_t VolumeName[50];
+                                memset(VolumeName, 0, sizeof(VolumeName));
+
+                                wchar_t FileNameBuffer[128];
+                                memset(FileNameBuffer, 0, sizeof(FileNameBuffer));
+
+                                memcpy(VolumeName, &NarData.VolumeRegionBuffer[i].GUIDStrVol.Buffer[4], (NarData.VolumeRegionBuffer[i].GUIDStrVol.Length - 4) * 2);
+                                DbgPrint("Vol name extracted %S\n", VolumeName);                                
+                                                                
+                                RtlInitEmptyUnicodeString(&FileName, &FileNameBuffer[0], sizeof(FileNameBuffer));
+                                RtlUnicodeStringCatString(&FileName, L"\\SystemRoot\\LOGFILE_");
+                                RtlUnicodeStringCatString(&FileName, VolumeName);
+#else
+
                                 RtlInitUnicodeString(&FileName, L"\\SystemRoot\\Example.txt");
-
+#endif
+                                DbgPrint("File name generated %wZ\n", &FileName);
+                                                                
                                 IO_STATUS_BLOCK iosb;
                                 OBJECT_ATTRIBUTES objAttr;
                                 InitializeObjectAttributes(&objAttr, &FileName, OBJ_KERNEL_HANDLE | OBJ_CASE_INSENSITIVE, NULL, NULL);
@@ -1430,9 +1446,8 @@ Return Value:
 
                                     status = ZwWriteFile(FileHandle, 0, 0, 0, &iosb, NAR_MB_DATA(NarData.VolumeRegionBuffer[i].MemoryBuffer), TempBufferSize, 0, 0);
                                     if (NT_SUCCESS(status)) {
-                                        DbgPrint("Successfully written to file\n");
+                                        DbgPrint("Successfully flushed file contents\n");
                                         NAR_INIT_MEMORYBUFFER(NarData.VolumeRegionBuffer[i].MemoryBuffer);
-
                                     }
                                     else {
                                         DbgPrint("couldnt write to file, err id %i\n", status);
@@ -1447,7 +1462,7 @@ Return Value:
 
 
 
-                                NAR_MB_MARK_NOT_ENOUGH_SPACE(NarData.VolumeRegionBuffer[i].MemoryBuffer);
+                                //NAR_MB_MARK_NOT_ENOUGH_SPACE(NarData.VolumeRegionBuffer[i].MemoryBuffer);
                             }
 
                             ExReleaseFastMutex(&NarData.VolumeRegionBuffer[i].FastMutex);
@@ -1480,7 +1495,6 @@ Return Value:
 #pragma warning(pop)
 #endif
 
-            ExFreePoolWithTag(CompareBuffer, NAR_TAG);
 
         }
         else {
