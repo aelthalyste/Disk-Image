@@ -34,23 +34,33 @@ namespace DiskBackupWpfGUI
             frame.Content = page;
             frame.VerticalAlignment = VerticalAlignment.Top;
             diskInfoStackPanel.Children.Add(frame);
+            page = new DiskInfoPage(diskInfo);
+            frame = new Frame();
+            frame.Content = page;
+            frame.VerticalAlignment = VerticalAlignment.Top;
+            stackTasksDiskInfo.Children.Add(frame);
             diskInfo.Name = "Disk 2";
             page = new DiskInfoPage(diskInfo);
             frame = new Frame();
             frame.Content = page;
             frame.VerticalAlignment = VerticalAlignment.Top;
             diskInfoStackPanel.Children.Add(frame);
-            //stackTasksDiskInfo.Children.Add(frame);
+            page = new DiskInfoPage(diskInfo);
+            frame = new Frame();
+            frame.Content = page;
+            frame.VerticalAlignment = VerticalAlignment.Top;
+            stackTasksDiskInfo.Children.Add(frame);
 
 
             List<Discs> discsItems = new List<Discs>();
-            discsItems.Add(new Discs() { 
-                Volume = "System Reserverd", 
-                Letter = 'A', 
-                Area = "2 GB", 
-                FreeSize = "1 GB", 
-                Type = "GPT", 
-                FileSystem = "NTFS", 
+            discsItems.Add(new Discs()
+            {
+                Volume = "System Reserverd",
+                Letter = 'A',
+                Area = "2 GB",
+                FreeSize = "1 GB",
+                Type = "GPT",
+                FileSystem = "NTFS",
                 Statu = "Sağlıklı",
                 DiscName = "Disk 1"
             });
@@ -88,10 +98,10 @@ namespace DiskBackupWpfGUI
                 DiscName = "Disk 2"
             });
 
-            diskListBox.ItemsSource = discsItems;
+            listViewDisk.ItemsSource = discsItems;
             listViewRestoreDisk.ItemsSource = discsItems;
 
-            CollectionView view = (CollectionView)CollectionViewSource.GetDefaultView(diskListBox.ItemsSource);
+            CollectionView view = (CollectionView)CollectionViewSource.GetDefaultView(listViewDisk.ItemsSource);
             PropertyGroupDescription groupDescription = new PropertyGroupDescription("DiscName");
             view.GroupDescriptions.Add(groupDescription);
         }
@@ -115,9 +125,9 @@ namespace DiskBackupWpfGUI
         {
             if (!_diskAllControl)
             {
-                foreach (Discs item in diskListBox.ItemsSource)
+                foreach (Discs item in listViewDisk.ItemsSource)
                 {
-                    diskListBox.SelectedItems.Add(item);
+                    listViewDisk.SelectedItems.Add(item);
                 }
                 _diskAllControl = true;
             }
@@ -127,7 +137,7 @@ namespace DiskBackupWpfGUI
         {
             if (_diskAllControl)
             {
-                diskListBox.SelectedItems.Clear();
+                listViewDisk.SelectedItems.Clear();
                 _diskAllControl = false;
             }
         }
@@ -136,7 +146,7 @@ namespace DiskBackupWpfGUI
         {
             if (chbDiskSelectDiskAll.IsChecked == false)
             {
-                _diskAllControl = diskListBox.SelectedItems.Count == diskListBox.Items.Count;
+                _diskAllControl = listViewDisk.SelectedItems.Count == listViewDisk.Items.Count;
                 chbDiskSelectDiskAll.IsChecked = _diskAllControl;
             }
         }
@@ -287,12 +297,15 @@ namespace DiskBackupWpfGUI
         private void btnRestore_Click(object sender, RoutedEventArgs e)
         {
             Restore restore = new Restore();
-            restore.ShowDialog();
+            try
+            {
+                restore.ShowDialog();
+            }
+            catch
+            {
+                MessageBox.Show("Geçmişe dönük restore yapılamaz." + e.ToString());
+            }
         }
 
-        private void maaaaoBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-
-        }
     }
 }

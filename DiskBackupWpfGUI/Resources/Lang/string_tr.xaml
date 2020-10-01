@@ -29,6 +29,7 @@
     <system:String x:Key="close">Kapat</system:String>
     <system:String x:Key="open">Aç</system:String>
     <system:String x:Key="copy">Kopyala</system:String>
+    <system:String x:Key="save">Kaydet</system:String>
     <system:String x:Key="restore">Geri Yükle</system:String>
     <system:String x:Key="restoreAppName">Geri Yükleme Görevi Oluştur</system:String>
     <system:String x:Key="paste">Yapıştır</system:String>
@@ -85,7 +86,7 @@
     <system:String x:Key="periodic">Periyodik</system:String>
     <system:String x:Key="day">Gün</system:String>
     <system:String x:Key="days">Günler</system:String>
-    <system:String x:Key="months">Aylar</system:String>
+    <system:String x:Key="mounths">Aylar</system:String>
     <system:String x:Key="try">Deneme</system:String>
     <system:String x:Key="times">kez</system:String>
     <system:String x:Key="minute">dakika</system:String>
@@ -98,6 +99,18 @@
     <system:String x:Key="friday">Cuma</system:String>
     <system:String x:Key="saturday">Cumartesi</system:String>
     <system:String x:Key="sunday">Pazar</system:String>
+    <system:String x:Key="january">Ocak</system:String>
+    <system:String x:Key="february">Şubat</system:String>
+    <system:String x:Key="march">Mart</system:String>
+    <system:String x:Key="april">Nisan</system:String>
+    <system:String x:Key="may">Mayıs</system:String>
+    <system:String x:Key="june">Haziran</system:String>
+    <system:String x:Key="july">Temmuz</system:String>
+    <system:String x:Key="august">Ağustos</system:String>
+    <system:String x:Key="september">Eylül</system:String>
+    <system:String x:Key="october">Ekim</system:String>
+    <system:String x:Key="november">Kasım</system:String>
+    <system:String x:Key="december">Aralık</system:String>
     <system:String x:Key="backupType">Yedekleme Türü :</system:String>
     <system:String x:Key="BackupType">Yedekleme Türü</system:String>
     <system:String x:Key="schedulerTasks">Zamanlaştırılmış Görevler</system:String>

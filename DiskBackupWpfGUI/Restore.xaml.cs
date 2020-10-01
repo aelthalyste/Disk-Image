@@ -22,6 +22,10 @@ namespace DiskBackupWpfGUI
         public Restore()
         {
             InitializeComponent();
+            //minimum date kontrol etme handle edemedik
+            dtpSetTime.Minimum = DateTime.Now;
+            dtpSetTime.Value = DateTime.Now;
+
         }
 
         private void btnRestoreBack_Click(object sender, RoutedEventArgs e)

@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
         xmlns:local="clr-namespace:DiskBackupWpfGUI"
         mc:Ignorable="d"
         Title="{DynamicResource restore}" WindowStartupLocation="CenterScreen" WindowStyle="None" BorderBrush="#194771" BorderThickness="1" ResizeMode="CanMinimize" HorizontalAlignment="Center" Height="450" Width="800" Icon="Resources/Icon/favicon_mavi.ico">
@@ -34,7 +35,7 @@
 
         <StackPanel Orientation="Horizontal" Grid.Row="1">
             <!--Menü açıklamaları dynmaic olucak-->
-            <Image Margin="10,0,0,0" Source="Resources/Icon/icons8_software_installer_1.ico"></Image>
+            <Image Margin="10,0,0,0" Source="Resources/Icon/icons8_computer_support_4.ico"></Image>
             <StackPanel VerticalAlignment="Center">
                 <TextBlock Name="lblTabHeader" Text="{DynamicResource name}" FontSize="12" VerticalAlignment="Center" Margin="10,0,0,0"/>
                 <TextBlock Name="lblTabContent" Text="{DynamicResource ABANameContent}" FontWeight="Bold" FontSize="12" VerticalAlignment="Center" Margin="10,0,0,0" />
@@ -97,25 +98,17 @@
                         <TextBlock Text="{DynamicResource scheduler}" Margin="0,0,0,20" />
                         <CheckBox Name="chbAutoRun" Margin="0,0,0,15" Content="{DynamicResource autoRun}" Checked="chbAutoRun_Checked" Unchecked="chbAutoRun_Unchecked"/>
                         <StackPanel IsEnabled="False" Name="stackAutoRun" Margin="20,0,0,10">
-
                             <RadioButton Name="rbStartNow" GroupName="rbAutoRun" Margin="0,0,0,10" Content="{DynamicResource startNow}"/>
                             <StackPanel Orientation="Horizontal">
                                 <RadioButton Name="rbSetTime" GroupName="rbAutoRun" Content="{DynamicResource setTime}" VerticalAlignment="Center" Checked="rbSetTime_Checked" Unchecked="rbSetTime_Unchecked"/>
-                                <!-- İSİMLERE BAKALIM-->
                                 <StackPanel Name="stackSetTime" Orientation="Horizontal" IsEnabled="False">
-                                    <TextBox Name="txtSetTime" Text="22:00" Width="60" Height="28" FontSize="13" Margin="79,0,0,0" VerticalContentAlignment="Center" MaxLength="5" />
-                                    <StackPanel Margin="-22,0,0,0" VerticalAlignment="Center">
-                                        <Button Name="btnSetTimeUp" Style="{StaticResource ArrowUpButton}" Content="▲" Width="20" Height="13" FontSize="8" />
-                                        <Button Name="btnSetTimeDown" Style="{StaticResource ArrowDownButton}" Content="▼" Width="20" Height="13" FontSize="8" />
-                                    </StackPanel>
-                                    <ComboBox Name="cbSetTime" Width="280" Margin="20,0,20,0" SelectedIndex="0">
-                                        <ComboBoxItem Content="{DynamicResource dateSelection}"></ComboBoxItem>
-                                    </ComboBox>
+                                    <TextBlock Text="{DynamicResource dateSelection}" VerticalAlignment="Center" Margin="40,0,0,0"/>
+                                    <TextBlock Text=":" VerticalAlignment="Center" Margin="3,0,10,0"/>
+                                    <xctk:DateTimePicker Name="dtpSetTime" Width="220" Height="26" MouseWheelActiveTrigger="Focused" />
                                 </StackPanel>
                             </StackPanel>
                         </StackPanel>
                     </StackPanel>
-
                 </Grid>
             </TabItem>
 

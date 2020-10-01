@@ -1,0 +1,85 @@
+﻿<Window x:Class="DiskBackupWpfGUI.ChooseDayAndMounths"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:DiskBackupWpfGUI"
+        mc:Ignorable="d"
+        Title="ChooseDayAndMounths" Height="220" Width="300" ResizeMode="CanMinimize" WindowStartupLocation="CenterScreen" WindowStyle="None" BorderBrush="#27527B" BorderThickness="10,0,10,10">
+    <Window.Resources>
+        <ResourceDictionary Source="Resources\Lang\string_tr.xaml"/>
+    </Window.Resources>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="30"/>
+            <RowDefinition/>
+            <RowDefinition Height="40"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Panel.ZIndex="1" Orientation="Horizontal" HorizontalAlignment="Center">
+            <Image Source="Resources/Icon/u62.png" Height="35" Width="40" Margin="0,0,5,0"></Image>
+            <TextBlock Name="txtTitleBar" Style="{StaticResource TitleBarText}"></TextBlock>
+        </StackPanel>
+        <StackPanel Name="MyTitleBar" VerticalAlignment="Top" MouseDown="MyTitleBar_MouseDown">
+            <Border Background="#27527B" Height="30">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button Name="btnChooseDayAndMounthsClose" Content="🗙" Margin="0,-2,0,0" Click="btnChooseDayAndMounthsClose_Click" Style="{StaticResource TitleButton}" Width="40" ></Button>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+
+        <Grid Name="gridMounths" Grid.Row="1" Margin="0,20,20,0" Visibility="Hidden">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition/>
+                <ColumnDefinition/>
+            </Grid.ColumnDefinitions>
+            <StackPanel Grid.Column="0" HorizontalAlignment="Center">
+                <CheckBox Content="{DynamicResource january}" Margin="0,0,0,5"/>
+                <CheckBox Content="{DynamicResource february}" Margin="0,0,0,5"/>
+                <CheckBox Content="{DynamicResource march}" Margin="0,0,0,5"/>
+                <CheckBox Content="{DynamicResource april}" Margin="0,0,0,5"/>
+                <CheckBox Content="{DynamicResource may}" Margin="0,0,0,5"/>
+                <CheckBox Content="{DynamicResource june}" Margin="0,0,0,5"/>
+            </StackPanel>
+            <StackPanel Grid.Column="1" HorizontalAlignment="Center">
+                <CheckBox Content="{DynamicResource july}" Margin="0,0,0,5"/>
+                <CheckBox Content="{DynamicResource august}" Margin="0,0,0,5"/>
+                <CheckBox Content="{DynamicResource september}" Margin="0,0,0,5"/>
+                <CheckBox Content="{DynamicResource october}" Margin="0,0,0,5"/>
+                <CheckBox Content="{DynamicResource november}" Margin="0,0,0,5"/>
+                <CheckBox Content="{DynamicResource december}" Margin="0,0,0,5"/>
+            </StackPanel>
+        </Grid>
+        <Grid Name="gridDays" Grid.Row="1" Margin="20,40,20,20" Visibility="Hidden">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition/>
+                <ColumnDefinition/>
+            </Grid.ColumnDefinitions>
+            <StackPanel Grid.Column="0" HorizontalAlignment="Center">
+                <CheckBox Content="{DynamicResource monday}" Margin="0,0,0,5"/>
+                <CheckBox Content="{DynamicResource tuesday}" Margin="0,0,0,5"/>
+                <CheckBox Content="{DynamicResource wednesday}" Margin="0,0,0,5"/>
+                <CheckBox Content="{DynamicResource thursday}" Margin="0,0,0,5"/>
+            </StackPanel>
+            <StackPanel Grid.Column="1" HorizontalAlignment="Center">
+                <CheckBox Content="{DynamicResource friday}" Margin="0,0,0,5"/>
+                <CheckBox Content="{DynamicResource saturday}" Margin="0,0,0,5"/>
+                <CheckBox Content="{DynamicResource sunday}" Margin="0,0,0,5"/>
+            </StackPanel>
+        </Grid>
+        <Button Name="btnSave" ToolTip="{DynamicResource save}" Click="btnSave_Click" Grid.Row="2" Width="80" Height="30" HorizontalAlignment="Center" Style="{StaticResource ImageButton}" Grid.Column="1">
+            <Button.Content>
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="{DynamicResource save}" VerticalAlignment="Center" Margin="5,0"/>
+                    <Image Height="25" Width="25" HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <Image.Style>
+                            <Style TargetType="Image">
+                                <Setter Property="Source" Value="Resources/Icon/icons8_ok_3.ico"/>
+                            </Style>
+                        </Image.Style>
+                    </Image>
+                </StackPanel>
+            </Button.Content>
+        </Button>
+    </Grid>
+</Window>

@@ -145,7 +145,7 @@
                                     </StackPanel>
                                 </Button.Content>
                             </Button>
-                            <ListView Name="diskListBox" MinHeight="370" Margin="5" DisplayMemberPath="Name" AllowDrop="True">
+                            <ListView Name="listViewDisk" MinHeight="370" Margin="5" DisplayMemberPath="Name" AllowDrop="True">
                                 <ListView.View>
                                     <GridView>
                                         <GridViewColumn Width="40">
@@ -288,7 +288,7 @@
                         <RowDefinition Height="0.43*"/>
                     </Grid.RowDefinitions>
                     <DockPanel>
-                        <ListView Name="taskListBox" Grid.ColumnSpan="2" MinHeight="415" Margin="5,0,0,5" DisplayMemberPath="Name" AllowDrop="True" VerticalAlignment="Top">
+                        <ListView Name="listViewTask" Grid.ColumnSpan="2" MinHeight="415" Margin="5,0,0,5" DisplayMemberPath="Name" AllowDrop="True" VerticalAlignment="Top">
                             <ListView.View>
                                 <GridView>
                                     <GridViewColumn Width="65">
@@ -416,10 +416,10 @@
                             </Button>
                             <Button Name="btnTaskOpen" ToolTip="{DynamicResource open}" Click="btnTaskOpen_Click" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5,5,5" Style="{StaticResource ImageButton}" Grid.Column="1">
                                 <Button.Content>
-                                    <Image Height="25" Width="25" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <Image Height="28" Width="28" HorizontalAlignment="Center" VerticalAlignment="Center">
                                         <Image.Style>
                                             <Style TargetType="Image">
-                                                <Setter Property="Source" Value="Resources/Icon/icons8_ok_4.ico"/>
+                                                <Setter Property="Source" Value="Resources/Icon/icons8_ok_3.ico"/>
                                             </Style>
                                         </Image.Style>
                                     </Image>
@@ -460,82 +460,12 @@
                             </Button>
                         </StackPanel>
                     </DockPanel>
-                    <!--<DockPanel Grid.Row="1" Grid.ColumnSpan="2" Margin="5,0" VerticalAlignment="Top">
+                    <DockPanel Grid.Row="1" Grid.ColumnSpan="2" Margin="5,0" VerticalAlignment="Top">
                         <ScrollViewer VerticalScrollBarVisibility="Auto">
                             <StackPanel Name="stackTasksDiskInfo" Orientation="Vertical" HorizontalAlignment="Stretch">
-                                <TextBlock Name="deneme"/>
-
+                                
                             </StackPanel>
                         </ScrollViewer>
-                    </DockPanel>-->
-                    <DockPanel Grid.Row="1" Grid.ColumnSpan="2" Margin="5,0" VerticalAlignment="Top">
-                        <Border Padding="10" BorderBrush="#D7D7D7" Background="Transparent" BorderThickness="1" Height="120" CornerRadius="3">
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="100"/>
-                                    <ColumnDefinition Width="0.45*"/>
-                                    <ColumnDefinition/>
-                                </Grid.ColumnDefinitions>
-                                <StackPanel Margin="10,5,10,5" VerticalAlignment="Center">
-                                    <StackPanel Orientation="Horizontal">
-                                        <Image Source="Resources\Icon\u79.png" Width="25" Height="30" Margin="0,0,5,0"></Image>
-                                        <TextBlock VerticalAlignment="Center" FontWeight="Bold" FontSize="14">Disk 1</TextBlock>
-                                    </StackPanel>
-                                    <TextBlock FontSize="14">MBR</TextBlock>
-                                    <TextBlock FontSize="14">700 GB</TextBlock>
-                                </StackPanel>
-                                <DockPanel Grid.Column="1">
-                                    <Border BorderBrush="#9ACFEA" Background="#F2F2F2" BorderThickness="1" Height="90" CornerRadius="3">
-                                        <Grid>
-                                            <ProgressBar Minimum="0" Maximum="100" Value="75" Height="20" Margin="10,10,10,0" VerticalAlignment="Top">
-                                                <ProgressBar.Background>
-                                                    <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
-                                                        <GradientStop Color="#FF94C683" Offset="0"/>
-                                                        <GradientStop Color="#D8ECD1" Offset="1"/>
-                                                    </LinearGradientBrush>
-                                                </ProgressBar.Background>
-                                                <ProgressBar.Foreground>
-                                                    <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
-                                                        <GradientStop Color="#FF093C59"/>
-                                                        <GradientStop Color="#74AAC8" Offset="1"/>
-                                                    </LinearGradientBrush>
-                                                </ProgressBar.Foreground>
-                                            </ProgressBar>
-                                            <StackPanel Margin="10,0,0,0" VerticalAlignment="Bottom">
-                                                <TextBlock FontWeight="Bold" FontSize="14">System Reserved</TextBlock>
-                                                <TextBlock FontSize="14">NTFS</TextBlock>
-                                                <TextBlock FontSize="14">700 GB, Primary</TextBlock>
-                                            </StackPanel>
-                                        </Grid>
-                                    </Border>
-                                </DockPanel>
-                                <DockPanel Grid.Column="2">
-                                    <Border BorderBrush="#9ACFEA" Background="#F2F2F2" BorderThickness="1" Height="90" CornerRadius="3">
-                                        <Grid>
-                                            <ProgressBar Minimum="0" Maximum="100" Value="40" Height="20" Margin="10,10,10,0" VerticalAlignment="Top">
-                                                <ProgressBar.Background>
-                                                    <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
-                                                        <GradientStop Color="#FF94C683" Offset="0"/>
-                                                        <GradientStop Color="#D8ECD1" Offset="1"/>
-                                                    </LinearGradientBrush>
-                                                </ProgressBar.Background>
-                                                <ProgressBar.Foreground>
-                                                    <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
-                                                        <GradientStop Color="#FF093C59"/>
-                                                        <GradientStop Color="#74AAC8" Offset="1"/>
-                                                    </LinearGradientBrush>
-                                                </ProgressBar.Foreground>
-                                            </ProgressBar>
-                                            <StackPanel Margin="10,0,0,0" VerticalAlignment="Bottom">
-                                                <TextBlock FontWeight="Bold" FontSize="14">Local Volume (C:)</TextBlock>
-                                                <TextBlock FontSize="14">NTFS</TextBlock>
-                                                <TextBlock FontSize="14">700 GB, Primary</TextBlock>
-                                            </StackPanel>
-                                        </Grid>
-                                    </Border>
-                                </DockPanel>
-                            </Grid>
-                        </Border>
                     </DockPanel>
                 </Grid>
             </TabItem>
@@ -661,7 +591,7 @@
                             </ListView>
                         </StackPanel>
                     </DockPanel>
-                    <ListView Grid.Row="1" Grid.ColumnSpan="2" Name="listViewRestoreDisk" MinHeight="150" Margin="5" DisplayMemberPath="Name" AllowDrop="True">
+                    <ListView Name="listViewRestoreDisk" Grid.Row="1" Grid.ColumnSpan="2" MinHeight="150" Margin="5" DisplayMemberPath="Name" AllowDrop="True">
                         <ListView.View>
                             <GridView>
                                 <GridViewColumn Width="40">
@@ -802,7 +732,7 @@
                         <ColumnDefinition Width="50"/>
                     </Grid.ColumnDefinitions>
                     <DockPanel>
-                        <ListView Name="viewBackupsListBox" Height="415" Margin="5,0,0,5" DisplayMemberPath="Name" AllowDrop="True" VerticalAlignment="Top">
+                        <ListView Name="ListViewBackups" Height="415" Margin="5,0,0,5" DisplayMemberPath="Name" AllowDrop="True" VerticalAlignment="Top">
                             <ListView.View>
                                 <GridView>
                                     <GridViewColumn Width="65">
@@ -930,7 +860,7 @@
                         <ColumnDefinition Width="50"/>
                     </Grid.ColumnDefinitions>
                     <DockPanel>
-                        <ListView Name="backupAreaListBox" Height="415" Margin="5,0,0,5" DisplayMemberPath="Name" AllowDrop="True" VerticalAlignment="Top">
+                        <ListView Name="listViewBackupArea" Height="415" Margin="5,0,0,5" DisplayMemberPath="Name" AllowDrop="True" VerticalAlignment="Top">
                             <ListView.View>
                                 <GridView>
                                     <GridViewColumn Width="65">
@@ -1073,7 +1003,7 @@
                         <RowDefinition Height="0.43*"/>
                     </Grid.RowDefinitions>
                     <DockPanel>
-                        <ListView Name="logListBox" MinHeight="415" Margin="5,0,0,5" DisplayMemberPath="Name" AllowDrop="True" VerticalAlignment="Top">
+                        <ListView Name="listViewLog" MinHeight="415" Margin="5,0,0,5" DisplayMemberPath="Name" AllowDrop="True" VerticalAlignment="Top">
                             <ListView.View>
                                 <GridView>
                                     <GridViewColumn Width="85">
@@ -1154,7 +1084,7 @@
                         </StackPanel>
                     </DockPanel>
                     <DockPanel Grid.Row="1" Grid.ColumnSpan="2">
-                        <ListView Name="logDownListBox" MinHeight="165" Margin="5,5,10,5" DisplayMemberPath="Name" AllowDrop="True" VerticalAlignment="Top">
+                        <ListView Name="ListViewLogDown" MinHeight="165" Margin="5,5,10,5" DisplayMemberPath="Name" AllowDrop="True" VerticalAlignment="Top">
                             <ListView.View>
                                 <GridView>
                                     <GridViewColumn Header="{DynamicResource time}" Width="300">
@@ -1393,7 +1323,7 @@
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="{DynamicResource forHelp}" HorizontalAlignment="Left" FontWeight="Normal" Foreground="#A1A1A1" FontSize="12" Margin="5,5,0,0"/>
                             <TextBlock FontSize="12" Margin="5,5,0,0">           
-                                <!--<Hyperlink NavigateUri="mailto:destek@narbulut.com?subject=Yardim&amp;body=Test" RequestNavigate="OnNavigate">
+<!--                                <Hyperlink NavigateUri="mailto:destek@narbulut.com?subject=Yardim&amp;body=Test" RequestNavigate="OnNavigate">
                                     destek@narbulut.com
                                 </Hyperlink>-->
                            </TextBlock>

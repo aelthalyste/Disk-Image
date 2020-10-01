@@ -76,6 +76,9 @@
     <Compile Include="AddBackupArea.xaml.cs">
       <DependentUpon>AddBackupArea.xaml</DependentUpon>
     </Compile>
+    <Compile Include="ChooseDayAndMounths.xaml.cs">
+      <DependentUpon>ChooseDayAndMounths.xaml</DependentUpon>
+    </Compile>
     <Compile Include="DiskInfoPage.xaml.cs">
       <DependentUpon>DiskInfoPage.xaml</DependentUpon>
     </Compile>
@@ -87,6 +90,10 @@
       <DependentUpon>TaskStatus.xaml</DependentUpon>
     </Compile>
     <Page Include="AddBackupArea.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="ChooseDayAndMounths.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -241,6 +248,9 @@
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Resources\Icon\blue_icon.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\Icon\icons8_computer_support_4.ico" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
