@@ -208,4 +208,15 @@
     <system:String x:Key="folderSize2Restore">Geri yüklenecek dosya boyutu</system:String>
     <system:String x:Key="volumeSize2Restore">Geri yüklenecek volume boyutu</system:String>
     <system:String x:Key="areaSize2Restore">Geri yüklenecek alan boyutu</system:String>
+    <system:String x:Key="suggestion">İstek / Öneri</system:String>    <system:String x:Key="bugReport">Hata Bildirimi</system:String>    <system:String x:Key="contactUsContent">Aşağıdaki formu doldurarak sorularınızı bize iletebilirsiniz. En kısa sürede size yanıt verilecektir.</system:String>    <system:String x:Key="report">Şikayet</system:String>
+    <system:String x:Key="volumeSize">Volume Boyutu</system:String>
+    <system:String x:Key="bootablePartition">Boot Edilebilir Bölüm</system:String>
+    <system:String x:Key="OS">İşletim Sistemi</system:String>
+    <system:String x:Key="pcName">Bilgisayar Adı</system:String>
+    <system:String x:Key="ipAddress">Ip Adresi</system:String>
+    <system:String x:Key="driverLetter">Sürücü Harfi</system:String>
+    <system:String x:Key="restoreDiskContent1">Bu alan yedeklediğiniz bölüme göre otomatik olarak seçilmiştir.</system:String>
+    <system:String x:Key="restoreDiskContent2">Farklı bir boot'a ihtiyaç duymadığınız sürece değiştirmeyiniz.</system:String>
+    <system:String x:Key="createBootPartition">Boot Partition Oluştur</system:String>
+    <system:String x:Key="fileInfo">Dosya Bilgileri</system:String>
 </ResourceDictionary>

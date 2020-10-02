@@ -1,6 +1,7 @@
 ﻿using DiskBackupWpfGUI.Model;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -104,6 +105,14 @@ namespace DiskBackupWpfGUI
             CollectionView view = (CollectionView)CollectionViewSource.GetDefaultView(listViewDisk.ItemsSource);
             PropertyGroupDescription groupDescription = new PropertyGroupDescription("DiscName");
             view.GroupDescriptions.Add(groupDescription);
+        }
+
+        private void OnNavigate(object sender, RequestNavigateEventArgs e)
+        {
+            if (e.Uri.IsAbsoluteUri)
+                Process.Start(e.Uri.AbsoluteUri);
+
+            e.Handled = true;
         }
 
         public class Discs
