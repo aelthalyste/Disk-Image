@@ -103,6 +103,10 @@
       <ExceptionHandling>
       </ExceptionHandling>
       <Optimization>MaxSpeed</Optimization>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <WholeProgramOptimization>true</WholeProgramOptimization>
     </ClCompile>
     <Midl>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);UNICODE;_UNICODE</PreprocessorDefinitions>
@@ -115,6 +119,7 @@
     <Link>
       <AdditionalDependencies>%(AdditionalDependencies);fltLib.lib;vssapi.lib</AdditionalDependencies>
       <Profile>true</Profile>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <Lib>
       <TreatLibWarningAsErrors>true</TreatLibWarningAsErrors>

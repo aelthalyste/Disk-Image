@@ -71,7 +71,7 @@ NarLog(const char *str, ...){
 
 }
 
-#define printf(fmt, ...) NarLog(fmt, __VA_ARGS__)
+//#define printf(fmt, ...) NarLog(fmt, __VA_ARGS__)
 
 enum rec_or {
     LEFT = 0,
