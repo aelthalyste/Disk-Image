@@ -5952,14 +5952,15 @@ NarGetFileListFromMFTID(FileEntriesList* EList, UINT64 TargetMFTID, nar_record* 
                                         break;
                                     }
 
-                                    UINT16 EntrySize = *(UINT32*)((char*)IndxCluster + 8);
-                                    if (EntrySize == 16) { 
+                                    UINT16 EntrySize = *(UINT16*)((char*)IndxCluster + 8);
+                                    UINT16 AttrSize = *(UINT16*)((char*)IndxCluster + 10);
+                                    if (EntrySize == 16 || AttrSize == 0) { 
                                         break; 
                                     }
 #define NAR_POSIX 2
 #define NAR_ENTRY_SIZE_OFFSET 8
 #define NAR_TIME_OFFSET 28
-#define NAR_SIZE_OFFSET 60
+#define NAR_SIZE_OFFSET 64
 #define NAR_NAME_LEN_OFFSET 80 
 #define NAR_POSIX_OFFSET 81
 #define NAR_NAME_OFFSET 82
@@ -5972,6 +5973,8 @@ NarGetFileListFromMFTID(FileEntriesList* EList, UINT64 TargetMFTID, nar_record* 
 
                                     UINT8 NameLen = *(UINT8*)((char*)IndxCluster + NAR_NAME_LEN_OFFSET);
                                     UINT64 MagicNumber = *(UINT64*)IndxCluster;
+                                    MagicNumber = MagicNumber & (0x0000FFFFFFFFFFFF);
+
                                     // DO MASK AND TRUNCATE 2 BYTES TO FIND MFTINDEX OF THE FILE
 
 
@@ -5981,6 +5984,10 @@ NarGetFileListFromMFTID(FileEntriesList* EList, UINT64 TargetMFTID, nar_record* 
                                     UINT64 FileSize = *(UINT64*)((char*)IndxCluster + NAR_SIZE_OFFSET);
 
                                     char* NamePtr = ((char*)IndxCluster + NAR_NAME_OFFSET);
+                                    if (*NamePtr == 0) {
+                                        IndxCluster = (char*)IndxCluster + EntrySize;
+                                        continue;
+                                    }
 
                                     memcpy(&EList->Entries[EList->EntryCount].Name[0], NamePtr, NameLen * sizeof(wchar_t));
                                     
@@ -5988,12 +5995,14 @@ NarGetFileListFromMFTID(FileEntriesList* EList, UINT64 TargetMFTID, nar_record* 
 
                                     // push stuff
                                     // represents files in directory
-
-                                    EList->Entries[EList->EntryCount].MFTFileIndex = 0;
+                                    //if (*NamePtr != 0 && TargetMFTID == 221313) {
+                                    //    printf("%S\n", EList->Entries[EList->EntryCount].Name);
+                                    //}
+                                    EList->Entries[EList->EntryCount].MFTFileIndex = MagicNumber;
                                     EList->Entries[EList->EntryCount].Size = FileSize;
                                     EList->Entries[EList->EntryCount].CreationTime = CreationTime;
                                     EList->Entries[EList->EntryCount].LastModifiedTime = ModificationTime;
-
+                                    
                                     EList->EntryCount++;
 
                                     
@@ -6057,12 +6066,16 @@ NarGetFileListFromMFTID(FileEntriesList* EList, UINT64 TargetMFTID, nar_record* 
     else {
         // set file pointer failed
     }
+    
+    //if (1) {
+    //    for (int i = 0; i < EList->EntryCount; i++) {
+    //        if (EList->Entries[i].Size > 0) {
+    //            printf("%S size %I64u %I64u\n", EList->Entries[i].Name, EList->Entries[i].Size, EList->Entries[i].MFTFileIndex);
+    //        }
+    //    }
+    //}
 
-    for (int i = 0; i < EList->EntryCount; i++) {
-        printf("Name : %S, size %I64u\n", EList->Entries[i].Name);
-    }
-
-
+    
 }
 
 
@@ -6083,8 +6096,34 @@ NarInitFileExplorerContext(NarBackupFileExplorerContext* Ctx, char Letter) {
 
     if (VolumeHandle != INVALID_HANDLE_VALUE) {
         
+
+
         Ctx->EList.EntryCount = 0;
         NarGetFileListFromMFTID(&Ctx->EList, 98328, Ctx->MFTRecords, Ctx->MFTRecordsCount, 4096, VolumeHandle);
+
+        Ctx->EList.EntryCount = 0;
+        NarGetFileListFromMFTID(&Ctx->EList, 43085, Ctx->MFTRecords, Ctx->MFTRecordsCount, 4096, VolumeHandle);
+        
+        Ctx->EList.EntryCount = 0;
+        NarGetFileListFromMFTID(&Ctx->EList, 204837, Ctx->MFTRecords, Ctx->MFTRecordsCount, 4096, VolumeHandle);
+        
+        Ctx->EList.EntryCount = 0;
+        NarGetFileListFromMFTID(&Ctx->EList, 221313, Ctx->MFTRecords, Ctx->MFTRecordsCount, 4096, VolumeHandle);
+
+
+        Ctx->EList.EntryCount = 0;
+        NarGetFileListFromMFTID(&Ctx->EList, 98328, Ctx->MFTRecords, Ctx->MFTRecordsCount, 4096, VolumeHandle);
+
+        Ctx->EList.EntryCount = 0;
+        NarGetFileListFromMFTID(&Ctx->EList, 43085, Ctx->MFTRecords, Ctx->MFTRecordsCount, 4096, VolumeHandle);
+
+        Ctx->EList.EntryCount = 0;
+        NarGetFileListFromMFTID(&Ctx->EList, 204837, Ctx->MFTRecords, Ctx->MFTRecordsCount, 4096, VolumeHandle);
+
+        Ctx->EList.EntryCount = 0;
+        NarGetFileListFromMFTID(&Ctx->EList, 221313, Ctx->MFTRecords, Ctx->MFTRecordsCount, 4096, VolumeHandle);
+
+
 
     }
     else {
@@ -6101,9 +6140,28 @@ main(
      CHAR* argv[]
      ) {
 
+    
+    //HANDLE H = CreateFileA("tempfile.txt", GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, CREATE_ALWAYS, 0, 0);
+    //
+    //UINT64 Bs = Megabyte(256);
+    //char *buffer = (char*)malloc(Bs);
+    //
+    //DWORD Hell = 0;
+    //for (int i = 0; i < 20; i++) {
+    //    
+    //    if (WriteFile(H, buffer, Bs, &Hell, 0) && Hell == Bs) {
+    //    
+    //    }
+    //    else {
+    //        printf("failed %i\n");
+    //    }
+    //
+    //}
+    //return 0;
+
     NarBackupFileExplorerContext ctx;
     NarInitFileExplorerContext(&ctx, 'C');
-    getchar();
+
     return 0;
 
     wchar_t B[50];
