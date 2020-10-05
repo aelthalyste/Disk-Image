@@ -78,6 +78,28 @@ namespace DiskBackupWpfGUI
             });
             discsItems.Add(new Discs()
             {
+                Volume = "Local Volume",
+                Letter = 'B',
+                Area = "75 GB",
+                FreeSize = "20 GB",
+                Type = "GPT",
+                FileSystem = "NTFS",
+                Statu = "Sağlıklı",
+                DiscName = "Disk 1"
+            });
+            discsItems.Add(new Discs()
+            {
+                Volume = "Local Volume",
+                Letter = 'B',
+                Area = "75 GB",
+                FreeSize = "20 GB",
+                Type = "GPT",
+                FileSystem = "NTFS",
+                Statu = "Sağlıklı",
+                DiscName = "Disk 1"
+            });
+            discsItems.Add(new Discs()
+            {
                 Volume = "System Reserverd",
                 Letter = 'C',
                 Area = "2 GB",
@@ -367,5 +389,55 @@ namespace DiskBackupWpfGUI
             }
         }
 
+        private void checkBootPartition_Checked(object sender, RoutedEventArgs e)
+        {
+            stackBootCheck.IsEnabled = true;
+        }
+
+        private void checkBootPartition_Unchecked(object sender, RoutedEventArgs e)
+        {
+            stackBootCheck.IsEnabled = false;
+            rbBootGPT.IsChecked = true;
+            rbBootGPT.IsChecked = false;
+        }
+
+        private static T FindParent<T>(DependencyObject dependencyObject) where T : DependencyObject
+        {
+            var parent = VisualTreeHelper.GetParent(dependencyObject);
+            if (parent == null)
+                return null;
+
+            var parentT = parent as T;
+            return parentT ?? FindParent<T>(parent);
+        }
+
+        private void HeaderCheckBox_Checked(object sender, RoutedEventArgs e)
+        {
+            var checkBox = e.OriginalSource as CheckBox;
+            var expander = FindParent<Expander>(checkBox);
+            var headerCheckBox = expander.FindName("HeaderCheckBox") as CheckBox;
+
+            foreach (Discs item in listViewDisk.Items)
+            {
+                if (item.DiscName.Equals(headerCheckBox.Tag.ToString()))
+                {
+                    listViewDisk.SelectedItems.Add(item);
+                }
+            }
+        }
+
+        private void HeaderCheckBox_Unchecked(object sender, RoutedEventArgs e)
+        {
+            var checkBox = e.OriginalSource as CheckBox;
+            var expander = FindParent<Expander>(checkBox);
+            var headerCheckBox = expander.FindName("HeaderCheckBox") as CheckBox;
+            foreach (Discs item in listViewDisk.Items)
+            {
+                if (item.DiscName.Equals(headerCheckBox.Tag.ToString()))
+                {
+                    listViewDisk.SelectedItems.Remove(item);
+                }
+            }
+        }
     }
 }

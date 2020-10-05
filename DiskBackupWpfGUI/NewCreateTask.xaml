@@ -113,11 +113,7 @@
                     <StackPanel Margin="10,10,20,10">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="{DynamicResource space2Backup}" VerticalAlignment="Center" />
-                            <TextBox Name="txtTarget" Width="400" Height="26" Margin="25,0,0,0" VerticalContentAlignment="Center" Padding="0,0,22,0" />
-                            <StackPanel Margin="-22,0,0,0" VerticalAlignment="Center">
-                                <Button Name="btnTargetUp" Style="{StaticResource ArrowUpButton}" Content="▲" Width="20" Height="12" FontSize="8"/>
-                                <Button Name="btnTargetDown" Style="{StaticResource ArrowDownButton}" Content="▼" Width="20" Height="12" FontSize="8"/>
-                            </StackPanel>
+                            <ComboBox Name="cbTargetBackupArea" Width="350"  Height="26" Margin="25,0,0,0"/>
                             <Button Name="btnTargetAdd" ToolTip="{DynamicResource add}" Click="btnTargetAdd_Click" HorizontalAlignment="Right" Margin="5,4,0,4" Style="{StaticResource ImageButton}" Width="32" Height="32" Grid.Column="1">
                                 <Button.Content>
                                     <Image Height="22">

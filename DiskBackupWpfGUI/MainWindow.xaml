@@ -215,7 +215,7 @@
                                 </ListView.View>
                                 <!-- Gruplama işlemi-->
                                 <ListView.GroupStyle>
-                                    <GroupStyle>
+                                    <GroupStyle >
                                         <GroupStyle.ContainerStyle>
                                             <Style TargetType="{x:Type GroupItem}">
                                                 <Setter Property="Template">
@@ -223,14 +223,15 @@
                                                         <ControlTemplate>
                                                             <Expander IsExpanded="True" Margin="5,10,0,0">
                                                                 <Expander.Header>
-                                                                    <WrapPanel Orientation="Horizontal" Margin="15,0,0,0">
-                                                                        <TextBlock Text="{Binding Name}" FontWeight="Bold" FontSize="18" VerticalAlignment="Center" />
+                                                                    <WrapPanel Orientation="Horizontal" >
+                                                                        <CheckBox Name="HeaderCheckBox" Checked="HeaderCheckBox_Checked" Unchecked="HeaderCheckBox_Unchecked" Tag="{Binding Name}" Margin="5,5,5,0" />
+                                                                        <TextBlock Text="{Binding Name}" FontWeight="Bold" FontSize="18" VerticalAlignment="Center"/>
                                                                         <TextBlock Text="{Binding ItemCount}" FontSize="14" Foreground="Silver" Margin="10,0,0,0" VerticalAlignment="Center" />
                                                                         <TextBlock Text="{DynamicResource items}" FontSize="14" Foreground="Silver" Margin="5,0,0,0" VerticalAlignment="Center" />
                                                                         <Rectangle Margin="10,0,0,0" Width="900" Stroke="Silver" StrokeThickness="1" VerticalAlignment="Center"/>
                                                                     </WrapPanel>
                                                                 </Expander.Header>
-                                                                <ItemsPresenter />
+                                                                <ItemsPresenter/>
                                                             </Expander>
                                                         </ControlTemplate>
                                                     </Setter.Value>
@@ -299,6 +300,13 @@
                                             <DataTemplate>
                                                 <CheckBox IsChecked="{Binding Path=IsSelected, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ListViewItem}}}"
                                                           HorizontalAlignment="Center"/>
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                    <GridViewColumn Header="{DynamicResource type}" Width="45">
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding TaskType}" TextAlignment="Left"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
@@ -753,9 +761,12 @@
                             <TextBlock Text="{DynamicResource restoreDiskContent1}" TextWrapping="Wrap"/>
                             <TextBlock Text="{DynamicResource restoreDiskContent2}" TextWrapping="Wrap"/>
 
-                            <CheckBox Margin="0,25,0,5" Content="{DynamicResource createBootPartition}"/>
-                            <CheckBox Content="MBR" Margin="0,0,0,5"/>
-                            <CheckBox Content="GPT" Margin="0,0,0,5"/>
+                            <CheckBox Name="checkBootPartition" Checked="checkBootPartition_Checked" Unchecked="checkBootPartition_Unchecked" Margin="0,25,0,5" Content="{DynamicResource createBootPartition}"/>
+                            <StackPanel Name="stackBootCheck" Margin="20,0,0,5" IsEnabled="False">
+                                <RadioButton Name="rbBootMBR" GroupName="BootPartion" Content="MBR"/>
+                                <RadioButton Name="rbBootGPT" GroupName="BootPartion" Content="GPT"/>
+                            </StackPanel>
+                            
                         </StackPanel>
                     </StackPanel>
                 </Grid>
@@ -1142,14 +1153,7 @@
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
-                                    <GridViewColumn Header="{DynamicResource statusCode}" Width="300" >
-                                        <GridViewColumn.CellTemplate>
-                                            <DataTemplate>
-                                                <TextBlock Text="{Binding TotalLength}" TextAlignment="Center"/>
-                                            </DataTemplate>
-                                        </GridViewColumn.CellTemplate>
-                                    </GridViewColumn>
-                                    <GridViewColumn Header="{DynamicResource detail}" Width="500" >
+                                    <GridViewColumn Header="{DynamicResource detail}" Width="750" >
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
                                                 <TextBlock Text="{Binding VersionLength}" TextAlignment="Center"/>
