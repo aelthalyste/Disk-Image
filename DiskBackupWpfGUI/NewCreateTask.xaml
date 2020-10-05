@@ -342,7 +342,7 @@
                 </Grid>
             </TabItem>
 
-            <TabItem Name="abstractTab" IsEnabled="False">
+            <TabItem Name="summaryTab" IsEnabled="False">
                 <TabItem.Header>
                     <StackPanel Height="35" Width="130" Orientation="Horizontal">
                         <TextBlock Text="{DynamicResource summary}" Margin="5,0" VerticalAlignment="Center" Style="{StaticResource NCTTabItemText}"/>

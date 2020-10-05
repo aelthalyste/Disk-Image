@@ -425,7 +425,7 @@
                                     </Image>
                                 </Button.Content>
                             </Button>
-                            <Button Name="btnTaskCopy" ToolTip="{DynamicResource copy}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5,5,5" Style="{StaticResource ImageButton}" Grid.Column="1">
+                            <Button Name="btnTaskCopy" ToolTip="{DynamicResource copy}" Click="btnTaskCopy_Click" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5,5,5" Style="{StaticResource ImageButton}" Grid.Column="1">
                                 <Button.Content>
                                     <Image Height="25" Width="25" HorizontalAlignment="Center" VerticalAlignment="Center">
                                         <Image.Style>
@@ -761,7 +761,7 @@
                 </Grid>
             </TabItem>
 
-            <TabItem Name="viexBackupsTab">
+            <TabItem Name="viewBackupsTab">
                 <TabItem.Header>
                     <StackPanel Height="48" Width="175" Orientation="Horizontal">
                         <Image Width="30">
@@ -862,7 +862,7 @@
                     </DockPanel>
                     <DockPanel Grid.Column="1" VerticalAlignment="Top" Height="415" Background="#F2F2F2">
                         <StackPanel Margin="0,0,5,5">
-                            <Button Name="btnFilesBrowse" ToolTip="{DynamicResource browse}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,25,5,5" Style="{StaticResource ImageButton}" Grid.Column="1">
+                            <Button Name="btnFilesBrowse" ToolTip="{DynamicResource browse}" Click="btnFilesBrowse_Click" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,25,5,5" Style="{StaticResource ImageButton}" Grid.Column="1">
                                 <Button.Content>
                                     <Image Height="26" Width="26" HorizontalAlignment="Center" VerticalAlignment="Center">
                                         <Image.Style>

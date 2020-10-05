@@ -1,15 +1,17 @@
-﻿<Window x:Class="DiskBackupWpfGUI.TaskStatus"
+﻿<Window x:Class="DiskBackupWpfGUI.Statuses"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:DiskBackupWpfGUI"
         mc:Ignorable="d"
-        Title="TaskStatus" Height="500" Width="950" WindowStartupLocation="CenterScreen" ResizeMode="CanMinimize" BorderBrush="#194771" BorderThickness="1" WindowStyle="None">
+        Title="Statuses" Height="500" Width="950" WindowStartupLocation="CenterScreen" ResizeMode="CanMinimize" BorderBrush="#194771" BorderThickness="1" WindowStyle="None">
     <Window.Resources>
         <ResourceDictionary Source="Resources\Lang\string_tr.xaml"/>
     </Window.Resources>
-    <Grid Background="#F2F2F2">
+
+    <Grid
+        Background="#F2F2F2">
         <Grid.RowDefinitions>
             <RowDefinition Height="30"/>
             <RowDefinition Height="255"/>
@@ -21,7 +23,7 @@
             <ColumnDefinition />
         </Grid.ColumnDefinitions>
 
-        <TextBlock Text="{DynamicResource taskStatus}" Style="{StaticResource TitleBarText}" Panel.ZIndex="1" Grid.Row="0" Grid.ColumnSpan="2" ></TextBlock>
+        <TextBlock Name="txtTitleBar" Style="{StaticResource TitleBarText}" Panel.ZIndex="1" Grid.Row="0" Grid.ColumnSpan="2" ></TextBlock>
 
         <StackPanel Name="MyTitleBar" VerticalAlignment="Top" MouseDown="MyTitleBar_MouseDown" Grid.Row="0" Grid.ColumnSpan="2">
             <Border Background="#27527B" Height="30">
@@ -42,6 +44,16 @@
                     </Grid.ColumnDefinitions>
                     <Rectangle Grid.Column="1" VerticalAlignment="Center" Stroke="#B5ADAD" StrokeThickness="2" HorizontalAlignment="Right" Height="250"/>
                     <StackPanel Width="230" Grid.Column="0">
+                        <StackPanel Name="stackLocalTaskName" Orientation="Horizontal" Visibility="Collapsed">
+                            <Image Height="25" Margin="8,0">
+                                <Image.Style>
+                                    <Style TargetType="Image">
+                                        <Setter Property="Source" Value="Resources/Icon/u58.png" />
+                                    </Style>
+                                </Image.Style>
+                            </Image>
+                            <TextBlock Text="{DynamicResource taskName}" VerticalAlignment="Center"/>
+                        </StackPanel>
                         <StackPanel Orientation="Horizontal">
                             <Image Height="20" Margin="10,0">
                                 <Image.Style>
@@ -92,7 +104,7 @@
                             </Image>
                             <TextBlock Text="{DynamicResource instantDataTransfer}" VerticalAlignment="Center"></TextBlock>
                         </StackPanel>
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                        <StackPanel Name="stackLocalZip" Orientation="Horizontal" Margin="0,0,0,4">
                             <Image Height="20" Margin="10,0">
                                 <Image.Style>
                                     <Style TargetType="Image">
@@ -114,12 +126,13 @@
                         </StackPanel>
                     </StackPanel>
                     <StackPanel Width="244" Grid.Column="1">
+                        <TextBlock Name="txtLocalTaskName" Height="20" Margin="0,2,0,4" Visibility="Collapsed">C'yi restore et</TextBlock>
                         <TextBlock Height="20" Margin="0,0,0,4">\\10.0.0.145\backup1.nb</TextBlock>
                         <TextBlock Height="20" Margin="0,0,0,4">01:20</TextBlock>
                         <TextBlock Height="20" Margin="0,0,0,4">74 MB/s</TextBlock>
                         <TextBlock Height="20" Margin="0,0,0,4">12 GB</TextBlock>
                         <TextBlock Height="22" Margin="0,0,0,4">01:20</TextBlock>
-                        <TextBlock Height="20" Margin="0,0,0,4">Standart</TextBlock>
+                        <TextBlock Name="txtLocalZip" Height="20" Margin="0,0,0,4">Standart</TextBlock>
                         <TextBlock Height="22" Margin="0,0,0,4">C:</TextBlock>
                     </StackPanel>
                 </Grid>
@@ -135,6 +148,16 @@
                         <ColumnDefinition/>
                     </Grid.ColumnDefinitions>
                     <StackPanel Width="230" Grid.Column="0">
+                        <StackPanel Name="stackCloudTaskName" Orientation="Horizontal" Visibility="Collapsed">
+                            <Image Height="25" Margin="8,0">
+                                <Image.Style>
+                                    <Style TargetType="Image">
+                                        <Setter Property="Source" Value="Resources/Icon/u58.png" />
+                                    </Style>
+                                </Image.Style>
+                            </Image>
+                            <TextBlock Text="{DynamicResource taskName}" VerticalAlignment="Center"/>
+                        </StackPanel>
                         <StackPanel Orientation="Horizontal">
                             <Image Height="20" Margin="10,0">
                                 <Image.Style>
@@ -186,7 +209,7 @@
                             </Image>
                             <TextBlock Text="{DynamicResource instantDataTransfer}" VerticalAlignment="Center"></TextBlock>
                         </StackPanel>
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                        <StackPanel Name="stackCloudZip" Orientation="Horizontal" Margin="0,0,0,4">
                             <Image Height="20" Margin="10,0">
                                 <Image.Style>
                                     <Style TargetType="Image">
@@ -211,12 +234,13 @@
                 </Grid>
                 <StackPanel>
                     <StackPanel Width="244" Grid.Column="1">
+                        <TextBlock Name="txtCloudTaskName" Height="20" Margin="0,2,0,4" Visibility="Collapsed">C'yi restore et</TextBlock>
                         <TextBlock Height="20" Margin="0,0,0,4">\\10.0.0.145\backup1.nb</TextBlock>
                         <TextBlock Height="20" Margin="0,0,0,4">01:20</TextBlock>
                         <TextBlock Height="20" Margin="0,0,0,4">74 MB/s</TextBlock>
                         <TextBlock Height="20" Margin="0,0,0,4">12 GB</TextBlock>
                         <TextBlock Height="22" Margin="0,0,0,4">01:20</TextBlock>
-                        <TextBlock Height="20" Margin="0,0,0,4">Standart</TextBlock>
+                        <TextBlock Name="txtCloudZip" Height="20" Margin="0,0,0,4">Standart</TextBlock>
                         <TextBlock Height="22" Margin="0,0,0,4">C:</TextBlock>
                     </StackPanel>
                 </StackPanel>
@@ -226,16 +250,19 @@
 
             <TextBlock Text="{DynamicResource processedTotal}" Margin="30,8"/>
 
-            <ProgressBar Minimum="0" Name="asd" Maximum="100" Value="50" Height="30" Margin="30,0" >
+            <ProgressBar Minimum="0" Maximum="100" Value="50" Height="30" Margin="30,0">
                 <ProgressBar.Foreground>
                     <LinearGradientBrush EndPoint="0,1" StartPoint="1,0">
-                        <GradientStop Color="#FF03971E" Offset="0.2"/>
-                        <GradientStop Color="#FFBFF3AE" Offset="1"/>
+                        <GradientStop Color="#093C59" Offset="0.2"/>
+                        <GradientStop Color="#B9DEF0" Offset="1"/>
                     </LinearGradientBrush>
                 </ProgressBar.Foreground>
             </ProgressBar>
-            <TextBlock Text="50%" FontSize="20" Margin="0,-30,0,0" VerticalAlignment="Center" HorizontalAlignment="Center"/>
-            <TextBlock Text="{DynamicResource processedTotal}" Margin="30,8"/>
+            <TextBlock Text="50%" FontSize="20" Margin="0,-30,0,0" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="White" FontWeight="Bold"/>
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="{DynamicResource processedTotal}" Margin="30,8,8,0"/>
+                <TextBlock Text="C:" Margin="5,8"/>
+            </StackPanel>
             <ProgressBar Minimum="0" Maximum="100" Value="60" Height="30" Margin="30,0">
                 <ProgressBar.Foreground>
                     <LinearGradientBrush EndPoint="0,1" StartPoint="1,0">
@@ -247,8 +274,15 @@
             <TextBlock Text="60%" FontSize="20" Margin="0,-30,0,0" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="White" FontWeight="Bold"/>
             <TextBlock Text="{DynamicResource narTransfer}" Margin="30,8"/>
             <ProgressBar Minimum="0" Maximum="100" Value="70" Height="30" Margin="30,0">
+                <ProgressBar.Foreground>
+                    <LinearGradientBrush EndPoint="0,1" StartPoint="1,0">
+                        <GradientStop Color="#093C59" Offset="0.2"/>
+                        <GradientStop Color="#B9DEF0" Offset="1"/>
+                    </LinearGradientBrush>
+                </ProgressBar.Foreground>
             </ProgressBar>
-            <TextBlock Text="70%" FontSize="20" Margin="0,-30,0,0" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+            <TextBlock Text="70%" FontSize="20" Margin="0,-30,0,0" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="White" FontWeight="Bold"/>
         </StackPanel>
+
     </Grid>
 </Window>
