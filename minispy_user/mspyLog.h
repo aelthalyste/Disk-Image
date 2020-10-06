@@ -751,7 +751,7 @@ NarGetBackupsInDirectory(const wchar_t* Directory, backup_metadata* B, int Buffe
 #define NAR_NAME_LEN_OFFSET 80 
 #define NAR_POSIX_OFFSET 81
 #define NAR_NAME_OFFSET 82
-
+#define NAR_ROOT_MFT_ID 5
 
 // could be either file or dir
 struct NarFileEntry {

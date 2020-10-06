@@ -6285,6 +6285,152 @@ NarInitFileExplorerContext(NarBackupFileExplorerContext* Ctx, char Letter) {
 
 }
 
+struct NarFEVolumeHandle{
+    HANDLE VolumeHandle;
+    INT32 Count;
+    nar_record Records[];    
+};
+
+inline BOOLEAN 
+NarInitFEVolumeHandle(NarFEVolumeHandle *FEV, INT32 Version, char VolumeLetter, wchar_t *RootDir) {
+
+    if (!FEV) return FALSE;
+
+    wchar_t Path[1024];
+    BOOLEAN Result = FALSE;
+
+    memset(Path, 0, sizeof(Path))
+
+    if(RootDir){
+        wcscat(Path, RootDir);
+        wcscat(Path, "\\");
+    }
+
+    BOOLEAN Result = TRUE;
+    std::wstring BinaryFileName = GenerateBinaryFileName((wchar_t)Letter, Version);
+
+    wcscat(Path, BinaryFileName.c_str());
+    printf("Target file path to initialize file explorer volume handle : %s\n", Path);
+
+    FEV.VolumeHandle = CreateFileW(Path, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, 0, 0);
+    
+    if(FEV.VolumeHandle != INVALID_HANDLE_VALUE){
+        
+        // TODO : read records from metadata 
+
+        Result = TRUE;
+
+    }  
+    else{
+        printf("Couldnt open file %s for FE Volume handle\n", Path);
+        DisplayError(GetLastError());
+    }
+
+    return Result;
+}
+
+inline void 
+NarFreeFEVolumeHandle(NarFEVolumeHandle *FEV) {
+    CloseHandle(FEV.VolumeHandle);
+}
+
+inline BOOLEAN
+NarFESetFilePointer(NarFEVolumeHandle FEV, INT64 NewFilePointer){
+
+    if(FEV.VolumeHandle == INVALID_HANDLE_VALUE) return FALSE;
+
+    BOOLEAN Result = FALSE;
+
+
+
+
+}
+
+
+
+inline BOOLEAN
+NarReadBackupAsVolume(nar_record *NarRead) {
+    
+}
+
+// input MUST be sorted
+// Finds point Offset in relative to Records structure, useful when converting absolue volume offsets to our binary backup data offsets.
+// returns negative value if fails to find, 
+inline 
+INT64 FindPointOffsetInRecords(nar_record *Records, INT32 Len, INT64 Offset){
+
+    if(!Records) return FALSE;
+
+    INT64 Result = 0;
+    BOOLEAN Found = FALSE;
+    
+    for(int i = 0; i < Len; i++){
+        
+        if(Offset <= (INT64)Records[i].StartPos + (INT64)Records[i].Len){
+
+            INT64 Diff = (Offset - (INT64)Records[i].StartPos);
+            if (Diff < 0) {
+                // Exceeded offset, this means we cant relate our Offset and Records data, return failcode
+                Found = FALSE;
+            }
+            else {
+                Result += Diff;
+                Found = TRUE;
+            }
+
+            break;
+
+        }
+        
+
+        Result += Records[i].Len;
+
+    }
+
+
+    return (Found ? Result : -1);
+}
+
+
+
+void
+TestFindPointOffsetInRecords(){
+
+
+    nar_record* Recs = new nar_record[100];
+    memset(Recs, 0, sizeof(nar_record) * 100);
+
+    Recs[0] = {0, 100};
+    Recs[1] = {150, 200};
+    Recs[2] = {520, 150};
+    Recs[3] = {1200, 55};
+    Recs[4] = {1300, 100};
+    Recs[5] = {1500, 75};
+    Recs[6] = {1700, 420};
+    Recs[7] = {5200, 500};
+
+    INT64 Answer = FindPointOffsetInRecords(Recs, 8, 1350);
+    printf("HELL ==== %I64d\n", Answer);
+
+    Answer = FindPointOffsetInRecords(Recs, 8, 1000);
+    printf("HELL ==== %I64d\n", Answer);
+
+    Answer = FindPointOffsetInRecords(Recs, 8, 70);
+    printf("HELL ==== %I64d\n", Answer);
+
+    Answer = FindPointOffsetInRecords(Recs, 8, 5400);
+    printf("HELL ==== %I64d\n", Answer);
+
+    Answer = FindPointOffsetInRecords(Recs, 8, 2000);
+    printf("HELL ==== %I64d\n", Answer);
+
+    Answer = FindPointOffsetInRecords(Recs, 8, 3000);
+    printf("HELL ==== %I64d\n", Answer);
+
+
+    return;
+
+}
 
 int
 main(
@@ -6292,6 +6438,8 @@ main(
      CHAR* argv[]
      ) {
 
+    TestFindPointOffsetInRecords();
+    return 0;
     
     //HANDLE H = CreateFileA("tempfile.txt", GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, CREATE_ALWAYS, 0, 0);
     //
