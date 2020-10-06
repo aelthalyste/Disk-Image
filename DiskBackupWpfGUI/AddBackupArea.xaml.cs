@@ -25,20 +25,15 @@ namespace DiskBackupWpfGUI
             InitializeComponent();
         }
 
-        #region titleBar
-        private void btnCreateTaskCancel_Click(object sender, RoutedEventArgs e)
-        {
-            Close();
-        }
-
-        private void btnNewCreateTaskClose_Click(object sender, RoutedEventArgs e)
-        {
-            Close();
-        }
-
-        private void btnNewCreateTaskMin_Click(object sender, RoutedEventArgs e)
+        #region Title Bar
+        private void btnABAMin_Click(object sender, RoutedEventArgs e)
         {
             WindowState = WindowState.Minimized;
+        }
+
+        private void btnABAClose_Click(object sender, RoutedEventArgs e)
+        {
+            Close();
         }
 
         private void MyTitleBar_MouseDown(object sender, MouseButtonEventArgs e)
@@ -49,6 +44,44 @@ namespace DiskBackupWpfGUI
             }
         }
         #endregion
+
+        #region Next-Back-Ok-Cancel Button
+        private void btnBackupAreaBack_Click(object sender, RoutedEventArgs e)
+        {
+            if (ABATabControl.SelectedIndex != 0)
+            {
+                ABATabControl.SelectedIndex -= 1;
+            }
+        }
+
+        private void btnBackupAreaNext_Click(object sender, RoutedEventArgs e)
+        {
+            if (ABATabControl.SelectedIndex != 3)
+            {
+                ABATabControl.SelectedIndex += 1;
+            }
+        }
+
+        private void btnBackupAreaOk_Click(object sender, RoutedEventArgs e)
+        {
+            //kaydet
+        }
+
+        private void btnBackupAreaCancel_Click(object sender, RoutedEventArgs e)
+        {
+            Close();
+        }
+        #endregion
+
+        private void rbLocalDisc_Checked(object sender, RoutedEventArgs e)
+        {
+            ShowSettings = false;
+        }
+
+        private void rbNAS_Checked(object sender, RoutedEventArgs e)
+        {
+            ShowSettings = true;
+        }
 
         private void ABATabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
@@ -84,33 +117,6 @@ namespace DiskBackupWpfGUI
             }
         }
 
-        #region Next-Back-Ok-Cancel Button
-        private void btnBackupAreaBack_Click(object sender, RoutedEventArgs e)
-        {
-            if (ABATabControl.SelectedIndex != 0)
-            {
-                ABATabControl.SelectedIndex -= 1;
-            }
-        }
-
-        private void btnBackupAreaNext_Click(object sender, RoutedEventArgs e)
-        {
-            if (ABATabControl.SelectedIndex != 3)
-            {
-                ABATabControl.SelectedIndex += 1;
-            }
-        }
-
-        private void btnBackupAreaOk_Click(object sender, RoutedEventArgs e)
-        {
-            //kaydet
-        }
-
-        private void btnBackupAreaCancel_Click(object sender, RoutedEventArgs e)
-        {
-            Close();
-        }
-        #endregion
 
         private void btnSettingsNASFolder_Click(object sender, RoutedEventArgs e)
         {
@@ -119,31 +125,12 @@ namespace DiskBackupWpfGUI
             txtSettingsNASFolderPath.Text = dialog.SelectedPath;
         }
 
-        private void rbLocalDisc_Checked(object sender, RoutedEventArgs e)
-        {
-            ShowSettings = false;
-        }
-
-        private void rbNAS_Checked(object sender, RoutedEventArgs e)
-        {
-            ShowSettings = true;
-        }
-
-        private void btnSettingsFolder_Click(object sender, RoutedEventArgs e)
+        private void btnSettingsLocalFolder_Click(object sender, RoutedEventArgs e)
         {
             var dialog = new System.Windows.Forms.FolderBrowserDialog();
             System.Windows.Forms.DialogResult result = dialog.ShowDialog();
             txtSettingsNASFolderPath.Text = dialog.SelectedPath;
         }
 
-        private void btnABAMin_Click(object sender, RoutedEventArgs e)
-        {
-            WindowState = WindowState.Minimized;
-        }
-
-        private void btnABAClose_Click(object sender, RoutedEventArgs e)
-        {
-            Close();
-        }
     }
 }

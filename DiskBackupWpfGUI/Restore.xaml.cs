@@ -28,6 +28,27 @@ namespace DiskBackupWpfGUI
 
         }
 
+        #region Title Bar
+        private void btnRestoreClose_Click(object sender, RoutedEventArgs e)
+        {
+            Close();
+        }
+
+        private void btnRestoreMin_Click(object sender, RoutedEventArgs e)
+        {
+            WindowState = WindowState.Minimized;
+        }
+
+        private void MyTitleBar_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            if (e.ChangedButton == MouseButton.Left)
+            {
+                DragMove();
+            }
+        }
+        #endregion
+
+        #region Next-Back-Ok-Cancel Button
         private void btnRestoreBack_Click(object sender, RoutedEventArgs e)
         {
             if (RTabControl.SelectedIndex != 0)
@@ -53,24 +74,7 @@ namespace DiskBackupWpfGUI
         {
             Close();
         }
-
-        private void btnRestoreClose_Click(object sender, RoutedEventArgs e)
-        {
-            Close();
-        }
-
-        private void btnRestoreMin_Click(object sender, RoutedEventArgs e)
-        {
-            WindowState = WindowState.Minimized;
-        }
-
-        private void MyTitleBar_MouseDown(object sender, MouseButtonEventArgs e)
-        {
-            if (e.ChangedButton == MouseButton.Left)
-            {
-                DragMove();
-            }
-        }
+        #endregion
 
         private void RTabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {

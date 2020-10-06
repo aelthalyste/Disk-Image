@@ -127,6 +127,8 @@
     <system:String x:Key="add">Ekle</system:String>
     <system:String x:Key="dateSelection">Tarih Seçimi</system:String>
     <system:String x:Key="taskStatus">Görev Durumu</system:String>
+    <system:String x:Key="backupStatus">Yedekleme Durumu</system:String>
+    <system:String x:Key="restoreStatus">Geri Yükleme Durumu</system:String>
     <system:String x:Key="localArea">Yerel Alan</system:String>
     <system:String x:Key="localDisc">Yerel Disk</system:String>
     <system:String x:Key="sendingToCloud">Bulut'a Gönderim</system:String>
@@ -208,7 +210,10 @@
     <system:String x:Key="folderSize2Restore">Geri yüklenecek dosya boyutu</system:String>
     <system:String x:Key="volumeSize2Restore">Geri yüklenecek volume boyutu</system:String>
     <system:String x:Key="areaSize2Restore">Geri yüklenecek alan boyutu</system:String>
-    <system:String x:Key="suggestion">İstek / Öneri</system:String>    <system:String x:Key="bugReport">Hata Bildirimi</system:String>    <system:String x:Key="contactUsContent">Aşağıdaki formu doldurarak sorularınızı bize iletebilirsiniz. En kısa sürede size yanıt verilecektir.</system:String>    <system:String x:Key="report">Şikayet</system:String>
+    <system:String x:Key="suggestion">İstek / Öneri</system:String>
+    <system:String x:Key="bugReport">Hata Bildirimi</system:String>
+    <system:String x:Key="contactUsContent">Aşağıdaki formu doldurarak sorularınızı bize iletebilirsiniz. En kısa sürede size yanıt verilecektir.</system:String>
+    <system:String x:Key="report">Şikayet</system:String>
     <system:String x:Key="volumeSize">Volume Boyutu</system:String>
     <system:String x:Key="bootablePartition">Boot Edilebilir Bölüm</system:String>
     <system:String x:Key="OS">İşletim Sistemi</system:String>

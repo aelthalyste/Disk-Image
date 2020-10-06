@@ -78,6 +78,28 @@ namespace DiskBackupWpfGUI
             });
             discsItems.Add(new Discs()
             {
+                Volume = "Local Volume",
+                Letter = 'B',
+                Area = "75 GB",
+                FreeSize = "20 GB",
+                Type = "GPT",
+                FileSystem = "NTFS",
+                Statu = "Sağlıklı",
+                DiscName = "Disk 1"
+            });
+            discsItems.Add(new Discs()
+            {
+                Volume = "Local Volume",
+                Letter = 'B',
+                Area = "75 GB",
+                FreeSize = "20 GB",
+                Type = "GPT",
+                FileSystem = "NTFS",
+                Statu = "Sağlıklı",
+                DiscName = "Disk 1"
+            });
+            discsItems.Add(new Discs()
+            {
                 Volume = "System Reserverd",
                 Letter = 'C',
                 Area = "2 GB",
@@ -127,9 +149,35 @@ namespace DiskBackupWpfGUI
             public string DiscName { get; set; }
         }
 
-        #region Checbox Select Operations
+        #region Title Bar
+        private void btnMainClose_Click(object sender, RoutedEventArgs e)
+        {
+            Close();
+        }
 
-        //Disk CheckBox 
+        private void btnMainMin_Click(object sender, RoutedEventArgs e)
+        {
+            WindowState = WindowState.Minimized;
+        }
+
+        private void MyTitleBar_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            if (e.ChangedButton == MouseButton.Left)
+            {
+                DragMove();
+            }
+        }
+        #endregion
+
+        #region Tasks Create Tab
+
+        private void btnCreateTask_Click(object sender, RoutedEventArgs e)
+        {
+            NewCreateTask newCreateTask = new NewCreateTask();
+            newCreateTask.ShowDialog();
+        }
+
+        #region Checkbox Operations
         private void chbDiskSelectDiskAll_Checked(object sender, RoutedEventArgs e)
         {
             if (!_diskAllControl)
@@ -165,8 +213,19 @@ namespace DiskBackupWpfGUI
             _diskAllControl = false;
             chbDiskSelectDiskAll.IsChecked = false;
         }
+        #endregion
 
-        //Restore Disk CheckBox 
+
+
+        #endregion
+
+        #region Tasks Tab
+
+        #endregion
+
+        #region Restore Tab
+
+        #region Checkbox Operations
         private void chbRestoreDiskSelectAll_Checked(object sender, RoutedEventArgs e)
         {
             if (!_restoreDiskAllControl)
@@ -205,37 +264,30 @@ namespace DiskBackupWpfGUI
 
         #endregion
 
-        private void btnCreateTask_Click(object sender, RoutedEventArgs e)
+
+
+        #endregion
+
+        #region View Backups Tab
+
+        #endregion
+
+        #region Backup Area Tab
+        private void btnBackupAreaAdd_Click(object sender, RoutedEventArgs e)
         {
-            NewCreateTask newCreateTask = new NewCreateTask();
-            newCreateTask.ShowDialog();
+            AddBackupArea addBackupArea = new AddBackupArea();
+            addBackupArea.ShowDialog();
         }
 
-        private void btnTaskOpen_Click(object sender, RoutedEventArgs e)
-        {
-            TaskStatus taskStatus = new TaskStatus();
-            taskStatus.ShowDialog();
-        }
+        #endregion
 
-        private void btnMainClose_Click(object sender, RoutedEventArgs e)
-        {
-            Close();
-        }
+        #region Log Tab
 
-        private void btnMainMin_Click(object sender, RoutedEventArgs e)
-        {
-            WindowState = WindowState.Minimized;
-        }
+        #endregion
 
-        private void MyTitleBar_MouseDown(object sender, MouseButtonEventArgs e)
-        {
-            if (e.ChangedButton == MouseButton.Left)
-            {
-                DragMove();
-            }
-        }
+        #region Settings Tab
 
-        #region UpDownClicks
+        #region Upload
         private void btnUploadDown_Click(object sender, RoutedEventArgs e)
         {
             var count = Convert.ToInt32(txtUpload.Text);
@@ -255,7 +307,18 @@ namespace DiskBackupWpfGUI
                 txtUpload.Text = count.ToString();
             }
         }
+        private void rbtnUpload_Checked(object sender, RoutedEventArgs e)
+        {
+            stackUpload.IsEnabled = true;
+        }
 
+        private void rbtnUpload_Unchecked(object sender, RoutedEventArgs e)
+        {
+            stackUpload.IsEnabled = false;
+        }
+        #endregion
+
+        #region Download
         private void btnDownloadDown_Click(object sender, RoutedEventArgs e)
         {
             var count = Convert.ToInt32(txtDownload.Text);
@@ -275,8 +338,6 @@ namespace DiskBackupWpfGUI
                 txtDownload.Text = count.ToString();
             }
         }
-        #endregion
-
         private void rbtnDownload_Checked(object sender, RoutedEventArgs e)
         {
             stackDownload.IsEnabled = true;
@@ -286,21 +347,33 @@ namespace DiskBackupWpfGUI
         {
             stackDownload.IsEnabled = false;
         }
+        #endregion
 
-        private void rbtnUpload_Checked(object sender, RoutedEventArgs e)
+
+
+        #endregion
+
+        #region Help Tab
+
+        #endregion
+
+
+        private void btnTaskOpen_Click(object sender, RoutedEventArgs e)
         {
-            stackUpload.IsEnabled = true;
+            Statuses taskStatus = new Statuses(0);
+            taskStatus.Show();
         }
 
-        private void rbtnUpload_Unchecked(object sender, RoutedEventArgs e)
+        private void btnFilesBrowse_Click(object sender, RoutedEventArgs e)
         {
-            stackUpload.IsEnabled = false;
+            Statuses backupStatus = new Statuses(1);
+            backupStatus.Show();
         }
 
-        private void btnBackupAreaAdd_Click(object sender, RoutedEventArgs e)
+        private void btnTaskCopy_Click(object sender, RoutedEventArgs e)
         {
-            AddBackupArea addBackupArea = new AddBackupArea();
-            addBackupArea.ShowDialog();
+            Statuses restoreStatus = new Statuses(2);
+            restoreStatus.Show();
         }
 
         private void btnRestore_Click(object sender, RoutedEventArgs e)
@@ -316,5 +389,55 @@ namespace DiskBackupWpfGUI
             }
         }
 
+        private void checkBootPartition_Checked(object sender, RoutedEventArgs e)
+        {
+            stackBootCheck.IsEnabled = true;
+        }
+
+        private void checkBootPartition_Unchecked(object sender, RoutedEventArgs e)
+        {
+            stackBootCheck.IsEnabled = false;
+            rbBootGPT.IsChecked = true;
+            rbBootGPT.IsChecked = false;
+        }
+
+        private static T FindParent<T>(DependencyObject dependencyObject) where T : DependencyObject
+        {
+            var parent = VisualTreeHelper.GetParent(dependencyObject);
+            if (parent == null)
+                return null;
+
+            var parentT = parent as T;
+            return parentT ?? FindParent<T>(parent);
+        }
+
+        private void HeaderCheckBox_Checked(object sender, RoutedEventArgs e)
+        {
+            var checkBox = e.OriginalSource as CheckBox;
+            var expander = FindParent<Expander>(checkBox);
+            var headerCheckBox = expander.FindName("HeaderCheckBox") as CheckBox;
+
+            foreach (Discs item in listViewDisk.Items)
+            {
+                if (item.DiscName.Equals(headerCheckBox.Tag.ToString()))
+                {
+                    listViewDisk.SelectedItems.Add(item);
+                }
+            }
+        }
+
+        private void HeaderCheckBox_Unchecked(object sender, RoutedEventArgs e)
+        {
+            var checkBox = e.OriginalSource as CheckBox;
+            var expander = FindParent<Expander>(checkBox);
+            var headerCheckBox = expander.FindName("HeaderCheckBox") as CheckBox;
+            foreach (Discs item in listViewDisk.Items)
+            {
+                if (item.DiscName.Equals(headerCheckBox.Tag.ToString()))
+                {
+                    listViewDisk.SelectedItems.Remove(item);
+                }
+            }
+        }
     }
 }

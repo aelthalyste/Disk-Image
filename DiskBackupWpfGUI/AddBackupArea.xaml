@@ -160,7 +160,7 @@
                             <TextBox Name="txtSettingsName" Grid.Row="0" Grid.Column="1" Width="250" Height="22" Margin="0,0,0,10" HorizontalAlignment="Left"/>
                             <TextBox Name="txtSettingsFolderPath" Grid.Row="1" Grid.Column="1" Width="250" Height="22" Margin="0,0,0,10" Padding="0,0,22,0" HorizontalAlignment="Left"/>
                             <StackPanel Grid.Row="1" Grid.Column="1" HorizontalAlignment="Left" Margin="229,1,0,0">
-                                <Button Name="btnSettingsFolder" Style="{StaticResource ArrowUpButton}" Click="btnSettingsFolder_Click" Content="..." Width="20" Height="20" FontSize="15" />
+                                <Button Name="btnSettingsLocalFolder" Style="{StaticResource ArrowUpButton}" Click="btnSettingsLocalFolder_Click" Content="..." Width="20" Height="20" FontSize="15" />
                             </StackPanel>
                             <TextBox Name="txtSettingsUserName" Grid.Row="2" Grid.Column="1" Width="250" Height="22" Margin="0,0,0,10" HorizontalAlignment="Left"/>
                             <TextBox Name="txtSettingsPassword" Grid.Row="3" Grid.Column="1" Width="250" Height="22" Margin="0,0,0,10" HorizontalAlignment="Left"/>

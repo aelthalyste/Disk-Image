@@ -35,6 +35,7 @@ namespace DiskBackupWpfGUI
             }
         }
 
+        #region Title Bar
         private void btnChooseDayAndMounthsClose_Click(object sender, RoutedEventArgs e)
         {
             Close();
@@ -47,6 +48,7 @@ namespace DiskBackupWpfGUI
                 DragMove();
             }
         }
+        #endregion
 
         private void btnSave_Click(object sender, RoutedEventArgs e)
         {
