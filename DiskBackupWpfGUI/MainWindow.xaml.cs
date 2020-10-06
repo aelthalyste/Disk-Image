@@ -23,7 +23,12 @@ namespace DiskBackupWpfGUI
     public partial class MainWindow : Window
     {
         private bool _diskAllControl = false;
+        private bool _diskAllHeaderControl = false;
         private bool _restoreDiskAllControl = false;
+        private bool _restoreDiskAllHeaderControl = false;
+        private List<CheckBox> _expanderCheckBoxes = new List<CheckBox>();
+        private List<int> _numberOfItems = new List<int>();
+        private List<string> _groupName = new List<string>();
 
         public MainWindow()
         {
@@ -57,57 +62,14 @@ namespace DiskBackupWpfGUI
             discsItems.Add(new Discs()
             {
                 Volume = "System Reserverd",
-                Letter = 'A',
-                Area = "2 GB",
-                FreeSize = "1 GB",
-                Type = "GPT",
-                FileSystem = "NTFS",
-                Statu = "Sağlıklı",
-                DiscName = "Disk 1"
-            });
-            discsItems.Add(new Discs()
-            {
-                Volume = "Local Volume",
-                Letter = 'B',
-                Area = "75 GB",
-                FreeSize = "20 GB",
-                Type = "GPT",
-                FileSystem = "NTFS",
-                Statu = "Sağlıklı",
-                DiscName = "Disk 1"
-            });
-            discsItems.Add(new Discs()
-            {
-                Volume = "Local Volume",
-                Letter = 'B',
-                Area = "75 GB",
-                FreeSize = "20 GB",
-                Type = "GPT",
-                FileSystem = "NTFS",
-                Statu = "Sağlıklı",
-                DiscName = "Disk 1"
-            });
-            discsItems.Add(new Discs()
-            {
-                Volume = "Local Volume",
-                Letter = 'B',
-                Area = "75 GB",
-                FreeSize = "20 GB",
-                Type = "GPT",
-                FileSystem = "NTFS",
-                Statu = "Sağlıklı",
-                DiscName = "Disk 1"
-            });
-            discsItems.Add(new Discs()
-            {
-                Volume = "System Reserverd",
                 Letter = 'C',
                 Area = "2 GB",
                 FreeSize = "1 GB",
                 Type = "GPT",
                 FileSystem = "NTFS",
                 Statu = "Sağlıklı",
-                DiscName = "Disk 2"
+                DiscName = "Disk 1",
+                RealSize = 2
             });
             discsItems.Add(new Discs()
             {
@@ -118,8 +80,59 @@ namespace DiskBackupWpfGUI
                 Type = "GPT",
                 FileSystem = "NTFS",
                 Statu = "Sağlıklı",
-                DiscName = "Disk 2"
+                DiscName = "Disk 3",
+                RealSize = 75
             });
+            discsItems.Add(new Discs()
+            {
+                Volume = "Local Volume",
+                Letter = 'E',
+                Area = "100 GB",
+                FreeSize = "55 GB",
+                Type = "GPT",
+                FileSystem = "NTFS",
+                Statu = "Sağlıklı",
+                DiscName = "Disk 3",
+                RealSize = 100
+            });
+            discsItems.Add(new Discs()
+            {
+                Volume = "Local Volume",
+                Letter = 'F',
+                Area = "500 GB",
+                FreeSize = "120 GB",
+                Type = "GPT",
+                FileSystem = "NTFS",
+                Statu = "Sağlıklı",
+                DiscName = "Disk 1",
+                RealSize = 500
+            });
+            discsItems.Add(new Discs()
+            {
+                Volume = "System Reserverd",
+                Letter = 'C',
+                Area = "128 GB",
+                FreeSize = "1 GB",
+                Type = "GPT",
+                FileSystem = "NTFS",
+                Statu = "Sağlıklı",
+                DiscName = "Disk 2",
+                RealSize = 128
+            });
+            discsItems.Add(new Discs()
+            {
+                Volume = "Local Volume",
+                Letter = 'D',
+                Area = "250 GB",
+                FreeSize = "100 GB",
+                Type = "GPT",
+                FileSystem = "NTFS",
+                Statu = "Sağlıklı",
+                DiscName = "Disk 2",
+                RealSize = 250
+            });
+
+
 
             listViewDisk.ItemsSource = discsItems;
             listViewRestoreDisk.ItemsSource = discsItems;
@@ -127,6 +140,40 @@ namespace DiskBackupWpfGUI
             CollectionView view = (CollectionView)CollectionViewSource.GetDefaultView(listViewDisk.ItemsSource);
             PropertyGroupDescription groupDescription = new PropertyGroupDescription("DiscName");
             view.GroupDescriptions.Add(groupDescription);
+
+            List<Backups> backupsItems = new List<Backups>();
+            backupsItems.Add(new Backups()
+            {
+                Type = "full",
+                FileName = "Volume_C_Full"
+            });
+            backupsItems.Add(new Backups()
+            {
+                Type = "inc",
+                FileName = "Disk 1"
+            });
+            backupsItems.Add(new Backups()
+            {
+                Type = "diff",
+                FileName = "Disk 2",
+                IsCloud = true
+            });
+
+            listViewBackups.ItemsSource = backupsItems;
+
+            List<Log> logsItems = new List<Log>();
+            logsItems.Add(new Log()
+            {
+                LogIcon = "success",
+                StartDate = "06.10.2020 22:11"
+            });
+            logsItems.Add(new Log()
+            {
+                LogIcon = "fail",
+                StartDate = "10.10.2020 10:20"
+            });
+
+            listViewLog.ItemsSource = logsItems;
         }
 
         private void OnNavigate(object sender, RequestNavigateEventArgs e)
@@ -147,6 +194,20 @@ namespace DiskBackupWpfGUI
             public string FileSystem { get; set; }
             public string Statu { get; set; }
             public string DiscName { get; set; }
+            public long RealSize { get; set; }
+        }
+
+        public class Backups
+        {
+            public string Type { get; set; }
+            public string FileName { get; set; }
+            public bool IsCloud { get; set; } = false;
+        }
+
+        public class Log
+        {
+            public string LogIcon { get; set; }
+            public string StartDate { get; set; }
         }
 
         #region Title Bar
@@ -177,6 +238,39 @@ namespace DiskBackupWpfGUI
             newCreateTask.ShowDialog();
         }
 
+        private static T FindParent<T>(DependencyObject dependencyObject) where T : DependencyObject
+        {
+            var parent = VisualTreeHelper.GetParent(dependencyObject);
+            if (parent == null)
+                return null;
+
+            var parentT = parent as T;
+            return parentT ?? FindParent<T>(parent);
+        }
+
+        private void Expander_Loaded(object sender, RoutedEventArgs e)
+        {
+            var expander = sender as Expander;
+            long diskSize = 0;
+
+            foreach (Discs item in listViewDisk.Items)
+            {
+                if (item.DiscName.Equals(expander.Tag.ToString()))
+                {
+                    diskSize += item.RealSize;
+                }
+            }
+
+            var size = expander.FindName("txtTotalSize") as TextBlock;
+            var expanderCheck = expander.FindName("HeaderCheckBox") as CheckBox;
+            _expanderCheckBoxes.Add(expanderCheck);
+            var numberOfItems = expander.FindName("txtNumberOfItems") as TextBlock;
+            _numberOfItems.Add(Convert.ToInt32(numberOfItems.Text));
+            var groupName = expander.FindName("txtGroupName") as TextBlock;
+            _groupName.Add(groupName.Text);
+            size.Text = diskSize.ToString() + " GB";
+        }
+
         #region Checkbox Operations
         private void chbDiskSelectDiskAll_Checked(object sender, RoutedEventArgs e)
         {
@@ -187,6 +281,7 @@ namespace DiskBackupWpfGUI
                     listViewDisk.SelectedItems.Add(item);
                 }
                 _diskAllControl = true;
+                _expanderCheckBoxes.ForEach(cb => cb.IsChecked = true);
             }
         }
 
@@ -194,6 +289,7 @@ namespace DiskBackupWpfGUI
         {
             if (_diskAllControl)
             {
+                _expanderCheckBoxes.ForEach(cb => cb.IsChecked = false);
                 listViewDisk.SelectedItems.Clear();
                 _diskAllControl = false;
             }
@@ -206,14 +302,82 @@ namespace DiskBackupWpfGUI
                 _diskAllControl = listViewDisk.SelectedItems.Count == listViewDisk.Items.Count;
                 chbDiskSelectDiskAll.IsChecked = _diskAllControl;
             }
+
+            var dataItem = FindParent<ListViewItem>(sender as DependencyObject);
+            var data = dataItem.DataContext as Discs; //data seçilen değer
+
+            for (int i = 0; i < _groupName.Count; i++)
+            {
+                if (data.DiscName.Equals(_groupName[i]))
+                {
+                    int totalSelected = 0;
+                    //i kaçıncı sıradaki adete eşit olacağı
+                    foreach (Discs item in listViewDisk.SelectedItems)
+                    {
+                        if (item.DiscName.Equals(data.DiscName))
+                        {
+                            totalSelected++;
+                        }
+                    }
+                    if (_numberOfItems[i] == totalSelected)
+                    {
+                        _expanderCheckBoxes[i].IsChecked = true;
+                    }
+                }
+            }
         }
 
         private void chbDisk_Unchecked(object sender, RoutedEventArgs e)
         {
             _diskAllControl = false;
             chbDiskSelectDiskAll.IsChecked = false;
+            _diskAllHeaderControl = false;
+
+            var dataItem = FindParent<ListViewItem>(sender as DependencyObject);
+            var data = dataItem.DataContext as Discs; //data seçilen değer
+
+            for (int i = 0; i < _groupName.Count; i++)
+            {
+                if (_groupName[i].Equals(data.DiscName))
+                {
+                    _expanderCheckBoxes[i].IsChecked = false;
+                }
+            }
         }
+
+        private void HeaderCheckBox_Checked(object sender, RoutedEventArgs e)
+        {
+            var headerCheckBox = sender as CheckBox;
+            _diskAllHeaderControl = true;
+
+            foreach (Discs item in listViewDisk.Items)
+            {
+                if (item.DiscName.Equals(headerCheckBox.Tag.ToString()))
+                {
+                    listViewDisk.SelectedItems.Add(item);
+                }
+            }
+        }
+
+        private void HeaderCheckBox_Unchecked(object sender, RoutedEventArgs e)
+        {
+            if (_diskAllHeaderControl)
+            {
+                var headerCheckBox = sender as CheckBox;
+                foreach (Discs item in listViewDisk.Items)
+                {
+                    if (item.DiscName.Equals(headerCheckBox.Tag.ToString()))
+                    {
+                        listViewDisk.SelectedItems.Remove(item);
+                    }
+                }
+                _diskAllHeaderControl = true;
+            }
+        }
+
         #endregion
+
+
 
 
 
@@ -264,6 +428,17 @@ namespace DiskBackupWpfGUI
 
         #endregion
 
+        private void checkBootPartition_Checked(object sender, RoutedEventArgs e)
+        {
+            stackBootCheck.IsEnabled = true;
+        }
+
+        private void checkBootPartition_Unchecked(object sender, RoutedEventArgs e)
+        {
+            stackBootCheck.IsEnabled = false;
+            rbBootGPT.IsChecked = true;
+            rbBootGPT.IsChecked = false;
+        }
 
 
         #endregion
@@ -389,55 +564,5 @@ namespace DiskBackupWpfGUI
             }
         }
 
-        private void checkBootPartition_Checked(object sender, RoutedEventArgs e)
-        {
-            stackBootCheck.IsEnabled = true;
-        }
-
-        private void checkBootPartition_Unchecked(object sender, RoutedEventArgs e)
-        {
-            stackBootCheck.IsEnabled = false;
-            rbBootGPT.IsChecked = true;
-            rbBootGPT.IsChecked = false;
-        }
-
-        private static T FindParent<T>(DependencyObject dependencyObject) where T : DependencyObject
-        {
-            var parent = VisualTreeHelper.GetParent(dependencyObject);
-            if (parent == null)
-                return null;
-
-            var parentT = parent as T;
-            return parentT ?? FindParent<T>(parent);
-        }
-
-        private void HeaderCheckBox_Checked(object sender, RoutedEventArgs e)
-        {
-            var checkBox = e.OriginalSource as CheckBox;
-            var expander = FindParent<Expander>(checkBox);
-            var headerCheckBox = expander.FindName("HeaderCheckBox") as CheckBox;
-
-            foreach (Discs item in listViewDisk.Items)
-            {
-                if (item.DiscName.Equals(headerCheckBox.Tag.ToString()))
-                {
-                    listViewDisk.SelectedItems.Add(item);
-                }
-            }
-        }
-
-        private void HeaderCheckBox_Unchecked(object sender, RoutedEventArgs e)
-        {
-            var checkBox = e.OriginalSource as CheckBox;
-            var expander = FindParent<Expander>(checkBox);
-            var headerCheckBox = expander.FindName("HeaderCheckBox") as CheckBox;
-            foreach (Discs item in listViewDisk.Items)
-            {
-                if (item.DiscName.Equals(headerCheckBox.Tag.ToString()))
-                {
-                    listViewDisk.SelectedItems.Remove(item);
-                }
-            }
-        }
     }
 }

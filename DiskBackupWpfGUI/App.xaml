@@ -4,7 +4,39 @@
              xmlns:local="clr-namespace:ManagementUI"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
-        
+
+
+        <Style x:Key="LogListViewItemImage" TargetType="{x:Type Image}">
+            <Setter Property="Width" Value="22"/>
+            <Setter Property="Height" Value="22"/>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding LogIcon}" Value="success">
+                    <Setter Property="Source" Value="Resources\Icon\icons8_ok_3.ico" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding LogIcon}" Value="fail">
+                    <Setter Property="Source" Value="Resources\Icon\icons8_cancel.ico" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="ViewBackupsListViewItemImage" TargetType="{x:Type Image}">
+            <Setter Property="Width" Value="30"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding Type}" Value="full">
+                    <Setter Property="Source" Value="\Resources\Icon\full.png" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Type}" Value="inc">
+                    <Setter Property="Source" Value="\Resources\Icon\inc.png" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Type}" Value="diff">
+                    <Setter Property="Source" Value="\Resources\Icon\diff.png" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+       
+
         <!--original start-->
         <Style TargetType="TabItem">
             <Setter Property="Template">
