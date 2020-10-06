@@ -5671,67 +5671,21 @@ void foo(){
 }
 
 
-// could be either file or dir
-struct NarFileEntry {
-
-    BOOLEAN Flags;
-
-    UINT64 MFTFileIndex;
-    UINT64 Size; // file size in bytes
-
-    UINT64 CreationTime;
-    UINT64 LastModifiedTime;
-
-    wchar_t Name[MAX_PATH + 1]; // max path + 1 for null termination
-};
-
-// represents files in directory
-struct FileEntriesList {
-    UINT32 MFTIndex;
-    UINT32 EntryCount;
-    NarFileEntry* Entries;
-};
-
-struct NarBackupFileExplorerContext {
-
-    char Letter;
-    INT32 ClusterSize = 4096;
-    wchar_t RootDir[256];
-
-    UINT32 LastIndx;
-
-    int MFTRecordsCount;
-
-#define NAR_PUSH_HIST_STACK(stack, id) (stack)[I++] = id;  
-#define NAR_POP_HIST_STACK(stack) (stack)[I--] = 0; 
-
-    struct {
-        UINT32 I;
-        UINT64 S[1024];
-    }HistoryStack;
-
-    nar_record *MFTRecords;
-    
-    FileEntriesList EList;
-
-};
+inline void
+NarPushDirectoryStack(NarBackupFileExplorerContext *Ctx, UINT64 ID) {
+    Ctx->HistoryStack.S[++Ctx->HistoryStack.I] = ID;
+}
 
 inline void
-NarReleaseFileExplorerContext(NarBackupFileExplorerContext* Ctx) {
-    if (!Ctx) return;
-
-    free(Ctx->EList.Entries);
-    
+NarPopDirectoryStack(NarBackupFileExplorerContext* Ctx) {
+    Ctx->HistoryStack.I--;
+    if (Ctx->HistoryStack.I < 0) {
+        Ctx->HistoryStack.I = 0;
+    }
 }
 
 
-#define NAR_POSIX 2
-#define NAR_ENTRY_SIZE_OFFSET 8
-#define NAR_TIME_OFFSET 28
-#define NAR_SIZE_OFFSET 64
-#define NAR_NAME_LEN_OFFSET 80 
-#define NAR_POSIX_OFFSET 81
-#define NAR_NAME_OFFSET 82
+
 
 inline void
 NarGetFileListFromMFTID(FileEntriesList* EList, UINT64 TargetMFTID, nar_record* MFTRegions, UINT32 MFTRegionCount, UINT32 ClusterSize, HANDLE VolumeHandle) {
@@ -5848,15 +5802,15 @@ NarGetFileListFromMFTID(FileEntriesList* EList, UINT64 TargetMFTID, nar_record* 
                                     continue;
                                 }
 
+                                memset(&EList->Entries[EList->EntryCount], 0, sizeof(EList->Entries[EList->EntryCount]));
+
                                 memcpy(&EList->Entries[EList->EntryCount].Name[0], NamePtr, NameLen * sizeof(wchar_t));
 
                                 // extracted all useful information, push it to the list and continue
 
                                 // push stuff
                                 // represents files in directory
-                                if (*NamePtr != 0) {
-                                    printf("INDEX_ROOT : %S\n", EList->Entries[EList->EntryCount].Name);
-                                }
+                                
                                 EList->Entries[EList->EntryCount].MFTFileIndex = MagicNumber;
                                 EList->Entries[EList->EntryCount].Size = FileSize;
                                 EList->Entries[EList->EntryCount].CreationTime = CreationTime;
@@ -6089,6 +6043,8 @@ NarGetFileListFromMFTID(FileEntriesList* EList, UINT64 TargetMFTID, nar_record* 
                                         IndxCluster = (char*)IndxCluster + EntrySize;
                                         continue;
                                     }
+                                    
+                                    memset(&EList->Entries[EList->EntryCount], 0, sizeof(EList->Entries[EList->EntryCount]));
 
                                     memcpy(&EList->Entries[EList->EntryCount].Name[0], NamePtr, NameLen * sizeof(wchar_t));
                                     
@@ -6179,60 +6135,155 @@ NarGetFileListFromMFTID(FileEntriesList* EList, UINT64 TargetMFTID, nar_record* 
     
 }
 
+inline void 
+NarFileExplorerPushDirectory(NarBackupFileExplorerContext* Ctx, UINT32 SelectedListID) {
 
+    if (!Ctx) {
+        printf("Context was null\n");
+        return;
+    }
+
+    if (SelectedListID > Ctx->EList.EntryCount) {
+        printf("ID exceeds size\n");
+        return;
+    }
+    if (Ctx->EList.Entries != 0 && Ctx->EList.Entries[SelectedListID].Size != 0) {
+        printf("Not a directory\n");
+        return;
+    }
+
+    UINT64 NewMFTID = Ctx->EList.Entries[SelectedListID].MFTFileIndex;
+
+    printf("Pushing %I64u to stack\n", NewMFTID);
+
+    NarPushDirectoryStack(Ctx, NewMFTID);
+
+    Ctx->EList.EntryCount = 0;
+    Ctx->EList.MFTIndex = NewMFTID;
+    
+    wcscat(Ctx->CurrentDirectory, Ctx->EList.Entries[SelectedListID].Name);
+
+    NarGetFileListFromMFTID(&Ctx->EList, NewMFTID, Ctx->MFTRecords, Ctx->MFTRecordsCount, 4096, Ctx->VolumeHandle);
+    
+}
 
 inline void
-NarInitFileExplorerContext(NarBackupFileExplorerContext* Ctx, char Letter) {
+NarFileExplorerPopDirectory(NarBackupFileExplorerContext* Ctx) {
 
+    NarPopDirectoryStack(Ctx);
+
+    Ctx->EList.EntryCount = 0;
+    Ctx->EList.MFTIndex = Ctx->HistoryStack.S[Ctx->HistoryStack.I];
+    NarGetFileListFromMFTID(&Ctx->EList, Ctx->HistoryStack.S[Ctx->HistoryStack.I], Ctx->MFTRecords, Ctx->MFTRecordsCount, 4096,Ctx->VolumeHandle);
+
+}
+
+inline void
+NarFileExplorerPrint(NarBackupFileExplorerContext* Ctx) {
     if (!Ctx) return;
+    if (Ctx->EList.Entries == 0) return;
+    
+    for (int i = 0; i < Ctx->EList.EntryCount; i++) {
+        printf("%i\t-> ", i);
+        if (Ctx->EList.Entries[i].Size == 0) {
+            printf("DIR: %-50S\ %I64u KB\n", Ctx->EList.Entries[i].Name, Ctx->EList.Entries[i].Size / 1024);
+        }
+        else {
+            printf("%-50S %I64u KB\n", Ctx->EList.Entries[i].Name, Ctx->EList.Entries[i].Size / 1024);
 
-    memset(Ctx, 0, sizeof(Ctx));
-
-    Ctx->MFTRecords = (nar_record*)NarGetMFTRegionsByCommandLine(Letter, &Ctx->MFTRecordsCount);
-    Ctx->EList.Entries = (NarFileEntry*)malloc(10000 * sizeof(NarFileEntry));
-    memset(Ctx->EList.Entries, 0, 10000 * sizeof(NarFileEntry));
-
-    HANDLE VolumeHandle = INVALID_HANDLE_VALUE;
-    VolumeHandle = NarOpenVolume(Letter);
-
-    if (VolumeHandle != INVALID_HANDLE_VALUE) {
-        
-
-        Ctx->EList.EntryCount = 0;
-        NarGetFileListFromMFTID(&Ctx->EList, 5, Ctx->MFTRecords, Ctx->MFTRecordsCount, 4096, VolumeHandle);
-
-
-        /*
-        Ctx->EList.EntryCount = 0;
-        NarGetFileListFromMFTID(&Ctx->EList, 44571, Ctx->MFTRecords, Ctx->MFTRecordsCount, 4096, VolumeHandle);
-
-        Ctx->EList.EntryCount = 0;
-        NarGetFileListFromMFTID(&Ctx->EList, 120848, Ctx->MFTRecords, Ctx->MFTRecordsCount, 4096, VolumeHandle);
-
-
-        Ctx->EList.EntryCount = 0;
-        NarGetFileListFromMFTID(&Ctx->EList, 98328, Ctx->MFTRecords, Ctx->MFTRecordsCount, 4096, VolumeHandle);
-
-        Ctx->EList.EntryCount = 0;
-        NarGetFileListFromMFTID(&Ctx->EList, 43085, Ctx->MFTRecords, Ctx->MFTRecordsCount, 4096, VolumeHandle);
-
-        Ctx->EList.EntryCount = 0;
-        NarGetFileListFromMFTID(&Ctx->EList, 204837, Ctx->MFTRecords, Ctx->MFTRecordsCount, 4096, VolumeHandle);
-
-        Ctx->EList.EntryCount = 0;
-        NarGetFileListFromMFTID(&Ctx->EList, 221313, Ctx->MFTRecords, Ctx->MFTRecordsCount, 4096, VolumeHandle);
-
-        Ctx->EList.EntryCount = 0;
-        NarGetFileListFromMFTID(&Ctx->EList, 228462, Ctx->MFTRecords, Ctx->MFTRecordsCount, 4096, VolumeHandle);
-        */
-        
-    }
-    else {
-
+        }
     }
 
 }
 
+inline void
+NarReleaseFileExplorerContext(NarBackupFileExplorerContext* Ctx) {
+    
+    if (!Ctx) return;
+
+    NarCloseVolume(Ctx->VolumeHandle);
+    if (Ctx->EList.Entries != 0) {
+        free(Ctx->EList.Entries);
+    }
+    if (Ctx->MFTRecords != 0) {
+        free(Ctx->MFTRecords);
+    }
+
+}
+
+
+inline BOOLEAN
+NarInitFileExplorerContext(NarBackupFileExplorerContext* Ctx, char Letter) {
+
+    if (!Ctx) goto NAR_FAIL_TERMINATE;;
+
+    memset(Ctx, 0, sizeof(*Ctx));
+
+    Ctx->MFTRecords = (nar_record*)NarGetMFTRegionsByCommandLine(Letter, &Ctx->MFTRecordsCount);
+    Ctx->EList.Entries = (NarFileEntry*)malloc(10000 * sizeof(NarFileEntry));
+    if (Ctx->EList.Entries) {
+        memset(Ctx->EList.Entries, 0, 10000 * sizeof(NarFileEntry));
+
+        HANDLE VolumeHandle = INVALID_HANDLE_VALUE;
+        VolumeHandle = NarOpenVolume(Letter);
+        
+        memset(Ctx->CurrentDirectory, 0, sizeof(Ctx->CurrentDirectory));
+        memset(Ctx->RootDir, 0, sizeof(Ctx->RootDir));
+        memset(&Ctx->HistoryStack, 0, sizeof(Ctx->HistoryStack));
+
+        if (VolumeHandle != INVALID_HANDLE_VALUE) {
+
+            Ctx->VolumeHandle = VolumeHandle;
+            Ctx->EList.EntryCount = 0;
+            Ctx->EList.MFTIndex = NAR_ROOT_MFT_ID;
+            Ctx->HistoryStack.I = -1;
+
+            NarGetFileListFromMFTID(&Ctx->EList, NAR_ROOT_MFT_ID, Ctx->MFTRecords, Ctx->MFTRecordsCount, 4096, VolumeHandle);
+            NarPushDirectoryStack(Ctx, NAR_ROOT_MFT_ID);
+            
+            wchar_t vb[] = L"%c\\";
+            vb[0] = (wchar_t)Letter;
+            wcscat(Ctx->CurrentDirectory, vb);
+            
+            /*
+            Ctx->EList.EntryCount = 0;
+            NarGetFileListFromMFTID(&Ctx->EList, 44571, Ctx->MFTRecords, Ctx->MFTRecordsCount, 4096, VolumeHandle);
+
+            Ctx->EList.EntryCount = 0;
+            NarGetFileListFromMFTID(&Ctx->EList, 120848, Ctx->MFTRecords, Ctx->MFTRecordsCount, 4096, VolumeHandle);
+
+
+            Ctx->EList.EntryCount = 0;
+            NarGetFileListFromMFTID(&Ctx->EList, 98328, Ctx->MFTRecords, Ctx->MFTRecordsCount, 4096, VolumeHandle);
+
+            Ctx->EList.EntryCount = 0;
+            NarGetFileListFromMFTID(&Ctx->EList, 43085, Ctx->MFTRecords, Ctx->MFTRecordsCount, 4096, VolumeHandle);
+
+            Ctx->EList.EntryCount = 0;
+            NarGetFileListFromMFTID(&Ctx->EList, 204837, Ctx->MFTRecords, Ctx->MFTRecordsCount, 4096, VolumeHandle);
+
+            Ctx->EList.EntryCount = 0;
+            NarGetFileListFromMFTID(&Ctx->EList, 221313, Ctx->MFTRecords, Ctx->MFTRecordsCount, 4096, VolumeHandle);
+
+            Ctx->EList.EntryCount = 0;
+            NarGetFileListFromMFTID(&Ctx->EList, 228462, Ctx->MFTRecords, Ctx->MFTRecordsCount, 4096, VolumeHandle);
+            */
+
+        }
+        else {
+            goto NAR_FAIL_TERMINATE;
+        }
+    }
+    else {
+        goto NAR_FAIL_TERMINATE;
+    }
+    
+    return TRUE;
+
+    NAR_FAIL_TERMINATE:
+    NarReleaseFileExplorerContext(Ctx);
+
+}
 
 
 int
@@ -6262,7 +6313,21 @@ main(
 
     NarBackupFileExplorerContext ctx;
     NarInitFileExplorerContext(&ctx, 'C');
+    NarFileExplorerPrint(&ctx);
+    
+    int ListID = 0;
+    while (1) {
+        scanf("%i", &ListID);
+        if (ListID < 0) {
+            NarFileExplorerPopDirectory(&ctx);
+        }
+        else {
+            NarFileExplorerPushDirectory(&ctx, ListID);
+        }
+        NarFileExplorerPrint(&ctx);
 
+        Sleep(16);
+    }
     return 0;
 
     wchar_t B[50];

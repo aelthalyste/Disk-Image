@@ -742,6 +742,91 @@ AttachVolume(volume_backup_inf* VolInf, BOOLEAN SetActive = TRUE);
 BOOLEAN
 NarGetBackupsInDirectory(const wchar_t* Directory, backup_metadata* B, int BufferSize, int* FoundCount);
 
+
+
+#define NAR_POSIX 2
+#define NAR_ENTRY_SIZE_OFFSET 8
+#define NAR_TIME_OFFSET 28
+#define NAR_SIZE_OFFSET 64
+#define NAR_NAME_LEN_OFFSET 80 
+#define NAR_POSIX_OFFSET 81
+#define NAR_NAME_OFFSET 82
+
+
+// could be either file or dir
+struct NarFileEntry {
+
+    BOOLEAN Flags;
+
+    UINT64 MFTFileIndex;
+    UINT64 Size; // file size in bytes
+
+    UINT64 CreationTime;
+    UINT64 LastModifiedTime;
+
+    wchar_t Name[MAX_PATH + 1]; // max path + 1 for null termination
+};
+
+// represents files in directory
+struct FileEntriesList {
+    UINT32 MFTIndex;
+    UINT32 EntryCount;
+    NarFileEntry* Entries;
+};
+
+struct NarBackupFileExplorerContext {
+
+    char Letter;
+    HANDLE VolumeHandle;
+    INT32 ClusterSize = 4096;
+    wchar_t RootDir[256];
+
+    UINT32 LastIndx;
+
+    int MFTRecordsCount;
+    
+    struct {
+        INT16 I;
+        UINT64 S[512];
+    }HistoryStack;
+
+    nar_record *MFTRecords;
+    
+    FileEntriesList EList;
+    
+    wchar_t CurrentDirectory[512];
+};
+
+
+
+inline void
+NarPushDirectoryStack(NarBackupFileExplorerContext *Ctx, UINT64 ID);
+
+inline void
+NarPopDirectoryStack(NarBackupFileExplorerContext* Ctx);
+
+
+inline void
+NarPopDirectoryStack(NarBackupFileExplorerContext* Ctx);
+
+inline void
+NarReleaseFileExplorerContext(NarBackupFileExplorerContext* Ctx);
+
+inline void
+NarGetFileListFromMFTID(FileEntriesList* EList, UINT64 TargetMFTID, nar_record* MFTRegions, UINT32 MFTRegionCount, UINT32 ClusterSize, HANDLE VolumeHandle);
+
+inline void 
+NarFileExplorerPushDirectory(NarBackupFileExplorerContext* Ctx, UINT32 SelectedID);
+
+inline void
+NarFileExplorerPopDirectory(NarBackupFileExplorerContext* Ctx);
+
+inline BOOLEAN
+NarInitFileExplorerContext(NarBackupFileExplorerContext* Ctx, char Letter);
+
+
+
+
 DWORD WINAPI
 RetrieveLogRecords(
                    _In_ LPVOID lpParameter
