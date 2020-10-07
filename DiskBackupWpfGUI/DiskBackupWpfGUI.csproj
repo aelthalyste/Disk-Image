@@ -252,5 +252,10 @@
   <ItemGroup>
     <Resource Include="Resources\Icon\icons8_computer_support_4.ico" />
   </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\Icon\diff.png" />
+    <Resource Include="Resources\Icon\full.png" />
+    <Resource Include="Resources\Icon\inc.png" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
