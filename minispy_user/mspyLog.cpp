@@ -33,7 +33,7 @@ _Analysis_mode_(_Analysis_code_type_user_code_)
 #define TIME_BUFFER_LENGTH 20
 #define TIME_ERROR         "time error"
 
-#define POLL_INTERVAL   (5000*1000) // ms
+#define POLL_INTERVAL   (500) // ms
 
 #ifndef min
 #define min(a,b)            (((a) < (b)) ? (a) : (b))
