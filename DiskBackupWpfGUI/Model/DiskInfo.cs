@@ -11,8 +11,6 @@ namespace DiskBackupWpfGUI.Model
         public string Name { get; set; }
         public string BootType { get; set; }
         public string Size { get; set; }
-        public string VolumeName { get; set; }
-        public string Format { get; set; }
-        public string VolumeSize { get; set; }
+        public List<VolumeInfo> volumeInfos = new List<VolumeInfo>();
     }
 }

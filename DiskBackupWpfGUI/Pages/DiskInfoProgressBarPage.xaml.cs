@@ -14,22 +14,20 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace DiskBackupWpfGUI
+namespace DiskBackupWpfGUI.Pages
 {
     /// <summary>
-    /// Interaction logic for DiskInfoPage.xaml
+    /// Interaction logic for DiskInfoProgressBarPage.xaml
     /// </summary>
-    public partial class DiskInfoPage : Page
+    public partial class DiskInfoProgressBarPage : Page
     {
-        public DiskInfoPage(DiskInfo diskInfo)
+        public DiskInfoProgressBarPage(VolumeInfo volumeInfo)
         {
             InitializeComponent();
-            diskNameTextBlock.Text = diskInfo.Name;
-            bootTypeTextBlock.Text = diskInfo.BootType;
-            sizeTextBlock.Text = diskInfo.Size;
-            volumeNameTextBlock.Text = diskInfo.VolumeName;
-            formatTextBlock.Text = diskInfo.Format;
-            volumeSizeTextBlock.Text = diskInfo.VolumeSize;
+            volumeNameTextBlock.Text = volumeInfo.VolumeName;
+            formatTextBlock.Text = volumeInfo.Format;
+            volumeSizeTextBlock.Text = volumeInfo.VolumeSize;
+            prioritySectionTextBlock.Text = volumeInfo.PrioritySection;
         }
     }
 }

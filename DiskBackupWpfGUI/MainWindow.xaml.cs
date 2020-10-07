@@ -34,7 +34,25 @@ namespace DiskBackupWpfGUI
         {
             InitializeComponent();
 
-            DiskInfo diskInfo = new DiskInfo { Size = "55 GB", BootType = "MBR", Format = "NTFS", Name = "Disk 1", VolumeSize = "100 GB", VolumeName = "Local Volume (D:)" };
+            DiskInfo diskInfo = new DiskInfo { 
+                Size = "400 GB", 
+                BootType = "MBR",         
+                Name = "Disk 1"
+             };
+            diskInfo.volumeInfos.Add(new VolumeInfo
+            {
+                Format = "NTFS",
+                VolumeSize = "100 GB",
+                VolumeName = "System Reserverd",
+                PrioritySection = "Primary"
+            });
+            diskInfo.volumeInfos.Add(new VolumeInfo
+            {
+                Format = "NTFS",
+                VolumeSize = "300 GB",
+                VolumeName = "Local Volume (C:)",
+                PrioritySection = "Primary"
+            });
             var page = new DiskInfoPage(diskInfo);
             var frame = new Frame();
             frame.Content = page;
@@ -45,13 +63,33 @@ namespace DiskBackupWpfGUI
             frame.Content = page;
             frame.VerticalAlignment = VerticalAlignment.Top;
             stackTasksDiskInfo.Children.Add(frame);
-            diskInfo.Name = "Disk 2";
-            page = new DiskInfoPage(diskInfo);
+
+            DiskInfo diskInfo2 = new DiskInfo
+            {
+                Size = "700 GB",
+                BootType = "MBR",
+                Name = "Disk 2"
+            };
+            diskInfo2.volumeInfos.Add(new VolumeInfo
+            {
+                Format = "NTFS",
+                VolumeSize = "500 GB",
+                VolumeName = "System Reserverd",
+                PrioritySection = "Primary"
+            });
+            diskInfo2.volumeInfos.Add(new VolumeInfo
+            {
+                Format = "NTFS",
+                VolumeSize = "200 GB",
+                VolumeName = "Local Volume (C:)",
+                PrioritySection = "Primary"
+            });
+            page = new DiskInfoPage(diskInfo2);
             frame = new Frame();
             frame.Content = page;
             frame.VerticalAlignment = VerticalAlignment.Top;
             diskInfoStackPanel.Children.Add(frame);
-            page = new DiskInfoPage(diskInfo);
+            page = new DiskInfoPage(diskInfo2);
             frame = new Frame();
             frame.Content = page;
             frame.VerticalAlignment = VerticalAlignment.Top;
@@ -131,7 +169,6 @@ namespace DiskBackupWpfGUI
                 DiscName = "Disk 2",
                 RealSize = 250
             });
-
 
 
             listViewDisk.ItemsSource = discsItems;
@@ -341,6 +378,7 @@ namespace DiskBackupWpfGUI
                 if (_groupName[i].Equals(data.DiscName))
                 {
                     _expanderCheckBoxes[i].IsChecked = false;
+                    _diskAllHeaderControl = true;
                 }
             }
         }

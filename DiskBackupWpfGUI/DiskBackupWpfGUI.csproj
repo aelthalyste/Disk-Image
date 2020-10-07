@@ -79,10 +79,14 @@
     <Compile Include="ChooseDayAndMounths.xaml.cs">
       <DependentUpon>ChooseDayAndMounths.xaml</DependentUpon>
     </Compile>
-    <Compile Include="DiskInfoPage.xaml.cs">
+    <Compile Include="Model\VolumeInfo.cs" />
+    <Compile Include="Pages\DiskInfoPage.xaml.cs">
       <DependentUpon>DiskInfoPage.xaml</DependentUpon>
     </Compile>
     <Compile Include="Model\DiskInfo.cs" />
+    <Compile Include="Pages\DiskInfoProgressBarPage.xaml.cs">
+      <DependentUpon>DiskInfoProgressBarPage.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Restore.xaml.cs">
       <DependentUpon>Restore.xaml</DependentUpon>
     </Compile>
@@ -97,7 +101,7 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="DiskInfoPage.xaml">
+    <Page Include="Pages\DiskInfoPage.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -114,6 +118,10 @@
       <SubType>Code</SubType>
     </Compile>
     <Page Include="NewCreateTask.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Pages\DiskInfoProgressBarPage.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
