@@ -29,6 +29,9 @@ namespace DiskBackupWpfGUI
         private List<CheckBox> _expanderCheckBoxes = new List<CheckBox>();
         private List<int> _numberOfItems = new List<int>();
         private List<string> _groupName = new List<string>();
+        private List<CheckBox> _restoreExpanderCheckBoxes = new List<CheckBox>();
+        private List<int> _restoreNumberOfItems = new List<int>();
+        private List<string> _restoreGroupName = new List<string>();
 
         public MainWindow()
         {
@@ -275,16 +278,6 @@ namespace DiskBackupWpfGUI
             newCreateTask.ShowDialog();
         }
 
-        private static T FindParent<T>(DependencyObject dependencyObject) where T : DependencyObject
-        {
-            var parent = VisualTreeHelper.GetParent(dependencyObject);
-            if (parent == null)
-                return null;
-
-            var parentT = parent as T;
-            return parentT ?? FindParent<T>(parent);
-        }
-
         private void Expander_Loaded(object sender, RoutedEventArgs e)
         {
             var expander = sender as Expander;
@@ -427,6 +420,30 @@ namespace DiskBackupWpfGUI
 
         #region Restore Tab
 
+        private void Expander_Loaded_1(object sender, RoutedEventArgs e)
+        {
+            var expander = sender as Expander;
+            long diskSize = 0;
+
+            foreach (Discs item in listViewRestoreDisk.Items)
+            {
+                if (item.DiscName.Equals(expander.Tag.ToString()))
+                {
+                    diskSize += item.RealSize;
+                }
+            }
+
+            var size = expander.FindName("txtRestoreTotalSize") as TextBlock;
+            var expanderCheck = expander.FindName("cbRestoreHeader") as CheckBox;
+            _restoreExpanderCheckBoxes.Add(expanderCheck);
+            var numberOfItems = expander.FindName("txtRestoreNumberOfItems") as TextBlock;
+            _restoreNumberOfItems.Add(Convert.ToInt32(numberOfItems.Text));
+            var groupName = expander.FindName("txtRestoreGroupName") as TextBlock;
+            _restoreGroupName.Add(groupName.Text);
+            size.Text = diskSize.ToString() + " GB";
+        }
+
+
         #region Checkbox Operations
         private void chbRestoreDiskSelectAll_Checked(object sender, RoutedEventArgs e)
         {
@@ -437,6 +454,7 @@ namespace DiskBackupWpfGUI
                     listViewRestoreDisk.SelectedItems.Add(item);
                 }
                 _restoreDiskAllControl = true;
+                _restoreExpanderCheckBoxes.ForEach(cb => cb.IsChecked = true);
             }
         }
 
@@ -444,8 +462,9 @@ namespace DiskBackupWpfGUI
         {
             if (_restoreDiskAllControl)
             {
+                _restoreExpanderCheckBoxes.ForEach(cb => cb.IsChecked = false);
                 listViewRestoreDisk.SelectedItems.Clear();
-                _restoreDiskAllControl = false;
+                _restoreDiskAllHeaderControl = false;
             }
         }
 
@@ -456,12 +475,78 @@ namespace DiskBackupWpfGUI
                 _restoreDiskAllControl = listViewRestoreDisk.SelectedItems.Count == listViewRestoreDisk.Items.Count;
                 chbRestoreDiskSelectAll.IsChecked = _restoreDiskAllControl;
             }
+
+            var dataItem = FindParent<ListViewItem>(sender as DependencyObject);
+            var data = dataItem.DataContext as Discs; //data seçilen değer
+
+            for (int i = 0; i < _restoreGroupName.Count; i++)
+            {
+                if (data.DiscName.Equals(_restoreGroupName[i]))
+                {
+                    int totalSelected = 0;
+                    //i kaçıncı sıradaki adete eşit olacağı
+                    foreach (Discs item in listViewRestoreDisk.SelectedItems)
+                    {
+                        if (item.DiscName.Equals(data.DiscName))
+                        {
+                            totalSelected++;
+                        }
+                    }
+                    if (_restoreNumberOfItems[i] == totalSelected)
+                    {
+                        _restoreExpanderCheckBoxes[i].IsChecked = true;
+                    }
+                }
+            }
         }
 
         private void chbRestoreDisk_Unchecked(object sender, RoutedEventArgs e)
         {
             _restoreDiskAllControl = false;
             chbRestoreDiskSelectAll.IsChecked = false;
+            _restoreDiskAllHeaderControl = false;
+
+            var dataItem = FindParent<ListViewItem>(sender as DependencyObject);
+            var data = dataItem.DataContext as Discs; //data seçilen değer
+
+            for (int i = 0; i < _restoreGroupName.Count; i++)
+            {
+                if (_restoreGroupName[i].Equals(data.DiscName))
+                {
+                    _restoreExpanderCheckBoxes[i].IsChecked = false;
+                    _restoreDiskAllHeaderControl = true;
+                }
+            }
+        }
+
+        private void cbRestoreHeader_Checked(object sender, RoutedEventArgs e)
+        {
+            var headerCheckBox = sender as CheckBox;
+            _restoreDiskAllHeaderControl = true;
+
+            foreach (Discs item in listViewRestoreDisk.Items)
+            {
+                if (item.DiscName.Equals(headerCheckBox.Tag.ToString()))
+                {
+                    listViewRestoreDisk.SelectedItems.Add(item);
+                }
+            }
+        }
+
+        private void cbRestoreHeader_Unchecked(object sender, RoutedEventArgs e)
+        {
+            if (_restoreDiskAllHeaderControl)
+            {
+                var headerCheckBox = sender as CheckBox;
+                foreach (Discs item in listViewRestoreDisk.Items)
+                {
+                    if (item.DiscName.Equals(headerCheckBox.Tag.ToString()))
+                    {
+                        listViewRestoreDisk.SelectedItems.Remove(item);
+                    }
+                }
+                _restoreDiskAllHeaderControl = true;
+            }
         }
 
         #endregion
@@ -579,8 +664,10 @@ namespace DiskBackupWpfGUI
 
         private void btnFilesBrowse_Click(object sender, RoutedEventArgs e)
         {
-            Statuses backupStatus = new Statuses(1);
-            backupStatus.Show();
+            //Statuses backupStatus = new Statuses(1);
+            //backupStatus.Show();
+            FileExplorer fileExplorer = new FileExplorer();
+            fileExplorer.Show();
         }
 
         private void btnTaskCopy_Click(object sender, RoutedEventArgs e)
@@ -601,6 +688,17 @@ namespace DiskBackupWpfGUI
                 MessageBox.Show("Geçmişe dönük restore yapılamaz." + e.ToString());
             }
         }
+
+        private static T FindParent<T>(DependencyObject dependencyObject) where T : DependencyObject
+        {
+            var parent = VisualTreeHelper.GetParent(dependencyObject);
+            if (parent == null)
+                return null;
+
+            var parentT = parent as T;
+            return parentT ?? FindParent<T>(parent);
+        }
+
 
     }
 }

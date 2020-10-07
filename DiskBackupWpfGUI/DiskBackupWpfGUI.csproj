@@ -79,6 +79,9 @@
     <Compile Include="ChooseDayAndMounths.xaml.cs">
       <DependentUpon>ChooseDayAndMounths.xaml</DependentUpon>
     </Compile>
+    <Compile Include="FileExplorer.xaml.cs">
+      <DependentUpon>FileExplorer.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Model\VolumeInfo.cs" />
     <Compile Include="Pages\DiskInfoPage.xaml.cs">
       <DependentUpon>DiskInfoPage.xaml</DependentUpon>
@@ -98,6 +101,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="ChooseDayAndMounths.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="FileExplorer.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -264,6 +271,14 @@
     <Resource Include="Resources\Icon\diff.png" />
     <Resource Include="Resources\Icon\full.png" />
     <Resource Include="Resources\Icon\inc.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\Icon\icons8_file_2.ico" />
+    <Resource Include="Resources\Icon\icons8_folder_5.ico" />
+    <Resource Include="Resources\Icon\icons8_undo_1.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\Icon\icons8_pause_button.ico" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

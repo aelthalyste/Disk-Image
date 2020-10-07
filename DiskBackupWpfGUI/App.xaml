@@ -35,7 +35,22 @@
                 </DataTrigger>
             </Style.Triggers>
         </Style>
-       
+
+        <Style x:Key="FileExplorerListViewItemImage" TargetType="{x:Type Image}">
+            <Setter Property="Width" Value="30"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding Type}" Value="folder">
+                    <Setter Property="Source" Value="\Resources\Icon\icons8_folder_5.ico" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Type}" Value="file">
+                    <Setter Property="Source" Value="\Resources\Icon\icons8_file_2.ico" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+
 
         <!--original start-->
         <Style TargetType="TabItem">
