@@ -881,6 +881,7 @@ InitVolumeInf(volume_backup_inf* VolInf, wchar_t Letter, BackupType Type) {
     VolInf->Stream.RecIndex = 0;
     VolInf->Stream.ClusterIndex = 0;
     
+    VolInf->MFTLCN = { 0 };
     
     DWORD BytesPerSector = 0;
     DWORD SectorsPerCluster = 0;
@@ -2128,15 +2129,17 @@ ReadStream(volume_backup_inf* VolInf, void* Buffer, unsigned int TotalSize) {
 
 BOOLEAN
 TerminateBackup(volume_backup_inf* V, BOOLEAN Succeeded) {
+
     BOOLEAN Return = FALSE;
     if (!V) return FALSE;
+    
     
     if (!V->FullBackupExists) {
         //Termination of fullbackup
         printf("Fullbackup operation will be terminated\n");
         if (Succeeded) {
             
-            if (SaveMetadata((char)V->Letter, NAR_FULLBACKUP_VERSION, V->ClusterSize, V->BT, V->Stream.Records, V->Stream.Handle)) {
+            if (SaveMetadata((char)V->Letter, NAR_FULLBACKUP_VERSION, V->ClusterSize, V->BT, V->Stream.Records, V->Stream.Handle, V->MFTLCN)) {
                 Return = TRUE;
                 V->FullBackupExists = TRUE;
             }
@@ -2173,7 +2176,7 @@ TerminateBackup(volume_backup_inf* V, BOOLEAN Succeeded) {
 
             // NOTE(Batuhan):
             printf("Will save metadata to working directory, Version : %i\n", V->Version);
-            SaveMetadata((char)V->Letter, V->Version, V->ClusterSize, V->BT, V->Stream.Records, V->Stream.Handle);
+            SaveMetadata((char)V->Letter, V->Version, V->ClusterSize, V->BT, V->Stream.Records, V->Stream.Handle, V->MFTLCN);
 
             /*
          Since merge algorithm may have change size of the record buffer,
@@ -2200,7 +2203,8 @@ TerminateBackup(volume_backup_inf* V, BOOLEAN Succeeded) {
     V->Stream.RecIndex = 0;
     V->Stream.ClusterIndex = 0;
     V->VSSPTR.Release();
-    
+    FreeDataArray(&V->MFTLCN);
+
     
     return Return;
 }
@@ -2236,6 +2240,7 @@ SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, DotNetStreamInf* SI) {
         
     }
     
+    
 
     
     volume_backup_inf* VolInf = &C->Volumes.Data[ID];
@@ -2246,13 +2251,42 @@ SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, DotNetStreamInf* SI) {
     VolInf->Stream.RecIndex = 0;
     VolInf->Stream.Records.Count = 0;
     
+    auto SetupMFTLCNandAppendStream = [&]() {
+
+        VolInf->MFTLCN = GetMFTLCN(L, VolInf->Stream.Handle);
+        if (VolInf->MFTLCN.Data != 0) {
+
+            printf("Parsed MFTLCN for volume %c for version %i, count %u", (wchar_t)VolInf->Letter, VolInf->Version, VolInf->MFTLCN.Count);
+            VolInf->Stream.Records.Data = (nar_record*)realloc(VolInf->Stream.Records.Data, (VolInf->Stream.Records.Count + VolInf->MFTLCN.Count) * sizeof(nar_record));
+            memcpy(&VolInf->Stream.Records.Data[VolInf->Stream.Records.Count], VolInf->MFTLCN.Data, VolInf->MFTLCN.Count * sizeof(nar_record));
+
+            VolInf->Stream.Records.Count += VolInf->MFTLCN.Count;
+            qsort(VolInf->Stream.Records.Data, VolInf->Stream.Records.Count, sizeof(nar_record), CompareNarRecords);
+            MergeRegions(&VolInf->Stream.Records);
+
+
+        }
+        else {
+            printf("Couldnt parse MFT at setupstream function for volume %c, version %i\n", L, VolInf->Version);
+
+        }
+
+
+    };
+
     if (SetupStreamHandle(VolInf)) {
+
+        // NOTE(Batuhan): Experimental feature, from now on (06.10.2020), every binary data MUST contain MFTLCN with extended INDEX_ALLOCATION data.
+        // that helps file explorer to search that volume 
         
+
         printf("Setup stream handle successfully\n");
         if (!VolInf->FullBackupExists) {
             printf("Fullbackup stream is preparing\n");
             //Fullbackup stream
             if (SetFullRecords(VolInf)) {
+                SetupMFTLCNandAppendStream();
+
                 Return = TRUE;
             }
             else {
@@ -2317,6 +2351,9 @@ SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, DotNetStreamInf* SI) {
 
     {
         volume_backup_inf* V = VolInf;
+        
+        SetupMFTLCNandAppendStream();
+
         unsigned int TruncateIndex = 0;
         
         for(unsigned int RecordIndex = 0; RecordIndex < V->Stream.Records.Count; RecordIndex++){
@@ -2815,8 +2852,6 @@ SetupStreamHandle(volume_backup_inf* VolInf) {
             return FALSE;
         }
     
-
-
 #if 0
         if (!DetachVolume(VolInf)) {
             printf("Detach volume failed\n");
@@ -4736,7 +4771,7 @@ BackupRegions: Must have, this data determines how i must map binary data to the
 */
 BOOLEAN
 SaveMetadata(char Letter, int Version, int ClusterSize, BackupType BT,
-             data_array<nar_record> BackupRegions, HANDLE VSSHandle) {
+             data_array<nar_record> BackupRegions, HANDLE VSSHandle, data_array<nar_record> MFTLCN) {
     // TODO(Batuhan): convert letter to uppercase
     
     if (ClusterSize <= 0 || ClusterSize % 512 != 0) {
@@ -4749,7 +4784,7 @@ SaveMetadata(char Letter, int Version, int ClusterSize, BackupType BT,
     DWORD BytesWritten = 0;
     backup_metadata BM = { 0 };
     ULONGLONG BaseOffset = sizeof(BM);
-    data_array<nar_record> MFTLCN = { 0 };
+
     
     BOOLEAN Result = FALSE;
     char StringBuffer[1024];
@@ -4810,8 +4845,11 @@ SaveMetadata(char Letter, int Version, int ClusterSize, BackupType BT,
     @BM.Errors.MFT
       */
 
-    MFTLCN = GetMFTLCN(Letter, VSSHandle);
+    if(MFTLCN.Data == NULL){
+        MFTLCN = GetMFTLCN(Letter, VSSHandle);
+    }
 
+    
 
     if (MFTLCN.Count > 0) {
         BM.Size.MFTMetadata = MFTLCN.Count * sizeof(nar_record);
@@ -6299,22 +6337,21 @@ NarInitFEVolumeHandle(NarFEVolumeHandle *FEV, INT32 Version, char VolumeLetter, 
     wchar_t Path[1024];
     BOOLEAN Result = FALSE;
 
-    memset(Path, 0, sizeof(Path))
+    memset(Path, 0, sizeof(Path));
 
     if(RootDir){
         wcscat(Path, RootDir);
-        wcscat(Path, "\\");
+        wcscat(Path, L"\\");
     }
 
-    BOOLEAN Result = TRUE;
-    std::wstring BinaryFileName = GenerateBinaryFileName((wchar_t)Letter, Version);
+    std::wstring BinaryFileName = GenerateBinaryFileName((wchar_t)VolumeLetter, Version);
 
     wcscat(Path, BinaryFileName.c_str());
     printf("Target file path to initialize file explorer volume handle : %s\n", Path);
 
-    FEV.VolumeHandle = CreateFileW(Path, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, 0, 0);
+    FEV->VolumeHandle = CreateFileW(Path, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, 0, 0);
     
-    if(FEV.VolumeHandle != INVALID_HANDLE_VALUE){
+    if(FEV->VolumeHandle != INVALID_HANDLE_VALUE){
         
         // TODO : read records from metadata 
 
@@ -6331,7 +6368,9 @@ NarInitFEVolumeHandle(NarFEVolumeHandle *FEV, INT32 Version, char VolumeLetter, 
 
 inline void 
 NarFreeFEVolumeHandle(NarFEVolumeHandle *FEV) {
-    CloseHandle(FEV.VolumeHandle);
+    if (FEV) {
+        CloseHandle(FEV->VolumeHandle);
+    }
 }
 
 inline BOOLEAN
@@ -6714,6 +6753,8 @@ main(
         printf("Size: %I64u\n", Disks.Data[i].Size);
         printf("###############\n");
     }
+
+
 
     return 0;    
    

@@ -282,7 +282,9 @@ struct volume_backup_inf {
     */
     
     stream Stream;
-    
+    // ONLY VALID DURING BACKUP STAGE, WILL BE CLEARED AFTER TERMINATEBACKUP CALLED.
+    data_array<nar_record> MFTLCN;
+
     CComPtr<IVssBackupComponents> VSSPTR;
     
 };
@@ -634,7 +636,7 @@ BOOLEAN
 OfflineRestoreToVolume(restore_inf* R, BOOLEAN ShouldFormat);
 
 BOOLEAN
-SaveMetadata(char Letter, int Version, int ClusterSize, BackupType BT, data_array<nar_record> BackupRegions, HANDLE VSSHandle);
+SaveMetadata(char Letter, int Version, int ClusterSize, BackupType BT, data_array<nar_record> BackupRegions, HANDLE VSSHandle, data_array<nar_record> MFTLCN);
 
 BOOLEAN
 RestoreIncVersion(restore_inf R, HANDLE Volume); // Volume optional, might pass INVALID_HANDLE_VALUE
