@@ -1,4 +1,4 @@
-﻿using DiskBackupWpfGUI.Model;
+﻿using DisckBackup.Entities;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -36,24 +36,24 @@ namespace DiskBackupWpfGUI
         public MainWindow()
         {
             InitializeComponent();
-
             DiskInfo diskInfo = new DiskInfo { 
-                Size = "400 GB", 
+                StrSize = "400 GB", 
+                Size = 1222,
                 BootType = "MBR",         
                 Name = "Disk 1"
              };
             diskInfo.volumeInfos.Add(new VolumeInfo
             {
                 Format = "NTFS",
-                VolumeSize = "100 GB",
-                VolumeName = "System Reserverd",
+                StrSize = "100 GB",
+                Name = "System Reserverd",
                 PrioritySection = "Primary"
             });
             diskInfo.volumeInfos.Add(new VolumeInfo
             {
                 Format = "NTFS",
-                VolumeSize = "300 GB",
-                VolumeName = "Local Volume (C:)",
+                StrSize = "300 GB",
+                Name = "Local Volume (C:)",
                 PrioritySection = "Primary"
             });
             var page = new DiskInfoPage(diskInfo);
@@ -69,22 +69,22 @@ namespace DiskBackupWpfGUI
 
             DiskInfo diskInfo2 = new DiskInfo
             {
-                Size = "700 GB",
+                StrSize = "700 GB",
                 BootType = "MBR",
                 Name = "Disk 2"
             };
             diskInfo2.volumeInfos.Add(new VolumeInfo
             {
                 Format = "NTFS",
-                VolumeSize = "500 GB",
-                VolumeName = "System Reserverd",
+                StrSize = "500 GB",
+                Name = "System Reserverd",
                 PrioritySection = "Primary"
             });
             diskInfo2.volumeInfos.Add(new VolumeInfo
             {
                 Format = "NTFS",
-                VolumeSize = "200 GB",
-                VolumeName = "Local Volume (C:)",
+                StrSize = "200 GB",
+                Name = "Local Volume (C:)",
                 PrioritySection = "Primary"
             });
             page = new DiskInfoPage(diskInfo2);

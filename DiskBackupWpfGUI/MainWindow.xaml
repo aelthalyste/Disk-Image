@@ -11,6 +11,7 @@
         WindowStartupLocation="CenterScreen" 
         WindowStyle="None" 
         Icon="Resources/Icon/u62.png" 
+        BorderBrush="#194771" BorderThickness="1"
         Height="689" Width="1294" 
         ResizeMode="CanMinimize">
     <Window.Resources>
@@ -544,10 +545,10 @@
                                                 </DataTemplate>
                                             </GridViewColumn.CellTemplate>
                                         </GridViewColumn>
-                                        <GridViewColumn Header="{DynamicResource diskSize}" Width="150" >
+                                        <GridViewColumn Header="{DynamicResource volumeSize}" Width="150" >
                                             <GridViewColumn.CellTemplate>
                                                 <DataTemplate>
-                                                    <TextBlock Text="{Binding DiskSize}" TextAlignment="Center"/>
+                                                    <TextBlock Text="{Binding VolumeSize}" TextAlignment="Center"/>
                                                 </DataTemplate>
                                             </GridViewColumn.CellTemplate>
                                         </GridViewColumn >
@@ -804,7 +805,7 @@
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
-                                    <GridViewColumn Header="{DynamicResource diskSize}" Width="125" >
+                                    <GridViewColumn Header="{DynamicResource volumeSize}" Width="125" >
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
                                                 <TextBlock Text="{Binding VersionLength}" TextAlignment="Center"/>
@@ -1053,7 +1054,7 @@
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
-                                    <GridViewColumn Header="{DynamicResource source}" Width="135" >
+                                    <GridViewColumn Header="{DynamicResource taskName}" Width="135" >
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
                                                 <TextBlock Text="{Binding VersionLength}" TextAlignment="Center"/>
@@ -1099,7 +1100,7 @@
                         </StackPanel>
                     </DockPanel>
                     <DockPanel Grid.Row="1" Grid.ColumnSpan="2">
-                        <ListView Name="ListViewLogDown" MinHeight="165" Margin="5,5,10,5" DisplayMemberPath="Name" AllowDrop="True" VerticalAlignment="Top">
+                        <ListView Name="listViewLogDown" MinHeight="165" Margin="5,5,10,5" DisplayMemberPath="Name" AllowDrop="True" VerticalAlignment="Top">
                             <ListView.View>
                                 <GridView>
                                     <GridViewColumn Header="{DynamicResource time}" Width="300">

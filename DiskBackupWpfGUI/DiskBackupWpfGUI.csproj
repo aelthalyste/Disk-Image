@@ -82,11 +82,9 @@
     <Compile Include="FileExplorer.xaml.cs">
       <DependentUpon>FileExplorer.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Model\VolumeInfo.cs" />
     <Compile Include="Pages\DiskInfoPage.xaml.cs">
       <DependentUpon>DiskInfoPage.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Model\DiskInfo.cs" />
     <Compile Include="Pages\DiskInfoProgressBarPage.xaml.cs">
       <DependentUpon>DiskInfoProgressBarPage.xaml</DependentUpon>
     </Compile>
@@ -279,6 +277,12 @@
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Resources\Icon\icons8_pause_button.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\DisckBackup.Entities\DisckBackup.Entities.csproj">
+      <Project>{086a06a2-0f05-4ef3-8347-13b3da3983dc}</Project>
+      <Name>DisckBackup.Entities</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

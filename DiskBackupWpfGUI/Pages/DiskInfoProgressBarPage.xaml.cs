@@ -1,4 +1,4 @@
-﻿using DiskBackupWpfGUI.Model;
+﻿using DisckBackup.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -24,9 +24,9 @@ namespace DiskBackupWpfGUI.Pages
         public DiskInfoProgressBarPage(VolumeInfo volumeInfo)
         {
             InitializeComponent();
-            volumeNameTextBlock.Text = volumeInfo.VolumeName;
+            volumeNameTextBlock.Text = volumeInfo.Name;
             formatTextBlock.Text = volumeInfo.Format;
-            volumeSizeTextBlock.Text = volumeInfo.VolumeSize;
+            volumeSizeTextBlock.Text = volumeInfo.StrSize;
             prioritySectionTextBlock.Text = volumeInfo.PrioritySection;
         }
     }

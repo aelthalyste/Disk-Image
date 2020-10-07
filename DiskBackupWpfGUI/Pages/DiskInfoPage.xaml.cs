@@ -1,5 +1,5 @@
-﻿using DiskBackupWpfGUI.Model;
-using DiskBackupWpfGUI.Pages;
+﻿using DiskBackupWpfGUI.Pages;
+using DisckBackup.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -27,7 +27,7 @@ namespace DiskBackupWpfGUI
             InitializeComponent();
             diskNameTextBlock.Text = diskInfo.Name;
             bootTypeTextBlock.Text = diskInfo.BootType;
-            sizeTextBlock.Text = diskInfo.Size;
+            sizeTextBlock.Text = diskInfo.StrSize;
 
             foreach (var item in diskInfo.volumeInfos)
             {
