@@ -6,19 +6,20 @@ using System.Threading.Tasks;
 
 namespace DisckBackup.Entities
 {
-    public class BackupDataInfo
+    public class RestoreTask
     {
-        //Geri yükle ve yedekleri görüntüle tablarında listViewRestore ve listViewBackups tablolarına ortak veri göndericek
-        public string Type { get; set; }
-        public string Name { get; set; }
-        public string CreatedDate { get; set; }
-        public string TaskName { get; set; }
+        // Geri yükle ve yedekleri görüntüle tablarında listViewRestore ve listViewBackups tablolarına ortak veri göndericek
+        // Geri Yükleme oluşturuda karşıladık
+        // görevlerde de yer alacak dolaylı
+        public int Id { get; set; }
+        public int TaskId { get; set; }
+        public int FileInfoId { get; set; } // FileInfo'ya bağlı
+        public string Name { get; set; } //dosya adı
         public long VolumeSize { get; set; }
         public long FileSize { get; set; }
         public string StrVolumeSize { get; set; }
         public string StrFileSize { get; set; }
         public char Letter { get; set; }
-        public string Descripiton { get; set; }
         public long UsedSize { get; set; }
         public string StrUsedSize { get; set; }
         public bool Bootable { get; set; }

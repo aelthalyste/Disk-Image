@@ -9,7 +9,7 @@ namespace DisckBackup.Entities
     public class Log
     {
         //Geçmiş aktiviteler tabında listviewLogDown da gözükecek
-        public string Time { get; set; }
+        public DateTime Time { get; set; }
         public string Detail { get; set; }
     }
 }

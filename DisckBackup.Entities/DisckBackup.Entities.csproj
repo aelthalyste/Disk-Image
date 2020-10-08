@@ -42,11 +42,12 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BackupAreaInfo.cs" />
-    <Compile Include="BackupDataInfo.cs" />
+    <Compile Include="BackupTask.cs" />
     <Compile Include="DiskInfo.cs" />
     <Compile Include="FileInfo.cs" />
     <Compile Include="Log.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="RestoreTask.cs" />
     <Compile Include="TaskInfo.cs" />
     <Compile Include="VolumeInfo.cs" />
   </ItemGroup>

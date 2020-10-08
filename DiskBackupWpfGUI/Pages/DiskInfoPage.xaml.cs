@@ -29,7 +29,7 @@ namespace DiskBackupWpfGUI
             bootTypeTextBlock.Text = diskInfo.BootType;
             sizeTextBlock.Text = diskInfo.StrSize;
 
-            foreach (var item in diskInfo.volumeInfos)
+            foreach (var item in diskInfo.VolumeInfos)
             {
                 var page = new DiskInfoProgressBarPage(item);
                 var frame = new Frame();

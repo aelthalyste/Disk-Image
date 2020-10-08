@@ -36,25 +36,36 @@ namespace DiskBackupWpfGUI
         public MainWindow()
         {
             InitializeComponent();
+            //letter progressbar'da name'in yanına eklenecek şekilde değiştirilmeli
             DiskInfo diskInfo = new DiskInfo { 
                 StrSize = "400 GB", 
-                Size = 1222,
+                Size = 400,
                 BootType = "MBR",         
-                Name = "Disk 1"
+                Name = "Disk 1",
              };
-            diskInfo.volumeInfos.Add(new VolumeInfo
+            diskInfo.VolumeInfos.Add(new VolumeInfo
             {
+                Name = "System Reserverd",
                 Format = "NTFS",
                 StrSize = "100 GB",
-                Name = "System Reserverd",
-                PrioritySection = "Primary"
+                Size = 100,
+                StrFreeSize = "50 GB",
+                FreeSize = 50,
+                PrioritySection = "Primary",
+                Letter = 'C',
+                Status = "Sağlıklı"
             });
-            diskInfo.volumeInfos.Add(new VolumeInfo
+            diskInfo.VolumeInfos.Add(new VolumeInfo
             {
+                Name = "Local Volume",
                 Format = "NTFS",
                 StrSize = "300 GB",
-                Name = "Local Volume (C:)",
-                PrioritySection = "Primary"
+                Size = 300,
+                StrFreeSize = "150 GB",
+                FreeSize = 150,
+                PrioritySection = "Primary",
+                Letter = 'D',
+                Status = "Sağlıklı"
             });
             var page = new DiskInfoPage(diskInfo);
             var frame = new Frame();
@@ -70,22 +81,57 @@ namespace DiskBackupWpfGUI
             DiskInfo diskInfo2 = new DiskInfo
             {
                 StrSize = "700 GB",
-                BootType = "MBR",
+                Size = 700,
+                BootType = "GPT",
                 Name = "Disk 2"
             };
-            diskInfo2.volumeInfos.Add(new VolumeInfo
+            diskInfo2.VolumeInfos.Add(new VolumeInfo
             {
+                Name = "System Reserverd",
+                Format = "NTFS",
+                StrSize = "250 GB",
+                Size = 250,
+                StrFreeSize = "158 GB",
+                FreeSize = 158,
+                PrioritySection = "Primary",
+                Letter = 'C',
+                Status = "Sağlıklı"
+            });
+            diskInfo2.VolumeInfos.Add(new VolumeInfo
+            {
+                Name = "Local Volume",
+                Format = "NTFS",
+                StrSize = "450 GB",
+                Size = 450,
+                StrFreeSize = "350 GB",
+                FreeSize = 350,
+                PrioritySection = "Primary",
+                Letter = 'D',
+                Status = "Sağlıklı"
+            });
+            diskInfo2.VolumeInfos.Add(new VolumeInfo
+            {
+                Name = "Local Volume",
                 Format = "NTFS",
                 StrSize = "500 GB",
-                Name = "System Reserverd",
-                PrioritySection = "Primary"
+                Size = 500,
+                StrFreeSize = "100 GB",
+                FreeSize = 100,
+                PrioritySection = "Primary",
+                Letter = 'E',
+                Status = "Sağlıklı"
             });
-            diskInfo2.volumeInfos.Add(new VolumeInfo
+            diskInfo2.VolumeInfos.Add(new VolumeInfo
             {
+                Name = "Local Volume",
                 Format = "NTFS",
-                StrSize = "200 GB",
-                Name = "Local Volume (C:)",
-                PrioritySection = "Primary"
+                StrSize = "500 GB",
+                Size = 500,
+                StrFreeSize = "10 GB",
+                FreeSize = 10,
+                PrioritySection = "Primary",
+                Letter = 'F',
+                Status = "Sağlıklı"
             });
             page = new DiskInfoPage(diskInfo2);
             frame = new Frame();
@@ -98,6 +144,12 @@ namespace DiskBackupWpfGUI
             frame.VerticalAlignment = VerticalAlignment.Top;
             stackTasksDiskInfo.Children.Add(frame);
 
+            List<DiskInfo> diskItems = new List<DiskInfo>();
+            diskItems.Add(diskInfo);
+            diskItems.Add(diskInfo2);
+
+            listViewDisk.ItemsSource = diskItems;
+            //buraya kadar uyarlandı loader'da falan da düzen gerekecek
 
             List<Discs> discsItems = new List<Discs>();
             discsItems.Add(new Discs()
@@ -174,11 +226,11 @@ namespace DiskBackupWpfGUI
             });
 
 
-            listViewDisk.ItemsSource = discsItems;
+            //listViewDisk.ItemsSource = discsItems;
             listViewRestoreDisk.ItemsSource = discsItems;
 
             CollectionView view = (CollectionView)CollectionViewSource.GetDefaultView(listViewDisk.ItemsSource);
-            PropertyGroupDescription groupDescription = new PropertyGroupDescription("DiscName");
+            PropertyGroupDescription groupDescription = new PropertyGroupDescription("Name");
             view.GroupDescriptions.Add(groupDescription);
 
             List<Backups> backupsItems = new List<Backups>();
@@ -283,11 +335,11 @@ namespace DiskBackupWpfGUI
             var expander = sender as Expander;
             long diskSize = 0;
 
-            foreach (Discs item in listViewDisk.Items)
+            foreach (DiskInfo item in listViewDisk.Items)
             {
-                if (item.DiscName.Equals(expander.Tag.ToString()))
+                if (item.Name.Equals(expander.Tag.ToString()))
                 {
-                    diskSize += item.RealSize;
+                    diskSize += item.Size;
                 }
             }
 
@@ -306,7 +358,7 @@ namespace DiskBackupWpfGUI
         {
             if (!_diskAllControl)
             {
-                foreach (Discs item in listViewDisk.ItemsSource)
+                foreach (DiskInfo item in listViewDisk.ItemsSource)
                 {
                     listViewDisk.SelectedItems.Add(item);
                 }
@@ -334,17 +386,17 @@ namespace DiskBackupWpfGUI
             }
 
             var dataItem = FindParent<ListViewItem>(sender as DependencyObject);
-            var data = dataItem.DataContext as Discs; //data seçilen değer
+            var data = dataItem.DataContext as DiskInfo; //data seçilen değer
 
             for (int i = 0; i < _groupName.Count; i++)
             {
-                if (data.DiscName.Equals(_groupName[i]))
+                if (data.Name.Equals(_groupName[i]))
                 {
                     int totalSelected = 0;
                     //i kaçıncı sıradaki adete eşit olacağı
-                    foreach (Discs item in listViewDisk.SelectedItems)
+                    foreach (DiskInfo item in listViewDisk.SelectedItems)
                     {
-                        if (item.DiscName.Equals(data.DiscName))
+                        if (item.Name.Equals(data.Name))
                         {
                             totalSelected++;
                         }
@@ -364,11 +416,11 @@ namespace DiskBackupWpfGUI
             _diskAllHeaderControl = false;
 
             var dataItem = FindParent<ListViewItem>(sender as DependencyObject);
-            var data = dataItem.DataContext as Discs; //data seçilen değer
+            var data = dataItem.DataContext as DiskInfo; //data seçilen değer
 
             for (int i = 0; i < _groupName.Count; i++)
             {
-                if (_groupName[i].Equals(data.DiscName))
+                if (_groupName[i].Equals(data.Name))
                 {
                     _expanderCheckBoxes[i].IsChecked = false;
                     _diskAllHeaderControl = true;
@@ -381,9 +433,9 @@ namespace DiskBackupWpfGUI
             var headerCheckBox = sender as CheckBox;
             _diskAllHeaderControl = true;
 
-            foreach (Discs item in listViewDisk.Items)
+            foreach (DiskInfo item in listViewDisk.Items)
             {
-                if (item.DiscName.Equals(headerCheckBox.Tag.ToString()))
+                if (item.Name.Equals(headerCheckBox.Tag.ToString()))
                 {
                     listViewDisk.SelectedItems.Add(item);
                 }
@@ -395,9 +447,9 @@ namespace DiskBackupWpfGUI
             if (_diskAllHeaderControl)
             {
                 var headerCheckBox = sender as CheckBox;
-                foreach (Discs item in listViewDisk.Items)
+                foreach (DiskInfo item in listViewDisk.Items)
                 {
-                    if (item.DiscName.Equals(headerCheckBox.Tag.ToString()))
+                    if (item.Name.Equals(headerCheckBox.Tag.ToString()))
                     {
                         listViewDisk.SelectedItems.Remove(item);
                     }
@@ -425,11 +477,11 @@ namespace DiskBackupWpfGUI
             var expander = sender as Expander;
             long diskSize = 0;
 
-            foreach (Discs item in listViewRestoreDisk.Items)
+            foreach (DiskInfo item in listViewRestoreDisk.Items)
             {
-                if (item.DiscName.Equals(expander.Tag.ToString()))
+                if (item.Name.Equals(expander.Tag.ToString()))
                 {
-                    diskSize += item.RealSize;
+                    diskSize += item.Size;
                 }
             }
 
@@ -449,7 +501,7 @@ namespace DiskBackupWpfGUI
         {
             if (!_restoreDiskAllControl)
             {
-                foreach (Discs item in listViewRestoreDisk.ItemsSource)
+                foreach (DiskInfo item in listViewRestoreDisk.ItemsSource)
                 {
                     listViewRestoreDisk.SelectedItems.Add(item);
                 }
@@ -477,17 +529,17 @@ namespace DiskBackupWpfGUI
             }
 
             var dataItem = FindParent<ListViewItem>(sender as DependencyObject);
-            var data = dataItem.DataContext as Discs; //data seçilen değer
+            var data = dataItem.DataContext as DiskInfo; //data seçilen değer
 
             for (int i = 0; i < _restoreGroupName.Count; i++)
             {
-                if (data.DiscName.Equals(_restoreGroupName[i]))
+                if (data.Name.Equals(_restoreGroupName[i]))
                 {
                     int totalSelected = 0;
                     //i kaçıncı sıradaki adete eşit olacağı
-                    foreach (Discs item in listViewRestoreDisk.SelectedItems)
+                    foreach (DiskInfo item in listViewRestoreDisk.SelectedItems)
                     {
-                        if (item.DiscName.Equals(data.DiscName))
+                        if (item.Name.Equals(data.Name))
                         {
                             totalSelected++;
                         }
@@ -507,11 +559,11 @@ namespace DiskBackupWpfGUI
             _restoreDiskAllHeaderControl = false;
 
             var dataItem = FindParent<ListViewItem>(sender as DependencyObject);
-            var data = dataItem.DataContext as Discs; //data seçilen değer
+            var data = dataItem.DataContext as DiskInfo; //data seçilen değer
 
             for (int i = 0; i < _restoreGroupName.Count; i++)
             {
-                if (_restoreGroupName[i].Equals(data.DiscName))
+                if (_restoreGroupName[i].Equals(data.Name))
                 {
                     _restoreExpanderCheckBoxes[i].IsChecked = false;
                     _restoreDiskAllHeaderControl = true;
@@ -524,9 +576,9 @@ namespace DiskBackupWpfGUI
             var headerCheckBox = sender as CheckBox;
             _restoreDiskAllHeaderControl = true;
 
-            foreach (Discs item in listViewRestoreDisk.Items)
+            foreach (DiskInfo item in listViewRestoreDisk.Items)
             {
-                if (item.DiscName.Equals(headerCheckBox.Tag.ToString()))
+                if (item.Name.Equals(headerCheckBox.Tag.ToString()))
                 {
                     listViewRestoreDisk.SelectedItems.Add(item);
                 }
@@ -538,9 +590,9 @@ namespace DiskBackupWpfGUI
             if (_restoreDiskAllHeaderControl)
             {
                 var headerCheckBox = sender as CheckBox;
-                foreach (Discs item in listViewRestoreDisk.Items)
+                foreach (DiskInfo item in listViewRestoreDisk.Items)
                 {
-                    if (item.DiscName.Equals(headerCheckBox.Tag.ToString()))
+                    if (item.Name.Equals(headerCheckBox.Tag.ToString()))
                     {
                         listViewRestoreDisk.SelectedItems.Remove(item);
                     }

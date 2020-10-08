@@ -20,6 +20,5 @@ namespace DisckBackup.Entities
         public char Letter { get; set; }
         public string Status { get; set; } // Sağlıklı
 
-        //hem string hem long tutsak nasıl olur size & freeSize  ??
     }
 }

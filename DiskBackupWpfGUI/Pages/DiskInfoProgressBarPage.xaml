@@ -12,7 +12,7 @@
         <DockPanel Margin="3,0,0,0">
             <Border BorderBrush="#9ACFEA" Background="#F2F2F2" BorderThickness="1" Height="90" CornerRadius="3">
                 <Grid>
-                    <ProgressBar Minimum="0" Maximum="100" Value="40" Height="20" Margin="10,10,10,0" VerticalAlignment="Top">
+                    <ProgressBar Name="pbVolume" Minimum="0" Height="20" Margin="10,10,10,0" VerticalAlignment="Top">
                         <ProgressBar.Background>
                             <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
                                 <GradientStop Color="#FF94C683" Offset="0"/>
@@ -27,7 +27,12 @@
                         </ProgressBar.Foreground>
                     </ProgressBar>
                     <StackPanel Margin="10,0,0,0" VerticalAlignment="Bottom">
-                        <TextBlock Name="volumeNameTextBlock" FontWeight="Bold" FontSize="14">Local Volume (C:)</TextBlock>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Name="volumeNameTextBlock" FontWeight="Bold" FontSize="14">Local Volume </TextBlock>
+                            <TextBlock Text=" (" FontWeight="Bold" FontSize="14"/>
+                            <TextBlock Name="volumeLetterTextBlock"  FontWeight="Bold" FontSize="14"/>
+                            <TextBlock Text=":)" FontWeight="Bold" FontSize="14"/>
+                        </StackPanel>
                         <TextBlock Name="formatTextBlock" FontSize="14">NTFS</TextBlock>
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Name="volumeSizeTextBlock" FontSize="14">700 GB</TextBlock>
