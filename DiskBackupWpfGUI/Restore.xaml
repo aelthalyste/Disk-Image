@@ -96,8 +96,7 @@
                     <Rectangle Grid.Column="0" Stroke="#AAAAAA" StrokeThickness="0.7" HorizontalAlignment="Right"/>
                     <StackPanel Margin="10,10,20,10">
                         <TextBlock Text="{DynamicResource scheduler}" Margin="0,0,0,20" />
-                        <CheckBox Name="chbAutoRun" Margin="0,0,0,15" Content="{DynamicResource autoRun}" Checked="chbAutoRun_Checked" Unchecked="chbAutoRun_Unchecked"/>
-                        <StackPanel IsEnabled="False" Name="stackAutoRun" Margin="20,0,0,10">
+                        <StackPanel Margin="20,0,0,10">
                             <RadioButton Name="rbStartNow" GroupName="rbAutoRun" Margin="0,0,0,10" Content="{DynamicResource startNow}"/>
                             <StackPanel Orientation="Horizontal">
                                 <RadioButton Name="rbSetTime" GroupName="rbAutoRun" Content="{DynamicResource setTime}" VerticalAlignment="Center" Checked="rbSetTime_Checked" Unchecked="rbSetTime_Unchecked"/>

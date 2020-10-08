@@ -1,4 +1,5 @@
-﻿using DiskBackupWpfGUI.Model;
+﻿using DiskBackupWpfGUI.Pages;
+using DisckBackup.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -26,10 +27,16 @@ namespace DiskBackupWpfGUI
             InitializeComponent();
             diskNameTextBlock.Text = diskInfo.Name;
             bootTypeTextBlock.Text = diskInfo.BootType;
-            sizeTextBlock.Text = diskInfo.Size;
-            volumeNameTextBlock.Text = diskInfo.VolumeName;
-            formatTextBlock.Text = diskInfo.Format;
-            volumeSizeTextBlock.Text = diskInfo.VolumeSize;
+            sizeTextBlock.Text = diskInfo.StrSize;
+
+            foreach (var item in diskInfo.VolumeInfos)
+            {
+                var page = new DiskInfoProgressBarPage(item);
+                var frame = new Frame();
+                frame.Content = page;
+                diskInfoUniformGrid.Children.Add(frame);
+            }
+
         }
     }
 }

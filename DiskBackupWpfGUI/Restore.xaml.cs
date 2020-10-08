@@ -95,18 +95,6 @@ namespace DiskBackupWpfGUI
             }
         }
 
-        private void chbAutoRun_Checked(object sender, RoutedEventArgs e)
-        {
-            stackAutoRun.IsEnabled = true;
-        }
-
-        private void chbAutoRun_Unchecked(object sender, RoutedEventArgs e)
-        {
-            stackAutoRun.IsEnabled = false;
-            rbSetTime.IsChecked = true;
-            rbSetTime.IsChecked = false;
-        }
-
         private void rbSetTime_Checked(object sender, RoutedEventArgs e)
         {
             stackSetTime.IsEnabled = true;

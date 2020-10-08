@@ -1,0 +1,31 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace DisckBackup.Entities
+{
+    public class RestoreTask
+    {
+        // Geri yükle ve yedekleri görüntüle tablarında listViewRestore ve listViewBackups tablolarına ortak veri göndericek
+        // Geri Yükleme oluşturuda karşıladık
+        // görevlerde de yer alacak dolaylı
+        public int Id { get; set; }
+        public int TaskId { get; set; }
+        public int FileInfoId { get; set; } // FileInfo'ya bağlı
+        public string Name { get; set; } //dosya adı
+        public long VolumeSize { get; set; }
+        public long FileSize { get; set; }
+        public string StrVolumeSize { get; set; }
+        public string StrFileSize { get; set; }
+        public char Letter { get; set; }
+        public long UsedSize { get; set; }
+        public string StrUsedSize { get; set; }
+        public bool Bootable { get; set; }
+        public bool Zip { get; set; }
+        public string OS { get; set; }
+        public string PCName { get; set; }
+        public string IpAddress { get; set; }
+    }
+}

@@ -26,6 +26,7 @@
     <system:String x:Key="edit">Düzenle</system:String>
     <system:String x:Key="start">Başla</system:String>
     <system:String x:Key="stop">Durdur</system:String>
+    <system:String x:Key="pause">Duraklat</system:String>
     <system:String x:Key="close">Kapat</system:String>
     <system:String x:Key="open">Aç</system:String>
     <system:String x:Key="copy">Kopyala</system:String>
@@ -49,6 +50,7 @@
     <system:String x:Key="backupAreas">Yedekleme Alanları</system:String>
     <system:String x:Key="startDate">Başlangıç Tarihi</system:String>
     <system:String x:Key="endDate">Bitiş Tarihi</system:String>
+    <system:String x:Key="updateDate">Değiştirme Tarihi</system:String>
     <system:String x:Key="source">Kaynak</system:String>
     <system:String x:Key="pastActivities">Geçmiş Aktiviteler</system:String>
     <system:String x:Key="time">Zaman</system:String>
@@ -224,4 +226,5 @@
     <system:String x:Key="restoreDiskContent2">Farklı bir boot'a ihtiyaç duymadığınız sürece değiştirmeyiniz.</system:String>
     <system:String x:Key="createBootPartition">Boot Partition Oluştur</system:String>
     <system:String x:Key="fileInfo">Dosya Bilgileri</system:String>
+    <system:String x:Key="files">Dosyalar</system:String>
 </ResourceDictionary>
