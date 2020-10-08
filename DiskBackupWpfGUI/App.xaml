@@ -10,10 +10,10 @@
             <Setter Property="Width" Value="22"/>
             <Setter Property="Height" Value="22"/>
             <Style.Triggers>
-                <DataTrigger Binding="{Binding LogIcon}" Value="success">
+                <DataTrigger Binding="{Binding Status}" Value="success">
                     <Setter Property="Source" Value="Resources\Icon\icons8_ok_3.ico" />
                 </DataTrigger>
-                <DataTrigger Binding="{Binding LogIcon}" Value="fail">
+                <DataTrigger Binding="{Binding Status}" Value="fail">
                     <Setter Property="Source" Value="Resources\Icon\icons8_cancel.ico" />
                 </DataTrigger>
             </Style.Triggers>

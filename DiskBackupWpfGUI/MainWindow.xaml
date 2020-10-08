@@ -176,7 +176,7 @@
                                                 <DataTemplate>
                                                     <StackPanel Orientation="Horizontal">
                                                         <Image Source="Resources/Icon/icons8_c_drive_2.png" Height="22" Width="Auto" Margin="0,0,10,0"/>
-                                                        <TextBlock Text="{Binding volumeInfos}" TextAlignment="Left" VerticalAlignment="Center"/>
+                                                        <TextBlock Text="{Binding Name}" TextAlignment="Left" VerticalAlignment="Center"/>
                                                     </StackPanel>
                                                 </DataTemplate>
                                             </GridViewColumn.CellTemplate>
@@ -191,14 +191,14 @@
                                         <GridViewColumn Header="{DynamicResource area}" Width="110" >
                                             <GridViewColumn.CellTemplate>
                                                 <DataTemplate>
-                                                    <TextBlock Text="{Binding Area}" TextAlignment="Center"/>
+                                                    <TextBlock Text="{Binding StrSize}" TextAlignment="Center"/>
                                                 </DataTemplate>
                                             </GridViewColumn.CellTemplate>
                                         </GridViewColumn >
                                         <GridViewColumn Header="{DynamicResource freeSize}" Width="110" >
                                             <GridViewColumn.CellTemplate>
                                                 <DataTemplate>
-                                                    <TextBlock Text="{Binding FreeSize}" TextAlignment="Center"/>
+                                                    <TextBlock Text="{Binding StrFreeSize}" TextAlignment="Center"/>
                                                 </DataTemplate>
                                             </GridViewColumn.CellTemplate>
                                         </GridViewColumn>
@@ -219,7 +219,7 @@
                                         <GridViewColumn Header="{DynamicResource statu}" Width="200" >
                                             <GridViewColumn.CellTemplate>
                                                 <DataTemplate>
-                                                    <TextBlock Text="{Binding Statu}" TextAlignment="Center"/>
+                                                    <TextBlock Text="{Binding Status}" TextAlignment="Center"/>
                                                 </DataTemplate>
                                             </GridViewColumn.CellTemplate>
                                         </GridViewColumn>
@@ -588,7 +588,7 @@
                                         <DataTemplate>
                                             <StackPanel Orientation="Horizontal">
                                                 <Image Source="Resources/Icon/icons8_c_drive_2.png" Height="22" Width="Auto" Margin="0,0,10,0"/>
-                                                <TextBlock Text="{Binding Volume}" TextAlignment="Left" VerticalAlignment="Center"/>
+                                                <TextBlock Text="{Binding Name}" TextAlignment="Left" VerticalAlignment="Center"/>
                                             </StackPanel>
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>
@@ -603,21 +603,21 @@
                                 <GridViewColumn Header="{DynamicResource area}" Width="110" >
                                     <GridViewColumn.CellTemplate>
                                         <DataTemplate>
-                                            <TextBlock Text="{Binding Area}" TextAlignment="Center"/>
+                                            <TextBlock Text="{Binding StrSize}" TextAlignment="Center"/>
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>
                                 </GridViewColumn >
                                 <GridViewColumn Header="{DynamicResource freeSize}" Width="110" >
                                     <GridViewColumn.CellTemplate>
                                         <DataTemplate>
-                                            <TextBlock Text="{Binding FreeSize}" TextAlignment="Center"/>
+                                            <TextBlock Text="{Binding StrFreeSize}" TextAlignment="Center"/>
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>
                                 </GridViewColumn>
                                 <GridViewColumn Header="{DynamicResource type}" Width="110" >
                                     <GridViewColumn.CellTemplate>
                                         <DataTemplate>
-                                            <TextBlock Text="{Binding Type}" TextAlignment="Center"/>
+                                            <TextBlock Text="{Binding BootType}" TextAlignment="Center"/>
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>
                                 </GridViewColumn>
@@ -631,7 +631,7 @@
                                 <GridViewColumn Header="{DynamicResource statu}" Width="180" >
                                     <GridViewColumn.CellTemplate>
                                         <DataTemplate>
-                                            <TextBlock Text="{Binding Statu}" TextAlignment="Center"/>
+                                            <TextBlock Text="{Binding Status}" TextAlignment="Center"/>
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>
                                 </GridViewColumn>
@@ -1043,35 +1043,35 @@
                                     <GridViewColumn Header="{DynamicResource endDate}" Width="155" >
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
-                                                <TextBlock Text="{Binding TotalLength}" TextAlignment="Center"/>
+                                                <TextBlock Text="{Binding EndDate}" TextAlignment="Center"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
                                     <GridViewColumn Header="{DynamicResource type}" Width="125" >
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
-                                                <TextBlock Text="{Binding VersionLength}" TextAlignment="Center"/>
+                                                <TextBlock Text="{Binding backupType}" TextAlignment="Center"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
                                     <GridViewColumn Header="{DynamicResource taskName}" Width="135" >
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
-                                                <TextBlock Text="{Binding VersionLength}" TextAlignment="Center"/>
+                                                <TextBlock Text="{Binding TaskName.Name}" TextAlignment="Center"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
                                     <GridViewColumn Header="{DynamicResource target}" Width="230" >
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
-                                                <TextBlock Text="{Binding VersionLength}" TextAlignment="Center"/>
+                                                <TextBlock Text="{Binding Target.AreaName}" TextAlignment="Center"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
                                     <GridViewColumn Header="{DynamicResource statu}" Width="175" >
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
-                                                <TextBlock Text="{Binding VersionLength}" TextAlignment="Center"/>
+                                                <TextBlock Text="{Binding Status}" TextAlignment="Center"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>

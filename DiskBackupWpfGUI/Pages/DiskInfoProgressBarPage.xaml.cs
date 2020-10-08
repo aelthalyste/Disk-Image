@@ -26,7 +26,7 @@ namespace DiskBackupWpfGUI.Pages
             InitializeComponent();
             volumeNameTextBlock.Text = volumeInfo.Name;
             volumeLetterTextBlock.Text = volumeInfo.Letter.ToString();
-            formatTextBlock.Text = volumeInfo.Format;
+            formatTextBlock.Text = volumeInfo.FileSystem;
             volumeSizeTextBlock.Text = volumeInfo.StrSize;
             prioritySectionTextBlock.Text = volumeInfo.PrioritySection;
             pbVolume.Maximum = volumeInfo.Size;

@@ -12,7 +12,7 @@ namespace DisckBackup.Entities
         // Geri Yükleme oluşturuda karşıladık
         // görevlerde de yer alacak dolaylı
         public int Id { get; set; }
-        public int TaskId { get; set; }
+        public TaskInfo TaskName { get; set; }
         public int FileInfoId { get; set; } // FileInfo'ya bağlı
         public string Name { get; set; } //dosya adı
         public long VolumeSize { get; set; }

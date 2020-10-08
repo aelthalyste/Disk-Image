@@ -41,6 +41,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ActivityLog.cs" />
     <Compile Include="BackupAreaInfo.cs" />
     <Compile Include="BackupTask.cs" />
     <Compile Include="DiskInfo.cs" />

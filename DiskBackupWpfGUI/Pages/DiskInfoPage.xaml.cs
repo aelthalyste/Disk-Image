@@ -25,8 +25,8 @@ namespace DiskBackupWpfGUI
         public DiskInfoPage(DiskInfo diskInfo)
         {
             InitializeComponent();
-            diskNameTextBlock.Text = diskInfo.Name;
-            bootTypeTextBlock.Text = diskInfo.BootType;
+            diskNameTextBlock.Text = diskInfo.VolumeInfos[0].DiskName;
+            bootTypeTextBlock.Text = diskInfo.VolumeInfos[0].BootType;
             sizeTextBlock.Text = diskInfo.StrSize;
 
             foreach (var item in diskInfo.VolumeInfos)

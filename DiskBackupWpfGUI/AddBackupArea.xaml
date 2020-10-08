@@ -152,12 +152,10 @@
                                 <RowDefinition/>
                                 <RowDefinition/>
                             </Grid.RowDefinitions>
-                            <TextBlock Text="{DynamicResource name2}" Grid.Row="0" Grid.Column="0" />
                             <TextBlock Text="{DynamicResource folderPath}" Grid.Row="1" Grid.Column="0"/>
                             <TextBlock Text="{DynamicResource userName}" Grid.Row="2" Grid.Column="0"/>
                             <TextBlock Text="{DynamicResource password}" Grid.Row="3" Grid.Column="0"/>
 
-                            <TextBox Name="txtSettingsName" Grid.Row="0" Grid.Column="1" Width="250" Height="22" Margin="0,0,0,10" HorizontalAlignment="Left"/>
                             <TextBox Name="txtSettingsFolderPath" Grid.Row="1" Grid.Column="1" Width="250" Height="22" Margin="0,0,0,10" Padding="0,0,22,0" HorizontalAlignment="Left"/>
                             <StackPanel Grid.Row="1" Grid.Column="1" HorizontalAlignment="Left" Margin="229,1,0,0">
                                 <Button Name="btnSettingsLocalFolder" Style="{StaticResource ArrowUpButton}" Click="btnSettingsLocalFolder_Click" Content="..." Width="20" Height="20" FontSize="15" />
@@ -166,7 +164,7 @@
                             <PasswordBox Name="txtSettingsPassword" Grid.Row="3" Grid.Column="1" Width="250" Height="22" Margin="0,0,0,10" HorizontalAlignment="Left"/>
                         </Grid>
                     </StackPanel>
-                    
+
                     <StackPanel Name="stackNAS" Grid.Row="0" Margin="10,30,20,10" Visibility="Hidden">
                         <TextBlock Text="{DynamicResource NASorSharing}" />
                         <Grid Margin="20,20,0,0">
@@ -181,13 +179,11 @@
                                 <RowDefinition/>
                                 <RowDefinition/>
                             </Grid.RowDefinitions>
-                            <TextBlock Text="{DynamicResource name2}" Grid.Row="0" Grid.Column="0" />
                             <TextBlock Text="{DynamicResource folderPath}" Grid.Row="1" Grid.Column="0"/>
                             <TextBlock Text="{DynamicResource domainIP}" Grid.Row="2" Grid.Column="0"/>
                             <TextBlock Text="{DynamicResource userName}" Grid.Row="3" Grid.Column="0"/>
                             <TextBlock Text="{DynamicResource password}" Grid.Row="4" Grid.Column="0"/>
 
-                            <TextBox Name="txtSettingsNASName" Grid.Row="0" Grid.Column="1" Width="250" Height="22" Margin="0,0,0,10" HorizontalAlignment="Left" VerticalContentAlignment="Center"/>
                             <TextBox Name="txtSettingsNASFolderPath" Grid.Row="1" Grid.Column="1" Width="250" Height="22" Margin="0,0,0,10" Padding="0,0,22,0" HorizontalAlignment="Left" VerticalContentAlignment="Center"/>
                             <StackPanel Grid.Row="1" Grid.Column="1" HorizontalAlignment="Left" Margin="229,1,0,0">
                                 <Button Name="btnSettingsNASFolder" Style="{StaticResource ArrowUpButton}" Click="btnSettingsNASFolder_Click" Content="..." Width="20" Height="20" FontSize="15" />
