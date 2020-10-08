@@ -1260,6 +1260,7 @@ GetMFTLCN(char VolumeLetter, HANDLE VolumeHandle) {
 
     UINT32 MEMORY_BUFFER_SIZE = 1024LL * 1024LL * 1024LL;
     UINT32 ClusterExtractedBufferSize = 1024 * 1024 * 5;
+    INT32 ClusterSize = NarGetVolumeClusterSize(VolumeLetter);
 
     struct {
         UINT32 Count[8];
@@ -1274,8 +1275,6 @@ GetMFTLCN(char VolumeLetter, HANDLE VolumeHandle) {
     }
     
 #define NAR_INSERT_CLUSTER(START, LEN) ClustersExtracted[ClusterExtractedCount++] = {(UINT32)(START), (UINT32)(LEN) };
-
-
 #define NAR_MFT_DBG_INFO 0
 
 
@@ -1487,9 +1486,9 @@ GetMFTLCN(char VolumeLetter, HANDLE VolumeHandle) {
             
             for (unsigned int MFTOffsetIndex = 0; MFTOffsetIndex < MFTRegionCount; MFTOffsetIndex++) {
 
-                // NOTE(Batuhan): IMPORTANT assumption made, cluster size 4096 bytes.
-                ULONGLONG Offset = (ULONGLONG)ClustersExtracted[MFTOffsetIndex].StartPos * 4096ULL;
-                ULONGLONG FileCount = (ULONGLONG)ClustersExtracted[MFTOffsetIndex].Len * 4ull; // its 4 file record per cluster, since file records are 1 KB
+                ULONGLONG Offset = (ULONGLONG)ClustersExtracted[MFTOffsetIndex].StartPos * (UINT64)ClusterSize;
+                INT32 FilePerCluster = ClusterSize / 1024;
+                ULONGLONG FileCount = (ULONGLONG)ClustersExtracted[MFTOffsetIndex].Len * (UINT64)FilePerCluster;
 
                 // set file pointer to actual records
                 if (NarSetFilePointer(VolumeHandle, Offset)) {
@@ -1513,10 +1512,7 @@ GetMFTLCN(char VolumeLetter, HANDLE VolumeHandle) {
                                     continue;
                                 }
                                 
-                                
-
                                 DBG_INC(DBG_TOTAL_FILES_FOUND);
-
                                 INT16 Flags = *(INT16*)((BYTE*)FileRecord + FlagOffset);
                                 
 
@@ -1666,7 +1662,7 @@ GetMFTLCN(char VolumeLetter, HANDLE VolumeHandle) {
 
                         }
                         else {
-                        printf("Couldnt read file records\n");
+                            printf("Couldnt read file records\n");
 #if _DEBUG
                             DebugBreak();
 #endif
@@ -1729,7 +1725,7 @@ GetMFTLCN(char VolumeLetter, HANDLE VolumeHandle) {
     ULONGLONG VolumeSize = NarGetVolumeSize(VolumeLetter);
     UINT32 TruncateIndex = 0;
     for (int i = 0; i < Result.Count; i++) {
-        if ((ULONGLONG)Result.Data[i].StartPos * (ULONGLONG)4096ULL + (ULONGLONG)Result.Data[i].Len * 4096ULL > VolumeSize) {
+        if ((ULONGLONG)Result.Data[i].StartPos * (ULONGLONG)ClusterSize + (ULONGLONG)Result.Data[i].Len * ClusterSize > VolumeSize) {
             TruncateIndex = i;
             break;
         }
@@ -3283,8 +3279,10 @@ NarRepairBoot(char OSVolumeLetter) {
 
 void
 FreeBackupMetadataEx(backup_metadata_ex* BMEX) {
-    FreeDataArray(&BMEX->RegionsMetadata);
-    free(BMEX);
+    if(BMEX){
+        FreeDataArray(&BMEX->RegionsMetadata);
+        free(BMEX);
+    }
 }
 
 
@@ -5708,7 +5706,6 @@ void foo(){
 
 }
 
-
 inline void
 NarPushDirectoryStack(NarBackupFileExplorerContext *Ctx, UINT64 ID) {
     Ctx->HistoryStack.S[++Ctx->HistoryStack.I] = ID;
@@ -5722,11 +5719,8 @@ NarPopDirectoryStack(NarBackupFileExplorerContext* Ctx) {
     }
 }
 
-
-
-
 inline void
-NarGetFileListFromMFTID(FileEntriesList* EList, UINT64 TargetMFTID, nar_record* MFTRegions, UINT32 MFTRegionCount, UINT32 ClusterSize, HANDLE VolumeHandle) {
+NarGetFileListFromMFTID(FileEntriesList* EList, UINT64 TargetMFTID, nar_record* MFTRegions, UINT32 MFTRegionCount, UINT32 ClusterSize, NarFEVolumeHandle FEHandle) {
 
     if (!EList) return;
 
@@ -5747,7 +5741,6 @@ NarGetFileListFromMFTID(FileEntriesList* EList, UINT64 TargetMFTID, nar_record* 
         if (FileCountInRegion + AdvancedFileCountSoFar >= TargetMFTID) {
             // found
             FileOffsetFromRegion = TargetMFTID - AdvancedFileCountSoFar;
-
             FileOffsetAtVolume = (UINT64)MFTRegions[RegionIndex].StartPos * (UINT64)ClusterSize + FileOffsetFromRegion * 1024;
             break;
         }
@@ -5757,7 +5750,7 @@ NarGetFileListFromMFTID(FileEntriesList* EList, UINT64 TargetMFTID, nar_record* 
     }
 
 
-    if (NarSetFilePointer(VolumeHandle, FileOffsetAtVolume)) {
+    if (NarFileExplorerSetFilePointer(FEHandle, FileOffsetAtVolume)) {
 
         BYTE Buffer[1024];
         memset(Buffer, 0, sizeof(Buffer));
@@ -5770,7 +5763,8 @@ NarGetFileListFromMFTID(FileEntriesList* EList, UINT64 TargetMFTID, nar_record* 
         }INDX_ALL_REGIONS[64];
 
         DWORD BytesRead = 0;
-        if (ReadFile(VolumeHandle, Buffer, 1024, &BytesRead, 0) && BytesRead == 1024) {
+
+        if (NarFileExplorerReadVolume(FEHandle, Buffer, 1024, &BytesRead) && BytesRead == 1024) {
 
             // do parsing stuff
             void* FileRecord = &Buffer[0];
@@ -6018,7 +6012,7 @@ NarGetFileListFromMFTID(FileEntriesList* EList, UINT64 TargetMFTID, nar_record* 
 
             for (UINT32 IndexRegionIndex = 0; IndexRegionIndex < IndexRegionsFound; IndexRegionIndex++) {
 
-                if (NarSetFilePointer(VolumeHandle, (UINT64)INDX_ALL_REGIONS[IndexRegionIndex].Start * (UINT64)ClusterSize)) {
+                if (NarFileExplorerSetFilePointer(FEHandle, (UINT64)INDX_ALL_REGIONS[IndexRegionIndex].Start * (UINT64)ClusterSize)) {
 
                     size_t IndxBufferSize = (UINT64)INDX_ALL_REGIONS[IndexRegionIndex].Len * (UINT64)ClusterSize;
 
@@ -6026,7 +6020,7 @@ NarGetFileListFromMFTID(FileEntriesList* EList, UINT64 TargetMFTID, nar_record* 
 
                     if (IndxBuffer) {
 
-                        if (ReadFile(VolumeHandle, IndxBuffer, (DWORD)IndxBufferSize, &BytesRead, 0) && BytesRead == IndxBufferSize) {
+                        if (NarFileExplorerReadVolume(FEHandle, IndxBuffer, (DWORD)IndxBufferSize, &BytesRead) && BytesRead == IndxBufferSize) {
 
                             // inspect each clusters in region
                             for (UINT32 IndxRegionClusterIndex = 0; IndxRegionClusterIndex < (IndxBufferSize / 4096); IndxRegionClusterIndex++) {
@@ -6212,7 +6206,7 @@ NarFileExplorerPopDirectory(NarBackupFileExplorerContext* Ctx) {
 
     Ctx->EList.EntryCount = 0;
     Ctx->EList.MFTIndex = Ctx->HistoryStack.S[Ctx->HistoryStack.I];
-    NarGetFileListFromMFTID(&Ctx->EList, Ctx->HistoryStack.S[Ctx->HistoryStack.I], Ctx->MFTRecords, Ctx->MFTRecordsCount, 4096,Ctx->VolumeHandle);
+    NarGetFileListFromMFTID(&Ctx->EList, Ctx->HistoryStack.S[Ctx->HistoryStack.I], Ctx->MFTRecords, Ctx->MFTRecordsCount, Ctx->ClusterSize, Ctx->FEHandle);
 
 }
 
@@ -6237,9 +6231,8 @@ NarFileExplorerPrint(NarBackupFileExplorerContext* Ctx) {
 inline void
 NarReleaseFileExplorerContext(NarBackupFileExplorerContext* Ctx) {
     
-    if (!Ctx) return;
+    if (!Ctx) return; 
 
-    NarCloseVolume(Ctx->VolumeHandle);
     if (Ctx->EList.Entries != 0) {
         free(Ctx->EList.Entries);
     }
@@ -6247,36 +6240,151 @@ NarReleaseFileExplorerContext(NarBackupFileExplorerContext* Ctx) {
         free(Ctx->MFTRecords);
     }
 
+    NarFreeFEVolumeHandle(&Ctx->FEHandle);
+
 }
 
+inline INT32
+NarGetVolumeClusterSize(char Letter){
+    
+    char V[] = "!:\\";
+    V[0] = Letter;
 
+    INT32 Result = 0;
+    DWORD SectorsPerCluster = 0;
+    DWORD BytesPerSector = 0;
+    
+    if (GetDiskFreeSpaceA(V, &SectorsPerCluster, &BytesPerSector, 0, 0)){
+        Result = SectorsPerCluster * BytesPerSector;
+    }
+    else{
+        printf("Couldnt get disk free space for volume %c\n", Letter);
+    }
+
+    return Result;
+}
+
+// asserts Buffer is large enough to hold all data needed, since caller has information about metadata this isnt problem at all
 inline BOOLEAN
-NarInitFileExplorerContext(NarBackupFileExplorerContext* Ctx, char Letter) {
+ReadMFTLCNFromMetadata(HANDLE FHandle, backup_metadata Metadata, void *Buffer){
+    
+    BOOLEAN Result = FALSE;
+    if(FHandle != INVALID_HANDLE_VALUE){
+        
+        // Caller must validate metadata integrity, but it's likely that something invalid may be passed here, check it anyway there isnt a cost
+        if(NarSetFilePointer(FHandle, Metadata.Offset.MFTMetadata)){
+
+            DWORD BR = 0;        
+            if(ReadFile(FHandle, Buffer, Metadata.Size.MFTMetadata, &BR, 0) && BR == Metadata.Size.MFTMetadata){
+                Result = TRUE;
+            }
+            else{
+                // readfile failed
+                printf("Readfile failed for ReadMFTLCNFromMetadata, tried to read %i bytes, instead read %i\n", Metadata.Size.MFTMetadata, BR);
+                DisplayError(GetLastError());
+            }
+
+        }
+        else{
+            printf("Couldnt set file pointer to %I64d to read mftlcn from metadata\n", Metadata.Offset.MFTMetadata);
+            // setfileptr failed
+        }
+
+    }
+    else{
+        printf("Metadata handle was invalid, terminating ReadMFTLCNFromMetadata\n");
+        // handle was invalid
+    }
+
+    return Result;
+}
+
+/*
+    Ctx = output
+    HandleOptions
+        NAR_READ_MOUNTED_VOLUME = Reads mounted local disk VolumeLetter and ignores rest of the parameters, and makes FEV->BMEX NULL to. this will lead FEV to become normal volume handle
+        NAR_READ_BACKUP_VOLUME 2 = Tries to find backup files in RootDir, if one not given, searches current running directory.
+                                    Then according to backup region information, handles read-seak operations in wrapped function
+
+*/
+inline BOOLEAN
+NarInitFileExplorerContext(NarBackupFileExplorerContext* Ctx, INT32 HandleOptions, char Letter, int Version, wchar_t *RootDir) {
 
     if (!Ctx) goto NAR_FAIL_TERMINATE;;
+    
+    if(HandleOptions != NAR_READ_BACKUP_VOLUME && HandleOptions != NAR_READ_MOUNTED_VOLUME){
+        printf("Passed invalid HandleOptions to NarInitFileExplorerContext\n");
+        goto NAR_FAIL_TERMINATE;
+    }
+
 
     memset(Ctx, 0, sizeof(*Ctx));
 
-    Ctx->MFTRecords = (nar_record*)NarGetMFTRegionsByCommandLine(Letter, &Ctx->MFTRecordsCount);
     Ctx->EList.Entries = (NarFileEntry*)malloc(10000 * sizeof(NarFileEntry));
     if (Ctx->EList.Entries) {
+
         memset(Ctx->EList.Entries, 0, 10000 * sizeof(NarFileEntry));
 
-        HANDLE VolumeHandle = INVALID_HANDLE_VALUE;
-        VolumeHandle = NarOpenVolume(Letter);
-        
         memset(Ctx->CurrentDirectory, 0, sizeof(Ctx->CurrentDirectory));
         memset(Ctx->RootDir, 0, sizeof(Ctx->RootDir));
         memset(&Ctx->HistoryStack, 0, sizeof(Ctx->HistoryStack));
 
-        if (VolumeHandle != INVALID_HANDLE_VALUE) {
+        if (NarInitFEVolumeHandle(&Ctx->FEHandle, HandleOptions, Letter, Version, RootDir)) {
 
-            Ctx->VolumeHandle = VolumeHandle;
+            BOOLEAN Status = FALSE;
+
+            if(HandleOptions == NAR_READ_MOUNTED_VOLUME){
+                Ctx->ClusterSize = NarGetVolumeClusterSize(Letter);
+                Ctx->MFTRecords = (nar_record*)NarGetMFTRegionsByCommandLine(Letter, &Ctx->MFTRecordsCount);
+                Status = TRUE;
+            }
+            if(HandleOptions == NAR_READ_BACKUP_VOLUME){
+                Ctx->ClusterSize = Ctx->FEHandle.BMEX->M.ClusterSize;
+                HANDLE BackupMetadataHandle = CreateFile(Ctx->FEHandle.BMEX->FilePath.c_str(), GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
+                if(BackupMetadataHandle != INVALID_HANDLE_VALUE){
+                    
+                    Ctx->MFTRecords = (nar_record*)malloc(Ctx->FEHandle.BMEX->M.Size.MFTMetadata * sizeof(nar_record));
+                    if(Ctx->MFTRecords){
+                        
+                        if(ReadMFTLCNFromMetadata(BackupMetadataHandle, Ctx->FEHandle.BMEX->M, Ctx->MFTRecords)){
+                            Ctx->MFTRecordsCount = Ctx->FEHandle.BMEX->M.Size.MFTMetadata / sizeof(nar_record);
+                            Status = TRUE;
+                        }
+                        else{
+                            printf("Couldnt read MFTLCN from metadata\n");
+                        }
+
+                    }
+                    else{
+                        printf("Failed to allocate memory for MFTLCN to read from backup metadata\n");
+                        // failed to allocate memory
+                    }
+                    
+                    CloseHandle(BackupMetadataHandle);
+                }
+                else{
+                    printf("Failed to open backup metadata for volume %c for version %i, filepath was %s\n", Ctx->FEHandle.BMEX->FilePath.c_str());
+                    DisplayError(GetLastError());
+                }
+                // extract MFT regions from backup metadata
+            }
+
+            if (Status) {
+                
+            }
+            else {
+                // TODO (Batuhan) :
+                // MFT Record setup has been failed, abort
+            }
+
+            Assert(Ctx->ClusterSize > 1024);
+            Assert(Ctx->ClusterSize % 1024 == 0);
+
             Ctx->EList.EntryCount = 0;
             Ctx->EList.MFTIndex = NAR_ROOT_MFT_ID;
             Ctx->HistoryStack.I = -1;
 
-            NarGetFileListFromMFTID(&Ctx->EList, NAR_ROOT_MFT_ID, Ctx->MFTRecords, Ctx->MFTRecordsCount, 4096, VolumeHandle);
+            NarGetFileListFromMFTID(&Ctx->EList, NAR_ROOT_MFT_ID, Ctx->MFTRecords, Ctx->MFTRecordsCount, Ctx->ClusterSize, Ctx->FEHandle);
             NarPushDirectoryStack(Ctx, NAR_ROOT_MFT_ID);
             
             wchar_t vb[] = L"%c\\";
@@ -6284,27 +6392,27 @@ NarInitFileExplorerContext(NarBackupFileExplorerContext* Ctx, char Letter) {
             wcscat(Ctx->CurrentDirectory, vb);
             
             /*
-            Ctx->EList.EntryCount = 0;
-            NarGetFileListFromMFTID(&Ctx->EList, 44571, Ctx->MFTRecords, Ctx->MFTRecordsCount, 4096, VolumeHandle);
+                Ctx->EList.EntryCount = 0;
+                NarGetFileListFromMFTID(&Ctx->EList, 44571, Ctx->MFTRecords, Ctx->MFTRecordsCount, 4096, VolumeHandle);
 
-            Ctx->EList.EntryCount = 0;
-            NarGetFileListFromMFTID(&Ctx->EList, 120848, Ctx->MFTRecords, Ctx->MFTRecordsCount, 4096, VolumeHandle);
+                Ctx->EList.EntryCount = 0;
+                NarGetFileListFromMFTID(&Ctx->EList, 120848, Ctx->MFTRecords, Ctx->MFTRecordsCount, 4096, VolumeHandle);
 
 
-            Ctx->EList.EntryCount = 0;
-            NarGetFileListFromMFTID(&Ctx->EList, 98328, Ctx->MFTRecords, Ctx->MFTRecordsCount, 4096, VolumeHandle);
+                Ctx->EList.EntryCount = 0;
+                NarGetFileListFromMFTID(&Ctx->EList, 98328, Ctx->MFTRecords, Ctx->MFTRecordsCount, 4096, VolumeHandle);
 
-            Ctx->EList.EntryCount = 0;
-            NarGetFileListFromMFTID(&Ctx->EList, 43085, Ctx->MFTRecords, Ctx->MFTRecordsCount, 4096, VolumeHandle);
+                Ctx->EList.EntryCount = 0;
+                NarGetFileListFromMFTID(&Ctx->EList, 43085, Ctx->MFTRecords, Ctx->MFTRecordsCount, 4096, VolumeHandle);
 
-            Ctx->EList.EntryCount = 0;
-            NarGetFileListFromMFTID(&Ctx->EList, 204837, Ctx->MFTRecords, Ctx->MFTRecordsCount, 4096, VolumeHandle);
+                Ctx->EList.EntryCount = 0;
+                NarGetFileListFromMFTID(&Ctx->EList, 204837, Ctx->MFTRecords, Ctx->MFTRecordsCount, 4096, VolumeHandle);
 
-            Ctx->EList.EntryCount = 0;
-            NarGetFileListFromMFTID(&Ctx->EList, 221313, Ctx->MFTRecords, Ctx->MFTRecordsCount, 4096, VolumeHandle);
+                Ctx->EList.EntryCount = 0;
+                NarGetFileListFromMFTID(&Ctx->EList, 221313, Ctx->MFTRecords, Ctx->MFTRecordsCount, 4096, VolumeHandle);
 
-            Ctx->EList.EntryCount = 0;
-            NarGetFileListFromMFTID(&Ctx->EList, 228462, Ctx->MFTRecords, Ctx->MFTRecordsCount, 4096, VolumeHandle);
+                Ctx->EList.EntryCount = 0;
+                NarGetFileListFromMFTID(&Ctx->EList, 228462, Ctx->MFTRecords, Ctx->MFTRecordsCount, 4096, VolumeHandle);
             */
 
         }
@@ -6319,48 +6427,150 @@ NarInitFileExplorerContext(NarBackupFileExplorerContext* Ctx, char Letter) {
     return TRUE;
 
     NAR_FAIL_TERMINATE:
-    NarReleaseFileExplorerContext(Ctx);
+    if(Ctx){
+        NarReleaseFileExplorerContext(Ctx);
+    }
 
 }
 
 struct NarFEVolumeHandle{
     HANDLE VolumeHandle;
-    INT32 Count;
-    nar_record Records[];    
+    backup_metadata_ex *BMEX;
 };
 
+
+inline BOOLEAN
+NarFileExplorerSetFilePointer(NarFEVolumeHandle FEV, UINT64 NewFilePointer){
+
+    BOOLEAN Result = FALSE;
+
+    if(FEV.VolumeHandle != INVALID_HANDLE_VALUE){
+        if(FEV.BMEX == NULL){
+            // normal file handle, safe to call NarSetFilePointer
+            Result = NarSetFilePointer(FEV.VolumeHandle, NewFilePointer);
+        }
+        else{
+            // backup file handle, must calculate relative offset.
+            UINT64 RelativePointer = FindPointOffsetInRecords(FEV.BMEX->RegionsMetadata.Data, FEV.BMEX->RegionsMetadata.Count, NewFilePointer);
+            if(RelativePointer != NAR_POINT_OFFSET_FAILED){
+                printf("Converted absolute file ptr %I64u to relative file pointer %I64d\n", NewFilePointer, RelativePointer);
+                Result = NarSetFilePointer(FEV.VolumeHandle, RelativePointer);
+                if(!Result){
+                    printf("Couldnt set relative file pointer %I64d\n", RelativePointer);
+                }
+            }
+            else{
+                printf("Failed to move absolute file ptr(%I64u), relative ptr(%I64d)\n", NewFilePointer, RelativePointer);
+                // failed
+            }
+
+        }
+    }
+    else{
+
+    }
+
+    return Result;
+}
+
+inline BOOLEAN
+NarFileExplorerReadVolume(NarFEVolumeHandle FEV, void* Buffer, DWORD ReadSize, DWORD* OutBytesRead){
+    
+    // so, since we are handling INDEX_ALLOCATION regions, all file requests should be valid, but i worry about that
+    // mft may throw up some special regions for weird directories
+    // for now, ill accept as everything will be fine, if any error occurs in file explorer, i might need to implement some safe procedure
+    // to be sure that read length doesnt exceed current region
+
+    if(FEV.BMEX == NULL){
+        // normal file handle
+    }
+    else{
+
+    }
+
+    return ReadFile(FEV.VolumeHandle, Buffer, ReadSize, OutBytesRead, 0);
+}
+
+
+/*
+    args:
+    FEV = output, simple
+    HandleOptions
+        NAR_READ_MOUNTED_VOLUME = Reads mounted local disk VolumeLetter and ignores rest of the parameters, and makes FEV->BMEX NULL to. this will lead FEV to become normal volume handle
+        NAR_READ_BACKUP_VOLUME 2 = Tries to find backup files in RootDir, if one not given, searches current running directory.
+                                    Then according to backup region information, handles read-seak operations in wrapped function
+
+*/
 inline BOOLEAN 
-NarInitFEVolumeHandle(NarFEVolumeHandle *FEV, INT32 Version, char VolumeLetter, wchar_t *RootDir) {
+NarInitFEVolumeHandle(NarFEVolumeHandle *FEV, INT32 HandleOptions, char VolumeLetter, INT32 Version, wchar_t *RootDir) {
 
     if (!FEV) return FALSE;
 
-    wchar_t Path[1024];
     BOOLEAN Result = FALSE;
 
-    memset(Path, 0, sizeof(Path));
+    if(HandleOptions != NAR_READ_MOUNTED_VOLUME && HandleOptions != NAR_READ_BACKUP_VOLUME){
+        printf("Invalid HandleOptions argument passed to NarInitFEVolumeHandle\n");
+        return FALSE;
+    }
+    
+    if(HandleOptions == NAR_READ_BACKUP_VOLUME){
+        
+        wchar_t Path[1024];
 
-    if(RootDir){
-        wcscat(Path, RootDir);
-        wcscat(Path, L"\\");
+        memset(Path, 0, sizeof(Path));
+
+        if(RootDir){
+            wcscat(Path, RootDir);
+            wcscat(Path, L"\\");
+        }
+
+        std::wstring BinaryFileName = GenerateBinaryFileName((wchar_t)VolumeLetter, Version);
+
+        wcscat(Path, BinaryFileName.c_str());
+        printf("Target file path to initialize file explorer volume handle : %s\n", Path);
+
+        FEV->VolumeHandle = CreateFileW(Path, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, 0, 0);
+
+        if(FEV->VolumeHandle != INVALID_HANDLE_VALUE){
+
+            FEV->BMEX = InitBackupMetadataEx(VolumeLetter, Version, RootDir);
+            if(FEV->BMEX != NULL){
+                Result = TRUE;
+            }
+            else{
+                printf("Couldnt initialize backup metadata for volume %c for version %i from path %s\n", VolumeLetter, Version, RootDir);
+            }
+
+        }  
+        else{
+            printf("Couldnt open file %s for FE Volume handle\n", Path);
+            DisplayError(GetLastError());
+        }
+
+    }
+    if(HandleOptions == NAR_READ_MOUNTED_VOLUME){
+
+        FEV->BMEX = 0;
+        FEV->VolumeHandle = NarOpenVolume(VolumeLetter);
+        if(FEV->VolumeHandle != INVALID_HANDLE_VALUE){
+            Result = TRUE;
+        }
+        else{
+            printf("Failed to open volume for file explorer for volume %c\n", VolumeLetter);
+        }
     }
 
-    std::wstring BinaryFileName = GenerateBinaryFileName((wchar_t)VolumeLetter, Version);
 
-    wcscat(Path, BinaryFileName.c_str());
-    printf("Target file path to initialize file explorer volume handle : %s\n", Path);
-
-    FEV->VolumeHandle = CreateFileW(Path, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, 0, 0);
-    
-    if(FEV->VolumeHandle != INVALID_HANDLE_VALUE){
-        
-        // TODO : read records from metadata 
-
-        Result = TRUE;
-
-    }  
-    else{
-        printf("Couldnt open file %s for FE Volume handle\n", Path);
-        DisplayError(GetLastError());
+    // failed
+    if(!Result){
+        if(FEV){
+            CloseHandle(FEV->VolumeHandle);
+            if(FEV->BMEX){
+                FreeBackupMetadataEx(FEV->BMEX);
+                FEV->BMEX = 0;
+                FEV->VolumeHandle = INVALID_HANDLE_VALUE;
+            }
+        }
     }
 
     return Result;
@@ -6370,35 +6580,22 @@ inline void
 NarFreeFEVolumeHandle(NarFEVolumeHandle *FEV) {
     if (FEV) {
         CloseHandle(FEV->VolumeHandle);
+        if(FEV->BMEX){
+            FreeBackupMetadataEx(FEV->BMEX);
+            FEV->BMEX = 0;
+        }
     }
 }
 
-inline BOOLEAN
-NarFESetFilePointer(NarFEVolumeHandle FEV, INT64 NewFilePointer){
 
-    if(FEV.VolumeHandle == INVALID_HANDLE_VALUE) return FALSE;
-
-    BOOLEAN Result = FALSE;
-
-
-
-
-}
-
-
-
-inline BOOLEAN
-NarReadBackupAsVolume(nar_record *NarRead) {
-    
-}
 
 // input MUST be sorted
 // Finds point Offset in relative to Records structure, useful when converting absolue volume offsets to our binary backup data offsets.
-// returns negative value if fails to find, 
-inline 
-INT64 FindPointOffsetInRecords(nar_record *Records, INT32 Len, INT64 Offset){
+// returns NAR_POINT_OFFSET_FAILED if fails to find given offset, 
+inline INT64 
+FindPointOffsetInRecords(nar_record *Records, INT32 Len, INT64 Offset){
 
-    if(!Records) return FALSE;
+    if(!Records) return NAR_POINT_OFFSET_FAILED;
 
     INT64 Result = 0;
     BOOLEAN Found = FALSE;
@@ -6427,7 +6624,7 @@ INT64 FindPointOffsetInRecords(nar_record *Records, INT32 Len, INT64 Offset){
     }
 
 
-    return (Found ? Result : -1);
+    return (Found ? Result : NAR_POINT_OFFSET_FAILED);
 }
 
 
