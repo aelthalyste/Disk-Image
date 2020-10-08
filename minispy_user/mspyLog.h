@@ -326,7 +326,6 @@ struct backup_metadata {
         ULONGLONG RegionsMetadata;
         ULONGLONG AlignmentReserved;
         
-        
         ULONGLONG MFTMetadata;
         ULONGLONG MFT;
         
@@ -754,6 +753,8 @@ NarGetBackupsInDirectory(const wchar_t* Directory, backup_metadata* B, int Buffe
 #define NAR_POSIX_OFFSET 81
 #define NAR_NAME_OFFSET 82
 #define NAR_ROOT_MFT_ID 5
+#define NAR_READ_MOUNTED_VOLUME 1
+#define NAR_READ_BACKUP_VOLUME 2
 
 // could be either file or dir
 struct NarFileEntry {
@@ -779,8 +780,8 @@ struct FileEntriesList {
 struct NarBackupFileExplorerContext {
 
     char Letter;
-    HANDLE VolumeHandle;
-    INT32 ClusterSize = 4096;
+    NarFEVolumeHandle FEHandle;
+    INT32 ClusterSize;
     wchar_t RootDir[256];
 
     UINT32 LastIndx;
@@ -793,7 +794,6 @@ struct NarBackupFileExplorerContext {
     }HistoryStack;
 
     nar_record *MFTRecords;
-    
     FileEntriesList EList;
     
     wchar_t CurrentDirectory[512];

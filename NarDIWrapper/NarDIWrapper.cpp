@@ -184,9 +184,7 @@ namespace NarDIWrapper {
         if (Version < 0) {
             R->Version = NAR_FULLBACKUP_VERSION;
         }
-        
-        
-        
+            
         return OfflineRestoreCleanDisk(R, DiskID);
     }
     
