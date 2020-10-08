@@ -10,5 +10,6 @@ namespace DisckBackup.Entities
     {
         public int Id { get; set; }
         public int TaskId { get; set; }
+        
     }
 }

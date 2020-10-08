@@ -735,9 +735,10 @@ namespace DiskBackupWpfGUI
             {
                 restore.ShowDialog();
             }
-            catch
+            catch (Exception ex)
             {
-                MessageBox.Show("Geçmişe dönük restore yapılamaz." + e.ToString());
+                MessageBox.Show("Geçmişe dönük restore yapılamaz." + ex.ToString());
+                restore.Close();
             }
         }
 

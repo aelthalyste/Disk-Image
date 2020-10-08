@@ -10,6 +10,7 @@ namespace DisckBackup.Entities
     {
         //Görev Oluştur ekranında ve Geri Yükle Ekranında listviewDisk vew listviewRestoreDisk listelerinde
         //2 tabda da progress bar olarak geliyor
+
         public string Name { get; set; } //System Reserved ,Local Volume
         public string Format { get; set; } //Dosya Sistemi NTFS
         public long Size { get; set; }

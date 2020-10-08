@@ -9,13 +9,19 @@ namespace DisckBackup.Entities
     public class TaskInfo
     {
         public int Id { get; set; }
-        public int TargetId { get; set; } // BackupAreaInofadan AreaName'i gelecek
-        public bool Type { get; set; } // sistem mi (BackupTask) geri yükle mi (RestoreTask)
+        public BackupAreaInfo Target { get; set; } // BackupAreaInofadan AreaName'i gelecek
+        public TaskType Type { get; set; } // sistem mi (BackupTask) geri yükle mi (RestoreTask)
         public string Name { get; set; }
         public int Obje { get; set; }
         public string Status { get; set; }
         public DateTime CreatedDate { get; set; }
         public DateTime NextDate { get; set; }
         public string Descripiton { get; set; }
+    }
+    
+    public enum TaskType
+    {
+        Backup = 0, 
+        Restore = 1
     }
 }

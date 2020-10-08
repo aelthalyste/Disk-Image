@@ -353,7 +353,7 @@
                                     <GridViewColumn Header="{DynamicResource target}" Width="175" >
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
-                                                <TextBlock Text="{Binding Target}" TextAlignment="Center"/>
+                                                <TextBlock Text="{Binding Target.Name}" TextAlignment="Center"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
