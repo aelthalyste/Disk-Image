@@ -23,9 +23,17 @@ namespace DisckBackup.Entities
         public long UsedSize { get; set; }
         public string StrUsedSize { get; set; }
         public bool Bootable { get; set; }
+        public BootType BootableType { get; set; }
         public bool Zip { get; set; }
         public string OS { get; set; }
         public string PCName { get; set; }
         public string IpAddress { get; set; }
     }
+
+    public enum BootType
+    {
+        MBR = 0,
+        GPT = 1
+    }
+
 }

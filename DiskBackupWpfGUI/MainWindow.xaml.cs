@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -37,10 +38,11 @@ namespace DiskBackupWpfGUI
         {
             InitializeComponent();
 
-            DiskInfo diskInfo = new DiskInfo { 
-                StrSize = "400 GB", 
+            DiskInfo diskInfo = new DiskInfo
+            {
+                StrSize = "400 GB",
                 Size = 400,
-             };
+            };
             diskInfo.VolumeInfos.Add(new VolumeInfo
             {
                 BootType = "MBR",
@@ -82,8 +84,8 @@ namespace DiskBackupWpfGUI
 
             DiskInfo diskInfo2 = new DiskInfo
             {
-                StrSize = "700 GB",
-                Size = 700,
+                StrSize = "1950 GB",
+                Size = 1950,
             };
             diskInfo2.VolumeInfos.Add(new VolumeInfo
             {
@@ -141,6 +143,20 @@ namespace DiskBackupWpfGUI
                 Letter = 'F',
                 Status = "Sağlıklı"
             });
+            diskInfo2.VolumeInfos.Add(new VolumeInfo
+            {
+                BootType = "GPT",
+                DiskName = "Disk 2",
+                Name = "Local Volume",
+                FileSystem = "NTFS",
+                StrSize = "250 GB",
+                Size = 250,
+                StrFreeSize = "10 GB",
+                FreeSize = 10,
+                PrioritySection = "Primary",
+                Letter = 'G',
+                Status = "Sağlıklı"
+            });
             page = new DiskInfoPage(diskInfo2);
             frame = new Frame();
             frame.Content = page;
@@ -171,13 +187,21 @@ namespace DiskBackupWpfGUI
             view.GroupDescriptions.Add(groupDescription);
 
 
-            TaskInfo deneme1 = new TaskInfo()
+            TaskInfo taskInfo1 = new TaskInfo()
             {
-                Name = "Eyüp"
+                Name = "Sistem Yedekleme"
             };
-            BackupAreaInfo deneme2 = new BackupAreaInfo()
+            TaskInfo taskInfo2 = new TaskInfo()
             {
-                AreaName = "Ebru"
+                Name = "Geri Yükleme"
+            };
+            BackupAreaInfo backupAreaInfo1 = new BackupAreaInfo()
+            {
+                AreaName = "Narbulut"
+            };
+            BackupAreaInfo backupAreaInfo2 = new BackupAreaInfo()
+            {
+                AreaName = "Disk 2"
             };
 
             List<ActivityLog> activityLogItems = new List<ActivityLog>();
@@ -186,21 +210,111 @@ namespace DiskBackupWpfGUI
             {
                 Id = 0,
                 StartDate = DateTime.Now - TimeSpan.FromDays(10),
-                EndDate = DateTime.Now,
+                EndDate = DateTime.Now - TimeSpan.FromHours(10),
                 backupType = BackupType.Diff,
-                TaskName = deneme1,
-                Target = deneme2,
-                Status = "fail"
+                TaskName = taskInfo1,
+                Target = backupAreaInfo2,
+                Status = "Başarısız"
+            });
+            activityLogItems.Add(new ActivityLog()
+            {
+                Id = 0,
+                StartDate = DateTime.Now - TimeSpan.FromDays(9),
+                EndDate = DateTime.Now - TimeSpan.FromHours(8),
+                backupType = BackupType.Diff,
+                TaskName = taskInfo1,
+                Target = backupAreaInfo1,
+                Status = "Başarılı"
+            });
+            activityLogItems.Add(new ActivityLog()
+            {
+                Id = 0,
+                StartDate = DateTime.Now - TimeSpan.FromDays(5),
+                EndDate = DateTime.Now - TimeSpan.FromHours(5),
+                backupType = BackupType.Full,
+                TaskName = taskInfo2,
+                Target = backupAreaInfo2,
+                Status = "Başarılı"
+            });
+            activityLogItems.Add(new ActivityLog()
+            {
+                Id = 0,
+                StartDate = DateTime.Now - TimeSpan.FromDays(5),
+                EndDate = DateTime.Now - TimeSpan.FromDays(4),
+                backupType = BackupType.Inc,
+                TaskName = taskInfo1,
+                Target = backupAreaInfo2,
+                Status = "Başarılı"
             });
             activityLogItems.Add(new ActivityLog()
             {
                 Id = 0,
                 StartDate = DateTime.Now - TimeSpan.FromDays(10),
-                EndDate = DateTime.Now,
+                EndDate = DateTime.Now - TimeSpan.FromDays(9),
+                backupType = BackupType.Diff,
+                TaskName = taskInfo1,
+                Target = backupAreaInfo2,
+                Status = "Başarısız"
+            });
+            activityLogItems.Add(new ActivityLog()
+            {
+                Id = 0,
+                StartDate = DateTime.Now - TimeSpan.FromDays(5),
+                EndDate = DateTime.Now - TimeSpan.FromHours(5),
                 backupType = BackupType.Full,
-                TaskName = deneme1,
-                Target = deneme2,
-                Status = "success"
+                TaskName = taskInfo2,
+                Target = backupAreaInfo1,
+                Status = "Başarısız"
+            });
+            activityLogItems.Add(new ActivityLog()
+            {
+                Id = 0,
+                StartDate = DateTime.Now - TimeSpan.FromDays(5),
+                EndDate = DateTime.Now - TimeSpan.FromHours(5),
+                backupType = BackupType.Full,
+                TaskName = taskInfo1,
+                Target = backupAreaInfo1,
+                Status = "Başarılı"
+            });
+            activityLogItems.Add(new ActivityLog()
+            {
+                Id = 0,
+                StartDate = DateTime.Now - TimeSpan.FromDays(5),
+                EndDate = DateTime.Now - TimeSpan.FromDays(5),
+                backupType = BackupType.Full,
+                TaskName = taskInfo2,
+                Target = backupAreaInfo2,
+                Status = "Başarısız"
+            });
+            activityLogItems.Add(new ActivityLog()
+            {
+                Id = 0,
+                StartDate = DateTime.Now - TimeSpan.FromDays(5),
+                EndDate = DateTime.Now - TimeSpan.FromDays(3),
+                backupType = BackupType.Inc,
+                TaskName = taskInfo1,
+                Target = backupAreaInfo1,
+                Status = "Başarılı"
+            });
+            activityLogItems.Add(new ActivityLog()
+            {
+                Id = 0,
+                StartDate = DateTime.Now - TimeSpan.FromDays(5),
+                EndDate = DateTime.Now - TimeSpan.FromDays(3),
+                backupType = BackupType.Inc,
+                TaskName = taskInfo2,
+                Target = backupAreaInfo1,
+                Status = "Başarılı"
+            });
+            activityLogItems.Add(new ActivityLog()
+            {
+                Id = 0,
+                StartDate = DateTime.Now - TimeSpan.FromDays(1),
+                EndDate = DateTime.Now,
+                backupType = BackupType.Diff,
+                TaskName = taskInfo1,
+                Target = backupAreaInfo2,
+                Status = "Başarılı"
             });
 
             listViewLog.ItemsSource = activityLogItems;
@@ -212,18 +326,75 @@ namespace DiskBackupWpfGUI
             backupsItems.Add(new Backups()
             {
                 Type = "full",
-                FileName = "Volume_C_Full"
+                FileName = "Volume_C_Full_001",
+                CreatedDate = DateTime.Now - TimeSpan.FromDays(5),
+                TaskName = "C Full",
+                VolumeSize = "250 GB",
+                FileSize = "12 GB",
+                Description = "Yedek açıklaması"
             });
             backupsItems.Add(new Backups()
             {
                 Type = "inc",
-                FileName = "Disk 1"
+                FileName = "Volume_D_Inc_001",
+                CreatedDate = DateTime.Now - TimeSpan.FromHours(5),
+                TaskName = "D Inc",
+                VolumeSize = "510 GB",
+                FileSize = "8 GB",
+                Description = "Yedek açıklaması"
             });
             backupsItems.Add(new Backups()
             {
                 Type = "diff",
-                FileName = "Disk 2",
-                IsCloud = true
+                FileName = "Volume_D_Diff_001",
+                IsCloud = true,
+                CreatedDate = DateTime.Now - TimeSpan.FromHours(30),
+                TaskName = "D Diff",
+                VolumeSize = "250 GB",
+                FileSize = "18 GB",
+                Description = "Yedek açıklaması"
+            });
+            backupsItems.Add(new Backups()
+            {
+                Type = "diff",
+                FileName = "Volume_D_Diff_002",
+                CreatedDate = DateTime.Now - TimeSpan.FromDays(15),
+                TaskName = "D Diff",
+                VolumeSize = "120 GB",
+                FileSize = "8 GB",
+                Description = "Yedek açıklaması"
+            });
+            backupsItems.Add(new Backups()
+            {
+                Type = "full",
+                FileName = "Volume_C_Full_002",
+                IsCloud = true,
+                CreatedDate = DateTime.Now - TimeSpan.FromDays(7),
+                TaskName = "C Full",
+                VolumeSize = "120 GB",
+                FileSize = "28 GB",
+                Description = "Yedek açıklaması"
+            });
+            backupsItems.Add(new Backups()
+            {
+                Type = "full",
+                FileName = "Volume_C_Full_003",
+                CreatedDate = DateTime.Now - TimeSpan.FromDays(7),
+                TaskName = "C Full",
+                VolumeSize = "120 GB",
+                FileSize = "28 GB",
+                Description = "Yedek açıklaması"
+            });
+            backupsItems.Add(new Backups()
+            {
+                Type = "inc",
+                FileName = "Volume_D_Inc_002",
+                IsCloud = true,
+                CreatedDate = DateTime.Now - TimeSpan.FromHours(5),
+                TaskName = "D Inc",
+                VolumeSize = "510 GB",
+                FileSize = "4 GB",
+                Description = "Yedek açıklaması"
             });
 
             listViewBackups.ItemsSource = backupsItems;
@@ -234,6 +405,11 @@ namespace DiskBackupWpfGUI
             public string Type { get; set; }
             public string FileName { get; set; }
             public bool IsCloud { get; set; } = false;
+            public DateTime CreatedDate { get; set; }
+            public string TaskName { get; set; }
+            public string VolumeSize { get; set; }
+            public string FileSize { get; set; }
+            public string Description { get; set; }
         }
 
 
@@ -274,7 +450,7 @@ namespace DiskBackupWpfGUI
             {
                 if (item.DiskName.Equals(expander.Tag.ToString()))
                 {
-                    diskSize += item.Size; //bak olmazsa
+                    diskSize += item.Size;
                 }
             }
 
@@ -656,10 +832,14 @@ namespace DiskBackupWpfGUI
             taskStatus.Show();
         }
 
+        private void btnTaskPaste_Click(object sender, RoutedEventArgs e)
+        {
+            Statuses backupStatus = new Statuses(1);
+            backupStatus.Show();
+        }
+
         private void btnFilesBrowse_Click(object sender, RoutedEventArgs e)
         {
-            //Statuses backupStatus = new Statuses(1);
-            //backupStatus.Show();
             FileExplorer fileExplorer = new FileExplorer();
             fileExplorer.Show();
         }

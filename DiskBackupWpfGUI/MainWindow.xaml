@@ -157,7 +157,7 @@
                                     </StackPanel>
                                 </Button.Content>
                             </Button>
-                            <ListView Name="listViewDisk" MinHeight="370" Margin="5" DisplayMemberPath="Name" AllowDrop="True">
+                            <ListView Name="listViewDisk" MinHeight="370" Margin="5">
                                 <ListView.View>
                                     <GridView>
                                         <GridViewColumn Width="40">
@@ -294,7 +294,7 @@
                         <RowDefinition Height="0.43*"/>
                     </Grid.RowDefinitions>
                     <DockPanel>
-                        <ListView Name="listViewTask" Grid.ColumnSpan="2" MinHeight="415" Margin="5,0,0,5" DisplayMemberPath="Name" AllowDrop="True" VerticalAlignment="Top">
+                        <ListView Name="listViewTask" Grid.ColumnSpan="2" MinHeight="415" Margin="5,0,0,5" VerticalAlignment="Top">
                             <ListView.View>
                                 <GridView>
                                     <GridViewColumn Width="40">
@@ -449,7 +449,7 @@
                                     </Image>
                                 </Button.Content>
                             </Button>
-                            <Button Name="btnTaskPaste" ToolTip="{DynamicResource paste}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5,5,5" Style="{StaticResource ImageButton}" Grid.Column="1">
+                            <Button Name="btnTaskPaste" ToolTip="{DynamicResource paste}" Click="btnTaskPaste_Click" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5,5,5" Style="{StaticResource ImageButton}" Grid.Column="1">
                                 <Button.Content>
                                     <Image Height="25" Width="25" HorizontalAlignment="Center" VerticalAlignment="Center">
                                         <Image.Style>
@@ -526,7 +526,7 @@
                                 <TextBlock Text="{DynamicResource restoreContent}" VerticalAlignment="Center" />
                             </StackPanel>
 
-                            <ListView Name="listViewRestore" MinHeight="370" Margin="5" DisplayMemberPath="Name" AllowDrop="True">
+                            <ListView Name="listViewRestore" MinHeight="370" Margin="5">
                                 <ListView.View>
                                     <GridView>
                                         <GridViewColumn Width="60">
@@ -569,7 +569,7 @@
                             </ListView>
                         </StackPanel>
                     </DockPanel>
-                    <ListView Name="listViewRestoreDisk" Grid.Row="1" Grid.ColumnSpan="2" MinHeight="150" Margin="5" DisplayMemberPath="Name" AllowDrop="True">
+                    <ListView Name="listViewRestoreDisk" Grid.Row="1" Grid.ColumnSpan="2" MinHeight="150" Margin="5">
                         <ListView.View>
                             <GridView>
                                 <GridViewColumn Width="40">
@@ -763,7 +763,7 @@
                         <ColumnDefinition Width="50"/>
                     </Grid.ColumnDefinitions>
                     <DockPanel>
-                        <ListView Name="listViewBackups" Height="415" Margin="5,0,0,5" DisplayMemberPath="Name" AllowDrop="True" VerticalAlignment="Top">
+                        <ListView Name="listViewBackups" Height="415" Margin="5,0,0,5" VerticalAlignment="Top">
                             <ListView.View>
                                 <GridView>
                                     <GridViewColumn Width="40">
@@ -794,35 +794,35 @@
                                     <GridViewColumn Header="{DynamicResource createdDate}" Width="165" >
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
-                                                <TextBlock Text="{Binding VersionLength}" TextAlignment="Center"/>
+                                                <TextBlock Text="{Binding CreatedDate, StringFormat='dd.MM.yyyy HH:mm'}" TextAlignment="Center"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
                                     <GridViewColumn Header="{DynamicResource taskName}" Width="170" >
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
-                                                <TextBlock Text="{Binding VersionLength}" TextAlignment="Center"/>
+                                                <TextBlock Text="{Binding TaskName}" TextAlignment="Center"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
                                     <GridViewColumn Header="{DynamicResource volumeSize}" Width="125" >
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
-                                                <TextBlock Text="{Binding VersionLength}" TextAlignment="Center"/>
+                                                <TextBlock Text="{Binding VolumeSize}" TextAlignment="Center"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
                                     <GridViewColumn Header="{DynamicResource folderSize}" Width="125" >
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
-                                                <TextBlock Text="{Binding FolderSize}" TextAlignment="Center"/>
+                                                <TextBlock Text="{Binding FileSize}" TextAlignment="Center"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
                                     <GridViewColumn Header="{DynamicResource description}" Width="150" >
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
-                                                <TextBlock Text="{Binding VersionLength}" TextWrapping="Wrap" TextAlignment="Center"/>
+                                                <TextBlock Text="{Binding Description}" TextWrapping="Wrap" TextAlignment="Center"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
@@ -888,7 +888,7 @@
                         <ColumnDefinition Width="50"/>
                     </Grid.ColumnDefinitions>
                     <DockPanel>
-                        <ListView Name="listViewBackupArea" Height="415" Margin="5,0,0,5" DisplayMemberPath="Name" AllowDrop="True" VerticalAlignment="Top">
+                        <ListView Name="listViewBackupArea" Height="415" Margin="5,0,0,5" VerticalAlignment="Top">
                             <ListView.View>
                                 <GridView>
                                     <GridViewColumn Width="40">
@@ -1023,7 +1023,7 @@
                         <RowDefinition Height="0.43*"/>
                     </Grid.RowDefinitions>
                     <DockPanel>
-                        <ListView Name="listViewLog" MinHeight="415" Margin="5,0,0,5" DisplayMemberPath="Name" AllowDrop="True" VerticalAlignment="Top">
+                        <ListView Name="listViewLog" MinHeight="415" Margin="5,0,0,5" VerticalAlignment="Top">
                             <ListView.View>
                                 <GridView>
                                     <GridViewColumn Width="50">
@@ -1036,14 +1036,14 @@
                                     <GridViewColumn Header="{DynamicResource startDate}" Width="155">
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
-                                                <TextBlock Text="{Binding StartDate}" TextAlignment="Left"/>
+                                                <TextBlock Text="{Binding StartDate, StringFormat='dd.MM.yyyy HH:mm'}" TextAlignment="Center"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
                                     <GridViewColumn Header="{DynamicResource endDate}" Width="155" >
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
-                                                <TextBlock Text="{Binding EndDate}" TextAlignment="Center"/>
+                                                <TextBlock Text="{Binding EndDate, StringFormat='dd.MM.yyyy HH:mm'}" TextAlignment="Center"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
@@ -1054,21 +1054,21 @@
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
-                                    <GridViewColumn Header="{DynamicResource taskName}" Width="135" >
+                                    <GridViewColumn Header="{DynamicResource taskName}" Width="180" >
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
                                                 <TextBlock Text="{Binding TaskName.Name}" TextAlignment="Center"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
-                                    <GridViewColumn Header="{DynamicResource target}" Width="230" >
+                                    <GridViewColumn Header="{DynamicResource target}" Width="180" >
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
                                                 <TextBlock Text="{Binding Target.AreaName}" TextAlignment="Center"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
-                                    <GridViewColumn Header="{DynamicResource statu}" Width="175" >
+                                    <GridViewColumn Header="{DynamicResource statu}" Width="180" >
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
                                                 <TextBlock Text="{Binding Status}" TextAlignment="Center"/>
@@ -1100,7 +1100,7 @@
                         </StackPanel>
                     </DockPanel>
                     <DockPanel Grid.Row="1" Grid.ColumnSpan="2">
-                        <ListView Name="listViewLogDown" MinHeight="165" Margin="5,5,10,5" DisplayMemberPath="Name" AllowDrop="True" VerticalAlignment="Top">
+                        <ListView Name="listViewLogDown" MinHeight="165" Margin="5,5,10,5" VerticalAlignment="Top">
                             <ListView.View>
                                 <GridView>
                                     <GridViewColumn Header="{DynamicResource time}" Width="300">

@@ -227,4 +227,7 @@
     <system:String x:Key="createBootPartition">Boot Partition Oluştur</system:String>
     <system:String x:Key="fileInfo">Dosya Bilgileri</system:String>
     <system:String x:Key="files">Dosyalar</system:String>
+    <system:String x:Key="Success">Başarılı</system:String>
+    <system:String x:Key="Fail">Başarısız</system:String>
+    
 </ResourceDictionary>

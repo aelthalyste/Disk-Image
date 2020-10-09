@@ -11,7 +11,6 @@ namespace DisckBackup.Entities
         public int Id { get; set; }
         public TaskInfo TaskName { get; set; } // foreign
         public BackupType Type { get; set; }
-        public BackupAreaInfo TargetName { get; set; }
         public int RetentionTime { get; set; }
         public bool FullOverwrite { get; set; }
         public int FullBackup { get; set; }
@@ -25,6 +24,16 @@ namespace DisckBackup.Entities
         public AutoRunType AutoType { get; set; }
         public DateTime StartTime { get; set; }
         //bitmap gelecek comboBoxlardan itibaren yok
+        public int Days { get; set; } // bu böyle olacak günlerin set edildiği yerde DayMask olacak direkt burada günlerin hepsi olacak
+        public WeeklyMask WeeklyTime { get; set; }
+        public PeriodicMask PeriodicTime { get; set; }
+    }
+
+    public enum BackupType
+    {
+        Full = 0,
+        Inc = 1,
+        Diff = 2
     }
 
     public enum AutoRunType
@@ -34,10 +43,29 @@ namespace DisckBackup.Entities
         Periodic = 2
     }
 
-    public enum BackupType
+    public enum DayMask
     {
-        Full = 0,
-        Inc = 1,
-        Diff = 2
+        Monday = 1,
+        Tuesday = 2,
+        Wednesday = 4,
+        Thursday = 8,
+        Friday = 16,
+        Saturday = 32,
+        Sunday = 64
     }
+
+    public enum WeeklyMask
+    {
+        First = 1,
+        Second = 2,
+        Third = 4,
+        Fourth = 8
+    }
+
+    public enum PeriodicMask
+    {
+        Minute = 0,
+        Hour = 1,
+    }
+
 }
