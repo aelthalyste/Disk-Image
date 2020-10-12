@@ -41,16 +41,22 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ActivityLog.cs" />
-    <Compile Include="BackupAreaInfo.cs" />
-    <Compile Include="BackupTask.cs" />
-    <Compile Include="DiskInfo.cs" />
-    <Compile Include="FileInfo.cs" />
-    <Compile Include="Log.cs" />
+    <Compile Include="Concrete\ActivityLog.cs" />
+    <Compile Include="Concrete\BackupStorageInfo.cs" />
+    <Compile Include="Concrete\BackupTask.cs" />
+    <Compile Include="Concrete\DiskInfo.cs" />
+    <Compile Include="Concrete\FileInfo.cs" />
+    <Compile Include="Concrete\Log.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="RestoreTask.cs" />
-    <Compile Include="TaskInfo.cs" />
-    <Compile Include="VolumeInfo.cs" />
+    <Compile Include="Concrete\RestoreTask.cs" />
+    <Compile Include="Concrete\TaskInfo.cs" />
+    <Compile Include="Concrete\VolumeInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\DiskBackup.Core\DiskBackup.Core.csproj">
+      <Project>{CA2A0627-7997-4B4E-8BE3-C1CA9E516F66}</Project>
+      <Name>DiskBackup.Core</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using DiskBackup.DataAccess.Entities;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,12 +7,12 @@ using System.Threading.Tasks;
 
 namespace DisckBackup.Entities
 {
-    public class BackupTask
+    public class BackupTask : IEntity
     {
         public int Id { get; set; }
         public TaskInfo TaskName { get; set; } // foreign
         public BackupType Type { get; set; }
-        public int RetentionTime { get; set; }
+        public int RetentionTime { get; set; } // saklama süresi
         public bool FullOverwrite { get; set; }
         public int FullBackup { get; set; }
         public int NarRetentionTime { get; set; }
@@ -22,8 +23,7 @@ namespace DisckBackup.Entities
         public int FailNumberTryAgain { get; set; }
         public int WaitNumberTryAgain { get; set; } //her denemeden önce bekle
         public AutoRunType AutoType { get; set; }
-        public DateTime StartTime { get; set; }
-        //bitmap gelecek comboBoxlardan itibaren yok
+        public DateTime StartTime { get; set; } //zamanlanmış görevin başlangıç saati
         public int Days { get; set; } // bu böyle olacak günlerin set edildiği yerde DayMask olacak direkt burada günlerin hepsi olacak
         public WeeklyType WeeklyTime { get; set; } 
         public PeriodicType PeriodicTime { get; set; }

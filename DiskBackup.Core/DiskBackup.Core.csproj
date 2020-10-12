@@ -5,11 +5,11 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{D7B5EBAF-801C-48A9-B1A4-C21ED315FEA1}</ProjectGuid>
+    <ProjectGuid>{CA2A0627-7997-4B4E-8BE3-C1CA9E516F66}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>DiskBackup.DataAccess</RootNamespace>
-    <AssemblyName>DiskBackup.DataAccess</AssemblyName>
+    <RootNamespace>DiskBackup.Core</RootNamespace>
+    <AssemblyName>DiskBackup.Core</AssemblyName>
     <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
@@ -51,30 +51,15 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Abstract\IActivityLogDal.cs" />
-    <Compile Include="Abstract\IBackupStorageDal.cs" />
-    <Compile Include="Abstract\IBackupTaskDal.cs" />
-    <Compile Include="Abstract\IFileInfoDal.cs" />
-    <Compile Include="Abstract\IRestore_TaskDal.cs" />
-    <Compile Include="Abstract\ITaskInfoDal.cs" />
-    <Compile Include="Concrete\EntityFramework\EfActivityLogDal.cs" />
-    <Compile Include="Concrete\EntityFramework\ImageDiskContext.cs" />
+    <Compile Include="DataAccess\EntityFramework\EfEntityRepositoryBase.cs" />
+    <Compile Include="DataAccess\IEntityRepository.cs" />
+    <Compile Include="Entities\IEntity.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="App.config" />
-    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>
-    <ProjectReference Include="..\DisckBackup.Entities\DisckBackup.Entities.csproj">
-      <Project>{086a06a2-0f05-4ef3-8347-13b3da3983dc}</Project>
-      <Name>DisckBackup.Entities</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\DiskBackup.Core\DiskBackup.Core.csproj">
-      <Project>{CA2A0627-7997-4B4E-8BE3-C1CA9E516F66}</Project>
-      <Name>DiskBackup.Core</Name>
-    </ProjectReference>
+    <None Include="App.config" />
+    <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">

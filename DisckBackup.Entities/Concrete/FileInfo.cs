@@ -1,4 +1,5 @@
-﻿using System;
+﻿using DiskBackup.DataAccess.Entities;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace DisckBackup.Entities
 {
-    public class FileInfo
+    public class FileInfo : IEntity
     {
         //File Explorer penceresinde bulunan listview'a gelecek
         public int Id { get; set; }

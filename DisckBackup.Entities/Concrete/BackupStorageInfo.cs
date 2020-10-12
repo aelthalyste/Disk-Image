@@ -1,4 +1,5 @@
-﻿using System;
+﻿using DiskBackup.DataAccess.Entities;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,13 +7,13 @@ using System.Threading.Tasks;
 
 namespace DisckBackup.Entities
 {
-    public class BackupAreaInfo
+    public class BackupStorageInfo : IEntity
     {
         //ListView'e doldururken üzerinden tekrar düşün sorun olursa
         //Yedekleme alanları & ekle 
         public int Id { get; set; }
         public string AreaName { get; set; }
-        public BackupAreaType Type { get; set; } 
+        public BackupStorageType Type { get; set; } 
         public string Description { get; set; }
         public string StrCapacity { get; set; }
         public long Capacity { get; set; }
@@ -27,7 +28,7 @@ namespace DisckBackup.Entities
         public string Password { get; set; }
     }
 
-    public enum BackupAreaType
+    public enum BackupStorageType
     {
         Windows = 0,
         NAS = 1,

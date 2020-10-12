@@ -1,4 +1,5 @@
-﻿using System;
+﻿using DiskBackup.DataAccess.Entities;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,14 +7,14 @@ using System.Threading.Tasks;
 
 namespace DisckBackup.Entities
 {
-    public class RestoreTask
+    public class RestoreTask : IEntity
     {
         // Geri yükle ve yedekleri görüntüle tablarında listViewRestore ve listViewBackups tablolarına ortak veri göndericek
         // Geri Yükleme oluşturuda karşıladık
         // görevlerde de yer alacak dolaylı
         public int Id { get; set; }
         public TaskInfo TaskName { get; set; }
-        public List<FileInfo> FileList = new List<FileInfo>(); // FileInfo'ya bağlı
+        public List<FileInfo> FileList { get; set; } = new List<FileInfo>(); // FileInfo'ya bağlı (database'e eklemedik)
         public string Name { get; set; } //dosya adı
         public long VolumeSize { get; set; }
         public long FileSize { get; set; }

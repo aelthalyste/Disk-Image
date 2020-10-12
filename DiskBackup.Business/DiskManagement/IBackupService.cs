@@ -11,14 +11,14 @@ namespace DiskBackup.Business.DiskManagement
     {
         List<DiskInfo> GetDiskList();
         List<RestoreTask> GetBackupFileList();
-        List<BackupAreaInfo> GetBackupAreaInfoList();
+        List<BackupStorageInfo> GetBackupAreaInfoList();
 
         bool CreateIncrementalBackup(VolumeInfo volumeInfo);
         bool CreateDifferentialBackup(VolumeInfo volumeInfo);
         bool RestoreBackup(RestoreTask restoreTask, VolumeInfo volumeInfo);
         bool RestoreFile(RestoreTask restoreTask, FileInfo fileInfo, string destination);
         bool RestoreFolder(RestoreTask restoreTask, FileInfo fileInfo, string destination);
-        bool AddBackupArea(BackupAreaInfo backupArea);
+        bool AddBackupArea(BackupStorageInfo backupArea);
         bool PauseBackup(VolumeInfo volumeInfo);
         bool CancelBackup(VolumeInfo volumeInfo);
         bool ResumeBackup(VolumeInfo volumeInfo);

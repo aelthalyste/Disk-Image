@@ -195,11 +195,11 @@ namespace DiskBackupWpfGUI
             {
                 Name = "Geri Yükleme"
             };
-            BackupAreaInfo backupAreaInfo1 = new BackupAreaInfo()
+            BackupStorageInfo backupAreaInfo1 = new BackupStorageInfo()
             {
                 AreaName = "Narbulut"
             };
-            BackupAreaInfo backupAreaInfo2 = new BackupAreaInfo()
+            BackupStorageInfo backupAreaInfo2 = new BackupStorageInfo()
             {
                 AreaName = "Disk 2"
             };
@@ -214,7 +214,8 @@ namespace DiskBackupWpfGUI
                 backupType = BackupType.Diff,
                 TaskName = taskInfo1,
                 Target = backupAreaInfo2,
-                Status = "Başarısız"
+                Status = StatusType.Success,
+                StrStatus = Resources[StatusType.Success.ToString()].ToString()
             });
             activityLogItems.Add(new ActivityLog()
             {
@@ -224,98 +225,99 @@ namespace DiskBackupWpfGUI
                 backupType = BackupType.Diff,
                 TaskName = taskInfo1,
                 Target = backupAreaInfo1,
-                Status = "Başarılı"
+                Status = StatusType.Fail,
+                StrStatus = Resources[StatusType.Fail.ToString()].ToString()
             });
-            activityLogItems.Add(new ActivityLog()
-            {
-                Id = 0,
-                StartDate = DateTime.Now - TimeSpan.FromDays(5),
-                EndDate = DateTime.Now - TimeSpan.FromHours(5),
-                backupType = BackupType.Full,
-                TaskName = taskInfo2,
-                Target = backupAreaInfo2,
-                Status = "Başarılı"
-            });
-            activityLogItems.Add(new ActivityLog()
-            {
-                Id = 0,
-                StartDate = DateTime.Now - TimeSpan.FromDays(5),
-                EndDate = DateTime.Now - TimeSpan.FromDays(4),
-                backupType = BackupType.Inc,
-                TaskName = taskInfo1,
-                Target = backupAreaInfo2,
-                Status = "Başarılı"
-            });
-            activityLogItems.Add(new ActivityLog()
-            {
-                Id = 0,
-                StartDate = DateTime.Now - TimeSpan.FromDays(10),
-                EndDate = DateTime.Now - TimeSpan.FromDays(9),
-                backupType = BackupType.Diff,
-                TaskName = taskInfo1,
-                Target = backupAreaInfo2,
-                Status = "Başarısız"
-            });
-            activityLogItems.Add(new ActivityLog()
-            {
-                Id = 0,
-                StartDate = DateTime.Now - TimeSpan.FromDays(5),
-                EndDate = DateTime.Now - TimeSpan.FromHours(5),
-                backupType = BackupType.Full,
-                TaskName = taskInfo2,
-                Target = backupAreaInfo1,
-                Status = "Başarısız"
-            });
-            activityLogItems.Add(new ActivityLog()
-            {
-                Id = 0,
-                StartDate = DateTime.Now - TimeSpan.FromDays(5),
-                EndDate = DateTime.Now - TimeSpan.FromHours(5),
-                backupType = BackupType.Full,
-                TaskName = taskInfo1,
-                Target = backupAreaInfo1,
-                Status = "Başarılı"
-            });
-            activityLogItems.Add(new ActivityLog()
-            {
-                Id = 0,
-                StartDate = DateTime.Now - TimeSpan.FromDays(5),
-                EndDate = DateTime.Now - TimeSpan.FromDays(5),
-                backupType = BackupType.Full,
-                TaskName = taskInfo2,
-                Target = backupAreaInfo2,
-                Status = "Başarısız"
-            });
-            activityLogItems.Add(new ActivityLog()
-            {
-                Id = 0,
-                StartDate = DateTime.Now - TimeSpan.FromDays(5),
-                EndDate = DateTime.Now - TimeSpan.FromDays(3),
-                backupType = BackupType.Inc,
-                TaskName = taskInfo1,
-                Target = backupAreaInfo1,
-                Status = "Başarılı"
-            });
-            activityLogItems.Add(new ActivityLog()
-            {
-                Id = 0,
-                StartDate = DateTime.Now - TimeSpan.FromDays(5),
-                EndDate = DateTime.Now - TimeSpan.FromDays(3),
-                backupType = BackupType.Inc,
-                TaskName = taskInfo2,
-                Target = backupAreaInfo1,
-                Status = "Başarılı"
-            });
-            activityLogItems.Add(new ActivityLog()
-            {
-                Id = 0,
-                StartDate = DateTime.Now - TimeSpan.FromDays(1),
-                EndDate = DateTime.Now,
-                backupType = BackupType.Diff,
-                TaskName = taskInfo1,
-                Target = backupAreaInfo2,
-                Status = "Başarılı"
-            });
+            //activityLogItems.Add(new ActivityLog()
+            //{
+            //    Id = 0,
+            //    StartDate = DateTime.Now - TimeSpan.FromDays(5),
+            //    EndDate = DateTime.Now - TimeSpan.FromHours(5),
+            //    backupType = BackupType.Full,
+            //    TaskName = taskInfo2,
+            //    Target = backupAreaInfo2,
+            //    Status = "Başarılı"
+            //});
+            //activityLogItems.Add(new ActivityLog()
+            //{
+            //    Id = 0,
+            //    StartDate = DateTime.Now - TimeSpan.FromDays(5),
+            //    EndDate = DateTime.Now - TimeSpan.FromDays(4),
+            //    backupType = BackupType.Inc,
+            //    TaskName = taskInfo1,
+            //    Target = backupAreaInfo2,
+            //    Status = "Başarılı"
+            //});
+            //activityLogItems.Add(new ActivityLog()
+            //{
+            //    Id = 0,
+            //    StartDate = DateTime.Now - TimeSpan.FromDays(10),
+            //    EndDate = DateTime.Now - TimeSpan.FromDays(9),
+            //    backupType = BackupType.Diff,
+            //    TaskName = taskInfo1,
+            //    Target = backupAreaInfo2,
+            //    Status = "Başarısız"
+            //});
+            //activityLogItems.Add(new ActivityLog()
+            //{
+            //    Id = 0,
+            //    StartDate = DateTime.Now - TimeSpan.FromDays(5),
+            //    EndDate = DateTime.Now - TimeSpan.FromHours(5),
+            //    backupType = BackupType.Full,
+            //    TaskName = taskInfo2,
+            //    Target = backupAreaInfo1,
+            //    Status = "Başarısız"
+            //});
+            //activityLogItems.Add(new ActivityLog()
+            //{
+            //    Id = 0,
+            //    StartDate = DateTime.Now - TimeSpan.FromDays(5),
+            //    EndDate = DateTime.Now - TimeSpan.FromHours(5),
+            //    backupType = BackupType.Full,
+            //    TaskName = taskInfo1,
+            //    Target = backupAreaInfo1,
+            //    Status = "Başarılı"
+            //});
+            //activityLogItems.Add(new ActivityLog()
+            //{
+            //    Id = 0,
+            //    StartDate = DateTime.Now - TimeSpan.FromDays(5),
+            //    EndDate = DateTime.Now - TimeSpan.FromDays(5),
+            //    backupType = BackupType.Full,
+            //    TaskName = taskInfo2,
+            //    Target = backupAreaInfo2,
+            //    Status = "Başarısız"
+            //});
+            //activityLogItems.Add(new ActivityLog()
+            //{
+            //    Id = 0,
+            //    StartDate = DateTime.Now - TimeSpan.FromDays(5),
+            //    EndDate = DateTime.Now - TimeSpan.FromDays(3),
+            //    backupType = BackupType.Inc,
+            //    TaskName = taskInfo1,
+            //    Target = backupAreaInfo1,
+            //    Status = "Başarılı"
+            //});
+            //activityLogItems.Add(new ActivityLog()
+            //{
+            //    Id = 0,
+            //    StartDate = DateTime.Now - TimeSpan.FromDays(5),
+            //    EndDate = DateTime.Now - TimeSpan.FromDays(3),
+            //    backupType = BackupType.Inc,
+            //    TaskName = taskInfo2,
+            //    Target = backupAreaInfo1,
+            //    Status = "Başarılı"
+            //});
+            //activityLogItems.Add(new ActivityLog()
+            //{
+            //    Id = 0,
+            //    StartDate = DateTime.Now - TimeSpan.FromDays(1),
+            //    EndDate = DateTime.Now,
+            //    backupType = BackupType.Diff,
+            //    TaskName = taskInfo1,
+            //    Target = backupAreaInfo2,
+            //    Status = "Başarılı"
+            //});
 
             listViewLog.ItemsSource = activityLogItems;
             //buraya kadar uyarlandı loader'da falan da düzen gerekecek
