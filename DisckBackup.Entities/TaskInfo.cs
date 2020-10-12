@@ -17,6 +17,7 @@ namespace DisckBackup.Entities
         public DateTime CreatedDate { get; set; }
         public DateTime NextDate { get; set; }
         public string Descripiton { get; set; }
+        public string ScheduleId { get; set; }
     }
     
     public enum TaskType

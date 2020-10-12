@@ -13,7 +13,7 @@ namespace DisckBackup.Entities
         // görevlerde de yer alacak dolaylı
         public int Id { get; set; }
         public TaskInfo TaskName { get; set; }
-        public int FileInfoId { get; set; } // FileInfo'ya bağlı
+        public List<FileInfo> FileList = new List<FileInfo>(); // FileInfo'ya bağlı
         public string Name { get; set; } //dosya adı
         public long VolumeSize { get; set; }
         public long FileSize { get; set; }

@@ -25,8 +25,8 @@ namespace DisckBackup.Entities
         public DateTime StartTime { get; set; }
         //bitmap gelecek comboBoxlardan itibaren yok
         public int Days { get; set; } // bu böyle olacak günlerin set edildiği yerde DayMask olacak direkt burada günlerin hepsi olacak
-        public WeeklyMask WeeklyTime { get; set; }
-        public PeriodicMask PeriodicTime { get; set; }
+        public WeeklyType WeeklyTime { get; set; } 
+        public PeriodicType PeriodicTime { get; set; }
     }
 
     public enum BackupType
@@ -54,15 +54,15 @@ namespace DisckBackup.Entities
         Sunday = 64
     }
 
-    public enum WeeklyMask
+    public enum WeeklyType
     {
-        First = 1,
-        Second = 2,
-        Third = 4,
-        Fourth = 8
+        First = 0,
+        Second = 1,
+        Third = 2,
+        Fourth = 3
     }
 
-    public enum PeriodicMask
+    public enum PeriodicType
     {
         Minute = 0,
         Hour = 1,

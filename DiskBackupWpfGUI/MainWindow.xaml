@@ -405,6 +405,18 @@
                                     </Image>
                                 </Button.Content>
                             </Button>
+                            <Button Name="btnTaskPauseButton" ToolTip="{DynamicResource pause}" HorizontalAlignment="Center" Margin="0,5,5,5" Style="{StaticResource ImageButton}" Width="32" Height="32" Grid.Column="1">
+                                <Button.Content>
+                                    <Image Height="28">
+                                        <Image.Style>
+                                            <Style TargetType="Image">
+                                                <Setter Property="Source" Value="Resources/Icon/icons8_pause_button.ico" />
+                                            </Style>
+                                        </Image.Style>
+                                    </Image>
+                                </Button.Content>
+                            </Button>
+
                             <Button Name="btnTaskStop" ToolTip="{DynamicResource stop}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5,5,5" Style="{StaticResource ImageButton}" Grid.Column="1">
                                 <Button.Content>
                                     <Image Height="40" Width="40" HorizontalAlignment="Center" VerticalAlignment="Center">
@@ -416,23 +428,23 @@
                                     </Image>
                                 </Button.Content>
                             </Button>
-                            <Button Name="btnTaskClose" ToolTip="{DynamicResource close}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5,5,5" Style="{StaticResource ImageButton}" Grid.Column="1">
-                                <Button.Content>
-                                    <Image Height="25" Width="25" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                        <Image.Style>
-                                            <Style TargetType="Image">
-                                                <Setter Property="Source" Value="Resources/Icon/icons8_unavailable_1.ico"/>
-                                            </Style>
-                                        </Image.Style>
-                                    </Image>
-                                </Button.Content>
-                            </Button>
                             <Button Name="btnTaskOpen" ToolTip="{DynamicResource open}" Click="btnTaskOpen_Click" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5,5,5" Style="{StaticResource ImageButton}" Grid.Column="1">
                                 <Button.Content>
                                     <Image Height="28" Width="28" HorizontalAlignment="Center" VerticalAlignment="Center">
                                         <Image.Style>
                                             <Style TargetType="Image">
                                                 <Setter Property="Source" Value="Resources/Icon/icons8_ok_3.ico"/>
+                                            </Style>
+                                        </Image.Style>
+                                    </Image>
+                                </Button.Content>
+                            </Button>
+                            <Button Name="btnTaskClose" ToolTip="{DynamicResource close}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5,5,5" Style="{StaticResource ImageButton}" Grid.Column="1">
+                                <Button.Content>
+                                    <Image Height="25" Width="25" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <Image.Style>
+                                            <Style TargetType="Image">
+                                                <Setter Property="Source" Value="Resources/Icon/icons8_unavailable_1.ico"/>
                                             </Style>
                                         </Image.Style>
                                     </Image>
@@ -868,7 +880,7 @@
                     </DockPanel>
                 </Grid>
             </TabItem>
-
+                   
             <TabItem Name="backupAreaTab">
                 <TabItem.Header>
                     <StackPanel Height="48" Width="175" Orientation="Horizontal">

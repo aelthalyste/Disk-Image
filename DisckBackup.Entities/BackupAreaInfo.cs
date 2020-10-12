@@ -10,7 +10,7 @@ namespace DisckBackup.Entities
     {
         //ListView'e doldururken üzerinden tekrar düşün sorun olursa
         //Yedekleme alanları & ekle 
-        public int id { get; set; }
+        public int Id { get; set; }
         public string AreaName { get; set; }
         public BackupAreaType Type { get; set; } 
         public string Description { get; set; }
