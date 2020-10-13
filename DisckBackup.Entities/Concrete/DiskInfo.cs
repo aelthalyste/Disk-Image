@@ -11,7 +11,7 @@ namespace DisckBackup.Entities
     { 
         //Görev Oluştur ekranında ve Geri Yükle Ekranında listviewDisk vew listviewRestoreDisk listelerinde
         //2 tabda da progress bar olarak geliyor
-        public long Size { get; set; } //Total Size
+        public ulong Size { get; set; } //Total Size
         public string StrSize { get; set; } //Total Size
         public List<VolumeInfo> VolumeInfos { get; set; } = new List<VolumeInfo>();
     }

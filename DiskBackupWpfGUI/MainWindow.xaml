@@ -1062,7 +1062,7 @@
                                     <GridViewColumn Header="{DynamicResource type}" Width="125" >
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
-                                                <TextBlock Text="{Binding backupType}" TextAlignment="Center"/>
+                                                <TextBlock Text="{Binding BackupType}" TextAlignment="Center"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
@@ -1076,7 +1076,7 @@
                                     <GridViewColumn Header="{DynamicResource target}" Width="180" >
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
-                                                <TextBlock Text="{Binding Target.AreaName}" TextAlignment="Center"/>
+                                                <TextBlock Text="{Binding Target.StorageName}" TextAlignment="Center"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>

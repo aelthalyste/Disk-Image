@@ -12,12 +12,11 @@ namespace DisckBackup.Entities
         public int Id { get; set; }
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
-        public BackupType backupType { get; set; }
+        public BackupTypes BackupType { get; set; }
         public TaskInfo TaskName { get; set; } // sistem mi (BackupTask) geri yükle mi (RestoreTask)
         public BackupStorageInfo Target { get; set; } // BackupAreaInofadan AreaName'i gelecek
         public StatusType Status { get; set; }  //Enum yapıp app.xaml'da gösterim anı için dictionary kullanımından vazgeçilebilir....
         public string StrStatus { get; set; }
-
     }
 
     public enum StatusType

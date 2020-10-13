@@ -10,8 +10,8 @@ namespace DisckBackup.Entities
     public class BackupTask : IEntity
     {
         public int Id { get; set; }
-        public TaskInfo TaskName { get; set; } // foreign
-        public BackupType Type { get; set; }
+        public string TaskName { get; set; } // TaskInfo'nun name'i ile aynı olarak tutulacak
+        public BackupTypes Type { get; set; }
         public int RetentionTime { get; set; } // saklama süresi
         public bool FullOverwrite { get; set; }
         public int FullBackup { get; set; }
@@ -29,7 +29,7 @@ namespace DisckBackup.Entities
         public PeriodicType PeriodicTime { get; set; }
     }
 
-    public enum BackupType
+    public enum BackupTypes
     {
         Full = 0,
         Inc = 1,
@@ -67,5 +67,10 @@ namespace DisckBackup.Entities
         Minute = 0,
         Hour = 1,
     }
-
+/*constructor yazarak ters bağlantıdan kurtulmak mümkün gözüküyor
+ * public BackupTask(string taskName)
+{
+    TaskName = taskName;
+}
+public string TaskName { get; set; }*/
 }

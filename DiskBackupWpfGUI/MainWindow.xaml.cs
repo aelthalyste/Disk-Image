@@ -197,11 +197,11 @@ namespace DiskBackupWpfGUI
             };
             BackupStorageInfo backupAreaInfo1 = new BackupStorageInfo()
             {
-                AreaName = "Narbulut"
+                StorageName = "Narbulut"
             };
             BackupStorageInfo backupAreaInfo2 = new BackupStorageInfo()
             {
-                AreaName = "Disk 2"
+                StorageName = "Disk 2"
             };
 
             List<ActivityLog> activityLogItems = new List<ActivityLog>();
@@ -211,7 +211,7 @@ namespace DiskBackupWpfGUI
                 Id = 0,
                 StartDate = DateTime.Now - TimeSpan.FromDays(10),
                 EndDate = DateTime.Now - TimeSpan.FromHours(10),
-                backupType = BackupType.Diff,
+                BackupType = BackupTypes.Diff,
                 TaskName = taskInfo1,
                 Target = backupAreaInfo2,
                 Status = StatusType.Success,
@@ -222,7 +222,7 @@ namespace DiskBackupWpfGUI
                 Id = 0,
                 StartDate = DateTime.Now - TimeSpan.FromDays(9),
                 EndDate = DateTime.Now - TimeSpan.FromHours(8),
-                backupType = BackupType.Diff,
+                BackupType = BackupTypes.Diff,
                 TaskName = taskInfo1,
                 Target = backupAreaInfo1,
                 Status = StatusType.Fail,
@@ -446,7 +446,7 @@ namespace DiskBackupWpfGUI
         private void Expander_Loaded(object sender, RoutedEventArgs e)
         {
             var expander = sender as Expander;
-            long diskSize = 0;
+            ulong diskSize = 0;
 
             foreach (VolumeInfo item in listViewDisk.Items)
             {
@@ -588,7 +588,7 @@ namespace DiskBackupWpfGUI
         private void Expander_Loaded_1(object sender, RoutedEventArgs e)
         {
             var expander = sender as Expander;
-            long diskSize = 0;
+            ulong diskSize = 0;
 
             foreach (VolumeInfo item in listViewRestoreDisk.Items)
             {
