@@ -9,6 +9,8 @@ namespace DiskBackup.Business.TaskManagement
 {
     public interface ITaskService
     {
+        //BİRİNCİL AMAÇ ÇALIŞAN KOD ÇIKARMAK
+
         bool AddRestoreTask(RestoreTask restoreTask);
         bool UpdateRestoreTask(RestoreTask restoreTask);
         bool AddBackupTask(BackupTask backupTask);

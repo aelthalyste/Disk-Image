@@ -131,7 +131,7 @@
                         <TextBlock Height="20" Margin="0,0,0,4">01:20</TextBlock>
                         <TextBlock Height="20" Margin="0,0,0,4">74 MB/s</TextBlock>
                         <TextBlock Height="20" Margin="0,0,0,4">12 GB</TextBlock>
-                        <TextBlock Height="22" Margin="0,0,0,4">01:20</TextBlock>
+                        <TextBlock Height="22" Margin="0,0,0,4">74 MB/s</TextBlock>
                         <TextBlock Name="txtLocalZip" Height="20" Margin="0,0,0,4">Standart</TextBlock>
                         <TextBlock Height="22" Margin="0,0,0,4">C:</TextBlock>
                     </StackPanel>
@@ -239,7 +239,7 @@
                         <TextBlock Height="20" Margin="0,0,0,4">01:20</TextBlock>
                         <TextBlock Height="20" Margin="0,0,0,4">74 MB/s</TextBlock>
                         <TextBlock Height="20" Margin="0,0,0,4">12 GB</TextBlock>
-                        <TextBlock Height="22" Margin="0,0,0,4">01:20</TextBlock>
+                        <TextBlock Height="22" Margin="0,0,0,4">74 MB/s</TextBlock>
                         <TextBlock Name="txtCloudZip" Height="20" Margin="0,0,0,4">Standart</TextBlock>
                         <TextBlock Height="22" Margin="0,0,0,4">C:</TextBlock>
                     </StackPanel>

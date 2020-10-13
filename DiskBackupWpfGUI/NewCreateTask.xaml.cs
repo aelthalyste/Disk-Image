@@ -271,6 +271,26 @@ namespace DiskBackupWpfGUI
                 txtTimeWait.Text = count.ToString();
             }
         }
+
+        private void btnPeriodicDown_Click(object sender, RoutedEventArgs e)
+        {
+            var count = Convert.ToInt32(txtPeriodic.Text);
+            if (count != 0)
+            {
+                count -= 1;
+                txtPeriodic.Text = count.ToString();
+            }
+        }
+
+        private void btnPeriodicUp_Click(object sender, RoutedEventArgs e)
+        {
+            var count = Convert.ToInt32(txtPeriodic.Text);
+            if (count != 999)
+            {
+                count += 1;
+                txtPeriodic.Text = count.ToString();
+            }
+        }
         #endregion
 
         private void btnDaysTimeDays_Click(object sender, RoutedEventArgs e)
@@ -349,5 +369,6 @@ namespace DiskBackupWpfGUI
             }
         }
 
+     
     }
 }

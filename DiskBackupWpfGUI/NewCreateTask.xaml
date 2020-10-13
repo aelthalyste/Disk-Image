@@ -97,9 +97,12 @@
                         <TextBlock Text="{DynamicResource BackupType}" Margin="0,0,0,20" />
                         <RadioButton Name="rbBTDifferential" GroupName="rbBackupType" Content="{DynamicResource diff}" />
                         <TextBlock Text="{DynamicResource diffDescription}" Margin="40,10,0,20" />
-                        <RadioButton Name="rbBTIncremental" GroupName="rbBackupType" Content="{DynamicResource inc}"></RadioButton>
+                        <RadioButton Name="rbBTIncremental" GroupName="rbBackupType" Content="{DynamicResource inc}"/>
                         <TextBlock Text="{DynamicResource incDescription}" Margin="40,10,0,20" />
+                        <RadioButton Name="rbBTFull" GroupName="rbBackupType" Content="{DynamicResource full}" />
+                        <TextBlock Text="{DynamicResource fullDescription}" Margin="40,10,0,20" />
                     </StackPanel>
+                    <!--Full backup radio button gelicek-->
                 </Grid>
             </TabItem>
 
@@ -264,11 +267,17 @@
                             <StackPanel Orientation="Horizontal">
                                 <RadioButton Name="rbPeriodic" GroupName="rbtnSchedular" Content="{DynamicResource periodic}" Checked="rbPeriodic_Checked" Unchecked="rbPeriodic_Unchecked" VerticalContentAlignment="Center" Margin="5,0,0,0" />
                                 <StackPanel Name="stackPeriodic" Orientation="Horizontal" IsEnabled="False">
-                                    <xctk:TimePicker Name="tpPeriodic" Margin="79,0,0,0" MouseWheelActiveTrigger="Focused" Width="80" Height="26" Value="23:00" />
+                                    <TextBox Name="txtPeriodic" Text="3" Width="80" Height="28" FontSize="13" Margin="79,0,0,0" VerticalContentAlignment="Center" MaxLength="3"/>
+                                        <StackPanel Margin="-23,0,0,0" VerticalAlignment="Center">
+                                            <Button Name="btnPeriodicUp" Style="{StaticResource ArrowUpButton}" Content="▲" Width="20" Height="13" FontSize="8" VerticalContentAlignment="Top" BorderThickness="0" Click="btnPeriodicUp_Click" />
+                                            <Button Name="btnPeriodicDown" Style="{StaticResource ArrowDownButton}" Content="▼" Width="20" Height="13" FontSize="8" VerticalContentAlignment="Top" BorderThickness="0" Click="btnPeriodicDown_Click" />
+                                        </StackPanel>
+                                    
                                     <ComboBox Name="cbPeriodicTime" Width="280" Margin="20,0,20,0" SelectedIndex="0">
-                                        <ComboBoxItem Content="{DynamicResource hour}"></ComboBoxItem>
-                                        <ComboBoxItem Content="{DynamicResource Minute}"></ComboBoxItem>
+                                        <ComboBoxItem Content="{DynamicResource hour}"/>
+                                        <ComboBoxItem Content="{DynamicResource Minute}"/>
                                     </ComboBox>
+                                    <!--Updown Buttonla değişecek-->
                                     <Button Name="btnPeriodicTime" Content="{DynamicResource time}" Style="{StaticResource WhiteButton}" Width="60" Visibility="Hidden"/>
                                 </StackPanel>
                             </StackPanel>
