@@ -279,9 +279,9 @@
     <Resource Include="Resources\Icon\icons8_pause_button.ico" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\DisckBackup.Entities\DisckBackup.Entities.csproj">
+    <ProjectReference Include="..\DisckBackup.Entities\DiskBackup.Entities.csproj">
       <Project>{086a06a2-0f05-4ef3-8347-13b3da3983dc}</Project>
-      <Name>DisckBackup.Entities</Name>
+      <Name>DiskBackup.Entities</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

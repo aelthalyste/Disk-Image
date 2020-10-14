@@ -1,5 +1,5 @@
 ﻿using DiskBackupWpfGUI.Pages;
-using DisckBackup.Entities;
+using DiskBackup.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;

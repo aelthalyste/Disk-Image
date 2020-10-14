@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DisckBackup.Entities
+namespace DiskBackup.Entities
 {
     public class RestoreTask : IEntity
     {

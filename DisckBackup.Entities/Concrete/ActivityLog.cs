@@ -5,17 +5,18 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DisckBackup.Entities
+namespace DiskBackup.Entities
 {
     public class ActivityLog : IEntity
     {
         public int Id { get; set; }
+        public int TaskInfoId { get; set; } // foreign key
+        public int BackupStorageInfoId { get; set; } // foreign key
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
-        public BackupTypes BackupType { get; set; }
-        public TaskInfo TaskName { get; set; } // sistem mi (BackupTask) geri yükle mi (RestoreTask)
-        public BackupStorageInfo Target { get; set; } // BackupAreaInofadan AreaName'i gelecek
-        public StatusType Status { get; set; }  //Enum yapıp app.xaml'da gösterim anı için dictionary kullanımından vazgeçilebilir....
+        public TaskInfo TaskInfo { get; set; } // sistem mi (BackupTask) geri yükle mi (RestoreTask) Name geliyor
+        public BackupStorageInfo BackupStorageInfo { get; set; } // BackupStorageInfo'dan StorageName
+        public StatusType Status { get; set; }  // Enum yapıp app.xaml'da gösterim anı için dictionary kullanımından vazgeçilebilir....
         public string StrStatus { get; set; }
     }
 

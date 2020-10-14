@@ -1,4 +1,4 @@
-﻿using DisckBackup.Entities;
+﻿using DiskBackup.Entities;
 using System;
 using System.Collections.Generic;
 using System.Data.Entity.ModelConfiguration;

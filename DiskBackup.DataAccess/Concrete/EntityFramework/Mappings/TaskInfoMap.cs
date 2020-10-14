@@ -1,4 +1,4 @@
-﻿using DisckBackup.Entities;
+﻿using DiskBackup.Entities;
 using System;
 using System.Collections.Generic;
 using System.Data.Entity.ModelConfiguration;
@@ -16,10 +16,9 @@ namespace DiskBackup.DataAccess.Concrete.EntityFramework.Mappings
             HasKey(x => x.Id);
 
             Property(x => x.Id).HasColumnName("task_info_id");
-            //relation ilişki
-            /*Property(x => x.RestoreTaskInfo).HasColumnName("restore_task_id");
-            Property(x => x.BackupTaskInfo).HasColumnName("backup_task_id");
-            Property(x => x.Target).HasColumnName("backup_storage_info_id");*/
+            Property(x => x.RestoreTaskId).HasColumnName("restore_task_id");
+            Property(x => x.BackupTaskId).HasColumnName("backup_task_id");
+            Property(x => x.BackupStorageInfoId).HasColumnName("backup_storage_info_id");
             Property(x => x.Type).HasColumnName("task_type");
             Property(x => x.Name).HasColumnName("name");
             Property(x => x.Obje).HasColumnName("obje");
@@ -29,6 +28,9 @@ namespace DiskBackup.DataAccess.Concrete.EntityFramework.Mappings
             Property(x => x.NextDate).HasColumnName("next_date");
             Property(x => x.Descripiton).HasColumnName("description");
             Property(x => x.ScheduleId).HasColumnName("scheduler_id");
+            Ignore(x => x.RestoreTaskInfo);
+            Ignore(x => x.BackupTaskInfo);
+            Ignore(x => x.BackupStorageInfo);
 
         }
     }

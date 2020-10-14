@@ -1062,21 +1062,21 @@
                                     <GridViewColumn Header="{DynamicResource type}" Width="125" >
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
-                                                <TextBlock Text="{Binding BackupType}" TextAlignment="Center"/>
+                                                <TextBlock Text="{Binding TaskInfo.Type}" TextAlignment="Center"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
                                     <GridViewColumn Header="{DynamicResource taskName}" Width="180" >
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
-                                                <TextBlock Text="{Binding TaskName.Name}" TextAlignment="Center"/>
+                                                <TextBlock Text="{Binding TaskInfo.Name}" TextAlignment="Center"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
                                     <GridViewColumn Header="{DynamicResource target}" Width="180" >
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
-                                                <TextBlock Text="{Binding Target.StorageName}" TextAlignment="Center"/>
+                                                <TextBlock Text="{Binding BackupStorageInfo.StorageName}" TextAlignment="Center"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>

@@ -1,4 +1,4 @@
-﻿using DisckBackup.Entities;
+﻿using DiskBackup.Entities;
 using System;
 using System.Collections.Generic;
 using System.Data.Entity.ModelConfiguration;
@@ -16,13 +16,14 @@ namespace DiskBackup.DataAccess.Concrete.EntityFramework.Mappings
             HasKey(x => x.Id);
 
             Property(x => x.Id).HasColumnName("activitiy_log_id");
+            Property(x => x.TaskInfoId).HasColumnName("task_info_id");
+            Property(x => x.BackupStorageInfoId).HasColumnName("backup_storage_info_id");
             Property(x => x.StartDate).HasColumnName("start_date");
             Property(x => x.EndDate).HasColumnName("end_date");
-            Property(x => x.BackupType).HasColumnName("backup_type");
-            //Property(x => x.TaskName).HasColumnName("task_info_id"); relation
-            //Property(x => x.Target).HasColumnName("backup_storage_info_id");
             Property(x => x.Status).HasColumnName("status");
             Property(x => x.StrStatus).HasColumnName("str_status");
+            Ignore(x => x.BackupStorageInfo);
+            Ignore(x => x.TaskInfo);
 
         }
     }

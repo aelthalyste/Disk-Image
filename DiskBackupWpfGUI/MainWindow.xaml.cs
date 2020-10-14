@@ -1,4 +1,4 @@
-﻿using DisckBackup.Entities;
+﻿using DiskBackup.Entities;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -189,11 +189,13 @@ namespace DiskBackupWpfGUI
 
             TaskInfo taskInfo1 = new TaskInfo()
             {
-                Name = "Sistem Yedekleme"
+                Name = "Sistem Yedekleme",
+                Type = TaskType.Backup
             };
             TaskInfo taskInfo2 = new TaskInfo()
             {
-                Name = "Geri Yükleme"
+                Name = "Geri Yükleme",
+                Type = TaskType.Restore
             };
             BackupStorageInfo backupAreaInfo1 = new BackupStorageInfo()
             {
@@ -211,9 +213,9 @@ namespace DiskBackupWpfGUI
                 Id = 0,
                 StartDate = DateTime.Now - TimeSpan.FromDays(10),
                 EndDate = DateTime.Now - TimeSpan.FromHours(10),
-                BackupType = BackupTypes.Diff,
-                TaskName = taskInfo1,
-                Target = backupAreaInfo2,
+                //BackupType = BackupTypes.Diff,
+                TaskInfo = taskInfo1,
+                BackupStorageInfo = backupAreaInfo2,
                 Status = StatusType.Success,
                 StrStatus = Resources[StatusType.Success.ToString()].ToString()
             });
@@ -222,22 +224,23 @@ namespace DiskBackupWpfGUI
                 Id = 0,
                 StartDate = DateTime.Now - TimeSpan.FromDays(9),
                 EndDate = DateTime.Now - TimeSpan.FromHours(8),
-                BackupType = BackupTypes.Diff,
-                TaskName = taskInfo1,
-                Target = backupAreaInfo1,
+                //BackupType = BackupTypes.Diff,
+                TaskInfo = taskInfo1,
+                BackupStorageInfo = backupAreaInfo1,
                 Status = StatusType.Fail,
                 StrStatus = Resources[StatusType.Fail.ToString()].ToString()
             });
-            //activityLogItems.Add(new ActivityLog()
-            //{
-            //    Id = 0,
-            //    StartDate = DateTime.Now - TimeSpan.FromDays(5),
-            //    EndDate = DateTime.Now - TimeSpan.FromHours(5),
-            //    backupType = BackupType.Full,
-            //    TaskName = taskInfo2,
-            //    Target = backupAreaInfo2,
-            //    Status = "Başarılı"
-            //});
+            activityLogItems.Add(new ActivityLog()
+            {
+                Id = 0,
+                StartDate = DateTime.Now - TimeSpan.FromDays(5),
+                EndDate = DateTime.Now - TimeSpan.FromHours(5),
+                //backupType = BackupType.Full,
+                TaskInfo = taskInfo2,
+                BackupStorageInfo = backupAreaInfo2,
+                Status = StatusType.Success,
+                StrStatus = Resources[StatusType.Success.ToString()].ToString()
+            });
             //activityLogItems.Add(new ActivityLog()
             //{
             //    Id = 0,
