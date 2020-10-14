@@ -382,8 +382,8 @@
                         </ListView>
                     </DockPanel>
                     <DockPanel Grid.Column="1" VerticalAlignment="Top" Height="415" Background="#F2F2F2">
-                        <StackPanel Margin="0,0,5,5">
-                            <Button Name="btnTaskEdit" ToolTip="{DynamicResource edit}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,25,5,5" Style="{StaticResource ImageButton}" Grid.Column="1">
+                        <StackPanel HorizontalAlignment="Center">
+                            <Button Name="btnTaskEdit" ToolTip="{DynamicResource edit}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,25,0,5" Style="{StaticResource ImageButton}" Grid.Column="1">
                                 <Button.Content>
                                     <Image Height="25" Width="25" HorizontalAlignment="Center" VerticalAlignment="Center">
                                         <Image.Style>
@@ -394,7 +394,7 @@
                                     </Image>
                                 </Button.Content>
                             </Button>
-                            <Button Name="btnTaskStart" ToolTip="{DynamicResource start}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5,5,5"  Style="{StaticResource ImageButton}" Grid.Column="1">
+                            <Button Name="btnTaskStart" ToolTip="{DynamicResource start}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5"  Style="{StaticResource ImageButton}" Grid.Column="1">
                                 <Button.Content>
                                     <Image Height="25" Width="25" HorizontalAlignment="Center" VerticalAlignment="Center">
                                         <Image.Style>
@@ -405,7 +405,7 @@
                                     </Image>
                                 </Button.Content>
                             </Button>
-                            <Button Name="btnTaskPauseButton" ToolTip="{DynamicResource pause}" HorizontalAlignment="Center" Margin="0,5,5,5" Style="{StaticResource ImageButton}" Width="32" Height="32" Grid.Column="1">
+                            <Button Name="btnTaskPauseButton" ToolTip="{DynamicResource pause}" HorizontalAlignment="Center" Margin="0,5" Style="{StaticResource ImageButton}" Width="32" Height="32" Grid.Column="1">
                                 <Button.Content>
                                     <Image Height="30" Width="30">
                                         <Image.Style>
@@ -417,7 +417,7 @@
                                 </Button.Content>
                             </Button>
 
-                            <Button Name="btnTaskStop" ToolTip="{DynamicResource stop}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5,5,5" Style="{StaticResource ImageButton}" Grid.Column="1">
+                            <Button Name="btnTaskStop" ToolTip="{DynamicResource stop}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5" Style="{StaticResource ImageButton}" Grid.Column="1">
                                 <Button.Content>
                                     <Image Height="40" Width="40" HorizontalAlignment="Center" VerticalAlignment="Center">
                                         <Image.Style>
@@ -428,7 +428,7 @@
                                     </Image>
                                 </Button.Content>
                             </Button>
-                            <Button Name="btnTaskOpen" ToolTip="{DynamicResource open}" Click="btnTaskOpen_Click" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5,5,5" Style="{StaticResource ImageButton}" Grid.Column="1">
+                            <Button Name="btnTaskOpen" ToolTip="{DynamicResource open}" Click="btnTaskOpen_Click" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5" Style="{StaticResource ImageButton}" Grid.Column="1">
                                 <Button.Content>
                                     <Image Height="28" Width="28" HorizontalAlignment="Center" VerticalAlignment="Center">
                                         <Image.Style>
@@ -439,7 +439,7 @@
                                     </Image>
                                 </Button.Content>
                             </Button>
-                            <Button Name="btnTaskClose" ToolTip="{DynamicResource close}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5,5,5" Style="{StaticResource ImageButton}" Grid.Column="1">
+                            <Button Name="btnTaskClose" ToolTip="{DynamicResource close}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5" Style="{StaticResource ImageButton}" Grid.Column="1">
                                 <Button.Content>
                                     <Image Height="25" Width="25" HorizontalAlignment="Center" VerticalAlignment="Center">
                                         <Image.Style>
@@ -450,7 +450,7 @@
                                     </Image>
                                 </Button.Content>
                             </Button>
-                            <Button Name="btnTaskCopy" ToolTip="{DynamicResource copy}" Click="btnTaskCopy_Click" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5,5,5" Style="{StaticResource ImageButton}" Grid.Column="1">
+                            <Button Name="btnTaskCopy" ToolTip="{DynamicResource copy}" Click="btnTaskCopy_Click" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5" Style="{StaticResource ImageButton}" Grid.Column="1">
                                 <Button.Content>
                                     <Image Height="25" Width="25" HorizontalAlignment="Center" VerticalAlignment="Center">
                                         <Image.Style>
@@ -461,7 +461,7 @@
                                     </Image>
                                 </Button.Content>
                             </Button>
-                            <Button Name="btnTaskPaste" ToolTip="{DynamicResource paste}" Click="btnTaskPaste_Click" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5,5,5" Style="{StaticResource ImageButton}" Grid.Column="1">
+                            <Button Name="btnTaskPaste" ToolTip="{DynamicResource paste}" Click="btnTaskPaste_Click" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5" Style="{StaticResource ImageButton}" Grid.Column="1">
                                 <Button.Content>
                                     <Image Height="25" Width="25" HorizontalAlignment="Center" VerticalAlignment="Center">
                                         <Image.Style>
@@ -472,7 +472,7 @@
                                     </Image>
                                 </Button.Content>
                             </Button>
-                            <Button Name="btnTaskDelete" ToolTip="{DynamicResource delete}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5,5,5" Style="{StaticResource ImageButton}" Grid.Column="1">
+                            <Button Name="btnTaskDelete" ToolTip="{DynamicResource delete}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5" Style="{StaticResource ImageButton}" Grid.Column="1">
                                 <Button.Content>
                                     <Image Height="30" Width="30" HorizontalAlignment="Center" VerticalAlignment="Center">
                                         <Image.Style>
@@ -772,7 +772,7 @@
                 <Grid Background="White">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition/>
-                        <ColumnDefinition Width="50"/>
+                        <ColumnDefinition Width="45"/>
                     </Grid.ColumnDefinitions>
                     <DockPanel>
                         <ListView Name="listViewBackups" Height="415" Margin="5,0,0,5" VerticalAlignment="Top">
@@ -853,8 +853,8 @@
                         </ListView>
                     </DockPanel>
                     <DockPanel Grid.Column="1" VerticalAlignment="Top" Height="415" Background="#F2F2F2">
-                        <StackPanel Margin="0,0,5,5">
-                            <Button Name="btnFilesBrowse" ToolTip="{DynamicResource browse}" Click="btnFilesBrowse_Click" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,25,5,5" Style="{StaticResource ImageButton}" Grid.Column="1">
+                        <StackPanel HorizontalAlignment="Center">
+                            <Button Name="btnFilesBrowse" ToolTip="{DynamicResource browse}" Click="btnFilesBrowse_Click" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,25,0,5" Style="{StaticResource ImageButton}" Grid.Column="1">
                                 <Button.Content>
                                     <Image Height="26" Width="26" HorizontalAlignment="Center" VerticalAlignment="Center">
                                         <Image.Style>
@@ -865,7 +865,7 @@
                                     </Image>
                                 </Button.Content>
                             </Button>
-                            <Button Name="btnFilesDelete" ToolTip="{DynamicResource delete}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5,5,5" Style="{StaticResource ImageButton}" Grid.Column="1">
+                            <Button Name="btnFilesDelete" ToolTip="{DynamicResource delete}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5" Style="{StaticResource ImageButton}" Grid.Column="1">
                                 <Button.Content>
                                     <Image Height="30" Width="30" HorizontalAlignment="Center" VerticalAlignment="Center">
                                         <Image.Style>
@@ -897,7 +897,7 @@
                 <Grid Background="White">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition/>
-                        <ColumnDefinition Width="50"/>
+                        <ColumnDefinition Width="45"/>
                     </Grid.ColumnDefinitions>
                     <DockPanel>
                         <ListView Name="listViewBackupArea" Height="415" Margin="5,0,0,5" VerticalAlignment="Top">
@@ -973,10 +973,10 @@
                         </ListView>
                     </DockPanel>
                     <DockPanel Grid.Column="1" VerticalAlignment="Top" Height="415" Background="#F2F2F2">
-                        <StackPanel Margin="0,0,5,5">
-                            <Button Name="btnBackupAreaAdd" ToolTip="{DynamicResource add}" Click="btnBackupAreaAdd_Click" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,25,5,5" Style="{StaticResource ImageButton}" Grid.Column="1">
+                        <StackPanel HorizontalAlignment="Center">
+                            <Button Name="btnBackupAreaAdd" ToolTip="{DynamicResource add}" Click="btnBackupAreaAdd_Click" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,25,0,5" Style="{StaticResource ImageButton}" Grid.Column="1">
                                 <Button.Content>
-                                    <Image Height="25" Width="25" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <Image Height="30" Width="30" HorizontalAlignment="Center" VerticalAlignment="Center">
                                         <Image.Style>
                                             <Style TargetType="Image">
                                                 <Setter Property="Source" Value="Resources/Icon/icons8_plus.ico"/>
@@ -985,7 +985,7 @@
                                     </Image>
                                 </Button.Content>
                             </Button>
-                            <Button Name="btnBackupAreaEdit" ToolTip="{DynamicResource edit}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5,5,5" Style="{StaticResource ImageButton}" Grid.Column="1">
+                            <Button Name="btnBackupAreaEdit" ToolTip="{DynamicResource edit}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5" Style="{StaticResource ImageButton}" Grid.Column="1">
                                 <Button.Content>
                                     <Image Height="25" Width="25" HorizontalAlignment="Center" VerticalAlignment="Center">
                                         <Image.Style>
@@ -996,7 +996,7 @@
                                     </Image>
                                 </Button.Content>
                             </Button>
-                            <Button Name="btnBackupAreaDelete" ToolTip="{DynamicResource delete}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5,5,5" Style="{StaticResource ImageButton}" Grid.Column="1">
+                            <Button Name="btnBackupAreaDelete" ToolTip="{DynamicResource delete}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5" Style="{StaticResource ImageButton}" Grid.Column="1">
                                 <Button.Content>
                                     <Image Height="30" Width="30" HorizontalAlignment="Center" VerticalAlignment="Center">
                                         <Image.Style>
@@ -1028,7 +1028,7 @@
                 <Grid Background="White">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition/>
-                        <ColumnDefinition Width="50"/>
+                        <ColumnDefinition Width="45"/>
                     </Grid.ColumnDefinitions>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="425"/>
@@ -1097,8 +1097,8 @@
                         </ListView>
                     </DockPanel>
                     <DockPanel Grid.Column="1" VerticalAlignment="Top" Height="415" Background="#F2F2F2">
-                        <StackPanel Margin="0,0,5,5">
-                            <Button Name="btnLogDelete" ToolTip="{DynamicResource delete}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,25,5,5" Style="{StaticResource ImageButton}" Grid.Column="1">
+                        <StackPanel HorizontalAlignment="Center">
+                            <Button Name="btnLogDelete" ToolTip="{DynamicResource delete}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,25,0,5" Style="{StaticResource ImageButton}" Grid.Column="1">
                                 <Button.Content>
                                     <Image Height="30" Width="30" HorizontalAlignment="Center" VerticalAlignment="Center">
                                         <Image.Style>

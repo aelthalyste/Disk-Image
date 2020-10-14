@@ -4,11 +4,11 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{3BFEB5E2-ADC2-4D43-9D70-86DC595E30B7}</ProjectGuid>
+    <ProjectGuid>{17E1BC6B-2BEA-4DC3-98B9-F1A6E1C743D1}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>DiskBackup.TaskScheduler</RootNamespace>
-    <AssemblyName>DiskBackup.TaskScheduler</AssemblyName>
+    <RootNamespace>DiskBackup.Controllers</RootNamespace>
+    <AssemblyName>DiskBackup.Controllers</AssemblyName>
     <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>

@@ -27,6 +27,15 @@ namespace DiskBackup.Core.DataAccess.EntityFramework
             }
         }
 
+        public void Add(List<TEntity> entities)
+        {
+            using (var context = new TContext())
+            {
+                context.Set<TEntity>().AddRange(entities);
+                context.SaveChanges();
+            }
+        }
+
         public void Delete(TEntity entity)
         {
             using (var context = new TContext())
@@ -37,6 +46,18 @@ namespace DiskBackup.Core.DataAccess.EntityFramework
             }
         }
 
+        public void Delete(List<TEntity> entities)
+        {
+            using (var context = new TContext())
+            {
+                foreach (var item in entities)
+                {
+                    var deletedEntry = context.Entry(item);
+                    deletedEntry.State = EntityState.Deleted;
+                }
+                context.SaveChanges();
+            }
+        }
 
         public TEntity Get(Expression<Func<TEntity, bool>> filter)
         {
@@ -64,6 +85,19 @@ namespace DiskBackup.Core.DataAccess.EntityFramework
                 context.SaveChanges();
 
                 return entity;
+            }
+        }
+
+        public void Update(List<TEntity> entities)
+        {
+            using (var context = new TContext())
+            {
+                foreach (var item in entities)
+                {
+                    var updatedEntry = context.Entry(item);
+                    updatedEntry.State = EntityState.Modified;
+                }
+                context.SaveChanges();
             }
         }
     }

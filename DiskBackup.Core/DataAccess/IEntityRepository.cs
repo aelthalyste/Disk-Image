@@ -16,5 +16,8 @@ namespace DiskBackup.DataAccess.Core
         T Add(T entity);
         T Update(T entity);
         void Delete(T entity);
+        void Add(List<T> entities);
+        void Update(List<T> entities);
+        void Delete(List<T> entities);
     }
 }

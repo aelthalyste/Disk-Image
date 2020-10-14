@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("DiskBackup.TaskScheduler")]
+[assembly: AssemblyTitle("DiskBackup.Controllers")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("DiskBackup.TaskScheduler")]
+[assembly: AssemblyProduct("DiskBackup.Controllers")]
 [assembly: AssemblyCopyright("Copyright ©  2020")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
@@ -20,7 +20,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("3bfeb5e2-adc2-4d43-9d70-86dc595e30b7")]
+[assembly: Guid("17e1bc6b-2bea-4dc3-98b9-f1a6e1c743d1")]
 
 // Version information for an assembly consists of the following four values:
 //
