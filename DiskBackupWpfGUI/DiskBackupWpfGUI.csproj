@@ -279,13 +279,13 @@
     <Resource Include="Resources\Icon\icons8_pause_button.ico" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\DisckBackup.Entities\DiskBackup.Entities.csproj">
-      <Project>{086a06a2-0f05-4ef3-8347-13b3da3983dc}</Project>
-      <Name>DiskBackup.Entities</Name>
-    </ProjectReference>
+    <Resource Include="Resources\Icon\Back_96px.png" />
   </ItemGroup>
   <ItemGroup>
-    <Resource Include="Resources\Icon\Back_96px.png" />
+    <ProjectReference Include="..\DiskBackup.Entities\DiskBackup.Entities.csproj">
+      <Project>{08189feb-3e7a-4c10-8088-3732bc8ac883}</Project>
+      <Name>DiskBackup.Entities</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

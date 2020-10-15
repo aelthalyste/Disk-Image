@@ -1,4 +1,4 @@
-﻿using DiskBackup.Entities;
+﻿using DiskBackup.Entities.Concrete;
 using DiskBackup.DataAccess.Concrete.EntityFramework.Mappings;
 using System;
 using System.Collections.Generic;
@@ -21,6 +21,7 @@ namespace DiskBackup.DataAccess.Concrete.EntityFramework
         public DbSet<BackupTask> BackupTasks { get; set; }
         public DbSet<RestoreTask> RestoreTasks { get; set; }
         public DbSet<TaskInfo> TaskInfos { get; set; }
+        public DbSet<BackupInfo> BackupInfos { get; set; }
 
         protected override void OnModelCreating(DbModelBuilder modelBuilder)
         {
@@ -29,6 +30,7 @@ namespace DiskBackup.DataAccess.Concrete.EntityFramework
             modelBuilder.Configurations.Add(new BackupTaskMap());
             modelBuilder.Configurations.Add(new RestoreTaskMap());
             modelBuilder.Configurations.Add(new TaskInfoMap());
+            modelBuilder.Configurations.Add(new BackupInfoMap());
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿using DiskBackup.Entities;
+﻿using DiskBackup.Entities.Concrete;
 using System;
 using System.Collections.Generic;
 using System.Data.Entity.ModelConfiguration;
@@ -16,14 +16,11 @@ namespace DiskBackup.DataAccess.Concrete.EntityFramework.Mappings
             HasKey(x => x.Id);
 
             Property(x => x.Id).HasColumnName("restore_task_id");
-            Property(x => x.TaskName).HasColumnName("task_name");
-            Property(x => x.Name).HasColumnName("name");
-            Property(x => x.VolumeSize).HasColumnName("volume_size");
-            Property(x => x.FileSize).HasColumnName("file_size");
-            Property(x => x.StrVolumeSize).HasColumnName("str_volume_size");
-            Property(x => x.StrFileSize).HasColumnName("str_file_size");
-            Property(x => x.Letter).HasColumnName("letter");
-
+            Property(x => x.BackupInfoId).HasColumnName("backup_info_id");
+            Property(x => x.DiskId).HasColumnName("disk_id");
+            Property(x => x.DiskLetter).HasColumnName("disk_letter");
+            Ignore(x => x.BackupInfo);
+            Ignore(x => x.DiskInfo);
         }
     }
 }

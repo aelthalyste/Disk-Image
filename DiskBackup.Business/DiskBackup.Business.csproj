@@ -41,16 +41,21 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="DiskManagement\IBackupService.cs" />
+    <Compile Include="Abstract\IBackupInfoService.cs" />
+    <Compile Include="Abstract\IBackupStorageService.cs" />
+    <Compile Include="Abstract\IBackupService.cs" />
+    <Compile Include="Abstract\ILogService.cs" />
+    <Compile Include="Concrete\LogManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="TaskManagement\ITaskScheduler.cs" />
-    <Compile Include="TaskManagement\ITaskService.cs" />
+    <Compile Include="Abstract\ITaskSchedulerService.cs" />
+    <Compile Include="Abstract\ITaskService.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\DisckBackup.Entities\DiskBackup.Entities.csproj">
-      <Project>{086A06A2-0F05-4EF3-8347-13B3DA3983DC}</Project>
+    <ProjectReference Include="..\DiskBackup.Entities\DiskBackup.Entities.csproj">
+      <Project>{08189feb-3e7a-4c10-8088-3732bc8ac883}</Project>
       <Name>DiskBackup.Entities</Name>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

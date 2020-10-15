@@ -1,5 +1,5 @@
-﻿using DiskBackup.Entities.Concrete;
-using DiskBackup.DataAccess.Core;
+﻿using DiskBackup.DataAccess.Core;
+using DiskBackup.Entities.Concrete;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace DiskBackup.DataAccess.Abstract
 {
-    public interface IBackupTaskDal : IEntityRepository<BackupTask>
+    public interface IBackupInfoDal : IEntityRepository<BackupInfo>
     {
     }
 }

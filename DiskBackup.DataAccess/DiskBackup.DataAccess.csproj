@@ -52,17 +52,19 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Abstract\IActivityLogDal.cs" />
+    <Compile Include="Abstract\IBackupInfoDal.cs" />
     <Compile Include="Abstract\IBackupStorageDal.cs" />
     <Compile Include="Abstract\IBackupTaskDal.cs" />
     <Compile Include="Abstract\IRestoreTaskDal.cs" />
     <Compile Include="Abstract\ITaskInfoDal.cs" />
     <Compile Include="Concrete\EntityFramework\EfActivityLogDal.cs" />
-    <Compile Include="Concrete\EntityFramework\EfBackupStorageDal.cs" />
+    <Compile Include="Concrete\EntityFramework\EfBackupInfoDal.cs" />
     <Compile Include="Concrete\EntityFramework\EfBackupTaskDal.cs" />
     <Compile Include="Concrete\EntityFramework\EfRestoreTaskDal.cs" />
     <Compile Include="Concrete\EntityFramework\EfTaskInfoDal.cs" />
     <Compile Include="Concrete\EntityFramework\ImageDiskContext.cs" />
     <Compile Include="Concrete\EntityFramework\Mappings\ActivitiyLogMap.cs" />
+    <Compile Include="Concrete\EntityFramework\Mappings\BackupInfoMap.cs" />
     <Compile Include="Concrete\EntityFramework\Mappings\BackupStorageInfoMap.cs" />
     <Compile Include="Concrete\EntityFramework\Mappings\BackupTaskMap.cs" />
     <Compile Include="Concrete\EntityFramework\Mappings\RestoreTaskMap.cs" />
@@ -75,13 +77,13 @@
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>
-    <ProjectReference Include="..\DisckBackup.Entities\DiskBackup.Entities.csproj">
-      <Project>{086a06a2-0f05-4ef3-8347-13b3da3983dc}</Project>
-      <Name>DiskBackup.Entities</Name>
-    </ProjectReference>
     <ProjectReference Include="..\DiskBackup.Core\DiskBackup.Core.csproj">
       <Project>{CA2A0627-7997-4B4E-8BE3-C1CA9E516F66}</Project>
       <Name>DiskBackup.Core</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\DiskBackup.Entities\DiskBackup.Entities.csproj">
+      <Project>{08189feb-3e7a-4c10-8088-3732bc8ac883}</Project>
+      <Name>DiskBackup.Entities</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

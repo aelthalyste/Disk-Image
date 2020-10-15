@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DiskBackup.Entities
+namespace DiskBackup.Entities.Concrete
 {
     public class TaskInfo : IEntity
     {

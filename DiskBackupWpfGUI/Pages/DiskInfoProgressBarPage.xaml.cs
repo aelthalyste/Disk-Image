@@ -1,4 +1,4 @@
-﻿using DiskBackup.Entities;
+﻿using DiskBackup.Entities.Concrete;
 using System;
 using System.Collections.Generic;
 using System.Linq;
