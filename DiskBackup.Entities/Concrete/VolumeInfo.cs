@@ -15,9 +15,9 @@ namespace DiskBackup.Entities.Concrete
         public string BootType { get; set; } //mbr . gpt 
         public string Name { get; set; } //System Reserved ,Local Volume
         public string FileSystem { get; set; } //Dosya Sistemi NTFS
-        public ulong Size { get; set; }
+        public long Size { get; set; }
         public string StrSize { get; set; }
-        public ulong FreeSize { get; set; }
+        public long FreeSize { get; set; }
         public string StrFreeSize { get; set; }
         public string PrioritySection { get; set; } //Primary ??
         public char Letter { get; set; }

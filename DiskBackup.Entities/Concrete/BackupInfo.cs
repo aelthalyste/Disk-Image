@@ -17,9 +17,9 @@ namespace DiskBackup.Entities.Concrete
         public string FileName { get; set; }
         public DateTime CreatedDate { get; set; }
         public string BackupTaskName { get; set; }
-        public ulong VolumeSize { get; set; }
+        public long VolumeSize { get; set; }
         public string StrVolumeSize { get; set; }
-        public ulong FileSize { get; set; }
+        public long FileSize { get; set; }
         public string StrFileSize { get; set; }
         public string Description { get; set; }
         public bool IsCloud { get; set; }

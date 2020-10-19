@@ -74,7 +74,7 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Sample\image_disk.db" />
+    <Content Include="Sample\image_disk.db"/>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\DiskBackup.Core\DiskBackup.Core.csproj">

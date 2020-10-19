@@ -449,7 +449,7 @@ namespace DiskBackupWpfGUI
         private void Expander_Loaded(object sender, RoutedEventArgs e)
         {
             var expander = sender as Expander;
-            ulong diskSize = 0;
+            long diskSize = 0;
 
             foreach (VolumeInfo item in listViewDisk.Items)
             {
@@ -591,7 +591,7 @@ namespace DiskBackupWpfGUI
         private void Expander_Loaded_1(object sender, RoutedEventArgs e)
         {
             var expander = sender as Expander;
-            ulong diskSize = 0;
+            long diskSize = 0;
 
             foreach (VolumeInfo item in listViewRestoreDisk.Items)
             {

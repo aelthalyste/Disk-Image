@@ -16,11 +16,11 @@ namespace DiskBackup.Entities.Concrete
         public BackupStorageType Type { get; set; } 
         public string Description { get; set; }
         public string StrCapacity { get; set; }
-        public ulong Capacity { get; set; }
+        public long Capacity { get; set; }
         public string StrUsedSize { get; set; }
-        public ulong UsedSize { get; set; }
+        public long UsedSize { get; set; }
         public string StrFreeSize { get; set; }
-        public ulong FreeSize { get; set; }
+        public long FreeSize { get; set; }
         public string Path { get; set; }
         public bool IsCloud { get; set; }   //true olduğunda aslında modelimiz hybrit oluyor
         public string Domain { get; set; } 
