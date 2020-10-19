@@ -39,24 +39,7 @@ namespace DiskBackup.DataAccess.Tests.EntityFramework
         public void GetStorageTest()
         {
             var result = _EfBackupStorageDal.Get(x => x.Id == 7);
-            var backupStorage = new BackupStorageInfo
-            {
-                StorageName = "GetStorageTest 10",
-                Type = (BackupStorageType)1,
-                Description = "GetStorageTest 10",
-                Capacity = 555555,
-                UsedSize = 444444,
-                FreeSize = 111111,
-                Path = "C:\\Users\\ebruv\\source\\repos\\Disk-Image\\DiskBackup.DataAccess.Tests\\Sample",
-                IsCloud = false,
-                Domain = null,
-                Username = "denemeUser10",
-                Password = "Parola123",
-                StrCapacity = "321 GB",
-                StrUsedSize = "111 GB",
-                StrFreeSize = "99 GB"
-            };
-            Assert.AreEqual(result.Path, backupStorage.Path);
+            Assert.AreEqual(result.Path, "C:\\Users\\ebruv\\source\\repos\\Disk-Image\\DiskBackup.DataAccess.Tests\\Sample");
         }
 
         [TestMethod]

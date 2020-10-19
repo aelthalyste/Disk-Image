@@ -85,7 +85,11 @@
     <None Include="App.config" />
     <None Include="packages.config" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Content Include="Templates\image_disk.db">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\DiskBackup.Core\DiskBackup.Core.csproj">
       <Project>{CA2A0627-7997-4B4E-8BE3-C1CA9E516F66}</Project>
