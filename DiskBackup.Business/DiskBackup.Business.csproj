@@ -31,6 +31,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="NarDIWrapper">
+      <HintPath>..\build\NarDIWrapper\x64\NarDIWrapper.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -45,6 +48,7 @@
     <Compile Include="Abstract\IBackupStorageService.cs" />
     <Compile Include="Abstract\IBackupService.cs" />
     <Compile Include="Abstract\ILogService.cs" />
+    <Compile Include="Concrete\BackupManager.cs" />
     <Compile Include="Concrete\LogManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Abstract\ITaskSchedulerService.cs" />
