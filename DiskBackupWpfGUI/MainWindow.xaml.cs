@@ -38,35 +38,35 @@ namespace DiskBackupWpfGUI
         {
             InitializeComponent();
 
-            DiskInfo diskInfo = new DiskInfo
+            DiskInformation diskInfo = new DiskInformation
             {
                 StrSize = "400 GB",
                 Size = 400,
             };
             diskInfo.VolumeInfos.Add(new VolumeInfo
             {
-                BootType = "MBR",
+                DiskType = "MBR",
                 DiskName = "Disk 1",
                 Name = "System Reserverd",
                 FileSystem = "NTFS",
-                StrSize = "100 GB",
-                Size = 100,
-                StrFreeSize = "50 GB",
-                FreeSize = 50,
+                StrSize = FormatBytes(107374182400),
+                Size = 107374182400,
+                StrFreeSize = FormatBytes(53687091200),
+                FreeSize = 53687091200,
                 PrioritySection = "Primary",
                 Letter = 'C',
                 Status = "Sağlıklı"
             });
             diskInfo.VolumeInfos.Add(new VolumeInfo
             {
-                BootType = "MBR",
+                DiskType = "MBR",
                 DiskName = "Disk 1",
                 Name = "Local Volume",
                 FileSystem = "NTFS",
-                StrSize = "300 GB",
-                Size = 300,
-                StrFreeSize = "150 GB",
-                FreeSize = 150,
+                StrSize = FormatBytes(322122547200),
+                Size = 322122547200,
+                StrFreeSize = FormatBytes(161061273600),
+                FreeSize = 161061273600,
                 PrioritySection = "Primary",
                 Letter = 'D',
                 Status = "Sağlıklı"
@@ -82,77 +82,77 @@ namespace DiskBackupWpfGUI
             frame.VerticalAlignment = VerticalAlignment.Top;
             stackTasksDiskInfo.Children.Add(frame);
 
-            DiskInfo diskInfo2 = new DiskInfo
+            DiskInformation diskInfo2 = new DiskInformation
             {
-                StrSize = "1950 GB",
-                Size = 1950,
+                StrSize = "2000 GB",
+                Size = 2000000000000,
             };
             diskInfo2.VolumeInfos.Add(new VolumeInfo
             {
-                BootType = "GPT",
+                DiskType = "GPT",
                 DiskName = "Disk 2",
                 Name = "System Reserverd",
                 FileSystem = "NTFS",
-                StrSize = "250 GB",
-                Size = 250,
-                StrFreeSize = "158 GB",
-                FreeSize = 158,
+                StrSize = FormatBytes(322122547200),
+                Size = 322122547200,
+                StrFreeSize = FormatBytes(169651208192),
+                FreeSize = 169651208192,
                 PrioritySection = "Primary",
                 Letter = 'C',
                 Status = "Sağlıklı"
             });
             diskInfo2.VolumeInfos.Add(new VolumeInfo
             {
-                BootType = "GPT",
+                DiskType = "GPT",
                 DiskName = "Disk 2",
                 Name = "Local Volume",
                 FileSystem = "NTFS",
-                StrSize = "450 GB",
-                Size = 450,
-                StrFreeSize = "350 GB",
-                FreeSize = 350,
+                StrSize = FormatBytes(483183820800),
+                Size = 483183820800,
+                StrFreeSize = FormatBytes(375809638400),
+                FreeSize = 375809638400,
                 PrioritySection = "Primary",
                 Letter = 'D',
                 Status = "Sağlıklı"
             });
             diskInfo2.VolumeInfos.Add(new VolumeInfo
             {
-                BootType = "GPT",
+                DiskType = "GPT",
                 DiskName = "Disk 2",
                 Name = "Local Volume",
                 FileSystem = "NTFS",
-                StrSize = "500 GB",
-                Size = 500,
-                StrFreeSize = "100 GB",
-                FreeSize = 100,
+                StrSize = FormatBytes(536870912000),
+                Size = 536870912000,
+                StrFreeSize = FormatBytes(107374182400),
+                FreeSize = 107374182400,
                 PrioritySection = "Primary",
                 Letter = 'E',
                 Status = "Sağlıklı"
             });
             diskInfo2.VolumeInfos.Add(new VolumeInfo
             {
-                BootType = "GPT",
+                DiskType = "GPT",
                 DiskName = "Disk 2",
                 Name = "Local Volume",
                 FileSystem = "NTFS",
-                StrSize = "500 GB",
-                Size = 500,
-                StrFreeSize = "10 GB",
-                FreeSize = 10,
+                StrSize = FormatBytes(536870912000),
+                Size = 536870912000,
+                StrFreeSize = FormatBytes(10737418240),
+                FreeSize = 10737418240,
                 PrioritySection = "Primary",
                 Letter = 'F',
                 Status = "Sağlıklı"
             });
             diskInfo2.VolumeInfos.Add(new VolumeInfo
             {
-                BootType = "GPT",
+                DiskType = "GPT",
                 DiskName = "Disk 2",
                 Name = "Local Volume",
                 FileSystem = "NTFS",
-                StrSize = "250 GB",
-                Size = 250,
-                StrFreeSize = "10 GB",
-                FreeSize = 10,
+                StrSize = FormatBytes(268435456000),
+                Size = 268435456000,
+                StrFreeSize = FormatBytes(10737418240),
+                FreeSize = 10737418240,
                 PrioritySection = "Primary",
                 Letter = 'G',
                 Status = "Sağlıklı"
@@ -178,6 +178,20 @@ namespace DiskBackupWpfGUI
             {
                 diskItems.Add(item);
             }
+
+            //List<VolumeInfo> diskItems = new List<VolumeInfo>();
+            //BackupManager backupManager = new BackupManager();
+            //List<DiskInformation> diskList = new List<DiskInformation>();
+
+            //diskList = backupManager.GetDiskList();
+            //for (int i = 0; i < diskList.Count; i++)
+            //{
+            //    foreach (var item in diskList[i].VolumeInfos)
+            //    {
+            //        diskItems.Add(item);
+            //    }
+            //}
+
 
             listViewDisk.ItemsSource = diskItems;
             listViewRestoreDisk.ItemsSource = diskItems;
@@ -466,7 +480,7 @@ namespace DiskBackupWpfGUI
             _numberOfItems.Add(Convert.ToInt32(numberOfItems.Text));
             var groupName = expander.FindName("txtGroupName") as TextBlock;
             _groupName.Add(groupName.Text);
-            size.Text = diskSize.ToString() + " GB";
+            size.Text = FormatBytes(diskSize);
         }
 
         #region Checkbox Operations
@@ -879,5 +893,17 @@ namespace DiskBackupWpfGUI
             return parentT ?? FindParent<T>(parent);
         }
 
+        private string FormatBytes(long bytes)
+        {
+            string[] Suffix = { "B", "KB", "MB", "GB", "TB" };
+            int i;
+            double dblSByte = bytes;
+            for (i = 0; i < Suffix.Length && bytes >= 1024; i++, bytes /= 1024)
+            {
+                dblSByte = bytes / 1024.0;
+            }
+
+            return String.Format("{0:0.##} {1}", dblSByte, Suffix[i]);
+        }
     }
 }

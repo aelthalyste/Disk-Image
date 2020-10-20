@@ -31,9 +31,9 @@ namespace DiskBackup.Entities.Concrete
 
     public enum BackupTypes
     {
-        Full = 0,
-        Inc = 1,
-        Diff = 2
+        Diff = 0,
+        Inc = 1, 
+        Full = 2
     }
 
     public enum AutoRunType

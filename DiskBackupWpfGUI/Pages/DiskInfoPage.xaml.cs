@@ -22,11 +22,11 @@ namespace DiskBackupWpfGUI
     /// </summary>
     public partial class DiskInfoPage : Page
     {
-        public DiskInfoPage(DiskInfo diskInfo)
+        public DiskInfoPage(DiskInformation diskInfo)
         {
             InitializeComponent();
             diskNameTextBlock.Text = diskInfo.VolumeInfos[0].DiskName;
-            bootTypeTextBlock.Text = diskInfo.VolumeInfos[0].BootType;
+            bootTypeTextBlock.Text = diskInfo.VolumeInfos[0].DiskType;
             sizeTextBlock.Text = diskInfo.StrSize;
 
             foreach (var item in diskInfo.VolumeInfos)

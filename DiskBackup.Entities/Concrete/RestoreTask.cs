@@ -14,7 +14,7 @@ namespace DiskBackup.Entities.Concrete
         public int Id { get; set; }
         public int BackupInfoId { get; set; }
         public BackupInfo BackupInfo { get; set; }
-        public DiskInfo DiskInfo { get; set; } //Selected Disk Letter lazım
+        public DiskInformation DiskInfo { get; set; } //Selected Disk Letter lazım
         public int DiskId { get; set; }
         public string DiskLetter { get; set; }
     }

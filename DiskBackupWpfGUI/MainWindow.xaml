@@ -205,7 +205,7 @@
                                         <GridViewColumn Header="{DynamicResource type}" Width="110" >
                                             <GridViewColumn.CellTemplate>
                                                 <DataTemplate>
-                                                    <TextBlock Text="{Binding BootType}" TextAlignment="Center"/>
+                                                    <TextBlock Text="{Binding DiskType}" TextAlignment="Center"/>
                                                 </DataTemplate>
                                             </GridViewColumn.CellTemplate>
                                         </GridViewColumn>
@@ -629,7 +629,7 @@
                                 <GridViewColumn Header="{DynamicResource type}" Width="110" >
                                     <GridViewColumn.CellTemplate>
                                         <DataTemplate>
-                                            <TextBlock Text="{Binding BootType}" TextAlignment="Center"/>
+                                            <TextBlock Text="{Binding DiskType}" TextAlignment="Center"/>
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>
                                 </GridViewColumn>
@@ -747,7 +747,7 @@
 
                             <CheckBox Name="checkBootPartition" Checked="checkBootPartition_Checked" Unchecked="checkBootPartition_Unchecked" Margin="0,25,0,5" Content="{DynamicResource createBootPartition}"/>
                             <StackPanel Name="stackBootCheck" Margin="20,0,0,5" IsEnabled="False">
-                                <RadioButton Name="rbBootMBR" GroupName="BootPartion" Content="MBR"/>
+                                <RadioButton Name="rbBootMBR" GroupName="BootPartion" Content="MBR" Margin="0,0,0,5"/>
                                 <RadioButton Name="rbBootGPT" GroupName="BootPartion" Content="GPT"/>
                             </StackPanel>
                             

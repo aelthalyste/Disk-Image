@@ -9,8 +9,9 @@ namespace DiskBackup.Business.Abstract
 {
     public interface IBackupService
     {
-        List<DiskInfo> GetDiskList(); //Systemdeki disklerin görüntülenmesi için Batuhanın ucu var (CW_DisksOnSystem) & (CW_GetVolumes' pcName, ipAddres vs eklenecekmiş)
-        List<RestoreTask> GetBackupFileList();  //parametre olarak path alıyor -> dönüş değeri liste (CW_GetBackupsInDirectory)
+        List<DiskInformation> GetDiskList(); //Systemdeki disklerin görüntülenmesi için Batuhanın ucu var (CW_DisksOnSystem) & (CW_GetVolumes' pcName, ipAddres vs eklenecekmiş)
+        List<BackupInfo> GetBackupFileList(List<BackupStorageInfo> backupStorageList);  //parametre olarak path alıyor -> dönüş değeri liste (CW_GetBackupsInDirectory)
+        BackupInfo GetBackupFile(BackupInfo backupInfo); // istediğimiz backup bilgilerini almak için
         List<FileInfo> GetFileInfoList(); //Ucu belli değil 
         List<Log> GetLogList(); //Böyle bir uç yapılacağı konuşuldu
 
@@ -22,7 +23,8 @@ namespace DiskBackup.Business.Abstract
         bool CreateDifferentialBackup(VolumeInfo volumeInfo);
         bool CreateFullBackup(VolumeInfo volumeInfo); //Bu daha hazır değil        
         
-        bool RestoreBackup(BackupInfo backupInfo, VolumeInfo volumeInfo); //Parametreler bu methodun içinde RestoreTask oluşturacak
+        bool RestoreBackupVolume(BackupInfo backupInfo, VolumeInfo volumeInfo); //Parametreler bu methodun içinde RestoreTask oluşturacak
+        bool RestoreBackupDisk(BackupInfo backupInfo, DiskInformation diskInformation);
         //Restore işleminde disk seçilirse CW_RestoreToFreshDisk, volume seçilirse CW_RestoreToVolume
         //CW_RestoreToVolume(char TargetLetter, char SrcLetter, int Version, bool ShouldFormat, string RootDir) 
         //CW_RestoreToFreshDisk(char TargetLetter, char SrcLetter, int Version, int DiskID, string Rootdir) methodları ayrı restore işlemi yapan methodlar

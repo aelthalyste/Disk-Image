@@ -28,6 +28,16 @@ namespace DiskBackup.DataAccess.Concrete.EntityFramework.Mappings
             Property(x => x.Description).HasColumnName("description");
             Property(x => x.IsCloud).HasColumnName("is_cloud");
             Ignore(x => x.BackupStorageInfo);
+            Ignore(x => x.DiskType);
+            Ignore(x => x.OSVolume);
+            Ignore(x => x.Version); 
+            Ignore(x => x.Letter);
+            Ignore(x => x.UsedSize);
+            Ignore(x => x.Bootable);
+            Ignore(x => x.Zip);
+            Ignore(x => x.OS);
+            Ignore(x => x.PCName);
+            Ignore(x => x.IpAddress);
         }
     }
 }

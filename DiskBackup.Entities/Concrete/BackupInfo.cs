@@ -24,6 +24,17 @@ namespace DiskBackup.Entities.Concrete
         public string Description { get; set; }
         public bool IsCloud { get; set; }
 
+        //Ignore edilecek, Batu'dan alınacaklar
+        public char DiskType { get; set; } //m-mbr, g-gpt
+        public int OSVolume { get; set; } //sor batuya
+        public int Version { get; set; } // sor batuya
+        public char Letter { get; set; } //sürücü harfi
+        public long UsedSize { get; set; }
+        public bool Bootable { get; set; }
+        public string Zip { get; set; }
+        public string OS { get; set; }
+        public string PCName { get; set; }
+        public string IpAddress { get; set; }
     }
 
      /*
