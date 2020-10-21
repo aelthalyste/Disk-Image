@@ -24,7 +24,7 @@
             <RowDefinition/>
         </Grid.RowDefinitions>
 
-        <StackPanel Panel.ZIndex="2" Orientation="Horizontal" HorizontalAlignment="Center" Grid.ColumnSpan="2" Margin="418,0">
+        <StackPanel Panel.ZIndex="2" Orientation="Horizontal" HorizontalAlignment="Center" Grid.ColumnSpan="2" Margin="418,0" MouseDown="MyTitleBar_MouseDown">
             <Image Source="Resources/Icon/u62.png" Height="35" Width="40" Margin="0,0,5,0"/>
             <TextBlock Text="{DynamicResource appFullName}" Panel.ZIndex="2" Style="{StaticResource TitleBarText}"/>
         </StackPanel>

@@ -6,7 +6,17 @@
         xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
         xmlns:local="clr-namespace:DiskBackupWpfGUI"
         mc:Ignorable="d"
-        Title="{DynamicResource restore}" WindowStartupLocation="CenterScreen" WindowStyle="None" BorderBrush="#194771" BorderThickness="1" ResizeMode="CanMinimize" HorizontalAlignment="Center" Height="450" Width="800" Icon="Resources/Icon/favicon_mavi.ico">
+        Title="{DynamicResource restore}" 
+        WindowStartupLocation="CenterScreen" 
+        WindowStyle="None" 
+        BorderBrush="#194771" 
+        BorderThickness="1" 
+        ResizeMode="CanMinimize" 
+        HorizontalAlignment="Center" 
+        Height="450" 
+        Width="800" 
+        Icon="Resources/Icon/u62.png" >
+    
     <Window.Resources>
         <ResourceDictionary Source="Resources\Lang\string_tr.xaml"/>
     </Window.Resources>
@@ -17,7 +27,7 @@
             <RowDefinition/>
         </Grid.RowDefinitions>
 
-        <StackPanel Panel.ZIndex="1" Orientation="Horizontal" HorizontalAlignment="Center">
+        <StackPanel Panel.ZIndex="1" Orientation="Horizontal" HorizontalAlignment="Center" MouseDown="MyTitleBar_MouseDown">
             <Image Source="Resources/Icon/u62.png" Height="35" Width="40" Margin="0,0,5,0"></Image>
             <TextBlock Text="{DynamicResource restoreAppName}" Style="{StaticResource TitleBarText}"></TextBlock>
         </StackPanel>

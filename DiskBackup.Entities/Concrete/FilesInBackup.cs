@@ -7,9 +7,9 @@ using System.Threading.Tasks;
 
 namespace DiskBackup.Entities.Concrete
 {
-    public class FileInfo : IEntity
+    public class FilesInBackup : IEntity
     {
-        //File Explorer penceresinde bulunan listview'a gelecek
+        //File Explorer penceresinde bulunan listview'a gelecek model
         public int Id { get; set; }
         public FileType Type { get; set; }
         public string Name { get; set; }

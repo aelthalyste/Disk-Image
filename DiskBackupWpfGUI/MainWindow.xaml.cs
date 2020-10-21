@@ -622,7 +622,7 @@ namespace DiskBackupWpfGUI
             _restoreNumberOfItems.Add(Convert.ToInt32(numberOfItems.Text));
             var groupName = expander.FindName("txtRestoreGroupName") as TextBlock;
             _restoreGroupName.Add(groupName.Text);
-            size.Text = diskSize.ToString() + " GB";
+            size.Text = FormatBytes(diskSize);
         }
 
 

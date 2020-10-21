@@ -3,6 +3,7 @@ using DiskBackup.Entities.Concrete;
 using NarDIWrapper;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Security.AccessControl;
 using System.Text;
@@ -12,6 +13,8 @@ namespace DiskBackup.Business.Concrete
 {
     public class BackupManager : IBackupService
     {
+                                                                    //TEST EDİLMEDİ
+
         private DiskTracker _diskTracker = new DiskTracker();
 
         public bool InitTracker()
@@ -19,7 +22,7 @@ namespace DiskBackup.Business.Concrete
             return _diskTracker.CW_InitTracker();
         }
 
-        public List<DiskInformation> GetDiskList() //debug edilmedi
+        public List<DiskInformation> GetDiskList()
         {
             //Disk Name, Name (Local Volume vs.), FileSystem (NTFS), FreeSize, PrioritySection, Status
             //Not: Status için eğerki DiskType Raw değilse sağlıklı mı denecekti? Tekrar sor
@@ -29,10 +32,10 @@ namespace DiskBackup.Business.Concrete
 
             List<DiskInformation> diskList = new List<DiskInformation>();
             VolumeInfo volumeInfo = new VolumeInfo();
-            int index = 0;           
+            int index = 0;
 
             foreach (var diskItem in _diskTracker.CW_GetDisksOnSystem())
-            {                
+            {
                 diskList[index].DiskId = diskItem.ID;
                 diskList[index].Size = diskItem.Size;
                 diskList[index].StrSize = FormatBytes(diskItem.Size);
@@ -106,7 +109,7 @@ namespace DiskBackup.Business.Concrete
                     return backupInfo;
                 }
             }
-            
+
             return null;
         }
 
@@ -123,52 +126,170 @@ namespace DiskBackup.Business.Concrete
             throw new NotImplementedException();
         }
 
-        public bool CancelTask(TaskInfo taskInfo)
+        public bool CreateDifferentialBackup(TaskInfo taskInfo, BackupStorageInfo backupStorageInfo)
+        {
+            string letters = taskInfo.StrObje;
+
+            int bufferSize = 64 * 1024 * 1024;
+            byte[] buffer = new byte[bufferSize];
+            StreamInfo str = new StreamInfo();
+            long BytesReadSoFar = 0;
+            int Read = 0;
+            bool result = false;
+
+            foreach (var letter in letters)
+            {
+                if (_diskTracker.CW_SetupStream(letter, 0, str))
+                {
+                    unsafe
+                    {
+                        fixed (byte* BAddr = &buffer[0])
+                        {
+                            FileStream file = File.Create(backupStorageInfo.Path + str.FileName); //backupStorageInfo path alınıcak
+                            while (true)
+                            {
+                                Read = _diskTracker.CW_ReadStream(BAddr, bufferSize);
+                                if (Read == 0)
+                                    break;
+                                file.Write(buffer, 0, Read);
+                                BytesReadSoFar += Read;
+                            }
+                            result = (long)str.ClusterCount * (long)str.ClusterSize == BytesReadSoFar;
+                            _diskTracker.CW_TerminateBackup(result); //işlemi başarılı olup olmadığı
+
+                            try
+                            {
+                                File.Copy(str.MetadataFileName, backupStorageInfo.Path + str.MetadataFileName); //backupStorageInfo path alınıcak
+                            }
+                            catch (IOException iox)
+                            {
+                                //MessageBox.Show(iox.Message);
+                            }
+
+                            if (result == true)
+                            {
+                                _diskTracker.CW_SaveBootState();
+                            }
+                            file.Close();
+                        }
+                    }
+                }
+            }
+            return result;
+        }
+
+        public bool CreateIncrementalBackup(TaskInfo taskInfo, BackupStorageInfo backupStorageInfo)
+        {
+            string letters = taskInfo.StrObje;
+
+            int bufferSize = 64 * 1024 * 1024;
+            byte[] buffer = new byte[bufferSize];
+            StreamInfo str = new StreamInfo();
+            long BytesReadSoFar = 0;
+            int Read = 0;
+            bool result = false;
+
+            foreach (var letter in letters)
+            {
+                if (_diskTracker.CW_SetupStream(letter, 1, str))
+                {
+                    unsafe
+                    {
+                        fixed (byte* BAddr = &buffer[0])
+                        {
+                            FileStream file = File.Create(backupStorageInfo.Path + str.FileName); //backupStorageInfo path alınıcak
+                            while (true)
+                            {
+                                Read = _diskTracker.CW_ReadStream(BAddr, bufferSize);
+                                if (Read == 0)
+                                    break;
+                                file.Write(buffer, 0, Read);
+                                BytesReadSoFar += Read;
+                            }
+                            result = (long)str.ClusterCount * (long)str.ClusterSize == BytesReadSoFar;
+                            _diskTracker.CW_TerminateBackup(result); //işlemin başarılı olup olmadığı
+
+                            try
+                            {
+                                File.Copy(str.MetadataFileName, backupStorageInfo.Path + str.MetadataFileName); //backupStorageInfo path alınıcak
+                            }
+                            catch (IOException iox)
+                            {
+                                //MessageBox.Show(iox.Message);
+                            }
+
+                            if (result == true)
+                            {
+                                _diskTracker.CW_SaveBootState();
+                            }
+                            file.Close();
+                        }
+                    }
+                }
+            }
+            return result;
+        }
+
+        public bool CreateFullBackup(TaskInfo taskInfo) //bu method daha gelmedi 
         {
             throw new NotImplementedException();
         }
 
-        public bool CreateDifferentialBackup(VolumeInfo volumeInfo)
+        public List<FilesInBackup> GetFileInfoList() //bu method daha gelmedi
         {
             throw new NotImplementedException();
         }
 
-        public bool CreateFullBackup(VolumeInfo volumeInfo)
+        public List<Log> GetLogList() //bu method daha gelmedi
         {
             throw new NotImplementedException();
         }
 
-        public bool CreateIncrementalBackup(VolumeInfo volumeInfo)
+        public bool PauseTask(TaskInfo taskInfo) //bu method tekrar konuşulacak
+        {
+            if (taskInfo.Type == 0) //backup
+            {
+                
+            }
+            else //restore
+            {
+
+            }
+            throw new NotImplementedException();
+        }
+
+        public bool CancelTask(TaskInfo taskInfo) 
+        {
+            if (taskInfo.Type == 0) //backup
+            {
+                _diskTracker.CW_TerminateBackup(false);  //_diskTracker bunun hangi task olduğunu nasıl anlayacak ??
+            }
+            else //restore
+            {
+
+            }
+            throw new NotImplementedException();
+        }
+
+        public bool ResumeTask(TaskInfo taskInfo)  //bu method tekrar konuşulacak
+        {
+            if (taskInfo.Type == 0) //backup
+            {
+
+            }
+            else //restore
+            {
+
+            }
+            throw new NotImplementedException();
+        }
+
+        public bool RestoreFile(BackupInfo backupInfo, FilesInBackup fileInfo, string destination) //bu method daha gelmedi
         {
             throw new NotImplementedException();
         }
 
-        public List<FileInfo> GetFileInfoList()
-        {
-            throw new NotImplementedException();
-        }
-
-        public List<Log> GetLogList()
-        {
-            throw new NotImplementedException();
-        }
-
-        public bool PauseTask(TaskInfo taskInfo)
-        {
-            throw new NotImplementedException();
-        }
-
-        public bool RestoreFile(BackupInfo backupInfo, FileInfo fileInfo, string destination)
-        {
-            throw new NotImplementedException();
-        }
-
-        public bool RestoreFolder(BackupInfo backupInfo, FileInfo fileInfo, string destination)
-        {
-            throw new NotImplementedException();
-        }
-
-        public bool ResumeTask(TaskInfo taskInfo)
+        public bool RestoreFolder(BackupInfo backupInfo, FilesInBackup fileInfo, string destination) //bu method daha gelmedi
         {
             throw new NotImplementedException();
         }

@@ -5,7 +5,16 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:DiskBackupWpfGUI"
         mc:Ignorable="d"
-        Title="{DynamicResource files}" Height="450" Width="800" BorderBrush="#194771" BorderThickness="1" WindowStartupLocation="CenterScreen" WindowStyle="None" ResizeMode="CanMinimize">
+        Title="{DynamicResource files}" 
+        Height="450" 
+        Width="800" 
+        BorderBrush="#194771" 
+        BorderThickness="1" 
+        WindowStartupLocation="CenterScreen" 
+        WindowStyle="None" 
+        Icon="Resources/Icon/u62.png" 
+        ResizeMode="CanMinimize">
+    
     <Window.Resources>
         <ResourceDictionary Source="Resources\Lang\string_tr.xaml"/>
     </Window.Resources>
@@ -16,7 +25,7 @@
             <RowDefinition/>
         </Grid.RowDefinitions>
 
-        <StackPanel Panel.ZIndex="1" Orientation="Horizontal" HorizontalAlignment="Center">
+        <StackPanel Panel.ZIndex="1" Orientation="Horizontal" HorizontalAlignment="Center" MouseDown="MyTitleBar_MouseDown">
             <!--<Image Source="Resources/Icon/u62.png" Height="35" Width="40" Margin="0,0,5,0"></Image>-->
             <TextBlock Text="{DynamicResource files}" Style="{StaticResource TitleBarText}"></TextBlock>
         </StackPanel>

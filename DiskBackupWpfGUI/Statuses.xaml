@@ -5,7 +5,15 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:DiskBackupWpfGUI"
         mc:Ignorable="d"
-        Title="Statuses" Height="500" Width="950" WindowStartupLocation="CenterScreen" ResizeMode="CanMinimize" BorderBrush="#194771" BorderThickness="1" WindowStyle="None">
+        Title="Statuses" 
+        Height="500" 
+        Width="950"
+        WindowStartupLocation="CenterScreen" 
+        ResizeMode="CanMinimize" 
+        BorderBrush="#194771" 
+        BorderThickness="1" 
+        Icon="Resources/Icon/u62.png" 
+        WindowStyle="None">
     <Window.Resources>
         <ResourceDictionary Source="Resources\Lang\string_tr.xaml"/>
     </Window.Resources>
@@ -23,7 +31,7 @@
             <ColumnDefinition />
         </Grid.ColumnDefinitions>
 
-        <TextBlock Name="txtTitleBar" Style="{StaticResource TitleBarText}" Panel.ZIndex="1" Grid.Row="0" Grid.ColumnSpan="2" ></TextBlock>
+        <TextBlock Name="txtTitleBar" Style="{StaticResource TitleBarText}" Panel.ZIndex="1" Grid.Row="0" Grid.ColumnSpan="2" MouseDown="MyTitleBar_MouseDown"/>
 
         <StackPanel Name="MyTitleBar" VerticalAlignment="Top" MouseDown="MyTitleBar_MouseDown" Grid.Row="0" Grid.ColumnSpan="2">
             <Border Background="#27527B" Height="30">
