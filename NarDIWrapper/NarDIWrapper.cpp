@@ -69,7 +69,65 @@ void SystemStringToWCharPtr(System::String ^SystemStr, wchar_t *Destination) {
 }
 
 namespace NarDIWrapper {
+
+
+
+    CSNarFileExplorer::CSNarFileExplorer(){
+        memset(m_ctx, 0, sizeof(m_ctx));
+    }
+
     
+    bool CSNarFileExplorer::CW_Init(INT32 HandleOptions, wchar_t VolLetter, int Version, wchar_t *RootDir){
+        return NarInitFileExplorerContext(&m_ctx, HandleOptions, VolLetter, Version, RootDir);
+    }
+
+    List<CSNarFileEntry^>^ CSNarFileExplorer::CW_GetFilesInCurrentDirectory(){
+        List<CSNarFileEntry^>^ Result = gcnew List<CSNarFileEntry^>;
+        Result.Reserve(ctx.EList.EntryCount);
+
+        CSNarFileEntry^ Entry = gcnew CSNarFileEntry;
+
+        for(int i = 0; i<ctx.EList.EntryCount; i++){
+            Entry->Size = ctx.EList.Entries[i].Size;
+            Entry->ID = i;
+            // TODO name, creation time, lastmodified time, isdirectory flags.
+        }
+
+    }
+    
+    bool CSNarFileExplorer::CW_SelectDirectory(CSNarFileEntry^ Entry){
+        
+        if(Entry->IsDirectory){
+            NarFileExplorerPushDirectory(&ctx, Entry->ID);
+            return TRUE;
+        }
+
+        return FALSE;
+
+    }
+
+    void CSNarFileExplorer::CW_PopDirectory(){
+        NarPopDirectoryStack(&ctx);
+    }
+
+    void CSNarFileExplorer::CW_Free(){
+        NarReleaseFileExplorerContext(&ctx);
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     DiskTracker::DiskTracker() {
 
         C = NarLoadBootState();
@@ -92,10 +150,6 @@ namespace NarDIWrapper {
         C->Volumes = { 0,0 };
 
         
-        //R = (restore_inf*)malloc(sizeof(restore_inf*));
-        
-        R = new restore_inf;
-        R->RootDir = L"";
         
     }
     
@@ -154,19 +208,21 @@ namespace NarDIWrapper {
                                          bool ShouldFormat,
                                          System::String^ RootDir
                                          ) {
-        
-        R->TargetLetter = TargetLetter;
-        R->SrcLetter = SrcLetter;
-        
-        R->Version = Version;
+    
+        restore_inf R;
+
+        R.TargetLetter = TargetLetter;
+        R.SrcLetter = SrcLetter;
+        R.Version = Version;
+
         if (Version < 0) {
-            R->Version = NAR_FULLBACKUP_VERSION;
+            R.Version = NAR_FULLBACKUP_VERSION;
         }
         
-        R->RootDir = msclr::interop::marshal_as<std::wstring>(RootDir);
+        R.RootDir = msclr::interop::marshal_as<std::wstring>(RootDir);
         
         
-        return OfflineRestoreToVolume(R, ShouldFormat);
+        return OfflineRestoreToVolume(&R, ShouldFormat);
         
     }
     
@@ -176,24 +232,36 @@ namespace NarDIWrapper {
 
     bool DiskTracker::CW_RestoreToFreshDisk(wchar_t TargetLetter, wchar_t SrcLetter, INT Version, int DiskID, System::String^ RootDir) {
         
-        R->TargetLetter = TargetLetter;
-        R->SrcLetter = SrcLetter;
-        R->Version = Version;
-        R->RootDir = msclr::interop::marshal_as<std::wstring>(RootDir);
+        R.TargetLetter = TargetLetter;
+        R.SrcLetter = SrcLetter;
+        R.Version = Version;
+        R.RootDir = msclr::interop::marshal_as<std::wstring>(RootDir);
 
         if (Version < 0) {
-            R->Version = NAR_FULLBACKUP_VERSION;
+            R.Version = NAR_FULLBACKUP_VERSION;
         }
             
-        return OfflineRestoreCleanDisk(R, DiskID);
+        return OfflineRestoreCleanDisk(&R, DiskID);
     }
     
-    INT32 DiskTracker::CW_ReadStream(void* Data, int Size) {
-        return ReadStream(&C->Volumes.Data[StreamID], Data, Size);
+    INT32 DiskTracker::CW_ReadStream(void* Data, wchar_t VolumeLetter, int Size) {
+        int VolID = GetVolumeID(C, VolumeLetter);
+        if(VolID != NAR_INVALID_VOLUME_TRACK_ID){
+            return ReadStream(&C->Volumes.Data[StreamID], Data, Size);
+        }
+        // couldnt find volume in the Context, which shoudlnt happen at all
+        return 0;
     }
     
-    bool DiskTracker::CW_TerminateBackup(bool Succeeded) {
-        return TerminateBackup(&C->Volumes.Data[StreamID], Succeeded);
+    bool DiskTracker::CW_TerminateBackup(bool Succeeded, wchar_t VolumeLetter) {
+        
+        INT32 VolID = GetVolumeID(VolumeLetter);
+        if(VolID != NAR_INVALID_VOLUME_TRACK_ID){
+            return TerminateBackup(&C->Volumes.Data[StreamID], Succeeded);
+        }
+        // couldnt find volume in the Context, which shoudlnt happen at all
+        return 0;   
+
     }
     
     
@@ -214,7 +282,6 @@ namespace NarDIWrapper {
         }
         
         FreeDataArray(&V);
-        
         return Result;
     }
     
@@ -258,7 +325,6 @@ namespace NarDIWrapper {
         int Found = 0;
         backup_metadata* BMList = (backup_metadata*)malloc(sizeof(backup_metadata) * MaxMetadataCount);
         
-        printf("PRE GETBACKUPSINDIRECTORY CALL\n");
         BOOLEAN bResult = NarGetBackupsInDirectory(RootDir, BMList, MaxMetadataCount, &Found);
         if (bResult && Found <= MaxMetadataCount) {
             

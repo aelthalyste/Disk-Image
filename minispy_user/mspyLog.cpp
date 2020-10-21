@@ -156,10 +156,12 @@ Return Value:
 
             volume_backup_inf* V = &context->Volumes.Data[VolumeIndex];
 
-            if (V == NULL || V->INVALIDATEDENTRY)
+            // TODO(BATUHAN): CHECK IF V LETTER IS ACTUALLY A LETTER
+            if (V == NULL || V->INVALIDATEDENTRY || V->Letter == 0)
             {
                 continue;
             }
+
             NAR_COMMAND Command;
 
             wsprintfW(wStrBuffer, L"%c:\\", V->Letter);

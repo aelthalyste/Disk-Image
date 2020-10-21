@@ -12,7 +12,7 @@ namespace NarDIWrapper {
   public ref class StreamInfo {
   public:
     System::Int32 ClusterSize; //Size of clusters, requester has to call readstream with multiples of this size
-    System::Int32 ClusterCount; //In clusters
+    System::Int32 ClusterCount;
     System::String^ FileName;
     System::String^ MetadataFileName;
   };
@@ -45,6 +45,78 @@ namespace NarDIWrapper {
       char DiskType;
   };
 
+
+// could be either file or dir
+  struct NarFileEntry {
+
+    BOOLEAN Flags;
+
+    UINT64 MFTFileIndex;
+    UINT64 Size; // file size in bytes
+
+    UINT64 CreationTime;
+    UINT64 LastModifiedTime;
+
+    wchar_t Name[MAX_PATH + 1]; // max path + 1 for null termination
+  };
+
+
+  public ref class CSNarFileTime{
+  public:
+    INT16 Year;
+    INT16 Month;
+    INT16 Day;
+    INT16 Hour;
+    INT16 Minute;
+    INT16 Second; 
+  };
+
+  public ref class CSNarFileEntry(){
+  public:
+    UINT64 Size;
+    UINT64 ID;
+    
+    CSNarFileTime CreationTime;
+    CSNarFileTime LastModifiedTime;
+    System::String^ Name;
+  };
+
+
+
+
+  public ref class CSNarFileExplorer{
+
+    NarBackupFileExplorerContext m_ctx;
+
+  public:
+
+    ~CSNarFileExplorer();
+
+/* 
+
+  C++ Side = INT32 HandleOptions, char Letter, int Version, wchar_t *RootDir
+  TODO(Batuhan): HandleOptions parameter will be removed in next builds, its just here for debugging purposes, just like in C++ side. 
+
+*/
+    //NOTE im not sure about if RootDir is going to be converted to string for managed code
+    bool CW_Init(INT32 HandleOptions, wchar_t VolumeLetter, int Version, wchar_t* RootDir);
+
+
+    List<CSNarFileEntry^>^ CW_GetFilesInCurrentDirectory();
+    
+    // Entry should be directory, otherwise function doesnt do anything and returns false
+    bool CW_SelectDirectory(CSNarFileEntry^ Entry);
+
+    // Pops directory stack by one, which is equal to "up to" button in file explorer
+    void CW_PopDirectory();
+
+    // deconstructor calls this, but in managed code object disposing may be delayed by GC. if caller want to release memory early, it can do by this utility function. 
+    void CW_Free();
+
+  };
+
+
+
   public ref class DiskTracker
   {
   public:
@@ -61,9 +133,9 @@ namespace NarDIWrapper {
     
     bool CW_SetupStream(wchar_t L, int BT, StreamInfo^ StrInf);
     
-    INT32 CW_ReadStream(void* Data, int Size);
+    INT32 CW_ReadStream(void* Data, wchar_t VolumeLetter, int Size);
     
-    bool CW_TerminateBackup(bool Succeeded);
+    bool CW_TerminateBackup(bool Succeeded, wchar_t VolumeLetter);
 
     bool CW_SaveBootState();
 
@@ -84,9 +156,7 @@ namespace NarDIWrapper {
     // Volume ID that it's stream requested store in wrapper, so requester doesnt have to pass letter or ID everytime it calls readstream or closestream.
     //StreamID is invalidated after CloseStream(), and refreshed every SetupStream() call
 
-    int StreamID;
     LOG_CONTEXT* C;
-    restore_inf* R;
 
   };
 

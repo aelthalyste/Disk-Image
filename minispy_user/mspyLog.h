@@ -350,7 +350,7 @@ struct backup_metadata {
             //FOR MBR things
             INT64 GPT_EFIPartitionSize;
             INT64 MBR_SystemPartitionSize;
-
+            wchar_t ProductName[32];
         };
     };
     
@@ -743,6 +743,8 @@ AttachVolume(volume_backup_inf* VolInf, BOOLEAN SetActive = TRUE);
 BOOLEAN
 NarGetBackupsInDirectory(const wchar_t* Directory, backup_metadata* B, int BufferSize, int* FoundCount);
 
+inline void
+FreeFileRead(file_read FR);
 
 
 #define NAR_POSIX 2
@@ -753,11 +755,25 @@ NarGetBackupsInDirectory(const wchar_t* Directory, backup_metadata* B, int Buffe
 #define NAR_POSIX_OFFSET 81
 #define NAR_NAME_OFFSET 82
 #define NAR_ROOT_MFT_ID 5
-#define NAR_READ_MOUNTED_VOLUME 1
-#define NAR_READ_BACKUP_VOLUME 2
+
+#define NAR_FE_HAND_OPT_READ_MOUNTED_VOLUME 1
+#define NAR_FE_HAND_OPT_READ_BACKUP_VOLUME 2
+
+#define NAR_FEXP_INDX_ENTRY_SIZE(e) *(UINT16*)((char*)(e) + 8)
+#define NAR_FEXP_POSIX -1
+#define NAR_FEXP_END_MARK -2
+#define NAR_FEXP_SUCCEEDED 1
+
+
+
+struct nar_fe_volume_handle{
+    HANDLE VolumeHandle;
+    backup_metadata_ex *BMEX;
+};
+
 
 // could be either file or dir
-struct NarFileEntry {
+struct nar_file_entry {
 
     BOOLEAN Flags;
 
@@ -771,16 +787,16 @@ struct NarFileEntry {
 };
 
 // represents files in directory
-struct FileEntriesList {
+struct nar_file_entries_list {
     UINT32 MFTIndex;
     UINT32 EntryCount;
-    NarFileEntry* Entries;
+    nar_file_entry* Entries;
 };
 
-struct NarBackupFileExplorerContext {
+struct nar_backup_file_explorer_context {
 
     char Letter;
-    NarFEVolumeHandle FEHandle;
+    nar_fe_volume_handle FEHandle;
     INT32 ClusterSize;
     wchar_t RootDir[256];
 
@@ -794,40 +810,148 @@ struct NarBackupFileExplorerContext {
     }HistoryStack;
 
     nar_record *MFTRecords;
-    FileEntriesList EList;
+    nar_file_entries_list EList;
     
     wchar_t CurrentDirectory[512];
 };
 
 
+struct nar_file_version_stack {
+
+    /*
+        Indicates how many version we must go back to start restore operation from given version.
+        If let's say user requested from version 9, restore that file, we search 8-7-6-5th versions, and couldnt find file
+        in 4th one. we must set this parameter as 5(we are not including latest version).
+    */
+    INT32 VersionsFound;
+
+    /*
+        Indicates which version we must start iterating when actually restoring file
+    */
+    INT32 StartingVersion;
+
+    // Path to file to be searched in backups
+    wchar_t* FilePath;
+
+    // path to search for backups in actual machine. unlikely null 
+    wchar_t* RootDir;
+
+    /*
+        Offset to the file's mft record in backup file. Backful file begin + this value will lead
+        file pointer to mft record
+    */
+
+    // 0th element is first backup that contains file, goes up to  (VersionsFound)
+    UINT64* FileAbsoluteMFTOffset;
+
+};
+
+struct nar_fe_search_result {
+    UINT64 FileMFTID;
+    UINT64 AbsoluteMFTRecordOffset; // in bytes
+    BOOLEAN Found;
+};
+
+
+
+
+// inf
+// stores file names, instead of MFTID's. because in early version of volumes, user might have same file with different ID, like then later user might have delete it and paste another copy of the file with same name
+// there, accepts new file as new copied one, totally normal thing for user but at backend of the NTFS, MFTID will be changed, because file will be deleted and new copied file will be assigned to new
+// ID. Intuitively user expects it's file to be restored as what it has been appeared in history, not exacty copy of file that related with ID.
+// Thats like business decision, storing MFTID's and restoring is much easier, but not intuitive for user, there is a slight line what file means to user and to us at backend. 
+
+
 
 inline void
-NarPushDirectoryStack(NarBackupFileExplorerContext *Ctx, UINT64 ID);
+NarPushDirectoryStack(nar_backup_file_explorer_context *Ctx, UINT64 ID);
 
 inline void
-NarPopDirectoryStack(NarBackupFileExplorerContext* Ctx);
+NarPopDirectoryStack(nar_backup_file_explorer_context* Ctx);
 
 
 inline void
-NarPopDirectoryStack(NarBackupFileExplorerContext* Ctx);
+NarPopDirectoryStack(nar_backup_file_explorer_context* Ctx);
 
 inline void
-NarReleaseFileExplorerContext(NarBackupFileExplorerContext* Ctx);
+NarReleaseFileExplorerContext(nar_backup_file_explorer_context* Ctx);
 
 inline void
-NarGetFileListFromMFTID(FileEntriesList* EList, UINT64 TargetMFTID, nar_record* MFTRegions, UINT32 MFTRegionCount, UINT32 ClusterSize, HANDLE VolumeHandle);
+NarGetFileListFromMFTID(nar_file_entries_list* EList, UINT64 TargetMFTID, nar_record* MFTRegions, UINT32 MFTRegionCount, UINT32 ClusterSize, nar_fe_volume_handle FEHandle);
 
 inline void 
-NarFileExplorerPushDirectory(NarBackupFileExplorerContext* Ctx, UINT32 SelectedID);
+NarFileExplorerPushDirectory(nar_backup_file_explorer_context* Ctx, UINT32 SelectedID);
 
 inline void
-NarFileExplorerPopDirectory(NarBackupFileExplorerContext* Ctx);
+NarFileExplorerPopDirectory(nar_backup_file_explorer_context* Ctx);
+
+inline nar_fe_search_result
+NarSearchFileInVolume(wchar_t* RootDir, wchar_t* FileName, wchar_t VolumeLetter, INT32 Version);
 
 inline BOOLEAN
-NarInitFileExplorerContext(NarBackupFileExplorerContext* Ctx, char Letter);
+NarFileExplorerSetFilePointer(nar_fe_volume_handle FEV, UINT64 NewFilePointer);
+
+inline BOOLEAN
+NarFileExplorerReadVolume(nar_fe_volume_handle FEV, void* Buffer, DWORD ReadSize, DWORD* OutBytesRead);
+
+nar_file_version_stack
+NarSearchFileInVersions(wchar_t* RootDir, wchar_t VolumeLetter, INT32 CeilVersion, wchar_t* FileName);
+
+/*
+    Ctx = output
+    HandleOptions
+        NAR_READ_MOUNTED_VOLUME = Reads mounted local disk VolumeLetter and ignores rest of the parameters, and makes FEV->BMEX NULL to. this will lead FEV to become normal volume handle
+        NAR_READ_BACKUP_VOLUME 2 = Tries to find backup files in RootDir, if one not given, searches current running directory.
+                                    Then according to backup region information, handles read-seak operations in wrapped function
+
+*/
+inline BOOLEAN
+NarInitFileExplorerContext(nar_backup_file_explorer_context* Ctx, INT32 HandleOptions, char Letter, int Version, wchar_t *RootDir);
+
+inline INT32
+NarGetVolumeClusterSize(char Letter);
+
+// asserts Buffer is large enough to hold all data needed, since caller has information about metadata this isnt problem at all
+inline BOOLEAN
+ReadMFTLCNFromMetadata(HANDLE FHandle, backup_metadata Metadata, void *Buffer);
 
 
+inline BOOLEAN
+NarFileExplorerSetFilePointer(nar_fe_volume_handle FEV, UINT64 NewFilePointer);
 
+inline BOOLEAN
+NarFileExplorerReadVolume(nar_fe_volume_handle FEV, void* Buffer, DWORD ReadSize, DWORD* OutBytesRead);
+
+/*
+    args:
+    FEV = output, simple
+    HandleOptions
+        NAR_READ_MOUNTED_VOLUME = Reads mounted local disk VolumeLetter and ignores rest of the parameters, and makes FEV->BMEX NULL to. this will lead FEV to become normal volume handle
+        NAR_READ_BACKUP_VOLUME 2 = Tries to find backup files in RootDir, if one not given, searches current running directory.
+                                    Then according to backup region information, handles read-seak operations in wrapped function
+
+*/
+inline BOOLEAN 
+NarInitFEVolumeHandle(nar_fe_volume_handle *FEV, INT32 HandleOptions, char VolumeLetter, INT32 Version, wchar_t *RootDir);
+
+inline void 
+NarFreeFEVolumeHandle(nar_fe_volume_handle FEV);
+
+// input MUST be sorted
+// Finds point Offset in relative to Records structure, useful when converting absolue volume offsets to our binary backup data offsets.
+// returns NAR_POINT_OFFSET_FAILED if fails to find given offset, 
+#define NAR_POINT_OFFSET_FAILED -1
+inline INT64 
+FindPointOffsetInRecords(nar_record *Records, INT32 Len, INT64 Offset);
+
+/*
+    Be careful about return value, its not a fail-pass thing
+*/
+inline INT
+NarFileExplorerGetFileEntryFromData(void* IndxCluster, nar_file_entry* OutFileEntry);
+
+inline void
+NarFreeFileVersionStack(nar_file_version_stack Stack);
 
 DWORD WINAPI
 RetrieveLogRecords(

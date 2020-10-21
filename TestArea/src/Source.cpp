@@ -285,12 +285,43 @@ ReverseNumber(unsigned int Number){
     return ReversedNumber;
 }
 
-
+#define _CRT_NON_CONFORMING_WCSTOK
 
 int main() {
-  
-    unsigned int Semirp[256];
+    
+    
+    wchar_t str[] = L"C:\\program files\\randomprogram\\subfolder\\executable.exe";
+    wchar_t* pwc = 0;
+    wchar_t* State = 0;
+    pwc = wcstok(str, L"\\", &State);
+    while (pwc != NULL) {
+        printf("%S\n", pwc);
+        pwc = wcstok(0, L"\\", &State);
+    }
+
+    return 0;
+    HKEY Key;
+    if (RegOpenKeyA(HKEY_LOCAL_MACHINE, "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion", &Key) == ERROR_SUCCESS) {
+        char BUFFER[1024];
+        memset(BUFFER, 0, sizeof(BUFFER));
+        DWORD H;
+        RegGetValueA(Key, 0, "ProductName", RRF_RT_ANY, 0, BUFFER, &H);
+        
+        return 0;
+    }
+    
+
+    HANDLE FileHandle = CreateFileA("testfile.txt", GENERIC_WRITE | GENERIC_READ, FILE_SHARE_READ, 0, CREATE_ALWAYS, 0, 0);
+    
+    SetFilePointer(FileHandle, 8192, 0, FILE_BEGIN);
+
+    unsigned int Semirp[6854];
     memset(Semirp, DH_UNINITIALIZED, sizeof(Semirp));
+
+    DWORD H = 0;
+    WriteFile(FileHandle, Semirp, sizeof(Semirp), &H, 0);
+
+    CloseHandle(FileHandle);
 
     int Primes[1000];
     memset(Primes, DH_UNINITIALIZED, sizeof(Primes));
