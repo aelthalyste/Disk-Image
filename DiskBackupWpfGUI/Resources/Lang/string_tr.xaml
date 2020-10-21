@@ -68,8 +68,10 @@
     <system:String x:Key="summary">Özet</system:String>
     <system:String x:Key="diff">Differential</system:String>
     <system:String x:Key="diffDescription">Seçilen dosyanızı ilk yedeğinize göre alır</system:String>
-    <system:String x:Key="incDescription">Seçilen dosyanızı son yedeğinize göre alır</system:String>
     <system:String x:Key="inc">Incremental</system:String>
+    <system:String x:Key="incDescription">Seçilen dosyanızı son yedeğinize göre alır</system:String>
+    <system:String x:Key="full">Full</system:String>
+    <system:String x:Key="fullDescription">Seçilen dosyanızı tam yedek alır</system:String>
     <system:String x:Key="back">Geri</system:String>
     <system:String x:Key="next">İleri</system:String>
     <system:String x:Key="cancel">İptal</system:String>
@@ -227,4 +229,7 @@
     <system:String x:Key="createBootPartition">Boot Partition Oluştur</system:String>
     <system:String x:Key="fileInfo">Dosya Bilgileri</system:String>
     <system:String x:Key="files">Dosyalar</system:String>
+    <system:String x:Key="Success">Başarılı</system:String>
+    <system:String x:Key="Fail">Başarısız</system:String>
+    
 </ResourceDictionary>

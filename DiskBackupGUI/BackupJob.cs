@@ -16,8 +16,8 @@ namespace DiskBackupGUI
         {
             List<char> letters = Main.Instance.taskParams[context.JobDetail.Key.Name];
             var diskTracker = Main.Instance.diskTracker;
-            int typeParam = context.PreviousFireTimeUtc == null? 0 : 1;
-            int paramType = Main.Instance.BackupNum;
+            int typeParam = context.PreviousFireTimeUtc == null? 0 : 1; //ihtiyaç yok
+            int paramType = Main.Instance.BackupNum; //inc 1, diff 0
             
             int bufferSize = 64 * 1024 * 1024;
             byte[] buffer = new byte[bufferSize];
@@ -33,7 +33,7 @@ namespace DiskBackupGUI
                     {
                         fixed (byte* BAddr = &buffer[0])
                         {
-                            FileStream file = File.Create(Main.Instance.myPath + str.FileName); 
+                            FileStream file = File.Create(Main.Instance.myPath + str.FileName); //backupStorageInfo path alınıcak
                             while (true)
                             {
                                 Read = diskTracker.CW_ReadStream(BAddr, bufferSize);
@@ -43,11 +43,11 @@ namespace DiskBackupGUI
                                 BytesReadSoFar += Read;
                             }
                             result = (long)str.ClusterCount * (long)str.ClusterSize == BytesReadSoFar;
-                            diskTracker.CW_TerminateBackup(result);
+                            diskTracker.CW_TerminateBackup(result); //işlemi başarılı olup olmadığı
 
                             try
                             {
-                                File.Copy(str.MetadataFileName, Main.Instance.myPath + str.MetadataFileName);
+                                File.Copy(str.MetadataFileName, Main.Instance.myPath + str.MetadataFileName); //backupStorageInfo path alınıcak
                             }
                             catch (IOException iox)
                             {

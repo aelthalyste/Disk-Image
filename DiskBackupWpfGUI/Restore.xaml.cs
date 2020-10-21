@@ -23,9 +23,9 @@ namespace DiskBackupWpfGUI
         {
             InitializeComponent();
             //minimum date kontrol etme handle edemedik
-            dtpSetTime.Minimum = DateTime.Now;
-            dtpSetTime.Value = DateTime.Now;
-
+            var now = DateTime.Now;
+            dtpSetTime.Minimum = now;
+            dtpSetTime.Value = now + TimeSpan.FromMinutes(5);
         }
 
         #region Title Bar

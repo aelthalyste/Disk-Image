@@ -1,7 +1,8 @@
-﻿using DisckBackup.Entities;
+﻿using DiskBackup.Entities.Concrete;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -36,33 +37,36 @@ namespace DiskBackupWpfGUI
         public MainWindow()
         {
             InitializeComponent();
-            //letter progressbar'da name'in yanına eklenecek şekilde değiştirilmeli
-            DiskInfo diskInfo = new DiskInfo { 
-                StrSize = "400 GB", 
+
+            DiskInformation diskInfo = new DiskInformation
+            {
+                StrSize = "400 GB",
                 Size = 400,
-                BootType = "MBR",         
-                Name = "Disk 1",
-             };
+            };
             diskInfo.VolumeInfos.Add(new VolumeInfo
             {
+                DiskType = "MBR",
+                DiskName = "Disk 1",
                 Name = "System Reserverd",
-                Format = "NTFS",
-                StrSize = "100 GB",
-                Size = 100,
-                StrFreeSize = "50 GB",
-                FreeSize = 50,
+                FileSystem = "NTFS",
+                StrSize = FormatBytes(107374182400),
+                Size = 107374182400,
+                StrFreeSize = FormatBytes(53687091200),
+                FreeSize = 53687091200,
                 PrioritySection = "Primary",
                 Letter = 'C',
                 Status = "Sağlıklı"
             });
             diskInfo.VolumeInfos.Add(new VolumeInfo
             {
+                DiskType = "MBR",
+                DiskName = "Disk 1",
                 Name = "Local Volume",
-                Format = "NTFS",
-                StrSize = "300 GB",
-                Size = 300,
-                StrFreeSize = "150 GB",
-                FreeSize = 150,
+                FileSystem = "NTFS",
+                StrSize = FormatBytes(322122547200),
+                Size = 322122547200,
+                StrFreeSize = FormatBytes(161061273600),
+                FreeSize = 161061273600,
                 PrioritySection = "Primary",
                 Letter = 'D',
                 Status = "Sağlıklı"
@@ -78,59 +82,79 @@ namespace DiskBackupWpfGUI
             frame.VerticalAlignment = VerticalAlignment.Top;
             stackTasksDiskInfo.Children.Add(frame);
 
-            DiskInfo diskInfo2 = new DiskInfo
+            DiskInformation diskInfo2 = new DiskInformation
             {
-                StrSize = "700 GB",
-                Size = 700,
-                BootType = "GPT",
-                Name = "Disk 2"
+                StrSize = "2000 GB",
+                Size = 2000000000000,
             };
             diskInfo2.VolumeInfos.Add(new VolumeInfo
             {
+                DiskType = "GPT",
+                DiskName = "Disk 2",
                 Name = "System Reserverd",
-                Format = "NTFS",
-                StrSize = "250 GB",
-                Size = 250,
-                StrFreeSize = "158 GB",
-                FreeSize = 158,
+                FileSystem = "NTFS",
+                StrSize = FormatBytes(322122547200),
+                Size = 322122547200,
+                StrFreeSize = FormatBytes(169651208192),
+                FreeSize = 169651208192,
                 PrioritySection = "Primary",
                 Letter = 'C',
                 Status = "Sağlıklı"
             });
             diskInfo2.VolumeInfos.Add(new VolumeInfo
             {
+                DiskType = "GPT",
+                DiskName = "Disk 2",
                 Name = "Local Volume",
-                Format = "NTFS",
-                StrSize = "450 GB",
-                Size = 450,
-                StrFreeSize = "350 GB",
-                FreeSize = 350,
+                FileSystem = "NTFS",
+                StrSize = FormatBytes(483183820800),
+                Size = 483183820800,
+                StrFreeSize = FormatBytes(375809638400),
+                FreeSize = 375809638400,
                 PrioritySection = "Primary",
                 Letter = 'D',
                 Status = "Sağlıklı"
             });
             diskInfo2.VolumeInfos.Add(new VolumeInfo
             {
+                DiskType = "GPT",
+                DiskName = "Disk 2",
                 Name = "Local Volume",
-                Format = "NTFS",
-                StrSize = "500 GB",
-                Size = 500,
-                StrFreeSize = "100 GB",
-                FreeSize = 100,
+                FileSystem = "NTFS",
+                StrSize = FormatBytes(536870912000),
+                Size = 536870912000,
+                StrFreeSize = FormatBytes(107374182400),
+                FreeSize = 107374182400,
                 PrioritySection = "Primary",
                 Letter = 'E',
                 Status = "Sağlıklı"
             });
             diskInfo2.VolumeInfos.Add(new VolumeInfo
             {
+                DiskType = "GPT",
+                DiskName = "Disk 2",
                 Name = "Local Volume",
-                Format = "NTFS",
-                StrSize = "500 GB",
-                Size = 500,
-                StrFreeSize = "10 GB",
-                FreeSize = 10,
+                FileSystem = "NTFS",
+                StrSize = FormatBytes(536870912000),
+                Size = 536870912000,
+                StrFreeSize = FormatBytes(10737418240),
+                FreeSize = 10737418240,
                 PrioritySection = "Primary",
                 Letter = 'F',
+                Status = "Sağlıklı"
+            });
+            diskInfo2.VolumeInfos.Add(new VolumeInfo
+            {
+                DiskType = "GPT",
+                DiskName = "Disk 2",
+                Name = "Local Volume",
+                FileSystem = "NTFS",
+                StrSize = FormatBytes(268435456000),
+                Size = 268435456000,
+                StrFreeSize = FormatBytes(10737418240),
+                FreeSize = 10737418240,
+                PrioritySection = "Primary",
+                Letter = 'G',
                 Status = "Sağlıklı"
             });
             page = new DiskInfoPage(diskInfo2);
@@ -144,149 +168,255 @@ namespace DiskBackupWpfGUI
             frame.VerticalAlignment = VerticalAlignment.Top;
             stackTasksDiskInfo.Children.Add(frame);
 
-            List<DiskInfo> diskItems = new List<DiskInfo>();
-            diskItems.Add(diskInfo);
-            diskItems.Add(diskInfo2);
+            List<VolumeInfo> diskItems = new List<VolumeInfo>();
+
+            foreach (var item in diskInfo.VolumeInfos)
+            {
+                diskItems.Add(item);
+            }
+            foreach (var item in diskInfo2.VolumeInfos)
+            {
+                diskItems.Add(item);
+            }
+
+            //List<VolumeInfo> diskItems = new List<VolumeInfo>();
+            //BackupManager backupManager = new BackupManager();
+            //List<DiskInformation> diskList = new List<DiskInformation>();
+
+            //diskList = backupManager.GetDiskList();
+            //for (int i = 0; i < diskList.Count; i++)
+            //{
+            //    foreach (var item in diskList[i].VolumeInfos)
+            //    {
+            //        diskItems.Add(item);
+            //    }
+            //}
+
 
             listViewDisk.ItemsSource = diskItems;
-            //buraya kadar uyarlandı loader'da falan da düzen gerekecek
-
-            List<Discs> discsItems = new List<Discs>();
-            discsItems.Add(new Discs()
-            {
-                Volume = "System Reserverd",
-                Letter = 'C',
-                Area = "2 GB",
-                FreeSize = "1 GB",
-                Type = "GPT",
-                FileSystem = "NTFS",
-                Statu = "Sağlıklı",
-                DiscName = "Disk 1",
-                RealSize = 2
-            });
-            discsItems.Add(new Discs()
-            {
-                Volume = "Local Volume",
-                Letter = 'D',
-                Area = "75 GB",
-                FreeSize = "20 GB",
-                Type = "GPT",
-                FileSystem = "NTFS",
-                Statu = "Sağlıklı",
-                DiscName = "Disk 3",
-                RealSize = 75
-            });
-            discsItems.Add(new Discs()
-            {
-                Volume = "Local Volume",
-                Letter = 'E',
-                Area = "100 GB",
-                FreeSize = "55 GB",
-                Type = "GPT",
-                FileSystem = "NTFS",
-                Statu = "Sağlıklı",
-                DiscName = "Disk 3",
-                RealSize = 100
-            });
-            discsItems.Add(new Discs()
-            {
-                Volume = "Local Volume",
-                Letter = 'F',
-                Area = "500 GB",
-                FreeSize = "120 GB",
-                Type = "GPT",
-                FileSystem = "NTFS",
-                Statu = "Sağlıklı",
-                DiscName = "Disk 1",
-                RealSize = 500
-            });
-            discsItems.Add(new Discs()
-            {
-                Volume = "System Reserverd",
-                Letter = 'C',
-                Area = "128 GB",
-                FreeSize = "1 GB",
-                Type = "GPT",
-                FileSystem = "NTFS",
-                Statu = "Sağlıklı",
-                DiscName = "Disk 2",
-                RealSize = 128
-            });
-            discsItems.Add(new Discs()
-            {
-                Volume = "Local Volume",
-                Letter = 'D',
-                Area = "250 GB",
-                FreeSize = "100 GB",
-                Type = "GPT",
-                FileSystem = "NTFS",
-                Statu = "Sağlıklı",
-                DiscName = "Disk 2",
-                RealSize = 250
-            });
-
-
-            //listViewDisk.ItemsSource = discsItems;
-            listViewRestoreDisk.ItemsSource = discsItems;
+            listViewRestoreDisk.ItemsSource = diskItems;
 
             CollectionView view = (CollectionView)CollectionViewSource.GetDefaultView(listViewDisk.ItemsSource);
-            PropertyGroupDescription groupDescription = new PropertyGroupDescription("Name");
+            PropertyGroupDescription groupDescription = new PropertyGroupDescription("DiskName");
             view.GroupDescriptions.Add(groupDescription);
 
+
+            TaskInfo taskInfo1 = new TaskInfo()
+            {
+                Name = "Sistem Yedekleme",
+                Type = TaskType.Backup
+            };
+            TaskInfo taskInfo2 = new TaskInfo()
+            {
+                Name = "Geri Yükleme",
+                Type = TaskType.Restore
+            };
+            BackupStorageInfo backupAreaInfo1 = new BackupStorageInfo()
+            {
+                StorageName = "Narbulut"
+            };
+            BackupStorageInfo backupAreaInfo2 = new BackupStorageInfo()
+            {
+                StorageName = "Disk 2"
+            };
+
+            List<ActivityLog> activityLogItems = new List<ActivityLog>();
+
+            activityLogItems.Add(new ActivityLog()
+            {
+                Id = 0,
+                StartDate = DateTime.Now - TimeSpan.FromDays(10),
+                EndDate = DateTime.Now - TimeSpan.FromHours(10),
+                //BackupType = BackupTypes.Diff,
+                TaskInfo = taskInfo1,
+                BackupStorageInfo = backupAreaInfo2,
+                Status = StatusType.Success,
+                StrStatus = Resources[StatusType.Success.ToString()].ToString()
+            });
+            activityLogItems.Add(new ActivityLog()
+            {
+                Id = 0,
+                StartDate = DateTime.Now - TimeSpan.FromDays(9),
+                EndDate = DateTime.Now - TimeSpan.FromHours(8),
+                //BackupType = BackupTypes.Diff,
+                TaskInfo = taskInfo1,
+                BackupStorageInfo = backupAreaInfo1,
+                Status = StatusType.Fail,
+                StrStatus = Resources[StatusType.Fail.ToString()].ToString()
+            });
+            activityLogItems.Add(new ActivityLog()
+            {
+                Id = 0,
+                StartDate = DateTime.Now - TimeSpan.FromDays(5),
+                EndDate = DateTime.Now - TimeSpan.FromHours(5),
+                //backupType = BackupType.Full,
+                TaskInfo = taskInfo2,
+                BackupStorageInfo = backupAreaInfo2,
+                Status = StatusType.Success,
+                StrStatus = Resources[StatusType.Success.ToString()].ToString()
+            });
+            //activityLogItems.Add(new ActivityLog()
+            //{
+            //    Id = 0,
+            //    StartDate = DateTime.Now - TimeSpan.FromDays(5),
+            //    EndDate = DateTime.Now - TimeSpan.FromDays(4),
+            //    backupType = BackupType.Inc,
+            //    TaskName = taskInfo1,
+            //    Target = backupAreaInfo2,
+            //    Status = "Başarılı"
+            //});
+            //activityLogItems.Add(new ActivityLog()
+            //{
+            //    Id = 0,
+            //    StartDate = DateTime.Now - TimeSpan.FromDays(10),
+            //    EndDate = DateTime.Now - TimeSpan.FromDays(9),
+            //    backupType = BackupType.Diff,
+            //    TaskName = taskInfo1,
+            //    Target = backupAreaInfo2,
+            //    Status = "Başarısız"
+            //});
+            //activityLogItems.Add(new ActivityLog()
+            //{
+            //    Id = 0,
+            //    StartDate = DateTime.Now - TimeSpan.FromDays(5),
+            //    EndDate = DateTime.Now - TimeSpan.FromHours(5),
+            //    backupType = BackupType.Full,
+            //    TaskName = taskInfo2,
+            //    Target = backupAreaInfo1,
+            //    Status = "Başarısız"
+            //});
+            //activityLogItems.Add(new ActivityLog()
+            //{
+            //    Id = 0,
+            //    StartDate = DateTime.Now - TimeSpan.FromDays(5),
+            //    EndDate = DateTime.Now - TimeSpan.FromHours(5),
+            //    backupType = BackupType.Full,
+            //    TaskName = taskInfo1,
+            //    Target = backupAreaInfo1,
+            //    Status = "Başarılı"
+            //});
+            //activityLogItems.Add(new ActivityLog()
+            //{
+            //    Id = 0,
+            //    StartDate = DateTime.Now - TimeSpan.FromDays(5),
+            //    EndDate = DateTime.Now - TimeSpan.FromDays(5),
+            //    backupType = BackupType.Full,
+            //    TaskName = taskInfo2,
+            //    Target = backupAreaInfo2,
+            //    Status = "Başarısız"
+            //});
+            //activityLogItems.Add(new ActivityLog()
+            //{
+            //    Id = 0,
+            //    StartDate = DateTime.Now - TimeSpan.FromDays(5),
+            //    EndDate = DateTime.Now - TimeSpan.FromDays(3),
+            //    backupType = BackupType.Inc,
+            //    TaskName = taskInfo1,
+            //    Target = backupAreaInfo1,
+            //    Status = "Başarılı"
+            //});
+            //activityLogItems.Add(new ActivityLog()
+            //{
+            //    Id = 0,
+            //    StartDate = DateTime.Now - TimeSpan.FromDays(5),
+            //    EndDate = DateTime.Now - TimeSpan.FromDays(3),
+            //    backupType = BackupType.Inc,
+            //    TaskName = taskInfo2,
+            //    Target = backupAreaInfo1,
+            //    Status = "Başarılı"
+            //});
+            //activityLogItems.Add(new ActivityLog()
+            //{
+            //    Id = 0,
+            //    StartDate = DateTime.Now - TimeSpan.FromDays(1),
+            //    EndDate = DateTime.Now,
+            //    backupType = BackupType.Diff,
+            //    TaskName = taskInfo1,
+            //    Target = backupAreaInfo2,
+            //    Status = "Başarılı"
+            //});
+
+            listViewLog.ItemsSource = activityLogItems;
+            //buraya kadar uyarlandı loader'da falan da düzen gerekecek
+
+
             List<Backups> backupsItems = new List<Backups>();
+
             backupsItems.Add(new Backups()
             {
                 Type = "full",
-                FileName = "Volume_C_Full"
+                FileName = "Volume_C_Full_001",
+                CreatedDate = DateTime.Now - TimeSpan.FromDays(5),
+                TaskName = "C Full",
+                VolumeSize = "250 GB",
+                FileSize = "12 GB",
+                Description = "Yedek açıklaması"
             });
             backupsItems.Add(new Backups()
             {
                 Type = "inc",
-                FileName = "Disk 1"
+                FileName = "Volume_D_Inc_001",
+                CreatedDate = DateTime.Now - TimeSpan.FromHours(5),
+                TaskName = "D Inc",
+                VolumeSize = "510 GB",
+                FileSize = "8 GB",
+                Description = "Yedek açıklaması"
             });
             backupsItems.Add(new Backups()
             {
                 Type = "diff",
-                FileName = "Disk 2",
-                IsCloud = true
+                FileName = "Volume_D_Diff_001",
+                IsCloud = true,
+                CreatedDate = DateTime.Now - TimeSpan.FromHours(30),
+                TaskName = "D Diff",
+                VolumeSize = "250 GB",
+                FileSize = "18 GB",
+                Description = "Yedek açıklaması"
+            });
+            backupsItems.Add(new Backups()
+            {
+                Type = "diff",
+                FileName = "Volume_D_Diff_002",
+                CreatedDate = DateTime.Now - TimeSpan.FromDays(15),
+                TaskName = "D Diff",
+                VolumeSize = "120 GB",
+                FileSize = "8 GB",
+                Description = "Yedek açıklaması"
+            });
+            backupsItems.Add(new Backups()
+            {
+                Type = "full",
+                FileName = "Volume_C_Full_002",
+                IsCloud = true,
+                CreatedDate = DateTime.Now - TimeSpan.FromDays(7),
+                TaskName = "C Full",
+                VolumeSize = "120 GB",
+                FileSize = "28 GB",
+                Description = "Yedek açıklaması"
+            });
+            backupsItems.Add(new Backups()
+            {
+                Type = "full",
+                FileName = "Volume_C_Full_003",
+                CreatedDate = DateTime.Now - TimeSpan.FromDays(7),
+                TaskName = "C Full",
+                VolumeSize = "120 GB",
+                FileSize = "28 GB",
+                Description = "Yedek açıklaması"
+            });
+            backupsItems.Add(new Backups()
+            {
+                Type = "inc",
+                FileName = "Volume_D_Inc_002",
+                IsCloud = true,
+                CreatedDate = DateTime.Now - TimeSpan.FromHours(5),
+                TaskName = "D Inc",
+                VolumeSize = "510 GB",
+                FileSize = "4 GB",
+                Description = "Yedek açıklaması"
             });
 
             listViewBackups.ItemsSource = backupsItems;
-
-            List<Log> logsItems = new List<Log>();
-            logsItems.Add(new Log()
-            {
-                LogIcon = "success",
-                StartDate = "06.10.2020 22:11"
-            });
-            logsItems.Add(new Log()
-            {
-                LogIcon = "fail",
-                StartDate = "10.10.2020 10:20"
-            });
-
-            listViewLog.ItemsSource = logsItems;
-        }
-
-        private void OnNavigate(object sender, RequestNavigateEventArgs e)
-        {
-            if (e.Uri.IsAbsoluteUri)
-                Process.Start(e.Uri.AbsoluteUri);
-
-            e.Handled = true;
-        }
-
-        public class Discs
-        {
-            public string Volume { get; set; }
-            public char Letter { get; set; }
-            public string Area { get; set; }
-            public string FreeSize { get; set; }
-            public string Type { get; set; }
-            public string FileSystem { get; set; }
-            public string Statu { get; set; }
-            public string DiscName { get; set; }
-            public long RealSize { get; set; }
         }
 
         public class Backups
@@ -294,13 +424,13 @@ namespace DiskBackupWpfGUI
             public string Type { get; set; }
             public string FileName { get; set; }
             public bool IsCloud { get; set; } = false;
+            public DateTime CreatedDate { get; set; }
+            public string TaskName { get; set; }
+            public string VolumeSize { get; set; }
+            public string FileSize { get; set; }
+            public string Description { get; set; }
         }
 
-        public class Log
-        {
-            public string LogIcon { get; set; }
-            public string StartDate { get; set; }
-        }
 
         #region Title Bar
         private void btnMainClose_Click(object sender, RoutedEventArgs e)
@@ -335,9 +465,9 @@ namespace DiskBackupWpfGUI
             var expander = sender as Expander;
             long diskSize = 0;
 
-            foreach (DiskInfo item in listViewDisk.Items)
+            foreach (VolumeInfo item in listViewDisk.Items)
             {
-                if (item.Name.Equals(expander.Tag.ToString()))
+                if (item.DiskName.Equals(expander.Tag.ToString()))
                 {
                     diskSize += item.Size;
                 }
@@ -350,7 +480,7 @@ namespace DiskBackupWpfGUI
             _numberOfItems.Add(Convert.ToInt32(numberOfItems.Text));
             var groupName = expander.FindName("txtGroupName") as TextBlock;
             _groupName.Add(groupName.Text);
-            size.Text = diskSize.ToString() + " GB";
+            size.Text = FormatBytes(diskSize);
         }
 
         #region Checkbox Operations
@@ -358,7 +488,7 @@ namespace DiskBackupWpfGUI
         {
             if (!_diskAllControl)
             {
-                foreach (DiskInfo item in listViewDisk.ItemsSource)
+                foreach (VolumeInfo item in listViewDisk.ItemsSource)
                 {
                     listViewDisk.SelectedItems.Add(item);
                 }
@@ -386,17 +516,17 @@ namespace DiskBackupWpfGUI
             }
 
             var dataItem = FindParent<ListViewItem>(sender as DependencyObject);
-            var data = dataItem.DataContext as DiskInfo; //data seçilen değer
+            var data = dataItem.DataContext as VolumeInfo; //data seçilen değer
 
             for (int i = 0; i < _groupName.Count; i++)
             {
-                if (data.Name.Equals(_groupName[i]))
+                if (data.DiskName.Equals(_groupName[i]))
                 {
                     int totalSelected = 0;
                     //i kaçıncı sıradaki adete eşit olacağı
-                    foreach (DiskInfo item in listViewDisk.SelectedItems)
+                    foreach (VolumeInfo item in listViewDisk.SelectedItems)
                     {
-                        if (item.Name.Equals(data.Name))
+                        if (item.DiskName.Equals(data.DiskName))
                         {
                             totalSelected++;
                         }
@@ -416,11 +546,11 @@ namespace DiskBackupWpfGUI
             _diskAllHeaderControl = false;
 
             var dataItem = FindParent<ListViewItem>(sender as DependencyObject);
-            var data = dataItem.DataContext as DiskInfo; //data seçilen değer
+            var data = dataItem.DataContext as VolumeInfo; //data seçilen değer
 
             for (int i = 0; i < _groupName.Count; i++)
             {
-                if (_groupName[i].Equals(data.Name))
+                if (_groupName[i].Equals(data.DiskName))
                 {
                     _expanderCheckBoxes[i].IsChecked = false;
                     _diskAllHeaderControl = true;
@@ -433,9 +563,9 @@ namespace DiskBackupWpfGUI
             var headerCheckBox = sender as CheckBox;
             _diskAllHeaderControl = true;
 
-            foreach (DiskInfo item in listViewDisk.Items)
+            foreach (VolumeInfo item in listViewDisk.Items)
             {
-                if (item.Name.Equals(headerCheckBox.Tag.ToString()))
+                if (item.DiskName.Equals(headerCheckBox.Tag.ToString()))
                 {
                     listViewDisk.SelectedItems.Add(item);
                 }
@@ -447,9 +577,9 @@ namespace DiskBackupWpfGUI
             if (_diskAllHeaderControl)
             {
                 var headerCheckBox = sender as CheckBox;
-                foreach (DiskInfo item in listViewDisk.Items)
+                foreach (VolumeInfo item in listViewDisk.Items)
                 {
-                    if (item.Name.Equals(headerCheckBox.Tag.ToString()))
+                    if (item.DiskName.Equals(headerCheckBox.Tag.ToString()))
                     {
                         listViewDisk.SelectedItems.Remove(item);
                     }
@@ -477,9 +607,9 @@ namespace DiskBackupWpfGUI
             var expander = sender as Expander;
             long diskSize = 0;
 
-            foreach (DiskInfo item in listViewRestoreDisk.Items)
+            foreach (VolumeInfo item in listViewRestoreDisk.Items)
             {
-                if (item.Name.Equals(expander.Tag.ToString()))
+                if (item.DiskName.Equals(expander.Tag.ToString()))
                 {
                     diskSize += item.Size;
                 }
@@ -492,7 +622,7 @@ namespace DiskBackupWpfGUI
             _restoreNumberOfItems.Add(Convert.ToInt32(numberOfItems.Text));
             var groupName = expander.FindName("txtRestoreGroupName") as TextBlock;
             _restoreGroupName.Add(groupName.Text);
-            size.Text = diskSize.ToString() + " GB";
+            size.Text = FormatBytes(diskSize);
         }
 
 
@@ -501,7 +631,7 @@ namespace DiskBackupWpfGUI
         {
             if (!_restoreDiskAllControl)
             {
-                foreach (DiskInfo item in listViewRestoreDisk.ItemsSource)
+                foreach (VolumeInfo item in listViewRestoreDisk.ItemsSource)
                 {
                     listViewRestoreDisk.SelectedItems.Add(item);
                 }
@@ -529,17 +659,17 @@ namespace DiskBackupWpfGUI
             }
 
             var dataItem = FindParent<ListViewItem>(sender as DependencyObject);
-            var data = dataItem.DataContext as DiskInfo; //data seçilen değer
+            var data = dataItem.DataContext as VolumeInfo; //data seçilen değer
 
             for (int i = 0; i < _restoreGroupName.Count; i++)
             {
-                if (data.Name.Equals(_restoreGroupName[i]))
+                if (data.DiskName.Equals(_restoreGroupName[i]))
                 {
                     int totalSelected = 0;
                     //i kaçıncı sıradaki adete eşit olacağı
-                    foreach (DiskInfo item in listViewRestoreDisk.SelectedItems)
+                    foreach (VolumeInfo item in listViewRestoreDisk.SelectedItems)
                     {
-                        if (item.Name.Equals(data.Name))
+                        if (item.DiskName.Equals(data.DiskName))
                         {
                             totalSelected++;
                         }
@@ -559,11 +689,11 @@ namespace DiskBackupWpfGUI
             _restoreDiskAllHeaderControl = false;
 
             var dataItem = FindParent<ListViewItem>(sender as DependencyObject);
-            var data = dataItem.DataContext as DiskInfo; //data seçilen değer
+            var data = dataItem.DataContext as VolumeInfo; //data seçilen değer
 
             for (int i = 0; i < _restoreGroupName.Count; i++)
             {
-                if (_restoreGroupName[i].Equals(data.Name))
+                if (_restoreGroupName[i].Equals(data.DiskName))
                 {
                     _restoreExpanderCheckBoxes[i].IsChecked = false;
                     _restoreDiskAllHeaderControl = true;
@@ -576,9 +706,9 @@ namespace DiskBackupWpfGUI
             var headerCheckBox = sender as CheckBox;
             _restoreDiskAllHeaderControl = true;
 
-            foreach (DiskInfo item in listViewRestoreDisk.Items)
+            foreach (VolumeInfo item in listViewRestoreDisk.Items)
             {
-                if (item.Name.Equals(headerCheckBox.Tag.ToString()))
+                if (item.DiskName.Equals(headerCheckBox.Tag.ToString()))
                 {
                     listViewRestoreDisk.SelectedItems.Add(item);
                 }
@@ -590,9 +720,9 @@ namespace DiskBackupWpfGUI
             if (_restoreDiskAllHeaderControl)
             {
                 var headerCheckBox = sender as CheckBox;
-                foreach (DiskInfo item in listViewRestoreDisk.Items)
+                foreach (VolumeInfo item in listViewRestoreDisk.Items)
                 {
-                    if (item.Name.Equals(headerCheckBox.Tag.ToString()))
+                    if (item.DiskName.Equals(headerCheckBox.Tag.ToString()))
                     {
                         listViewRestoreDisk.SelectedItems.Remove(item);
                     }
@@ -704,6 +834,13 @@ namespace DiskBackupWpfGUI
         #endregion
 
         #region Help Tab
+        private void OnNavigate(object sender, RequestNavigateEventArgs e)
+        {
+            if (e.Uri.IsAbsoluteUri)
+                Process.Start(e.Uri.AbsoluteUri);
+
+            e.Handled = true;
+        }
 
         #endregion
 
@@ -714,10 +851,14 @@ namespace DiskBackupWpfGUI
             taskStatus.Show();
         }
 
+        private void btnTaskPaste_Click(object sender, RoutedEventArgs e)
+        {
+            Statuses backupStatus = new Statuses(1);
+            backupStatus.Show();
+        }
+
         private void btnFilesBrowse_Click(object sender, RoutedEventArgs e)
         {
-            //Statuses backupStatus = new Statuses(1);
-            //backupStatus.Show();
             FileExplorer fileExplorer = new FileExplorer();
             fileExplorer.Show();
         }
@@ -735,9 +876,10 @@ namespace DiskBackupWpfGUI
             {
                 restore.ShowDialog();
             }
-            catch
+            catch (Exception ex)
             {
-                MessageBox.Show("Geçmişe dönük restore yapılamaz." + e.ToString());
+                MessageBox.Show("Geçmişe dönük restore yapılamaz." + ex.ToString());
+                restore.Close();
             }
         }
 
@@ -751,6 +893,17 @@ namespace DiskBackupWpfGUI
             return parentT ?? FindParent<T>(parent);
         }
 
+        private string FormatBytes(long bytes)
+        {
+            string[] Suffix = { "B", "KB", "MB", "GB", "TB" };
+            int i;
+            double dblSByte = bytes;
+            for (i = 0; i < Suffix.Length && bytes >= 1024; i++, bytes /= 1024)
+            {
+                dblSByte = bytes / 1024.0;
+            }
 
+            return String.Format("{0:0.##} {1}", dblSByte, Suffix[i]);
+        }
     }
 }

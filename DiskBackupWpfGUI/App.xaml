@@ -3,17 +3,17 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:ManagementUI"
              StartupUri="MainWindow.xaml">
+    
     <Application.Resources>
-
-
+        
         <Style x:Key="LogListViewItemImage" TargetType="{x:Type Image}">
             <Setter Property="Width" Value="22"/>
             <Setter Property="Height" Value="22"/>
             <Style.Triggers>
-                <DataTrigger Binding="{Binding LogIcon}" Value="success">
+                <DataTrigger Binding="{Binding Status}" Value="0">
                     <Setter Property="Source" Value="Resources\Icon\icons8_ok_3.ico" />
                 </DataTrigger>
-                <DataTrigger Binding="{Binding LogIcon}" Value="fail">
+                <DataTrigger Binding="{Binding Status}" Value="1">
                     <Setter Property="Source" Value="Resources\Icon\icons8_cancel.ico" />
                 </DataTrigger>
             </Style.Triggers>

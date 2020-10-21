@@ -1,5 +1,4 @@
 ﻿using DiskBackupWpfGUI.Pages;
-using DisckBackup.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,6 +13,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using DiskBackup.Entities.Concrete;
 
 namespace DiskBackupWpfGUI
 {
@@ -22,11 +22,11 @@ namespace DiskBackupWpfGUI
     /// </summary>
     public partial class DiskInfoPage : Page
     {
-        public DiskInfoPage(DiskInfo diskInfo)
+        public DiskInfoPage(DiskInformation diskInfo)
         {
             InitializeComponent();
-            diskNameTextBlock.Text = diskInfo.Name;
-            bootTypeTextBlock.Text = diskInfo.BootType;
+            diskNameTextBlock.Text = diskInfo.VolumeInfos[0].DiskName;
+            bootTypeTextBlock.Text = diskInfo.VolumeInfos[0].DiskType;
             sizeTextBlock.Text = diskInfo.StrSize;
 
             foreach (var item in diskInfo.VolumeInfos)
