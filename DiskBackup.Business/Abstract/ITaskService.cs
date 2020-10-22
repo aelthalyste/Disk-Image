@@ -10,13 +10,20 @@ namespace DiskBackup.Business.Abstract
                                                                     //BİRİNCİL AMAÇ ÇALIŞAN KOD ÇIKARMAK
     public interface ITaskService
     {
+        // !!Restore'un pause-resume-start-stop durumlarının olup olmamasına göre tekrardan düzenleme gerekecek!!
         List<TaskInfo> GetTaskInfoList();
+
+        bool CancelTask(TaskInfo taskInfo);
+        bool PauseTask(TaskInfo taskInfo);
+        bool ResumeTask(TaskInfo taskInfo);
+
 
         //RestoreTask parametresi de verebiliriz tam emin olamadık 
         bool AddRestoreTask(TaskInfo taskInfo);
         bool StartRestoreTask(TaskInfo taskInfo);
-        bool StopRestoreTask(TaskInfo taskInfo);
-        bool PauseRestoreTask(TaskInfo taskInfo); //Restore'da pause işlemi yapılabilir mi 
+        //bool StopRestoreTask(TaskInfo taskInfo);
+        //bool PauseRestoreTask(TaskInfo taskInfo); //Restore'da pause işlemi yapılabilir mi 
+        //bool ResumeRestoreTask(TaskInfo taskInfo);
         bool RemoveRestoreTask(TaskInfo taskInfo);
         bool UpdateRestoreTask(TaskInfo taskInfo);
         bool DisableRestoreTask(TaskInfo taskInfo);
@@ -25,9 +32,9 @@ namespace DiskBackup.Business.Abstract
         //BackupTask parametresi de verebiliriz tam emin olamadık 
         bool AddBackupTask(TaskInfo taskInfo);
         bool RemoveBackupTask(TaskInfo taskInfo);
-        bool PauseBackupTask(TaskInfo taskInfo);
-        bool StopBackupTask(TaskInfo taskInfo);
-        bool ResumeBackupTask(TaskInfo taskInfo);
+        //bool PauseBackupTask(TaskInfo taskInfo);
+        //bool StopBackupTask(TaskInfo taskInfo);
+        //bool ResumeBackupTask(TaskInfo taskInfo);
         bool UpdateBackupTask(TaskInfo taskInfo);
         bool RestartFailedBackupTask(TaskInfo taskInfo); //Eğer bu methodun neden Restore'da olmadığını düşünüyorsanız NewCreateTask.xaml'da zamanlama tabında cevabı bulacaksınız
         bool DisableBackupTask(TaskInfo taskInfo);

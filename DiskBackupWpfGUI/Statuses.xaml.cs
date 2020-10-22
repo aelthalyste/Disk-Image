@@ -22,12 +22,8 @@ namespace DiskBackupWpfGUI
         public Statuses(int chooseFlag)
         {
             InitializeComponent();
-            // 0 görev durumu, 1 yedekleme durumu, 2 geri yükleme
+            // 0 yedekleme durumu, 1 geri yükleme
             if (chooseFlag == 0)
-            {
-                txtTitleBar.Text = Resources["taskStatus"].ToString();
-            }
-            else if (chooseFlag == 1)
             {
                 stackLocalTaskName.Visibility = Visibility.Visible;
                 txtLocalTaskName.Visibility = Visibility.Visible;

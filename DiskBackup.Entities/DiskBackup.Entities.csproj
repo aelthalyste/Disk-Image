@@ -49,6 +49,7 @@
     <Compile Include="Concrete\FilesInBackup.cs" />
     <Compile Include="Concrete\Log.cs" />
     <Compile Include="Concrete\RestoreTask.cs" />
+    <Compile Include="Concrete\StatusInfo.cs" />
     <Compile Include="Concrete\TaskInfo.cs" />
     <Compile Include="Concrete\VolumeInfo.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

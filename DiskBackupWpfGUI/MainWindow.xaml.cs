@@ -847,13 +847,12 @@ namespace DiskBackupWpfGUI
 
         private void btnTaskOpen_Click(object sender, RoutedEventArgs e)
         {
-            Statuses taskStatus = new Statuses(0);
-            taskStatus.Show();
+
         }
 
         private void btnTaskPaste_Click(object sender, RoutedEventArgs e)
         {
-            Statuses backupStatus = new Statuses(1);
+            Statuses backupStatus = new Statuses(0);
             backupStatus.Show();
         }
 
@@ -865,7 +864,7 @@ namespace DiskBackupWpfGUI
 
         private void btnTaskCopy_Click(object sender, RoutedEventArgs e)
         {
-            Statuses restoreStatus = new Statuses(2);
+            Statuses restoreStatus = new Statuses(1);
             restoreStatus.Show();
         }
 
@@ -903,7 +902,7 @@ namespace DiskBackupWpfGUI
                 dblSByte = bytes / 1024.0;
             }
 
-            return String.Format("{0:0.##} {1}", dblSByte, Suffix[i]);
+            return ($"{dblSByte:0.##} {Suffix[i]}");
         }
     }
 }
