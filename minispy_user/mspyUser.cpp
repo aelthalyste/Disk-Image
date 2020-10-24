@@ -6649,9 +6649,11 @@ NarSearchFileInVersions(wchar_t *RootDir, wchar_t VolumeLetter, INT32 CeilVersio
     // Reserve space via assuming file exists in all backups back to full backup. Since structure is small there isnt an overheat for memory
     Result.RootDir = (wchar_t*)malloc(RootDirSize);
     Result.FilePath = (wchar_t*)malloc(FileNameSize);
+
     memset(Result.RootDir, 0, RootDirSize);
     memset(Result.FilePath, 0, FileNameSize);
 
+    
 
     size_t RelativeOffsetPtrSize = CeilVersion*sizeof(Result.FileAbsoluteMFTOffset);
     // size_t LCNRecordsPtrSize = CeilVersion*sizeof(Result.LCNRecords);
@@ -6659,7 +6661,7 @@ NarSearchFileInVersions(wchar_t *RootDir, wchar_t VolumeLetter, INT32 CeilVersio
     Result.FileAbsoluteMFTOffset = (UINT64*)malloc(RelativeOffsetPtrSize);
     // Result.LCNRecords = (UINT64*)malloc(LCNRecordsPtrSize);
     
-    memset(Result.FileAbsoluteMFTOffset, 0, RelativeOffsetPtrSize);
+    memset(&Result.FileAbsoluteMFTOffset, 0, RelativeOffsetPtrSize);
     // memset(Result.LCNRecords, 0, LCNRecordsPtrSize);
 
 

@@ -68,37 +68,47 @@ void SystemStringToWCharPtr(System::String ^SystemStr, wchar_t *Destination) {
 
 }
 
+
 namespace NarDIWrapper {
 
 
-
     CSNarFileExplorer::CSNarFileExplorer(){
-        memset(m_ctx, 0, sizeof(m_ctx));
+        memset(ctx, 0, sizeof(*ctx));
     }
 
+    CSNarFileExplorer::~CSNarFileExplorer() {
+        this->CW_Free();
+    }
     
     bool CSNarFileExplorer::CW_Init(INT32 HandleOptions, wchar_t VolLetter, int Version, wchar_t *RootDir){
-        return NarInitFileExplorerContext(&m_ctx, HandleOptions, VolLetter, Version, RootDir);
+        ctx = (nar_backup_file_explorer_context*)malloc(sizeof(ctx));
+        return NarInitFileExplorerContext(ctx, HandleOptions, VolLetter, Version, RootDir);
     }
 
     List<CSNarFileEntry^>^ CSNarFileExplorer::CW_GetFilesInCurrentDirectory(){
-        List<CSNarFileEntry^>^ Result = gcnew List<CSNarFileEntry^>;
-        Result.Reserve(ctx.EList.EntryCount);
 
+        List<CSNarFileEntry^>^ Result = gcnew List<CSNarFileEntry^>;     
         CSNarFileEntry^ Entry = gcnew CSNarFileEntry;
-
-        for(int i = 0; i<ctx.EList.EntryCount; i++){
-            Entry->Size = ctx.EList.Entries[i].Size;
+        
+        for(int i = 0; i<ctx->EList.EntryCount; i++){
+           
+            Entry->Size = ctx->EList.Entries[i].Size;
             Entry->ID = i;
+            Entry->Name = gcnew System::String(ctx->EList.Entries[i].Name);
+    
             // TODO name, creation time, lastmodified time, isdirectory flags.
+
+            Result->Add(Entry);
+
         }
+
 
     }
     
     bool CSNarFileExplorer::CW_SelectDirectory(CSNarFileEntry^ Entry){
         
         if(Entry->IsDirectory){
-            NarFileExplorerPushDirectory(&ctx, Entry->ID);
+            NarFileExplorerPushDirectory(ctx, Entry->ID);
             return TRUE;
         }
 
@@ -107,11 +117,15 @@ namespace NarDIWrapper {
     }
 
     void CSNarFileExplorer::CW_PopDirectory(){
-        NarPopDirectoryStack(&ctx);
+        NarPopDirectoryStack(ctx);
     }
 
     void CSNarFileExplorer::CW_Free(){
-        NarReleaseFileExplorerContext(&ctx);
+        if (ctx) {
+            NarReleaseFileExplorerContext(ctx);
+            free(ctx);
+            ctx = 0;
+        }
     }
 
 
@@ -139,7 +153,7 @@ namespace NarDIWrapper {
             memset(C, 0, sizeof(LOG_CONTEXT));
         }
         else {
-            // find old state
+            // found old state
             printf("Succ loaded boot state from file\n");
         }
 
@@ -162,7 +176,6 @@ namespace NarDIWrapper {
         CloseHandle(C->Thread);
         CloseHandle(C->ShutDown);
         
-        delete R;
         delete C;
     }
     
@@ -189,8 +202,6 @@ namespace NarDIWrapper {
             StrInf->ClusterSize = SI.ClusterSize;
             StrInf->FileName = gcnew String(SI.FileName.c_str());
             StrInf->MetadataFileName = gcnew String(SI.MetadataFileName.c_str());
-            
-            StreamID = GetVolumeID(C, L);
             
             return true;
         }
@@ -245,9 +256,10 @@ namespace NarDIWrapper {
     }
     
     INT32 DiskTracker::CW_ReadStream(void* Data, wchar_t VolumeLetter, int Size) {
+        
         int VolID = GetVolumeID(C, VolumeLetter);
         if(VolID != NAR_INVALID_VOLUME_TRACK_ID){
-            return ReadStream(&C->Volumes.Data[StreamID], Data, Size);
+            return ReadStream(&C->Volumes.Data[VolID], Data, Size);
         }
         // couldnt find volume in the Context, which shoudlnt happen at all
         return 0;
@@ -255,9 +267,9 @@ namespace NarDIWrapper {
     
     bool DiskTracker::CW_TerminateBackup(bool Succeeded, wchar_t VolumeLetter) {
         
-        INT32 VolID = GetVolumeID(VolumeLetter);
+        INT32 VolID = GetVolumeID(C, VolumeLetter);
         if(VolID != NAR_INVALID_VOLUME_TRACK_ID){
-            return TerminateBackup(&C->Volumes.Data[StreamID], Succeeded);
+            return TerminateBackup(&C->Volumes.Data[VolID], Succeeded);
         }
         // couldnt find volume in the Context, which shoudlnt happen at all
         return 0;   
