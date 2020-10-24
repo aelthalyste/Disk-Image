@@ -15,13 +15,14 @@ namespace DiskBackup.Business.Abstract
         List<FilesInBackup> GetFileInfoList(); //Ucu belli değil 
         List<Log> GetLogList(); //Böyle bir uç yapılacağı konuşuldu
 
+        StatusInfo GetStatusInfo(); // Statu pencereleri için
+
         bool PauseTask(TaskInfo taskInfo);
         bool CancelTask(TaskInfo taskInfo);
         bool ResumeTask(TaskInfo taskInfo);
-        
+
         //INC ve DIFF TaskInfo'dan strObjeyi alarak çoklu seçim yapabilir
-        bool CreateIncrementalBackup(TaskInfo taskInfo, BackupStorageInfo backupStorageInfo);
-        bool CreateDifferentialBackup(TaskInfo taskInfo, BackupStorageInfo backupStorageInfo);
+        bool CreateIncDiffBackup(TaskInfo taskInfo, BackupStorageInfo backupStorageInfo); // Kod tekrarı olmasın diye diff ile ınc birleştirildi
         bool CreateFullBackup(TaskInfo taskInfo); //Bu daha hazır değil        
         
         bool RestoreBackupVolume(BackupInfo backupInfo, VolumeInfo volumeInfo); //Parametreler bu methodun içinde RestoreTask oluşturacak

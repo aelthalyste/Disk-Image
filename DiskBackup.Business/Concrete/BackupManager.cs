@@ -3,10 +3,12 @@ using DiskBackup.Entities.Concrete;
 using NarDIWrapper;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Security.AccessControl;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace DiskBackup.Business.Concrete
@@ -16,6 +18,12 @@ namespace DiskBackup.Business.Concrete
                                                                     //TEST EDİLMEDİ
 
         private DiskTracker _diskTracker = new DiskTracker();
+        private ManualResetEvent _manualResetEvent = new ManualResetEvent(true);
+        private CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        private bool _isStarted = false;
+
+        private StatusInfo _statusInfo = new StatusInfo();
+        private Stopwatch _timeElapsed = new Stopwatch();
 
         public bool InitTracker()
         {
@@ -126,8 +134,13 @@ namespace DiskBackup.Business.Concrete
             throw new NotImplementedException();
         }
 
-        public bool CreateDifferentialBackup(TaskInfo taskInfo, BackupStorageInfo backupStorageInfo)
+        public bool CreateIncDiffBackup(TaskInfo taskInfo, BackupStorageInfo backupStorageInfo)
         {
+            _timeElapsed.Start();
+
+            _isStarted = true;
+            var cancellationToken = _cancellationTokenSource.Token;
+
             string letters = taskInfo.StrObje;
 
             int bufferSize = 64 * 1024 * 1024;
@@ -137,96 +150,65 @@ namespace DiskBackup.Business.Concrete
             int Read = 0;
             bool result = false;
 
-            foreach (var letter in letters)
+            _statusInfo.TaskName = taskInfo.Name;
+            _statusInfo.FileName = backupStorageInfo.Path + "/" + str.MetadataFileName;
+            _statusInfo.SourceObje = taskInfo.StrObje;            
+
+            Task.Run(() =>
             {
-                if (_diskTracker.CW_SetupStream(letter, 0, str))
+                foreach (var letter in letters) // C D E F
                 {
-                    unsafe
+                    if (_diskTracker.CW_SetupStream(letter, (int)taskInfo.BackupTaskInfo.Type, str)) // 0 diff, 1 inc, full (2) ucu gelmediğinden ayrılabilir veya aynı devam edebilir
                     {
-                        fixed (byte* BAddr = &buffer[0])
+                        unsafe
                         {
-                            FileStream file = File.Create(backupStorageInfo.Path + str.FileName); //backupStorageInfo path alınıcak
-                            while (true)
+                            fixed (byte* BAddr = &buffer[0])
                             {
-                                Read = _diskTracker.CW_ReadStream(BAddr, bufferSize);
-                                if (Read == 0)
-                                    break;
-                                file.Write(buffer, 0, Read);
-                                BytesReadSoFar += Read;
-                            }
-                            result = (long)str.ClusterCount * (long)str.ClusterSize == BytesReadSoFar;
-                            _diskTracker.CW_TerminateBackup(result); //işlemi başarılı olup olmadığı
+                                FileStream file = File.Create(backupStorageInfo.Path + str.FileName); //backupStorageInfo path alınıcak
+                                while (true)
+                                {
+                                    if (cancellationToken.IsCancellationRequested)
+                                    {
+                                        //cleanup 
+                                        _diskTracker.CW_TerminateBackup(false);
+                                        return;
+                                    }
+                                    _manualResetEvent.WaitOne();
 
-                            try
-                            {
-                                File.Copy(str.MetadataFileName, backupStorageInfo.Path + str.MetadataFileName); //backupStorageInfo path alınıcak
-                            }
-                            catch (IOException iox)
-                            {
-                                //MessageBox.Show(iox.Message);
-                            }
+                                    Read = _diskTracker.CW_ReadStream(BAddr, bufferSize);
+                                    if (Read == 0)
+                                        break;
+                                    file.Write(buffer, 0, Read);
+                                    BytesReadSoFar += Read;
 
-                            if (result == true)
-                            {
-                                _diskTracker.CW_SaveBootState();
+                                    _statusInfo.DataProcessed = BytesReadSoFar;
+                                    _statusInfo.TotalDataProcessed = (long)str.ClusterCount * (long)str.ClusterSize;
+                                    _statusInfo.AverageDataRate = ((_statusInfo.TotalDataProcessed / 1024.0)/1024.0) / (_timeElapsed.ElapsedMilliseconds/1000); // MB/s
+                                    _statusInfo.InstantDataRate = ((BytesReadSoFar / 1024.0) / 1024.0) / (_timeElapsed.ElapsedMilliseconds / 1000); // MB/s
+                                }
+                                result = (long)str.ClusterCount * (long)str.ClusterSize == BytesReadSoFar;
+                                _diskTracker.CW_TerminateBackup(result); //işlemi başarılı olup olmadığı cancel gelmeden
+
+                                try
+                                {
+                                    File.Copy(str.MetadataFileName, backupStorageInfo.Path + str.MetadataFileName); //backupStorageInfo path alınıcak
+                                }
+                                catch (IOException iox)
+                                {
+                                    //MessageBox.Show(iox.Message);
+                                }
+
+                                if (result == true)
+                                {
+                                    _diskTracker.CW_SaveBootState();
+                                }
+                                file.Close();
                             }
-                            file.Close();
                         }
                     }
                 }
-            }
-            return result;
-        }
+            });
 
-        public bool CreateIncrementalBackup(TaskInfo taskInfo, BackupStorageInfo backupStorageInfo)
-        {
-            string letters = taskInfo.StrObje;
-
-            int bufferSize = 64 * 1024 * 1024;
-            byte[] buffer = new byte[bufferSize];
-            StreamInfo str = new StreamInfo();
-            long BytesReadSoFar = 0;
-            int Read = 0;
-            bool result = false;
-
-            foreach (var letter in letters)
-            {
-                if (_diskTracker.CW_SetupStream(letter, 1, str))
-                {
-                    unsafe
-                    {
-                        fixed (byte* BAddr = &buffer[0])
-                        {
-                            FileStream file = File.Create(backupStorageInfo.Path + str.FileName); //backupStorageInfo path alınıcak
-                            while (true)
-                            {
-                                Read = _diskTracker.CW_ReadStream(BAddr, bufferSize);
-                                if (Read == 0)
-                                    break;
-                                file.Write(buffer, 0, Read);
-                                BytesReadSoFar += Read;
-                            }
-                            result = (long)str.ClusterCount * (long)str.ClusterSize == BytesReadSoFar;
-                            _diskTracker.CW_TerminateBackup(result); //işlemin başarılı olup olmadığı
-
-                            try
-                            {
-                                File.Copy(str.MetadataFileName, backupStorageInfo.Path + str.MetadataFileName); //backupStorageInfo path alınıcak
-                            }
-                            catch (IOException iox)
-                            {
-                                //MessageBox.Show(iox.Message);
-                            }
-
-                            if (result == true)
-                            {
-                                _diskTracker.CW_SaveBootState();
-                            }
-                            file.Close();
-                        }
-                    }
-                }
-            }
             return result;
         }
 
@@ -235,21 +217,13 @@ namespace DiskBackup.Business.Concrete
             throw new NotImplementedException();
         }
 
-        public List<FilesInBackup> GetFileInfoList() //bu method daha gelmedi
-        {
-            throw new NotImplementedException();
-        }
-
-        public List<Log> GetLogList() //bu method daha gelmedi
-        {
-            throw new NotImplementedException();
-        }
-
         public bool PauseTask(TaskInfo taskInfo) //bu method tekrar konuşulacak
         {
             if (taskInfo.Type == 0) //backup
             {
-                
+                if (!_isStarted) throw new Exception("Backup is not started");
+                _timeElapsed.Stop();
+                _manualResetEvent.Reset();
             }
             else //restore
             {
@@ -258,11 +232,15 @@ namespace DiskBackup.Business.Concrete
             throw new NotImplementedException();
         }
 
-        public bool CancelTask(TaskInfo taskInfo) 
+        public bool CancelTask(TaskInfo taskInfo)
         {
             if (taskInfo.Type == 0) //backup
             {
-                _diskTracker.CW_TerminateBackup(false);  //_diskTracker bunun hangi task olduğunu nasıl anlayacak ??
+                _cancellationTokenSource.Cancel();
+                _isStarted = false;
+                _timeElapsed.Stop();
+                _timeElapsed.Reset();
+                _manualResetEvent.Set();
             }
             else //restore
             {
@@ -275,12 +253,24 @@ namespace DiskBackup.Business.Concrete
         {
             if (taskInfo.Type == 0) //backup
             {
-
+                if (!_isStarted) throw new Exception("Backup is not started");
+                _timeElapsed.Start();
+                _manualResetEvent.Set();
             }
             else //restore
             {
 
             }
+            throw new NotImplementedException();
+        }
+
+        public List<FilesInBackup> GetFileInfoList() //bu method daha gelmedi
+        {
+            throw new NotImplementedException();
+        }
+
+        public List<Log> GetLogList() //bu method daha gelmedi
+        {
             throw new NotImplementedException();
         }
 
@@ -304,7 +294,13 @@ namespace DiskBackup.Business.Concrete
                 dblSByte = bytes / 1024.0;
             }
 
-            return String.Format("{0:0.##} {1}", dblSByte, Suffix[i]);
+            return ($"{dblSByte:0.##} {Suffix[i]}");
+        }
+
+        public StatusInfo GetStatusInfo()
+        {
+            _statusInfo.TimeElapsed = _timeElapsed.ElapsedMilliseconds; // TimeSpan.FromMilliseconds(999999); Console.WriteLine($"{d:mm\\:ss}");
+            return _statusInfo;
         }
     }
 }

@@ -20,7 +20,7 @@ namespace DiskBackup.Entities.Concrete
         public string Name { get; set; }
         public int Obje { get; set; }
         public string StrObje { get; set; } // CDE gibi olması durumunda tutulması
-        public string Status { get; set; }
+        public string Status { get; set; } //çalışıyor, hazır, iptal edildi...
         public DateTime CreatedDate { get; set; } //backuptask starttime ile aynı değil çünkü o zamanlaştırılması daha ileri bir zaman olabilir
         public DateTime NextDate { get; set; }
         public string Descripiton { get; set; }
