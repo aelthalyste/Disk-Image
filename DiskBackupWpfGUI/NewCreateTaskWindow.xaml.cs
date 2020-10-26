@@ -18,9 +18,9 @@ namespace DiskBackupWpfGUI
     /// <summary>
     /// Interaction logic for NewCreateTask.xaml
     /// </summary>
-    public partial class NewCreateTask : Window
+    public partial class NewCreateTaskWindow : Window
     {
-        public NewCreateTask()
+        public NewCreateTaskWindow()
         {
             InitializeComponent();
         }
@@ -174,7 +174,7 @@ namespace DiskBackupWpfGUI
 
         private void btnTargetAdd_Click(object sender, RoutedEventArgs e)
         {
-            AddBackupArea addBackupArea = new AddBackupArea();
+            AddBackupAreaWindow addBackupArea = new AddBackupAreaWindow();
             addBackupArea.ShowDialog();
         }
 
@@ -305,13 +305,13 @@ namespace DiskBackupWpfGUI
 
         private void btnDaysTimeDays_Click(object sender, RoutedEventArgs e)
         {
-            ChooseDayAndMounths chooseDays = new ChooseDayAndMounths(true);
+            ChooseDayAndMounthsWindow chooseDays = new ChooseDayAndMounthsWindow(true);
             chooseDays.ShowDialog();
         }
 
         private void btnWeeklyTimeWeek_Click(object sender, RoutedEventArgs e)
         {
-            ChooseDayAndMounths chooseMounths = new ChooseDayAndMounths(false);
+            ChooseDayAndMounthsWindow chooseMounths = new ChooseDayAndMounthsWindow(false);
             chooseMounths.ShowDialog();
         }
 

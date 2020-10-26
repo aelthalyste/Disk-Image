@@ -17,9 +17,9 @@ namespace DiskBackupWpfGUI
     /// <summary>
     /// Interaction logic for FileExplorer.xaml
     /// </summary>
-    public partial class FileExplorer : Window
+    public partial class FileExplorerWindow : Window
     {
-        public FileExplorer()
+        public FileExplorerWindow()
         {
             InitializeComponent();
         }

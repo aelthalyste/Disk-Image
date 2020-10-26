@@ -15,11 +15,11 @@ using System.Windows.Shapes;
 namespace DiskBackupWpfGUI
 {
     /// <summary>
-    /// Interaction logic for Statuses.xaml
+    /// Interaction logic for StatusesWindow.xaml
     /// </summary>
-    public partial class Statuses : Window
+    public partial class StatusesWindow : Window
     {
-        public Statuses(int chooseFlag)
+        public StatusesWindow(int chooseFlag)
         {
             InitializeComponent();
             // 0 yedekleme durumu, 1 geri yükleme

@@ -456,7 +456,7 @@ namespace DiskBackupWpfGUI
 
         private void btnCreateTask_Click(object sender, RoutedEventArgs e)
         {
-            NewCreateTask newCreateTask = new NewCreateTask();
+            NewCreateTaskWindow newCreateTask = new NewCreateTaskWindow();
             newCreateTask.ShowDialog();
         }
 
@@ -755,7 +755,7 @@ namespace DiskBackupWpfGUI
         #region Backup Area Tab
         private void btnBackupAreaAdd_Click(object sender, RoutedEventArgs e)
         {
-            AddBackupArea addBackupArea = new AddBackupArea();
+            AddBackupAreaWindow addBackupArea = new AddBackupAreaWindow();
             addBackupArea.ShowDialog();
         }
 
@@ -852,25 +852,25 @@ namespace DiskBackupWpfGUI
 
         private void btnTaskPaste_Click(object sender, RoutedEventArgs e)
         {
-            Statuses backupStatus = new Statuses(0);
+            StatusesWindow backupStatus = new StatusesWindow(0);
             backupStatus.Show();
         }
 
         private void btnFilesBrowse_Click(object sender, RoutedEventArgs e)
         {
-            FileExplorer fileExplorer = new FileExplorer();
+            FileExplorerWindow fileExplorer = new FileExplorerWindow();
             fileExplorer.Show();
         }
 
         private void btnTaskCopy_Click(object sender, RoutedEventArgs e)
         {
-            Statuses restoreStatus = new Statuses(1);
+            StatusesWindow restoreStatus = new StatusesWindow(1);
             restoreStatus.Show();
         }
 
         private void btnRestore_Click(object sender, RoutedEventArgs e)
         {
-            Restore restore = new Restore();
+            RestoreWindow restore = new RestoreWindow();
             try
             {
                 restore.ShowDialog();

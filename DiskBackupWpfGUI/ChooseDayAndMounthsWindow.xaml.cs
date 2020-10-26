@@ -17,9 +17,9 @@ namespace DiskBackupWpfGUI
     /// <summary>
     /// Interaction logic for ChooseDayAndMounths.xaml
     /// </summary>
-    public partial class ChooseDayAndMounths : Window
+    public partial class ChooseDayAndMounthsWindow : Window
     {
-        public ChooseDayAndMounths(bool chooseFlag)
+        public ChooseDayAndMounthsWindow(bool chooseFlag)
         {
             InitializeComponent();
             //chooseFlag = true gün, false ise ay

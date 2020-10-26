@@ -17,10 +17,10 @@ namespace DiskBackupWpfGUI
     /// <summary>
     /// Interaction logic for AddBackupArea.xaml
     /// </summary>
-    public partial class AddBackupArea : Window
+    public partial class AddBackupAreaWindow : Window
     {
         private bool ShowSettings = false;
-        public AddBackupArea()
+        public AddBackupAreaWindow()
         {
             InitializeComponent();
         }

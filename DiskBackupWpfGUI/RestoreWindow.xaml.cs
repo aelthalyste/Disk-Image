@@ -17,9 +17,9 @@ namespace DiskBackupWpfGUI
     /// <summary>
     /// Interaction logic for Restore.xaml
     /// </summary>
-    public partial class Restore : Window
+    public partial class RestoreWindow : Window
     {
-        public Restore()
+        public RestoreWindow()
         {
             InitializeComponent();
             //minimum date kontrol etme handle edemedik
