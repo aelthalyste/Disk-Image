@@ -11,10 +11,11 @@ namespace NarDIWrapper {
 
     public ref class StreamInfo {
     public:
-        System::Int32 ClusterSize; //Size of clusters, requester has to call readstream with multiples of this size
-        System::Int32 ClusterCount;
+        System::UInt32 ClusterSize; //Size of clusters, requester has to call readstream with multiples of this size
+        System::UInt32 ClusterCount;
         System::String^ FileName;
         System::String^ MetadataFileName;
+        System::UInt64 CopySize;
     };
 
 
@@ -33,7 +34,7 @@ namespace NarDIWrapper {
         int Version;
         int OSVolume; // boolean actually
         wchar_t DiskType;
-
+        System::String^ WindowsName;
     };
 
     public ref class VolumeInformation {
@@ -73,7 +74,8 @@ namespace NarDIWrapper {
 
     public ref class CSNarFileEntry {
     public:
-        CSNarFileEntry();
+        CSNarFileEntry() {
+        }
 
         INT16 IsDirectory;
         UINT64 Size;
@@ -140,7 +142,12 @@ namespace NarDIWrapper {
 
         bool CW_TerminateBackup(bool Succeeded, wchar_t VolumeLetter);
 
+
+        //terminate backuptan sonra cagir
         bool CW_SaveBootState();
+
+
+
 
         bool CW_RestoreToVolume(
             wchar_t TargetLetter,
@@ -149,11 +156,19 @@ namespace NarDIWrapper {
             bool ShouldFormat,
             System::String^ RootDir);
 
-        bool CW_RestoreToFreshDisk(wchar_t TargetLetter, wchar_t SrcLetter, INT Version, int DiskID, System::String^ Rootdir);
+        bool CW_RestoreToFreshDisk(
+          wchar_t TargetLetter, 
+          wchar_t SrcLetter, 
+          INT Version, 
+          int DiskID, 
+          System::String^ Rootdir);
 
-        List<BackupMetadata^>^ CW_GetBackupsInDirectory(System::String^ RootDir);
-        List<DiskInfo^>^ CW_GetDisksOnSystem();
+        
 
+        static List<BackupMetadata^>^ CW_GetBackupsInDirectory(System::String^ RootDir);
+        static List<DiskInfo^>^ CW_GetDisksOnSystem();
+
+        
     private:
 
         // Volume ID that it's stream requested store in wrapper, so requester doesnt have to pass letter or ID everytime it calls readstream or closestream.

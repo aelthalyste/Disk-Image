@@ -102,6 +102,8 @@ namespace NarDIWrapper {
 
         }
 
+        return Result;
+
 
     }
     
@@ -202,7 +204,8 @@ namespace NarDIWrapper {
             StrInf->ClusterSize = SI.ClusterSize;
             StrInf->FileName = gcnew String(SI.FileName.c_str());
             StrInf->MetadataFileName = gcnew String(SI.MetadataFileName.c_str());
-            
+            StrInf->CopySize = StrInf->ClusterSize * StrInf->ClusterCount;
+
             return true;
         }
         
@@ -243,6 +246,7 @@ namespace NarDIWrapper {
 
     bool DiskTracker::CW_RestoreToFreshDisk(wchar_t TargetLetter, wchar_t SrcLetter, INT Version, int DiskID, System::String^ RootDir) {
         
+        restore_inf R;
         R.TargetLetter = TargetLetter;
         R.SrcLetter = SrcLetter;
         R.Version = Version;
@@ -350,6 +354,8 @@ namespace NarDIWrapper {
                 BMet->DiskType = BMList[i].DiskType;
                 BMet->OSVolume = BMList[i].IsOSVolume;
                 BMet->Version = BMList[i].Version;
+                BMet->WindowsName = gcnew System::String(BMList[i].ProductName);
+
                 ResultList->Add(BMet);
 
             }

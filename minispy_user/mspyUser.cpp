@@ -4818,6 +4818,8 @@ SaveMetadata(char Letter, int Version, int ClusterSize, BackupType BT,
     
     BM.VolumeSize = NarGetVolumeSize(BM.Letter);
     
+    NarGetProductName(BM.ProductName);
+
     memset(&BM.Size, 0, sizeof(BM.Size));
     memset(&BM.Offset, 0, sizeof(BM.Offset));
     memset(&BM.Errors, 0, sizeof(BM.Errors));
@@ -7478,6 +7480,19 @@ Test_NarGetRegionIntersection() {
     NarGetRegionIntersection(r1, r2, r3, 5, 6, 16, &found);
 
     return Result;
+}
+
+
+inline void
+NarGetProductName(char* OutName) {
+
+    HKEY Key;
+    if (RegOpenKeyA(HKEY_LOCAL_MACHINE, "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion", &Key) == ERROR_SUCCESS) {
+        DWORD H = 0;
+        RegGetValueA(Key, 0, "ProductName", RRF_RT_ANY, 0, OutName, &H);
+        RegCloseKey(Key);
+    }
+
 }
 
 

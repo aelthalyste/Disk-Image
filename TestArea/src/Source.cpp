@@ -287,6 +287,18 @@ ReverseNumber(unsigned int Number){
 
 #define _CRT_NON_CONFORMING_WCSTOK
 
+inline void
+NarGetProductName(char *OutName) {
+    
+    HKEY Key;
+    if (RegOpenKeyA(HKEY_LOCAL_MACHINE, "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion", &Key) == ERROR_SUCCESS) {
+        DWORD H = 0;
+        RegGetValueA(Key, 0, "ProductName", RRF_RT_ANY, 0, OutName, &H);
+        RegCloseKey(Key);
+    }
+
+}
+
 int main() {
     
     
@@ -300,15 +312,8 @@ int main() {
     }
 
     return 0;
-    HKEY Key;
-    if (RegOpenKeyA(HKEY_LOCAL_MACHINE, "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion", &Key) == ERROR_SUCCESS) {
-        char BUFFER[1024];
-        memset(BUFFER, 0, sizeof(BUFFER));
-        DWORD H;
-        RegGetValueA(Key, 0, "ProductName", RRF_RT_ANY, 0, BUFFER, &H);
-        
-        return 0;
-    }
+
+    
     
 
     HANDLE FileHandle = CreateFileA("testfile.txt", GENERIC_WRITE | GENERIC_READ, FILE_SHARE_READ, 0, CREATE_ALWAYS, 0, 0);

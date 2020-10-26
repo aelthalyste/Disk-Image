@@ -350,7 +350,7 @@ struct backup_metadata {
             //FOR MBR things
             INT64 GPT_EFIPartitionSize;
             INT64 MBR_SystemPartitionSize;
-            wchar_t ProductName[32];
+            char ProductName[50];
         };
     };
     
@@ -496,6 +496,8 @@ NarGetVolumeDiskID(char Letter);
 inline BOOLEAN
 NarFormatVolume(char Letter);
 
+inline void
+NarGetProductName(char* OutName);
 
 //
 //  Structure for managing current state.
