@@ -25,6 +25,9 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OfflineTestGUI", "OfflineTestGUI\OfflineTestGUI.vcxproj", "{EEE4E91C-0C5A-4A94-89F1-366B951F4AD4}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DiskBackupWpfGUI", "DiskBackupWpfGUI\DiskBackupWpfGUI.csproj", "{9A1408AC-8914-4FC1-85D4-61EBBEAF9AF2}"
+	ProjectSection(ProjectDependencies) = postProject
+		{FFE248C9-AE73-4719-892A-692975BB6B9C} = {FFE248C9-AE73-4719-892A-692975BB6B9C}
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DiskBackup.Business", "DiskBackup.Business\DiskBackup.Business.csproj", "{3F48E57C-71B2-4978-8361-345FA514E77A}"
 EndProject

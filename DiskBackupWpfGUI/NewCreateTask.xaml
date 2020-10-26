@@ -320,7 +320,7 @@
                 </Grid>
             </TabItem>
 
-            <TabItem Name="settingsTab" IsEnabled="False">
+            <TabItem Name="settingsTab" Visibility="Collapsed" IsEnabled="False">
                 <TabItem.Header>
                     <StackPanel Height="35" Width="130" Orientation="Horizontal">
                         <TextBlock Text="{DynamicResource settings}" Margin="5,0" VerticalAlignment="Center" Style="{StaticResource NCTTabItemText}"/>

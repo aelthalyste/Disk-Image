@@ -55,6 +55,10 @@ namespace DiskBackupWpfGUI
         {
             if (NCTTabControl.SelectedIndex != 0)
             {
+                if (NCTTabControl.SelectedIndex == 5)
+                {
+                    NCTTabControl.SelectedIndex -= 1;
+                }
                 NCTTabControl.SelectedIndex -= 1;
             }
         }
@@ -63,6 +67,10 @@ namespace DiskBackupWpfGUI
         {
             if (NCTTabControl.SelectedIndex != 5)
             {
+                if (NCTTabControl.SelectedIndex == 3)
+                {
+                    NCTTabControl.SelectedIndex += 1;
+                }
                 NCTTabControl.SelectedIndex += 1;
             }
         }
