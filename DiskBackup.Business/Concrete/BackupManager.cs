@@ -15,18 +15,20 @@ namespace DiskBackup.Business.Concrete
 {
     public class BackupManager : IBackupService
     {
-        private CSNarFileExplorer _cSNarFileExplorer = new CSNarFileExplorer();
         private DiskTracker _diskTracker = new DiskTracker();
+        private CSNarFileExplorer _cSNarFileExplorer = new CSNarFileExplorer();
+
         private ManualResetEvent _manualResetEvent = new ManualResetEvent(true);
         private CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         private bool _isStarted = false;
 
-        private StatusInfo _statusInfo = new StatusInfo();
         private Stopwatch _timeElapsed = new Stopwatch();
+        private StatusInfo _statusInfo = new StatusInfo();
 
         public bool InitTracker()
         {
-            //programla başlat 1 kere çalışması yeter
+            // programla başlat 1 kere çalışması yeter
+            // false değeri dönüyor ise eğer backup işlemlerini disable et
             return _diskTracker.CW_InitTracker();
         }
 
@@ -42,10 +44,6 @@ namespace DiskBackup.Business.Concrete
         public List<DiskInformation> GetDiskList()
         {
             //Disk Name, Name (Local Volume vs.), FileSystem (NTFS), FreeSize, PrioritySection, Status
-            //Not: Status için eğerki DiskType Raw değilse sağlıklı mı denecekti? Tekrar sor
-
-            //disk'i alıyoruz içine volume dolduruyoruz.
-            //ilk önce disk alıp diskin volumlerini bulup doldurmamız gerekir       
 
             List<DiskInformation> diskList = new List<DiskInformation>();
             VolumeInfo volumeInfo = new VolumeInfo();
@@ -100,14 +98,17 @@ namespace DiskBackup.Business.Concrete
                 var returnList = DiskTracker.CW_GetBackupsInDirectory(backupStorageItem.Path);
                 foreach (var returnItem in returnList)
                 {
-                    backupInfo.Type = (BackupTypes)returnItem.BackupType; // 2 full - 1 inc - 0 diff - BATU' inc 1 - diff 0
                     backupInfo.Letter = returnItem.Letter;
-                    if (returnItem.Version == -1)
-                        backupInfo.Type = BackupTypes.Full; // 2 full - 1 inc - 0 diff - BATU' inc 1 - diff 0
-                    backupInfo.Version = returnItem.Version; //-1 dönerse FullBackup
+                    backupInfo.Version = returnItem.Version; 
                     backupInfo.OSVolume = returnItem.OSVolume;
                     backupInfo.DiskType = returnItem.DiskType; //mbr gpt
                     backupInfo.OS = returnItem.WindowsName;
+
+                    if (returnItem.Version == -1)
+                        backupInfo.Type = BackupTypes.Full;
+                    else
+                        backupInfo.Type = (BackupTypes)returnItem.BackupType; // 2 full - 1 inc - 0 diff - BATU' inc 1 - diff 0
+
                     backupInfoList.Add(backupInfo);
                 }
             }
@@ -115,16 +116,25 @@ namespace DiskBackup.Business.Concrete
             return backupInfoList;
         }
 
-        public BackupInfo GetBackupFile(BackupInfo backupInfo) // seçilen dosyanın bilgilerini sağ tarafta kullanabilmek için
+        public BackupInfo GetBackupFile(BackupInfo backupInfo) 
         {
+            // seçilen dosyanın bilgilerini sağ tarafta kullanabilmek için
             var result = DiskTracker.CW_GetBackupsInDirectory(backupInfo.BackupStorageInfo.Path);
 
             foreach (var resultItem in result)
             {
-                if (resultItem.Version == backupInfo.Version) //içindeki veriler tamamlandığında özel olan veri eşitliği kontrol edilecek
+                if (resultItem.Version == backupInfo.Version && resultItem.BackupType.Equals(backupInfo.Type) && resultItem.DiskType.Equals(backupInfo.DiskType)) 
                 {
-                    //atama işlemleri gerçekleştirilecek
+                    backupInfo.Letter = resultItem.Letter;
+                    backupInfo.Version = resultItem.Version;
                     backupInfo.OSVolume = resultItem.OSVolume;
+                    backupInfo.DiskType = resultItem.DiskType; //mbr gpt
+                    backupInfo.OS = resultItem.WindowsName;
+
+                    if (resultItem.Version == -1)
+                        backupInfo.Type = BackupTypes.Full;
+                    else
+                        backupInfo.Type = (BackupTypes)resultItem.BackupType; // 2 full - 1 inc - 0 diff - BATU' inc 1 - diff 0
                     return backupInfo;
                 }
             }
@@ -187,7 +197,7 @@ namespace DiskBackup.Business.Concrete
                                     }
                                     _manualResetEvent.WaitOne();
 
-                                    Read = _diskTracker.CW_ReadStream(BAddr, letter, bufferSize); //harf eklenicek
+                                    Read = _diskTracker.CW_ReadStream(BAddr, letter, bufferSize);
                                     file.Write(buffer, 0, Read);
                                     BytesReadSoFar += Read;
 
@@ -231,7 +241,7 @@ namespace DiskBackup.Business.Concrete
             throw new NotImplementedException();
         }
 
-        public void PauseTask(TaskInfo taskInfo) //bu method tekrar konuşulacak
+        public void PauseTask(TaskInfo taskInfo)
         {
             if (!_isStarted) throw new Exception("Backup is not started");
             _timeElapsed.Stop();
@@ -247,7 +257,7 @@ namespace DiskBackup.Business.Concrete
             _manualResetEvent.Set();
         }
 
-        public void ResumeTask(TaskInfo taskInfo)  //bu method tekrar konuşulacak
+        public void ResumeTask(TaskInfo taskInfo) 
         {
             if (!_isStarted) throw new Exception("Backup is not started");
             _timeElapsed.Start();
@@ -301,6 +311,12 @@ namespace DiskBackup.Business.Concrete
             _cSNarFileExplorer.CW_PopDirectory();
         }
 
+        public StatusInfo GetStatusInfo()
+        {
+            _statusInfo.TimeElapsed = _timeElapsed.ElapsedMilliseconds; // TimeSpan.FromMilliseconds(999999); Console.WriteLine($"{d:mm\\:ss}");
+            return _statusInfo;
+        }
+
         private string FormatBytes(long bytes)
         {
             string[] Suffix = { "B", "KB", "MB", "GB", "TB" };
@@ -312,12 +328,6 @@ namespace DiskBackup.Business.Concrete
             }
 
             return ($"{dblSByte:0.##} {Suffix[i]}");
-        }
-
-        public StatusInfo GetStatusInfo()
-        {
-            _statusInfo.TimeElapsed = _timeElapsed.ElapsedMilliseconds; // TimeSpan.FromMilliseconds(999999); Console.WriteLine($"{d:mm\\:ss}");
-            return _statusInfo;
         }
     }
 }

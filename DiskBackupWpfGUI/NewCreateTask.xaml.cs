@@ -231,11 +231,13 @@ namespace DiskBackupWpfGUI
         private void checkTimeFailDesc_Unchecked(object sender, RoutedEventArgs e)
         {
             stackTimeFailDesc.IsEnabled = false;
+            stackTimeWait.IsEnabled = false;
         }
 
         private void checkTimeFailDesc_Checked(object sender, RoutedEventArgs e)
         {
             stackTimeFailDesc.IsEnabled = true;
+            stackTimeWait.IsEnabled = true;
         }
         #endregion
 
