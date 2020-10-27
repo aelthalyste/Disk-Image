@@ -35,7 +35,7 @@ namespace QuartzPoC
             // Trigger the job to run now, and then every 40 seconds
             ITrigger trigger = TriggerBuilder.Create()
                 .WithIdentity("myTrigger", "group1")
-                .StartNow()
+                .StartAt(DateTime.Now + TimeSpan.FromSeconds(10))
                 .WithSimpleSchedule(x => x
                     .WithIntervalInSeconds(3)
                     .RepeatForever())

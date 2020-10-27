@@ -52,7 +52,6 @@
     <Compile Include="Concrete\BackupManager.cs" />
     <Compile Include="Concrete\LogManager.cs" />
     <Compile Include="Concrete\TaskManager.cs" />
-    <Compile Include="Concrete\TaskSchedulerManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

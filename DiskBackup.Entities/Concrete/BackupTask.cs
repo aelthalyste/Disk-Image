@@ -24,9 +24,11 @@ namespace DiskBackup.Entities.Concrete
         public int WaitNumberTryAgain { get; set; } //her denemeden önce bekle
         public AutoRunType AutoType { get; set; }
         public DateTime StartTime { get; set; } //zamanlanmış görevin başlangıç saati
-        public int Days { get; set; } // bu böyle olacak günlerin set edildiği yerde DayMask olacak direkt burada günlerin hepsi olacak
+        public string Days { get; set; } // bu böyle olacak günlerin set edildiği yerde ise foreach ile atama sağlanacak 0,1,2,3,4,5,6 cron için
+        public string Months { get; set; } // 1,2,3,4,5,6,7,8,9,10,11,12
         public WeeklyType WeeklyTime { get; set; } 
-        public PeriodicType PeriodicTime { get; set; }
+        public PeriodicType PeriodicTimeType { get; set; }
+        public int PeriodicTime { get; set; }
     }
 
     public enum BackupTypes
@@ -43,23 +45,12 @@ namespace DiskBackup.Entities.Concrete
         Periodic = 2
     }
 
-    public enum DayMask
-    {
-        Monday = 1,
-        Tuesday = 2,
-        Wednesday = 4,
-        Thursday = 8,
-        Friday = 16,
-        Saturday = 32,
-        Sunday = 64
-    }
-
     public enum WeeklyType
     {
-        First = 0,
-        Second = 1,
-        Third = 2,
-        Fourth = 3
+        First = 1,
+        Second = 2,
+        Third = 3,
+        Fourth = 4
     }
 
     public enum PeriodicType
@@ -67,10 +58,15 @@ namespace DiskBackup.Entities.Concrete
         Minute = 0,
         Hour = 1,
     }
-/*constructor yazarak ters bağlantıdan kurtulmak mümkün gözüküyor
- * public BackupTask(string taskName)
-{
-    TaskName = taskName;
-}
-public string TaskName { get; set; }*/
+
+    //public enum DayMask
+    //{
+    //    Monday = 1,
+    //    Tuesday = 2,
+    //    Wednesday = 4,
+    //    Thursday = 8,
+    //    Friday = 16,
+    //    Saturday = 32,
+    //    Sunday = 64
+    //}
 }
