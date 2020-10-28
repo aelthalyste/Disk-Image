@@ -48,37 +48,48 @@ namespace DiskBackup.Business.Concrete
             List<DiskInformation> diskList = new List<DiskInformation>();
             VolumeInfo volumeInfo = new VolumeInfo();
             int index = 0;
+
             List<DiskInfo> disks = DiskTracker.CW_GetDisksOnSystem();
+            List<VolumeInformation> volumes = _diskTracker.CW_GetVolumes();
+
             foreach (DiskInfo diskItem in disks)
             {
-                diskList[index].DiskId = diskItem.ID;
-                diskList[index].Size = diskItem.Size;
-                diskList[index].StrSize = FormatBytes(diskItem.Size);
+                DiskInformation temp = new DiskInformation();
+                temp.DiskId = diskItem.ID;
+                temp.Size = diskItem.Size;
+                temp.StrSize = FormatBytes(diskItem.Size);
+                diskList.Add(temp);
 
-                foreach (var volumeItem in _diskTracker.CW_GetVolumes())
+                foreach (var volumeItem in volumes)
                 {
-                    volumeInfo.Letter = (char)volumeItem.Letter;
-                    volumeInfo.Size = (long)volumeItem.Size;
-                    volumeInfo.StrSize = FormatBytes((long)volumeItem.Size);
-                    volumeInfo.Bootable = Convert.ToBoolean(volumeItem.Bootable);
+                    if (volumeItem.DiskID == temp.DiskId)
+                    {
+                        volumeInfo.Letter = (char)volumeItem.Letter;
+                        volumeInfo.Size = (long)volumeItem.Size;
+                        volumeInfo.StrSize = FormatBytes((long)volumeItem.Size);
+                        volumeInfo.Bootable = Convert.ToBoolean(volumeItem.Bootable);
+                        volumeInfo.Name = "Disk " + volumeItem.DiskID;
 
-                    if (volumeItem.DiskType == 'R')
-                    {
-                        volumeInfo.DiskType = "RAW";
-                        volumeInfo.Status = "Sağlıksız";
-                    }
-                    else if (volumeItem.DiskType == 'M')
-                    {
-                        volumeInfo.DiskType = "MBR";
-                        volumeInfo.Status = "Sağlıklı";
-                    }
-                    else if (volumeItem.DiskType == 'G')
-                    {
-                        volumeInfo.DiskType = "GPT";
-                        volumeInfo.Status = "Sağlıklı";
+                        // volumeItem.Bootable true ise işletim sistemi var
+                        if (volumeItem.DiskType == 'R')
+                        {
+                            volumeInfo.DiskType = "RAW";
+                            volumeInfo.Status = "Sağlıksız";
+                        }
+                        else if (volumeItem.DiskType == 'M')
+                        {
+                            volumeInfo.DiskType = "MBR";
+                            volumeInfo.Status = "Sağlıklı";
+                        }
+                        else if (volumeItem.DiskType == 'G')
+                        {
+                            volumeInfo.DiskType = "GPT";
+                            volumeInfo.Status = "Sağlıklı";
+                        }
+
+                        diskList[index].VolumeInfos.Add(volumeInfo);
                     }
 
-                    diskList[index].VolumeInfos.Add(volumeInfo);
                 }
 
                 index++;
@@ -277,7 +288,7 @@ namespace DiskBackup.Business.Concrete
                     //UpdatedDate dönüşü daha yok
                 });
             }
-            throw new NotImplementedException();
+            return filesInBackupList;
         }
 
         public List<Log> GetLogList() //bu method daha gelmedi
@@ -287,7 +298,9 @@ namespace DiskBackup.Business.Concrete
 
         public bool RestoreFilesInBackup(BackupInfo backupInfo, FilesInBackup fileInfo, string destination) //bu method daha gelmedi
         {
-            // void CW_RestoreFile(INT64 ID);
+            //_cSNarFileExplorer.CW_RestoreFile(ID, seçilen backup'ın directorysi dosya ismi olmadan, yüklenecek yer)
+            //void CW_RestoreFile(INT64 ID);
+            //_cSNarFileExplorer.CW_Free FileExplorer kapatıldığında Free çağırmakta fayda var bellek yönetimi için tutulan alanları geri veriyor sisteme
             throw new NotImplementedException();
         }
 
@@ -299,7 +312,7 @@ namespace DiskBackup.Business.Concrete
             cSNarFileEntry.Name = filesInBackup.Name;
             cSNarFileEntry.Size = (ulong)filesInBackup.Size;
             //tarihler eklenecek. oluşturma tarihi önemli mi?
-            return _cSNarFileExplorer.CW_SelectDirectory((long)cSNarFileEntry.ID);
+            return _cSNarFileExplorer.CW_SelectDirectory((ulong)cSNarFileEntry.ID);
         }
 
         public void PopDirectory()

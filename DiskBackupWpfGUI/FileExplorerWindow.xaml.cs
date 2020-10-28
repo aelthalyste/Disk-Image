@@ -11,6 +11,8 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
+using DiskBackup.Entities.Concrete;
+using NarDIWrapper;
 
 namespace DiskBackupWpfGUI
 {
@@ -22,6 +24,26 @@ namespace DiskBackupWpfGUI
         public FileExplorerWindow()
         {
             InitializeComponent();
+            CSNarFileExplorer cSNarFileExplorer = new CSNarFileExplorer();
+            cSNarFileExplorer.CW_Init('C', 0, "");
+
+            var resultList = cSNarFileExplorer.CW_GetFilesInCurrentDirectory();
+            List<FilesInBackup> filesInBackupList = new List<FilesInBackup>();
+            foreach (var item in resultList)
+            {
+                filesInBackupList.Add(new FilesInBackup
+                {
+                    Name = item.Name,
+                    Type = (FileType)item.IsDirectory, //Directory ise 1 
+                    Size = (long)item.Size,
+                    Id = (long)item.ID,
+                    //UpdatedDate = item.CreationTime
+                    //Path değeri Batudan isteyelim
+                    //UpdatedDate dönüşü daha yok
+                });
+            }
+
+            listViewFileExplorer.ItemsSource = filesInBackupList;
         }
 
         #region Title Bar
@@ -52,5 +74,14 @@ namespace DiskBackupWpfGUI
             System.Windows.Forms.DialogResult result = dialog.ShowDialog();
             txtFolderPath.Text = dialog.SelectedPath;
         }
+
+        private void btnBack_Click(object sender, RoutedEventArgs e)
+        {
+            // pop diyip
+            // getFilesInCurrentDirectory
+        }
+
+        //Seçilen değere gitmek için ise CW_SelectDirectory(seçilenID)
+        //tekrardan getFilesInCurrentDirectory istenecek
     }
 }

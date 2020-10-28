@@ -42,7 +42,7 @@
         <Rectangle Grid.Row="1" Height="1" Fill="DarkGray" VerticalAlignment="Bottom" />
 
         <StackPanel Orientation="Horizontal" Grid.Row="1">
-            <Button Name="btnBack" Margin="10,0,10,0" Height="30" HorizontalAlignment="Center" Style="{StaticResource ImageButton}" >
+            <Button Name="btnBack" Margin="10,0,10,0" Height="30" HorizontalAlignment="Center" Style="{StaticResource ImageButton}" Click="btnBack_Click">
                 <Button.Content>
                     <StackPanel Orientation="Horizontal">
                         <Image Height="25" Width="25" HorizontalAlignment="Center" VerticalAlignment="Center">
@@ -103,21 +103,21 @@
                     <GridViewColumn Header="{DynamicResource name2}" Width="210" >
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding CreatedDate}" TextAlignment="Center"/>
+                                <TextBlock Text="{Binding Name}" TextAlignment="Center"/>
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
                     <GridViewColumn Header="{DynamicResource updateDate}" Width="210" >
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding DiskSize}" TextAlignment="Center"/>
+                                <TextBlock Text="{Binding Id}" TextAlignment="Center"/>
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn >
                     <GridViewColumn Header="{DynamicResource size}" Width="210" >
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding FolderSize}" TextAlignment="Center"/>
+                                <TextBlock Text="{Binding Size}" TextAlignment="Center"/>
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
