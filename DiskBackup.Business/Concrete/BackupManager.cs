@@ -92,7 +92,7 @@ namespace DiskBackup.Business.Concrete
             //usedSize, bootable, sıkıştırma, pc name, ip address
             List<BackupInfo> backupInfoList = new List<BackupInfo>();
             BackupInfo backupInfo = new BackupInfo();
-
+            //bootable = osVolume (true)
             foreach (var backupStorageItem in backupStorageList)
             {
                 var returnList = DiskTracker.CW_GetBackupsInDirectory(backupStorageItem.Path);
@@ -216,16 +216,12 @@ namespace DiskBackup.Business.Concrete
                                 try
                                 {
                                     File.Copy(str.MetadataFileName, backupStorageInfo.Path + str.MetadataFileName); //backupStorageInfo path alınıcak
+                                    //backupStorageInfo.Path ters slaş '\' ile bitmeli
                                 }
                                 catch (IOException iox)
                                 {
                                     //MessageBox.Show(iox.Message);
                                 }
-                                //TerminateBackup içine girdiğinde aşağısı iptal olucak
-                                //if (result == true)
-                                //{
-                                //    _diskTracker.CW_SaveBootState();
-                                //}
                                 file.Close();
                             }
                         }
@@ -273,13 +269,12 @@ namespace DiskBackup.Business.Concrete
                 filesInBackupList.Add(new FilesInBackup
                 {
                     Name = item.Name,
-                    Type = (FileType)item.IsDirectory, //dönüş sorulsun
+                    Type = (FileType)item.IsDirectory, //Directory ise 1 
                     Size = (long)item.Size,
                     StrSize = FormatBytes((long)item.Size),
                     Id = (long)item.ID,
                     //Path değeri Batudan isteyelim
                     //UpdatedDate dönüşü daha yok
-
                 });
             }
             throw new NotImplementedException();
@@ -292,6 +287,7 @@ namespace DiskBackup.Business.Concrete
 
         public bool RestoreFilesInBackup(BackupInfo backupInfo, FilesInBackup fileInfo, string destination) //bu method daha gelmedi
         {
+            // void CW_RestoreFile(INT64 ID);
             throw new NotImplementedException();
         }
 
