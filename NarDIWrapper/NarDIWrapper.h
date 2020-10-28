@@ -122,7 +122,7 @@ namespace NarDIWrapper {
         List<CSNarFileEntry^>^ CW_GetFilesInCurrentDirectory();
 
         // Entry should be directory, otherwise function doesnt do anything and returns false
-        void CW_SelectDirectory(UINT64 ID);
+        bool CW_SelectDirectory(UINT64 ID);
 
         // Pops directory stack by one, which is equal to "up to" button in file explorer
         void CW_PopDirectory();
