@@ -35,6 +35,12 @@ namespace NarDIWrapper {
         int OSVolume; // boolean actually
         wchar_t DiskType;
         System::String^ WindowsName;
+        /*
+            ComputerName
+            IpAdress
+            UsedSize
+            VolumeSize
+        */
     };
 
     public ref class VolumeInformation {
@@ -104,19 +110,21 @@ namespace NarDIWrapper {
 
         */
         //NOTE im not sure about if RootDir is going to be converted to string for managed code
-        bool CW_Init(INT32 HandleOptions, wchar_t VolumeLetter, int Version, wchar_t* RootDir);
+        bool CW_Init(wchar_t VolumeLetter, int Version, wchar_t* RootDir);
 
 
         List<CSNarFileEntry^>^ CW_GetFilesInCurrentDirectory();
 
         // Entry should be directory, otherwise function doesnt do anything and returns false
-        bool CW_SelectDirectory(CSNarFileEntry^ Entry);
+        bool CW_SelectDirectory(INT64 ID);
 
         // Pops directory stack by one, which is equal to "up to" button in file explorer
         void CW_PopDirectory();
 
         // deconstructor calls this, but in managed code object disposing may be delayed by GC. if caller want to release memory early, it can do by this utility function. 
         void CW_Free();
+
+        //void CW_RestoreFile(INT64 ID, System::String^ BackupDirectory, System::String^ TargetDir);
 
     };
 
