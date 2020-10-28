@@ -48,8 +48,8 @@ namespace DiskBackup.Business.Concrete
             List<DiskInformation> diskList = new List<DiskInformation>();
             VolumeInfo volumeInfo = new VolumeInfo();
             int index = 0;
-
-            foreach (var diskItem in DiskTracker.CW_GetDisksOnSystem())
+            List<DiskInfo> disks = DiskTracker.CW_GetDisksOnSystem();
+            foreach (DiskInfo diskItem in disks)
             {
                 diskList[index].DiskId = diskItem.ID;
                 diskList[index].Size = diskItem.Size;
@@ -299,7 +299,7 @@ namespace DiskBackup.Business.Concrete
             cSNarFileEntry.Name = filesInBackup.Name;
             cSNarFileEntry.Size = (ulong)filesInBackup.Size;
             //tarihler eklenecek. oluşturma tarihi önemli mi?
-            return _cSNarFileExplorer.CW_SelectDirectory(cSNarFileEntry);
+            return _cSNarFileExplorer.CW_SelectDirectory((long)cSNarFileEntry.ID);
         }
 
         public void PopDirectory()
