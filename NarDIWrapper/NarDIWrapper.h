@@ -70,12 +70,18 @@ namespace NarDIWrapper {
 
     public ref class CSNarFileTime {
     public:
+      
+      CSNarFileTime(){
+
+      }
+
         INT16 Year;
         INT16 Month;
         INT16 Day;
         INT16 Hour;
         INT16 Minute;
         INT16 Second;
+
     };
 
     public ref class CSNarFileEntry {
@@ -87,8 +93,8 @@ namespace NarDIWrapper {
         UINT64 Size;
         UINT64 ID;
 
-        CSNarFileTime CreationTime;
-        CSNarFileTime LastModifiedTime;
+        CSNarFileTime^ CreationTime;
+        CSNarFileTime^ LastModifiedTime;
         System::String^ Name;
     };
 
@@ -110,13 +116,13 @@ namespace NarDIWrapper {
 
         */
         //NOTE im not sure about if RootDir is going to be converted to string for managed code
-        bool CW_Init(wchar_t VolumeLetter, int Version, wchar_t* RootDir);
+        bool CW_Init(wchar_t VolumeLetter, int Version, System::String^ RootDir);
 
 
         List<CSNarFileEntry^>^ CW_GetFilesInCurrentDirectory();
 
         // Entry should be directory, otherwise function doesnt do anything and returns false
-        bool CW_SelectDirectory(INT64 ID);
+        void CW_SelectDirectory(UINT64 ID);
 
         // Pops directory stack by one, which is equal to "up to" button in file explorer
         void CW_PopDirectory();
@@ -124,7 +130,9 @@ namespace NarDIWrapper {
         // deconstructor calls this, but in managed code object disposing may be delayed by GC. if caller want to release memory early, it can do by this utility function. 
         void CW_Free();
 
-        //void CW_RestoreFile(INT64 ID, System::String^ BackupDirectory, System::String^ TargetDir);
+        void CW_RestoreFile(INT64 ID, System::String^ BackupDirectory, System::String^ TargetDir);
+
+        System::String^ CW_GetCurrentDirectoryString();
 
     };
 

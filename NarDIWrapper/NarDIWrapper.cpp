@@ -61,7 +61,6 @@ void SystemStringToWCharPtr(System::String ^SystemStr, wchar_t *Destination) {
     pin_ptr<const wchar_t> wch = PtrToStringChars(SystemStr);
     size_t ConvertedChars = 0;
     size_t SizeInBytes = (SystemStr->Length + 1) * 2;
-    
     memcpy(Destination, wch, SizeInBytes);
 
 }
@@ -78,22 +77,31 @@ namespace NarDIWrapper {
         this->CW_Free();
     }
     
-    bool CSNarFileExplorer::CW_Init(wchar_t VolLetter, int Version, wchar_t *RootDir){
-        ctx = (nar_backup_file_explorer_context*)malloc(sizeof(ctx));
-        return NarInitFileExplorerContext(ctx, NAR_FE_HAND_OPT_READ_MOUNTED_VOLUME, VolLetter, Version, RootDir);
+    bool CSNarFileExplorer::CW_Init(wchar_t VolLetter, int Version, System::String^ RootDir){
+        ctx = (nar_backup_file_explorer_context*)malloc(sizeof(nar_backup_file_explorer_context));
+        
+        wchar_t wptr[512];
+        memset(wptr, 0, 1024);
+        SystemStringToWCharPtr(RootDir, wptr);
+
+        return NarInitFileExplorerContext(ctx, NAR_FE_HAND_OPT_READ_MOUNTED_VOLUME, VolLetter, Version, wptr);
+
     }
 
     List<CSNarFileEntry^>^ CSNarFileExplorer::CW_GetFilesInCurrentDirectory(){
 
         List<CSNarFileEntry^>^ Result = gcnew List<CSNarFileEntry^>;     
-        CSNarFileEntry^ Entry = gcnew CSNarFileEntry;
         
         for(int i = 0; i<ctx->EList.EntryCount; i++){
-           
+
+            CSNarFileEntry^ Entry = gcnew CSNarFileEntry;
             Entry->Size = ctx->EList.Entries[i].Size;
             Entry->ID = i;
             Entry->Name = gcnew System::String(ctx->EList.Entries[i].Name);
-    
+            
+            Entry->LastModifiedTime = gcnew CSNarFileTime;
+            Entry->CreationTime = gcnew CSNarFileTime;
+
             // TODO name, creation time, lastmodified time, isdirectory flags.
 
             Result->Add(Entry);
@@ -105,29 +113,34 @@ namespace NarDIWrapper {
 
     }
     
-    bool CSNarFileExplorer::CW_SelectDirectory(CSNarFileEntry^ Entry){
+    void CSNarFileExplorer::CW_SelectDirectory(UINT64 ID){
+
+        NarFileExplorerPushDirectory(ctx, ID);
         
-        if(Entry->IsDirectory){
-            NarFileExplorerPushDirectory(ctx, Entry->ID);
-            return TRUE;
-        }
-
-        return FALSE;
-
     }
 
     void CSNarFileExplorer::CW_PopDirectory(){
-        NarPopDirectoryStack(ctx);
+        NarFileExplorerPopDirectory(ctx);
     }
 
     void CSNarFileExplorer::CW_Free(){
+
         if (ctx) {
             NarReleaseFileExplorerContext(ctx);
             free(ctx);
             ctx = 0;
         }
+
     }
 
+    void CSNarFileExplorer::CW_RestoreFile(INT64 ID, System::String^ BackupDirectory, System::String^ TargetDir) {
+        
+    }
+    
+    System::String^ CSNarFileExplorer::CW_GetCurrentDirectoryString() {
+        System::String^ result = gcnew System::String(ctx->CurrentDirectory);
+        return result;
+    }
 
 
 

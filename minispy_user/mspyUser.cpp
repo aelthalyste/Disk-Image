@@ -3524,11 +3524,14 @@ NarGetDisks() {
     
     
     VirtualFree(Memory, 0, MEM_RELEASE);
+    Result.Count = Found;
     if (Found) {
-        Result.Count = Found;
         Result.Data = (disk_information*)realloc(Result.Data, sizeof(Result.Data[0]) * Result.Count);
     }
-
+    else {
+        free(Result.Data);
+        Result.Data = 0;
+    }
     
     return Result;
     
@@ -6892,15 +6895,17 @@ NarFileExplorerPushDirectory(nar_backup_file_explorer_context* Ctx, UINT32 Selec
 
     printf("Pushing %I64u to stack\n", NewMFTID);
 
-    Ctx->EList.EntryCount = 0;
     
+    Ctx->EList.MFTIndex = NewMFTID;
+    wcscat(Ctx->CurrentDirectory, L"\\");
+    wcscat(Ctx->CurrentDirectory, Ctx->EList.Entries[SelectedListID].Name);
+    NarPushDirectoryStack(Ctx, NewMFTID);
+
+    Ctx->EList.EntryCount = 0;
+
     NarGetFileListFromMFTID(&Ctx->EList, NewMFTID, Ctx->MFTRecords, Ctx->MFTRecordsCount, 4096, Ctx->FEHandle);
     
-    if(Ctx->EList.EntryCount > 0) {
-        Ctx->EList.MFTIndex = NewMFTID;
-        wcscat(Ctx->CurrentDirectory, Ctx->EList.Entries[SelectedListID].Name);
-        NarPushDirectoryStack(Ctx, NewMFTID);
-    }
+
 
 }
 
@@ -7094,7 +7099,7 @@ NarInitFileExplorerContext(nar_backup_file_explorer_context* Ctx, INT32 HandleOp
             NarGetFileListFromMFTID(&Ctx->EList, NAR_ROOT_MFT_ID, Ctx->MFTRecords, Ctx->MFTRecordsCount, Ctx->ClusterSize, Ctx->FEHandle);
             NarPushDirectoryStack(Ctx, NAR_ROOT_MFT_ID);
             
-            wchar_t vb[] = L"%c\\";
+            wchar_t vb[] = L"!:";
             vb[0] = (wchar_t)Letter;
             wcscat(Ctx->CurrentDirectory, vb);
             
@@ -7246,7 +7251,7 @@ NarInitFEVolumeHandle(nar_fe_volume_handle *FEV, INT32 HandleOptions, char Volum
 
         memset(Path, 0, sizeof(Path));
 
-        if(RootDir){
+        if(RootDir != NULL){
             wcscat(Path, RootDir);
             wcscat(Path, L"\\");
         }
@@ -7260,7 +7265,7 @@ NarInitFEVolumeHandle(nar_fe_volume_handle *FEV, INT32 HandleOptions, char Volum
 
         if(FEV->VolumeHandle != INVALID_HANDLE_VALUE){
 
-            FEV->BMEX = InitBackupMetadataEx(VolumeLetter, Version, RootDir);
+            FEV->BMEX = InitBackupMetadataEx(VolumeLetter, Version, Path);
             if(FEV->BMEX != NULL){
                 Result = TRUE;
             }
@@ -7502,7 +7507,7 @@ main(
      CHAR* argv[]
      ) {
     
-    return Test_NarGetRegionIntersection();
+    //return Test_NarGetRegionIntersection();
     
     //TestFindPointOffsetInRecords();
     //return 0;

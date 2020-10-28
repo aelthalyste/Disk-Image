@@ -44,11 +44,52 @@ namespace DotNetTest
             unsafe
             {
                 Console.WriteLine("Narbulut volume yedekleme servisi v0.1\n");
-                PrintCommands();
-                DiskTracker tracker = new DiskTracker();
 
-                var  a = tracker.CW_GetDisksOnSystem();
 
+                CSNarFileExplorer fexp = new CSNarFileExplorer();
+                
+                fexp.CW_Init('C', 0, "asdfasdf");
+                var list = fexp.CW_GetFilesInCurrentDirectory();
+
+                foreach (var entry in list)
+                {
+                    Console.Write(entry.ID);
+                    Console.Write("\t");
+                    Console.WriteLine(entry.Name);
+                }
+
+                while (true)
+                {
+
+                    string input = Console.ReadLine();
+                    var id = System.Convert.ToInt32(input);
+                    
+                    if (id >= 0) {
+                        fexp.CW_SelectDirectory(list[id].ID);
+                    }
+                    else
+                    {
+                        fexp.CW_PopDirectory();
+                    }
+
+                    list = fexp.CW_GetFilesInCurrentDirectory();
+
+                    foreach (var entry in list)
+                    {
+                        Console.Write(entry.ID);
+                        Console.Write("\t");
+                        Console.WriteLine(entry.Name);
+                    }
+
+                    Console.WriteLine(fexp.CW_GetCurrentDirectoryString());
+
+                }
+
+
+                var auto = DiskTracker.CW_GetDisksOnSystem();
+
+                return;
+                /*
                 if (tracker.CW_InitTracker())
                 {
 
@@ -235,6 +276,7 @@ namespace DotNetTest
                     // TODO err
                 }
 
+                */
             }
 
         }
