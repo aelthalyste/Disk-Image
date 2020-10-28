@@ -18,9 +18,9 @@ namespace DiskBackupWpfGUI
     /// <summary>
     /// Interaction logic for NewCreateTask.xaml
     /// </summary>
-    public partial class NewCreateTask : Window
+    public partial class NewCreateTaskWindow : Window
     {
-        public NewCreateTask()
+        public NewCreateTaskWindow()
         {
             InitializeComponent();
         }
@@ -55,6 +55,10 @@ namespace DiskBackupWpfGUI
         {
             if (NCTTabControl.SelectedIndex != 0)
             {
+                if (NCTTabControl.SelectedIndex == 5)
+                {
+                    NCTTabControl.SelectedIndex -= 1;
+                }
                 NCTTabControl.SelectedIndex -= 1;
             }
         }
@@ -63,6 +67,10 @@ namespace DiskBackupWpfGUI
         {
             if (NCTTabControl.SelectedIndex != 5)
             {
+                if (NCTTabControl.SelectedIndex == 3)
+                {
+                    NCTTabControl.SelectedIndex += 1;
+                }
                 NCTTabControl.SelectedIndex += 1;
             }
         }
@@ -166,7 +174,7 @@ namespace DiskBackupWpfGUI
 
         private void btnTargetAdd_Click(object sender, RoutedEventArgs e)
         {
-            AddBackupArea addBackupArea = new AddBackupArea();
+            AddBackupAreaWindow addBackupArea = new AddBackupAreaWindow();
             addBackupArea.ShowDialog();
         }
 
@@ -223,11 +231,13 @@ namespace DiskBackupWpfGUI
         private void checkTimeFailDesc_Unchecked(object sender, RoutedEventArgs e)
         {
             stackTimeFailDesc.IsEnabled = false;
+            stackTimeWait.IsEnabled = false;
         }
 
         private void checkTimeFailDesc_Checked(object sender, RoutedEventArgs e)
         {
             stackTimeFailDesc.IsEnabled = true;
+            stackTimeWait.IsEnabled = true;
         }
         #endregion
 
@@ -295,13 +305,13 @@ namespace DiskBackupWpfGUI
 
         private void btnDaysTimeDays_Click(object sender, RoutedEventArgs e)
         {
-            ChooseDayAndMounths chooseDays = new ChooseDayAndMounths(true);
+            ChooseDayAndMounthsWindow chooseDays = new ChooseDayAndMounthsWindow(true);
             chooseDays.ShowDialog();
         }
 
         private void btnWeeklyTimeWeek_Click(object sender, RoutedEventArgs e)
         {
-            ChooseDayAndMounths chooseMounths = new ChooseDayAndMounths(false);
+            ChooseDayAndMounthsWindow chooseMounths = new ChooseDayAndMounthsWindow(false);
             chooseMounths.ShowDialog();
         }
 

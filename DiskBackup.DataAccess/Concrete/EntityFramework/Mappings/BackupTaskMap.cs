@@ -31,9 +31,10 @@ namespace DiskBackup.DataAccess.Concrete.EntityFramework.Mappings
             Property(x => x.AutoType).HasColumnName("auto_run_type");
             Property(x => x.StartTime).HasColumnName("start_time");
             Property(x => x.Days).HasColumnName("days");
+            Property(x => x.Months).HasColumnName("months");
             Property(x => x.WeeklyTime).HasColumnName("weekly_time");
             Property(x => x.PeriodicTime).HasColumnName("periodic_time");
-
+            Property(x => x.PeriodicTimeType).HasColumnName("periodic_time_type");
         }
     }
 }

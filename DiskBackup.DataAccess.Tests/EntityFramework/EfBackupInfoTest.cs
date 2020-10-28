@@ -59,21 +59,22 @@ namespace DiskBackup.DataAccess.Tests.EntityFramework
             {
                 BackupStorageInfoId = 2,
                 Type = (BackupTypes)1,
-                FileName = "Volume_C_Full 3",
+                FileName = "Volume_C_Full 5",
                 CreatedDate = DateTime.Now,
                 BackupTaskName = "C Full",
                 VolumeSize = 9999999,
                 StrVolumeSize = "90 GB",
                 FileSize = 111,
                 StrFileSize = "11 GB",
-                Description = "Açıklama 3",
+                Description = "Açıklama 5",
                 IsCloud = false
             };
             backupInfoList.Add(backupInfo);
             Assert.IsNotNull(backupInfo);
 
             _EfBackupInfoDal.Add(backupInfoList);
-            Assert.AreEqual(_EfBackupInfoDal.Get(x => x.FileName == "Volume_C_Full 3").FileName, "Volume_C_Full 3");
+            Assert.AreEqual(_EfBackupInfoDal.Get(x => x.FileName == "Volume_C_Full 5").FileName, "Volume_C_Full 5");
+            _EfBackupInfoDal.Delete(_EfBackupInfoDal.Get(x => x.FileName == "Volume_C_Full 5"));
         }
 
         [TestMethod]

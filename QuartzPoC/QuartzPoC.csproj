@@ -4,16 +4,17 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{3BFEB5E2-ADC2-4D43-9D70-86DC595E30B7}</ProjectGuid>
-    <OutputType>Library</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>DiskBackup.TaskScheduler</RootNamespace>
-    <AssemblyName>DiskBackup.TaskScheduler</AssemblyName>
+    <ProjectGuid>{123F4B59-13D5-4FA1-B42D-C17506C2CA4A}</ProjectGuid>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>QuartzPooc</RootNamespace>
+    <AssemblyName>QuartzPooc</AssemblyName>
     <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <Deterministic>true</Deterministic>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
@@ -23,6 +24,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
@@ -65,25 +67,11 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Jobs\BackupFullJob.cs" />
-    <Compile Include="Jobs\BackupIncDiffJob.cs" />
-    <Compile Include="Jobs\RestoreDiskJob.cs" />
-    <Compile Include="Jobs\RestoreVolumeJob.cs" />
+    <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="TaskSchedulerManager.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\DiskBackup.Business\DiskBackup.Business.csproj">
-      <Project>{3F48E57C-71B2-4978-8361-345FA514E77A}</Project>
-      <Name>DiskBackup.Business</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\DiskBackup.Entities\DiskBackup.Entities.csproj">
-      <Project>{08189FEB-3E7A-4C10-8088-3732BC8AC883}</Project>
-      <Name>DiskBackup.Entities</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="app.config" />
+    <None Include="App.config" />
     <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

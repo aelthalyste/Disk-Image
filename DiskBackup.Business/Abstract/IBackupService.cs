@@ -9,41 +9,33 @@ namespace DiskBackup.Business.Abstract
 {
     public interface IBackupService
     {
-        List<DiskInformation> GetDiskList(); //Systemdeki disklerin görüntülenmesi için Batuhanın ucu var (CW_DisksOnSystem) & (CW_GetVolumes' pcName, ipAddres vs eklenecekmiş)
+        List<DiskInformation> GetDiskList();
         List<BackupInfo> GetBackupFileList(List<BackupStorageInfo> backupStorageList);  //parametre olarak path alıyor -> dönüş değeri liste (CW_GetBackupsInDirectory)
         BackupInfo GetBackupFile(BackupInfo backupInfo); // istediğimiz backup bilgilerini almak için
-        List<FilesInBackup> GetFileInfoList(); //Ucu belli değil 
+        List<FilesInBackup> GetFileInfoList(); 
         List<Log> GetLogList(); //Böyle bir uç yapılacağı konuşuldu
+        bool GetSelectedFileInfo(FilesInBackup filesInBackup);
 
         StatusInfo GetStatusInfo(); // Statu pencereleri için
 
-        bool PauseTask(TaskInfo taskInfo);
-        bool CancelTask(TaskInfo taskInfo);
-        bool ResumeTask(TaskInfo taskInfo);
+        void PauseTask(TaskInfo taskInfo);
+        void CancelTask(TaskInfo taskInfo);
+        void ResumeTask(TaskInfo taskInfo);
 
         //INC ve DIFF TaskInfo'dan strObjeyi alarak çoklu seçim yapabilir
         bool CreateIncDiffBackup(TaskInfo taskInfo, BackupStorageInfo backupStorageInfo); // Kod tekrarı olmasın diye diff ile ınc birleştirildi
         bool CreateFullBackup(TaskInfo taskInfo); //Bu daha hazır değil        
-        
-        bool RestoreBackupVolume(BackupInfo backupInfo, VolumeInfo volumeInfo); //Parametreler bu methodun içinde RestoreTask oluşturacak
+
+        //Parametreler bu methodun içinde RestoreTask oluşturacak
+        bool RestoreBackupVolume(BackupInfo backupInfo, VolumeInfo volumeInfo); 
         bool RestoreBackupDisk(BackupInfo backupInfo, DiskInformation diskInformation);
         //Restore işleminde disk seçilirse CW_RestoreToFreshDisk, volume seçilirse CW_RestoreToVolume
-        //CW_RestoreToVolume(char TargetLetter, char SrcLetter, int Version, bool ShouldFormat, string RootDir) 
-        //CW_RestoreToFreshDisk(char TargetLetter, char SrcLetter, int Version, int DiskID, string Rootdir) methodları ayrı restore işlemi yapan methodlar
 
-        //uçlar belli değil
-        bool RestoreFile(BackupInfo backupInfo, FilesInBackup fileInfo, string destination);
-        bool RestoreFolder(BackupInfo backupInfo, FilesInBackup fileInfo, string destination);
-        //...
+        bool RestoreFilesInBackup(BackupInfo backupInfo, FilesInBackup fileInfo, string destination); //uçlar belli değil
+        void PopDirectory(); //Üst dizine çıkma methodu
+
         bool InitTracker(); //CW_InitTracker driver okumayla ilgili bir method
+        bool InitFileExplorer(BackupInfo backupInfo); //CW_InitTracker file
 
-        //bool AddBackupArea(BackupStorageInfo backupArea); Bu veriyi de biz oluşturucaz
-        //List<BackupStorageInfo> GetBackupAreaInfoList(); Bu veriyi biz tutucaz uçlara biz göndericez
-
-        //File Backup Browse methodları eklenebilir tam bilinmiyor
-        //Yüzde hesabı Read Write' a göre yapılacak
-        //Okuma olmadığında pause olucak
-        //TerminateBackup'a false verilince durdurulacak
-        //StreamInfo class işlemleri (ReadStream, SetupStream) ?? (status progressbarlar doldurulur)
     }
 }
