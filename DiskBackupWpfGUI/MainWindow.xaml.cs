@@ -1,4 +1,5 @@
-﻿using DiskBackup.Entities.Concrete;
+﻿using DiskBackup.Business.Concrete;
+using DiskBackup.Entities.Concrete;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -168,30 +169,29 @@ namespace DiskBackupWpfGUI
             frame.VerticalAlignment = VerticalAlignment.Top;
             stackTasksDiskInfo.Children.Add(frame);
 
-            List<VolumeInfo> diskItems = new List<VolumeInfo>();
-
-            foreach (var item in diskInfo.VolumeInfos)
-            {
-                diskItems.Add(item);
-            }
-            foreach (var item in diskInfo2.VolumeInfos)
-            {
-                diskItems.Add(item);
-            }
-
             //List<VolumeInfo> diskItems = new List<VolumeInfo>();
-            //BackupManager backupManager = new BackupManager();
-            //List<DiskInformation> diskList = new List<DiskInformation>();
 
-            //diskList = backupManager.GetDiskList();
-            //for (int i = 0; i < diskList.Count; i++)
+            //foreach (var item in diskInfo.VolumeInfos)
             //{
-            //    foreach (var item in diskList[i].VolumeInfos)
-            //    {
-            //        diskItems.Add(item);
-            //    }
+            //    diskItems.Add(item);
+            //}
+            //foreach (var item in diskInfo2.VolumeInfos)
+            //{
+            //    diskItems.Add(item);
             //}
 
+            List<VolumeInfo> diskItems = new List<VolumeInfo>();
+            BackupManager backupManager = new BackupManager();
+            List<DiskInformation> diskList = new List<DiskInformation>();
+
+            diskList = backupManager.GetDiskList();
+            for (int i = 0; i < diskList.Count; i++)
+            {
+                foreach (var item in diskList[i].VolumeInfos)
+                {
+                    diskItems.Add(item);
+                }
+            }
 
             listViewDisk.ItemsSource = diskItems;
             listViewRestoreDisk.ItemsSource = diskItems;

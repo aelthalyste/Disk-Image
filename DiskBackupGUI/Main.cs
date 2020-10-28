@@ -222,43 +222,43 @@ namespace DiskBackupGUI
         }
 
         //scheduler yapıldığı için bu method şuanlık kullanılmıyor.
-        public async Task BackupThreadAsync(List<DataGridViewRow> checkedColumn, int typeParam)
-        {
-            StreamInfo str = new StreamInfo();
-            rtReport.Text = checkedColumn.Count.ToString() + " veri seçildi";
-            int bufferSize = 64 * 1024 * 1024;
-            byte[] buffer = new byte[bufferSize];
-            long BytesReadSoFar = 0;
-            bool result = false;
-            int Read = 0;
-            foreach (var item in checkedColumn)
-            {
-                if (diskTracker.CW_SetupStream((char)item.Cells["Letter"].Value, typeParam, str))
-                {
-                    rtReport.Text += $"\n{item.Cells["Letter"].Value.ToString()} Incremental eklendi";
-                    MessageBox.Show("Setup Done");
-                    unsafe
-                    {
-                        fixed (byte* BAddr = &buffer[0])
-                        {
-                            FileStream file = File.Create(Main.Instance.myPath + str.FileName); //kontrol etme işlemine bak
-                            while (true)
-                            {
-                                Read = diskTracker.CW_ReadStream(BAddr, bufferSize);
-                                if (Read == 0)
-                                    break;
-                                file.Write(buffer, 0, Read);
-                                BytesReadSoFar += Read;
-                            }
+        //public async Task BackupThreadAsync(List<DataGridViewRow> checkedColumn, int typeParam)
+        //{
+        //    StreamInfo str = new StreamInfo();
+        //    rtReport.Text = checkedColumn.Count.ToString() + " veri seçildi";
+        //    int bufferSize = 64 * 1024 * 1024;
+        //    byte[] buffer = new byte[bufferSize];
+        //    long BytesReadSoFar = 0;
+        //    bool result = false;
+        //    int Read = 0;
+        //    foreach (var item in checkedColumn)
+        //    {
+        //        if (diskTracker.CW_SetupStream((char)item.Cells["Letter"].Value, typeParam, str))
+        //        {
+        //            rtReport.Text += $"\n{item.Cells["Letter"].Value.ToString()} Incremental eklendi";
+        //            MessageBox.Show("Setup Done");
+        //            unsafe
+        //            {
+        //                fixed (byte* BAddr = &buffer[0])
+        //                {
+        //                    FileStream file = File.Create(Main.Instance.myPath + str.FileName); //kontrol etme işlemine bak
+        //                    while (true)
+        //                    {
+        //                        Read = diskTracker.CW_ReadStream(BAddr, bufferSize);
+        //                        if (Read == 0)
+        //                            break;
+        //                        file.Write(buffer, 0, Read);
+        //                        BytesReadSoFar += Read;
+        //                    }
 
-                            result = (long)str.ClusterCount * (long)str.ClusterSize == BytesReadSoFar;
-                            diskTracker.CW_TerminateBackup(result);
-                        }
-                    }
-                }
-                MessageBox.Show("Done");
-            }
-        }
+        //                    result = (long)str.ClusterCount * (long)str.ClusterSize == BytesReadSoFar;
+        //                    diskTracker.CW_TerminateBackup(result);
+        //                }
+        //            }
+        //        }
+        //        MessageBox.Show("Done");
+        //    }
+        //}
 
         //bir satırın üzerindeyken aşşağıda bulunan log ekranına satırdaki bilgileri girmesi için çalışan event
         private void dataGridView1_CellClick(object sender, DataGridViewCellEventArgs e)
