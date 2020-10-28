@@ -34,6 +34,7 @@ mesaj loopunda, threadinde, bir sorun yaşanırsa nasıl ana uygulamaya bildiril
 -Bu dosyayı diskte oluşturup kullanıcıya göndermek diskte ekstra yer kaplayacak ve işlem gücü harcayacağı için stream olarak direkt verilmesi daha iyi olabilir. Stream olarak verilmesi için seek ederek okuyup kullanıcıya gönderilebilinirse, kullanıcı tarafında metadata bilindiği için, düzgün sırayla yollayabilirsek restore yapabilirim.
 -Eğer bu algoritmayı kullanamazsak, diff ve incremental için gerek offline gerek ise stream olarak restore yapmak basit bir işlem.
 
+
 */
 
 #include "pch.h"
@@ -70,7 +71,7 @@ namespace NarDIWrapper {
 
 
     CSNarFileExplorer::CSNarFileExplorer(){
-        memset(ctx, 0, sizeof(*ctx));
+        ctx = 0;
     }
 
     CSNarFileExplorer::~CSNarFileExplorer() {
@@ -104,11 +105,13 @@ namespace NarDIWrapper {
 
     }
     
-    bool CSNarFileExplorer::CW_SelectDirectory(INT64 ID){
+    bool CSNarFileExplorer::CW_SelectDirectory(CSNarFileEntry^ Entry){
         
-        
-        NarFileExplorerPushDirectory(ctx, ID);
-        
+        if(Entry->IsDirectory){
+            NarFileExplorerPushDirectory(ctx, Entry->ID);
+            return TRUE;
+        }
+
         return FALSE;
 
     }
