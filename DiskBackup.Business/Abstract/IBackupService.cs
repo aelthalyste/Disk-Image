@@ -36,6 +36,7 @@ namespace DiskBackup.Business.Abstract
 
         bool InitTracker(); //CW_InitTracker driver okumayla ilgili bir method
         void InitFileExplorer(BackupInfo backupInfo); //CW_InitTracker file
+        void FreeFileExplorer();
 
     }
 }

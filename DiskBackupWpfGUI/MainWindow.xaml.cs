@@ -182,9 +182,9 @@ namespace DiskBackupWpfGUI
 
             List<VolumeInfo> diskItems = new List<VolumeInfo>();
             BackupManager backupManager = new BackupManager();
-            List<DiskInformation> diskListAsil = backupManager.GetDiskList();
+            List<DiskInformation> diskList = backupManager.GetDiskList();
 
-            foreach (var diskItem in diskListAsil)
+            foreach (var diskItem in diskList)
             {
                 foreach (var volumeItem in diskItem.VolumeInfos)
                 {
@@ -198,6 +198,20 @@ namespace DiskBackupWpfGUI
             CollectionView view = (CollectionView)CollectionViewSource.GetDefaultView(listViewDisk.ItemsSource);
             PropertyGroupDescription groupDescription = new PropertyGroupDescription("DiskName");
             view.GroupDescriptions.Add(groupDescription);
+
+            foreach (var item in diskList)
+            {
+                page = new DiskInfoPage(item);
+                frame = new Frame();
+                frame.Content = page;
+                frame.VerticalAlignment = VerticalAlignment.Top;
+                diskInfoStackPanel.Children.Add(frame);
+                page = new DiskInfoPage(item);
+                frame = new Frame();
+                frame.Content = page;
+                frame.VerticalAlignment = VerticalAlignment.Top;
+                stackTasksDiskInfo.Children.Add(frame);
+            }
 
 
             TaskInfo taskInfo1 = new TaskInfo()

@@ -67,6 +67,7 @@ namespace DiskBackupWpfGUI
         #region Title Bar
         private void btnClose_Click(object sender, RoutedEventArgs e)
         {
+            _backupManager.FreeFileExplorer();
             Close();
         }
 
@@ -104,7 +105,7 @@ namespace DiskBackupWpfGUI
 
         private void ListViewItem_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
-            MessageBox.Show(listViewFileExplorer.SelectedIndex.ToString());
+            //MessageBox.Show(listViewFileExplorer.SelectedIndex.ToString());
             FilesInBackup filesInBackup = new FilesInBackup();
             filesInBackup.Id = listViewFileExplorer.SelectedIndex;
             _backupManager.GetSelectedFileInfo(filesInBackup);

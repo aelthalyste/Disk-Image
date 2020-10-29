@@ -67,7 +67,7 @@ namespace DiskBackup.Business.Concrete
                         volumeInfo.Size = (long)volumeItem.Size;
                         volumeInfo.StrSize = FormatBytes((long)volumeItem.Size);
                         volumeInfo.Bootable = Convert.ToBoolean(volumeItem.Bootable);
-                        volumeInfo.Name = "Yerel Disk " + (char)volumeItem.Letter;
+                        volumeInfo.Name = "Local Volume";
                         volumeInfo.DiskName = "Disk " + temp.DiskId;
 
                         // volumeItem.Bootable true ise işletim sistemi var 
@@ -282,7 +282,12 @@ namespace DiskBackup.Business.Concrete
                     //Size = (long)item.Size,
                     // StrSize = FormatBytes((long)item.Size),
                     Id = (long)item.ID,
-                    StrSize = item.LastModifiedTime.Hour.ToString() + " saat" + item.LastModifiedTime.Day.ToString() + " gün"
+                    StrSize = 
+                        item.LastModifiedTime.Day.ToString() + "." + 
+                        item.LastModifiedTime.Month.ToString() + "." +
+                        item.LastModifiedTime.Year.ToString() + " " +
+                        item.LastModifiedTime.Hour.ToString() + ":" +
+                        item.LastModifiedTime.Minute.ToString()
                     //Path değeri Batudan isteyelim
                     //UpdatedDate dönüşü daha yok
                 });
@@ -290,17 +295,9 @@ namespace DiskBackup.Business.Concrete
             return filesInBackupList;
         }
 
-        public List<Log> GetLogList() //bu method daha gelmedi
+        public void FreeFileExplorer()
         {
-            throw new NotImplementedException();
-        }
-
-        public bool RestoreFilesInBackup(BackupInfo backupInfo, FilesInBackup fileInfo, string destination) //bu method daha gelmedi
-        {
-            //_cSNarFileExplorer.CW_RestoreFile(ID, seçilen backup'ın directorysi dosya ismi olmadan, yüklenecek yer)
-            //void CW_RestoreFile(INT64 ID);
-            //_cSNarFileExplorer.CW_Free FileExplorer kapatıldığında Free çağırmakta fayda var bellek yönetimi için tutulan alanları geri veriyor sisteme
-            throw new NotImplementedException();
+            _cSNarFileExplorer.CW_Free();
         }
 
         public bool GetSelectedFileInfo(FilesInBackup filesInBackup)
@@ -317,6 +314,19 @@ namespace DiskBackup.Business.Concrete
         public void PopDirectory()
         {
             _cSNarFileExplorer.CW_PopDirectory();
+        }
+
+        public List<Log> GetLogList() //bu method daha gelmedi
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool RestoreFilesInBackup(BackupInfo backupInfo, FilesInBackup fileInfo, string destination) //bu method daha gelmedi
+        {
+            //_cSNarFileExplorer.CW_RestoreFile(ID, seçilen backup'ın directorysi dosya ismi olmadan, yüklenecek yer)
+            //void CW_RestoreFile(INT64 ID);
+            //_cSNarFileExplorer.CW_Free FileExplorer kapatıldığında Free çağırmakta fayda var bellek yönetimi için tutulan alanları geri veriyor sisteme
+            throw new NotImplementedException();
         }
 
         public StatusInfo GetStatusInfo()
