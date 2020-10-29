@@ -89,14 +89,15 @@
                         </GridViewColumn.Header>
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <CheckBox IsChecked="{Binding Path=IsSelected, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ListViewItem}}}"/>
+                                <CheckBox IsChecked="{Binding Path=IsSelected, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ListViewItem}}}"
+                                          HorizontalAlignment="Center"/>
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
                     <GridViewColumn Header="{DynamicResource type}" Width="90">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <Image Style="{StaticResource FileExplorerListViewItemImage}" />
+                                <Image Height="20" Width="20" Style="{StaticResource FileExplorerListViewItemImage}" />
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
@@ -110,14 +111,14 @@
                     <GridViewColumn Header="{DynamicResource updateDate}" Width="210" >
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding Id}" TextAlignment="Center"/>
+                                <TextBlock Text="{Binding UpdatedDate}" TextAlignment="Center"/>
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn >
                     <GridViewColumn Header="{DynamicResource size}" Width="210" >
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding Size}" TextAlignment="Center"/>
+                                <TextBlock Text="{Binding StrSize}" TextAlignment="Center"/>
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>

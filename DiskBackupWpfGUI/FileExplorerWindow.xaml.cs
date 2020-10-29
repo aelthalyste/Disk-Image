@@ -11,6 +11,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
+using DiskBackup.Business.Concrete;
 using DiskBackup.Entities.Concrete;
 using NarDIWrapper;
 
@@ -21,27 +22,44 @@ namespace DiskBackupWpfGUI
     /// </summary>
     public partial class FileExplorerWindow : Window
     {
+        BackupManager _backupManager = new BackupManager();
+
         public FileExplorerWindow()
         {
             InitializeComponent();
-            CSNarFileExplorer cSNarFileExplorer = new CSNarFileExplorer();
-            cSNarFileExplorer.CW_Init('C', 0, "");
 
-            var resultList = cSNarFileExplorer.CW_GetFilesInCurrentDirectory();
-            List<FilesInBackup> filesInBackupList = new List<FilesInBackup>();
-            foreach (var item in resultList)
+            BackupInfo backupInfo = new BackupInfo();
+            _backupManager.InitFileExplorer(backupInfo);
+            //CSNarFileExplorer cSNarFileExplorer = new CSNarFileExplorer();
+            //cSNarFileExplorer.CW_Init('C', 0, "");
+
+            List<FilesInBackup> filesInBackupList = _backupManager.GetFileInfoList();
+            //var resultList = cSNarFileExplorer.CW_GetFilesInCurrentDirectory();
+            //List<FilesInBackup> filesInBackupList = new List<FilesInBackup>();
+            //foreach (var item in resultList)
+            //{
+            //    filesInBackupList.Add(new FilesInBackup
+            //    {
+            //        Name = item.Name,
+            //        Type = (FileType)item.IsDirectory, //Directory ise 1 
+            //        Size = (long)item.Size,
+            //        Id = (long)item.ID,
+            //        //UpdatedDate = item.CreationTime
+            //        //Path değeri Batudan isteyelim
+            //        //UpdatedDate dönüşü daha yok
+            //    });
+            //}
+
+            filesInBackupList.Add(new FilesInBackup
             {
-                filesInBackupList.Add(new FilesInBackup
-                {
-                    Name = item.Name,
-                    Type = (FileType)item.IsDirectory, //Directory ise 1 
-                    Size = (long)item.Size,
-                    Id = (long)item.ID,
-                    //UpdatedDate = item.CreationTime
-                    //Path değeri Batudan isteyelim
-                    //UpdatedDate dönüşü daha yok
-                });
-            }
+                Name = "Eyüp",
+                Type = (FileType)1, //Directory ise 1 
+                Size = 29,
+                Id = 1,
+                //UpdatedDate = item.CreationTime
+                //Path değeri Batudan isteyelim
+                //UpdatedDate dönüşü daha yok
+            });
 
             listViewFileExplorer.ItemsSource = filesInBackupList;
         }
@@ -77,6 +95,8 @@ namespace DiskBackupWpfGUI
 
         private void btnBack_Click(object sender, RoutedEventArgs e)
         {
+            _backupManager.PopDirectory();
+            _backupManager.GetFileInfoList();
             // pop diyip
             // getFilesInCurrentDirectory
         }

@@ -32,12 +32,12 @@ namespace DiskBackup.Business.Concrete
             return _diskTracker.CW_InitTracker();
         }
 
-        public bool InitFileExplorer(BackupInfo backupInfo) //initTracker'la aynı mantıkla çalışır mı? (Explorer ctor'da 1 kere çağrılma)
+        public void InitFileExplorer(BackupInfo backupInfo) //initTracker'la aynı mantıkla çalışır mı? (Explorer ctor'da 1 kere çağrılma)
         {
             //return _cSNarFileExplorer.CW_Init(12,backupInfo.Letter,backupInfo.Version,(char)backupInfo.BackupStorageInfo.Path); 
             //rootDir char biz buraya ne dönücez
             //Handle options şimdilik ne verilecek
-            throw new NotImplementedException();
+            _cSNarFileExplorer.CW_Init('C', 0, "");
 
         }
 
@@ -281,9 +281,11 @@ namespace DiskBackup.Business.Concrete
                 {
                     Name = item.Name,
                     Type = (FileType)item.IsDirectory, //Directory ise 1 
-                    Size = (long)item.Size,
-                    StrSize = FormatBytes((long)item.Size),
+                    Size = item.IsDirectory,
+                    //Size = (long)item.Size,
+                   // StrSize = FormatBytes((long)item.Size),
                     Id = (long)item.ID,
+                    StrSize = item.LastModifiedTime.Hour.ToString() + " saat" + item.LastModifiedTime.Day.ToString() + " gün"
                     //Path değeri Batudan isteyelim
                     //UpdatedDate dönüşü daha yok
                 });
@@ -335,6 +337,9 @@ namespace DiskBackup.Business.Concrete
             {
                 dblSByte = bytes / 1024.0;
             }
+
+            if (i > 4)
+                i = 4;
 
             return ($"{dblSByte:0.##} {Suffix[i]}");
         }

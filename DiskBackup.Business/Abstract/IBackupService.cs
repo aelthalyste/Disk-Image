@@ -35,7 +35,7 @@ namespace DiskBackup.Business.Abstract
         void PopDirectory(); //Üst dizine çıkma methodu
 
         bool InitTracker(); //CW_InitTracker driver okumayla ilgili bir method
-        bool InitFileExplorer(BackupInfo backupInfo); //CW_InitTracker file
+        void InitFileExplorer(BackupInfo backupInfo); //CW_InitTracker file
 
     }
 }
