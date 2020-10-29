@@ -96,9 +96,20 @@ namespace DiskBackupWpfGUI
         private void btnBack_Click(object sender, RoutedEventArgs e)
         {
             _backupManager.PopDirectory();
-            _backupManager.GetFileInfoList();
+            List<FilesInBackup> filesInBackupList = _backupManager.GetFileInfoList();
+            listViewFileExplorer.ItemsSource = filesInBackupList;
             // pop diyip
             // getFilesInCurrentDirectory
+        }
+
+        private void ListViewItem_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            MessageBox.Show(listViewFileExplorer.SelectedIndex.ToString());
+            FilesInBackup filesInBackup = new FilesInBackup();
+            filesInBackup.Id = listViewFileExplorer.SelectedIndex;
+            _backupManager.GetSelectedFileInfo(filesInBackup);
+            List<FilesInBackup> filesInBackupList = _backupManager.GetFileInfoList();
+            listViewFileExplorer.ItemsSource = filesInBackupList;
         }
 
         //Seçilen değere gitmek için ise CW_SelectDirectory(seçilenID)

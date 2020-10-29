@@ -43,14 +43,12 @@ namespace DiskBackup.Business.Concrete
 
         public List<DiskInformation> GetDiskList()
         {
-            //Disk Name, Name (Local Volume vs.), FileSystem (NTFS), FreeSize, PrioritySection, Status
-
-            List<DiskInformation> diskList = new List<DiskInformation>();
-            VolumeInfo volumeInfo = new VolumeInfo();
-            int index = 0;
-
+            //Disk Name, Name (Local Volume vs.), FileSystem (NTFS), FreeSize, PrioritySection, Status 
             List<DiskInfo> disks = DiskTracker.CW_GetDisksOnSystem();
             List<VolumeInformation> volumes = _diskTracker.CW_GetVolumes();
+
+            List<DiskInformation> diskList = new List<DiskInformation>();
+            int index = 0;
 
             foreach (DiskInfo diskItem in disks)
             {
@@ -64,13 +62,15 @@ namespace DiskBackup.Business.Concrete
                 {
                     if (volumeItem.DiskID == temp.DiskId)
                     {
+                        VolumeInfo volumeInfo = new VolumeInfo();
                         volumeInfo.Letter = (char)volumeItem.Letter;
                         volumeInfo.Size = (long)volumeItem.Size;
                         volumeInfo.StrSize = FormatBytes((long)volumeItem.Size);
                         volumeInfo.Bootable = Convert.ToBoolean(volumeItem.Bootable);
-                        volumeInfo.Name = "Disk " + volumeItem.DiskID;
+                        volumeInfo.Name = "Yerel Disk " + (char)volumeItem.Letter;
+                        volumeInfo.DiskName = "Disk " + temp.DiskId;
 
-                        // volumeItem.Bootable true ise işletim sistemi var
+                        // volumeItem.Bootable true ise işletim sistemi var 
                         if (volumeItem.DiskType == 'R')
                         {
                             volumeInfo.DiskType = "RAW";
@@ -85,16 +85,13 @@ namespace DiskBackup.Business.Concrete
                         {
                             volumeInfo.DiskType = "GPT";
                             volumeInfo.Status = "Sağlıklı";
-                        }
 
+                        }
                         diskList[index].VolumeInfos.Add(volumeInfo);
                     }
-
                 }
-
                 index++;
             }
-
             return diskList;
         }
 
@@ -110,7 +107,7 @@ namespace DiskBackup.Business.Concrete
                 foreach (var returnItem in returnList)
                 {
                     backupInfo.Letter = returnItem.Letter;
-                    backupInfo.Version = returnItem.Version; 
+                    backupInfo.Version = returnItem.Version;
                     backupInfo.OSVolume = returnItem.OSVolume;
                     backupInfo.DiskType = returnItem.DiskType; //mbr gpt
                     backupInfo.OS = returnItem.WindowsName;
@@ -127,14 +124,14 @@ namespace DiskBackup.Business.Concrete
             return backupInfoList;
         }
 
-        public BackupInfo GetBackupFile(BackupInfo backupInfo) 
+        public BackupInfo GetBackupFile(BackupInfo backupInfo)
         {
             // seçilen dosyanın bilgilerini sağ tarafta kullanabilmek için
             var result = DiskTracker.CW_GetBackupsInDirectory(backupInfo.BackupStorageInfo.Path);
 
             foreach (var resultItem in result)
             {
-                if (resultItem.Version == backupInfo.Version && resultItem.BackupType.Equals(backupInfo.Type) && resultItem.DiskType.Equals(backupInfo.DiskType)) 
+                if (resultItem.Version == backupInfo.Version && resultItem.BackupType.Equals(backupInfo.Type) && resultItem.DiskType.Equals(backupInfo.DiskType))
                 {
                     backupInfo.Letter = resultItem.Letter;
                     backupInfo.Version = resultItem.Version;
@@ -264,7 +261,7 @@ namespace DiskBackup.Business.Concrete
             _manualResetEvent.Set();
         }
 
-        public void ResumeTask(TaskInfo taskInfo) 
+        public void ResumeTask(TaskInfo taskInfo)
         {
             if (!_isStarted) throw new Exception("Backup is not started");
             _timeElapsed.Start();
@@ -283,7 +280,7 @@ namespace DiskBackup.Business.Concrete
                     Type = (FileType)item.IsDirectory, //Directory ise 1 
                     Size = item.IsDirectory,
                     //Size = (long)item.Size,
-                   // StrSize = FormatBytes((long)item.Size),
+                    // StrSize = FormatBytes((long)item.Size),
                     Id = (long)item.ID,
                     StrSize = item.LastModifiedTime.Hour.ToString() + " saat" + item.LastModifiedTime.Day.ToString() + " gün"
                     //Path değeri Batudan isteyelim
