@@ -169,29 +169,28 @@ namespace DiskBackupWpfGUI
             frame.VerticalAlignment = VerticalAlignment.Top;
             stackTasksDiskInfo.Children.Add(frame);
 
-            List<VolumeInfo> diskItems = new List<VolumeInfo>();
-
-            foreach (var item in diskInfo.VolumeInfos)
-            {
-                diskItems.Add(item);
-            }
-            foreach (var item in diskInfo2.VolumeInfos)
-            {
-                diskItems.Add(item);
-            }
-
             //List<VolumeInfo> diskItems = new List<VolumeInfo>();
-            //BackupManager backupManager = new BackupManager();
-            //List<DiskInformation> diskList = new List<DiskInformation>();
 
-            //diskList = backupManager.GetDiskList();
-            //for (int i = 0; i < diskList.Count; i++)
+            //foreach (var item in diskInfo.VolumeInfos)
             //{
-            //    foreach (var item in diskList[i].VolumeInfos)
-            //    {
-            //        diskItems.Add(item);
-            //    }
+            //    diskItems.Add(item);
             //}
+            //foreach (var item in diskInfo2.VolumeInfos)
+            //{
+            //    diskItems.Add(item);
+            //}
+
+            List<VolumeInfo> diskItems = new List<VolumeInfo>();
+            BackupManager backupManager = new BackupManager();
+            List<DiskInformation> diskList = backupManager.GetDiskList();
+
+            foreach (var diskItem in diskList)
+            {
+                foreach (var volumeItem in diskItem.VolumeInfos)
+                {
+                    diskItems.Add(volumeItem);
+                }
+            }
 
             listViewDisk.ItemsSource = diskItems;
             listViewRestoreDisk.ItemsSource = diskItems;
@@ -199,6 +198,20 @@ namespace DiskBackupWpfGUI
             CollectionView view = (CollectionView)CollectionViewSource.GetDefaultView(listViewDisk.ItemsSource);
             PropertyGroupDescription groupDescription = new PropertyGroupDescription("DiskName");
             view.GroupDescriptions.Add(groupDescription);
+
+            foreach (var item in diskList)
+            {
+                page = new DiskInfoPage(item);
+                frame = new Frame();
+                frame.Content = page;
+                frame.VerticalAlignment = VerticalAlignment.Top;
+                diskInfoStackPanel.Children.Add(frame);
+                page = new DiskInfoPage(item);
+                frame = new Frame();
+                frame.Content = page;
+                frame.VerticalAlignment = VerticalAlignment.Top;
+                stackTasksDiskInfo.Children.Add(frame);
+            }
 
 
             TaskInfo taskInfo1 = new TaskInfo()

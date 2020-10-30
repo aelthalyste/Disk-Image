@@ -241,7 +241,7 @@
                                                                         <TextBlock Name="txtTotalSize" FontWeight="Bold" FontSize="14" Margin="10,0,0,0" VerticalAlignment="Center"/>
                                                                         <TextBlock Name="txtNumberOfItems" Text="{Binding ItemCount}" FontSize="14" Foreground="Silver" Margin="10,0,0,0" VerticalAlignment="Center" />
                                                                         <TextBlock Text="{DynamicResource items}" FontSize="14" Foreground="Silver" Margin="5,0,0,0" VerticalAlignment="Center" />
-                                                                        <Rectangle Margin="10,2,0,0" Width="840" Stroke="Silver" StrokeThickness="1" VerticalAlignment="Center"/>
+                                                                        <Rectangle Margin="10,2,0,0" Width="820" Stroke="Silver" StrokeThickness="1" VerticalAlignment="Center"/>
                                                                     </WrapPanel>
                                                                 </Expander.Header>
                                                                 <ItemsPresenter/>
@@ -659,13 +659,13 @@
                                                 <ControlTemplate>
                                                     <Expander Tag="{Binding Name}" IsExpanded="True" Margin="5,10,0,0" Loaded="Expander_Loaded_1">
                                                         <Expander.Header>
-                                                            <WrapPanel Orientation="Horizontal" Margin="15,0,0,0">
+                                                            <WrapPanel Orientation="Horizontal">
                                                                 <CheckBox Name="cbRestoreHeader" Checked="cbRestoreHeader_Checked" Unchecked="cbRestoreHeader_Unchecked" Tag="{Binding Name}" Margin="5,5,5,0" />
                                                                 <TextBlock Name="txtRestoreGroupName" Text="{Binding Name}" FontWeight="Bold" FontSize="18" VerticalAlignment="Center" />
                                                                 <TextBlock Name="txtRestoreTotalSize" FontWeight="Bold" FontSize="14" Margin="10,0,0,0" VerticalAlignment="Center"/>
                                                                 <TextBlock Name="txtRestoreNumberOfItems" Text="{Binding ItemCount}" FontSize="14" Foreground="Silver" Margin="10,0,0,0" VerticalAlignment="Center" />
                                                                 <TextBlock Text="{DynamicResource items}" FontSize="14" Foreground="Silver" Margin="5,0,0,0" VerticalAlignment="Center" />
-                                                                <Rectangle Margin="10,0,0,0" Width="800" Stroke="Silver" StrokeThickness="1" VerticalAlignment="Center"/>
+                                                                <Rectangle Margin="10,0,0,0" Width="820" Stroke="Silver" StrokeThickness="1" VerticalAlignment="Center"/>
                                                             </WrapPanel>
                                                         </Expander.Header>
                                                         <ItemsPresenter />

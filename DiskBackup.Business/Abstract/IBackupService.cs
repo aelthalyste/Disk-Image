@@ -24,7 +24,7 @@ namespace DiskBackup.Business.Abstract
 
         //INC ve DIFF TaskInfo'dan strObjeyi alarak çoklu seçim yapabilir
         bool CreateIncDiffBackup(TaskInfo taskInfo, BackupStorageInfo backupStorageInfo); // Kod tekrarı olmasın diye diff ile ınc birleştirildi
-        bool CreateFullBackup(TaskInfo taskInfo); //Bu daha hazır değil        
+        bool CreateFullBackup(TaskInfo taskInfo, BackupStorageInfo backupStorageInfo); //Bu daha hazır değil        
 
         //Parametreler bu methodun içinde RestoreTask oluşturacak
         bool RestoreBackupVolume(BackupInfo backupInfo, VolumeInfo volumeInfo); 
@@ -35,7 +35,8 @@ namespace DiskBackup.Business.Abstract
         void PopDirectory(); //Üst dizine çıkma methodu
 
         bool InitTracker(); //CW_InitTracker driver okumayla ilgili bir method
-        bool InitFileExplorer(BackupInfo backupInfo); //CW_InitTracker file
+        void InitFileExplorer(BackupInfo backupInfo); //CW_InitTracker file
+        void FreeFileExplorer();
 
     }
 }
