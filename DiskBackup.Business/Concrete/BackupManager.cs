@@ -240,7 +240,7 @@ namespace DiskBackup.Business.Concrete
             return result;
         }
 
-        public bool CreateFullBackup(TaskInfo taskInfo) //bu method daha gelmedi 
+        public bool CreateFullBackup(TaskInfo taskInfo, BackupStorageInfo backupStorageInfo) //bu method daha gelmedi 
         {
             throw new NotImplementedException();
         }

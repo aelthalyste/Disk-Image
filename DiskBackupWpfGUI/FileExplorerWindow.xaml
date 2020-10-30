@@ -83,7 +83,7 @@
         <ListView Name="listViewFileExplorer" MinHeight="350" Margin="5" Grid.Row="2" DisplayMemberPath="Name" AllowDrop="True">
             <ListView.View>
                 <GridView>
-                    <GridViewColumn Width="60">
+                    <GridViewColumn Width="45">
                         <GridViewColumn.Header>
                             <CheckBox Name="chbFileExplorerSelectAll" />
                         </GridViewColumn.Header>
@@ -115,7 +115,7 @@
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn >
-                    <GridViewColumn Header="{DynamicResource size}" Width="210" >
+                    <GridViewColumn Header="{DynamicResource size}" Width="200" >
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
                                 <TextBlock Text="{Binding StrSize}" TextAlignment="Center"/>

@@ -54,8 +54,18 @@ namespace DiskBackupWpfGUI
             {
                 Name = "Eyüp",
                 Type = (FileType)1, //Directory ise 1 
-                Size = 29,
+                Size = 48,
                 Id = 1,
+                //UpdatedDate = item.CreationTime
+                //Path değeri Batudan isteyelim
+                //UpdatedDate dönüşü daha yok
+            });
+            filesInBackupList.Add(new FilesInBackup
+            {
+                Name = "Ebru",
+                Type = (FileType)1, //Directory ise 1 
+                Size = 29,
+                Id = 10,
                 //UpdatedDate = item.CreationTime
                 //Path değeri Batudan isteyelim
                 //UpdatedDate dönüşü daha yok
