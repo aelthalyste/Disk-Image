@@ -1,8 +1,10 @@
 ﻿using Quartz;
 using Quartz.Impl;
 using Quartz.Impl.Calendar;
+using QuartzPooc;
 using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -11,45 +13,32 @@ namespace QuartzPoC
 {
     class Program
     {
+        private static IScheduler _scheduler;
         static async Task Main(string[] args)
         {
-            await RRRRRRRRR();
-            Console.ReadLine();
-            HolidayCalendar cal = new HolidayCalendar();
-        }
-
-        private static async Task RRRRRRRRR()
-        {
-            // construct a scheduler factory
-            StdSchedulerFactory factory = new StdSchedulerFactory();
-
-            // get a scheduler
-            IScheduler scheduler = await factory.GetScheduler();
-            await scheduler.Start();
-
-            // define the job and tie it to our HelloJob class
-            IJobDetail job = JobBuilder.Create<HelloJob>()
-                .WithIdentity("myJob", "group1")
+            int id = 5;
+            NameValueCollection props = new NameValueCollection
+                {
+                    { "quartz.serializer.type", "binary" }
+                };
+            StdSchedulerFactory factory = new StdSchedulerFactory(props);
+            _scheduler = await factory.GetScheduler();
+            var jobFactory = new MyJobFactory(new TaskRepository());
+            var job = JobBuilder.Create<MyBackupJob>()
+                .WithIdentity($"myjob{id}", "narbulut_jobs")
+                .UsingJobData("parameterId", id)
                 .Build();
-
-            // Trigger the job to run now, and then every 40 seconds
-            ITrigger trigger = TriggerBuilder.Create()
-                .WithIdentity("myTrigger", "group1")
-                .StartAt(DateTime.Now + TimeSpan.FromSeconds(10))
+            var trigger = TriggerBuilder.Create()
+                .WithIdentity($"trigger{id}", "nar_jobs")
                 .WithSimpleSchedule(x => x
-                    .WithIntervalInSeconds(3)
-                    .RepeatForever())
-            .Build();
-
-            await scheduler.ScheduleJob(job, trigger);
+                    .WithIntervalInSeconds(10)
+                    .WithRepeatCount(10))
+                .Build();
+            await _scheduler.ScheduleJob(job, trigger);
+            _scheduler.JobFactory = jobFactory;
+            await _scheduler.Start();
+            await Console.In.ReadLineAsync();
         }
 
-        public class HelloJob : IJob
-        {
-            public async Task Execute(IJobExecutionContext context)
-            {
-                await Console.Out.WriteLineAsync("Greetings from HelloJob!");
-            }
-        }
     }
 }
