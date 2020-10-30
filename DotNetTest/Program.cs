@@ -77,9 +77,20 @@ namespace DotNetTest
                     foreach (var entry in list)
                     {
                         Console.Write(entry.ID);
+                        Console.Write(" ");
+                        if (entry.IsDirectory)
+                        {
+                            Console.Write("DIR");
+                        }
+                        else { 
+                            Console.Write(entry.Size);
+                        }
                         Console.Write("\t");
-                        Console.Write(entry.Size);
                         Console.Write("\t");
+                        Console.Write("\t");
+                        Console.Write("\t");
+                        Console.Write("\t");
+
                         Console.WriteLine(entry.Name);
                     }
 

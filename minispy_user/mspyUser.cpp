@@ -5844,7 +5844,7 @@ NarGetFileListFromMFTID(nar_file_entries_list* EList, UINT64 TargetMFTID, nar_re
                                 UINT64 CreationTime = *(UINT64*)((char*)Entry + NAR_TIME_OFFSET);
                                 UINT64 ModificationTime = *(UINT64*)((char*)Entry+ NAR_TIME_OFFSET + 8);
                                 UINT64 FileSize = *(UINT64*)((char*)Entry + NAR_SIZE_OFFSET);
-
+                                UINT64 Attributes = *(UINT64*)((char*)Entry + NAR_ATTRIBUTE_OFFSET);
                                 char* NamePtr = ((char*)Entry + NAR_NAME_OFFSET);
                                 if (*NamePtr == 0) {
                                     Entry = (char*)Entry + EntrySize;
@@ -5864,6 +5864,12 @@ NarGetFileListFromMFTID(nar_file_entries_list* EList, UINT64 TargetMFTID, nar_re
                                 EList->Entries[EList->EntryCount].Size = FileSize;
                                 EList->Entries[EList->EntryCount].CreationTime = CreationTime;
                                 EList->Entries[EList->EntryCount].LastModifiedTime = ModificationTime;
+                                
+                                EList->Entries[EList->EntryCount].IsDirectory = FALSE;
+
+                                if (Attributes > 10000000) {
+                                    EList->Entries[EList->EntryCount].IsDirectory = TRUE;
+                                }
                                 
                                 EList->EntryCount++;
 
@@ -6223,7 +6229,7 @@ RestoreFolder(nar_backup_file_explorer_context *ctx, UINT32 SelectedListID, cons
     for(int i = 0; i < ctx->EList.EntryCount; i++){
 
         // check if directory
-        if(ctx->EList.Entries[i].Flags & NAR_FE_DIRECTORY_FLAG == NAR_FE_DIRECTORY_FLAG){
+        if(ctx->EList.Entries[i].IsDirectory){
 
         }
         else{
@@ -6976,6 +6982,23 @@ NarFileExplorerPopDirectory(nar_backup_file_explorer_context* Ctx) {
     Ctx->EList.EntryCount = 0;
     Ctx->EList.MFTIndex = Ctx->HistoryStack.S[Ctx->HistoryStack.I];
     NarGetFileListFromMFTID(&Ctx->EList, Ctx->HistoryStack.S[Ctx->HistoryStack.I], Ctx->MFTRecords, Ctx->MFTRecordsCount, Ctx->ClusterSize, Ctx->FEHandle);
+    
+    INT32 LastTrailingBackslash = 0;
+    int i = 0;
+    while (TRUE) {
+        
+        if (Ctx->CurrentDirectory[i] == L'\\') {
+            LastTrailingBackslash = i;
+        }
+        
+        if (Ctx->CurrentDirectory[i] == L'\0') {
+            break;
+        }
+
+        i++;
+
+    }
+    Ctx->CurrentDirectory[LastTrailingBackslash + 1] = L'\0';
 
 }
 
@@ -7422,12 +7445,6 @@ FindPointOffsetInRecords(nar_record *Records, INT32 Len, INT64 Offset){
     return (Found ? Result : NAR_POINT_OFFSET_FAILED);
 }
 
-
-inline BOOLEAN
-NarIsDirectoryExists(const wchar_t* Dir){
-    // TODO(Batuhan)
-    return TRUE;
-}
 
 
 

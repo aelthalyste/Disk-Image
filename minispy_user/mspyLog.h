@@ -750,14 +750,16 @@ inline void
 FreeFileRead(file_read FR);
 
 
-#define NAR_POSIX 2
-#define NAR_ENTRY_SIZE_OFFSET 8
-#define NAR_TIME_OFFSET 28
-#define NAR_SIZE_OFFSET 64
-#define NAR_NAME_LEN_OFFSET 80 
-#define NAR_POSIX_OFFSET 81
-#define NAR_NAME_OFFSET 82
-#define NAR_ROOT_MFT_ID 5
+#define NAR_POSIX                2
+#define NAR_ENTRY_SIZE_OFFSET    8
+#define NAR_TIME_OFFSET         28
+#define NAR_SIZE_OFFSET         64
+#define NAR_ATTRIBUTE_OFFSET    72
+#define NAR_NAME_LEN_OFFSET     80 
+#define NAR_POSIX_OFFSET        81
+#define NAR_NAME_OFFSET         82
+
+#define NAR_ROOT_MFT_ID          5
 
 #define NAR_FE_HAND_OPT_READ_MOUNTED_VOLUME 1
 #define NAR_FE_HAND_OPT_READ_BACKUP_VOLUME 2
@@ -778,7 +780,7 @@ struct nar_fe_volume_handle{
 // could be either file or dir
 struct nar_file_entry {
 
-    BOOLEAN Flags;
+    BOOLEAN IsDirectory;
 
     UINT64 MFTFileIndex;
     UINT64 Size; // file size in bytes

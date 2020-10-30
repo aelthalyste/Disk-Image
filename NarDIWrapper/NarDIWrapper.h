@@ -90,7 +90,7 @@ namespace NarDIWrapper {
         CSNarFileEntry() {
         }
 
-        INT16 IsDirectory;
+        bool IsDirectory;
         UINT64 Size;
         UINT64 ID;
 
