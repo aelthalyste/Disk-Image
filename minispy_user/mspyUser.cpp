@@ -1834,7 +1834,7 @@ GetVolumesOnTrack(PLOG_CONTEXT C, volume_information* Out, unsigned int BufferSi
         Out[VolumesFound].Bootable = V->IsOSVolume;
         Out[VolumesFound].DiskID = NarGetVolumeDiskID((char)V->Letter);
         Out[VolumesFound].DiskType = (char)NarGetVolumeDiskType((char)V->Letter);
-        Out[VolumesFound].Size = NarGetVolumeSize((char)V->Letter);
+        Out[VolumesFound].TotalSize = NarGetVolumeSize((char)V->Letter);
         
         VolumesFound++;
         
@@ -3559,16 +3559,21 @@ NarGetVolumes() {
             
             VolumeString[0] = 'A' + (char)CurrentDriveIndex;
             ULARGE_INTEGER TotalSize = { 0 };
+            ULARGE_INTEGER FreeSize = { 0 };
+
             volume_information T = { 0 };
             
-            GetDiskFreeSpaceExA(VolumeString, 0, &TotalSize, 0);
-            T.Letter = 'A' + CurrentDriveIndex;
-            T.Size = NarGetVolumeSize(T.Letter);
-            T.Bootable = (WindowsLetter == T.Letter);
-            T.DiskType = NarGetVolumeDiskType(T.Letter);
-            T.DiskID = NarGetVolumeDiskID(T.Letter);
+            if (GetDiskFreeSpaceExA(VolumeString, 0, &TotalSize, &FreeSize)) {
+                T.Letter = 'A' + CurrentDriveIndex;
+                T.TotalSize = TotalSize.QuadPart;
+                T.FreeSize = FreeSize.QuadPart;
+
+                T.Bootable = (WindowsLetter == T.Letter);
+                T.DiskType = NarGetVolumeDiskType(T.Letter);
+                T.DiskID = NarGetVolumeDiskID(T.Letter);
+                Result.Insert(T);
+            }
             
-            Result.Insert(T);
             
         }
         
@@ -6299,6 +6304,21 @@ NarRestoreFileFromBackups(wchar_t *RootDir, wchar_t *FileName, wchar_t *RestoreT
     if(RootDir == NULL || FileName == NULL) return FALSE;
 
     BOOLEAN Result;
+    HANDLE RestoreFileHandle = INVALID_HANDLE_VALUE;
+    {
+
+        wchar_t fn[512];
+        memset(fn, 0, sizeof(fn));
+        wcscat(fn, RestoreTo);
+        wcscat(fn, FileName);
+        printf("File(%S)'s target restore path is %S\n", fn);
+        RestoreFileHandle = CreateFileW(fn, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ, 0, CREATE_ALWAYS, 0, 0);
+        if(RestoreFileHandle == INVALID_HANDLE_VALUE){
+            printf("Coulnd't create target restore path %S\n", fn);
+            return FALSE;
+        }
+
+    }
 
     nar_file_version_stack FileStack = NarSearchFileInVersions(RootDir, VolumeLetter, InVersion, FileName);
     if(FileStack.VersionsFound < 0){
@@ -6313,18 +6333,66 @@ NarRestoreFileFromBackups(wchar_t *RootDir, wchar_t *FileName, wchar_t *RestoreT
         VersionID < VersionUpTo;  
         VersionID++) {
                     
-        backup_metadata_ex *BMEX = InitBackupMetadataEx(VolumeLetter, VersionID, RootDir);
-        if(BMEX == NULL){
-            printf("Couldnt create backup_metadata_ex structure for volume %c for version %i to restore file %S\n", VolumeLetter, VersionID, FileName);
-        }
 
         nar_fe_volume_handle FEHandle = { 0 };
 
         if (NarInitFEVolumeHandle(&FEHandle, NAR_FE_HAND_OPT_READ_BACKUP_VOLUME, VolumeLetter, VersionID, RootDir)) {
             
-            
-            
+            NarFileExplorerSetFilePointer(FEHandle, FileStack.FileAbsoluteMFTOffset[0]);
 
+/*
+            inline lcn_from_mft_query_result
+            ReadLCNFromMFTRecord(void* RecordStart, nar_record* Records, INT32* RecordsFound);
+            
+            struct lcn_from_mft_query_result{
+    
+    enum{
+        FAIL            = 0x0,
+        SUCCESS         = 0x1,
+        HAS_DATA_IN_MFT = 0x2,
+        FILE_FITS_MFT   = 0x4
+    };
+
+    INT8 Flags;
+
+    // valid if record contains file data in it
+    INT16 DataOffset;
+    INT16 DataLen;
+
+    // i dont want to use dynamically allocated array then free it. Since these tasks are disk IO bounded, i can totally neglect cache behavior(thats a big sin) and preallocate big stack array and never have to deal with freeing it
+    // probably %95 of it will be empty most of the time
+    INT32 RecordCount;
+    nar_record Records[1024];
+
+};
+
+*/
+
+            //lcn_from_mft_query_result QResult = ReadLCNFromMFTRecord(Record);
+            //if(Result.Flags & Result.FAIL){
+            //    printf("Couldnt parse file %S's mft file record at volume %c's version %i", FileName, VolumeLetter, VersionID);
+            //    break;
+            //}
+
+
+            INT32 ISectionCount = 5000;
+            INT32 ISectionRegSize = ISectionCount*sizeof(nar_record); 
+            nar_record* IntersectionRegions = (nar_record*)malloc(ISectionRegSize);
+            memset(IntersectionRegions, 0, ISectionRegSize);
+
+            //NarGetRegionIntersection(FEHandle.BMEX->RegionsMetadata.Data, QResult.Records, IntersectionRegions, FEHandle.BMEX->RegionsMetadata.Count, QResult.RecordCount, ISectionRegSize, &ISectionCount);
+
+            if(ISectionCount != 0){
+                // copy intersections
+            }
+            else{
+                printf("Couldn't find any regions that intersects with file's regions in volume %c version %i, for file %S\n",VolumeLetter, VersionID, FileName);
+            }
+
+
+        }
+        else{
+            printf("Couldn't initialize volume %c's handle to restore file %S from version %i. File's integrity might be broken, thus resulting corrupt file\n", VolumeLetter, FileName, VersionID);
         }
 
         
@@ -6446,15 +6514,14 @@ struct lcn_from_mft_query_result{
 
 
 inline lcn_from_mft_query_result
-ReadLCNFromMFTRecord(void* RecordStart, nar_record* Records, INT32* RecordsFound) {
+ReadLCNFromMFTRecord(void* RecordStart) {
     // if file can fit in MFT, 
 
     lcn_from_mft_query_result Result;
     memset(&Result, 0, sizeof(Result));
 
-    *RecordsFound = 0;
-
-    if (Records == NULL || RecordStart == NULL || RecordsFound == NULL) return Result;
+    
+    //if (Records == NULL || RecordStart == NULL || RecordsFound == NULL) return Result;
 
     if (*(INT32*)RecordStart != 'ELIF') {
         return Result;
@@ -6813,14 +6880,6 @@ NarSearchFileInVolume(wchar_t* RootDir, wchar_t *FileName, wchar_t VolumeLetter,
 }
 
 
-
-
-inline void
-RestoreFileFromVersion(const wchar_t *FileName, const wchar_t* TargetName, nar_fe_volume_handle Handle, UINT64 FileMFTID, UINT64 FileAbsoluteMFTOffset){
-
-
-
-}
 
 
 
@@ -7507,6 +7566,61 @@ main(
      CHAR* argv[]
      ) {
     
+    {
+        ULARGE_INTEGER a = { 0};
+        a.QuadPart = 132485179915069772;
+        FILETIME b;
+        b.dwHighDateTime = a.HighPart;
+        b.dwLowDateTime = a.LowPart;
+        SYSTEMTIME S;
+        FileTimeToSystemTime(&b, &S);
+        printf("Hell\n");
+    }
+    WCHAR volumeName[MAX_PATH + 1] = { 0 };
+
+    WCHAR fileSystemName[MAX_PATH + 1] = { 0 };
+
+    DWORD serialNumber = 0;
+
+    DWORD maxComponentLen = 0;
+
+    DWORD fileSystemFlags = 0;
+
+
+
+    if (GetVolumeInformation(
+        L"C:\\", 
+        volumeName,
+        sizeof(volumeName),
+        &serialNumber,
+        &maxComponentLen,
+        &fileSystemFlags,
+        fileSystemName,
+        sizeof(fileSystemName)) == TRUE)
+    {
+
+        printf("GetVolumeInformation() should be fine!\n");
+        printf("Volume Name : % S\n", volumeName);
+        printf("Serial Number : % lu\n", serialNumber);
+        printf("File System Name : % S\n", fileSystemName);
+        printf("Max Component Length : % lu\n", maxComponentLen);
+        printf("File system flags : 0X % .08X\n", fileSystemFlags);
+
+    }
+    else{
+        printf("GetVolumeInformation() failed, error % u\n", GetLastError());
+    }
+
+    ULARGE_INTEGER a, b;
+    GetDiskFreeSpaceExA(
+        "C:\\",
+        0,
+        &a,
+        &b
+    );
+
+    return 0;
+
     //return Test_NarGetRegionIntersection();
     
     //TestFindPointOffsetInRecords();

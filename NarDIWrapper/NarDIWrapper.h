@@ -21,7 +21,7 @@ namespace NarDIWrapper {
 
     public ref class DiskInfo {
     public:
-        unsigned Size;
+        UINT64 Size;
         wchar_t Type; // MBR, RAW, GPT
         int ID;
     };
@@ -45,7 +45,8 @@ namespace NarDIWrapper {
 
     public ref class VolumeInformation {
     public:
-        ULONGLONG Size; //in bytes!
+        ULONGLONG TotalSize; //in bytes!
+        ULONGLONG FreeSize;
         BOOLEAN Bootable; // Healthy && NTFS && !Boot
         char Letter;
         INT8 DiskID;
@@ -161,7 +162,6 @@ namespace NarDIWrapper {
 
         //terminate backuptan sonra cagir
         bool CW_SaveBootState();
-
 
 
 

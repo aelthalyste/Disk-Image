@@ -429,7 +429,8 @@ Volume ###  Ltr  Label        Fs     Type        Size     Status     Info
   Volume 3                      FAT32  Partition    100 MB  Healthy    System
 */
 struct volume_information {
-    ULONGLONG Size; //in bytes!
+    UINT64 TotalSize;
+    UINT64 FreeSize;
     BOOLEAN Bootable; // Healthy && NTFS && !Boot
     char Letter;
     unsigned char DiskID;

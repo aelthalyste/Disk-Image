@@ -78,6 +78,8 @@ namespace DotNetTest
                     {
                         Console.Write(entry.ID);
                         Console.Write("\t");
+                        Console.Write(entry.Size);
+                        Console.Write("\t");
                         Console.WriteLine(entry.Name);
                     }
 
