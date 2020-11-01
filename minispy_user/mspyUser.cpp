@@ -6320,7 +6320,7 @@ NarRestoreFileFromBackups(wchar_t *RootDir, wchar_t *FileName, wchar_t *RestoreT
 
     if(RootDir == NULL || FileName == NULL) return FALSE;
 
-    BOOLEAN Result;
+    BOOLEAN Result = FALSE;
     HANDLE RestoreFileHandle = INVALID_HANDLE_VALUE;
     
     {
@@ -6347,7 +6347,7 @@ NarRestoreFileFromBackups(wchar_t *RootDir, wchar_t *FileName, wchar_t *RestoreT
     
     INT32 VersionUpTo = FileStack.StartingVersion + FileStack.VersionsFound;
 
-    nar_fe_volume_handle FEHandle = { };
+    nar_fe_volume_handle FEHandle = {0};
     
     for (
         int VersionID = FileStack.StartingVersion;
@@ -6374,11 +6374,9 @@ NarRestoreFileFromBackups(wchar_t *RootDir, wchar_t *FileName, wchar_t *RestoreT
                 goto ABORT;
             }
             
-
-            INT32 ISectionCount = 5000;
-            INT32 ISectionRegSize = ISectionCount*sizeof(nar_record); 
+            INT32 ISectionCount = 0;
             nar_record* IntersectionRegions = 0;
-            NarGetRegionIntersection(FEHandle.BMEX->RegionsMetadata.Data, QResult.Records, &IntersectionRegions, FEHandle.BMEX->RegionsMetadata.Count, QResult.RecordCount, ISectionRegSize, &ISectionCount);
+            NarGetRegionIntersection(FEHandle.BMEX->RegionsMetadata.Data, QResult.Records, &IntersectionRegions, FEHandle.BMEX->RegionsMetadata.Count, QResult.RecordCount, &ISectionCount);
 
             if(ISectionCount != 0){
                 // IMPORTANT TODO(Batuhan): special code for data in 
@@ -6436,7 +6434,7 @@ NarRestoreFileFromBackups(wchar_t *RootDir, wchar_t *FileName, wchar_t *RestoreT
     Gets the intersection of the r1 and r2 arrays, writes new array to r3
 */
 inline void
-NarGetRegionIntersection(nar_record* r1, nar_record* r2, nar_record** intersections, INT32 len1, INT32 len2, INT32 len3, INT32 *RegionsWritten) {
+NarGetRegionIntersection(nar_record* r1, nar_record* r2, nar_record** intersections, INT32 len1, INT32 len2, INT32 *IntersectionLen) {
     
     if (!r1 || !r2 || !intersections) return;
 
@@ -6444,14 +6442,13 @@ NarGetRegionIntersection(nar_record* r1, nar_record* r2, nar_record** intersecti
     i1 = i2 = i3 = 0;
 
     //memset(r3, 0, len3 * sizeof(*r3));
-    UINT32 r3cap = 2;
+    UINT32 r3cap = len2;
     nar_record* r3 = (nar_record*)malloc(r3cap * sizeof(nar_record));
 
     // logic behind iteration, ALWAYS iterate item that has LOWER END.
     while (TRUE) {
         
         if (i1 >= len1 || i2 >= len2) {
-            // IMPORTANT TODO(Batuhan): detect if we are actually terminating because no more memory left to write intersections or actually region runs exceeded their limits.
             break;
         }
         
@@ -6518,7 +6515,7 @@ NarGetRegionIntersection(nar_record* r1, nar_record* r2, nar_record** intersecti
     }
     
     r3 = (nar_record*)realloc(r3, i3 * sizeof(nar_record));
-    *RegionsWritten = i3;
+    *IntersectionLen = i3;
     *intersections = r3;
 
 }
@@ -6735,7 +6732,7 @@ NarSearchFileInVersions(wchar_t *RootDir, wchar_t VolumeLetter, INT32 CeilVersio
     nar_file_version_stack Result;
     memset(&Result, 0, sizeof(Result));
 
-    if(FileName == NULL){
+    if(FileName == NULL || RootDir == NULL){
         return Result;
     }
         
@@ -7417,7 +7414,7 @@ NarFreeFEVolumeHandle(nar_fe_volume_handle FEV) {
         CloseHandle(FEV.VolumeHandle);
         FEV.VolumeHandle = INVALID_HANDLE_VALUE;
 
-        if(FEV.BMEX){
+        if(FEV.BMEX != NULL){
             FreeBackupMetadataEx(FEV.BMEX);
             FEV.BMEX = 0;
         }
@@ -7557,6 +7554,7 @@ NarEndPerfCounter(){
     NarPerfCounter.WorkCounter = GetClock();
 }
 
+
 inline BOOLEAN
 Test_NarGetRegionIntersection() {
 
@@ -7579,11 +7577,16 @@ Test_NarGetRegionIntersection() {
 
     INT32 found = 0;
     nar_record* r3 = 0;
-    NarGetRegionIntersection(r1, r2, &r3, 5, 6, 16, &found);
+    NarGetRegionIntersection(r1, r2, &r3, 5, 6, &found);
     for (int i = 0; i < found; i++) {
         printf("%i\t%i\n", r3[i].StartPos, r3[i].Len);
     }
     NarFreeRegionIntersection(r3);
+
+    for (int i = 0; i < found; i++) {
+        printf("%i\t%i\n", r3[i].StartPos, r3[i].Len);
+    }
+
 
     return Result;
 }

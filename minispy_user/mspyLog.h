@@ -887,7 +887,7 @@ ReadLCNFromMFTRecord(void* RecordStart);
     Gets the intersection of the r1 and r2 arrays, writes new array to r3
 */
 inline void
-NarGetRegionIntersection(nar_record* r1, nar_record* r2, nar_record** intersections, INT32 len1, INT32 len2, INT32 len3, INT32* RegionsWritten);
+NarGetRegionIntersection(nar_record* r1, nar_record* r2, nar_record** intersections, INT32 len1, INT32 len2, INT32* IntersectionLen);
 
 inline void
 NarFreeRegionIntersection(nar_record* intersections);
