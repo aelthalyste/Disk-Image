@@ -1,6 +1,6 @@
-[17:39:28]: GetVolumeInformation() should be fine!
-[17:39:28]: Volume Name : 
-[17:39:28]: Serial Number : 912255184
-[17:39:28]: File System Name : NTFS
-[17:39:28]: Max Component Length : 255
-[17:39:28]: File system flags : 0X 03E706FF
+[16:7:22]: 80	70
+[16:7:22]: 300	50
+[16:7:23]: 1200	200
+[16:7:23]: 1500	50
+[16:7:23]: 1600	400
+[16:7:23]: 2100	200
