@@ -18,9 +18,9 @@ namespace DiskBackup.TaskScheduler.Jobs
         private readonly IEntityRepository<TaskInfo> _taskInfoRepository;
         private readonly IEntityRepository<BackupStorageInfo> _backupStorageRepository;
 
-        public BackupIncDiffJob(IBackupService backupService, IEntityRepository<TaskInfo> taskInfoRepository, IEntityRepository<BackupStorageInfo> backupStorageRepository)
+        public BackupIncDiffJob(IEntityRepository<TaskInfo> taskInfoRepository, IEntityRepository<BackupStorageInfo> backupStorageRepository)
         {
-            _backupService = backupService;
+            _backupService = new BackupManager();
             _taskInfoRepository = taskInfoRepository;
             _backupStorageRepository = backupStorageRepository;
         }

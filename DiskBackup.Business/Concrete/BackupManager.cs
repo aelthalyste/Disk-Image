@@ -54,8 +54,8 @@ namespace DiskBackup.Business.Concrete
             {
                 DiskInformation temp = new DiskInformation();
                 temp.DiskId = diskItem.ID;
-                temp.Size = diskItem.Size;
-                temp.StrSize = FormatBytes(diskItem.Size);
+                temp.Size = (long)diskItem.Size;
+                temp.StrSize = FormatBytes((long)diskItem.Size);
                 diskList.Add(temp);
 
                 foreach (var volumeItem in volumes)
@@ -64,8 +64,10 @@ namespace DiskBackup.Business.Concrete
                     {
                         VolumeInfo volumeInfo = new VolumeInfo();
                         volumeInfo.Letter = (char)volumeItem.Letter;
-                        volumeInfo.Size = (long)volumeItem.Size;
-                        volumeInfo.StrSize = FormatBytes((long)volumeItem.Size);
+                        volumeInfo.Size = (long)volumeItem.TotalSize;
+                        volumeInfo.StrSize = FormatBytes((long)volumeItem.TotalSize);
+                        volumeInfo.FreeSize = (long)volumeItem.FreeSize;
+                        volumeInfo.StrFreeSize = FormatBytes((long)volumeItem.FreeSize);
                         volumeInfo.Bootable = Convert.ToBoolean(volumeItem.Bootable);
                         volumeInfo.Name = "Local Volume";
                         volumeInfo.DiskName = "Disk " + temp.DiskId;
@@ -150,9 +152,9 @@ namespace DiskBackup.Business.Concrete
             return null;
         }
 
-        public bool RestoreBackupVolume(BackupInfo backupInfo, VolumeInfo volumeInfo)
+        public bool RestoreBackupVolume(BackupInfo backupInfo, char volumeLetter)
         {
-            return _diskTracker.CW_RestoreToVolume(volumeInfo.Letter, backupInfo.Letter, backupInfo.Version, true, backupInfo.BackupStorageInfo.Path); //true gidecek
+            return _diskTracker.CW_RestoreToVolume(volumeLetter, backupInfo.Letter, backupInfo.Version, true, backupInfo.BackupStorageInfo.Path); //true gidecek
         }
 
         public bool RestoreBackupDisk(BackupInfo backupInfo, DiskInformation diskInformation)
@@ -277,17 +279,23 @@ namespace DiskBackup.Business.Concrete
                 filesInBackupList.Add(new FilesInBackup
                 {
                     Name = item.Name,
-                    Type = (FileType)item.IsDirectory, //Directory ise 1 
-                    Size = item.IsDirectory,
+                    Type = (FileType)Convert.ToInt16(item.IsDirectory), //Directory ise 1 
+                    Size = (long)item.Size,
+                    StrSize = FormatBytes((long)item.Size),
+                    UpdatedDate = item.LastModifiedTime.Day + "." +
+                        item.LastModifiedTime.Month + "." +
+                        item.LastModifiedTime.Year + " " +
+                        item.LastModifiedTime.Hour + ":" +
+                        item.LastModifiedTime.Minute,
                     //Size = (long)item.Size,
                     // StrSize = FormatBytes((long)item.Size),
                     Id = (long)item.ID,
-                    StrSize = 
-                        item.LastModifiedTime.Day.ToString() + "." + 
-                        item.LastModifiedTime.Month.ToString() + "." +
-                        item.LastModifiedTime.Year.ToString() + " " +
-                        item.LastModifiedTime.Hour.ToString() + ":" +
-                        item.LastModifiedTime.Minute.ToString()
+                    //StrSize = 
+                    //    item.LastModifiedTime.Day.ToString() + "." + 
+                    //    item.LastModifiedTime.Month.ToString() + "." +
+                    //    item.LastModifiedTime.Year.ToString() + " " +
+                    //    item.LastModifiedTime.Hour.ToString() + ":" +
+                    //    item.LastModifiedTime.Minute.ToString()
                     //Path değeri Batudan isteyelim
                     //UpdatedDate dönüşü daha yok
                 });
@@ -304,7 +312,7 @@ namespace DiskBackup.Business.Concrete
         {
             CSNarFileEntry cSNarFileEntry = new CSNarFileEntry();
             cSNarFileEntry.ID = (ulong)filesInBackup.Id;
-            cSNarFileEntry.IsDirectory = (short)filesInBackup.Type; //bool demişti short dönüyor? 1-0 hangisi file hangisi folder
+            cSNarFileEntry.IsDirectory = Convert.ToBoolean(filesInBackup.Type); //bool demişti short dönüyor? 1-0 hangisi file hangisi folder
             cSNarFileEntry.Name = filesInBackup.Name;
             cSNarFileEntry.Size = (ulong)filesInBackup.Size;
             //tarihler eklenecek. oluşturma tarihi önemli mi?
@@ -350,5 +358,6 @@ namespace DiskBackup.Business.Concrete
 
             return ($"{dblSByte:0.##} {Suffix[i]}");
         }
+
     }
 }

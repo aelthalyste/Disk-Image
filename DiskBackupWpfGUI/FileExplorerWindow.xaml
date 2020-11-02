@@ -104,14 +104,14 @@
                     <GridViewColumn Header="{DynamicResource name2}" Width="210" >
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding Name}" TextAlignment="Center"/>
+                                <TextBlock Text="{Binding Name}" />
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
                     <GridViewColumn Header="{DynamicResource updateDate}" Width="210" >
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding UpdatedDate, StringFormat='dd.MM.yyyy HH:mm'}" TextAlignment="Center"/>
+                                <TextBlock Text="{Binding UpdatedDate}" TextAlignment="Center"/>
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn >
