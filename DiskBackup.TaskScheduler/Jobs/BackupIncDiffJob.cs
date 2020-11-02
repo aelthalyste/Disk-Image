@@ -35,9 +35,9 @@ namespace DiskBackup.TaskScheduler.Jobs
 
             var result = _backupService.CreateIncDiffBackup(task, backupStorage);
 
-            // başarısızsa tekrar dene
             // activity log burada basılacak
-    
+            // başarısızsa tekrar dene fonksiyonu çağırılacak
+
             return Task.CompletedTask;
         }
     }
