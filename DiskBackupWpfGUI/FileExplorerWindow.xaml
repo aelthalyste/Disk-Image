@@ -85,12 +85,12 @@
                 <GridView>
                     <GridViewColumn Width="45">
                         <GridViewColumn.Header>
-                            <CheckBox Name="chbFileExplorerSelectAll" />
+                            <CheckBox Name="chbFileExplorerSelectAll" Cursor="Hand"/>
                         </GridViewColumn.Header>
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
                                 <CheckBox IsChecked="{Binding Path=IsSelected, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ListViewItem}}}"
-                                          HorizontalAlignment="Center"/>
+                                          HorizontalAlignment="Center" Cursor="Hand"/>
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
@@ -126,7 +126,7 @@
             </ListView.View>
             <ListView.ItemContainerStyle>
                 <Style TargetType="ListViewItem">
-                    <EventSetter Event="MouseDoubleClick" Handler="ListViewItem_MouseDoubleClick"/>
+                    <EventSetter Event="MouseDoubleClick" Handler="listViewFileExplorer_MouseDoubleClick"/>
                     <Setter Property="HorizontalContentAlignment" Value="Stretch" />
                     <Style.Triggers>
                         <DataTrigger Binding="{Binding IsCloud}" Value="true">
