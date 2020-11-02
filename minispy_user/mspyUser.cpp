@@ -1828,6 +1828,8 @@ GetVolumesOnTrack(PLOG_CONTEXT C, volume_information* Out, unsigned int BufferSi
         if (V->INVALIDATEDENTRY) {
             continue;
         }
+
+  
         
         Out[VolumesFound].Letter = (char)V->Letter;
         Out[VolumesFound].Bootable = V->IsOSVolume;
@@ -3552,7 +3554,7 @@ data_array<volume_information>
 NarGetVolumes() {
     
     data_array<volume_information> Result = { 0,0 };
-    char VolumeString[] = " :\\";
+    wchar_t VolumeString[] = L"!:\\";
     char WindowsLetter = 'C';
     {
         char WindowsDir[512];
@@ -3566,13 +3568,13 @@ NarGetVolumes() {
         
         if (Drives & (1 << CurrentDriveIndex)) {
             
-            VolumeString[0] = 'A' + (char)CurrentDriveIndex;
+            VolumeString[0] = (wchar_t)('A' + (char)CurrentDriveIndex);
             ULARGE_INTEGER TotalSize = { 0 };
             ULARGE_INTEGER FreeSize = { 0 };
 
             volume_information T = { 0 };
             
-            if (GetDiskFreeSpaceExA(VolumeString, 0, &TotalSize, &FreeSize)) {
+            if (GetDiskFreeSpaceExW(VolumeString, 0, &TotalSize, &FreeSize)) {
                 T.Letter = 'A' + CurrentDriveIndex;
                 T.TotalSize = TotalSize.QuadPart;
                 T.FreeSize = FreeSize.QuadPart;
@@ -3580,6 +3582,15 @@ NarGetVolumes() {
                 T.Bootable = (WindowsLetter == T.Letter);
                 T.DiskType = NarGetVolumeDiskType(T.Letter);
                 T.DiskID = NarGetVolumeDiskID(T.Letter);
+
+                {
+                    WCHAR fileSystemName[MAX_PATH + 1] = { 0 };
+                    DWORD serialNumber = 0;
+                    DWORD maxComponentLen = 0;
+                    DWORD fileSystemFlags = 0;
+                    GetVolumeInformationW(VolumeString, T.VolumeName, sizeof(T.VolumeName), &serialNumber, &maxComponentLen, &fileSystemFlags, fileSystemName, sizeof(fileSystemName));
+                }
+
                 Result.Insert(T);
             }
             
@@ -7623,41 +7634,15 @@ main(
         FileTimeToSystemTime(&b, &S);
         printf("Hell\n");
     }
+
     WCHAR volumeName[MAX_PATH + 1] = { 0 };
-
     WCHAR fileSystemName[MAX_PATH + 1] = { 0 };
-
     DWORD serialNumber = 0;
-
     DWORD maxComponentLen = 0;
-
     DWORD fileSystemFlags = 0;
-
-
-
-    if (GetVolumeInformation(
-        L"C:\\", 
-        volumeName,
-        sizeof(volumeName),
-        &serialNumber,
-        &maxComponentLen,
-        &fileSystemFlags,
-        fileSystemName,
-        sizeof(fileSystemName)) == TRUE)
-    {
-
-        printf("GetVolumeInformation() should be fine!\n");
-        printf("Volume Name : % S\n", volumeName);
-        printf("Serial Number : % lu\n", serialNumber);
-        printf("File System Name : % S\n", fileSystemName);
-        printf("Max Component Length : % lu\n", maxComponentLen);
-        printf("File system flags : 0X % .08X\n", fileSystemFlags);
-
-    }
-    else{
-        printf("GetVolumeInformation() failed, error % u\n", GetLastError());
-    }
-
+    GetVolumeInformation(L"C:\\", volumeName, sizeof(volumeName), &serialNumber, &maxComponentLen, &fileSystemFlags, fileSystemName, sizeof(fileSystemName));
+    
+    
     ULARGE_INTEGER a, b;
     GetDiskFreeSpaceExA(
         "C:\\",

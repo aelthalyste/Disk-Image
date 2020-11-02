@@ -435,6 +435,7 @@ struct volume_information {
     char Letter;
     unsigned char DiskID;
     char DiskType;
+    wchar_t VolumeName[MAX_PATH + 1];
 };
 
 // Up to 2GB

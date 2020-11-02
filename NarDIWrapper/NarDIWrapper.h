@@ -47,6 +47,7 @@ namespace NarDIWrapper {
     public:
         ULONGLONG TotalSize; //in bytes!
         ULONGLONG FreeSize;
+        System::String^ VolumeName;
         BOOLEAN Bootable; // Healthy && NTFS && !Boot
         char Letter;
         INT8 DiskID;
@@ -145,7 +146,7 @@ namespace NarDIWrapper {
         DiskTracker();
         ~DiskTracker();
 
-        List<VolumeInformation^>^ CW_GetVolumes();
+        static List<VolumeInformation^>^ CW_GetVolumes();
 
         bool CW_InitTracker();
 

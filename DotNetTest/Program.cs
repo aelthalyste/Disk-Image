@@ -45,7 +45,11 @@ namespace DotNetTest
             {
                 Console.WriteLine("Narbulut volume yedekleme servisi v0.1\n");
 
-
+                var l = DiskTracker.CW_GetVolumes();
+                foreach (var v in l) {
+                    Console.WriteLine(v.VolumeName);
+                }
+                return;
                 CSNarFileExplorer fexp = new CSNarFileExplorer();
                 
                 fexp.CW_Init('C', 0, "asdfasdf");

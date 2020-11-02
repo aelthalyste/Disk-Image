@@ -343,6 +343,11 @@ namespace NarDIWrapper {
             BI->DiskID = V.Data[i].DiskID;
             BI->DiskType = V.Data[i].DiskType;
             BI->Letter = V.Data[i].Letter;
+            BI->VolumeName = gcnew System::String(V.Data[i].VolumeName);
+            if (BI->VolumeName->Length == 0) {
+                BI->VolumeName = L"Local Disk";
+            }
+
             Result->Add(BI);
         }
         
