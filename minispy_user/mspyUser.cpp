@@ -6988,8 +6988,8 @@ NarFileExplorerPushDirectory(nar_backup_file_explorer_context* Ctx, UINT32 Selec
 
     
     Ctx->EList.MFTIndex = NewMFTID;
-    wcscat(Ctx->CurrentDirectory, L"\\");
     wcscat(Ctx->CurrentDirectory, Ctx->EList.Entries[SelectedListID].Name);
+    wcscat(Ctx->CurrentDirectory, L"\\");
     NarPushDirectoryStack(Ctx, NewMFTID);
 
     Ctx->EList.EntryCount = 0;
@@ -7013,6 +7013,10 @@ NarFileExplorerPopDirectory(nar_backup_file_explorer_context* Ctx) {
     int i = 0;
     while (TRUE) {
         
+        if (Ctx->CurrentDirectory[i] == L'\\' && Ctx->CurrentDirectory[i + 1] == L'\0') {
+            break;
+        }
+
         if (Ctx->CurrentDirectory[i] == L'\\') {
             LastTrailingBackslash = i;
         }
@@ -7207,7 +7211,7 @@ NarInitFileExplorerContext(nar_backup_file_explorer_context* Ctx, INT32 HandleOp
             NarGetFileListFromMFTID(&Ctx->EList, NAR_ROOT_MFT_ID, Ctx->MFTRecords, Ctx->MFTRecordsCount, Ctx->ClusterSize, Ctx->FEHandle);
             NarPushDirectoryStack(Ctx, NAR_ROOT_MFT_ID);
             
-            wchar_t vb[] = L"!:";
+            wchar_t vb[] = L"!:\\";
             vb[0] = (wchar_t)Letter;
             wcscat(Ctx->CurrentDirectory, vb);
             
