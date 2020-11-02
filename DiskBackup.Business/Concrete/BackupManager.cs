@@ -45,7 +45,7 @@ namespace DiskBackup.Business.Concrete
         {
             //Disk Name, Name (Local Volume vs.), FileSystem (NTFS), FreeSize, PrioritySection, Status 
             List<DiskInfo> disks = DiskTracker.CW_GetDisksOnSystem();
-            List<VolumeInformation> volumes = _diskTracker.CW_GetVolumes();
+            List<VolumeInformation> volumes = DiskTracker.CW_GetVolumes();
 
             List<DiskInformation> diskList = new List<DiskInformation>();
             int index = 0;
@@ -69,7 +69,7 @@ namespace DiskBackup.Business.Concrete
                         volumeInfo.FreeSize = (long)volumeItem.FreeSize;
                         volumeInfo.StrFreeSize = FormatBytes((long)volumeItem.FreeSize);
                         volumeInfo.Bootable = Convert.ToBoolean(volumeItem.Bootable);
-                        volumeInfo.Name = "Local Volume";
+                        volumeInfo.Name = volumeItem.VolumeName;
                         volumeInfo.DiskName = "Disk " + temp.DiskId;
 
                         // volumeItem.Bootable true ise işletim sistemi var 
