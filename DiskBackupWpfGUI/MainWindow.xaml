@@ -175,8 +175,8 @@
                                             <GridViewColumn.CellTemplate>
                                                 <DataTemplate>
                                                     <StackPanel Orientation="Horizontal">
-                                                        <Image Source="Resources/Icon/icons8_c_drive_2.png" Height="22" Width="Auto" Margin="0,0,10,0"/>
-                                                        <TextBlock Text="{Binding Name}" TextAlignment="Left" VerticalAlignment="Center"/>
+                                                        <Image Style="{StaticResource OSListViewItemImage}" />
+                                                        <TextBlock Text="{Binding Name}" TextAlignment="Left" VerticalAlignment="Center" Margin="4,0"/>
                                                     </StackPanel>
                                                 </DataTemplate>
                                             </GridViewColumn.CellTemplate>
@@ -599,8 +599,8 @@
                                     <GridViewColumn.CellTemplate>
                                         <DataTemplate>
                                             <StackPanel Orientation="Horizontal">
-                                                <Image Source="Resources/Icon/icons8_c_drive_2.png" Height="22" Width="Auto" Margin="0,0,10,0"/>
-                                                <TextBlock Text="{Binding Name}" TextAlignment="Left" VerticalAlignment="Center"/>
+                                                <Image Style="{StaticResource OSListViewItemImage}" />
+                                                <TextBlock Text="{Binding Name}" TextAlignment="Left" VerticalAlignment="Center"  Margin="4,0"/>
                                             </StackPanel>
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>
