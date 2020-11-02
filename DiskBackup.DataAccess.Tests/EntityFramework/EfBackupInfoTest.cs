@@ -137,7 +137,8 @@ namespace DiskBackup.DataAccess.Tests.EntityFramework
                 FileSize = 111,
                 StrFileSize = "11 GB",
                 Description = "Açıklama deneme 2",
-                IsCloud = false
+                IsCloud = false,
+                Version = 1
             };
             _EfBackupInfoDal.Add(backupInfo);
 

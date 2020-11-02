@@ -71,6 +71,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Factory\BackupFullFactory.cs" />
+    <Compile Include="Factory\BackupIncDiffFactory.cs" />
+    <Compile Include="Factory\RestoreVolumeFactory.cs" />
     <Compile Include="Jobs\BackupFullJob.cs" />
     <Compile Include="Jobs\BackupIncDiffJob.cs" />
     <Compile Include="Jobs\RestoreDiskJob.cs" />
@@ -100,5 +103,6 @@
     <None Include="app.config" />
     <None Include="packages.config" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

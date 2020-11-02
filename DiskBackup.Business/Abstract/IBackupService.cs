@@ -27,7 +27,7 @@ namespace DiskBackup.Business.Abstract
         bool CreateFullBackup(TaskInfo taskInfo, BackupStorageInfo backupStorageInfo); //Bu daha hazır değil        
 
         //Parametreler bu methodun içinde RestoreTask oluşturacak
-        bool RestoreBackupVolume(BackupInfo backupInfo, VolumeInfo volumeInfo); 
+        bool RestoreBackupVolume(BackupInfo backupInfo, char volumeLetter); 
         bool RestoreBackupDisk(BackupInfo backupInfo, DiskInformation diskInformation);
         //Restore işleminde disk seçilirse CW_RestoreToFreshDisk, volume seçilirse CW_RestoreToVolume
 
