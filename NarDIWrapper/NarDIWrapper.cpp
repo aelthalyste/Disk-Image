@@ -343,6 +343,11 @@ namespace NarDIWrapper {
             BI->DiskID = V.Data[i].DiskID;
             BI->DiskType = V.Data[i].DiskType;
             BI->Letter = V.Data[i].Letter;
+            BI->VolumeName = gcnew System::String(V.Data[i].VolumeName);
+            if (BI->VolumeName->Length == 0) {
+                BI->VolumeName = L"Local Disk";
+            }
+
             Result->Add(BI);
         }
         
@@ -398,7 +403,7 @@ namespace NarDIWrapper {
             for (int i = 0; i < Found; i++) {
                 
                 BackupMetadata^ BMet = gcnew BackupMetadata;
-                BMet->Letter = BMList[i].Letter;
+                BMet->Letter = (wchar_t)BMList[i].Letter;
                 BMet->BackupType = (int)BMList[i].BT;
                 BMet->DiskType = BMList[i].DiskType;
                 BMet->OSVolume = BMList[i].IsOSVolume;
