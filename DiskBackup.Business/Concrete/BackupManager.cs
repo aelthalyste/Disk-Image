@@ -282,11 +282,11 @@ namespace DiskBackup.Business.Concrete
                     Type = (FileType)Convert.ToInt16(item.IsDirectory), //Directory ise 1 
                     Size = (long)item.Size,
                     StrSize = FormatBytes((long)item.Size),
-                    UpdatedDate = item.LastModifiedTime.Day + "." +
-                        item.LastModifiedTime.Month + "." +
-                        item.LastModifiedTime.Year + " " +
-                        item.LastModifiedTime.Hour + ":" +
-                        item.LastModifiedTime.Minute,
+                    UpdatedDate = Convert.ToInt32(item.LastModifiedTime.Day) + "." +
+                        Convert.ToInt32(item.LastModifiedTime.Month) + "." +
+                        Convert.ToInt32(item.LastModifiedTime.Year) + " " +
+                        Convert.ToInt32(item.LastModifiedTime.Hour) + ":" +
+                        Convert.ToInt32(item.LastModifiedTime.Minute),
                     //Size = (long)item.Size,
                     // StrSize = FormatBytes((long)item.Size),
                     Id = (long)item.ID,
@@ -322,6 +322,11 @@ namespace DiskBackup.Business.Concrete
         public void PopDirectory()
         {
             _cSNarFileExplorer.CW_PopDirectory();
+        }
+
+        public string GetCurrentDirectory()
+        {
+            return _cSNarFileExplorer.CW_GetCurrentDirectoryString();
         }
 
         public List<Log> GetLogList() //bu method daha gelmedi

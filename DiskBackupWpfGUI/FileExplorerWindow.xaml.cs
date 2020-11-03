@@ -37,6 +37,7 @@ namespace DiskBackupWpfGUI
 
             listViewFileExplorer.ItemsSource = _filesInBackupList;
             SortItems();
+            txtfileExplorerPath.Text = _backupManager.GetCurrentDirectory();
 
         }
 
@@ -73,9 +74,10 @@ namespace DiskBackupWpfGUI
         private void btnBack_Click(object sender, RoutedEventArgs e)
         {
             _backupManager.PopDirectory();
-            List<FilesInBackup> filesInBackupList = _backupManager.GetFileInfoList();
-            listViewFileExplorer.ItemsSource = filesInBackupList;
+            _filesInBackupList = _backupManager.GetFileInfoList();
+            listViewFileExplorer.ItemsSource = _filesInBackupList;
             SortItems();
+            txtfileExplorerPath.Text = _backupManager.GetCurrentDirectory();
             // pop diyip
             // getFilesInCurrentDirectory
         }
@@ -92,6 +94,7 @@ namespace DiskBackupWpfGUI
                     _filesInBackupList = _backupManager.GetFileInfoList();
                     listViewFileExplorer.ItemsSource = _filesInBackupList;
                     SortItems();
+                    txtfileExplorerPath.Text = _backupManager.GetCurrentDirectory();
                     break;
                 }
             }
