@@ -35,23 +35,6 @@ namespace DiskBackup.TaskScheduler
 
         #region Backup Inc-Diff
 
-        public async Task BackupIncDiffFailTryAgainJob(TaskInfo taskInfo, BackupStorageInfo backupStorageInfo)
-        {
-            IJobDetail job = JobBuilder.Create<BackupIncDiffJob>()
-                .WithIdentity($"backupIncDiffEverydayJob_{taskInfo.Id}", "Backup")
-                .UsingJobData("taskId", taskInfo.Id)
-                .UsingJobData("backupStorageId", backupStorageInfo.Id)
-                .Build();
-
-            ITrigger trigger = TriggerBuilder.Create()
-                .WithIdentity($"backupIncDiffDailyTrigger_{taskInfo.Id}", "Backup")
-                .WithSimpleSchedule(x => x
-                    .WithIntervalInMinutes(taskInfo.BackupTaskInfo.WaitNumberTryAgain))
-                .Build();
-
-            await _scheduler.ScheduleJob(job, trigger);
-        }
-
         #region Daily
         public async Task BackupIncDiffEverydayJob(TaskInfo taskInfo, BackupStorageInfo backupStorageInfo)
         {
@@ -187,23 +170,6 @@ namespace DiskBackup.TaskScheduler
         #endregion
 
         #region Backup Full
-
-        public async Task BackupFullFailTryAgainJob(TaskInfo taskInfo, BackupStorageInfo backupStorageInfo)
-        {
-            IJobDetail job = JobBuilder.Create<BackupFullJob>()
-                .WithIdentity($"backupFullEverydayJob_{taskInfo.Id}", "Backup")
-                .UsingJobData("taskId", taskInfo.Id)
-                .UsingJobData("backupStorageId", backupStorageInfo.Id)
-                .Build();
-
-            ITrigger trigger = TriggerBuilder.Create()
-                .WithIdentity($"backupFullDailyTrigger_{taskInfo.Id}", "Backup")
-                .WithSimpleSchedule(x => x
-                    .WithIntervalInMinutes(taskInfo.BackupTaskInfo.WaitNumberTryAgain))
-                .Build();
-
-            await _scheduler.ScheduleJob(job, trigger);
-        }
 
         #region Daily
         public async Task BackupFullEverydayJob(TaskInfo taskInfo, BackupStorageInfo backupStorageInfo)

@@ -7,11 +7,8 @@ using System.Threading.Tasks;
 
 namespace QuartzPooc
 {
-    
     class MyBackupJob : IJob
     {
-
-
         public MyBackupJob()
         {
 
@@ -35,7 +32,7 @@ namespace QuartzPooc
             if (!result) exception = new JobExecutionException(context.RefireCount < 5);
             if (exception != null)
             {
-                await Task.Delay(TimeSpan.FromMinutes(5));
+                await Task.Delay(TimeSpan.FromMinutes(3));
                 throw exception;
             }
         }
