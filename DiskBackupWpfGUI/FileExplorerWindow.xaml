@@ -83,14 +83,14 @@
         <ListView Name="listViewFileExplorer" MinHeight="350" Margin="5" Grid.Row="2" DisplayMemberPath="Name" AllowDrop="True">
             <ListView.View>
                 <GridView>
-                    <GridViewColumn Width="60">
+                    <GridViewColumn Width="45">
                         <GridViewColumn.Header>
-                            <CheckBox Name="chbFileExplorerSelectAll" />
+                            <CheckBox Name="chbFileExplorerSelectAll" Cursor="Hand"/>
                         </GridViewColumn.Header>
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
                                 <CheckBox IsChecked="{Binding Path=IsSelected, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ListViewItem}}}"
-                                          HorizontalAlignment="Center"/>
+                                          HorizontalAlignment="Center" Cursor="Hand"/>
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
@@ -104,18 +104,18 @@
                     <GridViewColumn Header="{DynamicResource name2}" Width="210" >
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding Name}" TextAlignment="Center"/>
+                                <TextBlock Text="{Binding Name}" />
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
                     <GridViewColumn Header="{DynamicResource updateDate}" Width="210" >
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding UpdatedDate, StringFormat='dd.MM.yyyy HH:mm'}" TextAlignment="Center"/>
+                                <TextBlock Text="{Binding UpdatedDate}" TextAlignment="Center"/>
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn >
-                    <GridViewColumn Header="{DynamicResource size}" Width="210" >
+                    <GridViewColumn Header="{DynamicResource size}" Width="200" >
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
                                 <TextBlock Text="{Binding StrSize}" TextAlignment="Center"/>
@@ -126,7 +126,7 @@
             </ListView.View>
             <ListView.ItemContainerStyle>
                 <Style TargetType="ListViewItem">
-                    <EventSetter Event="MouseDoubleClick" Handler="ListViewItem_MouseDoubleClick"/>
+                    <EventSetter Event="MouseDoubleClick" Handler="listViewFileExplorer_MouseDoubleClick"/>
                     <Setter Property="HorizontalContentAlignment" Value="Stretch" />
                     <Style.Triggers>
                         <DataTrigger Binding="{Binding IsCloud}" Value="true">

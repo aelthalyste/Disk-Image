@@ -24,16 +24,20 @@ namespace DiskBackupWpfGUI
     /// </summary>
     public partial class MainWindow : Window
     {
+        private int _diskExpenderIndex = 0;
+
         private bool _diskAllControl = false;
         private bool _diskAllHeaderControl = false;
         private bool _restoreDiskAllControl = false;
         private bool _restoreDiskAllHeaderControl = false;
+
         private List<CheckBox> _expanderCheckBoxes = new List<CheckBox>();
         private List<int> _numberOfItems = new List<int>();
         private List<string> _groupName = new List<string>();
         private List<CheckBox> _restoreExpanderCheckBoxes = new List<CheckBox>();
         private List<int> _restoreNumberOfItems = new List<int>();
         private List<string> _restoreGroupName = new List<string>();
+        private List<DiskInformation> diskList = new List<DiskInformation>();
 
         public MainWindow()
         {
@@ -182,7 +186,7 @@ namespace DiskBackupWpfGUI
 
             List<VolumeInfo> diskItems = new List<VolumeInfo>();
             BackupManager backupManager = new BackupManager();
-            List<DiskInformation> diskList = backupManager.GetDiskList();
+            diskList = backupManager.GetDiskList();
 
             foreach (var diskItem in diskList)
             {
@@ -476,15 +480,6 @@ namespace DiskBackupWpfGUI
         private void Expander_Loaded(object sender, RoutedEventArgs e)
         {
             var expander = sender as Expander;
-            long diskSize = 0;
-
-            foreach (VolumeInfo item in listViewDisk.Items)
-            {
-                if (item.DiskName.Equals(expander.Tag.ToString()))
-                {
-                    diskSize += item.Size;
-                }
-            }
 
             var size = expander.FindName("txtTotalSize") as TextBlock;
             var expanderCheck = expander.FindName("HeaderCheckBox") as CheckBox;
@@ -493,7 +488,9 @@ namespace DiskBackupWpfGUI
             _numberOfItems.Add(Convert.ToInt32(numberOfItems.Text));
             var groupName = expander.FindName("txtGroupName") as TextBlock;
             _groupName.Add(groupName.Text);
-            size.Text = FormatBytes(diskSize);
+            if (diskList.Count == _diskExpenderIndex)
+                _diskExpenderIndex = 0;
+            size.Text = FormatBytes(diskList[_diskExpenderIndex++].Size);
         }
 
         #region Checkbox Operations
@@ -618,15 +615,6 @@ namespace DiskBackupWpfGUI
         private void Expander_Loaded_1(object sender, RoutedEventArgs e)
         {
             var expander = sender as Expander;
-            long diskSize = 0;
-
-            foreach (VolumeInfo item in listViewRestoreDisk.Items)
-            {
-                if (item.DiskName.Equals(expander.Tag.ToString()))
-                {
-                    diskSize += item.Size;
-                }
-            }
 
             var size = expander.FindName("txtRestoreTotalSize") as TextBlock;
             var expanderCheck = expander.FindName("cbRestoreHeader") as CheckBox;
@@ -635,7 +623,9 @@ namespace DiskBackupWpfGUI
             _restoreNumberOfItems.Add(Convert.ToInt32(numberOfItems.Text));
             var groupName = expander.FindName("txtRestoreGroupName") as TextBlock;
             _restoreGroupName.Add(groupName.Text);
-            size.Text = FormatBytes(diskSize);
+            if (diskList.Count == _diskExpenderIndex)
+                _diskExpenderIndex = 0;
+            size.Text = FormatBytes(diskList[_diskExpenderIndex++].Size);
         }
 
 

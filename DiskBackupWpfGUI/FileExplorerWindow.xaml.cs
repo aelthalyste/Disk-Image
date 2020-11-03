@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -23,45 +24,21 @@ namespace DiskBackupWpfGUI
     public partial class FileExplorerWindow : Window
     {
         BackupManager _backupManager = new BackupManager();
+        List<FilesInBackup> _filesInBackupList = new List<FilesInBackup>();
 
         public FileExplorerWindow()
         {
             InitializeComponent();
 
             BackupInfo backupInfo = new BackupInfo();
+
             _backupManager.InitFileExplorer(backupInfo);
-            //CSNarFileExplorer cSNarFileExplorer = new CSNarFileExplorer();
-            //cSNarFileExplorer.CW_Init('C', 0, "");
+            _filesInBackupList = _backupManager.GetFileInfoList();
 
-            List<FilesInBackup> filesInBackupList = _backupManager.GetFileInfoList();
-            //var resultList = cSNarFileExplorer.CW_GetFilesInCurrentDirectory();
-            //List<FilesInBackup> filesInBackupList = new List<FilesInBackup>();
-            //foreach (var item in resultList)
-            //{
-            //    filesInBackupList.Add(new FilesInBackup
-            //    {
-            //        Name = item.Name,
-            //        Type = (FileType)item.IsDirectory, //Directory ise 1 
-            //        Size = (long)item.Size,
-            //        Id = (long)item.ID,
-            //        //UpdatedDate = item.CreationTime
-            //        //Path değeri Batudan isteyelim
-            //        //UpdatedDate dönüşü daha yok
-            //    });
-            //}
+            listViewFileExplorer.ItemsSource = _filesInBackupList;
+            SortItems();
+            txtfileExplorerPath.Text = _backupManager.GetCurrentDirectory();
 
-            filesInBackupList.Add(new FilesInBackup
-            {
-                Name = "Eyüp",
-                Type = (FileType)1, //Directory ise 1 
-                Size = 29,
-                Id = 1,
-                //UpdatedDate = item.CreationTime
-                //Path değeri Batudan isteyelim
-                //UpdatedDate dönüşü daha yok
-            });
-
-            listViewFileExplorer.ItemsSource = filesInBackupList;
         }
 
         #region Title Bar
@@ -97,20 +74,37 @@ namespace DiskBackupWpfGUI
         private void btnBack_Click(object sender, RoutedEventArgs e)
         {
             _backupManager.PopDirectory();
-            List<FilesInBackup> filesInBackupList = _backupManager.GetFileInfoList();
-            listViewFileExplorer.ItemsSource = filesInBackupList;
+            _filesInBackupList = _backupManager.GetFileInfoList();
+            listViewFileExplorer.ItemsSource = _filesInBackupList;
+            SortItems();
+            txtfileExplorerPath.Text = _backupManager.GetCurrentDirectory();
             // pop diyip
             // getFilesInCurrentDirectory
         }
 
-        private void ListViewItem_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        private void listViewFileExplorer_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
-            //MessageBox.Show(listViewFileExplorer.SelectedIndex.ToString());
-            FilesInBackup filesInBackup = new FilesInBackup();
-            filesInBackup.Id = listViewFileExplorer.SelectedIndex;
-            _backupManager.GetSelectedFileInfo(filesInBackup);
-            List<FilesInBackup> filesInBackupList = _backupManager.GetFileInfoList();
-            listViewFileExplorer.ItemsSource = filesInBackupList;
+            FilesInBackup filesInBackup = (FilesInBackup)listViewFileExplorer.SelectedItem;
+
+            foreach (var item in _filesInBackupList)
+            {
+                if(item.Name.Equals(filesInBackup.Name) && item.StrSize.Equals(filesInBackup.StrSize))
+                {
+                    _backupManager.GetSelectedFileInfo(item);
+                    _filesInBackupList = _backupManager.GetFileInfoList();
+                    listViewFileExplorer.ItemsSource = _filesInBackupList;
+                    SortItems();
+                    txtfileExplorerPath.Text = _backupManager.GetCurrentDirectory();
+                    break;
+                }
+            }
+        }
+
+        private void SortItems()
+        {
+            CollectionView view = (CollectionView)CollectionViewSource.GetDefaultView(listViewFileExplorer.ItemsSource);
+            view.SortDescriptions.Add(new SortDescription("Type", ListSortDirection.Descending));
+            view.SortDescriptions.Add(new SortDescription("Name", ListSortDirection.Ascending));
         }
 
         //Seçilen değere gitmek için ise CW_SelectDirectory(seçilenID)

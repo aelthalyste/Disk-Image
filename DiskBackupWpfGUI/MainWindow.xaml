@@ -175,8 +175,8 @@
                                             <GridViewColumn.CellTemplate>
                                                 <DataTemplate>
                                                     <StackPanel Orientation="Horizontal">
-                                                        <Image Source="Resources/Icon/icons8_c_drive_2.png" Height="22" Width="Auto" Margin="0,0,10,0"/>
-                                                        <TextBlock Text="{Binding Name}" TextAlignment="Left" VerticalAlignment="Center"/>
+                                                        <Image Style="{StaticResource OSListViewItemImage}" />
+                                                        <TextBlock Text="{Binding Name}" TextAlignment="Left" VerticalAlignment="Center" Margin="4,0"/>
                                                     </StackPanel>
                                                 </DataTemplate>
                                             </GridViewColumn.CellTemplate>
@@ -366,19 +366,6 @@
                                     </GridViewColumn>
                                 </GridView>
                             </ListView.View>
-                            <ListView.ItemContainerStyle>
-                                <Style TargetType="ListViewItem">
-                                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding IsPolicyFolder}" Value="false">
-                                            <Setter Property="IsEnabled" Value="True"/>
-                                        </DataTrigger>
-                                        <DataTrigger Binding="{Binding IsPolicyFolder}" Value="true">
-                                            <Setter Property="IsEnabled" Value="False"/>
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </ListView.ItemContainerStyle>
                         </ListView>
                     </DockPanel>
                     <DockPanel Grid.Column="1" VerticalAlignment="Top" Height="415" Background="#F2F2F2">
@@ -599,8 +586,8 @@
                                     <GridViewColumn.CellTemplate>
                                         <DataTemplate>
                                             <StackPanel Orientation="Horizontal">
-                                                <Image Source="Resources/Icon/icons8_c_drive_2.png" Height="22" Width="Auto" Margin="0,0,10,0"/>
-                                                <TextBlock Text="{Binding Name}" TextAlignment="Left" VerticalAlignment="Center"/>
+                                                <Image Style="{StaticResource OSListViewItemImage}" />
+                                                <TextBlock Text="{Binding Name}" TextAlignment="Left" VerticalAlignment="Center"  Margin="4,0"/>
                                             </StackPanel>
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>
@@ -677,19 +664,6 @@
                                 </GroupStyle.ContainerStyle>
                             </GroupStyle>
                         </ListView.GroupStyle>
-                        <ListView.ItemContainerStyle>
-                            <Style TargetType="ListViewItem">
-                                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding IsPolicyFolder}" Value="false">
-                                        <Setter Property="IsEnabled" Value="True"/>
-                                    </DataTrigger>
-                                    <DataTrigger Binding="{Binding IsPolicyFolder}" Value="true">
-                                        <Setter Property="IsEnabled" Value="False"/>
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </ListView.ItemContainerStyle>
                     </ListView>
 
                     <StackPanel Grid.Column="1">

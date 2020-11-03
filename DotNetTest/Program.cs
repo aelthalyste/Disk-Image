@@ -45,26 +45,46 @@ namespace DotNetTest
             {
                 Console.WriteLine("Narbulut volume yedekleme servisi v0.1\n");
 
-
+                var l = DiskTracker.CW_GetVolumes();
+                foreach (var v in l) {
+                    Console.WriteLine(v.VolumeName);
+                }
+                
                 CSNarFileExplorer fexp = new CSNarFileExplorer();
                 
                 fexp.CW_Init('C', 0, "asdfasdf");
                 var list = fexp.CW_GetFilesInCurrentDirectory();
 
-                foreach (var entry in list)
-                {
-                    Console.Write(entry.ID);
-                    Console.Write("\t");
-                    Console.WriteLine(entry.Name);
-                }
-
                 while (true)
                 {
 
+                    foreach (var entry in list)
+                    {
+                        Console.Write(entry.ID);
+                        Console.Write(" ");
+                        if (entry.IsDirectory)
+                        {
+                            Console.Write("DIR");
+                        }
+                        else { 
+                            Console.Write(entry.Size);
+                        }
+                        Console.Write("\t");
+                        Console.Write("\t");
+                        Console.Write("\t");
+                        Console.Write("\t");
+                        Console.Write("\t");
+
+                        Console.WriteLine(entry.Name);
+                    }
+
+                    Console.WriteLine(fexp.CW_GetCurrentDirectoryString());
+
                     string input = Console.ReadLine();
                     var id = System.Convert.ToInt32(input);
-                    
-                    if (id >= 0) {
+
+                    if (id >= 0)
+                    {
                         fexp.CW_SelectDirectory(list[id].ID);
                     }
                     else
@@ -73,15 +93,6 @@ namespace DotNetTest
                     }
 
                     list = fexp.CW_GetFilesInCurrentDirectory();
-
-                    foreach (var entry in list)
-                    {
-                        Console.Write(entry.ID);
-                        Console.Write("\t");
-                        Console.WriteLine(entry.Name);
-                    }
-
-                    Console.WriteLine(fexp.CW_GetCurrentDirectoryString());
 
                 }
 

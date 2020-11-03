@@ -21,7 +21,7 @@ namespace NarDIWrapper {
 
     public ref class DiskInfo {
     public:
-        unsigned Size;
+        UINT64 Size;
         wchar_t Type; // MBR, RAW, GPT
         int ID;
     };
@@ -45,7 +45,9 @@ namespace NarDIWrapper {
 
     public ref class VolumeInformation {
     public:
-        ULONGLONG Size; //in bytes!
+        ULONGLONG TotalSize; //in bytes!
+        ULONGLONG FreeSize;
+        System::String^ VolumeName;
         BOOLEAN Bootable; // Healthy && NTFS && !Boot
         char Letter;
         INT8 DiskID;
@@ -89,7 +91,7 @@ namespace NarDIWrapper {
         CSNarFileEntry() {
         }
 
-        INT16 IsDirectory;
+        bool IsDirectory;
         UINT64 Size;
         UINT64 ID;
 
@@ -144,7 +146,7 @@ namespace NarDIWrapper {
         DiskTracker();
         ~DiskTracker();
 
-        List<VolumeInformation^>^ CW_GetVolumes();
+        static List<VolumeInformation^>^ CW_GetVolumes();
 
         bool CW_InitTracker();
 
@@ -161,7 +163,6 @@ namespace NarDIWrapper {
 
         //terminate backuptan sonra cagir
         bool CW_SaveBootState();
-
 
 
 

@@ -429,11 +429,13 @@ Volume ###  Ltr  Label        Fs     Type        Size     Status     Info
   Volume 3                      FAT32  Partition    100 MB  Healthy    System
 */
 struct volume_information {
-    ULONGLONG Size; //in bytes!
+    UINT64 TotalSize;
+    UINT64 FreeSize;
     BOOLEAN Bootable; // Healthy && NTFS && !Boot
     char Letter;
     unsigned char DiskID;
     char DiskType;
+    wchar_t VolumeName[MAX_PATH + 1];
 };
 
 // Up to 2GB
@@ -749,14 +751,16 @@ inline void
 FreeFileRead(file_read FR);
 
 
-#define NAR_POSIX 2
-#define NAR_ENTRY_SIZE_OFFSET 8
-#define NAR_TIME_OFFSET 28
-#define NAR_SIZE_OFFSET 64
-#define NAR_NAME_LEN_OFFSET 80 
-#define NAR_POSIX_OFFSET 81
-#define NAR_NAME_OFFSET 82
-#define NAR_ROOT_MFT_ID 5
+#define NAR_POSIX                2
+#define NAR_ENTRY_SIZE_OFFSET    8
+#define NAR_TIME_OFFSET         28
+#define NAR_SIZE_OFFSET         64
+#define NAR_ATTRIBUTE_OFFSET    72
+#define NAR_NAME_LEN_OFFSET     80 
+#define NAR_POSIX_OFFSET        81
+#define NAR_NAME_OFFSET         82
+
+#define NAR_ROOT_MFT_ID          5
 
 #define NAR_FE_HAND_OPT_READ_MOUNTED_VOLUME 1
 #define NAR_FE_HAND_OPT_READ_BACKUP_VOLUME 2
@@ -777,7 +781,7 @@ struct nar_fe_volume_handle{
 // could be either file or dir
 struct nar_file_entry {
 
-    BOOLEAN Flags;
+    BOOLEAN IsDirectory;
 
     UINT64 MFTFileIndex;
     UINT64 Size; // file size in bytes
@@ -854,7 +858,40 @@ struct nar_fe_search_result {
     BOOLEAN Found;
 };
 
+struct lcn_from_mft_query_result {
 
+    enum {
+        FAIL = 0x0,
+        SUCCESS = 0x1,
+        HAS_DATA_IN_MFT = 0x2,
+        FILE_FITS_MFT = 0x4
+    };
+
+    INT8 Flags;
+
+    // valid if record contains file data in it
+    INT16 DataOffset;
+    INT16 DataLen;
+
+    // i dont want to use dynamically allocated array then free it. Since these tasks are disk IO bounded, i can totally neglect cache behavior(thats a big sin) and preallocate big stack array and never have to deal with freeing it
+    // probably %95 of it will be empty most of the time
+    INT32 RecordCount;
+    nar_record Records[1024];
+
+};
+
+
+inline lcn_from_mft_query_result
+ReadLCNFromMFTRecord(void* RecordStart);
+
+/*
+    Gets the intersection of the r1 and r2 arrays, writes new array to r3
+*/
+inline void
+NarGetRegionIntersection(nar_record* r1, nar_record* r2, nar_record** intersections, INT32 len1, INT32 len2, INT32* IntersectionLen);
+
+inline void
+NarFreeRegionIntersection(nar_record* intersections);
 
 
 // inf

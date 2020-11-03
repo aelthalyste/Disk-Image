@@ -2,10 +2,14 @@
 using DiskBackup.Entities.Concrete;
 using DiskBackup.TaskScheduler.Jobs;
 using Quartz;
+using Quartz.Impl;
 using Quartz.Impl.Calendar;
+using Quartz.Spi;
 using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -13,82 +17,92 @@ namespace DiskBackup.TaskScheduler
 {
     public class TaskSchedulerManager
     {
-        public IScheduler MyScheduler { get; set; }
-        public static int jobIdCounter = 0;
-        public static TaskInfo _taskInfo = null;
-        public static BackupStorageInfo _backupStorageInfo = null;
-        public static BackupManager _backupManager = null;
+        public IScheduler _scheduler;
+        public IJobFactory _jobFactory;
 
-        public async Task CreateBackupIncDiffJob(TaskInfo taskInfo, BackupStorageInfo backupStorageInfo)
+        public TaskSchedulerManager(IJobFactory jobFactory)
         {
-            _taskInfo = taskInfo;
-            _backupStorageInfo = backupStorageInfo;
-
-            IJobDetail job = JobBuilder.Create<BackupIncDiffJob>()
-               .WithIdentity("job3" + jobIdCounter, "group3")
-               .Build();
-            var trigger = TriggerBuilder.Create()
-               .WithIdentity("trigger3" + jobIdCounter, "group3")
-               .WithSimpleSchedule(x => x
-                   .WithIntervalInMinutes(1)
-                   .WithRepeatCount(0))
-               .Build();
-            await MyScheduler.ScheduleJob(job, trigger);
-            jobIdCounter++;
+            _jobFactory = jobFactory;
         }
 
-        //*************************************************************************************************
+        public async Task InitShedulerAsync()
+        {
+            StdSchedulerFactory factory = new StdSchedulerFactory();
+            _scheduler = await factory.GetScheduler();
+            _scheduler.JobFactory = _jobFactory;
+            await _scheduler.Start();
+        }
 
-        #region Backup
+        #region Backup Inc-Diff
+
+        public async Task BackupIncDiffFailTryAgainJob(TaskInfo taskInfo, BackupStorageInfo backupStorageInfo)
+        {
+            IJobDetail job = JobBuilder.Create<BackupIncDiffJob>()
+                .WithIdentity($"backupIncDiffEverydayJob_{taskInfo.Id}", "Backup")
+                .UsingJobData("taskId", taskInfo.Id)
+                .UsingJobData("backupStorageId", backupStorageInfo.Id)
+                .Build();
+
+            ITrigger trigger = TriggerBuilder.Create()
+                .WithIdentity($"backupIncDiffDailyTrigger_{taskInfo.Id}", "Backup")
+                .WithSimpleSchedule(x => x
+                    .WithIntervalInMinutes(taskInfo.BackupTaskInfo.WaitNumberTryAgain))
+                .Build();
+
+            await _scheduler.ScheduleJob(job, trigger);
+        }
 
         #region Daily
         public async Task BackupIncDiffEverydayJob(TaskInfo taskInfo, BackupStorageInfo backupStorageInfo)
         {
             IJobDetail job = JobBuilder.Create<BackupIncDiffJob>()
-                .WithIdentity("backupIncDiffEverydayJob_" + jobIdCounter, "Backup")
+                .WithIdentity($"backupIncDiffEverydayJob_{taskInfo.Id}", "Backup")
+                .UsingJobData("taskId", taskInfo.Id)
+                .UsingJobData("backupStorageId", backupStorageInfo.Id)
                 .Build();
 
             ITrigger trigger = TriggerBuilder.Create()
-                .WithIdentity("backupIncDiffDailyTrigger_" + jobIdCounter, "Backup")
-                .ForJob("backupIncDiffEverydayJob_" + jobIdCounter)
+                .WithIdentity($"backupIncDiffDailyTrigger_{taskInfo.Id}", "Backup")
+                .ForJob($"backupIncDiffEverydayJob_{taskInfo.Id}", "Backup")
                 .WithSchedule(CronScheduleBuilder.DailyAtHourAndMinute(taskInfo.BackupTaskInfo.StartTime.Hour, taskInfo.BackupTaskInfo.StartTime.Minute)) // execute job daily at 22:00
                 .Build();
 
-            await MyScheduler.ScheduleJob(job, trigger);
-            jobIdCounter++;
+            await _scheduler.ScheduleJob(job, trigger);
         }
 
         public async Task BackupIncDiffWeekDaysJob(TaskInfo taskInfo, BackupStorageInfo backupStorageInfo)
         {
             IJobDetail job = JobBuilder.Create<BackupIncDiffJob>()
-                .WithIdentity("backupIncDiffWeekDaysJob_" + jobIdCounter, "Backup")
+                .WithIdentity($"backupIncDiffWeekDaysJob_{taskInfo.Id}", "Backup")
+                .UsingJobData("taskId", taskInfo.Id)
+                .UsingJobData("backupStorageId", backupStorageInfo.Id)
                 .Build();
 
             ITrigger trigger = TriggerBuilder.Create()
-                .WithIdentity("backupIncDiffWeekDaysTrigger_", "Backup")
+                .WithIdentity($"backupIncDiffWeekDaysTrigger_{taskInfo.Id}", "Backup")
                 .WithCronSchedule($"0 {taskInfo.BackupTaskInfo.StartTime.Minute} {taskInfo.BackupTaskInfo.StartTime.Hour}? * MON-FRI") // Haftaiçi günlerinde çalıştırma
-                .ForJob("backupIncDiffWeekDaysJob_", "Backup")
+                .ForJob($"backupIncDiffWeekDaysJob_{taskInfo.Id}", "Backup")
                 .Build();
 
-            await MyScheduler.ScheduleJob(job, trigger);
-            jobIdCounter++;
+            await _scheduler.ScheduleJob(job, trigger);
         }
 
-        //yapılmadı*****string çözümü düşünüldü
+        //string çözümü düşünüldü
         public async Task BackupIncDiffCertainDaysJob(TaskInfo taskInfo, BackupStorageInfo backupStorageInfo)
         {
             IJobDetail job = JobBuilder.Create<BackupIncDiffJob>()
-                .WithIdentity("backupIncDiffCertainDaysJob_" + jobIdCounter, "Backup")
+                .WithIdentity($"backupIncDiffCertainDaysJob_{taskInfo.Id}", "Backup")
+                .UsingJobData("taskId", taskInfo.Id)
+                .UsingJobData("backupStorageId", backupStorageInfo.Id)
                 .Build();
 
             ITrigger trigger = TriggerBuilder.Create()
-                .WithIdentity("backupIncDiffCertainDaysTrigger_", "Backup")
+                .WithIdentity($"backupIncDiffCertainDaysTrigger_{taskInfo.Id}", "Backup")
                 .WithCronSchedule($"0 {taskInfo.BackupTaskInfo.StartTime.Minute} {taskInfo.BackupTaskInfo.StartTime.Hour}? * {taskInfo.BackupTaskInfo.Days}") // Belirli günler
-                .ForJob("backupIncDiffCertainDaysJob_", "Backup")
+                .ForJob($"backupIncDiffCertainDaysJob_{taskInfo.Id}", "Backup")
                 .Build();
 
-            await MyScheduler.ScheduleJob(job, trigger);
-            jobIdCounter++;
+            await _scheduler.ScheduleJob(job, trigger);
         }
 
         #endregion
@@ -97,17 +111,19 @@ namespace DiskBackup.TaskScheduler
         public async Task BackupIncDiffWeeklyJob(TaskInfo taskInfo, BackupStorageInfo backupStorageInfo)
         {
             IJobDetail job = JobBuilder.Create<BackupIncDiffJob>()
-                .WithIdentity("backupIncDiffWeeklyJob_" + jobIdCounter, "Backup")
+                .WithIdentity($"backupIncDiffWeeklyJob_{taskInfo.Id}", "Backup")
+                .UsingJobData("taskId", taskInfo.Id)
+                .UsingJobData("backupStorageId", backupStorageInfo.Id)
                 .Build();
 
             ITrigger trigger = TriggerBuilder.Create()
-                .WithIdentity("backupIncDiffWeeklyTrigger_", "Backup")
+                .WithIdentity($"backupIncDiffWeeklyTrigger_{taskInfo.Id}", "Backup")
                 .WithCronSchedule($"0 {taskInfo.BackupTaskInfo.StartTime.Minute} {taskInfo.BackupTaskInfo.StartTime.Hour}? {taskInfo.BackupTaskInfo.Months} {taskInfo.BackupTaskInfo.Days} # {taskInfo.BackupTaskInfo.WeeklyTime}") // 0 15 10? * 6 # 3
-                .ForJob("backupIncDiffWeeklyJob_", "Backup")
+                .ForJob($"backupIncDiffWeeklyJob_{taskInfo.Id}", "Backup")
                 .Build();
 
-            await MyScheduler.ScheduleJob(job, trigger);
-            jobIdCounter++;
+            await _scheduler.ScheduleJob(job, trigger);
+
         }
 
         #endregion
@@ -116,54 +132,209 @@ namespace DiskBackup.TaskScheduler
         public async Task BackupIncDiffPeriodicHoursJob(TaskInfo taskInfo, BackupStorageInfo backupStorageInfo)
         {
             IJobDetail job = JobBuilder.Create<BackupIncDiffJob>()
-                .WithIdentity("backupIncDiffPeriodicHoursJob_" + jobIdCounter, "Backup")
+                .WithIdentity($"backupIncDiffPeriodicHoursJob_{taskInfo.Id}", "Backup")
+                .UsingJobData("taskId", taskInfo.Id)
+                .UsingJobData("backupStorageId", backupStorageInfo.Id)
                 .Build();
 
             var trigger = TriggerBuilder.Create()
-               .WithIdentity("backupIncDiffPeriodicHoursTrigger_" + jobIdCounter, "Backup")
+               .WithIdentity($"backupIncDiffPeriodicHoursTrigger_{taskInfo.Id}", "Backup")
                .WithSimpleSchedule(x => x
                    .WithIntervalInHours(taskInfo.BackupTaskInfo.PeriodicTime)
                    .RepeatForever())
                .Build();
 
-            await MyScheduler.ScheduleJob(job, trigger);
-            jobIdCounter++;
+            await _scheduler.ScheduleJob(job, trigger);
         }
 
         public async Task BackupIncDiffPeriodicMinutesJob(TaskInfo taskInfo, BackupStorageInfo backupStorageInfo)
         {
             IJobDetail job = JobBuilder.Create<BackupIncDiffJob>()
-                .WithIdentity("backupIncDiffPeriodicHoursJob_" + jobIdCounter, "Backup")
+                .WithIdentity($"backupIncDiffPeriodicHoursJob_{taskInfo.Id}", "Backup")
+                .UsingJobData("taskId", taskInfo.Id)
+                .UsingJobData("backupStorageId", backupStorageInfo.Id)
                 .Build();
 
             var trigger = TriggerBuilder.Create()
-               .WithIdentity("backupIncDiffPeriodicHoursTrigger_" + jobIdCounter, "Backup")
+               .WithIdentity($"backupIncDiffPeriodicHoursTrigger_{taskInfo.Id}", "Backup")
                .WithSimpleSchedule(x => x
                    .WithIntervalInMinutes(taskInfo.BackupTaskInfo.PeriodicTime)
                    .RepeatForever())
                .Build();
 
-            await MyScheduler.ScheduleJob(job, trigger);
-            jobIdCounter++;
+            await _scheduler.ScheduleJob(job, trigger);
         }
 
         #endregion
 
         public async Task BackupIncDiffNowJob(TaskInfo taskInfo, BackupStorageInfo backupStorageInfo)
         {
-            IJobDetail job = JobBuilder.Create<RestoreDiskJob>()
-                .WithIdentity("backupIncDiffNowJob_" + jobIdCounter, "Backup")
+            IJobDetail job = JobBuilder.Create<BackupIncDiffJob>()
+                .WithIdentity($"backupIncDiffNowJob_{taskInfo.Id}", "Backup")
+                .UsingJobData("taskId", taskInfo.Id)
+                .UsingJobData("backupStorageId", backupStorageInfo.Id)
                 .Build();
 
             ITrigger trigger = TriggerBuilder.Create()
-                .WithIdentity("backupIncDiffNowTrigger_" + jobIdCounter, "Backup")
-                .ForJob("restoreDiskJob_" + jobIdCounter)
+                .WithIdentity($"backupIncDiffNowTrigger_{taskInfo.Id}", "Backup")
+                .ForJob($"backupIncDiffNowJob_{taskInfo.Id}", "Backup")
                 .StartAt(taskInfo.NextDate) // now yollandığında hemen çalıştıracak
                 .Build();
 
-            await MyScheduler.ScheduleJob(job, trigger);
-            jobIdCounter++;
+            await _scheduler.ScheduleJob(job, trigger);
+        }
 
+        #endregion
+
+        #region Backup Full
+
+        public async Task BackupFullFailTryAgainJob(TaskInfo taskInfo, BackupStorageInfo backupStorageInfo)
+        {
+            IJobDetail job = JobBuilder.Create<BackupFullJob>()
+                .WithIdentity($"backupFullEverydayJob_{taskInfo.Id}", "Backup")
+                .UsingJobData("taskId", taskInfo.Id)
+                .UsingJobData("backupStorageId", backupStorageInfo.Id)
+                .Build();
+
+            ITrigger trigger = TriggerBuilder.Create()
+                .WithIdentity($"backupFullDailyTrigger_{taskInfo.Id}", "Backup")
+                .WithSimpleSchedule(x => x
+                    .WithIntervalInMinutes(taskInfo.BackupTaskInfo.WaitNumberTryAgain))
+                .Build();
+
+            await _scheduler.ScheduleJob(job, trigger);
+        }
+
+        #region Daily
+        public async Task BackupFullEverydayJob(TaskInfo taskInfo, BackupStorageInfo backupStorageInfo)
+        {
+            IJobDetail job = JobBuilder.Create<BackupFullJob>()
+                .WithIdentity($"backupFullEverydayJob_{taskInfo.Id}", "Backup")
+                .UsingJobData("taskId", taskInfo.Id)
+                .UsingJobData("backupStorageId", backupStorageInfo.Id)
+                .Build();
+
+            ITrigger trigger = TriggerBuilder.Create()
+                .WithIdentity($"backupFullDailyTrigger_{taskInfo.Id}", "Backup")
+                .ForJob($"backupFullEverydayJob_{taskInfo.Id}", "Backup")
+                .WithSchedule(CronScheduleBuilder.DailyAtHourAndMinute(taskInfo.BackupTaskInfo.StartTime.Hour, taskInfo.BackupTaskInfo.StartTime.Minute)) // execute job daily at 22:00
+                .Build();
+
+            await _scheduler.ScheduleJob(job, trigger);
+        }
+
+        public async Task BackupFullWeekDaysJob(TaskInfo taskInfo, BackupStorageInfo backupStorageInfo)
+        {
+            IJobDetail job = JobBuilder.Create<BackupFullJob>()
+                .WithIdentity($"backupFullWeekDaysJob_{taskInfo.Id}", "Backup")
+                .UsingJobData("taskId", taskInfo.Id)
+                .UsingJobData("backupStorageId", backupStorageInfo.Id)
+                .Build();
+
+            ITrigger trigger = TriggerBuilder.Create()
+                .WithIdentity($"backupFullWeekDaysTrigger_{taskInfo.Id}", "Backup")
+                .WithCronSchedule($"0 {taskInfo.BackupTaskInfo.StartTime.Minute} {taskInfo.BackupTaskInfo.StartTime.Hour}? * MON-FRI") // Haftaiçi günlerinde çalıştırma
+                .ForJob($"backupFullWeekDaysJob_{taskInfo.Id}", "Backup")
+                .Build();
+
+            await _scheduler.ScheduleJob(job, trigger);
+
+        }
+
+        //string çözümü düşünüldü
+        public async Task BackupFullCertainDaysJob(TaskInfo taskInfo, BackupStorageInfo backupStorageInfo)
+        {
+            IJobDetail job = JobBuilder.Create<BackupFullJob>()
+                .WithIdentity($"backupFullCertainDaysJob_{taskInfo.Id}", "Backup")
+                .UsingJobData("taskId", taskInfo.Id)
+                .UsingJobData("backupStorageId", backupStorageInfo.Id)
+                .Build();
+
+            ITrigger trigger = TriggerBuilder.Create()
+                .WithIdentity($"backupFullCertainDaysTrigger_{taskInfo.Id}", "Backup")
+                .WithCronSchedule($"0 {taskInfo.BackupTaskInfo.StartTime.Minute} {taskInfo.BackupTaskInfo.StartTime.Hour}? * {taskInfo.BackupTaskInfo.Days}") // Belirli günler
+                .ForJob($"backupFullCertainDaysJob_{taskInfo.Id}", "Backup")
+                .Build();
+
+            await _scheduler.ScheduleJob(job, trigger);           
+        }
+
+        #endregion
+
+        #region Weekly
+        public async Task BackupFullWeeklyJob(TaskInfo taskInfo, BackupStorageInfo backupStorageInfo)
+        {
+            IJobDetail job = JobBuilder.Create<BackupFullJob>()
+                .WithIdentity($"backupFullWeeklyJob_{taskInfo.Id}", "Backup")
+                .UsingJobData("taskId", taskInfo.Id)
+                .UsingJobData("backupStorageId", backupStorageInfo.Id)
+                .Build();
+
+            ITrigger trigger = TriggerBuilder.Create()
+                .WithIdentity($"backupFullWeeklyTrigger_{taskInfo.Id}", "Backup")
+                .WithCronSchedule($"0 {taskInfo.BackupTaskInfo.StartTime.Minute} {taskInfo.BackupTaskInfo.StartTime.Hour}? {taskInfo.BackupTaskInfo.Months} {taskInfo.BackupTaskInfo.Days} # {taskInfo.BackupTaskInfo.WeeklyTime}") // 0 15 10? * 6 # 3
+                .ForJob($"backupFullWeeklyJob_{taskInfo.Id}", "Backup")
+                .Build();
+
+            await _scheduler.ScheduleJob(job, trigger);
+        }
+
+        #endregion
+
+        #region Periodic
+        public async Task BackupFullPeriodicHoursJob(TaskInfo taskInfo, BackupStorageInfo backupStorageInfo)
+        {
+            IJobDetail job = JobBuilder.Create<BackupFullJob>()
+                .WithIdentity($"backupFullPeriodicHoursJob_{taskInfo.Id}", "Backup")
+                .UsingJobData("taskId", taskInfo.Id)
+                .UsingJobData("backupStorageId", backupStorageInfo.Id)
+                .Build();
+
+            var trigger = TriggerBuilder.Create()
+               .WithIdentity($"backupFullPeriodicHoursTrigger_{taskInfo.Id}", "Backup")
+               .WithSimpleSchedule(x => x
+                   .WithIntervalInHours(taskInfo.BackupTaskInfo.PeriodicTime)
+                   .RepeatForever())
+               .Build();
+
+            await _scheduler.ScheduleJob(job, trigger);
+        }
+
+        public async Task BackupFullPeriodicMinutesJob(TaskInfo taskInfo, BackupStorageInfo backupStorageInfo)
+        {
+            IJobDetail job = JobBuilder.Create<BackupFullJob>()
+                .WithIdentity($"backupFullPeriodicHoursJob_{taskInfo.Id}", "Backup")
+                .UsingJobData("taskId", taskInfo.Id)
+                .UsingJobData("backupStorageId", backupStorageInfo.Id)
+                .Build();
+
+            var trigger = TriggerBuilder.Create()
+               .WithIdentity($"backupFullPeriodicHoursTrigger_{taskInfo.Id}", "Backup")
+               .WithSimpleSchedule(x => x
+                   .WithIntervalInMinutes(taskInfo.BackupTaskInfo.PeriodicTime)
+                   .RepeatForever())
+               .Build();
+
+            await _scheduler.ScheduleJob(job, trigger);
+        }
+
+        #endregion
+
+        public async Task BackupFullNowJob(TaskInfo taskInfo, BackupStorageInfo backupStorageInfo)
+        {
+            IJobDetail job = JobBuilder.Create<BackupFullJob>()
+                .WithIdentity($"backupFullNowJob_{taskInfo.Id}", "Backup")
+                .UsingJobData("taskId", taskInfo.Id)
+                .UsingJobData("backupStorageId", backupStorageInfo.Id)
+                .Build();
+
+            ITrigger trigger = TriggerBuilder.Create()
+                .WithIdentity($"backupFullNowTrigger_{taskInfo.Id}", "Backup")
+                .ForJob($"backupFullNowJob_{taskInfo.Id}", "Backup")
+                .StartAt(taskInfo.NextDate) // now yollandığında hemen çalıştıracak
+                .Build();
+
+            await _scheduler.ScheduleJob(job, trigger);
         }
 
         #endregion
@@ -173,39 +344,42 @@ namespace DiskBackup.TaskScheduler
         public async Task RestoreDiskJob(TaskInfo taskInfo, BackupStorageInfo backupStorageInfo)
         {
             IJobDetail job = JobBuilder.Create<RestoreDiskJob>()
-                .WithIdentity("restoreDiskJob_" + jobIdCounter, "Restore")
+                .WithIdentity($"restoreDiskJob_{taskInfo.Id}", "Restore")
+                .UsingJobData("taskId", taskInfo.Id)
+                .UsingJobData("backupStorageId", backupStorageInfo.Id)
                 .Build();
 
             ITrigger trigger = TriggerBuilder.Create()
-                .WithIdentity("restoreDiskTrigger_" + jobIdCounter, "Restore")
-                .ForJob("restoreDiskJob_" + jobIdCounter)
+                .WithIdentity($"restoreDiskTrigger_{taskInfo.Id}", "Restore")
+                .ForJob($"restoreDiskJob_{taskInfo.Id}", "Restore")
                 .StartAt(taskInfo.NextDate) // now yollandığında hemen çalıştıracak
                 .Build();
 
-            await MyScheduler.ScheduleJob(job, trigger);
-            jobIdCounter++;
-
+            await _scheduler.ScheduleJob(job, trigger);
         }
 
-        public async Task RestoreVolumeJob(TaskInfo taskInfo, BackupStorageInfo backupStorageInfo)
+        //return _diskTracker.CW_RestoreToVolume(volumeInfo.Letter, backupInfo.Letter, backupInfo.Version, true, backupInfo.BackupStorageInfo.Path);
+        //public bool RestoreBackupVolume(BackupInfo backupInfo, char volumeLetter)
+
+        public async Task RestoreVolumeJob(char volumeLetter, BackupInfo backupInfo, TaskInfo taskInfo)
         {
             IJobDetail job = JobBuilder.Create<RestoreVolumeJob>()
-                .WithIdentity("restoreVolumeJob_" + jobIdCounter, "Restore")
+                .WithIdentity($"restoreVolumeJob_{taskInfo.Id}", "Restore")
+                .UsingJobData("volumeLetter", volumeLetter)
+                .UsingJobData("backupInfoId", backupInfo.Id)
                 .Build();
 
             ITrigger trigger = TriggerBuilder.Create()
-                .WithIdentity("restoreVolumeTrigger_" + jobIdCounter, "Restore")
-                .ForJob("restoreVolumeJob_" + jobIdCounter)
+                .WithIdentity($"restoreVolumeTrigger_{taskInfo.Id}", "Restore")
+                .ForJob($"restoreVolumeJob_{taskInfo.Id}", "Restore")
                 .StartAt(taskInfo.NextDate) // now yollandığında hemen çalıştıracak
                 .Build();
 
-            await MyScheduler.ScheduleJob(job, trigger);
-            jobIdCounter++;
+            await _scheduler.ScheduleJob(job, trigger);
 
         }
 
         #endregion
-
 
 
 
@@ -261,9 +435,9 @@ namespace DiskBackup.TaskScheduler
             throw new NotImplementedException();
         }
 
-        public bool PauseAllSchedule(List<TaskInfo> taskInfoList)
+        public async Task PauseAllScheduleAsync()
         {
-            throw new NotImplementedException();
+            await _scheduler.PauseAll();
         }
 
         public bool PauseSchedule(string scheduleId)
@@ -271,9 +445,9 @@ namespace DiskBackup.TaskScheduler
             throw new NotImplementedException();
         }
 
-        public bool ResumeAllSchedule(List<TaskInfo> taskInfoList)
+        public async Task ResumeAllScheduleAsync(List<TaskInfo> taskInfoList)
         {
-            throw new NotImplementedException();
+            await _scheduler.ResumeAll();
         }
 
         public bool ResumeSchedule(string scheduleId)

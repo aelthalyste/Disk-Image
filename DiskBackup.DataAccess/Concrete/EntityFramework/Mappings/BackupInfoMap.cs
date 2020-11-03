@@ -27,10 +27,10 @@ namespace DiskBackup.DataAccess.Concrete.EntityFramework.Mappings
             Property(x => x.StrFileSize).HasColumnName("str_file_size");
             Property(x => x.Description).HasColumnName("description");
             Property(x => x.IsCloud).HasColumnName("is_cloud");
+            Property(x => x.Version).HasColumnName("backup_version");
             Ignore(x => x.BackupStorageInfo);
             Ignore(x => x.DiskType);
             Ignore(x => x.OSVolume);
-            Ignore(x => x.Version); 
             Ignore(x => x.Letter);
             Ignore(x => x.UsedSize);
             Ignore(x => x.Bootable);

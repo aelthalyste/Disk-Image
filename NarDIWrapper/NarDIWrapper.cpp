@@ -92,6 +92,10 @@ namespace NarDIWrapper {
 
         List<CSNarFileEntry^>^ Result = gcnew List<CSNarFileEntry^>;     
         
+        ULARGE_INTEGER templargeinteger = { 0 };
+        FILETIME ft;
+        SYSTEMTIME st;
+
         for(int i = 0; i<ctx->EList.EntryCount; i++){
 
             CSNarFileEntry^ Entry = gcnew CSNarFileEntry;
@@ -102,7 +106,33 @@ namespace NarDIWrapper {
             Entry->LastModifiedTime = gcnew CSNarFileTime;
             Entry->CreationTime = gcnew CSNarFileTime;
 
-            // TODO name, creation time, lastmodified time, isdirectory flags.
+            templargeinteger.QuadPart = ctx->EList.Entries[i].CreationTime;
+            ft.dwHighDateTime = templargeinteger.HighPart;
+            ft.dwLowDateTime =  templargeinteger.LowPart;
+            FileTimeToSystemTime(&ft, &st);
+            
+            Entry->CreationTime->Year = st.wYear;
+            Entry->CreationTime->Month = st.wMonth;
+            Entry->CreationTime->Day = st.wDay;
+            Entry->CreationTime->Hour = st.wHour;
+            Entry->CreationTime->Minute = st.wMinute;
+            Entry->CreationTime->Second = st.wSecond;
+            
+
+            templargeinteger.QuadPart = ctx->EList.Entries[i].LastModifiedTime;
+            ft.dwHighDateTime = templargeinteger.HighPart;
+            ft.dwLowDateTime = templargeinteger.LowPart;
+            FileTimeToSystemTime(&ft, &st);
+
+            Entry->LastModifiedTime->Year = st.wYear;
+            Entry->LastModifiedTime->Month = st.wMonth;
+            Entry->LastModifiedTime->Day = st.wDay;
+            Entry->LastModifiedTime->Hour = st.wHour;
+            Entry->LastModifiedTime->Minute = st.wMinute;
+            Entry->LastModifiedTime->Second = st.wSecond;
+
+            // TODO isdirectory flags.
+            Entry->IsDirectory = (ctx->EList.Entries[i].Size == 0);
 
             Result->Add(Entry);
 
@@ -141,16 +171,6 @@ namespace NarDIWrapper {
         System::String^ result = gcnew System::String(ctx->CurrentDirectory);
         return result;
     }
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -203,7 +223,21 @@ namespace NarDIWrapper {
     }
     
     bool DiskTracker::CW_RemoveFromTrack(wchar_t Letter) {
-        return RemoveVolumeFromTrack(C, Letter);
+        
+        BOOLEAN Result = FALSE;
+        if(RemoveVolumeFromTrack(C, Letter)){
+            if(NarSaveBootState(C)){
+                Result = TRUE;
+            }
+            else{
+                printf("Failed to save state of the program\n");
+            }
+        }
+        else{
+            printf("Failed to remove volume %c from track list\n", Letter);
+        }
+
+        return Result;
     }
     
     bool DiskTracker::CW_SetupStream(wchar_t L, int BT, StreamInfo^ StrInf) {
@@ -283,11 +317,14 @@ namespace NarDIWrapper {
     bool DiskTracker::CW_TerminateBackup(bool Succeeded, wchar_t VolumeLetter) {
         
         INT32 VolID = GetVolumeID(C, VolumeLetter);
+        
         if(VolID != NAR_INVALID_VOLUME_TRACK_ID){
-            return TerminateBackup(&C->Volumes.Data[VolID], Succeeded);
+            if(TerminateBackup(&C->Volumes.Data[VolID], Succeeded)){
+                return NarSaveBootState(C);
+            }
         }
-        // couldnt find volume in the Context, which shoudlnt happen at all
-        return 0;   
+        
+        return FALSE;   
 
     }
     
@@ -300,11 +337,17 @@ namespace NarDIWrapper {
         
         for (int i = 0; i < V.Count; i++) {
             VolumeInformation^ BI = gcnew VolumeInformation;
-            BI->Size = V.Data[i].Size;
+            BI->TotalSize = V.Data[i].TotalSize;
+            BI->FreeSize = V.Data[i].FreeSize;
             BI->Bootable = V.Data[i].Bootable;
             BI->DiskID = V.Data[i].DiskID;
             BI->DiskType = V.Data[i].DiskType;
             BI->Letter = V.Data[i].Letter;
+            BI->VolumeName = gcnew System::String(V.Data[i].VolumeName);
+            if (BI->VolumeName->Length == 0) {
+                BI->VolumeName = L"Local Disk";
+            }
+
             Result->Add(BI);
         }
         
@@ -360,7 +403,7 @@ namespace NarDIWrapper {
             for (int i = 0; i < Found; i++) {
                 
                 BackupMetadata^ BMet = gcnew BackupMetadata;
-                BMet->Letter = BMList[i].Letter;
+                BMet->Letter = (wchar_t)BMList[i].Letter;
                 BMet->BackupType = (int)BMList[i].BT;
                 BMet->DiskType = BMList[i].DiskType;
                 BMet->OSVolume = BMList[i].IsOSVolume;
