@@ -12,7 +12,7 @@ namespace DiskBackup.Business.Abstract
         List<BackupStorageInfo> BackupStorageInfoList();
 
         bool AddBackupStorage(BackupStorageInfo backupStorageInfo);
-        bool DeleteBackupStorage(BackupStorageInfo backupStorageInfo);
+        void DeleteBackupStorage(BackupStorageInfo backupStorageInfo);
         bool UpdateBackupStorage(BackupStorageInfo backupStorageInfo);
 
     }
