@@ -35,6 +35,8 @@ namespace DiskBackupWpfGUI
             _backupManager.InitFileExplorer(backupInfo);
             _filesInBackupList = _backupManager.GetFileInfoList();
 
+            RemoveSystemFiles();
+
             listViewFileExplorer.ItemsSource = _filesInBackupList;
             SortItems();
             txtfileExplorerPath.Text = _backupManager.GetCurrentDirectory();
@@ -75,6 +77,7 @@ namespace DiskBackupWpfGUI
         {
             _backupManager.PopDirectory();
             _filesInBackupList = _backupManager.GetFileInfoList();
+            RemoveSystemFiles();
             listViewFileExplorer.ItemsSource = _filesInBackupList;
             SortItems();
             txtfileExplorerPath.Text = _backupManager.GetCurrentDirectory();
@@ -92,6 +95,7 @@ namespace DiskBackupWpfGUI
                 {
                     _backupManager.GetSelectedFileInfo(item);
                     _filesInBackupList = _backupManager.GetFileInfoList();
+                    RemoveSystemFiles();
                     listViewFileExplorer.ItemsSource = _filesInBackupList;
                     SortItems();
                     txtfileExplorerPath.Text = _backupManager.GetCurrentDirectory();
@@ -105,6 +109,19 @@ namespace DiskBackupWpfGUI
             CollectionView view = (CollectionView)CollectionViewSource.GetDefaultView(listViewFileExplorer.ItemsSource);
             view.SortDescriptions.Add(new SortDescription("Type", ListSortDirection.Descending));
             view.SortDescriptions.Add(new SortDescription("Name", ListSortDirection.Ascending));
+        }
+
+        private void RemoveSystemFiles()
+        {
+            for (int i = 0; i < _filesInBackupList.Count;)
+            {
+                if ((_filesInBackupList[i].Name.ToCharArray()[0].Equals('$') && !_filesInBackupList[i].Name.Equals("$Recycle.Bin")) || _filesInBackupList[i].Name.Equals("."))
+                {
+                    _filesInBackupList.Remove(_filesInBackupList[i]);
+                    continue;
+                }
+                i++;
+            }
         }
 
         //Seçilen değere gitmek için ise CW_SelectDirectory(seçilenID)

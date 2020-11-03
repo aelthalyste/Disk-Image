@@ -6,6 +6,14 @@
     
     <Application.Resources>
 
+        <Style x:Key="FEWListViewItemSize" TargetType="{x:Type TextBlock}">
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding Type}" Value="1">
+                    <Setter Property="Visibility" Value="Hidden" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
         <Style x:Key="OSListViewItemImage" TargetType="{x:Type Image}">
             <Setter Property="Width" Value="22"/>
             <Setter Property="Height" Value="22"/>
