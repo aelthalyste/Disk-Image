@@ -7,21 +7,37 @@ using System.Threading.Tasks;
 
 namespace QuartzPooc
 {
+    
     class MyBackupJob : IJob
     {
-        private readonly MyTask _task;
-        private readonly IMySevice _service;
 
-        public MyBackupJob(IMySevice sevice)
+
+        public MyBackupJob()
         {
 
-            _service = sevice;
         }
-        public Task Execute(IJobExecutionContext context)
+        public async Task Execute(IJobExecutionContext context)
         {
-            int id = (int)context.JobDetail.JobDataMap["parameterId"];
-            Console.WriteLine("Execute task" + _task); // task execution
-            return _service.ExecuteBackupTask(id);
+            int id = (int)context.JobDetail.JobDataMap["parameterId"];            
+            Console.WriteLine($"Execute task {id}. Refire: {context.RefireCount}"); // task execution
+            await Task.Delay(1000);
+            JobExecutionException exception = null;
+            bool result = true; 
+            try
+            {
+                //do some business task
+                result = false;
+            }
+            catch (Exception e)
+            {
+                exception = new JobExecutionException(e, context.RefireCount < 5);
+            }
+            if (!result) exception = new JobExecutionException(context.RefireCount < 5);
+            if (exception != null)
+            {
+                await Task.Delay(TimeSpan.FromMinutes(5));
+                throw exception;
+            }
         }
     }
 }

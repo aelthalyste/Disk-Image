@@ -18,8 +18,8 @@ namespace QuartzPooc
         }
         public IJob NewJob(TriggerFiredBundle bundle, IScheduler scheduler)
         {
-            int id = (int)bundle.JobDetail.JobDataMap["parameterId"];
-            return new MyBackupJob(_repository.GetById(id));
+            //int id = (int)bundle.JobDetail.JobDataMap["parameterId"];
+            return new MyBackupJob();
         }
 
         public void ReturnJob(IJob job)
