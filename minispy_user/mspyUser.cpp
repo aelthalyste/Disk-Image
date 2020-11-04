@@ -6861,26 +6861,16 @@ NarFileExplorerPopDirectory(nar_backup_file_explorer_context* Ctx) {
     Ctx->EList.MFTIndex = Ctx->HistoryStack.S[Ctx->HistoryStack.I];
     NarGetFileListFromMFTID(&Ctx->EList, Ctx->HistoryStack.S[Ctx->HistoryStack.I], Ctx->MFTRecords, Ctx->MFTRecordsCount, Ctx->ClusterSize, Ctx->FEHandle);
     
-    INT32 LastTrailingBackslash = 0;
-    int i = 0;
-    while (TRUE) {
-        
-        if (Ctx->CurrentDirectory[i] == L'\\' && Ctx->CurrentDirectory[i + 1] == L'\0') {
+    INT32 slen = (INT32)wcslen(Ctx->CurrentDirectory);
+    INT32 CutPoint = slen - 1;
+    for(int i = slen - 2; i >= 0; i--){
+        if(Ctx->CurrentDirectory[i] == L'\\'){
+            CutPoint = i;
             break;
         }
-
-        if (Ctx->CurrentDirectory[i] == L'\\') {
-            LastTrailingBackslash = i;
-        }
-        
-        if (Ctx->CurrentDirectory[i] == L'\0') {
-            break;
-        }
-
-        i++;
-
     }
-    Ctx->CurrentDirectory[LastTrailingBackslash + 1] = L'\0';
+
+    Ctx->CurrentDirectory[CutPoint + 1] = L'\0';
 
 }
 
@@ -6891,12 +6881,11 @@ NarFileExplorerPrint(nar_backup_file_explorer_context* Ctx) {
     
     for (int i = 0; i < Ctx->EList.EntryCount; i++) {
         printf("%i\t-> ", i);
-        if (Ctx->EList.Entries[i].Size == 0) {
+        if (Ctx->EList.Entries[i].IsDirectory) {
             printf("DIR: %-50S\ %I64u KB\n", Ctx->EList.Entries[i].Name, Ctx->EList.Entries[i].Size / 1024);
         }
         else {
             printf("%-50S %I64u KB\n", Ctx->EList.Entries[i].Name, Ctx->EList.Entries[i].Size / 1024);
-
         }
     }
 
@@ -7498,79 +7487,11 @@ main(
      CHAR* argv[]
      ) {
     
-    {
-        ULARGE_INTEGER a = { 0};
-        a.QuadPart = 13370246219114536463;
-        FILETIME b;
-        b.dwHighDateTime = a.HighPart;
-        b.dwLowDateTime = a.LowPart;
-        SYSTEMTIME S;
-        FileTimeToSystemTime(&b, &S);
-        printf("Hell\n");
-    }
-    return 0;
-    WCHAR volumeName[MAX_PATH + 1] = { 0 };
-    WCHAR fileSystemName[MAX_PATH + 1] = { 0 };
-    DWORD serialNumber = 0;
-    DWORD maxComponentLen = 0;
-    DWORD fileSystemFlags = 0;
-    GetVolumeInformation(L"C:\\", volumeName, sizeof(volumeName), &serialNumber, &maxComponentLen, &fileSystemFlags, fileSystemName, sizeof(fileSystemName));
-    
-    
-    ULARGE_INTEGER a, b;
-    GetDiskFreeSpaceExA(
-        "C:\\",
-        0,
-        &a,
-        &b
-    );
-
-    return 0;
-
-    //return Test_NarGetRegionIntersection();
-    
-    //TestFindPointOffsetInRecords();
-    //return 0;
-    
-    //HANDLE H = CreateFileA("tempfile.txt", GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, CREATE_ALWAYS, 0, 0);
-    //
-    //UINT64 Bs = Megabyte(256);
-    //char *buffer = (char*)malloc(Bs);
-    //
-    //DWORD Hell = 0;
-    //for (int i = 0; i < 20; i++) {
-    //    
-    //    if (WriteFile(H, buffer, Bs, &Hell, 0) && Hell == Bs) {
-    //    
-    //    }
-    //    else {
-    //        printf("failed %i\n");
-    //    }
-    //
-    //}
-    //return 0;
-
-    NarInitPerfCounter();
 
     nar_backup_file_explorer_context ctx;
-    NarStartPerfCounter();
-
-    printf("Please take a snapshot\n");
-    getchar();
 
     NarInitFileExplorerContext(&ctx, NAR_FE_HAND_OPT_READ_MOUNTED_VOLUME, 'C', 0, NULL);
-
-    NarEndPerfCounter();
-
-    float time = GetSecondsElapsed(NarPerfCounter.LastCounter, NarPerfCounter.WorkCounter);
-    
-    INT64 CyclesElapsed = NarPerfCounter.LastCycleCount - NarPerfCounter.WorkCycleCount;
-    
-    double WorkCyclesElapsed = (double)(CyclesElapsed) / (1000.f * 1000.f);
-    double fps = (double)1.0f / (double)time;
-
-    printf("%d, %f, %.02f", WorkCyclesElapsed, time, fps);
-    
+        
     NarFileExplorerPrint(&ctx);
     
     int ListID = 0;

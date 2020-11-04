@@ -181,7 +181,6 @@ namespace NarDIWrapper {
           System::String^ Rootdir);
 
         static wchar_t CW_GetFirstAvailableVolumeLetter();
-
         static List<BackupMetadata^>^ CW_GetBackupsInDirectory(System::String^ RootDir);
         static List<DiskInfo^>^ CW_GetDisksOnSystem();
 
