@@ -25,6 +25,9 @@ namespace DiskBackup.Business.Concrete
         private Stopwatch _timeElapsed = new Stopwatch();
         private StatusInfo _statusInfo = new StatusInfo();
 
+        /*Geri yükle
+	_cSNarFileExplorer.CW_RestoreFile(dosyaid, Backupdirectory (ilgil backup hariç), kaydedilecekyol)*/
+
         public bool InitTracker()
         {
             // programla başlat 1 kere çalışması yeter
@@ -290,17 +293,8 @@ namespace DiskBackup.Business.Concrete
                         Convert.ToInt32(item.LastModifiedTime.Year) + " " +
                         Convert.ToInt32(item.LastModifiedTime.Hour) + ":" +
                         Convert.ToInt32(item.LastModifiedTime.Minute),
-                    //Size = (long)item.Size,
-                    // StrSize = FormatBytes((long)item.Size),
+                    // tarihlerde düzenlemeler yapılacak
                     Id = (long)item.ID,
-                    //StrSize = 
-                    //    item.LastModifiedTime.Day.ToString() + "." + 
-                    //    item.LastModifiedTime.Month.ToString() + "." +
-                    //    item.LastModifiedTime.Year.ToString() + " " +
-                    //    item.LastModifiedTime.Hour.ToString() + ":" +
-                    //    item.LastModifiedTime.Minute.ToString()
-                    //Path değeri Batudan isteyelim
-                    //UpdatedDate dönüşü daha yok
                 });
             }
             return filesInBackupList;

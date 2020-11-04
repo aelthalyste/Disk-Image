@@ -573,7 +573,7 @@
                             <GridView>
                                 <GridViewColumn Width="40">
                                     <GridViewColumn.Header>
-                                        <CheckBox Name="chbRestoreDiskSelectAll"  Checked="chbRestoreDiskSelectAll_Checked" Unchecked="chbRestoreDiskSelectAll_Unchecked" Cursor="Hand"/>
+                                        <CheckBox Name="chbRestoreDiskSelectAll" Checked="chbRestoreDiskSelectAll_Checked" Unchecked="chbRestoreDiskSelectAll_Unchecked" Cursor="Hand"/>
                                     </GridViewColumn.Header>
                                     <GridViewColumn.CellTemplate>
                                         <DataTemplate>
@@ -926,7 +926,7 @@
                                     <GridViewColumn Header="{DynamicResource folderPath}" Width="170" >
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
-                                                <TextBlock Text="{Binding Path}" TextAlignment="Center"/>
+                                                <TextBlock Text="{Binding Path}" TextAlignment="Left"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
