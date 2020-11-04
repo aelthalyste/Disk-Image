@@ -6806,6 +6806,7 @@ NarFileExplorerGetFileEntryFromData(void *IndxCluster, nar_file_entry *OutFileEn
 
     OutFileEntry->IsDirectory = FALSE;
 
+
     if (Attributes > 10000000) {
         OutFileEntry->IsDirectory = TRUE;
     }
@@ -7190,6 +7191,26 @@ NarFileExplorerReadVolume(nar_fe_volume_handle FEV, void* Buffer, DWORD ReadSize
 
 
 /*
+    Returns first available volume letter that is not used by system
+*/
+inline char
+NarGetAvailableVolumeLetter() {
+    
+    DWORD Drives = GetLogicalDrives();
+
+    for (int CurrentDriveIndex = 0; CurrentDriveIndex < 26; CurrentDriveIndex++) {
+        if (Drives & (1 << CurrentDriveIndex)) {
+
+        }
+        else {
+            return ('A' + (char)CurrentDriveIndex);
+        }
+    }
+
+    return 0;
+}
+
+/*
     args:
     FEV = output, simple
     HandleOptions
@@ -7476,6 +7497,7 @@ main(
      int argc,
      CHAR* argv[]
      ) {
+    
     {
         ULARGE_INTEGER a = { 0};
         a.QuadPart = 13370246219114536463;

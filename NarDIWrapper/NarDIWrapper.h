@@ -166,21 +166,21 @@ namespace NarDIWrapper {
 
 
 
-        bool CW_RestoreToVolume(
+        static bool CW_RestoreToVolume(
             wchar_t TargetLetter,
             wchar_t SrcLetter,
             INT Version,
             bool ShouldFormat,
             System::String^ RootDir);
 
-        bool CW_RestoreToFreshDisk(
+        static bool CW_RestoreToFreshDisk(
           wchar_t TargetLetter, 
           wchar_t SrcLetter, 
           INT Version, 
           int DiskID, 
           System::String^ Rootdir);
 
-        
+        static wchar_t CW_GetFirstAvailableVolumeLetter();
 
         static List<BackupMetadata^>^ CW_GetBackupsInDirectory(System::String^ RootDir);
         static List<DiskInfo^>^ CW_GetDisksOnSystem();

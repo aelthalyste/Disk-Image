@@ -301,6 +301,12 @@ namespace NarDIWrapper {
             
         return OfflineRestoreCleanDisk(&R, DiskID);
     }
+
+    // returns 0 if one is not present
+    wchar_t DiskTracker::CW_GetFirstAvailableVolumeLetter()
+    {
+        return NarGetAvailableVolumeLetter();
+    }
     
     INT32 DiskTracker::CW_ReadStream(void* Data, wchar_t VolumeLetter, int Size) {
         
