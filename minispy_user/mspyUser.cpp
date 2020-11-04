@@ -5836,94 +5836,24 @@ NarGetFileListFromMFTID(nar_file_entries_list* EList, UINT64 TargetMFTID, nar_re
 
                             void *Entry = (char*)FileAttribute + 64;
 
-
-                            
-                            while (1) {
-
-
-                                UINT16 EntrySize = *(UINT16*)((char*)Entry + 8);
-                                UINT16 AttrSize = *(UINT16*)((char*)Entry + 10);
-                                if (EntrySize == 16 || AttrSize == 0) {
-                                    // end mark
-                                    break;
-                                }
-
-
-                                // check if POSIX entry
-                                if (*((char*)Entry + NAR_POSIX_OFFSET) == NAR_POSIX) {
-                                    Entry = (char*)Entry + EntrySize;
-                                    continue;
-                                }
-
-                                UINT8 NameLen = *(UINT8*)((char*)Entry + NAR_NAME_LEN_OFFSET);
-                                UINT64 MagicNumber = *(UINT64*)Entry;
-                                MagicNumber = MagicNumber & (0x0000FFFFFFFFFFFF);
-
-                                // DO MASK AND TRUNCATE 2 BYTES TO FIND MFTINDEX OF THE FILE
-
-
-                                // useful information here
-                                UINT64 CreationTime = *(UINT64*)((char*)Entry + NAR_TIME_OFFSET);
-                                UINT64 ModificationTime = *(UINT64*)((char*)Entry+ NAR_TIME_OFFSET + 8);
-                                UINT64 FileSize = *(UINT64*)((char*)Entry + NAR_SIZE_OFFSET);
-                                UINT64 Attributes = *(UINT64*)((char*)Entry + NAR_ATTRIBUTE_OFFSET);
-                                char* NamePtr = ((char*)Entry + NAR_NAME_OFFSET);
-                                if (*NamePtr == 0) {
-                                    Entry = (char*)Entry + EntrySize;
-                                    continue;
-                                }
+                            INT EntryParseResult = NAR_FEXP_END_MARK;
+                            do {
 
                                 memset(&EList->Entries[EList->EntryCount], 0, sizeof(EList->Entries[EList->EntryCount]));
+                                EntryParseResult = NarFileExplorerGetFileEntryFromData(Entry, &EList->Entries[EList->EntryCount]);
 
-                                memcpy(&EList->Entries[EList->EntryCount].Name[0], NamePtr, NameLen * sizeof(wchar_t));
+                                if (EntryParseResult == NAR_FEXP_SUCCEEDED || EntryParseResult == NAR_FEXP_POSIX) {
 
-                                // extracted all useful information, push it to the list and continue
+                                    // do not accept posix files as FILE_ENTRY at all
+                                    if (EntryParseResult == NAR_FEXP_SUCCEEDED) {
+                                        EList->EntryCount++;
+                                    }
 
-                                // push stuff
-                                // represents files in directory
-                                
-                                EList->Entries[EList->EntryCount].MFTFileIndex = MagicNumber;
-                                EList->Entries[EList->EntryCount].Size = FileSize;
-                                EList->Entries[EList->EntryCount].CreationTime = CreationTime;
-                                EList->Entries[EList->EntryCount].LastModifiedTime = ModificationTime;
-                                
-                                EList->Entries[EList->EntryCount].IsDirectory = FALSE;
-
-                                if (Attributes > 10000000) {
-                                    EList->Entries[EList->EntryCount].IsDirectory = TRUE;
+                                    UINT16 EntrySize = NAR_FEXP_INDX_ENTRY_SIZE(Entry);
+                                    Entry = (char*)Entry + EntrySize;
                                 }
-                                
-                                EList->EntryCount++;
 
-
-                                /*
-                                struct FileEntriesList{
-                                 UINT32 MFTIndex;
-                                 UINT32 EntryCount;
-                                 NarFileEntry *Entries;
-                                };
-
-
-                                // could be either file or dir
-                                struct NarFileEntry{
-
-                                 BOOLEAN Flags;
-
-                                 UINT64 MFTFileIndex;
-                                 UINT64 Size; // file size in bytes
-
-                                 UINT64 CreationTime;
-                                 UINT64 LastModifiedTime;
-
-                                 wchar_t Name[MAX_PATH + 1]; // max path + 1 for null termination
-                                };
-                                */
-
-                                Entry = (char*)Entry + EntrySize;
-
-                            }
-
-
+                            } while (EntryParseResult != NAR_FEXP_END_MARK);
 
 
                         }
@@ -6107,94 +6037,6 @@ NarGetFileListFromMFTID(nar_file_entries_list* EList, UINT64 TargetMFTID, nar_re
 
                                 } while (EntryParseResult != NAR_FEXP_END_MARK);
 
-#if 0
-
-                                while (1) {
-
-                                    // check if end of records
-                                    if (memcmp(IndxCluster, &ZeroBytes[0], 24) == 0) {
-                                        // end of records
-                                        break;
-                                    }
-
-                                    UINT16 EntrySize = *(UINT16*)((char*)IndxCluster + 8);
-                                    UINT16 AttrSize = *(UINT16*)((char*)IndxCluster + 10);
-                                    if (EntrySize == 16 || AttrSize == 0) { 
-                                        break; 
-                                    }
-
-                                    // check if POSIX entry
-                                    if (*((char*)IndxCluster + NAR_POSIX_OFFSET) == NAR_POSIX) {
-                                        IndxCluster = (char*)IndxCluster + EntrySize;
-                                        continue;
-                                    }
-
-                                    UINT8 NameLen = *(UINT8*)((char*)IndxCluster + NAR_NAME_LEN_OFFSET);
-                                    UINT64 MagicNumber = *(UINT64*)IndxCluster;
-                                    MagicNumber = MagicNumber & (0x0000FFFFFFFFFFFF);
-
-                                    // DO MASK AND TRUNCATE 2 BYTES TO FIND MFTINDEX OF THE FILE
-
-
-                                    // useful information here
-                                    UINT64 CreationTime = *(UINT64*)((char*)IndxCluster + NAR_TIME_OFFSET);
-                                    UINT64 ModificationTime = *(UINT64*)((char*)IndxCluster + NAR_TIME_OFFSET + 8);
-                                    UINT64 FileSize = *(UINT64*)((char*)IndxCluster + NAR_SIZE_OFFSET);
-
-                                    char* NamePtr = ((char*)IndxCluster + NAR_NAME_OFFSET);
-                                    if (*NamePtr == 0) {
-                                        IndxCluster = (char*)IndxCluster + EntrySize;
-                                        continue;
-                                    }
-                                    
-                                    memset(&EList->Entries[EList->EntryCount], 0, sizeof(EList->Entries[EList->EntryCount]));
-
-                                    memcpy(&EList->Entries[EList->EntryCount].Name[0], NamePtr, NameLen * sizeof(wchar_t));
-                                    
-                                    // extracted all useful information, push it to the list and continue
-
-                                    // push stuff
-                                    // represents files in directory
-                                    //if (*NamePtr != 0 && TargetMFTID == 221313) {
-                                    //    printf("%S\n", EList->Entries[EList->EntryCount].Name);
-                                    //}
-                                    EList->Entries[EList->EntryCount].MFTFileIndex = MagicNumber;
-                                    EList->Entries[EList->EntryCount].Size = FileSize;
-                                    EList->Entries[EList->EntryCount].CreationTime = CreationTime;
-                                    EList->Entries[EList->EntryCount].LastModifiedTime = ModificationTime;
-                                    
-                                    EList->EntryCount++;
-
-                                    
-                                    /*
-                                    struct FileEntriesList{
-                                     UINT32 MFTIndex;
-                                     UINT32 EntryCount;
-                                     NarFileEntry *Entries;
-                                    };
-
-
-                                    // could be either file or dir
-                                    struct NarFileEntry{
-
-                                     BOOLEAN Flags;
-
-                                     UINT64 MFTFileIndex;
-                                     UINT64 Size; // file size in bytes
-
-                                     UINT64 CreationTime;
-                                     UINT64 LastModifiedTime;
-
-                                     wchar_t Name[MAX_PATH + 1]; // max path + 1 for null termination
-                                    };
-                                    */
-
-                                    IndxCluster = (char*)IndxCluster + EntrySize;
-
-                                }
-
-
-#endif
 
                             }
 
@@ -6369,7 +6211,7 @@ NarRestoreFileFromBackups(wchar_t *RootDir, wchar_t *FileName, wchar_t *RestoreT
 
         if (NarInitFEVolumeHandle(&FEHandle, NAR_FE_HAND_OPT_READ_BACKUP_VOLUME, VolumeLetter, VersionID, RootDir)) {
             
-            NarFileExplorerSetFilePointer(FEHandle, FileStack.FileAbsoluteMFTOffset[0]);
+            NarFileExplorerSetFilePointer(FEHandle, FileStack.FileAbsoluteMFTOffset[VersionID - FileStack.StartingVersion]);
             memset(MemoryBuffer, 0, 1024);
 
             DWORD BytesRead = 0;
@@ -6395,8 +6237,9 @@ NarRestoreFileFromBackups(wchar_t *RootDir, wchar_t *FileName, wchar_t *RestoreT
                 
                 for (INT32 RegIndex = 0; RegIndex < ISectionCount; RegIndex++) {
                     
-                    UINT64 CopyLen = IntersectionRegions[RegIndex].Len* FEHandle.BMEX->M.ClusterSize;
-                    UINT64 CopyStart = IntersectionRegions[RegIndex].StartPos * FEHandle.BMEX->M.ClusterSize;
+                    UINT64 CopyLen   = (UINT64)IntersectionRegions[RegIndex].Len      * FEHandle.BMEX->M.ClusterSize;
+                    UINT64 CopyStart = (UINT64)IntersectionRegions[RegIndex].StartPos * FEHandle.BMEX->M.ClusterSize;
+
                     if (NarFileExplorerSetFilePointer(FEHandle, CopyStart)) {
 
                         if (CopyData(FEHandle.VolumeHandle, RestoreFileHandle, CopyLen) == FALSE) {
@@ -6442,7 +6285,8 @@ NarRestoreFileFromBackups(wchar_t *RootDir, wchar_t *FileName, wchar_t *RestoreT
 
 
 /*
-    Gets the intersection of the r1 and r2 arrays, writes new array to r3
+    Gets the intersection of the r1 and r2 arrays, writes new array to dynamicall allocated r3 array, and sets intersections pointer to that pointers adress
+    after caller has done with that r3 array, it MUST call NarFreeRegionIntersections with intersections parameter that has passed here. Otherwise memory will be leaked
 */
 inline void
 NarGetRegionIntersection(nar_record* r1, nar_record* r2, nar_record** intersections, INT32 len1, INT32 len2, INT32 *IntersectionLen) {
@@ -6945,6 +6789,7 @@ NarFileExplorerGetFileEntryFromData(void *IndxCluster, nar_file_entry *OutFileEn
     UINT64 CreationTime = *(UINT64*)((char*)IndxCluster + NAR_TIME_OFFSET);
     UINT64 ModificationTime = *(UINT64*)((char*)IndxCluster + NAR_TIME_OFFSET + 8);
     UINT64 FileSize = *(UINT64*)((char*)IndxCluster + NAR_SIZE_OFFSET);
+    UINT64 Attributes = *(UINT64*)((char*)IndxCluster + NAR_ATTRIBUTE_OFFSET);
 
     char* NamePtr = ((char*)IndxCluster + NAR_NAME_OFFSET);
     if (*NamePtr == 0) {
@@ -6958,6 +6803,12 @@ NarFileExplorerGetFileEntryFromData(void *IndxCluster, nar_file_entry *OutFileEn
     OutFileEntry->Size = FileSize;
     OutFileEntry->CreationTime = CreationTime;
     OutFileEntry->LastModifiedTime = ModificationTime;
+
+    OutFileEntry->IsDirectory = FALSE;
+
+    if (Attributes > 10000000) {
+        OutFileEntry->IsDirectory = TRUE;
+    }
 
     return NAR_FEXP_SUCCEEDED;
 
@@ -7625,12 +7476,9 @@ main(
      int argc,
      CHAR* argv[]
      ) {
-    Test_NarGetRegionIntersection();
-
-    return 0;
     {
         ULARGE_INTEGER a = { 0};
-        a.QuadPart = 132485179915069772;
+        a.QuadPart = 13370246219114536463;
         FILETIME b;
         b.dwHighDateTime = a.HighPart;
         b.dwLowDateTime = a.LowPart;
@@ -7638,7 +7486,7 @@ main(
         FileTimeToSystemTime(&b, &S);
         printf("Hell\n");
     }
-
+    return 0;
     WCHAR volumeName[MAX_PATH + 1] = { 0 };
     WCHAR fileSystemName[MAX_PATH + 1] = { 0 };
     DWORD serialNumber = 0;

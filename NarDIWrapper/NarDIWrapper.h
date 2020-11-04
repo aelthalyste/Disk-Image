@@ -77,12 +77,12 @@ namespace NarDIWrapper {
 
       }
 
-        INT16 Year;
-        INT16 Month;
-        INT16 Day;
-        INT16 Hour;
-        INT16 Minute;
-        INT16 Second;
+        WORD Year;
+        WORD Month;
+        WORD Day;
+        WORD Hour;
+        WORD Minute;
+        WORD Second;
 
     };
 

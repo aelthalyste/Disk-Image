@@ -753,7 +753,7 @@ FreeFileRead(file_read FR);
 
 #define NAR_POSIX                2
 #define NAR_ENTRY_SIZE_OFFSET    8
-#define NAR_TIME_OFFSET         28
+#define NAR_TIME_OFFSET         24
 #define NAR_SIZE_OFFSET         64
 #define NAR_ATTRIBUTE_OFFSET    72
 #define NAR_NAME_LEN_OFFSET     80 

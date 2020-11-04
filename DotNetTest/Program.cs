@@ -69,8 +69,9 @@ namespace DotNetTest
                         else { 
                             Console.Write(entry.Size);
                         }
+
                         Console.Write("\t");
-                        Console.Write("\t");
+                        Console.Write($"{entry.LastModifiedTime.Day}:{entry.LastModifiedTime.Month}:{entry.LastModifiedTime.Year}");
                         Console.Write("\t");
                         Console.Write("\t");
                         Console.Write("\t");

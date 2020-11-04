@@ -131,9 +131,7 @@ namespace NarDIWrapper {
             Entry->LastModifiedTime->Minute = st.wMinute;
             Entry->LastModifiedTime->Second = st.wSecond;
 
-            // TODO isdirectory flags.
-            Entry->IsDirectory = (ctx->EList.Entries[i].Size == 0);
-
+            Entry->IsDirectory = ctx->EList.Entries[i].IsDirectory;
             Result->Add(Entry);
 
         }
