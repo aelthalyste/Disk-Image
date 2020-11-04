@@ -1,4 +1,5 @@
-﻿using DiskBackup.Business.Concrete;
+﻿using DiskBackup.Business.Abstract;
+using DiskBackup.Business.Concrete;
 using DiskBackup.Entities.Concrete;
 using System;
 using System.Collections.Generic;
@@ -31,182 +32,49 @@ namespace DiskBackupWpfGUI
         private bool _restoreDiskAllControl = false;
         private bool _restoreDiskAllHeaderControl = false;
 
+        private bool _storegeAllControl = false;
+        private bool _viewBackupsAllControl = false;
+        private bool _tasksAllControl = false;
+
         private List<CheckBox> _expanderCheckBoxes = new List<CheckBox>();
         private List<int> _numberOfItems = new List<int>();
         private List<string> _groupName = new List<string>();
         private List<CheckBox> _restoreExpanderCheckBoxes = new List<CheckBox>();
         private List<int> _restoreNumberOfItems = new List<int>();
         private List<string> _restoreGroupName = new List<string>();
-        private List<DiskInformation> diskList = new List<DiskInformation>();
+        private List<DiskInformation> _diskList = new List<DiskInformation>();
+
+        private IBackupService _backupService = new BackupManager();
+        private IBackupStorageService _backupStorageService = new BackupStorageManager();
 
         public MainWindow()
         {
             InitializeComponent();
 
-            DiskInformation diskInfo = new DiskInformation
-            {
-                StrSize = "400 GB",
-                Size = 400,
-            };
-            diskInfo.VolumeInfos.Add(new VolumeInfo
-            {
-                DiskType = "MBR",
-                DiskName = "Disk 1",
-                Name = "System Reserverd",
-                FileSystem = "NTFS",
-                StrSize = FormatBytes(107374182400),
-                Size = 107374182400,
-                StrFreeSize = FormatBytes(53687091200),
-                FreeSize = 53687091200,
-                PrioritySection = "Primary",
-                Letter = 'C',
-                Status = "Sağlıklı"
-            });
-            diskInfo.VolumeInfos.Add(new VolumeInfo
-            {
-                DiskType = "MBR",
-                DiskName = "Disk 1",
-                Name = "Local Volume",
-                FileSystem = "NTFS",
-                StrSize = FormatBytes(322122547200),
-                Size = 322122547200,
-                StrFreeSize = FormatBytes(161061273600),
-                FreeSize = 161061273600,
-                PrioritySection = "Primary",
-                Letter = 'D',
-                Status = "Sağlıklı"
-            });
-            var page = new DiskInfoPage(diskInfo);
-            var frame = new Frame();
-            frame.Content = page;
-            frame.VerticalAlignment = VerticalAlignment.Top;
-            diskInfoStackPanel.Children.Add(frame);
-            page = new DiskInfoPage(diskInfo);
-            frame = new Frame();
-            frame.Content = page;
-            frame.VerticalAlignment = VerticalAlignment.Top;
-            stackTasksDiskInfo.Children.Add(frame);
+            #region Disk Bilgileri
 
-            DiskInformation diskInfo2 = new DiskInformation
-            {
-                StrSize = "2000 GB",
-                Size = 2000000000000,
-            };
-            diskInfo2.VolumeInfos.Add(new VolumeInfo
-            {
-                DiskType = "GPT",
-                DiskName = "Disk 2",
-                Name = "System Reserverd",
-                FileSystem = "NTFS",
-                StrSize = FormatBytes(322122547200),
-                Size = 322122547200,
-                StrFreeSize = FormatBytes(169651208192),
-                FreeSize = 169651208192,
-                PrioritySection = "Primary",
-                Letter = 'C',
-                Status = "Sağlıklı"
-            });
-            diskInfo2.VolumeInfos.Add(new VolumeInfo
-            {
-                DiskType = "GPT",
-                DiskName = "Disk 2",
-                Name = "Local Volume",
-                FileSystem = "NTFS",
-                StrSize = FormatBytes(483183820800),
-                Size = 483183820800,
-                StrFreeSize = FormatBytes(375809638400),
-                FreeSize = 375809638400,
-                PrioritySection = "Primary",
-                Letter = 'D',
-                Status = "Sağlıklı"
-            });
-            diskInfo2.VolumeInfos.Add(new VolumeInfo
-            {
-                DiskType = "GPT",
-                DiskName = "Disk 2",
-                Name = "Local Volume",
-                FileSystem = "NTFS",
-                StrSize = FormatBytes(536870912000),
-                Size = 536870912000,
-                StrFreeSize = FormatBytes(107374182400),
-                FreeSize = 107374182400,
-                PrioritySection = "Primary",
-                Letter = 'E',
-                Status = "Sağlıklı"
-            });
-            diskInfo2.VolumeInfos.Add(new VolumeInfo
-            {
-                DiskType = "GPT",
-                DiskName = "Disk 2",
-                Name = "Local Volume",
-                FileSystem = "NTFS",
-                StrSize = FormatBytes(536870912000),
-                Size = 536870912000,
-                StrFreeSize = FormatBytes(10737418240),
-                FreeSize = 10737418240,
-                PrioritySection = "Primary",
-                Letter = 'F',
-                Status = "Sağlıklı"
-            });
-            diskInfo2.VolumeInfos.Add(new VolumeInfo
-            {
-                DiskType = "GPT",
-                DiskName = "Disk 2",
-                Name = "Local Volume",
-                FileSystem = "NTFS",
-                StrSize = FormatBytes(268435456000),
-                Size = 268435456000,
-                StrFreeSize = FormatBytes(10737418240),
-                FreeSize = 10737418240,
-                PrioritySection = "Primary",
-                Letter = 'G',
-                Status = "Sağlıklı"
-            });
-            page = new DiskInfoPage(diskInfo2);
-            frame = new Frame();
-            frame.Content = page;
-            frame.VerticalAlignment = VerticalAlignment.Top;
-            diskInfoStackPanel.Children.Add(frame);
-            page = new DiskInfoPage(diskInfo2);
-            frame = new Frame();
-            frame.Content = page;
-            frame.VerticalAlignment = VerticalAlignment.Top;
-            stackTasksDiskInfo.Children.Add(frame);
+            List<VolumeInfo> volumeList = new List<VolumeInfo>();
+            _diskList = _backupService.GetDiskList();
 
-            //List<VolumeInfo> diskItems = new List<VolumeInfo>();
-
-            //foreach (var item in diskInfo.VolumeInfos)
-            //{
-            //    diskItems.Add(item);
-            //}
-            //foreach (var item in diskInfo2.VolumeInfos)
-            //{
-            //    diskItems.Add(item);
-            //}
-
-            List<VolumeInfo> diskItems = new List<VolumeInfo>();
-            BackupManager backupManager = new BackupManager();
-            diskList = backupManager.GetDiskList();
-
-            foreach (var diskItem in diskList)
+            foreach (var diskItem in _diskList)
             {
                 foreach (var volumeItem in diskItem.VolumeInfos)
                 {
-                    diskItems.Add(volumeItem);
+                    volumeList.Add(volumeItem);
                 }
             }
 
-            listViewDisk.ItemsSource = diskItems;
-            listViewRestoreDisk.ItemsSource = diskItems;
+            listViewDisk.ItemsSource = volumeList;
+            listViewRestoreDisk.ItemsSource = volumeList;
 
             CollectionView view = (CollectionView)CollectionViewSource.GetDefaultView(listViewDisk.ItemsSource);
             PropertyGroupDescription groupDescription = new PropertyGroupDescription("DiskName");
             view.GroupDescriptions.Add(groupDescription);
 
-            foreach (var item in diskList)
+            foreach (var item in _diskList)
             {
-                page = new DiskInfoPage(item);
-                frame = new Frame();
+                DiskInfoPage page = new DiskInfoPage(item);
+                Frame frame = new Frame();
                 frame.Content = page;
                 frame.VerticalAlignment = VerticalAlignment.Top;
                 diskInfoStackPanel.Children.Add(frame);
@@ -216,6 +84,16 @@ namespace DiskBackupWpfGUI
                 frame.VerticalAlignment = VerticalAlignment.Top;
                 stackTasksDiskInfo.Children.Add(frame);
             }
+
+            #endregion
+
+
+            #region Yedekleme alanları
+
+            listViewBackupStorage.ItemsSource = _backupStorageService.BackupStorageInfoList();
+
+
+            #endregion
 
 
             TaskInfo taskInfo1 = new TaskInfo()
@@ -272,182 +150,91 @@ namespace DiskBackupWpfGUI
                 Status = StatusType.Success,
                 StrStatus = Resources[StatusType.Success.ToString()].ToString()
             });
-            //activityLogItems.Add(new ActivityLog()
-            //{
-            //    Id = 0,
-            //    StartDate = DateTime.Now - TimeSpan.FromDays(5),
-            //    EndDate = DateTime.Now - TimeSpan.FromDays(4),
-            //    backupType = BackupType.Inc,
-            //    TaskName = taskInfo1,
-            //    Target = backupAreaInfo2,
-            //    Status = "Başarılı"
-            //});
-            //activityLogItems.Add(new ActivityLog()
-            //{
-            //    Id = 0,
-            //    StartDate = DateTime.Now - TimeSpan.FromDays(10),
-            //    EndDate = DateTime.Now - TimeSpan.FromDays(9),
-            //    backupType = BackupType.Diff,
-            //    TaskName = taskInfo1,
-            //    Target = backupAreaInfo2,
-            //    Status = "Başarısız"
-            //});
-            //activityLogItems.Add(new ActivityLog()
-            //{
-            //    Id = 0,
-            //    StartDate = DateTime.Now - TimeSpan.FromDays(5),
-            //    EndDate = DateTime.Now - TimeSpan.FromHours(5),
-            //    backupType = BackupType.Full,
-            //    TaskName = taskInfo2,
-            //    Target = backupAreaInfo1,
-            //    Status = "Başarısız"
-            //});
-            //activityLogItems.Add(new ActivityLog()
-            //{
-            //    Id = 0,
-            //    StartDate = DateTime.Now - TimeSpan.FromDays(5),
-            //    EndDate = DateTime.Now - TimeSpan.FromHours(5),
-            //    backupType = BackupType.Full,
-            //    TaskName = taskInfo1,
-            //    Target = backupAreaInfo1,
-            //    Status = "Başarılı"
-            //});
-            //activityLogItems.Add(new ActivityLog()
-            //{
-            //    Id = 0,
-            //    StartDate = DateTime.Now - TimeSpan.FromDays(5),
-            //    EndDate = DateTime.Now - TimeSpan.FromDays(5),
-            //    backupType = BackupType.Full,
-            //    TaskName = taskInfo2,
-            //    Target = backupAreaInfo2,
-            //    Status = "Başarısız"
-            //});
-            //activityLogItems.Add(new ActivityLog()
-            //{
-            //    Id = 0,
-            //    StartDate = DateTime.Now - TimeSpan.FromDays(5),
-            //    EndDate = DateTime.Now - TimeSpan.FromDays(3),
-            //    backupType = BackupType.Inc,
-            //    TaskName = taskInfo1,
-            //    Target = backupAreaInfo1,
-            //    Status = "Başarılı"
-            //});
-            //activityLogItems.Add(new ActivityLog()
-            //{
-            //    Id = 0,
-            //    StartDate = DateTime.Now - TimeSpan.FromDays(5),
-            //    EndDate = DateTime.Now - TimeSpan.FromDays(3),
-            //    backupType = BackupType.Inc,
-            //    TaskName = taskInfo2,
-            //    Target = backupAreaInfo1,
-            //    Status = "Başarılı"
-            //});
-            //activityLogItems.Add(new ActivityLog()
-            //{
-            //    Id = 0,
-            //    StartDate = DateTime.Now - TimeSpan.FromDays(1),
-            //    EndDate = DateTime.Now,
-            //    backupType = BackupType.Diff,
-            //    TaskName = taskInfo1,
-            //    Target = backupAreaInfo2,
-            //    Status = "Başarılı"
-            //});
 
             listViewLog.ItemsSource = activityLogItems;
             //buraya kadar uyarlandı loader'da falan da düzen gerekecek
 
 
-            List<Backups> backupsItems = new List<Backups>();
+            List<BackupInfo> backupsItems = new List<BackupInfo>();
 
-            backupsItems.Add(new Backups()
+            backupsItems.Add(new BackupInfo()
             {
-                Type = "full",
+                Type = BackupTypes.Full,
                 FileName = "Volume_C_Full_001",
                 CreatedDate = DateTime.Now - TimeSpan.FromDays(5),
-                TaskName = "C Full",
-                VolumeSize = "250 GB",
-                FileSize = "12 GB",
+                BackupTaskName = "C Full",
+                StrVolumeSize = "250 GB",
+                StrFileSize = "12 GB",
                 Description = "Yedek açıklaması"
             });
-            backupsItems.Add(new Backups()
+            backupsItems.Add(new BackupInfo()
             {
-                Type = "inc",
+                Type = BackupTypes.Inc,
                 FileName = "Volume_D_Inc_001",
                 CreatedDate = DateTime.Now - TimeSpan.FromHours(5),
-                TaskName = "D Inc",
-                VolumeSize = "510 GB",
-                FileSize = "8 GB",
+                BackupTaskName = "D Inc",
+                StrVolumeSize = "510 GB",
+                StrFileSize = "8 GB",
                 Description = "Yedek açıklaması"
             });
-            backupsItems.Add(new Backups()
+            backupsItems.Add(new BackupInfo()
             {
-                Type = "diff",
+                Type = BackupTypes.Diff,
                 FileName = "Volume_D_Diff_001",
                 IsCloud = true,
                 CreatedDate = DateTime.Now - TimeSpan.FromHours(30),
-                TaskName = "D Diff",
-                VolumeSize = "250 GB",
-                FileSize = "18 GB",
+                BackupTaskName = "D Diff",
+                StrVolumeSize = "250 GB",
+                StrFileSize = "18 GB",
                 Description = "Yedek açıklaması"
             });
-            backupsItems.Add(new Backups()
+            backupsItems.Add(new BackupInfo()
             {
-                Type = "diff",
+                Type = BackupTypes.Diff,
                 FileName = "Volume_D_Diff_002",
                 CreatedDate = DateTime.Now - TimeSpan.FromDays(15),
-                TaskName = "D Diff",
-                VolumeSize = "120 GB",
-                FileSize = "8 GB",
+                BackupTaskName = "D Diff",
+                StrVolumeSize = "120 GB",
+                StrFileSize = "8 GB",
                 Description = "Yedek açıklaması"
             });
-            backupsItems.Add(new Backups()
+            backupsItems.Add(new BackupInfo()
             {
-                Type = "full",
+                Type = BackupTypes.Full,
                 FileName = "Volume_C_Full_002",
                 IsCloud = true,
                 CreatedDate = DateTime.Now - TimeSpan.FromDays(7),
-                TaskName = "C Full",
-                VolumeSize = "120 GB",
-                FileSize = "28 GB",
+                BackupTaskName = "C Full",
+                StrVolumeSize = "120 GB",
+                StrFileSize = "28 GB",
                 Description = "Yedek açıklaması"
             });
-            backupsItems.Add(new Backups()
+            backupsItems.Add(new BackupInfo()
             {
-                Type = "full",
+                Type = BackupTypes.Full,
                 FileName = "Volume_C_Full_003",
                 CreatedDate = DateTime.Now - TimeSpan.FromDays(7),
-                TaskName = "C Full",
-                VolumeSize = "120 GB",
-                FileSize = "28 GB",
+                BackupTaskName = "C Full",
+                StrVolumeSize = "120 GB",
+                StrFileSize = "28 GB",
                 Description = "Yedek açıklaması"
             });
-            backupsItems.Add(new Backups()
+            backupsItems.Add(new BackupInfo()
             {
-                Type = "inc",
+                Type = BackupTypes.Inc,
                 FileName = "Volume_D_Inc_002",
                 IsCloud = true,
                 CreatedDate = DateTime.Now - TimeSpan.FromHours(5),
-                TaskName = "D Inc",
-                VolumeSize = "510 GB",
-                FileSize = "4 GB",
+                BackupTaskName = "D Inc",
+                StrVolumeSize = "510 GB",
+                StrFileSize = "4 GB",
                 Description = "Yedek açıklaması"
             });
 
             listViewBackups.ItemsSource = backupsItems;
-        }
 
-        public class Backups
-        {
-            public string Type { get; set; }
-            public string FileName { get; set; }
-            public bool IsCloud { get; set; } = false;
-            public DateTime CreatedDate { get; set; }
-            public string TaskName { get; set; }
-            public string VolumeSize { get; set; }
-            public string FileSize { get; set; }
-            public string Description { get; set; }
+            listViewRestore.ItemsSource = backupsItems;
         }
-
 
         #region Title Bar
         private void btnMainClose_Click(object sender, RoutedEventArgs e)
@@ -469,6 +256,7 @@ namespace DiskBackupWpfGUI
         }
         #endregion
 
+
         #region Tasks Create Tab
 
         private void btnCreateTask_Click(object sender, RoutedEventArgs e)
@@ -488,9 +276,9 @@ namespace DiskBackupWpfGUI
             _numberOfItems.Add(Convert.ToInt32(numberOfItems.Text));
             var groupName = expander.FindName("txtGroupName") as TextBlock;
             _groupName.Add(groupName.Text);
-            if (diskList.Count == _diskExpenderIndex)
+            if (_diskList.Count == _diskExpenderIndex)
                 _diskExpenderIndex = 0;
-            size.Text = FormatBytes(diskList[_diskExpenderIndex++].Size);
+            size.Text = FormatBytes(_diskList[_diskExpenderIndex++].Size);
         }
 
         #region Checkbox Operations
@@ -606,9 +394,102 @@ namespace DiskBackupWpfGUI
 
         #endregion
 
+
         #region Tasks Tab
 
+        private void listViewTasks_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (listViewTasks.SelectedIndex != -1)
+            {
+                btnTaskDelete.IsEnabled = true;
+                btnTaskEdit.IsEnabled = true;
+                //butonlar eklenmeye devam edecek burayada da checkboxlara da
+            }
+        }
+
+        #region Checkbox Operations
+        private void chbAllTasksChechbox_Checked(object sender, RoutedEventArgs e)
+        {
+            _tasksAllControl = true;
+
+            foreach (TaskInfo item in listViewTasks.ItemsSource)
+            {
+                listViewTasks.SelectedItems.Add(item);
+            }
+
+            if (listViewTasks.SelectedItems.Count == 1)
+                btnTaskEdit.IsEnabled = true;
+            else
+                btnTaskEdit.IsEnabled = false;
+
+            if (listViewTasks.SelectedItems.Count > 0)
+                btnTaskDelete.IsEnabled = true;
+            else
+                btnTaskDelete.IsEnabled = false;
+        }
+
+        private void chbAllTasksChechbox_Unchecked(object sender, RoutedEventArgs e)
+        {
+            if (_tasksAllControl)
+            {
+                foreach (TaskInfo item in listViewTasks.ItemsSource)
+                {
+                    listViewTasks.SelectedItems.Remove(item);
+                }
+                _tasksAllControl = true;
+            }
+
+            if (listViewTasks.SelectedItems.Count == 1)
+                btnTaskEdit.IsEnabled = true;
+            else
+                btnTaskEdit.IsEnabled = false;
+
+            if (listViewTasks.SelectedItems.Count > 0)
+                btnTaskDelete.IsEnabled = true;
+            else
+                btnTaskDelete.IsEnabled = false;
+        }
+
+        private void chbTask_Checked(object sender, RoutedEventArgs e)
+        {
+            if (chbAllTasksChechbox.IsChecked == false)
+            {
+                _tasksAllControl = listViewTasks.SelectedItems.Count == listViewTasks.Items.Count;
+                chbAllTasksChechbox.IsChecked = _tasksAllControl;
+            }
+
+            if (listViewTasks.SelectedItems.Count == 1)
+                btnTaskEdit.IsEnabled = true;
+            else
+                btnTaskEdit.IsEnabled = false;
+
+            if (listViewTasks.SelectedItems.Count > 0)
+                btnTaskDelete.IsEnabled = true;
+            else
+                btnTaskDelete.IsEnabled = false;
+        }
+
+        private void chbTask_Unchecked(object sender, RoutedEventArgs e)
+        {
+            _tasksAllControl = false;
+            chbAllTasksChechbox.IsChecked = false;
+
+            if (listViewTasks.SelectedItems.Count == 1)
+                btnTaskEdit.IsEnabled = true;
+            else
+                btnTaskEdit.IsEnabled = false;
+
+            if (listViewTasks.SelectedItems.Count > 0)
+                btnTaskDelete.IsEnabled = true;
+            else
+                btnTaskDelete.IsEnabled = false;
+        }
         #endregion
+
+
+
+        #endregion
+
 
         #region Restore Tab
 
@@ -623,9 +504,9 @@ namespace DiskBackupWpfGUI
             _restoreNumberOfItems.Add(Convert.ToInt32(numberOfItems.Text));
             var groupName = expander.FindName("txtRestoreGroupName") as TextBlock;
             _restoreGroupName.Add(groupName.Text);
-            if (diskList.Count == _diskExpenderIndex)
+            if (_diskList.Count == _diskExpenderIndex)
                 _diskExpenderIndex = 0;
-            size.Text = FormatBytes(diskList[_diskExpenderIndex++].Size);
+            size.Text = FormatBytes(_diskList[_diskExpenderIndex++].Size);
         }
 
 
@@ -751,22 +632,260 @@ namespace DiskBackupWpfGUI
 
         #endregion
 
+
         #region View Backups Tab
+
+        private void listViewBackups_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (listViewBackups.SelectedIndex != -1)
+            {
+                btnFilesDelete.IsEnabled = true;
+                btnFilesBrowse.IsEnabled = true;
+            }
+        }
+
+        #region Checkbox Operations
+        private void chbAllFilesChecbox_Checked(object sender, RoutedEventArgs e)
+        {
+            _viewBackupsAllControl = true;
+
+            foreach (BackupInfo item in listViewBackups.ItemsSource)
+            {
+                listViewBackups.SelectedItems.Add(item);
+            }
+
+            if (listViewBackups.SelectedItems.Count == 1)
+                btnFilesBrowse.IsEnabled = true;
+            else
+                btnFilesBrowse.IsEnabled = false;
+
+            if (listViewBackups.SelectedItems.Count > 0)
+                btnFilesDelete.IsEnabled = true;
+            else
+                btnFilesDelete.IsEnabled = false;
+        }
+
+        private void chbAllFilesChecbox_Unchecked(object sender, RoutedEventArgs e)
+        {
+            if (_viewBackupsAllControl)
+            {
+                foreach (BackupInfo item in listViewBackups.ItemsSource)
+                {
+                    listViewBackups.SelectedItems.Remove(item);
+                }
+                _viewBackupsAllControl = true;
+            }
+
+            if (listViewBackups.SelectedItems.Count == 1)
+                btnFilesBrowse.IsEnabled = true;
+            else
+                btnFilesBrowse.IsEnabled = false;
+
+            if (listViewBackups.SelectedItems.Count > 0)
+                btnFilesDelete.IsEnabled = true;
+            else
+                btnFilesDelete.IsEnabled = false;
+        }
+
+        private void chbViewBackups_Checked(object sender, RoutedEventArgs e)
+        {
+            if (chbAllFilesChecbox.IsChecked == false)
+            {
+                _viewBackupsAllControl = listViewBackups.SelectedItems.Count == listViewBackups.Items.Count;
+                chbAllFilesChecbox.IsChecked = _viewBackupsAllControl;
+            }
+
+            if (listViewBackups.SelectedItems.Count == 1)
+                btnFilesBrowse.IsEnabled = true;
+            else
+                btnFilesBrowse.IsEnabled = false;
+
+            if (listViewBackups.SelectedItems.Count > 0)
+                btnFilesDelete.IsEnabled = true;
+            else
+                btnFilesDelete.IsEnabled = false;
+        }
+
+        private void chbViewBackups_Unchecked(object sender, RoutedEventArgs e)
+        {
+            _viewBackupsAllControl = false;
+            chbAllFilesChecbox.IsChecked = false;
+
+            if (listViewBackups.SelectedItems.Count == 1)
+                btnFilesBrowse.IsEnabled = true;
+            else
+                btnFilesBrowse.IsEnabled = false;
+
+            if (listViewBackups.SelectedItems.Count > 0)
+                btnFilesDelete.IsEnabled = true;
+            else
+                btnFilesDelete.IsEnabled = false;
+        }
+        #endregion
+
 
         #endregion
 
-        #region Backup Area Tab
-        private void btnBackupAreaAdd_Click(object sender, RoutedEventArgs e)
+
+        #region Backup Storage Tab
+
+        private void btnBackupStorageAdd_Click(object sender, RoutedEventArgs e)
         {
             AddBackupAreaWindow addBackupArea = new AddBackupAreaWindow();
             addBackupArea.ShowDialog();
+            listViewBackupStorage.ItemsSource = _backupStorageService.BackupStorageInfoList();
+            chbAllBackupStorage.IsChecked = true;
+            chbAllBackupStorage.IsChecked = false;
+        }
+
+        private void btnBackupStorageEdit_Click(object sender, RoutedEventArgs e)
+        {
+            BackupStorageInfo backupStorageInfo = (BackupStorageInfo)listViewBackupStorage.SelectedItem;
+            AddBackupAreaWindow addBackupArea = new AddBackupAreaWindow(backupStorageInfo);
+            addBackupArea.ShowDialog();
+            listViewBackupStorage.ItemsSource = _backupStorageService.BackupStorageInfoList();
+            chbAllBackupStorage.IsChecked = true;
+            chbAllBackupStorage.IsChecked = false;
+        }
+
+        private void btnBackupStorageDelete_Click(object sender, RoutedEventArgs e)
+        {
+            MessageBoxResult result = MessageBox.Show($"{listViewBackupStorage.SelectedItems.Count} adet veri silinecek. Onaylıyor musunuz?", "Narbulut diyor ki; " , MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
+            if (result == MessageBoxResult.Yes)
+            {
+                foreach (BackupStorageInfo item in listViewBackupStorage.SelectedItems)
+                {
+                    _backupStorageService.DeleteBackupStorage(item);
+                }
+                listViewBackupStorage.ItemsSource = _backupStorageService.BackupStorageInfoList();
+            }
+        }
+
+        private void listViewBackupStorage_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (listViewBackupStorage.SelectedIndex != -1)
+            {
+                btnBackupStorageDelete.IsEnabled = true;
+                btnBackupStorageEdit.IsEnabled = true;
+            }
+        }
+
+        #region Checkbox Operations
+        private void chbAllBackupStorage_Checked(object sender, RoutedEventArgs e)
+        {
+            _storegeAllControl = true;
+
+            foreach (BackupStorageInfo item in listViewBackupStorage.ItemsSource)
+            {
+                listViewBackupStorage.SelectedItems.Add(item);
+            }
+
+            if (listViewBackupStorage.SelectedItems.Count == 1)
+            {
+                btnBackupStorageEdit.IsEnabled = true;
+            }
+            else
+            {
+                btnBackupStorageEdit.IsEnabled = false;
+            }
+            if (listViewBackupStorage.SelectedItems.Count > 0)
+            {
+                btnBackupStorageDelete.IsEnabled = true;
+            }
+            else
+            {
+                btnBackupStorageDelete.IsEnabled = false;
+            }
+        }
+
+        private void chbAllBackupStorage_Unchecked(object sender, RoutedEventArgs e)
+        {
+            if (_storegeAllControl)
+            {
+                foreach (BackupStorageInfo item in listViewBackupStorage.ItemsSource)
+                {
+                    listViewBackupStorage.SelectedItems.Remove(item);
+                }
+                _storegeAllControl = true;
+            }
+
+            if (listViewBackupStorage.SelectedItems.Count == 1)
+            {
+                btnBackupStorageEdit.IsEnabled = true;
+            }
+            else
+            {
+                btnBackupStorageEdit.IsEnabled = false;
+            }
+            if (listViewBackupStorage.SelectedItems.Count > 0)
+            {
+                btnBackupStorageDelete.IsEnabled = true;
+            }
+            else
+            {
+                btnBackupStorageDelete.IsEnabled = false;
+            }
+        }
+
+        private void chbBackupStorage_Checked(object sender, RoutedEventArgs e)
+        {
+            if (chbAllBackupStorage.IsChecked == false)
+            {
+                _storegeAllControl = listViewBackupStorage.SelectedItems.Count == listViewBackupStorage.Items.Count;
+                chbAllBackupStorage.IsChecked = _storegeAllControl;
+            }
+
+            if (listViewBackupStorage.SelectedItems.Count == 1)
+            {
+                btnBackupStorageEdit.IsEnabled = true;
+            }
+            else
+            {
+                btnBackupStorageEdit.IsEnabled = false;
+            }
+            if (listViewBackupStorage.SelectedItems.Count > 0)
+            {
+                btnBackupStorageDelete.IsEnabled = true;
+            }
+            else
+            {
+                btnBackupStorageDelete.IsEnabled = false;
+            }
+        }
+
+        private void chbBackupStorage_Unchecked(object sender, RoutedEventArgs e)
+        {
+            _storegeAllControl = false;
+            chbAllBackupStorage.IsChecked = false;
+
+            if (listViewBackupStorage.SelectedItems.Count == 1)
+            {
+                btnBackupStorageEdit.IsEnabled = true;
+            }
+            else
+            {
+                btnBackupStorageEdit.IsEnabled = false;
+            }
+            if (listViewBackupStorage.SelectedItems.Count > 0)
+            {
+                btnBackupStorageDelete.IsEnabled = true;
+            }
+            else
+            {
+                btnBackupStorageDelete.IsEnabled = false;
+            }
         }
 
         #endregion
 
+
+        #endregion
+
+
         #region Log Tab
 
         #endregion
+
 
         #region Settings Tab
 
@@ -836,6 +955,7 @@ namespace DiskBackupWpfGUI
 
         #endregion
 
+
         #region Help Tab
         private void OnNavigate(object sender, RequestNavigateEventArgs e)
         {
@@ -880,7 +1000,9 @@ namespace DiskBackupWpfGUI
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Geçmişe dönük restore yapılamaz." + ex.ToString());
+                //Bu düzeltilecek.... umarım :(
+
+                MessageBox.Show("Geçmişe dönük restore yapılamaz." + ex.ToString(), "NARBULUT DİYOR Kİ;", MessageBoxButton.OK, MessageBoxImage.Error);
                 restore.Close();
             }
         }

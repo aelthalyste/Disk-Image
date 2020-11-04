@@ -1,4 +1,8 @@
-﻿using DiskBackup.Entities.Concrete;
+﻿using DiskBackup.Business.Abstract;
+using DiskBackup.Business.Concrete;
+using DiskBackup.DataAccess.Abstract;
+using DiskBackup.DataAccess.Concrete.EntityFramework;
+using DiskBackup.Entities.Concrete;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,11 +24,66 @@ namespace DiskBackupWpfGUI
     /// </summary>
     public partial class AddBackupAreaWindow : Window
     {
-        //PATH SONUNA TERS SLAS EKLE BATU DA ÖYLE İSTENİYOR
-        private bool ShowSettings = false;
+        // Nar depolama ve lisans bilgileri için uç alınacak
+        // NAS kısmı gerçekleştirilecek
+
+        private IBackupStorageService _backupStorageService = new BackupStorageManager();
+        public IBackupStorageDal _backupStorageDal = new EfBackupStorageDal();
+
+        private bool _showSettings = false;
+        private bool _updateControl = false;
+
+        private int _updateId;
+
         public AddBackupAreaWindow()
         {
             InitializeComponent();
+            _updateControl = false;
+        }
+
+        public AddBackupAreaWindow(BackupStorageInfo backupStorageInfo)
+        {
+            InitializeComponent();
+
+            _updateId = backupStorageInfo.Id;
+            _updateControl = true;
+            txtBackupAreaName.Text = backupStorageInfo.StorageName;
+            txtBackupAreaDescription.Text = backupStorageInfo.Description;
+            if (backupStorageInfo.IsCloud) //hibrit
+            {
+                cbBackupToCloud.IsChecked = true;
+                if (backupStorageInfo.Username != null) // nas
+                {
+                    rbNAS.IsChecked = true;
+                    txtSettingsNASFolderPath.Text = backupStorageInfo.Path.Substring(0, backupStorageInfo.Path.Length - 1);
+                    txtSettingsNASDomain.Text = backupStorageInfo.Domain;
+                    //txtSettingsNASUserName.Text = backupStorageInfo.Username;
+                    //txtSettingsNASPassword.Password = backupStorageInfo.Password;
+                }
+                else // yerel disktir
+                {
+                    rbLocalDisc.IsChecked = true;
+                    txtSettingsFolderPath.Text = backupStorageInfo.Path.Substring(0, backupStorageInfo.Path.Length - 1);
+                }
+            }
+            else // sadece nas veya yerel disk
+            {
+                cbBackupToCloud.IsChecked = false;
+                if (backupStorageInfo.Username != null) // nas
+                {
+                    rbNAS.IsChecked = true;
+                    txtSettingsNASFolderPath.Text = backupStorageInfo.Path.Substring(0, backupStorageInfo.Path.Length - 1);
+                    txtSettingsNASDomain.Text = backupStorageInfo.Domain;
+                    //txtSettingsNASUserName.Text = backupStorageInfo.Username;
+                    //txtSettingsNASPassword.Password = backupStorageInfo.Password;
+                }
+                else // yerel disktir
+                {
+                    rbLocalDisc.IsChecked = true;
+                    txtSettingsFolderPath.Text = backupStorageInfo.Path.Substring(0, backupStorageInfo.Path.Length-1);
+                }
+            }
+
         }
 
         #region Title Bar
@@ -96,24 +155,23 @@ namespace DiskBackupWpfGUI
             {
                 if (txtBackupAreaName.Text.Equals("") || txtBackupAreaDescription.Text.Equals("") || txtSettingsFolderPath.Text.Equals(""))
                 {
-                    MessageBox.Show("İlgili alanları lütfen boş geçmeyiniz. Yerel Disk");
+                    MessageBox.Show("İlgili alanları lütfen boş geçmeyiniz. Yerel Disk","NARBULUT DİYOR Kİ;", MessageBoxButton.OK, MessageBoxImage.Error);
                     controlFlag = false;
                 }
             }
             else if (rbNAS.IsChecked.Value) // nas
             {
-                if (txtBackupAreaName.Text.Equals("") || txtBackupAreaDescription.Text.Equals("") || 
+                if (txtBackupAreaName.Text.Equals("") || txtBackupAreaDescription.Text.Equals("") ||
                     txtSettingsNASFolderPath.Text.Equals("") || txtSettingsNASDomain.Text.Equals("") ||
                     txtSettingsNASUserName.Text.Equals("") || txtSettingsNASPassword.Password.Equals(""))
                 {
-                    MessageBox.Show("İlgili alanları lütfen boş geçmeyiniz. NAS");
+                    MessageBox.Show("İlgili alanları lütfen boş geçmeyiniz. NAS", "NARBULUT DİYOR Kİ;", MessageBoxButton.OK, MessageBoxImage.Error);
                     controlFlag = false;
                 }
             }
 
             if (controlFlag)
             {
-                //kaydet
                 if (rbLocalDisc.IsChecked.Value) // yerel disk
                 {
                     BackupStorageInfo backupStorageInfo = new BackupStorageInfo
@@ -133,6 +191,22 @@ namespace DiskBackupWpfGUI
                     {
                         backupStorageInfo.Type = BackupStorageType.Windows;
                     }
+
+                    Close();
+
+                    if (_updateControl)
+                    {
+                        //update
+                        backupStorageInfo.Id = _updateId;
+                        backupStorageInfo.Path = txtSettingsFolderPath.Text + @"\";
+                        UpdateAndShowResult(backupStorageInfo);
+                    }
+                    else
+                    {
+                        //kaydet
+                        AddAndShowResult(backupStorageInfo);
+                    }
+
                 }
                 else // Nas
                 {
@@ -156,6 +230,21 @@ namespace DiskBackupWpfGUI
                     {
                         backupStorageInfo.Type = BackupStorageType.NAS;
                     }
+
+                    Close();
+
+                    if (_updateControl)
+                    {
+                        //update
+                        backupStorageInfo.Id = _updateId;
+                        backupStorageInfo.Path = txtSettingsNASFolderPath.Text + @"\";
+                        UpdateAndShowResult(backupStorageInfo);
+                    }
+                    else
+                    {
+                        //kaydet
+                        AddAndShowResult(backupStorageInfo);
+                    }
                 }
             }
         }
@@ -168,12 +257,12 @@ namespace DiskBackupWpfGUI
 
         private void rbLocalDisc_Checked(object sender, RoutedEventArgs e)
         {
-            ShowSettings = false;
+            _showSettings = false;
         }
 
         private void rbNAS_Checked(object sender, RoutedEventArgs e)
         {
-            ShowSettings = true;
+            _showSettings = true;
         }
 
         private void ABATabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -192,7 +281,7 @@ namespace DiskBackupWpfGUI
             {
                 lblTabHeader.Text = Resources["settings"].ToString();
                 lblTabContent.Text = Resources["ABASettingsContent"].ToString();
-                if (ShowSettings == false)
+                if (_showSettings == false)
                 {
                     stackLocalDisc.Visibility = Visibility.Visible;
                     stackNAS.Visibility = Visibility.Hidden;
@@ -222,6 +311,24 @@ namespace DiskBackupWpfGUI
             var dialog = new System.Windows.Forms.FolderBrowserDialog();
             System.Windows.Forms.DialogResult result = dialog.ShowDialog();
             txtSettingsFolderPath.Text = dialog.SelectedPath;
+        }
+
+        private void UpdateAndShowResult(BackupStorageInfo backupStorageInfo)
+        {
+            var result = _backupStorageService.UpdateBackupStorage(backupStorageInfo);
+            if (result)
+                MessageBox.Show("Güncelleme işlemi başarılı", "NARBULUT DİYOR Kİ;", MessageBoxButton.OK, MessageBoxImage.Information);
+            else
+                MessageBox.Show("Güncelleme işlemi başarısız", "NARBULUT DİYOR Kİ;", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+
+        private void AddAndShowResult(BackupStorageInfo backupStorageInfo)
+        {
+            var result = _backupStorageService.AddBackupStorage(backupStorageInfo);
+            if (result)
+                MessageBox.Show("Ekleme işlemi başarılı", "NARBULUT DİYOR Kİ;", MessageBoxButton.OK, MessageBoxImage.Information);
+            else
+                MessageBox.Show("Ekleme işlemi başarısız", "NARBULUT DİYOR Kİ;", MessageBoxButton.OK, MessageBoxImage.Error);
         }
 
     }

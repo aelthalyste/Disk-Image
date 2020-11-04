@@ -12,7 +12,7 @@
         ResizeMode="CanMinimize" 
         BorderBrush="#194771" 
         BorderThickness="1" 
-        Icon="Resources/Icon/u62.png" 
+        Icon="Resources/Icon/NarBulut_PNG_Icon_White_V3.png" 
         WindowStyle="None">
     <Window.Resources>
         <ResourceDictionary Source="Resources\Lang\string_tr.xaml"/>

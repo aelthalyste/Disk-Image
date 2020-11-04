@@ -19,17 +19,18 @@ namespace DiskBackup.DataAccess.Concrete.EntityFramework.Mappings
             Property(x => x.StorageName).HasColumnName("storage_name");
             Property(x => x.Type).HasColumnName("backup_storage_type");
             Property(x => x.Description).HasColumnName("description");
-            Property(x => x.StrCapacity).HasColumnName("str_capacity");
-            Property(x => x.Capacity).HasColumnName("capacity");
-            Property(x => x.StrUsedSize).HasColumnName("str_used_size");
-            Property(x => x.UsedSize).HasColumnName("used_size");
-            Property(x => x.StrFreeSize).HasColumnName("str_free_size");
-            Property(x => x.FreeSize).HasColumnName("free_size");
             Property(x => x.Path).HasColumnName("path");
             Property(x => x.IsCloud).HasColumnName("is_cloud");
             Property(x => x.Domain).HasColumnName("domain");
             Property(x => x.Username).HasColumnName("username");
             Property(x => x.Password).HasColumnName("password");
+            Ignore(x => x.Capacity);
+            Ignore(x => x.StrCapacity);
+            Ignore(x => x.UsedSize);
+            Ignore(x => x.StrUsedSize);
+            Ignore(x => x.FreeSize);
+            Ignore(x => x.StrFreeSize);
+
         }
     }
 }
