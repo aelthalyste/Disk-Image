@@ -571,6 +571,15 @@ namespace DiskBackupWpfGUI
             chbAllBackupStorage.IsChecked = false;
         }
 
+        private void listViewBackupStorage_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (listViewBackupStorage.SelectedIndex != -1)
+            {
+                btnBackupStorageDelete.IsEnabled = true;
+                btnBackupStorageEdit.IsEnabled = true;
+            }
+        }
+
         #region Checkbox Operations
         private void selectAllBackupStorageChecbox_Checked(object sender, RoutedEventArgs e) 
         {

@@ -154,7 +154,7 @@ namespace DiskBackup.Business.Concrete
 
         public bool RestoreBackupVolume(BackupInfo backupInfo, char volumeLetter)
         {
-            //return _diskTracker.CW_RestoreToVolume(volumeLetter, backupInfo.Letter, backupInfo.Version, true, backupInfo.BackupStorageInfo.Path); //true gidecek
+            return DiskTracker.CW_RestoreToVolume(volumeLetter, backupInfo.Letter, backupInfo.Version, true, backupInfo.BackupStorageInfo.Path); //true gidecek
             throw new NotImplementedException();
         }
 
@@ -164,6 +164,7 @@ namespace DiskBackup.Business.Concrete
             //pathde sadece path varmış dosya adı yokmuş
             //target letter nerden
             //batudan fonksiyon gelecek o fonksiyon hangi harfle restore edeceğini dönecek ve batu o harfle restore edecek
+            //CW_GetFirstAvailableVolumeLetter ile boş olan volume'ü alıp batuhan'a dönerek o volume restore gerçekleştirilecek
             throw new NotImplementedException();
         }
 

@@ -33,6 +33,8 @@ namespace DiskBackupWpfGUI
         private bool _showSettings = false;
         private bool _updateControl = false;
 
+        private int _updateId;
+
         public AddBackupAreaWindow()
         {
             InitializeComponent();
@@ -43,6 +45,7 @@ namespace DiskBackupWpfGUI
         {
             InitializeComponent();
 
+            _updateId = backupStorageInfo.Id;
             _updateControl = true;
             txtBackupAreaName.Text = backupStorageInfo.StorageName;
             txtBackupAreaDescription.Text = backupStorageInfo.Description;
@@ -193,6 +196,8 @@ namespace DiskBackupWpfGUI
                     if (_updateControl)
                     {
                         //update
+                        backupStorageInfo.Id = _updateId;
+                        backupStorageInfo.Path = txtSettingsFolderPath.Text + @"\";
                         var result = _backupStorageService.UpdateBackupStorage(backupStorageInfo);
                         if (result)
                             MessageBox.Show("Güncelleme işlemi başarılı");
@@ -237,6 +242,8 @@ namespace DiskBackupWpfGUI
                     if (_updateControl)
                     {
                         //update
+                        backupStorageInfo.Id = _updateId;
+                        backupStorageInfo.Path = txtSettingsNASFolderPath.Text + @"\";
                         var result = _backupStorageService.UpdateBackupStorage(backupStorageInfo);
                         if (result)
                             MessageBox.Show("Güncelleme işlemi başarılı");

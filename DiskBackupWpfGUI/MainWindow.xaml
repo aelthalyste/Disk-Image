@@ -874,7 +874,7 @@
                         <ColumnDefinition Width="45"/>
                     </Grid.ColumnDefinitions>
                     <DockPanel>
-                        <ListView Name="listViewBackupStorage" Height="415" Margin="5,0,0,5" VerticalAlignment="Top">
+                        <ListView Name="listViewBackupStorage" Height="415" Margin="5,0,0,5" VerticalAlignment="Top" SelectionChanged="listViewBackupStorage_SelectionChanged">
                             <ListView.View>
                                 <GridView>
                                     <GridViewColumn Width="40">
