@@ -532,32 +532,37 @@
                                 <ListView.View>
                                     <GridView>
                                         <GridViewColumn Width="60">
+                                            <GridViewColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <Image Style="{StaticResource ViewBackupsListViewItemImage}"/>
+                                                </DataTemplate>
+                                            </GridViewColumn.CellTemplate>
                                         </GridViewColumn>
                                         <GridViewColumn Header="{DynamicResource fileName}" Width="200">
                                             <GridViewColumn.CellTemplate>
                                                 <DataTemplate>
-                                                    <TextBlock Text="{Binding FolderName}" TextAlignment="Center"/>
+                                                    <TextBlock Text="{Binding FileName}" TextAlignment="Left"/>
                                                 </DataTemplate>
                                             </GridViewColumn.CellTemplate>
                                         </GridViewColumn>
                                         <GridViewColumn Header="{DynamicResource createdDate}" Width="160" >
                                             <GridViewColumn.CellTemplate>
                                                 <DataTemplate>
-                                                    <TextBlock Text="{Binding CreatedDate}" TextAlignment="Center"/>
+                                                    <TextBlock Text="{Binding CreatedDate, StringFormat='dd.MM.yyyy HH:mm'}" TextAlignment="Center"/>
                                                 </DataTemplate>
                                             </GridViewColumn.CellTemplate>
                                         </GridViewColumn>
                                         <GridViewColumn Header="{DynamicResource volumeSize}" Width="150" >
                                             <GridViewColumn.CellTemplate>
                                                 <DataTemplate>
-                                                    <TextBlock Text="{Binding VolumeSize}" TextAlignment="Center"/>
+                                                    <TextBlock Text="{Binding StrVolumeSize}" TextAlignment="Center"/>
                                                 </DataTemplate>
                                             </GridViewColumn.CellTemplate>
                                         </GridViewColumn >
                                         <GridViewColumn Header="{DynamicResource folderSize}" Width="150" >
                                             <GridViewColumn.CellTemplate>
                                                 <DataTemplate>
-                                                    <TextBlock Text="{Binding FolderSize}" TextAlignment="Center"/>
+                                                    <TextBlock Text="{Binding StrFileSize}" TextAlignment="Center"/>
                                                 </DataTemplate>
                                             </GridViewColumn.CellTemplate>
                                         </GridViewColumn>
@@ -757,7 +762,7 @@
                         <ColumnDefinition Width="45"/>
                     </Grid.ColumnDefinitions>
                     <DockPanel>
-                        <ListView Name="listViewBackups" Height="415" Margin="5,0,0,5" VerticalAlignment="Top">
+                        <ListView Name="listViewBackups" Height="415" Margin="5,0,0,5" VerticalAlignment="Top" SelectionChanged="listViewBackups_SelectionChanged">
                             <ListView.View>
                                 <GridView>
                                     <GridViewColumn Width="40">

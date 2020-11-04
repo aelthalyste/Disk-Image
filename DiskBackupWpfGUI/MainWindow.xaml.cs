@@ -232,6 +232,8 @@ namespace DiskBackupWpfGUI
             });
 
             listViewBackups.ItemsSource = backupsItems;
+
+            listViewRestore.ItemsSource = backupsItems;
         }
 
         #region Title Bar
@@ -633,6 +635,14 @@ namespace DiskBackupWpfGUI
 
         #region View Backups Tab
 
+        private void listViewBackups_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (listViewBackups.SelectedIndex != -1)
+            {
+                btnFilesDelete.IsEnabled = true;
+                btnFilesBrowse.IsEnabled = true;
+            }
+        }
 
         #region Checkbox Operations
         private void chbAllFilesChecbox_Checked(object sender, RoutedEventArgs e)
@@ -1019,6 +1029,5 @@ namespace DiskBackupWpfGUI
 
             return ($"{dblSByte:0.##} {Suffix[i]}");
         }
-
     }
 }

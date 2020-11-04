@@ -101,24 +101,24 @@
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
-                    <GridViewColumn Header="{DynamicResource name2}" Width="210" >
+                    <GridViewColumn Header="{DynamicResource name2}" Width="240" >
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
                                 <TextBlock Text="{Binding Name}" />
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
-                    <GridViewColumn Header="{DynamicResource updateDate}" Width="210" >
+                    <GridViewColumn Header="{DynamicResource updateDate}" Width="230" >
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
                                 <TextBlock Text="{Binding UpdatedDate}" TextAlignment="Center"/>
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn >
-                    <GridViewColumn Header="{DynamicResource size}" Width="200" >
+                    <GridViewColumn Header="{DynamicResource size}" Width="130" >
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock Style="{StaticResource FEWListViewItemSize}" Text="{Binding StrSize}" TextAlignment="Center"/>
+                                <TextBlock Style="{StaticResource FEWListViewItemSize}" Text="{Binding StrSize}" TextAlignment="Right"/>
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
