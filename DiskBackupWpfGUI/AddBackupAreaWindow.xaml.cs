@@ -1,4 +1,5 @@
-﻿using System;
+﻿using DiskBackup.Entities.Concrete;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -19,6 +20,7 @@ namespace DiskBackupWpfGUI
     /// </summary>
     public partial class AddBackupAreaWindow : Window
     {
+        //PATH SONUNA TERS SLAS EKLE BATU DA ÖYLE İSTENİYOR
         private bool ShowSettings = false;
         public AddBackupAreaWindow()
         {
@@ -60,11 +62,102 @@ namespace DiskBackupWpfGUI
             {
                 ABATabControl.SelectedIndex += 1;
             }
+
+            if (ABATabControl.SelectedIndex == 3)
+            {
+                if (rbLocalDisc.IsChecked.Value) // yerel disk
+                {
+                    txtName.Text = txtBackupAreaName.Text;
+                    txtTarget.Text = Resources["localDisc"].ToString();
+                    txtFolderPath.Text = txtSettingsFolderPath.Text;
+                    if (cbBackupToCloud.IsChecked.Value)
+                        txtBackupCloud.Text = Resources["active"].ToString();
+                    else
+                        txtBackupCloud.Text = Resources["inactive"].ToString();
+                }
+                else if (rbNAS.IsChecked.Value) // nas
+                {
+                    txtName.Text = txtBackupAreaName.Text;
+                    txtTarget.Text = "NAS cihazı";
+                    txtFolderPath.Text = txtSettingsNASFolderPath.Text;
+                    if (cbBackupToCloud.IsChecked.Value)
+                        txtBackupCloud.Text = Resources["active"].ToString();
+                    else
+                        txtBackupCloud.Text = Resources["inactive"].ToString();
+                }
+            }
         }
 
         private void btnBackupAreaOk_Click(object sender, RoutedEventArgs e)
         {
+            bool controlFlag = true;
             //kaydet
+            if (rbLocalDisc.IsChecked.Value) // yerel disk
+            {
+                if (txtBackupAreaName.Text.Equals("") || txtBackupAreaDescription.Text.Equals("") || txtSettingsFolderPath.Text.Equals(""))
+                {
+                    MessageBox.Show("İlgili alanları lütfen boş geçmeyiniz. Yerel Disk");
+                    controlFlag = false;
+                }
+            }
+            else if (rbNAS.IsChecked.Value) // nas
+            {
+                if (txtBackupAreaName.Text.Equals("") || txtBackupAreaDescription.Text.Equals("") || 
+                    txtSettingsNASFolderPath.Text.Equals("") || txtSettingsNASDomain.Text.Equals("") ||
+                    txtSettingsNASUserName.Text.Equals("") || txtSettingsNASPassword.Password.Equals(""))
+                {
+                    MessageBox.Show("İlgili alanları lütfen boş geçmeyiniz. NAS");
+                    controlFlag = false;
+                }
+            }
+
+            if (controlFlag)
+            {
+                //kaydet
+                if (rbLocalDisc.IsChecked.Value) // yerel disk
+                {
+                    BackupStorageInfo backupStorageInfo = new BackupStorageInfo
+                    {
+                        StorageName = txtBackupAreaName.Text,
+                        Description = txtBackupAreaDescription.Text,
+                        Path = txtSettingsFolderPath.Text + @"\",
+                        IsCloud = cbBackupToCloud.IsChecked.Value,
+                    };
+
+                    if (cbBackupToCloud.IsChecked.Value)
+                    {
+                        backupStorageInfo.Type = BackupStorageType.Hybrit;
+                        // bulut işlemleri gelecek (kullanılan alan vs...)
+                    }
+                    else
+                    {
+                        backupStorageInfo.Type = BackupStorageType.Windows;
+                    }
+                }
+                else // Nas
+                {
+                    BackupStorageInfo backupStorageInfo = new BackupStorageInfo
+                    {
+                        StorageName = txtBackupAreaName.Text,
+                        Description = txtBackupAreaDescription.Text,
+                        Path = txtSettingsNASFolderPath.Text + @"\",
+                        IsCloud = cbBackupToCloud.IsChecked.Value,
+                        Domain = txtSettingsNASDomain.Text,
+                        Username = txtSettingsNASUserName.Text,
+                        Password = txtSettingsNASPassword.Password
+                    };
+
+                    if (cbBackupToCloud.IsChecked.Value)
+                    {
+                        backupStorageInfo.Type = BackupStorageType.Hybrit;
+                        // bulut işlemleri gelecek (kullanılan alan vs...)
+                    }
+                    else
+                    {
+                        backupStorageInfo.Type = BackupStorageType.NAS;
+                    }
+                }
+            }
         }
 
         private void btnBackupAreaCancel_Click(object sender, RoutedEventArgs e)
@@ -117,7 +210,6 @@ namespace DiskBackupWpfGUI
             }
         }
 
-
         private void btnSettingsNASFolder_Click(object sender, RoutedEventArgs e)
         {
             var dialog = new System.Windows.Forms.FolderBrowserDialog();
@@ -129,7 +221,7 @@ namespace DiskBackupWpfGUI
         {
             var dialog = new System.Windows.Forms.FolderBrowserDialog();
             System.Windows.Forms.DialogResult result = dialog.ShowDialog();
-            txtSettingsNASFolderPath.Text = dialog.SelectedPath;
+            txtSettingsFolderPath.Text = dialog.SelectedPath;
         }
 
     }

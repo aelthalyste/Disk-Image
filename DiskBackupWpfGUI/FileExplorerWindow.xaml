@@ -56,7 +56,7 @@
                     </StackPanel>
                 </Button.Content>
             </Button>
-            <TextBox Name="txtfileExplorerPath" Width="300" Height="22" HorizontalAlignment="Left" VerticalContentAlignment="Center"/>
+            <TextBox Name="txtfileExplorerPath" Width="300" Height="22" HorizontalAlignment="Left" VerticalContentAlignment="Center" IsReadOnly="True" Cursor="Arrow"/>
 
             <StackPanel VerticalAlignment="Center" Orientation="Horizontal" Margin="10,0,0,0">
                 <TextBox Name="txtFolderPath" Width="300" Height="22" Padding="0,0,22,0" HorizontalAlignment="Left" VerticalContentAlignment="Center"/>
@@ -85,12 +85,12 @@
                 <GridView>
                     <GridViewColumn Width="45">
                         <GridViewColumn.Header>
-                            <CheckBox Name="chbFileExplorerSelectAll" />
+                            <CheckBox Name="chbFileExplorerSelectAll" Cursor="Hand"/>
                         </GridViewColumn.Header>
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
                                 <CheckBox IsChecked="{Binding Path=IsSelected, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ListViewItem}}}"
-                                          HorizontalAlignment="Center"/>
+                                          HorizontalAlignment="Center" Cursor="Hand"/>
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
@@ -118,7 +118,7 @@
                     <GridViewColumn Header="{DynamicResource size}" Width="200" >
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding StrSize}" TextAlignment="Center"/>
+                                <TextBlock Style="{StaticResource FEWListViewItemSize}" Text="{Binding StrSize}" TextAlignment="Center"/>
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
@@ -126,7 +126,7 @@
             </ListView.View>
             <ListView.ItemContainerStyle>
                 <Style TargetType="ListViewItem">
-                    <EventSetter Event="MouseDoubleClick" Handler="ListViewItem_MouseDoubleClick"/>
+                    <EventSetter Event="MouseDoubleClick" Handler="listViewFileExplorer_MouseDoubleClick"/>
                     <Setter Property="HorizontalContentAlignment" Value="Stretch" />
                     <Style.Triggers>
                         <DataTrigger Binding="{Binding IsCloud}" Value="true">

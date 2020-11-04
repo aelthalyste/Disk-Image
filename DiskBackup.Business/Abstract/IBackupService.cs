@@ -33,6 +33,7 @@ namespace DiskBackup.Business.Abstract
 
         bool RestoreFilesInBackup(BackupInfo backupInfo, FilesInBackup fileInfo, string destination); //uçlar belli değil
         void PopDirectory(); //Üst dizine çıkma methodu
+        string GetCurrentDirectory(); // path yazdırma
 
         bool InitTracker(); //CW_InitTracker driver okumayla ilgili bir method
         void InitFileExplorer(BackupInfo backupInfo); //CW_InitTracker file

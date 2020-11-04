@@ -31,7 +31,7 @@ namespace QuartzPoC
             var trigger = TriggerBuilder.Create()
                 .WithIdentity($"trigger{id}", "nar_jobs")
                 .WithSimpleSchedule(x => x
-                    .WithIntervalInSeconds(10)
+                    .WithIntervalInSeconds(15)
                     .WithRepeatCount(10))
                 .Build();
             await _scheduler.ScheduleJob(job, trigger);
