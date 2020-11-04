@@ -664,6 +664,11 @@
                                 </GroupStyle.ContainerStyle>
                             </GroupStyle>
                         </ListView.GroupStyle>
+                        <ListView.ItemContainerStyle>
+                            <Style TargetType="ListViewItem">
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                            </Style>
+                        </ListView.ItemContainerStyle>
                     </ListView>
 
                     <StackPanel Grid.Column="1">
@@ -754,12 +759,12 @@
                                 <GridView>
                                     <GridViewColumn Width="40">
                                         <GridViewColumn.Header>
-                                            <CheckBox Name="selectAllFilesChecbox" Cursor="Hand"/>
+                                            <CheckBox Name="chbAllFilesChecbox" Checked="chbAllFilesChecbox_Checked" Unchecked="chbAllFilesChecbox_Unchecked" Cursor="Hand"/>
                                         </GridViewColumn.Header>
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
                                                 <CheckBox IsChecked="{Binding Path=IsSelected, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ListViewItem}}}"
-                                                          HorizontalAlignment="Center" Cursor="Hand"/>
+                                                          HorizontalAlignment="Center" Cursor="Hand" Checked="chbViewBackups_Checked" Unchecked="chbViewBackups_Unchecked"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
@@ -828,7 +833,8 @@
                     </DockPanel>
                     <DockPanel Grid.Column="1" VerticalAlignment="Top" Height="415" Background="#F2F2F2">
                         <StackPanel HorizontalAlignment="Center">
-                            <Button Name="btnFilesBrowse" ToolTip="{DynamicResource browse}" Click="btnFilesBrowse_Click" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,25,0,5" Style="{StaticResource ImageButton}" Grid.Column="1">
+                            <Button Name="btnFilesBrowse" ToolTip="{DynamicResource browse}" Click="btnFilesBrowse_Click" Width="32" Height="32" 
+                                    HorizontalAlignment="Center" Margin="0,25,0,5" Style="{StaticResource ImageButton}" Grid.Column="1" IsEnabled="False">
                                 <Button.Content>
                                     <Image Height="26" Width="26" HorizontalAlignment="Center" VerticalAlignment="Center">
                                         <Image.Style>
@@ -839,7 +845,8 @@
                                     </Image>
                                 </Button.Content>
                             </Button>
-                            <Button Name="btnFilesDelete" ToolTip="{DynamicResource delete}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5" Style="{StaticResource ImageButton}" Grid.Column="1">
+                            <Button Name="btnFilesDelete" ToolTip="{DynamicResource delete}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5" 
+                                    Style="{StaticResource ImageButton}" Grid.Column="1" IsEnabled="False">
                                 <Button.Content>
                                     <Image Height="30" Width="30" HorizontalAlignment="Center" VerticalAlignment="Center">
                                         <Image.Style>
@@ -879,7 +886,7 @@
                                 <GridView>
                                     <GridViewColumn Width="40">
                                         <GridViewColumn.Header>
-                                            <CheckBox Name="chbAllBackupStorage" Checked="selectAllBackupStorageChecbox_Checked" Unchecked="selectAllBackupStorageChecbox_Unchecked" Cursor="Hand"/>
+                                            <CheckBox Name="chbAllBackupStorage" Checked="chbAllBackupStorage_Checked" Unchecked="chbAllBackupStorage_Unchecked" Cursor="Hand"/>
                                         </GridViewColumn.Header>
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>

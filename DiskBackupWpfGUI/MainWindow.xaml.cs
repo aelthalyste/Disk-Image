@@ -33,6 +33,7 @@ namespace DiskBackupWpfGUI
         private bool _restoreDiskAllHeaderControl = false;
 
         private bool _storegeAllControl = false;
+        private bool _viewBackupsAllControl = false;
 
         private List<CheckBox> _expanderCheckBoxes = new List<CheckBox>();
         private List<int> _numberOfItems = new List<int>();
@@ -548,6 +549,87 @@ namespace DiskBackupWpfGUI
 
         #region View Backups Tab
 
+
+        #region Checkbox Operations
+        private void chbAllFilesChecbox_Checked(object sender, RoutedEventArgs e)
+        {
+            _viewBackupsAllControl = true;
+
+            foreach (Backups item in listViewBackups.ItemsSource)
+            {
+                listViewBackups.SelectedItems.Add(item);
+            }
+
+            if (listViewBackups.SelectedItems.Count == 1)
+                btnFilesBrowse.IsEnabled = true;
+            else
+                btnFilesBrowse.IsEnabled = false;
+
+            if (listViewBackups.SelectedItems.Count > 0)
+                btnFilesDelete.IsEnabled = true;
+            else
+                btnFilesDelete.IsEnabled = false;
+        }
+
+        private void chbAllFilesChecbox_Unchecked(object sender, RoutedEventArgs e)
+        {
+            if (_viewBackupsAllControl)
+            {
+                foreach (Backups item in listViewBackups.ItemsSource)
+                {
+                    listViewBackups.SelectedItems.Remove(item);
+                }
+                _viewBackupsAllControl = true;
+            }
+
+            if (listViewBackups.SelectedItems.Count == 1)
+                btnFilesBrowse.IsEnabled = true;
+            else
+                btnFilesBrowse.IsEnabled = false;
+
+            if (listViewBackups.SelectedItems.Count > 0)
+                btnFilesDelete.IsEnabled = true;
+            else
+                btnFilesDelete.IsEnabled = false;
+        }
+
+        private void chbViewBackups_Checked(object sender, RoutedEventArgs e)
+        {
+            if (chbAllFilesChecbox.IsChecked == false)
+            {
+                _viewBackupsAllControl = listViewBackups.SelectedItems.Count == listViewBackups.Items.Count;
+                chbAllFilesChecbox.IsChecked = _viewBackupsAllControl;
+            }
+
+            if (listViewBackups.SelectedItems.Count == 1)
+                btnFilesBrowse.IsEnabled = true;
+            else
+                btnFilesBrowse.IsEnabled = false;
+
+            if (listViewBackups.SelectedItems.Count > 0)
+                btnFilesDelete.IsEnabled = true;
+            else
+                btnFilesDelete.IsEnabled = false;
+        }
+
+        private void chbViewBackups_Unchecked(object sender, RoutedEventArgs e)
+        {
+            _viewBackupsAllControl = false;
+            chbAllFilesChecbox.IsChecked = false;
+
+            if (listViewBackups.SelectedItems.Count == 1)
+                btnFilesBrowse.IsEnabled = true;
+            else
+                btnFilesBrowse.IsEnabled = false;
+
+            if (listViewBackups.SelectedItems.Count > 0)
+                btnFilesDelete.IsEnabled = true;
+            else
+                btnFilesDelete.IsEnabled = false;
+        }
+        #endregion
+
+
         #endregion
 
         #region Backup Storage Tab
@@ -594,13 +676,13 @@ namespace DiskBackupWpfGUI
         }
 
         #region Checkbox Operations
-        private void selectAllBackupStorageChecbox_Checked(object sender, RoutedEventArgs e) 
+        private void chbAllBackupStorage_Checked(object sender, RoutedEventArgs e)
         {
             _storegeAllControl = true;
 
             foreach (BackupStorageInfo item in listViewBackupStorage.ItemsSource)
             {
-                listViewBackupStorage.SelectedItems.Add(item);               
+                listViewBackupStorage.SelectedItems.Add(item);
             }
 
             if (listViewBackupStorage.SelectedItems.Count == 1)
@@ -621,13 +703,13 @@ namespace DiskBackupWpfGUI
             }
         }
 
-        private void selectAllBackupStorageChecbox_Unchecked(object sender, RoutedEventArgs e) 
+        private void chbAllBackupStorage_Unchecked(object sender, RoutedEventArgs e)
         {
             if (_storegeAllControl)
             {
                 foreach (BackupStorageInfo item in listViewBackupStorage.ItemsSource)
                 {
-                    listViewBackupStorage.SelectedItems.Remove(item);                    
+                    listViewBackupStorage.SelectedItems.Remove(item);
                 }
                 _storegeAllControl = true;
             }
@@ -849,5 +931,6 @@ namespace DiskBackupWpfGUI
 
             return ($"{dblSByte:0.##} {Suffix[i]}");
         }
+
     }
 }
