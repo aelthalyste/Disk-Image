@@ -294,17 +294,17 @@
                         <RowDefinition />
                     </Grid.RowDefinitions>
                     <DockPanel>
-                        <ListView Name="listViewTask" Grid.ColumnSpan="2" MinHeight="415" Margin="5,0,0,5" VerticalAlignment="Top">
+                        <ListView Name="listViewTasks" Grid.ColumnSpan="2" MinHeight="415" Margin="5,0,0,5" VerticalAlignment="Top" SelectionChanged="listViewTasks_SelectionChanged">
                             <ListView.View>
                                 <GridView>
                                     <GridViewColumn Width="40">
                                         <GridViewColumn.Header>
-                                            <CheckBox Name="selectAllTasksChechbox" Cursor="Hand"/>
+                                            <CheckBox Name="chbAllTasksChechbox" Checked="chbAllTasksChechbox_Checked" Unchecked="chbAllTasksChechbox_Unchecked" Cursor="Hand"/>
                                         </GridViewColumn.Header>
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
                                                 <CheckBox IsChecked="{Binding Path=IsSelected, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ListViewItem}}}"
-                                                          HorizontalAlignment="Center" Cursor="Hand"/>
+                                                          HorizontalAlignment="Center" Cursor="Hand" Checked="chbTask_Checked" Unchecked="chbTask_Unchecked"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
@@ -370,7 +370,8 @@
                     </DockPanel>
                     <DockPanel Grid.Column="1" VerticalAlignment="Top" Height="415" Background="#F2F2F2">
                         <StackPanel HorizontalAlignment="Center">
-                            <Button Name="btnTaskEdit" ToolTip="{DynamicResource edit}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,25,0,5" Style="{StaticResource ImageButton}" Grid.Column="1">
+                            <Button Name="btnTaskEdit" ToolTip="{DynamicResource edit}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,25,0,5" 
+                                    Style="{StaticResource ImageButton}" Grid.Column="1" IsEnabled="False">
                                 <Button.Content>
                                     <Image Height="25" Width="25" HorizontalAlignment="Center" VerticalAlignment="Center">
                                         <Image.Style>
@@ -448,7 +449,8 @@
                                     </Image>
                                 </Button.Content>
                             </Button>
-                            <Button Name="btnTaskPaste" ToolTip="{DynamicResource paste}" Click="btnTaskPaste_Click" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5" Style="{StaticResource ImageButton}" Grid.Column="1">
+                            <Button Name="btnTaskPaste" ToolTip="{DynamicResource paste}" Click="btnTaskPaste_Click" Width="32" Height="32" HorizontalAlignment="Center" 
+                                    Margin="0,5" Style="{StaticResource ImageButton}" Grid.Column="1">
                                 <Button.Content>
                                     <Image Height="25" Width="25" HorizontalAlignment="Center" VerticalAlignment="Center">
                                         <Image.Style>
@@ -459,7 +461,8 @@
                                     </Image>
                                 </Button.Content>
                             </Button>
-                            <Button Name="btnTaskDelete" ToolTip="{DynamicResource delete}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5" Style="{StaticResource ImageButton}" Grid.Column="1">
+                            <Button Name="btnTaskDelete" ToolTip="{DynamicResource delete}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5" 
+                                    Style="{StaticResource ImageButton}" Grid.Column="1" IsEnabled="False">
                                 <Button.Content>
                                     <Image Height="30" Width="30" HorizontalAlignment="Center" VerticalAlignment="Center">
                                         <Image.Style>
@@ -792,21 +795,21 @@
                                     <GridViewColumn Header="{DynamicResource taskName}" Width="170" >
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
-                                                <TextBlock Text="{Binding TaskName}" TextAlignment="Center"/>
+                                                <TextBlock Text="{Binding BackupTaskName}" TextAlignment="Center"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
                                     <GridViewColumn Header="{DynamicResource volumeSize}" Width="125" >
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
-                                                <TextBlock Text="{Binding VolumeSize}" TextAlignment="Center"/>
+                                                <TextBlock Text="{Binding StrVolumeSize}" TextAlignment="Center"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
                                     <GridViewColumn Header="{DynamicResource folderSize}" Width="125" >
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
-                                                <TextBlock Text="{Binding FileSize}" TextAlignment="Center"/>
+                                                <TextBlock Text="{Binding StrFileSize}" TextAlignment="Center"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>

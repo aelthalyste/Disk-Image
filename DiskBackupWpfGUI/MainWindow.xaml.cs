@@ -34,6 +34,7 @@ namespace DiskBackupWpfGUI
 
         private bool _storegeAllControl = false;
         private bool _viewBackupsAllControl = false;
+        private bool _tasksAllControl = false;
 
         private List<CheckBox> _expanderCheckBoxes = new List<CheckBox>();
         private List<int> _numberOfItems = new List<int>();
@@ -94,6 +95,7 @@ namespace DiskBackupWpfGUI
 
             #endregion
 
+
             TaskInfo taskInfo1 = new TaskInfo()
             {
                 Name = "Sistem Yedekleme",
@@ -153,97 +155,84 @@ namespace DiskBackupWpfGUI
             //buraya kadar uyarlandı loader'da falan da düzen gerekecek
 
 
-            List<Backups> backupsItems = new List<Backups>();
+            List<BackupInfo> backupsItems = new List<BackupInfo>();
 
-            backupsItems.Add(new Backups()
+            backupsItems.Add(new BackupInfo()
             {
-                Type = "full",
+                Type = BackupTypes.Full,
                 FileName = "Volume_C_Full_001",
                 CreatedDate = DateTime.Now - TimeSpan.FromDays(5),
-                TaskName = "C Full",
-                VolumeSize = "250 GB",
-                FileSize = "12 GB",
+                BackupTaskName = "C Full",
+                StrVolumeSize = "250 GB",
+                StrFileSize = "12 GB",
                 Description = "Yedek açıklaması"
             });
-            backupsItems.Add(new Backups()
+            backupsItems.Add(new BackupInfo()
             {
-                Type = "inc",
+                Type = BackupTypes.Inc,
                 FileName = "Volume_D_Inc_001",
                 CreatedDate = DateTime.Now - TimeSpan.FromHours(5),
-                TaskName = "D Inc",
-                VolumeSize = "510 GB",
-                FileSize = "8 GB",
+                BackupTaskName = "D Inc",
+                StrVolumeSize = "510 GB",
+                StrFileSize = "8 GB",
                 Description = "Yedek açıklaması"
             });
-            backupsItems.Add(new Backups()
+            backupsItems.Add(new BackupInfo()
             {
-                Type = "diff",
+                Type = BackupTypes.Diff,
                 FileName = "Volume_D_Diff_001",
                 IsCloud = true,
                 CreatedDate = DateTime.Now - TimeSpan.FromHours(30),
-                TaskName = "D Diff",
-                VolumeSize = "250 GB",
-                FileSize = "18 GB",
+                BackupTaskName = "D Diff",
+                StrVolumeSize = "250 GB",
+                StrFileSize = "18 GB",
                 Description = "Yedek açıklaması"
             });
-            backupsItems.Add(new Backups()
+            backupsItems.Add(new BackupInfo()
             {
-                Type = "diff",
+                Type = BackupTypes.Diff,
                 FileName = "Volume_D_Diff_002",
                 CreatedDate = DateTime.Now - TimeSpan.FromDays(15),
-                TaskName = "D Diff",
-                VolumeSize = "120 GB",
-                FileSize = "8 GB",
+                BackupTaskName = "D Diff",
+                StrVolumeSize = "120 GB",
+                StrFileSize = "8 GB",
                 Description = "Yedek açıklaması"
             });
-            backupsItems.Add(new Backups()
+            backupsItems.Add(new BackupInfo()
             {
-                Type = "full",
+                Type = BackupTypes.Full,
                 FileName = "Volume_C_Full_002",
                 IsCloud = true,
                 CreatedDate = DateTime.Now - TimeSpan.FromDays(7),
-                TaskName = "C Full",
-                VolumeSize = "120 GB",
-                FileSize = "28 GB",
+                BackupTaskName = "C Full",
+                StrVolumeSize = "120 GB",
+                StrFileSize = "28 GB",
                 Description = "Yedek açıklaması"
             });
-            backupsItems.Add(new Backups()
+            backupsItems.Add(new BackupInfo()
             {
-                Type = "full",
+                Type = BackupTypes.Full,
                 FileName = "Volume_C_Full_003",
                 CreatedDate = DateTime.Now - TimeSpan.FromDays(7),
-                TaskName = "C Full",
-                VolumeSize = "120 GB",
-                FileSize = "28 GB",
+                BackupTaskName = "C Full",
+                StrVolumeSize = "120 GB",
+                StrFileSize = "28 GB",
                 Description = "Yedek açıklaması"
             });
-            backupsItems.Add(new Backups()
+            backupsItems.Add(new BackupInfo()
             {
-                Type = "inc",
+                Type = BackupTypes.Inc,
                 FileName = "Volume_D_Inc_002",
                 IsCloud = true,
                 CreatedDate = DateTime.Now - TimeSpan.FromHours(5),
-                TaskName = "D Inc",
-                VolumeSize = "510 GB",
-                FileSize = "4 GB",
+                BackupTaskName = "D Inc",
+                StrVolumeSize = "510 GB",
+                StrFileSize = "4 GB",
                 Description = "Yedek açıklaması"
             });
 
             listViewBackups.ItemsSource = backupsItems;
         }
-
-        public class Backups
-        {
-            public string Type { get; set; }
-            public string FileName { get; set; }
-            public bool IsCloud { get; set; } = false;
-            public DateTime CreatedDate { get; set; }
-            public string TaskName { get; set; }
-            public string VolumeSize { get; set; }
-            public string FileSize { get; set; }
-            public string Description { get; set; }
-        }
-
 
         #region Title Bar
         private void btnMainClose_Click(object sender, RoutedEventArgs e)
@@ -264,6 +253,7 @@ namespace DiskBackupWpfGUI
             }
         }
         #endregion
+
 
         #region Tasks Create Tab
 
@@ -402,9 +392,102 @@ namespace DiskBackupWpfGUI
 
         #endregion
 
+
         #region Tasks Tab
 
+        private void listViewTasks_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (listViewTasks.SelectedIndex != -1)
+            {
+                btnTaskDelete.IsEnabled = true;
+                btnTaskEdit.IsEnabled = true;
+                //butonlar eklenmeye devam edecek burayada da checkboxlara da
+            }
+        }
+
+        #region Checkbox Operations
+        private void chbAllTasksChechbox_Checked(object sender, RoutedEventArgs e)
+        {
+            _tasksAllControl = true;
+
+            foreach (TaskInfo item in listViewTasks.ItemsSource)
+            {
+                listViewTasks.SelectedItems.Add(item);
+            }
+
+            if (listViewTasks.SelectedItems.Count == 1)
+                btnTaskEdit.IsEnabled = true;
+            else
+                btnTaskEdit.IsEnabled = false;
+
+            if (listViewTasks.SelectedItems.Count > 0)
+                btnTaskDelete.IsEnabled = true;
+            else
+                btnTaskDelete.IsEnabled = false;
+        }
+
+        private void chbAllTasksChechbox_Unchecked(object sender, RoutedEventArgs e)
+        {
+            if (_tasksAllControl)
+            {
+                foreach (TaskInfo item in listViewTasks.ItemsSource)
+                {
+                    listViewTasks.SelectedItems.Remove(item);
+                }
+                _tasksAllControl = true;
+            }
+
+            if (listViewTasks.SelectedItems.Count == 1)
+                btnTaskEdit.IsEnabled = true;
+            else
+                btnTaskEdit.IsEnabled = false;
+
+            if (listViewTasks.SelectedItems.Count > 0)
+                btnTaskDelete.IsEnabled = true;
+            else
+                btnTaskDelete.IsEnabled = false;
+        }
+
+        private void chbTask_Checked(object sender, RoutedEventArgs e)
+        {
+            if (chbAllTasksChechbox.IsChecked == false)
+            {
+                _tasksAllControl = listViewTasks.SelectedItems.Count == listViewTasks.Items.Count;
+                chbAllTasksChechbox.IsChecked = _tasksAllControl;
+            }
+
+            if (listViewTasks.SelectedItems.Count == 1)
+                btnTaskEdit.IsEnabled = true;
+            else
+                btnTaskEdit.IsEnabled = false;
+
+            if (listViewTasks.SelectedItems.Count > 0)
+                btnTaskDelete.IsEnabled = true;
+            else
+                btnTaskDelete.IsEnabled = false;
+        }
+
+        private void chbTask_Unchecked(object sender, RoutedEventArgs e)
+        {
+            _tasksAllControl = false;
+            chbAllTasksChechbox.IsChecked = false;
+
+            if (listViewTasks.SelectedItems.Count == 1)
+                btnTaskEdit.IsEnabled = true;
+            else
+                btnTaskEdit.IsEnabled = false;
+
+            if (listViewTasks.SelectedItems.Count > 0)
+                btnTaskDelete.IsEnabled = true;
+            else
+                btnTaskDelete.IsEnabled = false;
+        }
         #endregion
+
+
+
+        #endregion
+
 
         #region Restore Tab
 
@@ -547,6 +630,7 @@ namespace DiskBackupWpfGUI
 
         #endregion
 
+
         #region View Backups Tab
 
 
@@ -555,7 +639,7 @@ namespace DiskBackupWpfGUI
         {
             _viewBackupsAllControl = true;
 
-            foreach (Backups item in listViewBackups.ItemsSource)
+            foreach (BackupInfo item in listViewBackups.ItemsSource)
             {
                 listViewBackups.SelectedItems.Add(item);
             }
@@ -575,7 +659,7 @@ namespace DiskBackupWpfGUI
         {
             if (_viewBackupsAllControl)
             {
-                foreach (Backups item in listViewBackups.ItemsSource)
+                foreach (BackupInfo item in listViewBackups.ItemsSource)
                 {
                     listViewBackups.SelectedItems.Remove(item);
                 }
@@ -631,6 +715,7 @@ namespace DiskBackupWpfGUI
 
 
         #endregion
+
 
         #region Backup Storage Tab
 
@@ -786,9 +871,11 @@ namespace DiskBackupWpfGUI
 
         #endregion
 
+
         #region Log Tab
 
         #endregion
+
 
         #region Settings Tab
 
@@ -857,6 +944,7 @@ namespace DiskBackupWpfGUI
 
 
         #endregion
+
 
         #region Help Tab
         private void OnNavigate(object sender, RequestNavigateEventArgs e)
