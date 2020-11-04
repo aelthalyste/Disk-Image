@@ -12,7 +12,7 @@
         BorderThickness="1" 
         WindowStartupLocation="CenterScreen" 
         WindowStyle="None" 
-        Icon="Resources/Icon/u62.png" 
+        Icon="Resources/Icon/NarBulut_PNG_Icon_White_V3.png" 
         ResizeMode="CanMinimize">
     
     <Window.Resources>

@@ -1,4 +1,8 @@
-﻿using DiskBackup.Entities.Concrete;
+﻿using DiskBackup.Business.Abstract;
+using DiskBackup.Business.Concrete;
+using DiskBackup.DataAccess.Abstract;
+using DiskBackup.DataAccess.Concrete.EntityFramework;
+using DiskBackup.Entities.Concrete;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,11 +24,62 @@ namespace DiskBackupWpfGUI
     /// </summary>
     public partial class AddBackupAreaWindow : Window
     {
-        //PATH SONUNA TERS SLAS EKLE BATU DA ÖYLE İSTENİYOR
-        private bool ShowSettings = false;
+        // Nar depolama ve lisans bilgileri için uç alınacak
+        // NAS kısmı gerçekleştirilecek
+
+        private IBackupStorageService _backupStorageService = new BackupStorageManager();
+        public IBackupStorageDal _backupStorageDal = new EfBackupStorageDal();
+
+        private bool _showSettings = false;
+        private bool _updateControl = false;
+
         public AddBackupAreaWindow()
         {
             InitializeComponent();
+            _updateControl = false;
+        }
+
+        public AddBackupAreaWindow(BackupStorageInfo backupStorageInfo)
+        {
+            InitializeComponent();
+
+            _updateControl = true;
+            txtBackupAreaName.Text = backupStorageInfo.StorageName;
+            txtBackupAreaDescription.Text = backupStorageInfo.Description;
+            if (backupStorageInfo.IsCloud) //hibrit
+            {
+                cbBackupToCloud.IsChecked = true;
+                if (backupStorageInfo.Username != null) // nas
+                {
+                    rbNAS.IsChecked = true;
+                    txtSettingsNASFolderPath.Text = backupStorageInfo.Path;
+                    txtSettingsNASDomain.Text = backupStorageInfo.Domain;
+                    //txtSettingsNASUserName.Text = backupStorageInfo.Username;
+                    //txtSettingsNASPassword.Password = backupStorageInfo.Password;
+                }
+                else // yerel disktir
+                {
+                    rbLocalDisc.IsChecked = true;
+                    txtSettingsFolderPath.Text = backupStorageInfo.Path;
+                }
+            }
+            else // sadece nas veya yerel disk
+            {
+                if (backupStorageInfo.Username != null) // nas
+                {
+                    rbNAS.IsChecked = true;
+                    txtSettingsNASFolderPath.Text = backupStorageInfo.Path;
+                    txtSettingsNASDomain.Text = backupStorageInfo.Domain;
+                    //txtSettingsNASUserName.Text = backupStorageInfo.Username;
+                    //txtSettingsNASPassword.Password = backupStorageInfo.Password;
+                }
+                else // yerel disktir
+                {
+                    rbLocalDisc.IsChecked = true;
+                    txtSettingsFolderPath.Text = backupStorageInfo.Path;
+                }
+            }
+
         }
 
         #region Title Bar
@@ -102,7 +157,7 @@ namespace DiskBackupWpfGUI
             }
             else if (rbNAS.IsChecked.Value) // nas
             {
-                if (txtBackupAreaName.Text.Equals("") || txtBackupAreaDescription.Text.Equals("") || 
+                if (txtBackupAreaName.Text.Equals("") || txtBackupAreaDescription.Text.Equals("") ||
                     txtSettingsNASFolderPath.Text.Equals("") || txtSettingsNASDomain.Text.Equals("") ||
                     txtSettingsNASUserName.Text.Equals("") || txtSettingsNASPassword.Password.Equals(""))
                 {
@@ -113,7 +168,6 @@ namespace DiskBackupWpfGUI
 
             if (controlFlag)
             {
-                //kaydet
                 if (rbLocalDisc.IsChecked.Value) // yerel disk
                 {
                     BackupStorageInfo backupStorageInfo = new BackupStorageInfo
@@ -133,6 +187,27 @@ namespace DiskBackupWpfGUI
                     {
                         backupStorageInfo.Type = BackupStorageType.Windows;
                     }
+
+                    if (_updateControl)
+                    {
+                        //update
+                        var result = _backupStorageService.UpdateBackupStorage(backupStorageInfo);
+                        if (result)
+                            MessageBox.Show("Güncelleme işlemi başarılı");
+                        else
+                            MessageBox.Show("Güncelleme işlemi başarısız");
+                    }
+                    else
+                    {
+                        //kaydet
+                        var result = _backupStorageService.AddBackupStorage(backupStorageInfo);
+                        if (result)
+                            MessageBox.Show("Ekleme işlemi başarılı");
+                        else
+                            MessageBox.Show("Başarısız");
+                    }
+                    Close();
+
                 }
                 else // Nas
                 {
@@ -156,6 +231,26 @@ namespace DiskBackupWpfGUI
                     {
                         backupStorageInfo.Type = BackupStorageType.NAS;
                     }
+
+                    if (_updateControl)
+                    {
+                        //update
+                        var result = _backupStorageService.UpdateBackupStorage(backupStorageInfo);
+                        if (result)
+                            MessageBox.Show("Güncelleme işlemi başarılı");
+                        else
+                            MessageBox.Show("Güncelleme işlemi başarısız");
+                    }
+                    else
+                    {
+                        //kaydet
+                        var result = _backupStorageService.AddBackupStorage(backupStorageInfo);
+                        if (result)
+                            MessageBox.Show("Ekleme işlemi başarılı");
+                        else
+                            MessageBox.Show("Ekleme işlemi başarısız");
+                    }
+                    Close();
                 }
             }
         }
@@ -168,12 +263,12 @@ namespace DiskBackupWpfGUI
 
         private void rbLocalDisc_Checked(object sender, RoutedEventArgs e)
         {
-            ShowSettings = false;
+            _showSettings = false;
         }
 
         private void rbNAS_Checked(object sender, RoutedEventArgs e)
         {
-            ShowSettings = true;
+            _showSettings = true;
         }
 
         private void ABATabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -192,7 +287,7 @@ namespace DiskBackupWpfGUI
             {
                 lblTabHeader.Text = Resources["settings"].ToString();
                 lblTabContent.Text = Resources["ABASettingsContent"].ToString();
-                if (ShowSettings == false)
+                if (_showSettings == false)
                 {
                     stackLocalDisc.Visibility = Visibility.Visible;
                     stackNAS.Visibility = Visibility.Hidden;

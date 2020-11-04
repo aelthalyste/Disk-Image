@@ -1,4 +1,5 @@
 ﻿using DiskBackup.Business.Abstract;
+using DiskBackup.DataAccess.Abstract;
 using DiskBackup.DataAccess.Concrete.EntityFramework;
 using DiskBackup.Entities.Concrete;
 using System;
@@ -11,11 +12,11 @@ namespace DiskBackup.Business.Concrete
 {
     public class BackupStorageManager : IBackupStorageService
     {
-        private EfBackupStorageDal _BackupStorageDal = new EfBackupStorageDal();
+        private IBackupStorageDal _backupStorageDal = new EfBackupStorageDal();
 
         public bool AddBackupStorage(BackupStorageInfo backupStorageInfo)
         {
-            var result = _BackupStorageDal.Add(backupStorageInfo);
+            var result = _backupStorageDal.Add(backupStorageInfo);
             if (result != null)
             {
                 return true;
@@ -28,17 +29,17 @@ namespace DiskBackup.Business.Concrete
 
         public List<BackupStorageInfo> BackupStorageInfoList()
         {
-            return _BackupStorageDal.GetList();
+            return _backupStorageDal.GetList();
         }
 
         public void DeleteBackupStorage(BackupStorageInfo backupStorageInfo)
         {
-            _BackupStorageDal.Delete(backupStorageInfo);
+            _backupStorageDal.Delete(backupStorageInfo);
         }
 
         public bool UpdateBackupStorage(BackupStorageInfo backupStorageInfo)
         {
-            var result = _BackupStorageDal.Update(backupStorageInfo);
+            var result = _backupStorageDal.Update(backupStorageInfo);
             if (result != null)
             {
                 return true;

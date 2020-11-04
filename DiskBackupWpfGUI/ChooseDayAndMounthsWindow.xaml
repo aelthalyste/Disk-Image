@@ -10,7 +10,7 @@
         Width="300" 
         ResizeMode="CanMinimize" 
         WindowStartupLocation="CenterScreen" 
-        Icon="Resources/Icon/u62.png" 
+        Icon="Resources/Icon/NarBulut_PNG_Icon_White_V3.png" 
         WindowStyle="None" 
         BorderBrush="#27527B" 
         BorderThickness="10,0,10,10">
@@ -25,7 +25,7 @@
         </Grid.RowDefinitions>
 
         <StackPanel Panel.ZIndex="1" Orientation="Horizontal" HorizontalAlignment="Center" MouseDown="MyTitleBar_MouseDown">
-            <Image Source="Resources/Icon/u62.png" Height="35" Width="40" Margin="0,0,5,0"></Image>
+            <Image Source="Resources/Icon/NarBulut_PNG_Icon_White_V3.png" Margin="0,0,5,0"/>
             <TextBlock Name="txtTitleBar" Style="{StaticResource TitleBarText}"></TextBlock>
         </StackPanel>
         <StackPanel Name="MyTitleBar" VerticalAlignment="Top" MouseDown="MyTitleBar_MouseDown">

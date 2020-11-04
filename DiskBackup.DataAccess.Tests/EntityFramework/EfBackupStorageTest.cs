@@ -19,17 +19,11 @@ namespace DiskBackup.DataAccess.Tests.EntityFramework
                 StorageName = "AddBackupStorageTest 4",
                 Type = (BackupStorageType)1,
                 Description = "AddBackupStorageTest 4",
-                Capacity = 555555,
-                UsedSize = 444444,
-                FreeSize = 111111,
                 Path = "C:\\Users\\ebruv\\source\\repos\\Disk-Image\\DiskBackup.DataAccess.Tests\\Sample",
                 IsCloud = false,
                 Domain = null,
                 Username = "denemeUser3",
                 Password = "Parola123",
-                StrCapacity = "321 GB",
-                StrUsedSize = "111 GB",
-                StrFreeSize = "99 GB"
             };
             var result = _EfBackupStorageDal.Add(backupStorage);
             Assert.AreEqual(result, backupStorage);
@@ -50,17 +44,11 @@ namespace DiskBackup.DataAccess.Tests.EntityFramework
                 StorageName = "Deneme 2",
                 Type = (BackupStorageType)1,
                 Description = "Açıklama 2",
-                Capacity = 555555,
-                UsedSize = 444444,
-                FreeSize = 111111,
                 Path = "C:\\Users\\ebruv\\source\\repos\\Disk-Image\\DiskBackup.DataAccess.Tests\\Sample",
                 IsCloud = false,
                 Domain = null,
                 Username = "denemeUser2",
                 Password = "Parola123",
-                StrCapacity = "321 GB",
-                StrUsedSize = "111 GB",
-                StrFreeSize = "99 GB"
             };
             _EfBackupStorageDal.Add(backupStorage);
 
