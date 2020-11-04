@@ -71,6 +71,7 @@ namespace DiskBackup.Business.Concrete
                         volumeInfo.Bootable = Convert.ToBoolean(volumeItem.Bootable);
                         volumeInfo.Name = volumeItem.VolumeName;
                         volumeInfo.DiskName = "Disk " + temp.DiskId;
+                        volumeInfo.FileSystem = "NTFS";
 
                         // volumeItem.Bootable true ise işletim sistemi var 
                         if (volumeItem.DiskType == 'R')

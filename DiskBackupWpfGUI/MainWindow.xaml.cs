@@ -571,6 +571,19 @@ namespace DiskBackupWpfGUI
             chbAllBackupStorage.IsChecked = false;
         }
 
+        private void btnBackupStorageDelete_Click(object sender, RoutedEventArgs e)
+        {
+            MessageBoxResult result = MessageBox.Show($"{listViewBackupStorage.SelectedItems.Count} adet veri silinecek. Onaylıyor musunuz?", "Narbulut diyor ki; " , MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
+            if (result == MessageBoxResult.Yes)
+            {
+                foreach (BackupStorageInfo item in listViewBackupStorage.SelectedItems)
+                {
+                    _backupStorageService.DeleteBackupStorage(item);
+                }
+                listViewBackupStorage.ItemsSource = _backupStorageService.BackupStorageInfoList();
+            }
+        }
+
         private void listViewBackupStorage_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (listViewBackupStorage.SelectedIndex != -1)
@@ -807,7 +820,9 @@ namespace DiskBackupWpfGUI
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Geçmişe dönük restore yapılamaz." + ex.ToString());
+                //Bu düzeltilecek.... umarım :(
+
+                MessageBox.Show("Geçmişe dönük restore yapılamaz." + ex.ToString(), "NARBULUT DİYOR Kİ;", MessageBoxButton.OK, MessageBoxImage.Error);
                 restore.Close();
             }
         }
@@ -834,7 +849,5 @@ namespace DiskBackupWpfGUI
 
             return ($"{dblSByte:0.##} {Suffix[i]}");
         }
-
-
     }
 }

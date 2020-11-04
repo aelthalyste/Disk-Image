@@ -156,7 +156,7 @@ namespace DiskBackupWpfGUI
             {
                 if (txtBackupAreaName.Text.Equals("") || txtBackupAreaDescription.Text.Equals("") || txtSettingsFolderPath.Text.Equals(""))
                 {
-                    MessageBox.Show("İlgili alanları lütfen boş geçmeyiniz. Yerel Disk");
+                    MessageBox.Show("İlgili alanları lütfen boş geçmeyiniz. Yerel Disk","NARBULUT DİYOR Kİ;", MessageBoxButton.OK, MessageBoxImage.Error);
                     controlFlag = false;
                 }
             }
@@ -166,7 +166,7 @@ namespace DiskBackupWpfGUI
                     txtSettingsNASFolderPath.Text.Equals("") || txtSettingsNASDomain.Text.Equals("") ||
                     txtSettingsNASUserName.Text.Equals("") || txtSettingsNASPassword.Password.Equals(""))
                 {
-                    MessageBox.Show("İlgili alanları lütfen boş geçmeyiniz. NAS");
+                    MessageBox.Show("İlgili alanları lütfen boş geçmeyiniz. NAS", "NARBULUT DİYOR Kİ;", MessageBoxButton.OK, MessageBoxImage.Error);
                     controlFlag = false;
                 }
             }
@@ -193,6 +193,8 @@ namespace DiskBackupWpfGUI
                         backupStorageInfo.Type = BackupStorageType.Windows;
                     }
 
+                    Close();
+
                     if (_updateControl)
                     {
                         //update
@@ -200,20 +202,20 @@ namespace DiskBackupWpfGUI
                         backupStorageInfo.Path = txtSettingsFolderPath.Text + @"\";
                         var result = _backupStorageService.UpdateBackupStorage(backupStorageInfo);
                         if (result)
-                            MessageBox.Show("Güncelleme işlemi başarılı");
+                            MessageBox.Show("Güncelleme işlemi başarılı", "NARBULUT DİYOR Kİ;", MessageBoxButton.OK, MessageBoxImage.Information);
+
                         else
-                            MessageBox.Show("Güncelleme işlemi başarısız");
+                            MessageBox.Show("Güncelleme işlemi başarısız", "NARBULUT DİYOR Kİ;", MessageBoxButton.OK, MessageBoxImage.Error);
                     }
                     else
                     {
                         //kaydet
                         var result = _backupStorageService.AddBackupStorage(backupStorageInfo);
                         if (result)
-                            MessageBox.Show("Ekleme işlemi başarılı");
+                            MessageBox.Show("Ekleme işlemi başarılı", "NARBULUT DİYOR Kİ;", MessageBoxButton.OK, MessageBoxImage.Information);
                         else
-                            MessageBox.Show("Başarısız");
+                            MessageBox.Show("Ekleme işlemi başarısız", "NARBULUT DİYOR Kİ;", MessageBoxButton.OK, MessageBoxImage.Error);
                     }
-                    Close();
 
                 }
                 else // Nas
@@ -239,6 +241,8 @@ namespace DiskBackupWpfGUI
                         backupStorageInfo.Type = BackupStorageType.NAS;
                     }
 
+                    Close();
+
                     if (_updateControl)
                     {
                         //update
@@ -246,20 +250,19 @@ namespace DiskBackupWpfGUI
                         backupStorageInfo.Path = txtSettingsNASFolderPath.Text + @"\";
                         var result = _backupStorageService.UpdateBackupStorage(backupStorageInfo);
                         if (result)
-                            MessageBox.Show("Güncelleme işlemi başarılı");
+                            MessageBox.Show("Güncelleme işlemi başarılı","NARBULUT DİYOR Kİ;", MessageBoxButton.OK, MessageBoxImage.Information);
                         else
-                            MessageBox.Show("Güncelleme işlemi başarısız");
+                            MessageBox.Show("Güncelleme işlemi başarısız", "NARBULUT DİYOR Kİ;", MessageBoxButton.OK, MessageBoxImage.Error);
                     }
                     else
                     {
                         //kaydet
                         var result = _backupStorageService.AddBackupStorage(backupStorageInfo);
                         if (result)
-                            MessageBox.Show("Ekleme işlemi başarılı");
+                            MessageBox.Show("Ekleme işlemi başarılı", "NARBULUT DİYOR Kİ;", MessageBoxButton.OK, MessageBoxImage.Information);
                         else
-                            MessageBox.Show("Ekleme işlemi başarısız");
+                            MessageBox.Show("Ekleme işlemi başarısız", "NARBULUT DİYOR Kİ;", MessageBoxButton.OK, MessageBoxImage.Error);
                     }
-                    Close();
                 }
             }
         }

@@ -162,12 +162,12 @@
                                     <GridView>
                                         <GridViewColumn Width="40">
                                             <GridViewColumn.Header>
-                                                <CheckBox Name="chbDiskSelectDiskAll" Checked="chbDiskSelectDiskAll_Checked" Unchecked="chbDiskSelectDiskAll_Unchecked"/>
+                                                <CheckBox Name="chbDiskSelectDiskAll" Checked="chbDiskSelectDiskAll_Checked" Unchecked="chbDiskSelectDiskAll_Unchecked" Cursor="Hand"/>
                                             </GridViewColumn.Header>
                                             <GridViewColumn.CellTemplate>
                                                 <DataTemplate>
                                                     <CheckBox IsChecked="{Binding Path=IsSelected, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ListViewItem}}}"
-                                                              Checked="chbDisk_Checked" Unchecked="chbDisk_Unchecked" />
+                                                              Checked="chbDisk_Checked" Unchecked="chbDisk_Unchecked" Cursor="Hand"/>
                                                 </DataTemplate>
                                             </GridViewColumn.CellTemplate>
                                         </GridViewColumn>
@@ -236,7 +236,7 @@
                                                             <Expander Tag="{Binding Name}" IsExpanded="True" Margin="5,10,0,0" Loaded="Expander_Loaded">
                                                                 <Expander.Header>
                                                                     <WrapPanel Orientation="Horizontal" >
-                                                                        <CheckBox Name="HeaderCheckBox" Checked="HeaderCheckBox_Checked" Unchecked="HeaderCheckBox_Unchecked" Tag="{Binding Name}" Margin="5,5,5,0" />
+                                                                        <CheckBox Name="HeaderCheckBox" Checked="HeaderCheckBox_Checked" Unchecked="HeaderCheckBox_Unchecked" Tag="{Binding Name}" Margin="5,5,5,0" Cursor="Hand"/>
                                                                         <TextBlock Name="txtGroupName" Text="{Binding Name}" FontWeight="Bold" FontSize="18" VerticalAlignment="Center"/>
                                                                         <TextBlock Name="txtTotalSize" FontWeight="Bold" FontSize="14" Margin="10,0,0,0" VerticalAlignment="Center"/>
                                                                         <TextBlock Name="txtNumberOfItems" Text="{Binding ItemCount}" FontSize="14" Foreground="Silver" Margin="10,0,0,0" VerticalAlignment="Center" />
@@ -299,12 +299,12 @@
                                 <GridView>
                                     <GridViewColumn Width="40">
                                         <GridViewColumn.Header>
-                                            <CheckBox Name="selectAllTasksChechbox"/>
+                                            <CheckBox Name="selectAllTasksChechbox" Cursor="Hand"/>
                                         </GridViewColumn.Header>
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
                                                 <CheckBox IsChecked="{Binding Path=IsSelected, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ListViewItem}}}"
-                                                          HorizontalAlignment="Center"/>
+                                                          HorizontalAlignment="Center" Cursor="Hand"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
@@ -573,12 +573,12 @@
                             <GridView>
                                 <GridViewColumn Width="40">
                                     <GridViewColumn.Header>
-                                        <CheckBox Name="chbRestoreDiskSelectAll" Checked="chbRestoreDiskSelectAll_Checked" Unchecked="chbRestoreDiskSelectAll_Unchecked"/>
+                                        <CheckBox Name="chbRestoreDiskSelectAll"  Checked="chbRestoreDiskSelectAll_Checked" Unchecked="chbRestoreDiskSelectAll_Unchecked" Cursor="Hand"/>
                                     </GridViewColumn.Header>
                                     <GridViewColumn.CellTemplate>
                                         <DataTemplate>
                                             <CheckBox IsChecked="{Binding Path=IsSelected, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ListViewItem}}}"
-                                                              Checked="chbRestoreDisk_Checked" Unchecked="chbRestoreDisk_Unchecked" />
+                                                              Checked="chbRestoreDisk_Checked" Unchecked="chbRestoreDisk_Unchecked" Cursor="Hand"/>
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>
                                 </GridViewColumn>
@@ -647,7 +647,7 @@
                                                     <Expander Tag="{Binding Name}" IsExpanded="True" Margin="5,10,0,0" Loaded="Expander_Loaded_1">
                                                         <Expander.Header>
                                                             <WrapPanel Orientation="Horizontal">
-                                                                <CheckBox Name="cbRestoreHeader" Checked="cbRestoreHeader_Checked" Unchecked="cbRestoreHeader_Unchecked" Tag="{Binding Name}" Margin="5,5,5,0" />
+                                                                <CheckBox Name="cbRestoreHeader" Checked="cbRestoreHeader_Checked" Unchecked="cbRestoreHeader_Unchecked" Tag="{Binding Name}" Margin="5,5,5,0" Cursor="Hand"/>
                                                                 <TextBlock Name="txtRestoreGroupName" Text="{Binding Name}" FontWeight="Bold" FontSize="18" VerticalAlignment="Center" />
                                                                 <TextBlock Name="txtRestoreTotalSize" FontWeight="Bold" FontSize="14" Margin="10,0,0,0" VerticalAlignment="Center"/>
                                                                 <TextBlock Name="txtRestoreNumberOfItems" Text="{Binding ItemCount}" FontSize="14" Foreground="Silver" Margin="10,0,0,0" VerticalAlignment="Center" />
@@ -754,12 +754,12 @@
                                 <GridView>
                                     <GridViewColumn Width="40">
                                         <GridViewColumn.Header>
-                                            <CheckBox Name="selectAllFilesChecbox"/>
+                                            <CheckBox Name="selectAllFilesChecbox" Cursor="Hand"/>
                                         </GridViewColumn.Header>
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
                                                 <CheckBox IsChecked="{Binding Path=IsSelected, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ListViewItem}}}"
-                                                          HorizontalAlignment="Center"/>
+                                                          HorizontalAlignment="Center" Cursor="Hand"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
@@ -879,12 +879,12 @@
                                 <GridView>
                                     <GridViewColumn Width="40">
                                         <GridViewColumn.Header>
-                                            <CheckBox Name="chbAllBackupStorage" Cursor="Hand" Checked="selectAllBackupStorageChecbox_Checked" Unchecked="selectAllBackupStorageChecbox_Unchecked"/>
+                                            <CheckBox Name="chbAllBackupStorage" Checked="selectAllBackupStorageChecbox_Checked" Unchecked="selectAllBackupStorageChecbox_Unchecked" Cursor="Hand"/>
                                         </GridViewColumn.Header>
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
                                                 <CheckBox IsChecked="{Binding Path=IsSelected, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ListViewItem}}}"
-                                                          HorizontalAlignment="Center" Cursor="Hand" Checked="chbBackupStorage_Checked" Unchecked="chbBackupStorage_Unchecked"/>
+                                                          HorizontalAlignment="Center" Checked="chbBackupStorage_Checked" Unchecked="chbBackupStorage_Unchecked" Cursor="Hand"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
@@ -972,7 +972,7 @@
                                 </Button.Content>
                             </Button>
                             <Button Name="btnBackupStorageDelete" ToolTip="{DynamicResource delete}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5" 
-                                    Style="{StaticResource ImageButton}" Grid.Column="1" IsEnabled="False">
+                                    Style="{StaticResource ImageButton}" Grid.Column="1" IsEnabled="False" Click="btnBackupStorageDelete_Click">
                                 <Button.Content>
                                     <Image Height="30" Width="30" HorizontalAlignment="Center" VerticalAlignment="Center">
                                         <Image.Style>
