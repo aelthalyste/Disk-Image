@@ -154,7 +154,8 @@ namespace DiskBackup.Business.Concrete
 
         public bool RestoreBackupVolume(BackupInfo backupInfo, char volumeLetter)
         {
-            return _diskTracker.CW_RestoreToVolume(volumeLetter, backupInfo.Letter, backupInfo.Version, true, backupInfo.BackupStorageInfo.Path); //true gidecek
+            //return _diskTracker.CW_RestoreToVolume(volumeLetter, backupInfo.Letter, backupInfo.Version, true, backupInfo.BackupStorageInfo.Path); //true gidecek
+            throw new NotImplementedException();
         }
 
         public bool RestoreBackupDisk(BackupInfo backupInfo, DiskInformation diskInformation)

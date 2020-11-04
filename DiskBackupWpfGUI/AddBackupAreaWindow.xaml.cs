@@ -52,7 +52,7 @@ namespace DiskBackupWpfGUI
                 if (backupStorageInfo.Username != null) // nas
                 {
                     rbNAS.IsChecked = true;
-                    txtSettingsNASFolderPath.Text = backupStorageInfo.Path;
+                    txtSettingsNASFolderPath.Text = backupStorageInfo.Path.Substring(0, backupStorageInfo.Path.Length - 1);
                     txtSettingsNASDomain.Text = backupStorageInfo.Domain;
                     //txtSettingsNASUserName.Text = backupStorageInfo.Username;
                     //txtSettingsNASPassword.Password = backupStorageInfo.Password;
@@ -60,15 +60,16 @@ namespace DiskBackupWpfGUI
                 else // yerel disktir
                 {
                     rbLocalDisc.IsChecked = true;
-                    txtSettingsFolderPath.Text = backupStorageInfo.Path;
+                    txtSettingsFolderPath.Text = backupStorageInfo.Path.Substring(0, backupStorageInfo.Path.Length - 1);
                 }
             }
             else // sadece nas veya yerel disk
             {
+                cbBackupToCloud.IsChecked = false;
                 if (backupStorageInfo.Username != null) // nas
                 {
                     rbNAS.IsChecked = true;
-                    txtSettingsNASFolderPath.Text = backupStorageInfo.Path;
+                    txtSettingsNASFolderPath.Text = backupStorageInfo.Path.Substring(0, backupStorageInfo.Path.Length - 1);
                     txtSettingsNASDomain.Text = backupStorageInfo.Domain;
                     //txtSettingsNASUserName.Text = backupStorageInfo.Username;
                     //txtSettingsNASPassword.Password = backupStorageInfo.Password;
@@ -76,9 +77,10 @@ namespace DiskBackupWpfGUI
                 else // yerel disktir
                 {
                     rbLocalDisc.IsChecked = true;
-                    txtSettingsFolderPath.Text = backupStorageInfo.Path;
+                    txtSettingsFolderPath.Text = backupStorageInfo.Path.Substring(0, backupStorageInfo.Path.Length-1);
                 }
             }
+
 
         }
 

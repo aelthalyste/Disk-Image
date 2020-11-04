@@ -552,11 +552,23 @@ namespace DiskBackupWpfGUI
 
         #region Backup Storage Tab
 
-        private void btnBackupAreaAdd_Click(object sender, RoutedEventArgs e)
+        private void btnBackupStorageAdd_Click(object sender, RoutedEventArgs e)
         {
             AddBackupAreaWindow addBackupArea = new AddBackupAreaWindow();
             addBackupArea.ShowDialog();
             listViewBackupStorage.ItemsSource = _backupStorageService.BackupStorageInfoList();
+            chbAllBackupStorage.IsChecked = true;
+            chbAllBackupStorage.IsChecked = false;
+        }
+
+        private void btnBackupStorageEdit_Click(object sender, RoutedEventArgs e)
+        {
+            BackupStorageInfo backupStorageInfo = (BackupStorageInfo)listViewBackupStorage.SelectedItem;
+            AddBackupAreaWindow addBackupArea = new AddBackupAreaWindow(backupStorageInfo);
+            addBackupArea.ShowDialog();
+            listViewBackupStorage.ItemsSource = _backupStorageService.BackupStorageInfoList();
+            chbAllBackupStorage.IsChecked = true;
+            chbAllBackupStorage.IsChecked = false;
         }
 
         #region Checkbox Operations
@@ -814,12 +826,6 @@ namespace DiskBackupWpfGUI
             return ($"{dblSByte:0.##} {Suffix[i]}");
         }
 
-        private void btnBackupStorageEdit_Click(object sender, RoutedEventArgs e)
-        {
-            BackupStorageInfo backupStorageInfo = (BackupStorageInfo)listViewBackupStorage.SelectedItem;
-            AddBackupAreaWindow addBackupArea = new AddBackupAreaWindow(backupStorageInfo);
-            addBackupArea.ShowDialog();
-            listViewBackupStorage.ItemsSource = _backupStorageService.BackupStorageInfoList();
-        }
+
     }
 }
