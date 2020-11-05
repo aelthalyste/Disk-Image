@@ -366,6 +366,7 @@
     <Content Include="image_disk.db">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Resource Include="Resources\Icon\icons8-edit-property-521.png" />
     <Resource Include="Resources\Icon\icons8-pause-button-96.png" />
     <Resource Include="Resources\Icon\icons8-pause-button-96_disable.png" />
     <Resource Include="Resources\Icon\icons8-back-48.png" />

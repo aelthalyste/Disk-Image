@@ -1,4 +1,6 @@
-﻿using DiskBackup.Entities.Concrete;
+﻿using DiskBackup.Business.Abstract;
+using DiskBackup.Business.Concrete;
+using DiskBackup.Entities.Concrete;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -21,6 +23,9 @@ namespace DiskBackupWpfGUI
     /// </summary>
     public partial class NewCreateTaskWindow : Window
     {
+        private IBackupService _backupService = new BackupManager();
+        private IBackupStorageService _backupStorageService = new BackupStorageManager();
+
         private List<BackupStorageInfo> _backupStorageInfoList = new List<BackupStorageInfo>();
 
         public NewCreateTaskWindow(List<BackupStorageInfo> backupStorageInfoList)
@@ -161,6 +166,26 @@ namespace DiskBackupWpfGUI
             }
         }
 
+        private void btnTargetAdd_Click(object sender, RoutedEventArgs e)
+        {
+            AddBackupAreaWindow addBackupArea = new AddBackupAreaWindow();
+            addBackupArea.ShowDialog();
+
+            //karşılaştırma yapıp ekleneni yeniden gösteriyoruz
+            List<DiskInformation> diskList = _backupService.GetDiskList();
+            List<VolumeInfo> volumeList = new List<VolumeInfo>();
+
+            foreach (var diskItem in diskList)
+            {
+                foreach (var volumeItem in diskItem.VolumeInfos)
+                {
+                    volumeList.Add(volumeItem);
+                }
+            }
+
+            cbTargetBackupArea.ItemsSource = MainWindow.GetBackupStorages(volumeList, _backupStorageService.BackupStorageInfoList());
+        }
+
         #region Arrow Button
         private void btnRetentionUp_Click(object sender, RoutedEventArgs e)
         {
@@ -243,12 +268,6 @@ namespace DiskBackupWpfGUI
         }
         #endregion
 
-        private void btnTargetAdd_Click(object sender, RoutedEventArgs e)
-        {
-            AddBackupAreaWindow addBackupArea = new AddBackupAreaWindow();
-            addBackupArea.ShowDialog();
-            //karşılaştırma yap ekleneni de göster
-        }
 
         #endregion
 

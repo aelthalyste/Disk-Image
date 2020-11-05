@@ -88,14 +88,11 @@ namespace DiskBackupWpfGUI
 
             #endregion
 
-
             #region Yedekleme alanları
 
-            GetBackupStorages(_volumeList);
-
+            listViewBackupStorage.ItemsSource = GetBackupStorages(_volumeList, _backupStorageService.BackupStorageInfoList());
 
             #endregion
-
 
             TaskInfo taskInfo1 = new TaskInfo()
             {
@@ -737,9 +734,9 @@ namespace DiskBackupWpfGUI
 
         #region Backup Storage Tab
 
-        private void GetBackupStorages(List<VolumeInfo> volumeList)
+        public static List<BackupStorageInfo> GetBackupStorages(List<VolumeInfo> volumeList, List<BackupStorageInfo> backupStorageInfoList)
         {
-            List<BackupStorageInfo> backupStorageInfoList = _backupStorageService.BackupStorageInfoList();
+            //List<BackupStorageInfo> backupStorageInfoList = _backupStorageService.BackupStorageInfoList();
             string backupStorageLetter;
 
             foreach (var storageItem in backupStorageInfoList)
@@ -770,14 +767,14 @@ namespace DiskBackupWpfGUI
                 }
             }
 
-            listViewBackupStorage.ItemsSource = backupStorageInfoList;
+            return backupStorageInfoList;
         }
 
         private void btnBackupStorageAdd_Click(object sender, RoutedEventArgs e)
         {
             AddBackupAreaWindow addBackupArea = new AddBackupAreaWindow();
             addBackupArea.ShowDialog();
-            GetBackupStorages(_volumeList);
+            listViewBackupStorage.ItemsSource = GetBackupStorages(_volumeList, _backupStorageService.BackupStorageInfoList());
             chbAllBackupStorage.IsChecked = true;
             chbAllBackupStorage.IsChecked = false;
         }
@@ -787,7 +784,7 @@ namespace DiskBackupWpfGUI
             BackupStorageInfo backupStorageInfo = (BackupStorageInfo)listViewBackupStorage.SelectedItem;
             AddBackupAreaWindow addBackupArea = new AddBackupAreaWindow(backupStorageInfo);
             addBackupArea.ShowDialog();
-            GetBackupStorages(_volumeList);
+            listViewBackupStorage.ItemsSource = GetBackupStorages(_volumeList, _backupStorageService.BackupStorageInfoList());
             chbAllBackupStorage.IsChecked = true;
             chbAllBackupStorage.IsChecked = false;
         }
@@ -801,7 +798,7 @@ namespace DiskBackupWpfGUI
                 {
                     _backupStorageService.DeleteBackupStorage(item);
                 }
-                GetBackupStorages(_volumeList);
+                listViewBackupStorage.ItemsSource = GetBackupStorages(_volumeList, _backupStorageService.BackupStorageInfoList());
             }
         }
 
@@ -927,6 +924,15 @@ namespace DiskBackupWpfGUI
 
 
         #region Log Tab
+
+        private void listViewLog_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (listViewLog.SelectedIndex != -1)
+                btnLogDelete.IsEnabled = true;
+            else
+                btnLogDelete.IsEnabled = false;
+        }
+
 
         #endregion
 
@@ -1061,7 +1067,7 @@ namespace DiskBackupWpfGUI
             return parentT ?? FindParent<T>(parent);
         }
 
-        private string FormatBytes(long bytes)
+        private static string FormatBytes(long bytes)
         {
             string[] Suffix = { "B", "KB", "MB", "GB", "TB" };
             int i;
@@ -1074,15 +1080,11 @@ namespace DiskBackupWpfGUI
             return ($"{dblSByte:0.##} {Suffix[i]}");
         }
 
-        private void listViewLog_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void mainTabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (listViewBackupStorage.SelectedIndex != -1)
+            if (mainTabControl.SelectedIndex == 4) // Yedekleme alanları
             {
-                btnLogDelete.IsEnabled = false;
-            }
-            else
-            {
-                btnLogDelete.IsEnabled = true;
+                listViewBackupStorage.ItemsSource = GetBackupStorages(_volumeList, _backupStorageService.BackupStorageInfoList());
             }
         }
     }
