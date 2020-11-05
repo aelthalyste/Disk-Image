@@ -920,21 +920,30 @@
                                     <GridViewColumn Header="{DynamicResource capacity}" Width="125" >
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
-                                                <TextBlock Text="{Binding StrCapacity}" TextAlignment="Center"/>
+                                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                                                    <TextBlock Text="{Binding StrCapacity}" />
+                                                    <TextBlock Text="{Binding StrCloudCapacity}" Foreground="#0095D5"/>
+                                                </StackPanel>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
                                     <GridViewColumn Header="{DynamicResource usedSize}" Width="125" >
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
-                                                <TextBlock Text="{Binding StrUsedSize}" TextAlignment="Center"/>
+                                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                                                    <TextBlock Text="{Binding StrUsedSize}" />
+                                                    <TextBlock Text="{Binding StrCloudUsedSize}" Foreground="#0095D5"/>
+                                                </StackPanel>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
                                     <GridViewColumn Header="{DynamicResource freeSize}" Width="125" >
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
-                                                <TextBlock Text="{Binding StrFreeSize}" TextAlignment="Center"/>
+                                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                                                    <TextBlock Text="{Binding StrFreeSize}" />
+                                                    <TextBlock Text="{Binding StrCloudFreeSize}" Foreground="#0095D5"/>
+                                                </StackPanel>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>

@@ -26,6 +26,10 @@ namespace DiskBackup.Entities.Concrete
         public string Domain { get; set; } 
         public string Username { get; set; }
         public string Password { get; set; }
+        // Yanında mavi olarak gösterebilmek için ihtiyaç var
+        public string StrCloudCapacity { get; set; }
+        public string StrCloudUsedSize { get; set; }
+        public string StrCloudFreeSize { get; set; }
     }
 
     public enum BackupStorageType

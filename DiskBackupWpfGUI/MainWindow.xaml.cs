@@ -106,6 +106,13 @@ namespace DiskBackupWpfGUI
                         storageItem.StrUsedSize = FormatBytes(volumeItem.Size - volumeItem.FreeSize);
                     }
                 }
+
+                if (storageItem.IsCloud) // cloud bilgileri alınıp hibritse burada doldurulacak
+                {
+                    storageItem.StrCloudCapacity = "/100 GB";
+                    storageItem.StrCloudFreeSize = "/80 GB";
+                    storageItem.StrCloudUsedSize = "/20 GB";
+                }
             }
 
             listViewBackupStorage.ItemsSource = backupStorageInfoList;

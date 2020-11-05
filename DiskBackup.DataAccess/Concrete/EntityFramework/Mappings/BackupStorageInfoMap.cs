@@ -30,6 +30,9 @@ namespace DiskBackup.DataAccess.Concrete.EntityFramework.Mappings
             Ignore(x => x.StrUsedSize);
             Ignore(x => x.FreeSize);
             Ignore(x => x.StrFreeSize);
+            Ignore(x => x.StrCloudCapacity);
+            Ignore(x => x.StrCloudFreeSize);
+            Ignore(x => x.StrCloudUsedSize);
 
         }
     }
