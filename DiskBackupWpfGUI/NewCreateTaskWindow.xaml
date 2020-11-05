@@ -16,7 +16,7 @@
         HorizontalAlignment="Center" 
         Height="450" 
         Width="800">
-    
+
     <Window.Resources>
         <ResourceDictionary Source="Resources\Lang\string_tr.xaml"/>
     </Window.Resources>
@@ -126,7 +126,13 @@
                     <StackPanel Margin="10,10,20,10">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="{DynamicResource space2Backup}" VerticalAlignment="Center" />
-                            <ComboBox Name="cbTargetBackupArea" Width="350"  Height="26" Margin="25,0,0,0"/>
+                            <ComboBox Name="cbTargetBackupArea" Width="350"  Height="26" Margin="25,0,0,0" SelectionChanged="cbTargetBackupArea_SelectionChanged">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding StorageName}" />
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
                             <Button Name="btnTargetAdd" ToolTip="{DynamicResource add}" Click="btnTargetAdd_Click" HorizontalAlignment="Right" Margin="5,4,0,4" Style="{StaticResource ImageButton}" Width="32" Height="32" Grid.Column="1">
                                 <Button.Content>
                                     <Image Height="22">
@@ -139,13 +145,17 @@
                                 </Button.Content>
                             </Button>
                         </StackPanel>
-                        <!--DUMMİES-->
-                        <StackPanel Orientation="Horizontal">
-                            <Grid Height="70" Width="70" Margin="10,0,0,0">
+                        <Grid Margin="0,10,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="80"/>
+                                <ColumnDefinition Width="170"/>
+                                <ColumnDefinition/>
+                            </Grid.ColumnDefinitions>
+                            <Grid Height="70" Width="70" Margin="10,0,0,0" Grid.Column="0">
                                 <xctk:Pie StartAngle="0" EndAngle="360" Height="64" Width="64" Fill="#B8DABC" Stroke="#7A917D"/>
                                 <xctk:Pie Name="pieDiskSize" StartAngle="-90" EndAngle="150" Height="64" Width="64" Fill="#87B5F2" Stroke="#5A78A1"/>
                             </Grid>
-                            <StackPanel Margin="45,10,0,0">
+                            <StackPanel Margin="45,10,0,0" Grid.Column="1">
                                 <StackPanel Orientation="Horizontal">
                                     <TextBlock Name="lblTargetTotalSize">3 TB</TextBlock>
                                     <TextBlock Text="{DynamicResource area}" Margin="3,0,0,0"></TextBlock>
@@ -159,7 +169,7 @@
                                     <TextBlock Text="{DynamicResource fullSize}" Margin="3,0,0,0"></TextBlock>
                                 </StackPanel>
                             </StackPanel>
-                            <StackPanel Margin="50,0,0,0">
+                            <StackPanel Margin="50,0,0,0" Grid.Column="2">
                                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                     <TextBlock Text="{DynamicResource retentionTime}" VerticalAlignment="Center"/>
                                     <TextBox Name="txtRetentionTime" Text="14" Width="50" Height="28" FontSize="13" Margin="10,0,0,0" VerticalContentAlignment="Center" MaxLength="3"/>
@@ -180,23 +190,32 @@
                                     <TextBlock Text="{DynamicResource perWeek}" Margin="10,0,0,0" VerticalAlignment="Center"></TextBlock>
                                 </StackPanel>
                             </StackPanel>
-                        </StackPanel>
+                        </Grid>
 
-                        <TextBlock Name="txtTargetLicence" Foreground="Red" Margin="0,10,0,0">Lisans Aktif Değil</TextBlock>
+                        <TextBlock Name="txtTargetLicence" Foreground="Red" Margin="0,10">Lisans Aktif Değil</TextBlock>
 
-                        <TextBlock Margin="0,20,0,0">Narbulut</TextBlock>
-                        <StackPanel Orientation="Horizontal">
-                            <Grid Height="70" Width="70" Margin="10,0,0,0">
+                        <Grid Name="gridIsCloud">
+                            <Grid.RowDefinitions>
+                                <RowDefinition/>
+                                <RowDefinition/>
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="80"/>
+                                <ColumnDefinition Width="170"/>
+                                <ColumnDefinition/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock>Narbulut</TextBlock>
+                            <Grid Height="70" Width="70" Margin="10,0,0,0" Grid.Row="1">
                                 <xctk:Pie StartAngle="0" EndAngle="360" Height="64" Width="64" Fill="#B8DABC" Stroke="#7A917D"/>
                                 <xctk:Pie Name="pieCloudSize" StartAngle="-90" EndAngle="150" Height="64" Width="64" Fill="#87B5F2" Stroke="#5A78A1"/>
                             </Grid>
-                            <StackPanel Margin="45,10,0,0">
+                            <StackPanel Margin="45,10,0,0" Grid.Row="1" Grid.Column="1">
                                 <StackPanel Orientation="Horizontal">
                                     <TextBlock Name="lblTargetNarbulutTotalSize">3 TB</TextBlock>
                                     <TextBlock Text="{DynamicResource area}" Margin="3,0,0,0"></TextBlock>
                                 </StackPanel>
                                 <StackPanel Orientation="Horizontal">
-                                    <TextBlock Name="lblTargetnNarbulutFreeSize">350 GB</TextBlock>
+                                    <TextBlock Name="lblTargetNarbulutFreeSize">350 GB</TextBlock>
                                     <TextBlock Text="{DynamicResource freeSize}" Margin="3,0,0,0"></TextBlock>
                                 </StackPanel>
                                 <StackPanel Orientation="Horizontal">
@@ -204,7 +223,7 @@
                                     <TextBlock Text="{DynamicResource fullSize}" Margin="3,0,0,0"></TextBlock>
                                 </StackPanel>
                             </StackPanel>
-                            <StackPanel Margin="50,0,0,0">
+                            <StackPanel Margin="50,0,0,0" Grid.Row="1" Grid.Column="2">
                                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                     <TextBlock Text="{DynamicResource retentionTime}" VerticalAlignment="Center"/>
                                     <TextBox Name="txtNarRetentionTime" Text="14" Width="50" Height="28" FontSize="13" Margin="10,0,0,0" VerticalContentAlignment="Center" MaxLength="3"/>
@@ -225,7 +244,7 @@
                                     <TextBlock Text="{DynamicResource perWeek}" Margin="10,0,0,0" VerticalAlignment="Center"></TextBlock>
                                 </StackPanel>
                             </StackPanel>
-                        </StackPanel>
+                        </Grid>
                     </StackPanel>
                 </Grid>
             </TabItem>
@@ -278,11 +297,11 @@
                                 <RadioButton Name="rbPeriodic" GroupName="rbtnSchedular" Content="{DynamicResource periodic}" Checked="rbPeriodic_Checked" Unchecked="rbPeriodic_Unchecked" VerticalContentAlignment="Center" Margin="5,0,0,0" />
                                 <StackPanel Name="stackPeriodic" Orientation="Horizontal" IsEnabled="False">
                                     <TextBox Name="txtPeriodic" Text="3" Width="80" Height="28" FontSize="13" Margin="79,0,0,0" VerticalContentAlignment="Center" MaxLength="3"/>
-                                        <StackPanel Margin="-23,0,0,0" VerticalAlignment="Center">
-                                            <Button Name="btnPeriodicUp" Style="{StaticResource ArrowUpButton}" Content="▲" Width="20" Height="13" FontSize="8" VerticalContentAlignment="Top" BorderThickness="0" Click="btnPeriodicUp_Click" />
-                                            <Button Name="btnPeriodicDown" Style="{StaticResource ArrowDownButton}" Content="▼" Width="20" Height="13" FontSize="8" VerticalContentAlignment="Top" BorderThickness="0" Click="btnPeriodicDown_Click" />
-                                        </StackPanel>
-                                    
+                                    <StackPanel Margin="-23,0,0,0" VerticalAlignment="Center">
+                                        <Button Name="btnPeriodicUp" Style="{StaticResource ArrowUpButton}" Content="▲" Width="20" Height="13" FontSize="8" VerticalContentAlignment="Top" BorderThickness="0" Click="btnPeriodicUp_Click" />
+                                        <Button Name="btnPeriodicDown" Style="{StaticResource ArrowDownButton}" Content="▼" Width="20" Height="13" FontSize="8" VerticalContentAlignment="Top" BorderThickness="0" Click="btnPeriodicDown_Click" />
+                                    </StackPanel>
+
                                     <ComboBox Name="cbPeriodicTime" Width="280" Margin="20,0,20,0" SelectedIndex="0">
                                         <ComboBoxItem Content="{DynamicResource hour}"/>
                                         <ComboBoxItem Content="{DynamicResource Minute}"/>

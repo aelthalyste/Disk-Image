@@ -43,6 +43,7 @@ namespace DiskBackupWpfGUI
         private List<int> _restoreNumberOfItems = new List<int>();
         private List<string> _restoreGroupName = new List<string>();
         private List<DiskInformation> _diskList = new List<DiskInformation>();
+        private List<VolumeInfo> _volumeList = new List<VolumeInfo>();
 
         private IBackupService _backupService = new BackupManager();
         private IBackupStorageService _backupStorageService = new BackupStorageManager();
@@ -53,19 +54,19 @@ namespace DiskBackupWpfGUI
 
             #region Disk Bilgileri
 
-            List<VolumeInfo> volumeList = new List<VolumeInfo>();
+            
             _diskList = _backupService.GetDiskList();
 
             foreach (var diskItem in _diskList)
             {
                 foreach (var volumeItem in diskItem.VolumeInfos)
                 {
-                    volumeList.Add(volumeItem);
+                    _volumeList.Add(volumeItem);
                 }
             }
 
-            listViewDisk.ItemsSource = volumeList;
-            listViewRestoreDisk.ItemsSource = volumeList;
+            listViewDisk.ItemsSource = _volumeList;
+            listViewRestoreDisk.ItemsSource = _volumeList;
 
             CollectionView view = (CollectionView)CollectionViewSource.GetDefaultView(listViewDisk.ItemsSource);
             PropertyGroupDescription groupDescription = new PropertyGroupDescription("DiskName");
@@ -90,32 +91,7 @@ namespace DiskBackupWpfGUI
 
             #region Yedekleme alanları
 
-            List<BackupStorageInfo> backupStorageInfoList = _backupStorageService.BackupStorageInfoList();
-            string backupStorageLetter;
-
-            foreach (var storageItem in backupStorageInfoList)
-            {
-                backupStorageLetter = storageItem.Path.Substring(0, storageItem.Path.Length - (storageItem.Path.Length - 1));
-
-                foreach (var volumeItem in volumeList)
-                {
-                    if (backupStorageLetter.Equals(Convert.ToString(volumeItem.Letter)))
-                    {
-                        storageItem.StrCapacity = volumeItem.StrSize;
-                        storageItem.StrFreeSize = volumeItem.StrFreeSize;
-                        storageItem.StrUsedSize = FormatBytes(volumeItem.Size - volumeItem.FreeSize);
-                    }
-                }
-
-                if (storageItem.IsCloud) // cloud bilgileri alınıp hibritse burada doldurulacak
-                {
-                    storageItem.StrCloudCapacity = "/100 GB";
-                    storageItem.StrCloudFreeSize = "/80 GB";
-                    storageItem.StrCloudUsedSize = "/20 GB";
-                }
-            }
-
-            listViewBackupStorage.ItemsSource = backupStorageInfoList;
+            GetBackupStorages(_volumeList);
 
 
             #endregion
@@ -261,6 +237,7 @@ namespace DiskBackupWpfGUI
             listViewRestore.ItemsSource = backupsItems;
         }
 
+
         #region Title Bar
         private void btnMainClose_Click(object sender, RoutedEventArgs e)
         {
@@ -286,7 +263,12 @@ namespace DiskBackupWpfGUI
 
         private void btnCreateTask_Click(object sender, RoutedEventArgs e)
         {
-            NewCreateTaskWindow newCreateTask = new NewCreateTaskWindow();
+            List<BackupStorageInfo> backupStorageInfoList = new List<BackupStorageInfo>();
+            foreach (BackupStorageInfo item in listViewBackupStorage.Items)
+            {
+                backupStorageInfoList.Add(item);
+            }
+            NewCreateTaskWindow newCreateTask = new NewCreateTaskWindow(backupStorageInfoList);
             newCreateTask.ShowDialog();
         }
 
@@ -660,6 +642,7 @@ namespace DiskBackupWpfGUI
 
         #region View Backups Tab
 
+
         private void listViewBackups_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (listViewBackups.SelectedIndex != -1)
@@ -754,11 +737,47 @@ namespace DiskBackupWpfGUI
 
         #region Backup Storage Tab
 
+        private void GetBackupStorages(List<VolumeInfo> volumeList)
+        {
+            List<BackupStorageInfo> backupStorageInfoList = _backupStorageService.BackupStorageInfoList();
+            string backupStorageLetter;
+
+            foreach (var storageItem in backupStorageInfoList)
+            {
+                backupStorageLetter = storageItem.Path.Substring(0, storageItem.Path.Length - (storageItem.Path.Length - 1));
+
+                foreach (var volumeItem in volumeList)
+                {
+                    if (backupStorageLetter.Equals(Convert.ToString(volumeItem.Letter)))
+                    {
+                        storageItem.StrCapacity = volumeItem.StrSize;
+                        storageItem.StrFreeSize = volumeItem.StrFreeSize;
+                        storageItem.StrUsedSize = FormatBytes(volumeItem.Size - volumeItem.FreeSize);
+                        storageItem.Capacity = volumeItem.Size;
+                        storageItem.FreeSize = volumeItem.FreeSize;
+                        storageItem.UsedSize = volumeItem.Size - volumeItem.FreeSize;
+                    }
+                }
+
+                if (storageItem.IsCloud) // cloud bilgileri alınıp hibritse burada doldurulacak
+                {
+                    storageItem.CloudCapacity = 107374182400;
+                    storageItem.CloudUsedSize = 21474836480;
+                    storageItem.CloudFreeSize = 85899345920;
+                    storageItem.StrCloudCapacity = FormatBytes(storageItem.CloudCapacity);
+                    storageItem.StrCloudUsedSize = FormatBytes(storageItem.CloudUsedSize);
+                    storageItem.StrCloudFreeSize = FormatBytes(storageItem.CloudFreeSize);
+                }
+            }
+
+            listViewBackupStorage.ItemsSource = backupStorageInfoList;
+        }
+
         private void btnBackupStorageAdd_Click(object sender, RoutedEventArgs e)
         {
             AddBackupAreaWindow addBackupArea = new AddBackupAreaWindow();
             addBackupArea.ShowDialog();
-            listViewBackupStorage.ItemsSource = _backupStorageService.BackupStorageInfoList();
+            GetBackupStorages(_volumeList);
             chbAllBackupStorage.IsChecked = true;
             chbAllBackupStorage.IsChecked = false;
         }
@@ -768,7 +787,7 @@ namespace DiskBackupWpfGUI
             BackupStorageInfo backupStorageInfo = (BackupStorageInfo)listViewBackupStorage.SelectedItem;
             AddBackupAreaWindow addBackupArea = new AddBackupAreaWindow(backupStorageInfo);
             addBackupArea.ShowDialog();
-            listViewBackupStorage.ItemsSource = _backupStorageService.BackupStorageInfoList();
+            GetBackupStorages(_volumeList);
             chbAllBackupStorage.IsChecked = true;
             chbAllBackupStorage.IsChecked = false;
         }
@@ -782,7 +801,7 @@ namespace DiskBackupWpfGUI
                 {
                     _backupStorageService.DeleteBackupStorage(item);
                 }
-                listViewBackupStorage.ItemsSource = _backupStorageService.BackupStorageInfoList();
+                GetBackupStorages(_volumeList);
             }
         }
 

@@ -25,9 +25,6 @@ namespace DiskBackup.Business.Concrete
         private Stopwatch _timeElapsed = new Stopwatch();
         private StatusInfo _statusInfo = new StatusInfo();
 
-        /*Geri yükle
-	_cSNarFileExplorer.CW_RestoreFile(dosyaid, Backupdirectory (ilgil backup hariç), kaydedilecekyol)*/
-
         public bool InitTracker()
         {
             // programla başlat 1 kere çalışması yeter
@@ -46,7 +43,7 @@ namespace DiskBackup.Business.Concrete
 
         public List<DiskInformation> GetDiskList()
         {
-            //Disk Name, Name (Local Volume vs.), FileSystem (NTFS), FreeSize, PrioritySection, Status 
+            //PrioritySection 
             List<DiskInfo> disks = DiskTracker.CW_GetDisksOnSystem();
             List<VolumeInformation> volumes = DiskTracker.CW_GetVolumes();
 
@@ -159,7 +156,6 @@ namespace DiskBackup.Business.Concrete
         public bool RestoreBackupVolume(BackupInfo backupInfo, char volumeLetter)
         {
             return DiskTracker.CW_RestoreToVolume(volumeLetter, backupInfo.Letter, backupInfo.Version, true, backupInfo.BackupStorageInfo.Path); //true gidecek
-            throw new NotImplementedException();
         }
 
         public bool RestoreBackupDisk(BackupInfo backupInfo, DiskInformation diskInformation)
@@ -276,7 +272,7 @@ namespace DiskBackup.Business.Concrete
             _manualResetEvent.Set();
         }
 
-        public List<FilesInBackup> GetFileInfoList() //EKSİKLERİ VAR
+        public List<FilesInBackup> GetFileInfoList()
         {
             var resultList = _cSNarFileExplorer.CW_GetFilesInCurrentDirectory();
             List<FilesInBackup> filesInBackupList = new List<FilesInBackup>();
@@ -333,12 +329,14 @@ namespace DiskBackup.Business.Concrete
             throw new NotImplementedException();
         }
 
-        public bool RestoreFilesInBackup(BackupInfo backupInfo, FilesInBackup fileInfo, string destination) //bu method daha gelmedi
+        public void RestoreFilesInBackup(int fileId, string backupDirectory, string targetDirectory) // batuhan hangi backup olduğunu nasıl anlayacak? backup directoryde backup ismi almıyor
         {
             //_cSNarFileExplorer.CW_RestoreFile(ID, seçilen backup'ın directorysi dosya ismi olmadan, yüklenecek yer)
             //void CW_RestoreFile(INT64 ID);
             //_cSNarFileExplorer.CW_Free FileExplorer kapatıldığında Free çağırmakta fayda var bellek yönetimi için tutulan alanları geri veriyor sisteme
-            throw new NotImplementedException();
+            /*Geri yükle fileExplorerdan istenen dosyayı geri yüklemek için
+_           cSNarFileExplorer.CW_RestoreFile(dosyaid, Backupdirectory (ilgil backup hariç), kaydedilecekyol)*/
+            _cSNarFileExplorer.CW_RestoreFile(fileId, backupDirectory, targetDirectory);
         }
 
         public StatusInfo GetStatusInfo()

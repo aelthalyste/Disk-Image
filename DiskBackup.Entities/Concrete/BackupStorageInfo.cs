@@ -30,6 +30,9 @@ namespace DiskBackup.Entities.Concrete
         public string StrCloudCapacity { get; set; }
         public string StrCloudUsedSize { get; set; }
         public string StrCloudFreeSize { get; set; }
+        public long CloudCapacity { get; set; }
+        public long CloudUsedSize { get; set; }
+        public long CloudFreeSize { get; set; }
     }
 
     public enum BackupStorageType

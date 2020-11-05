@@ -31,7 +31,7 @@ namespace DiskBackup.Business.Abstract
         bool RestoreBackupDisk(BackupInfo backupInfo, DiskInformation diskInformation);
         //Restore işleminde disk seçilirse CW_RestoreToFreshDisk, volume seçilirse CW_RestoreToVolume
 
-        bool RestoreFilesInBackup(BackupInfo backupInfo, FilesInBackup fileInfo, string destination); //uçlar belli değil
+        void RestoreFilesInBackup(int fileId, string backupDirectory, string targetDirectory);
         void PopDirectory(); //Üst dizine çıkma methodu
         string GetCurrentDirectory(); // path yazdırma
 

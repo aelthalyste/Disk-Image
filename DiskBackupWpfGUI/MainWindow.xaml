@@ -922,6 +922,7 @@
                                             <DataTemplate>
                                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
                                                     <TextBlock Text="{Binding StrCapacity}" />
+                                                    <TextBlock Text="/" Foreground="#0095D5" Style="{StaticResource MBSTListViewCapacity}"/>
                                                     <TextBlock Text="{Binding StrCloudCapacity}" Foreground="#0095D5"/>
                                                 </StackPanel>
                                             </DataTemplate>
@@ -932,6 +933,7 @@
                                             <DataTemplate>
                                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
                                                     <TextBlock Text="{Binding StrUsedSize}" />
+                                                    <TextBlock Text="/" Foreground="#0095D5" Style="{StaticResource MBSTListViewCapacity}"/>
                                                     <TextBlock Text="{Binding StrCloudUsedSize}" Foreground="#0095D5"/>
                                                 </StackPanel>
                                             </DataTemplate>
@@ -942,6 +944,7 @@
                                             <DataTemplate>
                                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
                                                     <TextBlock Text="{Binding StrFreeSize}" />
+                                                    <TextBlock Text="/" Foreground="#0095D5" Style="{StaticResource MBSTListViewCapacity}"/>
                                                     <TextBlock Text="{Binding StrCloudFreeSize}" Foreground="#0095D5"/>
                                                 </StackPanel>
                                             </DataTemplate>
