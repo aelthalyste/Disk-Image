@@ -47,6 +47,7 @@
     <system:String x:Key="localPath">Yerel Yol</system:String>
     <system:String x:Key="folderPath">Klasör Yolu</system:String>
     <system:String x:Key="cloudPath">Bulut Alan</system:String>
+    <system:String x:Key="cloud">Bulut</system:String>
     <system:String x:Key="backupAreas">Yedekleme Alanları</system:String>
     <system:String x:Key="startDate">Başlangıç Tarihi</system:String>
     <system:String x:Key="endDate">Bitiş Tarihi</system:String>

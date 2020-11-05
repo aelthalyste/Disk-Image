@@ -267,6 +267,7 @@ namespace DiskBackupWpfGUI
             }
             NewCreateTaskWindow newCreateTask = new NewCreateTaskWindow(backupStorageInfoList);
             newCreateTask.ShowDialog();
+            listViewBackupStorage.ItemsSource = GetBackupStorages(_volumeList, _backupStorageService.BackupStorageInfoList());
         }
 
         private void Expander_Loaded(object sender, RoutedEventArgs e)
@@ -1080,12 +1081,5 @@ namespace DiskBackupWpfGUI
             return ($"{dblSByte:0.##} {Suffix[i]}");
         }
 
-        private void mainTabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            if (mainTabControl.SelectedIndex == 4) // Yedekleme alanları
-            {
-                listViewBackupStorage.ItemsSource = GetBackupStorages(_volumeList, _backupStorageService.BackupStorageInfoList());
-            }
-        }
     }
 }

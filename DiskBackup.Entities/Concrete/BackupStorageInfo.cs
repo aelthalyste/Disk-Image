@@ -39,7 +39,6 @@ namespace DiskBackup.Entities.Concrete
     {
         Windows = 0,
         NAS = 1,
-        Hybrit = 2
     }
     
 }
