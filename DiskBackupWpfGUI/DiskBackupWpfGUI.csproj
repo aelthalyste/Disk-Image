@@ -237,7 +237,6 @@
     <Resource Include="Resources\Icon\icons8_edit_property_2.ico" />
     <Resource Include="Resources\Icon\icons8_edit_property_3.ico" />
     <Resource Include="Resources\Icon\icons8_edit_property_4.ico" />
-    <Resource Include="Resources\Icon\icons8_edit_property_5.ico" />
     <Resource Include="Resources\Icon\icons8_hdd_2.ico" />
     <Resource Include="Resources\Icon\icons8_help_2.ico" />
     <Resource Include="Resources\Icon\icons8_network_drive.ico" />
@@ -254,7 +253,6 @@
     <Resource Include="Resources\Icon\icons8_settings_4.ico" />
     <Resource Include="Resources\Icon\icons8_ssd_3.ico" />
     <Resource Include="Resources\Icon\icons8_stack_3.ico" />
-    <Resource Include="Resources\Icon\icons8_stop.ico" />
     <Resource Include="Resources\Icon\icons8_stop_7.ico" />
     <Resource Include="Resources\Icon\icons8_stop_8.ico" />
     <Resource Include="Resources\Icon\icons8_system_task_3.ico" />
@@ -325,9 +323,6 @@
     <Resource Include="Resources\Icon\icons8_pause_button.ico" />
   </ItemGroup>
   <ItemGroup>
-    <Resource Include="Resources\Icon\Back_96px.png" />
-  </ItemGroup>
-  <ItemGroup>
     <ProjectReference Include="..\DiskBackup.Business\DiskBackup.Business.csproj">
       <Project>{3F48E57C-71B2-4978-8361-345FA514E77A}</Project>
       <Name>DiskBackup.Business</Name>
@@ -371,6 +366,21 @@
     <Content Include="image_disk.db">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Resource Include="Resources\Icon\icons8-pause-button-96.png" />
+    <Resource Include="Resources\Icon\icons8-pause-button-96_disable.png" />
+    <Resource Include="Resources\Icon\icons8-back-48.png" />
+    <Resource Include="Resources\Icon\icons8_synchronize_disable.ico" />
+    <Resource Include="Resources\Icon\icons8_copy_disable.ico" />
+    <Resource Include="Resources\Icon\icons8_unavailable_4.ico" />
+    <Resource Include="Resources\Icon\icons8_unavailable_1_disable.ico" />
+    <Resource Include="Resources\Icon\icons8_stop_disable.ico" />
+    <Resource Include="Resources\Icon\icons8_pause_button_disable.ico" />
+    <Resource Include="Resources\Icon\icons8_search_property_1_disable.ico" />
+    <Resource Include="Resources\Icon\icons8_unavailable.ico" />
+    <Resource Include="Resources\Icon\icons8_paste_disable.ico" />
+    <Resource Include="Resources\Icon\icons8_circled_play.ico" />
+    <Resource Include="Resources\Icon\icons8_ok.ico" />
+    <Resource Include="Resources\Icon\icons8_edit_property_1_disable.ico" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">

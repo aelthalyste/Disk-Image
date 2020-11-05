@@ -97,6 +97,70 @@ namespace DiskBackupWpfGUI
 
         #region Target Type Tab
 
+        private void cbTargetBackupArea_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (cbTargetBackupArea.SelectedIndex != -1)
+            {
+                foreach (var item in _backupStorageInfoList)
+                {
+                    if (((BackupStorageInfo)cbTargetBackupArea.SelectedItem).Id == item.Id)
+                    {
+                        //yerel disk - nas
+                        lblTargetTotalSize.Text = item.StrCapacity;
+                        lblTargetFreeSize.Text = item.StrFreeSize;
+                        lblTargetFullSize.Text = item.StrUsedSize;
+                        // pasta işlemleri
+                        double Capacity = item.Capacity;
+                        double UsedSize = item.UsedSize;
+                        if (UsedSize != 0)
+                        {
+                            var diskRatio = Capacity / UsedSize;
+                            var pieRatio = 360 / diskRatio;
+
+                            pieDiskSize.EndAngle = -90 + pieRatio;
+                        }
+                        else
+                        {
+                            pieDiskSize.EndAngle = -89;
+                        }
+
+                        //cloud
+                        if (item.IsCloud)
+                        {
+                            gridIsCloud.Visibility = Visibility.Visible;
+                            lblTargetNarbulutTotalSize.Text = item.StrCloudCapacity;
+                            lblTargetNarbulutFreeSize.Text = item.StrCloudFreeSize;
+                            lblTargetNarbulutFullSize.Text = item.StrCloudUsedSize;
+                            // pasta işlemleri
+                            double cloudCapacity = item.CloudCapacity;
+                            double cloudUsedSize = item.CloudUsedSize;
+                            if (cloudUsedSize != 0)
+                            {
+                                var diskRatio = cloudCapacity / cloudUsedSize;
+                                var pieRatio = 360 / diskRatio;
+
+                                pieCloudSize.EndAngle = -90 + pieRatio;
+                            }
+                            else
+                            {
+                                pieCloudSize.EndAngle = -89;
+                            }
+                        }
+                        else
+                        {
+                            gridIsCloud.Visibility = Visibility.Hidden;
+                        }
+
+
+
+                        break;
+                    }
+                }
+
+                MessageBox.Show(((BackupStorageInfo)cbTargetBackupArea.SelectedItem).Id.ToString());
+            }
+        }
+
         #region Arrow Button
         private void btnRetentionUp_Click(object sender, RoutedEventArgs e)
         {
@@ -183,6 +247,7 @@ namespace DiskBackupWpfGUI
         {
             AddBackupAreaWindow addBackupArea = new AddBackupAreaWindow();
             addBackupArea.ShowDialog();
+            //karşılaştırma yap ekleneni de göster
         }
 
         #endregion
@@ -386,68 +451,5 @@ namespace DiskBackupWpfGUI
             }
         }
 
-        private void cbTargetBackupArea_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            if (cbTargetBackupArea.SelectedIndex != -1)
-            {
-                foreach (var item in _backupStorageInfoList)
-                {
-                    if (((BackupStorageInfo)cbTargetBackupArea.SelectedItem).Id == item.Id)
-                    {                       
-                        //yerel disk - nas
-                        lblTargetTotalSize.Text = item.StrCapacity;
-                        lblTargetFreeSize.Text = item.StrFreeSize;
-                        lblTargetFullSize.Text = item.StrUsedSize;
-                        // pasta işlemleri
-                        double Capacity = item.Capacity;
-                        double UsedSize = item.UsedSize;
-                        if (UsedSize != 0)
-                        {
-                            var diskRatio = Capacity / UsedSize;
-                            var pieRatio = 360 / diskRatio;
-
-                            pieDiskSize.EndAngle = -90 + pieRatio;
-                        }
-                        else
-                        {
-                            pieDiskSize.EndAngle = -89;
-                        }
-
-                        //cloud
-                        if (item.IsCloud)
-                        {
-                            gridIsCloud.Visibility = Visibility.Visible;
-                            lblTargetNarbulutTotalSize.Text = item.StrCloudCapacity;
-                            lblTargetNarbulutFreeSize.Text = item.StrCloudFreeSize;
-                            lblTargetNarbulutFullSize.Text = item.StrCloudUsedSize;
-                            // pasta işlemleri
-                            double cloudCapacity = item.CloudCapacity;
-                            double cloudUsedSize = item.CloudUsedSize;
-                            if (cloudUsedSize != 0)
-                            {
-                                var diskRatio = cloudCapacity / cloudUsedSize;
-                                var pieRatio = 360 / diskRatio;
-
-                                pieCloudSize.EndAngle = -90 + pieRatio;                               
-                            }
-                            else
-                            {
-                                pieCloudSize.EndAngle = -89;
-                            }
-                        }
-                        else
-                        {
-                            gridIsCloud.Visibility = Visibility.Hidden;
-                        }
-
-
-
-                        break;
-                    }
-                }
-                
-                MessageBox.Show(((BackupStorageInfo)cbTargetBackupArea.SelectedItem).Id.ToString());
-            }
-        }
     }
 }

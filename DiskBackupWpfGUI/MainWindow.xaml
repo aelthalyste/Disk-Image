@@ -54,6 +54,11 @@
                             <Image.Style>
                                 <Style TargetType="Image">
                                     <Setter Property="Source" Value="Resources/Icon/icons8_play.ico" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsEnabled, RelativeSource={RelativeSource AncestorType=Button}}" Value="False">
+                                            <Setter Property="Source" Value="Resources/Icon/icons8_circled_play.ico"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
                                 </Style>
                             </Image.Style>
                         </Image>
@@ -64,7 +69,12 @@
                         <Image Height="28">
                             <Image.Style>
                                 <Style TargetType="Image">
-                                    <Setter Property="Source" Value="Resources/Icon/icons8_pause_button.ico" />
+                                    <Setter Property="Source" Value="Resources/Icon/icons8-pause-button-96.png" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsEnabled, RelativeSource={RelativeSource AncestorType=Button}}" Value="False">
+                                            <Setter Property="Source" Value="Resources/Icon/icons8-pause-button-96_disable.png"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
                                 </Style>
                             </Image.Style>
                         </Image>
@@ -72,10 +82,19 @@
                 </Button>
                 <Button Name="btnStopButton" ToolTip="{DynamicResource stop}" Width="32" Height="32" HorizontalAlignment="Right" Margin="5,4,0,4" Style="{StaticResource ImageButton}" Grid.Column="1">
                     <Button.Content>
-                        <Image Height="40" Width="40" HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <Image HorizontalAlignment="Center" VerticalAlignment="Center">
                             <Image.Style>
                                 <Style TargetType="Image">
-                                    <Setter Property="Source" Value="Resources/Icon/icons8_stop_8.ico"/>
+                                    <Setter Property="Source" Value="Resources/Icon/icons8_stop_8.ico" />
+                                    <Setter Property="Height" Value="40"/>
+                                    <Setter Property="Width" Value="40"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsEnabled, RelativeSource={RelativeSource AncestorType=Button}}" Value="False">
+                                            <Setter Property="Source" Value="Resources/Icon/icons8_stop_disable.ico"/>
+                                            <Setter Property="Height" Value="31"/>
+                                            <Setter Property="Width" Value="31"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
                                 </Style>
                             </Image.Style>
                         </Image>
@@ -87,6 +106,11 @@
                             <Image.Style>
                                 <Style TargetType="Image">
                                     <Setter Property="Source" Value="Resources/Icon/icons8_refresh.ico" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsEnabled, RelativeSource={RelativeSource AncestorType=Button}}" Value="False">
+                                            <Setter Property="Source" Value="Resources/Icon/icons8_synchronize_disable.ico"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
                                 </Style>
                             </Image.Style>
                         </Image>
@@ -376,86 +400,144 @@
                                     <Image Height="25" Width="25" HorizontalAlignment="Center" VerticalAlignment="Center">
                                         <Image.Style>
                                             <Style TargetType="Image">
-                                                <Setter Property="Source" Value="Resources/Icon/icons8_edit_property_1.ico"/>
+                                                <Setter Property="Source" Value="Resources/Icon/icons8_edit_property_3.ico" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsEnabled, RelativeSource={RelativeSource AncestorType=Button}}" Value="False">
+                                                        <Setter Property="Source" Value="Resources/Icon/icons8_edit_property_1_disable.ico"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
                                             </Style>
                                         </Image.Style>
                                     </Image>
                                 </Button.Content>
                             </Button>
-                            <Button Name="btnTaskStart" ToolTip="{DynamicResource start}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5"  Style="{StaticResource ImageButton}" Grid.Column="1">
+                            <Button Name="btnTaskStart" ToolTip="{DynamicResource start}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5"  
+                                    Style="{StaticResource ImageButton}" Grid.Column="1">
                                 <Button.Content>
-                                    <Image Height="25" Width="25" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <Image Height="27" Width="27" HorizontalAlignment="Center" VerticalAlignment="Center">
                                         <Image.Style>
                                             <Style TargetType="Image">
-                                                <Setter Property="Source" Value="Resources/Icon/icons8_play.ico"/>
+                                                <Setter Property="Source" Value="Resources/Icon/icons8_play.ico" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsEnabled, RelativeSource={RelativeSource AncestorType=Button}}" Value="False">
+                                                        <Setter Property="Source" Value="Resources/Icon/icons8_circled_play.ico"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
                                             </Style>
                                         </Image.Style>
                                     </Image>
                                 </Button.Content>
                             </Button>
-                            <Button Name="btnTaskPauseButton" ToolTip="{DynamicResource pause}" HorizontalAlignment="Center" Margin="0,5" Style="{StaticResource ImageButton}" Width="32" Height="32" Grid.Column="1">
+                            <Button Name="btnTaskPauseButton" ToolTip="{DynamicResource pause}" HorizontalAlignment="Center" Margin="0,5" 
+                                    Style="{StaticResource ImageButton}" Width="32" Height="32" Grid.Column="1">
                                 <Button.Content>
-                                    <Image Height="30" Width="30">
+                                    <Image>
                                         <Image.Style>
                                             <Style TargetType="Image">
-                                                <Setter Property="Source" Value="Resources/Icon/icons8_pause_button.ico" />
+                                                <Setter Property="Source" Value="Resources/Icon/icons8-pause-button-96.png" />
+                                                <Setter Property="Height" Value="30"/>
+                                                <Setter Property="Width" Value="30"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsEnabled, RelativeSource={RelativeSource AncestorType=Button}}" Value="False">
+                                                        <Setter Property="Source" Value="Resources/Icon/icons8-pause-button-96_disable.png"/>
+                                                        <Setter Property="Height" Value="30"/>
+                                                        <Setter Property="Width" Value="30"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
                                             </Style>
                                         </Image.Style>
                                     </Image>
                                 </Button.Content>
                             </Button>
 
-                            <Button Name="btnTaskStop" ToolTip="{DynamicResource stop}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5" Style="{StaticResource ImageButton}" Grid.Column="1">
+                            <Button Name="btnTaskStop" ToolTip="{DynamicResource stop}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5" 
+                                    Style="{StaticResource ImageButton}" Grid.Column="1" >
                                 <Button.Content>
-                                    <Image Height="40" Width="40" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <Image HorizontalAlignment="Center" VerticalAlignment="Center">
                                         <Image.Style>
                                             <Style TargetType="Image">
-                                                <Setter Property="Source" Value="Resources/Icon/icons8_stop_8.ico"/>
+                                                <Setter Property="Source" Value="Resources/Icon/icons8_stop_8.ico" />
+                                                <Setter Property="Height" Value="35"/>
+                                                <Setter Property="Width" Value="35"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsEnabled, RelativeSource={RelativeSource AncestorType=Button}}" Value="False">
+                                                        <Setter Property="Source" Value="Resources/Icon/icons8_stop_disable.ico"/>
+                                                        <Setter Property="Height" Value="28"/>
+                                                        <Setter Property="Width" Value="28"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
                                             </Style>
                                         </Image.Style>
                                     </Image>
                                 </Button.Content>
                             </Button>
-                            <Button Name="btnTaskOpen" ToolTip="{DynamicResource open}" Click="btnTaskOpen_Click" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5" Style="{StaticResource ImageButton}" Grid.Column="1">
+                            <Button Name="btnTaskOpen" ToolTip="{DynamicResource open}" Click="btnTaskOpen_Click" Width="32" Height="32" HorizontalAlignment="Center" 
+                                    Margin="0,5" Style="{StaticResource ImageButton}" Grid.Column="1" >
                                 <Button.Content>
                                     <Image Height="28" Width="28" HorizontalAlignment="Center" VerticalAlignment="Center">
                                         <Image.Style>
                                             <Style TargetType="Image">
-                                                <Setter Property="Source" Value="Resources/Icon/icons8_ok_3.ico"/>
+                                                <Setter Property="Source" Value="Resources/Icon/icons8_ok_3.ico" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsEnabled, RelativeSource={RelativeSource AncestorType=Button}}" Value="False">
+                                                        <Setter Property="Source" Value="Resources/Icon/icons8_ok.ico"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
                                             </Style>
                                         </Image.Style>
                                     </Image>
                                 </Button.Content>
                             </Button>
-                            <Button Name="btnTaskClose" ToolTip="{DynamicResource close}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5" Style="{StaticResource ImageButton}" Grid.Column="1">
+                            <Button Name="btnTaskClose" ToolTip="{DynamicResource close}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5" 
+                                    Style="{StaticResource ImageButton}" Grid.Column="1">
                                 <Button.Content>
-                                    <Image Height="25" Width="25" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <Image HorizontalAlignment="Center" VerticalAlignment="Center">
                                         <Image.Style>
                                             <Style TargetType="Image">
-                                                <Setter Property="Source" Value="Resources/Icon/icons8_unavailable_1.ico"/>
+                                                <Setter Property="Source" Value="Resources/Icon/icons8_unavailable_4.ico" />
+                                                <Setter Property="Height" Value="26"/>
+                                                <Setter Property="Width" Value="26"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsEnabled, RelativeSource={RelativeSource AncestorType=Button}}" Value="False">
+                                                        <Setter Property="Source" Value="Resources/Icon/icons8_unavailable_1_disable.ico"/>
+                                                        <Setter Property="Height" Value="30"/>
+                                                        <Setter Property="Width" Value="30"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
                                             </Style>
                                         </Image.Style>
                                     </Image>
                                 </Button.Content>
                             </Button>
-                            <Button Name="btnTaskCopy" ToolTip="{DynamicResource copy}" Click="btnTaskCopy_Click" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5" Style="{StaticResource ImageButton}" Grid.Column="1">
+                            <Button Name="btnTaskCopy" ToolTip="{DynamicResource copy}" Click="btnTaskCopy_Click" Width="32" Height="32" HorizontalAlignment="Center" 
+                                    Margin="0,5" Style="{StaticResource ImageButton}" Grid.Column="1">
                                 <Button.Content>
                                     <Image Height="25" Width="25" HorizontalAlignment="Center" VerticalAlignment="Center">
                                         <Image.Style>
                                             <Style TargetType="Image">
-                                                <Setter Property="Source" Value="Resources/Icon/icons8_copy_2.ico"/>
+                                                <Setter Property="Source" Value="Resources/Icon/icons8_copy_2.ico" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsEnabled, RelativeSource={RelativeSource AncestorType=Button}}" Value="False">
+                                                        <Setter Property="Source" Value="Resources/Icon/icons8_copy_disable.ico"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
                                             </Style>
                                         </Image.Style>
                                     </Image>
                                 </Button.Content>
                             </Button>
                             <Button Name="btnTaskPaste" ToolTip="{DynamicResource paste}" Click="btnTaskPaste_Click" Width="32" Height="32" HorizontalAlignment="Center" 
-                                    Margin="0,5" Style="{StaticResource ImageButton}" Grid.Column="1">
+                                    Margin="0,5" Style="{StaticResource ImageButton}" Grid.Column="1" >
                                 <Button.Content>
                                     <Image Height="25" Width="25" HorizontalAlignment="Center" VerticalAlignment="Center">
                                         <Image.Style>
                                             <Style TargetType="Image">
-                                                <Setter Property="Source" Value="Resources/Icon/icons8_paste.ico"/>
+                                                <Setter Property="Source" Value="Resources/Icon/icons8_paste.ico" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsEnabled, RelativeSource={RelativeSource AncestorType=Button}}" Value="False">
+                                                        <Setter Property="Source" Value="Resources/Icon/icons8_paste_disable.ico"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
                                             </Style>
                                         </Image.Style>
                                     </Image>
@@ -464,10 +546,19 @@
                             <Button Name="btnTaskDelete" ToolTip="{DynamicResource delete}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5" 
                                     Style="{StaticResource ImageButton}" Grid.Column="1" IsEnabled="False">
                                 <Button.Content>
-                                    <Image Height="30" Width="30" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <Image HorizontalAlignment="Center" VerticalAlignment="Center">
                                         <Image.Style>
                                             <Style TargetType="Image">
-                                                <Setter Property="Source" Value="Resources/Icon/icons8_cancel.ico"/>
+                                                <Setter Property="Source" Value="Resources/Icon/icons8_cancel.ico" />
+                                                <Setter Property="Height" Value="30"/>
+                                                <Setter Property="Width" Value="30"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsEnabled, RelativeSource={RelativeSource AncestorType=Button}}" Value="False">
+                                                        <Setter Property="Source" Value="Resources/Icon/icons8_unavailable.ico"/>
+                                                        <Setter Property="Height" Value="25"/>
+                                                        <Setter Property="Width" Value="25"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
                                             </Style>
                                         </Image.Style>
                                     </Image>
@@ -737,7 +828,7 @@
                                 <RadioButton Name="rbBootMBR" GroupName="BootPartion" Content="MBR" Margin="0,0,0,5"/>
                                 <RadioButton Name="rbBootGPT" GroupName="BootPartion" Content="GPT"/>
                             </StackPanel>
-                            
+
                         </StackPanel>
                     </StackPanel>
                 </Grid>
@@ -783,7 +874,8 @@
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
-                                    <GridViewColumn Header="{DynamicResource fileName}" Width="155" > <!-- filesName de aynı bak buraya-->
+                                    <GridViewColumn Header="{DynamicResource fileName}" Width="155" >
+                                        <!-- filesName de aynı bak buraya-->
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
                                                 <TextBlock Text="{Binding FileName}" TextAlignment="Left"/>
@@ -847,7 +939,12 @@
                                     <Image Height="26" Width="26" HorizontalAlignment="Center" VerticalAlignment="Center">
                                         <Image.Style>
                                             <Style TargetType="Image">
-                                                <Setter Property="Source" Value="Resources/Icon/icons8_search_property.ico"/>
+                                                <Setter Property="Source" Value="Resources/Icon/icons8_search_property.ico" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsEnabled, RelativeSource={RelativeSource AncestorType=Button}}" Value="False">
+                                                        <Setter Property="Source" Value="Resources/Icon/icons8_search_property_1_disable.ico"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
                                             </Style>
                                         </Image.Style>
                                     </Image>
@@ -856,10 +953,19 @@
                             <Button Name="btnFilesDelete" ToolTip="{DynamicResource delete}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5" 
                                     Style="{StaticResource ImageButton}" Grid.Column="1" IsEnabled="False">
                                 <Button.Content>
-                                    <Image Height="30" Width="30" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <Image HorizontalAlignment="Center" VerticalAlignment="Center">
                                         <Image.Style>
                                             <Style TargetType="Image">
-                                                <Setter Property="Source" Value="Resources/Icon/icons8_cancel.ico"/>
+                                                <Setter Property="Source" Value="Resources/Icon/icons8_cancel.ico" />
+                                                <Setter Property="Height" Value="30"/>
+                                                <Setter Property="Width" Value="30"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsEnabled, RelativeSource={RelativeSource AncestorType=Button}}" Value="False">
+                                                        <Setter Property="Source" Value="Resources/Icon/icons8_unavailable.ico"/>
+                                                        <Setter Property="Height" Value="25"/>
+                                                        <Setter Property="Width" Value="25"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
                                             </Style>
                                         </Image.Style>
                                     </Image>
@@ -869,7 +975,7 @@
                     </DockPanel>
                 </Grid>
             </TabItem>
-                   
+
             <TabItem Name="backupAreaTab">
                 <TabItem.Header>
                     <StackPanel Height="48" Width="175" Orientation="Horizontal">
@@ -992,7 +1098,12 @@
                                     <Image Height="25" Width="25" HorizontalAlignment="Center" VerticalAlignment="Center">
                                         <Image.Style>
                                             <Style TargetType="Image">
-                                                <Setter Property="Source" Value="Resources/Icon/icons8_edit_property_1.ico"/>
+                                                <Setter Property="Source" Value="Resources/Icon/icons8_edit_property_3.ico" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsEnabled, RelativeSource={RelativeSource AncestorType=Button}}" Value="False">
+                                                        <Setter Property="Source" Value="Resources/Icon/icons8_edit_property_1_disable.ico"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
                                             </Style>
                                         </Image.Style>
                                     </Image>
@@ -1001,10 +1112,19 @@
                             <Button Name="btnBackupStorageDelete" ToolTip="{DynamicResource delete}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5" 
                                     Style="{StaticResource ImageButton}" Grid.Column="1" IsEnabled="False" Click="btnBackupStorageDelete_Click">
                                 <Button.Content>
-                                    <Image Height="30" Width="30" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <Image HorizontalAlignment="Center" VerticalAlignment="Center">
                                         <Image.Style>
                                             <Style TargetType="Image">
-                                                <Setter Property="Source" Value="Resources/Icon/icons8_cancel.ico"/>
+                                                <Setter Property="Source" Value="Resources/Icon/icons8_cancel.ico" />
+                                                <Setter Property="Height" Value="30"/>
+                                                <Setter Property="Width" Value="30"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsEnabled, RelativeSource={RelativeSource AncestorType=Button}}" Value="False">
+                                                        <Setter Property="Source" Value="Resources/Icon/icons8_unavailable.ico"/>
+                                                        <Setter Property="Height" Value="25"/>
+                                                        <Setter Property="Width" Value="25"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
                                             </Style>
                                         </Image.Style>
                                     </Image>
@@ -1038,7 +1158,7 @@
                         <RowDefinition/>
                     </Grid.RowDefinitions>
                     <DockPanel>
-                        <ListView Name="listViewLog" MinHeight="415" Margin="5,0,0,5" VerticalAlignment="Top">
+                        <ListView Name="listViewLog" MinHeight="415" Margin="5,0,0,5" VerticalAlignment="Top" SelectionChanged="listViewLog_SelectionChanged">
                             <ListView.View>
                                 <GridView>
                                     <GridViewColumn Width="50">
@@ -1101,12 +1221,22 @@
                     </DockPanel>
                     <DockPanel Grid.Column="1" VerticalAlignment="Top" Height="415" Background="#F2F2F2">
                         <StackPanel HorizontalAlignment="Center">
-                            <Button Name="btnLogDelete" ToolTip="{DynamicResource delete}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,25,0,5" Style="{StaticResource ImageButton}" Grid.Column="1">
+                            <Button Name="btnLogDelete" ToolTip="{DynamicResource delete}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,25,0,5" 
+                                    Style="{StaticResource ImageButton}" Grid.Column="1" IsEnabled="False">
                                 <Button.Content>
-                                    <Image Height="30" Width="30" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <Image HorizontalAlignment="Center" VerticalAlignment="Center">
                                         <Image.Style>
                                             <Style TargetType="Image">
-                                                <Setter Property="Source" Value="Resources/Icon/icons8_cancel.ico"/>
+                                                <Setter Property="Source" Value="Resources/Icon/icons8_cancel.ico" />
+                                                <Setter Property="Height" Value="30"/>
+                                                <Setter Property="Width" Value="30"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsEnabled, RelativeSource={RelativeSource AncestorType=Button}}" Value="False">
+                                                        <Setter Property="Source" Value="Resources/Icon/icons8_unavailable.ico"/>
+                                                        <Setter Property="Height" Value="25"/>
+                                                        <Setter Property="Width" Value="25"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
                                             </Style>
                                         </Image.Style>
                                     </Image>

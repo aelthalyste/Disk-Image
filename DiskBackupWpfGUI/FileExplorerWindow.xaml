@@ -45,14 +45,14 @@
             <Button Name="btnBack" Margin="10,0,10,0" Height="30" HorizontalAlignment="Center" Style="{StaticResource ImageButton}" Click="btnBack_Click">
                 <Button.Content>
                     <StackPanel Orientation="Horizontal">
-                        <Image Height="25" Width="25" HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <Image Height="30" Width="30" HorizontalAlignment="Center" VerticalAlignment="Center">
                             <Image.Style>
                                 <Style TargetType="Image">
-                                    <Setter Property="Source" Value="Resources/Icon/Back_96px.png"/>
+                                    <Setter Property="Source" Value="Resources/Icon/icons8-back-48.png"/>
                                 </Style>
                             </Image.Style>
                         </Image>
-                        <TextBlock Text="{DynamicResource back}" VerticalAlignment="Center" Margin="5,0"/>
+                        <TextBlock Text="{DynamicResource back}" VerticalAlignment="Center" Margin="0,0,5,0"/>
                     </StackPanel>
                 </Button.Content>
             </Button>

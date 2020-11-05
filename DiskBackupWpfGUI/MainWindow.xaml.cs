@@ -1073,5 +1073,17 @@ namespace DiskBackupWpfGUI
 
             return ($"{dblSByte:0.##} {Suffix[i]}");
         }
+
+        private void listViewLog_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (listViewBackupStorage.SelectedIndex != -1)
+            {
+                btnLogDelete.IsEnabled = false;
+            }
+            else
+            {
+                btnLogDelete.IsEnabled = true;
+            }
+        }
     }
 }
