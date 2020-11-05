@@ -90,7 +90,25 @@ namespace DiskBackupWpfGUI
 
             #region Yedekleme alanları
 
-            listViewBackupStorage.ItemsSource = _backupStorageService.BackupStorageInfoList();
+            List<BackupStorageInfo> backupStorageInfoList = _backupStorageService.BackupStorageInfoList();
+            string backupStorageLetter;
+
+            foreach (var storageItem in backupStorageInfoList)
+            {
+                backupStorageLetter = storageItem.Path.Substring(0, storageItem.Path.Length - (storageItem.Path.Length - 1));
+
+                foreach (var volumeItem in volumeList)
+                {
+                    if (backupStorageLetter.Equals(Convert.ToString(volumeItem.Letter)))
+                    {
+                        storageItem.StrCapacity = volumeItem.StrSize;
+                        storageItem.StrFreeSize = volumeItem.StrFreeSize;
+                        storageItem.StrUsedSize = FormatBytes(volumeItem.Size - volumeItem.FreeSize);
+                    }
+                }
+            }
+
+            listViewBackupStorage.ItemsSource = backupStorageInfoList;
 
 
             #endregion
