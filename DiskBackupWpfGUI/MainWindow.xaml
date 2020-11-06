@@ -400,7 +400,7 @@
                                     <Image Height="25" Width="25" HorizontalAlignment="Center" VerticalAlignment="Center">
                                         <Image.Style>
                                             <Style TargetType="Image">
-                                                <Setter Property="Source" Value="Resources/Icon/icons8-edit-property-521.png" />
+                                                <Setter Property="Source" Value="Resources/Icon/icons8_edit_property_1.ico" />
                                                 <Style.Triggers>
                                                     <DataTrigger Binding="{Binding IsEnabled, RelativeSource={RelativeSource AncestorType=Button}}" Value="False">
                                                         <Setter Property="Source" Value="Resources/Icon/icons8_edit_property_1_disable.ico"/>
@@ -1103,7 +1103,7 @@
                                     <Image Height="25" Width="25" HorizontalAlignment="Center" VerticalAlignment="Center">
                                         <Image.Style>
                                             <Style TargetType="Image">
-                                                <Setter Property="Source" Value="Resources/Icon/icons8-edit-property-521.png" />
+                                                <Setter Property="Source" Value="Resources/Icon/icons8_edit_property_1.ico" />
                                                 <Style.Triggers>
                                                     <DataTrigger Binding="{Binding IsEnabled, RelativeSource={RelativeSource AncestorType=Button}}" Value="False">
                                                         <Setter Property="Source" Value="Resources/Icon/icons8_edit_property_1_disable.ico"/>

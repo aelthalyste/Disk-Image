@@ -80,17 +80,17 @@
             </Button>
         </StackPanel>
 
-        <ListView Name="listViewFileExplorer" MinHeight="350" Margin="5" Grid.Row="2" DisplayMemberPath="Name" AllowDrop="True">
+        <ListView Name="listViewFileExplorer" MinHeight="350" Margin="5" Grid.Row="2" DisplayMemberPath="Name" AllowDrop="True" >
             <ListView.View>
                 <GridView>
                     <GridViewColumn Width="45">
                         <GridViewColumn.Header>
-                            <CheckBox Name="chbFileExplorerSelectAll" Cursor="Hand"/>
+                            <CheckBox Name="chbFileExplorerSelectAll" Checked="chbFileExplorerSelectAll_Checked" Unchecked="chbFileExplorerSelectAll_Unchecked" Cursor="Hand"/>
                         </GridViewColumn.Header>
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
                                 <CheckBox IsChecked="{Binding Path=IsSelected, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ListViewItem}}}"
-                                          HorizontalAlignment="Center" Cursor="Hand"/>
+                                          HorizontalAlignment="Center" Cursor="Hand" Checked="CheckBox_Checked" Unchecked="CheckBox_Unchecked"/>
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
