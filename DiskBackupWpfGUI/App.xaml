@@ -6,6 +6,14 @@
     
     <Application.Resources>
 
+        <Style x:Key="MBSTListViewCapacity" TargetType="{x:Type TextBlock}"> <!--Maindeki backup storage tabında bulut verisinde slaş için--> 
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsCloud}" Value="false">
+                    <Setter Property="Visibility" Value="Collapsed" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
         <Style x:Key="FEWListViewItemSize" TargetType="{x:Type TextBlock}">
             <Style.Triggers>
                 <DataTrigger Binding="{Binding Type}" Value="1">
@@ -287,6 +295,10 @@
                                 <Setter TargetName="Border" Property="BorderBrush" Value="#FF4B9A4E"/>
                                 <Setter TargetName="Border" Property="Background" Value="#D8ECD1"/>
                             </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Border" Property="BorderBrush" Value="#27527B"/>
+                                <Setter TargetName="Border" Property="Background" Value="#6C7A7B"/>
+                            </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
@@ -330,6 +342,9 @@
                 <!-- -->
                 <DataTrigger Binding="{Binding IsEnabled, RelativeSource={RelativeSource AncestorType=Button}}" Value="True">
                     <Setter Property="Foreground" Value="Black"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding IsEnabled, RelativeSource={RelativeSource AncestorType=Button}}" Value="False">
+                    <Setter Property="Foreground" Value="WhiteSmoke"/>
                 </DataTrigger>
 
             </Style.Triggers>

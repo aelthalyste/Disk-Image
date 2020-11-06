@@ -1,4 +1,6 @@
 ﻿using DiskBackup.Business.Abstract;
+using DiskBackup.DataAccess.Concrete.EntityFramework;
+using DiskBackup.DataAccess.Core;
 using DiskBackup.Entities.Concrete;
 using NarDIWrapper;
 using System;
@@ -18,15 +20,19 @@ namespace DiskBackup.Business.Concrete
         private DiskTracker _diskTracker = new DiskTracker();
         private CSNarFileExplorer _cSNarFileExplorer = new CSNarFileExplorer();
 
-        private ManualResetEvent _manualResetEvent = new ManualResetEvent(true);
+        private ManualResetEvent _manualResetEvent = new ManualResetEvent(true); // Melik Bey ile beraber bakacağız DI'dan önce
         private CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         private bool _isStarted = false;
 
         private Stopwatch _timeElapsed = new Stopwatch();
         private StatusInfo _statusInfo = new StatusInfo();
 
-        /*Geri yükle
-	_cSNarFileExplorer.CW_RestoreFile(dosyaid, Backupdirectory (ilgil backup hariç), kaydedilecekyol)*/
+        private readonly IEntityRepository<StatusInfo> _statusInfoRepository; // status bilgilerini veritabanına yazabilmek için gerekli
+
+        public BackupManager()
+        {
+            _statusInfoRepository = new EfStatusInfoDal();
+        }
 
         public bool InitTracker()
         {
@@ -37,16 +43,14 @@ namespace DiskBackup.Business.Concrete
 
         public void InitFileExplorer(BackupInfo backupInfo) //initTracker'la aynı mantıkla çalışır mı? (Explorer ctor'da 1 kere çağrılma)
         {
-            //return _cSNarFileExplorer.CW_Init(12,backupInfo.Letter,backupInfo.Version,(char)backupInfo.BackupStorageInfo.Path); 
-            //rootDir char biz buraya ne dönücez
-            //Handle options şimdilik ne verilecek
+            //rootDir string biz buraya ne dönücez
             _cSNarFileExplorer.CW_Init('C', 0, "");
 
         }
 
         public List<DiskInformation> GetDiskList()
         {
-            //Disk Name, Name (Local Volume vs.), FileSystem (NTFS), FreeSize, PrioritySection, Status 
+            //PrioritySection 
             List<DiskInfo> disks = DiskTracker.CW_GetDisksOnSystem();
             List<VolumeInformation> volumes = DiskTracker.CW_GetVolumes();
 
@@ -159,7 +163,6 @@ namespace DiskBackup.Business.Concrete
         public bool RestoreBackupVolume(BackupInfo backupInfo, char volumeLetter)
         {
             return DiskTracker.CW_RestoreToVolume(volumeLetter, backupInfo.Letter, backupInfo.Version, true, backupInfo.BackupStorageInfo.Path); //true gidecek
-            throw new NotImplementedException();
         }
 
         public bool RestoreBackupDisk(BackupInfo backupInfo, DiskInformation diskInformation)
@@ -172,8 +175,9 @@ namespace DiskBackup.Business.Concrete
             throw new NotImplementedException();
         }
 
-        public bool CreateIncDiffBackup(TaskInfo taskInfo, BackupStorageInfo backupStorageInfo)
+        public bool CreateIncDiffBackup(TaskInfo taskInfo)
         {
+            _statusInfo = taskInfo.StatusInfo;
             _timeElapsed.Start();
 
             _isStarted = true;
@@ -189,7 +193,7 @@ namespace DiskBackup.Business.Concrete
             bool result = false;
 
             _statusInfo.TaskName = taskInfo.Name;
-            _statusInfo.FileName = backupStorageInfo.Path + "/" + str.MetadataFileName;
+            _statusInfo.FileName = taskInfo.BackupStorageInfo.Path + "/" + str.MetadataFileName;
             _statusInfo.SourceObje = taskInfo.StrObje;
 
             Task.Run(() =>
@@ -202,7 +206,7 @@ namespace DiskBackup.Business.Concrete
                         {
                             fixed (byte* BAddr = &buffer[0])
                             {
-                                FileStream file = File.Create(backupStorageInfo.Path + str.FileName); //backupStorageInfo path alınıcak
+                                FileStream file = File.Create(taskInfo.BackupStorageInfo.Path + str.FileName); //backupStorageInfo path alınıcak
                                 while (true)
                                 {
                                     if (cancellationToken.IsCancellationRequested)
@@ -231,7 +235,7 @@ namespace DiskBackup.Business.Concrete
 
                                 try
                                 {
-                                    File.Copy(str.MetadataFileName, backupStorageInfo.Path + str.MetadataFileName); //backupStorageInfo path alınıcak
+                                    File.Copy(str.MetadataFileName, taskInfo.BackupStorageInfo.Path + str.MetadataFileName); //backupStorageInfo path alınıcak
                                     //backupStorageInfo.Path ters slaş '\' ile bitmeli
                                 }
                                 catch (IOException iox)
@@ -242,13 +246,15 @@ namespace DiskBackup.Business.Concrete
                             }
                         }
                     }
+                    _statusInfo.TimeElapsed = _timeElapsed.ElapsedMilliseconds;
+                    _statusInfoRepository.Update(_statusInfo);
                 }
             });
 
             return result;
         }
 
-        public bool CreateFullBackup(TaskInfo taskInfo, BackupStorageInfo backupStorageInfo) //bu method daha gelmedi 
+        public bool CreateFullBackup(TaskInfo taskInfo) //bu method daha gelmedi 
         {
             throw new NotImplementedException();
         }
@@ -257,6 +263,10 @@ namespace DiskBackup.Business.Concrete
         {
             if (!_isStarted) throw new Exception("Backup is not started");
             _timeElapsed.Stop();
+
+            _statusInfo.TimeElapsed = _timeElapsed.ElapsedMilliseconds;
+            _statusInfoRepository.Update(_statusInfo);
+
             _manualResetEvent.Reset();
         }
 
@@ -265,6 +275,10 @@ namespace DiskBackup.Business.Concrete
             _cancellationTokenSource.Cancel();
             _isStarted = false;
             _timeElapsed.Stop();
+
+            _statusInfo.TimeElapsed = _timeElapsed.ElapsedMilliseconds;
+            _statusInfoRepository.Update(_statusInfo);
+
             _timeElapsed.Reset();
             _manualResetEvent.Set();
         }
@@ -273,10 +287,14 @@ namespace DiskBackup.Business.Concrete
         {
             if (!_isStarted) throw new Exception("Backup is not started");
             _timeElapsed.Start();
+
+            _statusInfo.TimeElapsed = _timeElapsed.ElapsedMilliseconds;
+            _statusInfoRepository.Update(_statusInfo);
+
             _manualResetEvent.Set();
         }
 
-        public List<FilesInBackup> GetFileInfoList() //EKSİKLERİ VAR
+        public List<FilesInBackup> GetFileInfoList()
         {
             var resultList = _cSNarFileExplorer.CW_GetFilesInCurrentDirectory();
             List<FilesInBackup> filesInBackupList = new List<FilesInBackup>();
@@ -333,18 +351,14 @@ namespace DiskBackup.Business.Concrete
             throw new NotImplementedException();
         }
 
-        public bool RestoreFilesInBackup(BackupInfo backupInfo, FilesInBackup fileInfo, string destination) //bu method daha gelmedi
+        public void RestoreFilesInBackup(int fileId, string backupDirectory, string targetDirectory) // batuhan hangi backup olduğunu nasıl anlayacak? backup directoryde backup ismi almıyor
         {
             //_cSNarFileExplorer.CW_RestoreFile(ID, seçilen backup'ın directorysi dosya ismi olmadan, yüklenecek yer)
             //void CW_RestoreFile(INT64 ID);
             //_cSNarFileExplorer.CW_Free FileExplorer kapatıldığında Free çağırmakta fayda var bellek yönetimi için tutulan alanları geri veriyor sisteme
-            throw new NotImplementedException();
-        }
-
-        public StatusInfo GetStatusInfo()
-        {
-            _statusInfo.TimeElapsed = _timeElapsed.ElapsedMilliseconds; // TimeSpan.FromMilliseconds(999999); Console.WriteLine($"{d:mm\\:ss}");
-            return _statusInfo;
+            /*Geri yükle fileExplorerdan istenen dosyayı geri yüklemek için
+_           cSNarFileExplorer.CW_RestoreFile(dosyaid, Backupdirectory (ilgil backup hariç), kaydedilecekyol)*/
+            _cSNarFileExplorer.CW_RestoreFile(fileId, backupDirectory, targetDirectory);
         }
 
         private string FormatBytes(long bytes)

@@ -22,10 +22,8 @@ namespace DiskBackupWpfGUI
         public RestoreWindow()
         {
             InitializeComponent();
-            //minimum date kontrol etme handle edemedik
-            var now = DateTime.Now;
-            dtpSetTime.Minimum = now;
-            dtpSetTime.Value = now + TimeSpan.FromMinutes(5);
+
+            dtpSetTime.Value = DateTime.Now + TimeSpan.FromMinutes(5);
         }
 
         #region Title Bar
@@ -63,11 +61,49 @@ namespace DiskBackupWpfGUI
             {
                 RTabControl.SelectedIndex += 1;
             }
+
+            // özet yazımı
+            if (RTabControl.SelectedIndex == 2)
+            {
+                lblName.Text = txtTaskName.Text;
+
+                if (rbStartNow.IsChecked.Value) // hemen çalıştır
+                {
+                    lblSchedulerTasks.Text = "Hemen Çalıştır";
+                }
+                else if (rbSetTime.IsChecked.Value) // şu saatte çalıştır
+                {
+                    lblSchedulerTasks.Text = dtpSetTime.Text;
+                }
+            }
         }
 
         private void btnRestoreOk_Click(object sender, RoutedEventArgs e)
         {
             //Kaydedip Silinecek
+
+            if (dtpSetTime.Value <= DateTime.Now + TimeSpan.FromSeconds(10))
+            {
+                MessageBox.Show("Geçmiş tarih için geri yükleme işlemi gerçekleştirilemez.", "NARBULUT DİYOR Kİ;", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            else
+            {
+                if (rbStartNow.IsChecked.Value) // hemen çalıştır
+                {
+                    if (txtTaskName.Text.Equals("") || txtTaskDescription.Text.Equals(""))
+                    {
+                        MessageBox.Show("İlgili alanları lütfen boş geçmeyiniz. Hemen çalıştır", "NARBULUT DİYOR Kİ;", MessageBoxButton.OK, MessageBoxImage.Error);
+                    }
+                }
+                else if (rbSetTime.IsChecked.Value) // zaman belirle
+                {
+                    if (txtTaskName.Text.Equals("") || txtTaskDescription.Text.Equals("") || dtpSetTime.Value.Equals(""))
+                    {
+                        MessageBox.Show("İlgili alanları lütfen boş geçmeyiniz. Zaman belirle", "NARBULUT DİYOR Kİ;", MessageBoxButton.OK, MessageBoxImage.Error);
+                    }
+                }
+            }
+
         }
 
         private void btnRestoreCancel_Click(object sender, RoutedEventArgs e)

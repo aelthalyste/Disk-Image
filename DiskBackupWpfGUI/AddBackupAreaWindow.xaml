@@ -129,8 +129,8 @@
                             </StackPanel>
                             <StackPanel Grid.Column="1">
                                 <TextBlock Name="txtArea" Text="100 GB" Margin="0,0,0,5"/>
-                                <TextBlock Name="txtUsedArea" Text="2 GB" Margin="0,0,0,5"/>
-                                <TextBlock Name="txtFreeArea" Text="98 GB"/>
+                                <TextBlock Name="txtUsedArea" Text="20 GB" Margin="0,0,0,5"/>
+                                <TextBlock Name="txtFreeArea" Text="80 GB"/>
                             </StackPanel>
                         </Grid>
                     </StackPanel>

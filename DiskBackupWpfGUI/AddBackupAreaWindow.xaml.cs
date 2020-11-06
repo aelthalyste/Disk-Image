@@ -182,15 +182,13 @@ namespace DiskBackupWpfGUI
                         IsCloud = cbBackupToCloud.IsChecked.Value,
                     };
 
+                    backupStorageInfo.Type = BackupStorageType.Windows;
+
                     if (cbBackupToCloud.IsChecked.Value)
                     {
-                        backupStorageInfo.Type = BackupStorageType.Hybrit;
                         // bulut işlemleri gelecek (kullanılan alan vs...)
                     }
-                    else
-                    {
-                        backupStorageInfo.Type = BackupStorageType.Windows;
-                    }
+
 
                     Close();
 
@@ -221,15 +219,13 @@ namespace DiskBackupWpfGUI
                         Password = txtSettingsNASPassword.Password
                     };
 
+                    backupStorageInfo.Type = BackupStorageType.NAS;
+
                     if (cbBackupToCloud.IsChecked.Value)
                     {
-                        backupStorageInfo.Type = BackupStorageType.Hybrit;
                         // bulut işlemleri gelecek (kullanılan alan vs...)
                     }
-                    else
-                    {
-                        backupStorageInfo.Type = BackupStorageType.NAS;
-                    }
+
 
                     Close();
 

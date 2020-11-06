@@ -15,16 +15,18 @@ namespace DiskBackup.TaskScheduler.Factory
     {
         private readonly IEntityRepository<TaskInfo> _taskInfoRepository;
         private readonly IEntityRepository<BackupStorageInfo> _backupStorageRepository;
+        private readonly IEntityRepository<StatusInfo> _statusInfoRepository;
 
-        public BackupFullFactory(IEntityRepository<TaskInfo> taskInfoRepository, IEntityRepository<BackupStorageInfo> backupStorageRepository)
+        public BackupFullFactory(IEntityRepository<TaskInfo> taskInfoRepository, IEntityRepository<BackupStorageInfo> backupStorageRepository, IEntityRepository<StatusInfo> statusInfoRepository)
         {
             _taskInfoRepository = taskInfoRepository;
             _backupStorageRepository = backupStorageRepository;
+            _statusInfoRepository = statusInfoRepository;
         }
 
         public IJob NewJob(TriggerFiredBundle bundle, IScheduler scheduler)
         {
-            return new BackupFullJob(_taskInfoRepository, _backupStorageRepository);
+            return new BackupFullJob(_taskInfoRepository, _backupStorageRepository, _statusInfoRepository);
         }
 
         public void ReturnJob(IJob job)

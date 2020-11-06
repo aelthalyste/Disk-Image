@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -25,6 +26,7 @@ namespace DiskBackupWpfGUI
     {
         BackupManager _backupManager = new BackupManager();
         List<FilesInBackup> _filesInBackupList = new List<FilesInBackup>();
+        private bool _fileAllControl;
 
         public FileExplorerWindow()
         {
@@ -123,6 +125,47 @@ namespace DiskBackupWpfGUI
                 i++;
             }
         }
+
+        #region Checkbox Operations
+
+        private void chbFileExplorerSelectAll_Checked(object sender, RoutedEventArgs e)
+        {
+            _fileAllControl = true;
+
+            foreach (FilesInBackup item in listViewFileExplorer.ItemsSource)
+            {
+                listViewFileExplorer.SelectedItems.Add(item);
+            }
+        }
+
+        private void chbFileExplorerSelectAll_Unchecked(object sender, RoutedEventArgs e)
+        {
+            if (_fileAllControl)
+            {
+                foreach (FilesInBackup item in listViewFileExplorer.ItemsSource)
+                {
+                    listViewFileExplorer.SelectedItems.Remove(item);
+                }
+                _fileAllControl = true;
+            }
+        }
+
+        private void CheckBox_Checked(object sender, RoutedEventArgs e)
+        {
+            if (chbFileExplorerSelectAll.IsChecked == false)
+            {
+                _fileAllControl = listViewFileExplorer.SelectedItems.Count == listViewFileExplorer.Items.Count;
+                chbFileExplorerSelectAll.IsChecked = _fileAllControl;
+            }
+        }
+
+        private void CheckBox_Unchecked(object sender, RoutedEventArgs e)
+        {
+            _fileAllControl = false;
+            chbFileExplorerSelectAll.IsChecked = false;
+        }
+
+        #endregion
 
         //Seçilen değere gitmek için ise CW_SelectDirectory(seçilenID)
         //tekrardan getFilesInCurrentDirectory istenecek
