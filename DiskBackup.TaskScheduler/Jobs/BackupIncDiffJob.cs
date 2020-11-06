@@ -17,21 +17,24 @@ namespace DiskBackup.TaskScheduler.Jobs
         private readonly IBackupService _backupService;
         private readonly IEntityRepository<TaskInfo> _taskInfoRepository;
         private readonly IEntityRepository<BackupStorageInfo> _backupStorageRepository;
+        private readonly IEntityRepository<StatusInfo> _statusInfoRepository;
 
-        public BackupIncDiffJob(IEntityRepository<TaskInfo> taskInfoRepository, IEntityRepository<BackupStorageInfo> backupStorageRepository)
+        public BackupIncDiffJob(IEntityRepository<TaskInfo> taskInfoRepository, IEntityRepository<BackupStorageInfo> backupStorageRepository, IEntityRepository<StatusInfo> statusInfoRepository)
         {
             _backupService = new BackupManager();
             _taskInfoRepository = taskInfoRepository;
             _backupStorageRepository = backupStorageRepository;
+            _statusInfoRepository = statusInfoRepository;
         }
 
         public async Task Execute(IJobExecutionContext context)
         {
             var taskId = (int)context.JobDetail.JobDataMap["taskId"];
-            var backupStorageId = (int)context.JobDetail.JobDataMap["backupStorageId"];
 
             var task = _taskInfoRepository.Get(x => x.Id == taskId);
-            var backupStorage = _backupStorageRepository.Get(x => x.Id == backupStorageId);
+            task.BackupStorageInfo = _backupStorageRepository.Get(x => x.Id == task.BackupStorageInfoId);
+
+            task.StatusInfo = _statusInfoRepository.Get(x => x.Id == task.StatusInfoId);
 
 
             JobExecutionException exception = null;
@@ -39,7 +42,7 @@ namespace DiskBackup.TaskScheduler.Jobs
 
             try
             {
-                 result = _backupService.CreateIncDiffBackup(task, backupStorage);
+                 result = _backupService.CreateIncDiffBackup(task);
                 // activity log burada basılacak
             }
             catch (Exception e)
