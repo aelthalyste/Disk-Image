@@ -1,4 +1,5 @@
-﻿using System;
+﻿using DiskBackup.DataAccess.Entities;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,8 +7,9 @@ using System.Threading.Tasks;
 
 namespace DiskBackup.Entities.Concrete
 {
-    public class StatusInfo
+    public class StatusInfo : IEntity
     {
+        public int Id { get; set; }
         public string TaskName { get; set; }
         public string FileName { get; set; }
         public long TimeElapsed { get; set; } // backup managerda direkt erişmeye karar verdik

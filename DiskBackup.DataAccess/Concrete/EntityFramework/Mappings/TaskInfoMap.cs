@@ -19,6 +19,7 @@ namespace DiskBackup.DataAccess.Concrete.EntityFramework.Mappings
             Property(x => x.RestoreTaskId).HasColumnName("restore_task_id");
             Property(x => x.BackupTaskId).HasColumnName("backup_task_id");
             Property(x => x.BackupStorageInfoId).HasColumnName("backup_storage_info_id");
+            Property(x => x.StatusInfoId).HasColumnName("status_info_id");
             Property(x => x.Type).HasColumnName("task_type");
             Property(x => x.Name).HasColumnName("name");
             Property(x => x.Obje).HasColumnName("obje");
@@ -31,6 +32,7 @@ namespace DiskBackup.DataAccess.Concrete.EntityFramework.Mappings
             Ignore(x => x.RestoreTaskInfo);
             Ignore(x => x.BackupTaskInfo);
             Ignore(x => x.BackupStorageInfo);
+            Ignore(x => x.StatusInfo);
 
         }
     }

@@ -162,7 +162,6 @@ namespace DiskBackupWpfGUI
                     }
                 }
 
-                MessageBox.Show(((BackupStorageInfo)cbTargetBackupArea.SelectedItem).Id.ToString());
             }
         }
 

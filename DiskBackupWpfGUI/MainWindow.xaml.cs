@@ -94,16 +94,7 @@ namespace DiskBackupWpfGUI
 
             #endregion
 
-            TaskInfo taskInfo1 = new TaskInfo()
-            {
-                Name = "Sistem Yedekleme",
-                Type = TaskType.Backup
-            };
-            TaskInfo taskInfo2 = new TaskInfo()
-            {
-                Name = "Geri Yükleme",
-                Type = TaskType.Restore
-            };
+
             BackupStorageInfo backupAreaInfo1 = new BackupStorageInfo()
             {
                 StorageName = "Narbulut"
@@ -121,7 +112,7 @@ namespace DiskBackupWpfGUI
                 StartDate = DateTime.Now - TimeSpan.FromDays(10),
                 EndDate = DateTime.Now - TimeSpan.FromHours(10),
                 //BackupType = BackupTypes.Diff,
-                TaskInfo = taskInfo1,
+                TaskInfoName = "Sistem Yedekleme",
                 BackupStorageInfo = backupAreaInfo2,
                 Status = StatusType.Success,
                 StrStatus = Resources[StatusType.Success.ToString()].ToString()
@@ -132,7 +123,7 @@ namespace DiskBackupWpfGUI
                 StartDate = DateTime.Now - TimeSpan.FromDays(9),
                 EndDate = DateTime.Now - TimeSpan.FromHours(8),
                 //BackupType = BackupTypes.Diff,
-                TaskInfo = taskInfo1,
+                TaskInfoName = "Sistem Yedekleme",
                 BackupStorageInfo = backupAreaInfo1,
                 Status = StatusType.Fail,
                 StrStatus = Resources[StatusType.Fail.ToString()].ToString()
@@ -143,7 +134,7 @@ namespace DiskBackupWpfGUI
                 StartDate = DateTime.Now - TimeSpan.FromDays(5),
                 EndDate = DateTime.Now - TimeSpan.FromHours(5),
                 //backupType = BackupType.Full,
-                TaskInfo = taskInfo2,
+                TaskInfoName = "Geri Yükleme",
                 BackupStorageInfo = backupAreaInfo2,
                 Status = StatusType.Success,
                 StrStatus = Resources[StatusType.Success.ToString()].ToString()

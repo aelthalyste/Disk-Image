@@ -13,9 +13,11 @@ namespace DiskBackup.Entities.Concrete
         public int RestoreTaskId { get; set; } // Foreign key
         public int BackupTaskId { get; set; } // Foreign key
         public int BackupStorageInfoId { get; set; } // Foreign key
+        public int StatusInfoId { get; set; } // Foreign key
         public RestoreTask RestoreTaskInfo { get; set; }
         public BackupTask BackupTaskInfo { get; set; }
         public BackupStorageInfo BackupStorageInfo { get; set; } // BackupAreaInofadan AreaName'i gelecek
+        public StatusInfo StatusInfo { get; set; }
         public TaskType Type { get; set; } // sistem mi (BackupTask) geri yükle mi (RestoreTask)
         public string Name { get; set; }
         public int Obje { get; set; }
