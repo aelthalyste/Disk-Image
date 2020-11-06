@@ -48,6 +48,9 @@ namespace DiskBackupWpfGUI
         private IBackupService _backupService = new BackupManager();
         private IBackupStorageService _backupStorageService = new BackupStorageManager();
 
+        private bool _listViesRestoreControl = false;
+        private bool _listViesRestoreDiskControl = false;
+
         public MainWindow()
         {
             InitializeComponent();
@@ -488,6 +491,53 @@ namespace DiskBackupWpfGUI
 
 
         #region Restore Tab
+
+
+        private void listViewRestore_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (listViewRestore.SelectedIndex != -1)
+            {
+                _listViesRestoreControl = true;
+            }
+            else
+            {
+                _listViesRestoreControl = false;
+            }
+
+            if (_listViesRestoreControl && _listViesRestoreDiskControl)
+            {
+                lblRestoreWarning.Visibility = Visibility.Hidden;
+                btnRestore.IsEnabled = true;
+            }
+            else
+            {
+                lblRestoreWarning.Visibility = Visibility.Visible;
+                btnRestore.IsEnabled = false;
+            }
+        }
+
+        private void listViewRestoreDisk_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (listViewRestoreDisk.SelectedIndex != -1)
+            {
+                _listViesRestoreDiskControl = true;
+            }
+            else
+            {
+                _listViesRestoreDiskControl = false;
+            }
+
+            if (_listViesRestoreControl && _listViesRestoreDiskControl)
+            {
+                lblRestoreWarning.Visibility = Visibility.Hidden;
+                btnRestore.IsEnabled = true;
+            }
+            else
+            {
+                lblRestoreWarning.Visibility = Visibility.Visible;
+                btnRestore.IsEnabled = false;
+            }
+        }
 
         private void Expander_Loaded_1(object sender, RoutedEventArgs e)
         {
@@ -1036,17 +1086,7 @@ namespace DiskBackupWpfGUI
         private void btnRestore_Click(object sender, RoutedEventArgs e)
         {
             RestoreWindow restore = new RestoreWindow();
-            try
-            {
-                restore.ShowDialog();
-            }
-            catch (Exception ex)
-            {
-                //Bu düzeltilecek.... umarım :(
-
-                MessageBox.Show("Geçmişe dönük restore yapılamaz." + ex.ToString(), "NARBULUT DİYOR Kİ;", MessageBoxButton.OK, MessageBoxImage.Error);
-                restore.Close();
-            }
+            restore.ShowDialog();
         }
 
         private static T FindParent<T>(DependencyObject dependencyObject) where T : DependencyObject

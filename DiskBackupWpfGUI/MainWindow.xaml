@@ -602,7 +602,8 @@
                     <DockPanel>
                         <StackPanel>
                             <StackPanel Orientation="Horizontal">
-                                <Button Name="btnRestore" HorizontalAlignment="Left" Margin="10,4,30,4" Style="{StaticResource CreateTaskButton}" Width="110" Height="32" Grid.Column="0" Click="btnRestore_Click">
+                                <Button Name="btnRestore" HorizontalAlignment="Left" Margin="10,4,30,4" Style="{StaticResource CreateTaskButton}" Width="110" Height="32" 
+                                        Grid.Column="0" Click="btnRestore_Click" IsEnabled="False">
                                     <Button.Content>
                                         <StackPanel Orientation="Horizontal">
                                             <Image Height="22">
@@ -616,10 +617,10 @@
                                         </StackPanel>
                                     </Button.Content>
                                 </Button>
-                                <TextBlock Text="{DynamicResource restoreContent}" VerticalAlignment="Center" />
+                                <TextBlock Name="lblRestoreWarning" Text="{DynamicResource restoreContent}" VerticalAlignment="Center" />
                             </StackPanel>
 
-                            <ListView Name="listViewRestore" MinHeight="370" Margin="5">
+                            <ListView Name="listViewRestore" MinHeight="370" Margin="5" SelectionChanged="listViewRestore_SelectionChanged">
                                 <ListView.View>
                                     <GridView>
                                         <GridViewColumn Width="60">
@@ -667,7 +668,7 @@
                             </ListView>
                         </StackPanel>
                     </DockPanel>
-                    <ListView Name="listViewRestoreDisk" Grid.Row="1" Grid.ColumnSpan="2" MinHeight="150" Margin="5">
+                    <ListView Name="listViewRestoreDisk" Grid.Row="1" Grid.ColumnSpan="2" MinHeight="150" Margin="5" SelectionChanged="listViewRestoreDisk_SelectionChanged">
                         <ListView.View>
                             <GridView>
                                 <GridViewColumn Width="40">
