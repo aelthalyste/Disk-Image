@@ -5905,8 +5905,8 @@ NarGetFileListFromMFTID(nar_file_entries_list* EList, UINT64 TargetMFTID, nar_re
                         void* D = (BYTE*)DataRuns + FirstClusterSize + ClusterCountSize + 1;
 
 
-                        INDX_ALL_REGIONS[IndexRegionsFound].Start = FirstCluster;
-                        INDX_ALL_REGIONS[IndexRegionsFound].Len = ClusterCount;
+                        INDX_ALL_REGIONS[IndexRegionsFound].Start = (UINT32)FirstCluster;
+                        INDX_ALL_REGIONS[IndexRegionsFound].Len   = (UINT32)ClusterCount;
                         IndexRegionsFound++;
 
                         //DBG_INC(DBG_INDX_FOUND);
