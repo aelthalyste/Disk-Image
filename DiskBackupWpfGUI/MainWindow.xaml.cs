@@ -48,9 +48,6 @@ namespace DiskBackupWpfGUI
         private IBackupService _backupService = new BackupManager();
         private IBackupStorageService _backupStorageService = new BackupStorageManager();
 
-        private bool _listViesRestoreControl = false;
-        private bool _listViesRestoreDiskControl = false;
-
         public MainWindow()
         {
             InitializeComponent();
@@ -279,6 +276,17 @@ namespace DiskBackupWpfGUI
                 _diskExpenderIndex = 0;
             size.Text = FormatBytes(_diskList[_diskExpenderIndex++].Size);
         }
+        private void listViewDisk_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (listViewDisk.SelectedIndex != -1)
+            {
+                btnCreateTask.IsEnabled = true;
+            }
+            else
+            {
+                btnCreateTask.IsEnabled = false;
+            }
+        }
 
         #region Checkbox Operations
         private void chbDiskSelectDiskAll_Checked(object sender, RoutedEventArgs e)
@@ -497,21 +505,11 @@ namespace DiskBackupWpfGUI
         {
             if (listViewRestore.SelectedIndex != -1)
             {
-                _listViesRestoreControl = true;
+                if (listViewRestoreDisk.SelectedIndex != -1)
+                    btnRestore.IsEnabled = true;
             }
             else
             {
-                _listViesRestoreControl = false;
-            }
-
-            if (_listViesRestoreControl && _listViesRestoreDiskControl)
-            {
-                lblRestoreWarning.Visibility = Visibility.Hidden;
-                btnRestore.IsEnabled = true;
-            }
-            else
-            {
-                lblRestoreWarning.Visibility = Visibility.Visible;
                 btnRestore.IsEnabled = false;
             }
         }
@@ -520,21 +518,15 @@ namespace DiskBackupWpfGUI
         {
             if (listViewRestoreDisk.SelectedIndex != -1)
             {
-                _listViesRestoreDiskControl = true;
+                if (listViewRestore.SelectedIndex != -1)
+                    btnRestore.IsEnabled = true;
+                //foreach (VolumeInfo item in listViewRestoreDisk.SelectedItems)
+                //{
+                //    MessageBox.Show(item.ToString() + "--" + item.Name + "-" + item.Letter);
+                //}
             }
             else
             {
-                _listViesRestoreDiskControl = false;
-            }
-
-            if (_listViesRestoreControl && _listViesRestoreDiskControl)
-            {
-                lblRestoreWarning.Visibility = Visibility.Hidden;
-                btnRestore.IsEnabled = true;
-            }
-            else
-            {
-                lblRestoreWarning.Visibility = Visibility.Visible;
                 btnRestore.IsEnabled = false;
             }
         }
@@ -1111,6 +1103,5 @@ namespace DiskBackupWpfGUI
 
             return ($"{dblSByte:0.##} {Suffix[i]}");
         }
-
     }
 }

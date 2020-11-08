@@ -167,10 +167,11 @@
                     </Grid.RowDefinitions>
                     <DockPanel>
                         <StackPanel>
-                            <Button Name="btnCreateTask" HorizontalAlignment="Left" Margin="10,4,85,4" Style="{StaticResource CreateTaskButton}" Width="110" Height="32" Grid.Column="0" Click="btnCreateTask_Click">
+                            <Button Name="btnCreateTask" HorizontalAlignment="Left" Margin="10,4,85,4" Style="{StaticResource CreateTaskButton}" 
+                                    Width="110" Height="32" Grid.Column="0" Click="btnCreateTask_Click" IsEnabled="False">
                                 <Button.Content>
                                     <StackPanel Orientation="Horizontal">
-                                        <Image Height="22">
+                                        <Image Height="26">
                                             <Image.Style>
                                                 <Style TargetType="Image">
                                                     <Setter Property="Source" Value="Resources/Icon/u58.png" />
@@ -181,7 +182,7 @@
                                     </StackPanel>
                                 </Button.Content>
                             </Button>
-                            <ListView Name="listViewDisk" MinHeight="370" Margin="5">
+                            <ListView Name="listViewDisk" MinHeight="370" Margin="5" SelectionChanged="listViewDisk_SelectionChanged">
                                 <ListView.View>
                                     <GridView>
                                         <GridViewColumn Width="40">
@@ -606,7 +607,7 @@
                                         Grid.Column="0" Click="btnRestore_Click" IsEnabled="False">
                                     <Button.Content>
                                         <StackPanel Orientation="Horizontal">
-                                            <Image Height="22">
+                                            <Image Height="26">
                                                 <Image.Style>
                                                     <Style TargetType="Image">
                                                         <Setter Property="Source" Value="Resources/Icon/u58.png" />
@@ -1197,7 +1198,7 @@
                                     <GridViewColumn Header="{DynamicResource taskName}" Width="180" >
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
-                                                <TextBlock Text="{Binding TaskInfo.Name}" TextAlignment="Center"/>
+                                                <TextBlock Text="{Binding TaskInfoName}" TextAlignment="Center"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>

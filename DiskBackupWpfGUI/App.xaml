@@ -296,7 +296,7 @@
                                 <Setter TargetName="Border" Property="Background" Value="#D8ECD1"/>
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
-                                <Setter TargetName="Border" Property="BorderBrush" Value="#27527B"/>
+                                <Setter TargetName="Border" Property="BorderBrush" Value="#FF4B9A4E"/>
                                 <Setter TargetName="Border" Property="Background" Value="#6C7A7B"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
@@ -346,9 +346,9 @@
                 <DataTrigger Binding="{Binding IsEnabled, RelativeSource={RelativeSource AncestorType=Button}}" Value="False">
                     <Setter Property="Foreground" Value="WhiteSmoke"/>
                 </DataTrigger>
-
             </Style.Triggers>
         </Style>
+        
         <Style TargetType="{x:Type TreeViewItem}">
             <Style.Resources>
                 <SolidColorBrush x:Key="{x:Static SystemColors.ControlBrushKey}"
