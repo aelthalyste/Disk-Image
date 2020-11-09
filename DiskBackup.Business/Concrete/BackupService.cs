@@ -21,12 +21,12 @@ namespace DiskBackup.Business.Concrete
         private DiskTracker _diskTracker = new DiskTracker();
         private CSNarFileExplorer _cSNarFileExplorer = new CSNarFileExplorer();
 
-        private ManualResetEvent _manualResetEvent = new ManualResetEvent(true); // Melik Bey ile beraber bakacağız DI'dan önce
+        private Dictionary<int,ManualResetEvent> _taskEventMap = new Dictionary<int, ManualResetEvent>(); // aynı işlem Stopwatch ve cancellationtoken source için de yapılacak ancak Quartz'ın pause, resume ve cancel işlemleri düzgün çalışıyorsa kullanılmayacak
         private CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         private bool _isStarted = false;
 
         private Stopwatch _timeElapsed = new Stopwatch();
-        private StatusInfo _statusInfo = new StatusInfo();
+        private StatusInfo _statusInfo = new StatusInfo(); //her taskın kendine ait bir status infosu olması gerekiyor
 
         private readonly IStatusInfoDal _statusInfoRepository; // status bilgilerini veritabanına yazabilmek için gerekli
 
@@ -178,7 +178,10 @@ namespace DiskBackup.Business.Concrete
 
         public bool CreateIncDiffBackup(TaskInfo taskInfo)
         {
-            _statusInfo = taskInfo.StatusInfo;
+            var statusInfo = _statusInfoRepository.Get(si => si.Id == taskInfo.StatusInfoId); //her task için uygulanmalı
+
+            var manualResetEvent = new ManualResetEvent(true);
+            _taskEventMap[taskInfo.Id] = manualResetEvent;
             _timeElapsed.Start();
 
             _isStarted = true;
@@ -193,65 +196,65 @@ namespace DiskBackup.Business.Concrete
             int Read = 0;
             bool result = false;
 
-            _statusInfo.TaskName = taskInfo.Name;
-            _statusInfo.FileName = taskInfo.BackupStorageInfo.Path + "/" + str.MetadataFileName;
-            _statusInfo.SourceObje = taskInfo.StrObje;
+            statusInfo.TaskName = taskInfo.Name;
+            statusInfo.FileName = taskInfo.BackupStorageInfo.Path + "/" + str.MetadataFileName;
+            statusInfo.SourceObje = taskInfo.StrObje;
 
-            Task.Run(() =>
+            foreach (var letter in letters) // C D E F
             {
-                foreach (var letter in letters) // C D E F
+                if (_diskTracker.CW_SetupStream(letter, (int)taskInfo.BackupTaskInfo.Type, str)) // 0 diff, 1 inc, full (2) ucu gelmediğinden ayrılabilir veya aynı devam edebilir
                 {
-                    if (_diskTracker.CW_SetupStream(letter, (int)taskInfo.BackupTaskInfo.Type, str)) // 0 diff, 1 inc, full (2) ucu gelmediğinden ayrılabilir veya aynı devam edebilir
+                    unsafe
                     {
-                        unsafe
+                        fixed (byte* BAddr = &buffer[0])
                         {
-                            fixed (byte* BAddr = &buffer[0])
+                            FileStream file = File.Create(taskInfo.BackupStorageInfo.Path + str.FileName); //backupStorageInfo path alınıcak
+                            while (true)
                             {
-                                FileStream file = File.Create(taskInfo.BackupStorageInfo.Path + str.FileName); //backupStorageInfo path alınıcak
-                                while (true)
+                                if (cancellationToken.IsCancellationRequested)
                                 {
-                                    if (cancellationToken.IsCancellationRequested)
-                                    {
-                                        //cleanup 
-                                        _diskTracker.CW_TerminateBackup(false, letter);
-                                        return;
-                                    }
-                                    _manualResetEvent.WaitOne();
-
-                                    Read = _diskTracker.CW_ReadStream(BAddr, letter, bufferSize);
-                                    file.Write(buffer, 0, Read);
-                                    BytesReadSoFar += Read;
-
-
-                                    _statusInfo.DataProcessed = BytesReadSoFar;
-                                    _statusInfo.TotalDataProcessed = (long)str.CopySize;
-                                    _statusInfo.AverageDataRate = ((_statusInfo.TotalDataProcessed / 1024.0) / 1024.0) / (_timeElapsed.ElapsedMilliseconds / 1000); // MB/s
-                                    _statusInfo.InstantDataRate = ((BytesReadSoFar / 1024.0) / 1024.0) / (_timeElapsed.ElapsedMilliseconds / 1000); // MB/s
-
-                                    if (Read != bufferSize)
-                                        break;
+                                    //cleanup 
+                                    _diskTracker.CW_TerminateBackup(false, letter);
+                                    _taskEventMap.Remove(taskInfo.Id);
+                                    manualResetEvent.Dispose();
+                                    return false;
                                 }
-                                result = (long)str.CopySize == BytesReadSoFar;
-                                _diskTracker.CW_TerminateBackup(result, letter); //işlemi başarılı olup olmadığı cancel gelmeden
+                                manualResetEvent.WaitOne();
 
-                                try
-                                {
-                                    File.Copy(str.MetadataFileName, taskInfo.BackupStorageInfo.Path + str.MetadataFileName); //backupStorageInfo path alınıcak
-                                    //backupStorageInfo.Path ters slaş '\' ile bitmeli
-                                }
-                                catch (IOException iox)
-                                {
-                                    //MessageBox.Show(iox.Message);
-                                }
-                                file.Close();
+                                Read = _diskTracker.CW_ReadStream(BAddr, letter, bufferSize);
+                                file.Write(buffer, 0, Read);
+                                BytesReadSoFar += Read;
+
+
+                                statusInfo.DataProcessed = BytesReadSoFar;
+                                statusInfo.TotalDataProcessed = (long)str.CopySize;
+                                statusInfo.AverageDataRate = ((statusInfo.TotalDataProcessed / 1024.0) / 1024.0) / (_timeElapsed.ElapsedMilliseconds / 1000); // MB/s
+                                statusInfo.InstantDataRate = ((BytesReadSoFar / 1024.0) / 1024.0) / (_timeElapsed.ElapsedMilliseconds / 1000); // MB/s
+
+                                if (Read != bufferSize)
+                                    break;
                             }
+                            result = (long)str.CopySize == BytesReadSoFar;
+                            _diskTracker.CW_TerminateBackup(result, letter); //işlemi başarılı olup olmadığı cancel gelmeden
+
+                            try
+                            {
+                                File.Copy(str.MetadataFileName, taskInfo.BackupStorageInfo.Path + str.MetadataFileName); //backupStorageInfo path alınıcak
+                                                                                                                         //backupStorageInfo.Path ters slaş '\' ile bitmeli
+                            }
+                            catch (IOException iox)
+                            {
+                                //MessageBox.Show(iox.Message);
+                            }
+                            file.Close();
                         }
                     }
-                    _statusInfo.TimeElapsed = _timeElapsed.ElapsedMilliseconds;
-                    _statusInfoRepository.Update(_statusInfo);
                 }
-            });
-
+                statusInfo.TimeElapsed = _timeElapsed.ElapsedMilliseconds;
+                _statusInfoRepository.Update(statusInfo);
+            }
+            manualResetEvent.Dispose();
+            _taskEventMap.Remove(taskInfo.Id);
             return result;
         }
 
@@ -267,8 +270,10 @@ namespace DiskBackup.Business.Concrete
 
             _statusInfo.TimeElapsed = _timeElapsed.ElapsedMilliseconds;
             _statusInfoRepository.Update(_statusInfo);
-
-            _manualResetEvent.Reset();
+            if (_taskEventMap.ContainsKey(taskInfo.Id))
+            {
+                _taskEventMap[taskInfo.Id].Reset();
+            }
         }
 
         public void CancelTask(TaskInfo taskInfo)
@@ -281,7 +286,10 @@ namespace DiskBackup.Business.Concrete
             _statusInfoRepository.Update(_statusInfo);
 
             _timeElapsed.Reset();
-            _manualResetEvent.Set();
+            if (_taskEventMap.ContainsKey(taskInfo.Id))
+            {
+                _taskEventMap[taskInfo.Id].Set();
+            }
         }
 
         public void ResumeTask(TaskInfo taskInfo)
@@ -292,7 +300,11 @@ namespace DiskBackup.Business.Concrete
             _statusInfo.TimeElapsed = _timeElapsed.ElapsedMilliseconds;
             _statusInfoRepository.Update(_statusInfo);
 
-            _manualResetEvent.Set();
+            if (_taskEventMap.ContainsKey(taskInfo.Id))
+            {
+                _taskEventMap[taskInfo.Id].Set();
+            }
+
         }
 
         public List<FilesInBackup> GetFileInfoList()

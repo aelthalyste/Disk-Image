@@ -52,6 +52,7 @@
     <Compile Include="Concrete\BackupService.cs" />
     <Compile Include="Concrete\BackupStorageService.cs" />
     <Compile Include="Concrete\LogService.cs" />
+    <Compile Include="Concrete\NetworkConnection.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
