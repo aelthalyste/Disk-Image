@@ -32,7 +32,7 @@ namespace DiskBackupWpfGUI
         public FileExplorerWindow(IBackupService backupManager)
         {
             InitializeComponent();
-
+            _backupManager = backupManager;
             BackupInfo backupInfo = new BackupInfo();
 
             _backupManager.InitFileExplorer(backupInfo);
@@ -43,7 +43,7 @@ namespace DiskBackupWpfGUI
             listViewFileExplorer.ItemsSource = _filesInBackupList;
             SortItems();
             txtfileExplorerPath.Text = _backupManager.GetCurrentDirectory();
-            _backupManager = backupManager;
+            
         }
 
         #region Title Bar

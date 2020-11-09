@@ -49,11 +49,14 @@ namespace DiskBackupWpfGUI
 
         private IBackupService _backupService;
         private IBackupStorageService _backupStorageService;
-        private readonly LifetimeScope _scope;
+        private readonly ILifetimeScope _scope;
 
-        public MainWindow(IBackupService backupService, IBackupStorageService backupStorageService, LifetimeScope scope)
+        public MainWindow(IBackupService backupService, IBackupStorageService backupStorageService, ILifetimeScope scope)
         {
             InitializeComponent();
+            _backupService = backupService;
+            _backupStorageService = backupStorageService;
+            _scope = scope;
 
             #region Disk Bilgileri
 
@@ -226,9 +229,7 @@ namespace DiskBackupWpfGUI
             listViewBackups.ItemsSource = backupsItems;
 
             listViewRestore.ItemsSource = backupsItems;
-            _backupService = backupService;
-            _backupStorageService = backupStorageService;
-            _scope = scope;
+            
         }
 
 
