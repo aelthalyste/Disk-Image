@@ -49,9 +49,9 @@
     <Compile Include="Abstract\IBackupStorageService.cs" />
     <Compile Include="Abstract\IBackupService.cs" />
     <Compile Include="Abstract\ILogService.cs" />
-    <Compile Include="Concrete\BackupManager.cs" />
-    <Compile Include="Concrete\BackupStorageManager.cs" />
-    <Compile Include="Concrete\LogManager.cs" />
+    <Compile Include="Concrete\BackupService.cs" />
+    <Compile Include="Concrete\BackupStorageService.cs" />
+    <Compile Include="Concrete\LogService.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

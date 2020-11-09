@@ -5,11 +5,10 @@ using System.Text;
 using System.Threading.Tasks;
 using WpfDIIntegration.Model;
 
-namespace WpfDIIntegration.Services
+namespace WpfDIIntegration.Component
 {
-    public interface IMyService
+    public interface ITaskRepository
     {
-        List<Person> GetPeople();
-        void ScheduleTask();
+        List<RestoreTask> GetTasks();
     }
 }

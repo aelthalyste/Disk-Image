@@ -17,5 +17,10 @@ namespace WpfDIIntegration.Services
                 new Person {Name = "Alice", Age = 28}
             };
         }
+
+        public void ScheduleTask()
+        {
+            throw new NotImplementedException();
+        }
     }
 }

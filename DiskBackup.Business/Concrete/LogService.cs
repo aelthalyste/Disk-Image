@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace DiskBackup.Business.Concrete
 {
-    public class LogManager : ILogService
+    public class LogService : ILogService
     {
         public bool AddActivityLog(TaskInfo taskInfo)
         {

@@ -37,6 +37,7 @@ namespace WpfDIIntegration
         private void Button_Click(object sender, RoutedEventArgs e)
         {
             MessageBox.Show(_otherService.Cities().First());
+            _myService.ScheduleTask();
             personListView.ItemsSource = _myService.GetPeople();
         } 
 

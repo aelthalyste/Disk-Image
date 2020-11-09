@@ -15,16 +15,16 @@ namespace DiskBackup.TaskScheduler.Jobs
     public class BackupIncDiffJob : IJob
     {
         private readonly IBackupService _backupService;
-        private readonly IEntityRepository<TaskInfo> _taskInfoRepository;
-        private readonly IEntityRepository<BackupStorageInfo> _backupStorageRepository;
-        private readonly IEntityRepository<StatusInfo> _statusInfoRepository;
+        private readonly ITaskInfoDal _taskInfoRepository;
+        private readonly IBackupStorageDal _backupStorageRepository;
+        private readonly IStatusInfoDal _statusInfoRepository;
 
-        public BackupIncDiffJob(IEntityRepository<TaskInfo> taskInfoRepository, IEntityRepository<BackupStorageInfo> backupStorageRepository, IEntityRepository<StatusInfo> statusInfoRepository)
+        public BackupIncDiffJob(ITaskInfoDal taskInfoRepository, IBackupStorageDal backupStorageRepository, IStatusInfoDal statusInfoRepository, IBackupService backupService)
         {
-            _backupService = new BackupManager();
             _taskInfoRepository = taskInfoRepository;
             _backupStorageRepository = backupStorageRepository;
             _statusInfoRepository = statusInfoRepository;
+            _backupService = backupService;
         }
 
         public async Task Execute(IJobExecutionContext context)

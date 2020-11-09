@@ -80,6 +80,10 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Component\ITaskRepository.cs" />
+    <Compile Include="Component\TaskManager.cs" />
+    <Compile Include="Component\TaskRepository.cs" />
+    <Compile Include="Model\RestoreTask.cs" />
     <Compile Include="Model\Person.cs" />
     <Compile Include="Services\IMyService.cs" />
     <Compile Include="Services\IOtherService.cs" />
@@ -132,6 +136,12 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Scheduler\Scheduler.csproj">
+      <Project>{fd7c2bb5-39db-4cde-be1f-cff3bdab540a}</Project>
+      <Name>Scheduler</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

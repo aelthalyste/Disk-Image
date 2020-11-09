@@ -23,18 +23,24 @@ namespace DiskBackupWpfGUI
     /// </summary>
     public partial class NewCreateTaskWindow : Window
     {
-        private IBackupService _backupService = new BackupManager();
-        private IBackupStorageService _backupStorageService = new BackupStorageManager();
+        private IBackupService _backupService;
+
+        private IBackupStorageService _backupStorageService;
 
         private List<BackupStorageInfo> _backupStorageInfoList = new List<BackupStorageInfo>();
 
-        public NewCreateTaskWindow(List<BackupStorageInfo> backupStorageInfoList)
+        private readonly Func<AddBackupAreaWindow> _createAddBackupWindow;
+
+        public NewCreateTaskWindow(List<BackupStorageInfo> backupStorageInfoList, IBackupService backupService, IBackupStorageService backupStorageService, Func<AddBackupAreaWindow> createAddBackupWindow)
         {
             InitializeComponent();
 
             _backupStorageInfoList = backupStorageInfoList;
 
             cbTargetBackupArea.ItemsSource = _backupStorageInfoList;
+            _backupService = backupService;
+            _backupStorageService = backupStorageService;
+            _createAddBackupWindow = createAddBackupWindow;
         }
 
         #region Title Bar
@@ -167,7 +173,7 @@ namespace DiskBackupWpfGUI
 
         private void btnTargetAdd_Click(object sender, RoutedEventArgs e)
         {
-            AddBackupAreaWindow addBackupArea = new AddBackupAreaWindow();
+            AddBackupAreaWindow addBackupArea = _createAddBackupWindow();
             addBackupArea.ShowDialog();
 
             //karşılaştırma yapıp ekleneni yeniden gösteriyoruz

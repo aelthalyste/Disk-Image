@@ -1,4 +1,5 @@
 ﻿using DiskBackup.Business.Abstract;
+using DiskBackup.DataAccess.Abstract;
 using DiskBackup.DataAccess.Concrete.EntityFramework;
 using DiskBackup.DataAccess.Core;
 using DiskBackup.Entities.Concrete;
@@ -15,7 +16,7 @@ using System.Threading.Tasks;
 
 namespace DiskBackup.Business.Concrete
 {
-    public class BackupManager : IBackupService
+    public class BackupService : IBackupService
     {
         private DiskTracker _diskTracker = new DiskTracker();
         private CSNarFileExplorer _cSNarFileExplorer = new CSNarFileExplorer();
@@ -27,11 +28,11 @@ namespace DiskBackup.Business.Concrete
         private Stopwatch _timeElapsed = new Stopwatch();
         private StatusInfo _statusInfo = new StatusInfo();
 
-        private readonly IEntityRepository<StatusInfo> _statusInfoRepository; // status bilgilerini veritabanına yazabilmek için gerekli
+        private readonly IStatusInfoDal _statusInfoRepository; // status bilgilerini veritabanına yazabilmek için gerekli
 
-        public BackupManager()
+        public BackupService(IStatusInfoDal statusInfoRepository)
         {
-            _statusInfoRepository = new EfStatusInfoDal();
+            _statusInfoRepository = statusInfoRepository;
         }
 
         public bool InitTracker()

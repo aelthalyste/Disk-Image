@@ -1,4 +1,6 @@
-﻿using DiskBackup.Business.Abstract;
+﻿using Autofac;
+using Autofac.Core.Lifetime;
+using DiskBackup.Business.Abstract;
 using DiskBackup.Business.Concrete;
 using DiskBackup.Entities.Concrete;
 using System;
@@ -45,16 +47,17 @@ namespace DiskBackupWpfGUI
         private List<DiskInformation> _diskList = new List<DiskInformation>();
         private List<VolumeInfo> _volumeList = new List<VolumeInfo>();
 
-        private IBackupService _backupService = new BackupManager();
-        private IBackupStorageService _backupStorageService = new BackupStorageManager();
+        private IBackupService _backupService;
+        private IBackupStorageService _backupStorageService;
+        private readonly LifetimeScope _scope;
 
-        public MainWindow()
+        public MainWindow(IBackupService backupService, IBackupStorageService backupStorageService, LifetimeScope scope)
         {
             InitializeComponent();
 
             #region Disk Bilgileri
 
-            
+
             _diskList = _backupService.GetDiskList();
 
             foreach (var diskItem in _diskList)
@@ -223,6 +226,9 @@ namespace DiskBackupWpfGUI
             listViewBackups.ItemsSource = backupsItems;
 
             listViewRestore.ItemsSource = backupsItems;
+            _backupService = backupService;
+            _backupStorageService = backupStorageService;
+            _scope = scope;
         }
 
 
@@ -256,8 +262,11 @@ namespace DiskBackupWpfGUI
             {
                 backupStorageInfoList.Add(item);
             }
-            NewCreateTaskWindow newCreateTask = new NewCreateTaskWindow(backupStorageInfoList);
-            newCreateTask.ShowDialog();
+            using (var scope = _scope.BeginLifetimeScope())
+            {
+                NewCreateTaskWindow newCreateTask = scope.Resolve<NewCreateTaskWindow>(new TypedParameter(backupStorageInfoList.GetType(), backupStorageInfoList));
+                newCreateTask.ShowDialog();
+            }
             listViewBackupStorage.ItemsSource = GetBackupStorages(_volumeList, _backupStorageService.BackupStorageInfoList());
         }
 
@@ -806,21 +815,27 @@ namespace DiskBackupWpfGUI
 
         private void btnBackupStorageAdd_Click(object sender, RoutedEventArgs e)
         {
-            AddBackupAreaWindow addBackupArea = new AddBackupAreaWindow();
-            addBackupArea.ShowDialog();
-            listViewBackupStorage.ItemsSource = GetBackupStorages(_volumeList, _backupStorageService.BackupStorageInfoList());
-            chbAllBackupStorage.IsChecked = true;
-            chbAllBackupStorage.IsChecked = false;
+            using(var scope = _scope.BeginLifetimeScope())
+            {
+                AddBackupAreaWindow addBackupArea = scope.Resolve<AddBackupAreaWindow>();
+                addBackupArea.ShowDialog();
+                listViewBackupStorage.ItemsSource = GetBackupStorages(_volumeList, _backupStorageService.BackupStorageInfoList());
+                chbAllBackupStorage.IsChecked = true;
+                chbAllBackupStorage.IsChecked = false;
+            }
         }
 
         private void btnBackupStorageEdit_Click(object sender, RoutedEventArgs e)
         {
-            BackupStorageInfo backupStorageInfo = (BackupStorageInfo)listViewBackupStorage.SelectedItem;
-            AddBackupAreaWindow addBackupArea = new AddBackupAreaWindow(backupStorageInfo);
-            addBackupArea.ShowDialog();
-            listViewBackupStorage.ItemsSource = GetBackupStorages(_volumeList, _backupStorageService.BackupStorageInfoList());
-            chbAllBackupStorage.IsChecked = true;
-            chbAllBackupStorage.IsChecked = false;
+            using (var scope = _scope.BeginLifetimeScope())
+            {
+                BackupStorageInfo backupStorageInfo = (BackupStorageInfo)listViewBackupStorage.SelectedItem;
+                AddBackupAreaWindow addBackupArea = scope.Resolve<AddBackupAreaWindow>(new TypedParameter(backupStorageInfo.GetType(), backupStorageInfo));
+                addBackupArea.ShowDialog();
+                listViewBackupStorage.ItemsSource = GetBackupStorages(_volumeList, _backupStorageService.BackupStorageInfoList());
+                chbAllBackupStorage.IsChecked = true;
+                chbAllBackupStorage.IsChecked = false;
+            }
         }
 
         private void btnBackupStorageDelete_Click(object sender, RoutedEventArgs e)
@@ -1059,26 +1074,32 @@ namespace DiskBackupWpfGUI
 
         private void btnTaskPaste_Click(object sender, RoutedEventArgs e)
         {
-            StatusesWindow backupStatus = new StatusesWindow(0);
+            StatusesWindow backupStatus = _scope.Resolve<StatusesWindow>(new NamedParameter("chooseFlag", 0));
             backupStatus.Show();
         }
 
         private void btnFilesBrowse_Click(object sender, RoutedEventArgs e)
         {
-            FileExplorerWindow fileExplorer = new FileExplorerWindow();
-            fileExplorer.Show();
+            using (var scope = _scope.BeginLifetimeScope())
+            {
+                FileExplorerWindow fileExplorer = scope.Resolve<FileExplorerWindow>();
+                fileExplorer.ShowDialog();
+            }
         }
 
         private void btnTaskCopy_Click(object sender, RoutedEventArgs e)
         {
-            StatusesWindow restoreStatus = new StatusesWindow(1);
+            StatusesWindow restoreStatus = _scope.Resolve<StatusesWindow>(new NamedParameter("chooseFlag", 1));
             restoreStatus.Show();
         }
 
         private void btnRestore_Click(object sender, RoutedEventArgs e)
         {
-            RestoreWindow restore = new RestoreWindow();
-            restore.ShowDialog();
+            using (var scope = _scope.BeginLifetimeScope())
+            {
+                RestoreWindow restore = scope.Resolve<RestoreWindow>();
+                restore.ShowDialog();
+            }
         }
 
         private static T FindParent<T>(DependencyObject dependencyObject) where T : DependencyObject

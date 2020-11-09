@@ -27,21 +27,23 @@ namespace DiskBackupWpfGUI
         // Nar depolama ve lisans bilgileri için uç alınacak
         // NAS kısmı gerçekleştirilecek
 
-        private IBackupStorageService _backupStorageService = new BackupStorageManager();
-        public IBackupStorageDal _backupStorageDal = new EfBackupStorageDal();
+        private IBackupStorageService _backupStorageService;
+        public IBackupStorageDal _backupStorageDal;
 
         private bool _showSettings = false;
         private bool _updateControl = false;
 
         private int _updateId;
 
-        public AddBackupAreaWindow()
+        public AddBackupAreaWindow(IBackupStorageService backupStorageService, IBackupStorageDal backupStorageDal)
         {
             InitializeComponent();
             _updateControl = false;
+            _backupStorageService = backupStorageService;
+            _backupStorageDal = backupStorageDal;
         }
 
-        public AddBackupAreaWindow(BackupStorageInfo backupStorageInfo)
+        public AddBackupAreaWindow(BackupStorageInfo backupStorageInfo, IBackupStorageService backupStorageService, IBackupStorageDal backupStorageDal)
         {
             InitializeComponent();
 
@@ -80,10 +82,11 @@ namespace DiskBackupWpfGUI
                 else // yerel disktir
                 {
                     rbLocalDisc.IsChecked = true;
-                    txtSettingsFolderPath.Text = backupStorageInfo.Path.Substring(0, backupStorageInfo.Path.Length-1);
+                    txtSettingsFolderPath.Text = backupStorageInfo.Path.Substring(0, backupStorageInfo.Path.Length - 1);
                 }
             }
-
+            _backupStorageService = backupStorageService;
+            _backupStorageDal = backupStorageDal;
         }
 
         #region Title Bar
@@ -297,16 +300,26 @@ namespace DiskBackupWpfGUI
 
         private void btnSettingsNASFolder_Click(object sender, RoutedEventArgs e)
         {
-            var dialog = new System.Windows.Forms.FolderBrowserDialog();
-            System.Windows.Forms.DialogResult result = dialog.ShowDialog();
-            txtSettingsNASFolderPath.Text = dialog.SelectedPath;
+            using (var dialog = new System.Windows.Forms.FolderBrowserDialog())
+            {
+                var result = dialog.ShowDialog();
+                if(result == System.Windows.Forms.DialogResult.OK)
+                {
+                    txtSettingsNASFolderPath.Text = dialog.SelectedPath;
+                }
+            }
         }
 
         private void btnSettingsLocalFolder_Click(object sender, RoutedEventArgs e)
         {
-            var dialog = new System.Windows.Forms.FolderBrowserDialog();
-            System.Windows.Forms.DialogResult result = dialog.ShowDialog();
-            txtSettingsFolderPath.Text = dialog.SelectedPath;
+            using (var dialog = new System.Windows.Forms.FolderBrowserDialog())
+            {
+                var result = dialog.ShowDialog();
+                if (result == System.Windows.Forms.DialogResult.OK)
+                {
+                    txtSettingsFolderPath.Text = dialog.SelectedPath;
+                }
+            }
         }
 
         private void UpdateAndShowResult(BackupStorageInfo backupStorageInfo)

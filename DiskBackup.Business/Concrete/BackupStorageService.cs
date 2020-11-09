@@ -10,9 +10,14 @@ using System.Threading.Tasks;
 
 namespace DiskBackup.Business.Concrete
 {
-    public class BackupStorageManager : IBackupStorageService
+    public class BackupStorageService : IBackupStorageService
     {
-        private IBackupStorageDal _backupStorageDal = new EfBackupStorageDal();
+        private IBackupStorageDal _backupStorageDal;
+
+        public BackupStorageService(IBackupStorageDal backupStorageDal)
+        {
+            _backupStorageDal = backupStorageDal;
+        }
 
         public bool AddBackupStorage(BackupStorageInfo backupStorageInfo)
         {
