@@ -1191,7 +1191,7 @@
                                     <GridViewColumn Header="{DynamicResource type}" Width="125" >
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
-                                                <TextBlock Text="{Binding TaskInfo.Type}" TextAlignment="Center"/>
+                                                <TextBlock Text="{Binding Type}" TextAlignment="Center"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
