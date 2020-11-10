@@ -162,12 +162,9 @@ namespace DiskBackupWpfGUI
                             gridIsCloud.Visibility = Visibility.Hidden;
                         }
 
-
-
                         break;
                     }
                 }
-
             }
         }
 
@@ -188,7 +185,8 @@ namespace DiskBackupWpfGUI
                 }
             }
 
-            cbTargetBackupArea.ItemsSource = MainWindow.GetBackupStorages(volumeList, _backupStorageService.BackupStorageInfoList());
+            _backupStorageInfoList = MainWindow.GetBackupStorages(volumeList, _backupStorageService.BackupStorageInfoList());
+            cbTargetBackupArea.ItemsSource = _backupStorageInfoList;
         }
 
         #region Arrow Button
