@@ -179,7 +179,7 @@
                                     </StackPanel>
                                     <TextBlock Text="{DynamicResource day}" Margin="10,0,0,0" VerticalAlignment="Center"></TextBlock>
                                 </StackPanel>
-                                <CheckBox Content="{DynamicResource fullOverwrite}" Margin="0,10" IsChecked="True"/>
+                                <CheckBox Name="chbFullOverwrite" Content="{DynamicResource fullOverwrite}" Margin="0,10" IsChecked="True"/>
                                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                     <TextBlock Text="{DynamicResource fullBackup}" VerticalAlignment="Center"/>
                                     <TextBox Name="txtFullBackup" Text="2" Width="50" Height="28" FontSize="13" Margin="35,0,0,0" VerticalContentAlignment="Center" MaxLength="3"/>
@@ -233,7 +233,7 @@
                                     </StackPanel>
                                     <TextBlock Text="{DynamicResource day}" Margin="10,0,0,0" VerticalAlignment="Center"></TextBlock>
                                 </StackPanel>
-                                <CheckBox Content="{DynamicResource fullOverwrite}" Margin="0,10" IsChecked="True"/>
+                                <CheckBox Name="chbNarFullOverwrite" Content="{DynamicResource fullOverwrite}" Margin="0,10" IsChecked="True"/>
                                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                     <TextBlock Text="{DynamicResource fullBackup}" VerticalAlignment="Center"/>
                                     <TextBox Name="txtNarFullBackup" Text="2" Width="50" Height="28" FontSize="13" Margin="35,0,0,0" VerticalContentAlignment="Center" MaxLength="3"/>
@@ -407,7 +407,7 @@
                                 <StackPanel Grid.Column="2" >
                                     <TextBlock Name="lblTaskName" Margin="0,0,0,5">İŞLETİM SİSTEMİ YEDEĞİ</TextBlock>
                                     <TextBlock Name="lblBackupType" Margin="0,0,0,5">DUMMY DATA</TextBlock>
-                                    <TextBlock Name="lblBackupStorages" Margin="0,0,0,5">C_D_E</TextBlock>
+                                    <TextBlock Name="lblBackupStorages" Margin="0,0,0,5"></TextBlock>
                                     <TextBlock Name="lblWorkingTimeTask" Margin="0,0,0,5" Text="{DynamicResource NCTuntimelyTask}"></TextBlock>
                                 </StackPanel>
                             </Grid>

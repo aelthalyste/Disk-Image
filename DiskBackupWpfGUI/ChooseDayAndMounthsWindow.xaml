@@ -42,20 +42,20 @@
                 <ColumnDefinition/>
             </Grid.ColumnDefinitions>
             <StackPanel Grid.Column="0" HorizontalAlignment="Center">
-                <CheckBox Content="{DynamicResource january}" Margin="0,0,0,5"/>
-                <CheckBox Content="{DynamicResource february}" Margin="0,0,0,5"/>
-                <CheckBox Content="{DynamicResource march}" Margin="0,0,0,5"/>
-                <CheckBox Content="{DynamicResource april}" Margin="0,0,0,5"/>
-                <CheckBox Content="{DynamicResource may}" Margin="0,0,0,5"/>
-                <CheckBox Content="{DynamicResource june}" Margin="0,0,0,5"/>
+                <CheckBox Name="chbJanuary" Content="{DynamicResource january}" Margin="0,0,0,5"/>
+                <CheckBox Name="chbFebruary" Content="{DynamicResource february}" Margin="0,0,0,5"/>
+                <CheckBox Name="chbMarch" Content="{DynamicResource march}" Margin="0,0,0,5"/>
+                <CheckBox Name="chbApril" Content="{DynamicResource april}" Margin="0,0,0,5"/>
+                <CheckBox Name="chbMay" Content="{DynamicResource may}" Margin="0,0,0,5"/>
+                <CheckBox Name="chbJune" Content="{DynamicResource june}" Margin="0,0,0,5"/>
             </StackPanel>
             <StackPanel Grid.Column="1" HorizontalAlignment="Center">
-                <CheckBox Content="{DynamicResource july}" Margin="0,0,0,5"/>
-                <CheckBox Content="{DynamicResource august}" Margin="0,0,0,5"/>
-                <CheckBox Content="{DynamicResource september}" Margin="0,0,0,5"/>
-                <CheckBox Content="{DynamicResource october}" Margin="0,0,0,5"/>
-                <CheckBox Content="{DynamicResource november}" Margin="0,0,0,5"/>
-                <CheckBox Content="{DynamicResource december}" Margin="0,0,0,5"/>
+                <CheckBox Name="chbJuly" Content="{DynamicResource july}" Margin="0,0,0,5"/>
+                <CheckBox Name="chbAugust" Content="{DynamicResource august}" Margin="0,0,0,5"/>
+                <CheckBox Name="chbSeptember" Content="{DynamicResource september}" Margin="0,0,0,5"/>
+                <CheckBox Name="chbOctober" Content="{DynamicResource october}" Margin="0,0,0,5"/>
+                <CheckBox Name="chbNovember" Content="{DynamicResource november}" Margin="0,0,0,5"/>
+                <CheckBox Name="chbDecember" Content="{DynamicResource december}" Margin="0,0,0,5"/>
             </StackPanel>
         </Grid>
         <Grid Name="gridDays" Grid.Row="1" Margin="20,40,20,20" Visibility="Hidden">
@@ -64,15 +64,15 @@
                 <ColumnDefinition/>
             </Grid.ColumnDefinitions>
             <StackPanel Grid.Column="0" HorizontalAlignment="Center">
-                <CheckBox Content="{DynamicResource monday}" Margin="0,0,0,5"/>
-                <CheckBox Content="{DynamicResource tuesday}" Margin="0,0,0,5"/>
-                <CheckBox Content="{DynamicResource wednesday}" Margin="0,0,0,5"/>
-                <CheckBox Content="{DynamicResource thursday}" Margin="0,0,0,5"/>
+                <CheckBox Name="chbMonday" Content="{DynamicResource monday}" Margin="0,0,0,5"/>
+                <CheckBox Name="chbTuesday" Content="{DynamicResource tuesday}" Margin="0,0,0,5"/>
+                <CheckBox Name="chbWednesday" Content="{DynamicResource wednesday}" Margin="0,0,0,5"/>
+                <CheckBox Name="chbThursday" Content="{DynamicResource thursday}" Margin="0,0,0,5"/>
             </StackPanel>
             <StackPanel Grid.Column="1" HorizontalAlignment="Center">
-                <CheckBox Content="{DynamicResource friday}" Margin="0,0,0,5"/>
-                <CheckBox Content="{DynamicResource saturday}" Margin="0,0,0,5"/>
-                <CheckBox Content="{DynamicResource sunday}" Margin="0,0,0,5"/>
+                <CheckBox Name="chbFriday" Content="{DynamicResource friday}" Margin="0,0,0,5"/>
+                <CheckBox Name="chbSaturday" Content="{DynamicResource saturday}" Margin="0,0,0,5"/>
+                <CheckBox Name="chbSunday" Content="{DynamicResource sunday}" Margin="0,0,0,5"/>
             </StackPanel>
         </Grid>
         <Button Name="btnSave" ToolTip="{DynamicResource save}" Click="btnSave_Click" Grid.Row="2" Width="80" Height="30" HorizontalAlignment="Center" Style="{StaticResource ImageButton}" Grid.Column="1">

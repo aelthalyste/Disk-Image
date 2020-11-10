@@ -263,9 +263,17 @@ namespace DiskBackupWpfGUI
             {
                 backupStorageInfoList.Add(item);
             }
+
+            List<VolumeInfo> volumeInfoList = new List<VolumeInfo>();
+            foreach (VolumeInfo item in listViewDisk.SelectedItems)
+            {
+                volumeInfoList.Add(item);
+            }
+
             using (var scope = _scope.BeginLifetimeScope())
             {
-                NewCreateTaskWindow newCreateTask = scope.Resolve<NewCreateTaskWindow>(new TypedParameter(backupStorageInfoList.GetType(), backupStorageInfoList));
+                NewCreateTaskWindow newCreateTask = scope.Resolve<NewCreateTaskWindow>(new TypedParameter(backupStorageInfoList.GetType(), backupStorageInfoList),
+                    new TypedParameter(volumeInfoList.GetType(), volumeInfoList));
                 newCreateTask.ShowDialog();
             }
             listViewBackupStorage.ItemsSource = GetBackupStorages(_volumeList, _backupStorageService.BackupStorageInfoList());
