@@ -66,7 +66,65 @@ namespace DiskBackupWpfGUI
         #region Next-Back-Ok-Cancel Button
         private void btnCreateTaskOk_Click(object sender, RoutedEventArgs e)
         {
+            bool errorFlag = false;
             //kaydet
+            if (txtTaskName.Text.Equals("") || txtTaskDescription.Text.Equals("") || cbTargetBackupArea.SelectedIndex == -1 ||
+                txtRetentionTime.Text.Equals("") || txtFullBackup.Text.Equals("") || txtNarRetentionTime.Text.Equals("") ||
+                txtNarFullBackup.Text.Equals(""))
+            {
+                errorFlag = true;
+            }
+            else if (checkAutoRun.IsChecked.Value) // zamanlama tabı için
+            {
+                if (rbDaysTime.IsChecked.Value)
+                {
+                    if (tpDaysTime.Value.ToString().Equals(""))
+                    {
+                        errorFlag = true;
+                    }
+                    else if (cbDaysTime.SelectedIndex == 2) // belirli günler seçilmeli
+                    {
+                        // belirli günlerin seçildiğini kontrol et
+                    }
+                }
+                else if (rbWeeklyTime.IsChecked.Value)
+                {
+                    if (tpWeeklyTime.Value.ToString().Equals(""))
+                    {
+                        errorFlag = true;
+                    }
+                    else // aylar seçilmeli
+                    {
+                        // ayların seçildiğini kontrol et
+                    }
+                }
+                else if (rbPeriodic.IsChecked.Value)
+                {
+                    if (txtPeriodic.Text.Equals(""))
+                    {
+                        errorFlag = true;
+                    }
+                }
+                else // radiobuttonların
+                {
+                    errorFlag = true;
+                }
+            }
+            if (checkTimeFailDesc.IsChecked.Value)
+            {
+                if (txtTimeFailDesc.Text.Equals("") || txtTimeWait.Text.Equals(""))
+                {
+                    errorFlag = true;
+                }
+            }
+            if (errorFlag)
+            {
+                MessageBox.Show("İlgili alanları lütfen boş geçmeyiniz.", "NARBULUT DİYOR Kİ;", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            else
+            {
+                // kaydet
+            }
         }
 
         private void btnCreateTaskBack_Click(object sender, RoutedEventArgs e)
@@ -90,6 +148,45 @@ namespace DiskBackupWpfGUI
                     NCTTabControl.SelectedIndex += 1;
                 }
                 NCTTabControl.SelectedIndex += 1;
+            }
+
+            // özet yazımı
+            if (NCTTabControl.SelectedIndex == 5)
+            {
+                lblTaskName.Text = txtTaskName.Text;
+        
+                if (rbBTDifferential.IsChecked.Value) // diff
+                {
+                    lblBackupType.Text = Resources["diff"].ToString();
+                }
+                else if (rbBTIncremental.IsChecked.Value) // inc
+                {
+                    lblBackupType.Text = Resources["inc"].ToString();
+                }
+                else if (rbBTFull.IsChecked.Value) // full
+                {
+                    lblBackupType.Text = Resources["full"].ToString();
+                }
+
+                if (checkAutoRun.IsChecked.Value) // otomatik çalıştır aktif ise
+                {
+                    if (rbDaysTime.IsChecked.Value) // günlük
+                    {
+                        lblWorkingTimeTask.Text = Resources["dailyTime"].ToString();
+                    }
+                    else if (rbWeeklyTime.IsChecked.Value) // haftalık
+                    {
+                        lblWorkingTimeTask.Text = Resources["weeklyTime"].ToString();
+                    }
+                    else if (rbPeriodic.IsChecked.Value) // periyodik
+                    {
+                        lblWorkingTimeTask.Text = Resources["periodic"].ToString();
+                    }
+                }
+                else
+                {
+                    lblWorkingTimeTask.Text = Resources["NCTuntimelyTask"].ToString();
+                }
             }
         }
         private void btnCreateTaskCancel_Click(object sender, RoutedEventArgs e)

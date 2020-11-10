@@ -105,7 +105,7 @@
                 <Grid Background="White">
                     <StackPanel Margin="10,10,20,10">
                         <TextBlock Text="{DynamicResource BackupType}" Margin="0,0,0,20" />
-                        <RadioButton Name="rbBTDifferential" GroupName="rbBackupType" Content="{DynamicResource diff}" />
+                        <RadioButton Name="rbBTDifferential" GroupName="rbBackupType" Content="{DynamicResource diff}" IsChecked="True"/>
                         <TextBlock Text="{DynamicResource diffDescription}" Margin="40,10,0,20" />
                         <RadioButton Name="rbBTIncremental" GroupName="rbBackupType" Content="{DynamicResource inc}"/>
                         <TextBlock Text="{DynamicResource incDescription}" Margin="40,10,0,20" />
@@ -405,10 +405,10 @@
                                     <TextBlock Text=":" Margin="0,0,0,5" />
                                 </StackPanel>
                                 <StackPanel Grid.Column="2" >
-                                    <TextBlock Margin="0,0,0,5">İŞLETİM SİSTEMİ YEDEĞİ</TextBlock>
-                                    <TextBlock Margin="0,0,0,5">DUMMY DATA</TextBlock>
-                                    <TextBlock Margin="0,0,0,5">C_D_E</TextBlock>
-                                    <TextBlock Margin="0,0,0,5">BUGÜN ŞU SAAT HAFTADA 2 AYDA 4 YILDA 1</TextBlock>
+                                    <TextBlock Name="lblTaskName" Margin="0,0,0,5">İŞLETİM SİSTEMİ YEDEĞİ</TextBlock>
+                                    <TextBlock Name="lblBackupType" Margin="0,0,0,5">DUMMY DATA</TextBlock>
+                                    <TextBlock Name="lblBackupStorages" Margin="0,0,0,5">C_D_E</TextBlock>
+                                    <TextBlock Name="lblWorkingTimeTask" Margin="0,0,0,5" Text="{DynamicResource NCTuntimelyTask}"></TextBlock>
                                 </StackPanel>
                             </Grid>
                         </StackPanel>
