@@ -5,6 +5,25 @@
     
     <Application.Resources>
 
+        <!--<Style x:Key="MTBListViewLastWorkingDate" TargetType="{x:Type TextBlock}">
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding LastWorkingDate}" Value="01.01.0002 00:00">
+                    <Setter Property="Text" Value="Yok" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>-->
+
+        <Style x:Key="MTBListViewType" TargetType="{x:Type TextBlock}">
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding Type}" Value="0">
+                    <Setter Property="Text" Value="Backup" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Type}" Value="1">
+                    <Setter Property="Text" Value="Restore" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
         <Style x:Key="MBSTListViewCapacity" TargetType="{x:Type TextBlock}"> <!--Maindeki backup storage tabında bulut verisinde slaş için--> 
             <Style.Triggers>
                 <DataTrigger Binding="{Binding IsCloud}" Value="false">

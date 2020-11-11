@@ -336,67 +336,72 @@
                                     <GridViewColumn Header="{DynamicResource type}" Width="65">
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
-                                                <TextBlock Text="{Binding TaskType}" TextAlignment="Left"/>
+                                                <TextBlock Style="{StaticResource MTBListViewType}" TextAlignment="Center"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
                                     <GridViewColumn Header="{DynamicResource taskName}" Width="135">
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
-                                                <TextBlock Text="{Binding TaskName}" TextAlignment="Left"/>
+                                                <TextBlock Text="{Binding Name}" TextAlignment="Left"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
                                     <GridViewColumn Header="{DynamicResource object}" Width="65" >
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
-                                                <TextBlock Text="{Binding Object}" TextAlignment="Center"/>
+                                                <TextBlock Text="{Binding Obje}" TextAlignment="Center"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
                                     <GridViewColumn Header="{DynamicResource statu}" Width="125" >
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
-                                                <TextBlock Text="{Binding Statu}" TextAlignment="Center"/>
+                                                <TextBlock Text="{Binding Status}" TextAlignment="Center"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
                                     <GridViewColumn Header="{DynamicResource lastStudy}" Width="125" >
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
-                                                <TextBlock Text="{Binding LastStudy}" TextAlignment="Center"/>
+                                                <TextBlock Text="{Binding LastWorkingDate, StringFormat='dd.MM.yyyy HH:mm'}" TextAlignment="Center"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
                                     <GridViewColumn Header="{DynamicResource nextStudy}" Width="125" >
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
-                                                <TextBlock Text="{Binding NextStudy}" TextAlignment="Center"/>
+                                                <TextBlock Text="{Binding NextDate, StringFormat='dd.MM.yyyy HH:mm'}" TextAlignment="Center"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
                                     <GridViewColumn Header="{DynamicResource target}" Width="175" >
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
-                                                <TextBlock Text="{Binding Target.Name}" TextAlignment="Center"/>
+                                                <TextBlock Text="{Binding BackupStorageInfo.StorageName}" TextAlignment="Center"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
                                     <GridViewColumn Header="{DynamicResource description}" Width="175" >
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
-                                                <TextBlock Text="{Binding Description}" TextWrapping="Wrap" TextAlignment="Center"/>
+                                                <TextBlock Text="{Binding Descripiton}" TextWrapping="Wrap" TextAlignment="Center"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
                                 </GridView>
                             </ListView.View>
+                            <ListView.ItemContainerStyle>
+                                <Style TargetType="ListViewItem">
+                                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                </Style>
+                            </ListView.ItemContainerStyle>
                         </ListView>
                     </DockPanel>
                     <DockPanel Grid.Column="1" VerticalAlignment="Top" Height="415" Background="#F2F2F2">
                         <StackPanel HorizontalAlignment="Center">
                             <Button Name="btnTaskEdit" ToolTip="{DynamicResource edit}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,25,0,5" 
-                                    Style="{StaticResource ImageButton}" Grid.Column="1">
+                                    Style="{StaticResource ImageButton}" Grid.Column="1" IsEnabled="False">
                                 <Button.Content>
                                     <Image Height="25" Width="25" HorizontalAlignment="Center" VerticalAlignment="Center">
                                         <Image.Style>
@@ -545,7 +550,7 @@
                                 </Button.Content>
                             </Button>
                             <Button Name="btnTaskDelete" ToolTip="{DynamicResource delete}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5" 
-                                    Style="{StaticResource ImageButton}" Grid.Column="1" >
+                                    Style="{StaticResource ImageButton}" Grid.Column="1" IsEnabled="False">
                                 <Button.Content>
                                     <Image HorizontalAlignment="Center" VerticalAlignment="Center">
                                         <Image.Style>

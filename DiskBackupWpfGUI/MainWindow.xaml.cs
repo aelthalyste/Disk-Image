@@ -2,6 +2,7 @@
 using Autofac.Core.Lifetime;
 using DiskBackup.Business.Abstract;
 using DiskBackup.Business.Concrete;
+using DiskBackup.DataAccess.Abstract;
 using DiskBackup.Entities.Concrete;
 using System;
 using System.Collections.Generic;
@@ -49,13 +50,20 @@ namespace DiskBackupWpfGUI
 
         private IBackupService _backupService;
         private IBackupStorageService _backupStorageService;
+        private ITaskInfoDal _taskInfoDal;
+        private IBackupStorageDal _backupStorageDal;
+
         private readonly ILifetimeScope _scope;
 
-        public MainWindow(IBackupService backupService, IBackupStorageService backupStorageService, ILifetimeScope scope)
+        public MainWindow(IBackupService backupService, IBackupStorageService backupStorageService, ILifetimeScope scope, ITaskInfoDal taskInfoDal, IBackupStorageDal backupStorageDal)
         {
             InitializeComponent();
+
             _backupService = backupService;
             _backupStorageService = backupStorageService;
+            _taskInfoDal = taskInfoDal;
+            _backupStorageDal = backupStorageDal;
+
             _scope = scope;
 
             #region Disk Bilgileri
@@ -100,6 +108,18 @@ namespace DiskBackupWpfGUI
 
             #endregion
 
+            #region Görevler
+
+            List<TaskInfo> taskInfoList = new List<TaskInfo>();
+            taskInfoList = _taskInfoDal.GetList();
+
+            foreach (var item in taskInfoList)
+            {
+                item.BackupStorageInfo = _backupStorageDal.Get(x => x.Id == item.BackupStorageInfoId);
+            }
+            listViewTasks.ItemsSource = taskInfoList;
+
+            #endregion
 
             BackupStorageInfo backupAreaInfo1 = new BackupStorageInfo()
             {
@@ -229,7 +249,6 @@ namespace DiskBackupWpfGUI
             listViewBackups.ItemsSource = backupsItems;
 
             listViewRestore.ItemsSource = backupsItems;
-            
         }
 
 
