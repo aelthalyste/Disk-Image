@@ -47,6 +47,7 @@ namespace DiskBackupWpfGUI
         private List<string> _restoreGroupName = new List<string>();
         private List<DiskInformation> _diskList = new List<DiskInformation>();
         private List<VolumeInfo> _volumeList = new List<VolumeInfo>();
+        private List<TaskInfo> _taskInfoList = new List<TaskInfo>();
 
         private IBackupService _backupService;
         private IBackupStorageService _backupStorageService;
@@ -110,14 +111,7 @@ namespace DiskBackupWpfGUI
 
             #region Görevler
 
-            List<TaskInfo> taskInfoList = new List<TaskInfo>();
-            taskInfoList = _taskInfoDal.GetList();
-
-            foreach (var item in taskInfoList)
-            {
-                item.BackupStorageInfo = _backupStorageDal.Get(x => x.Id == item.BackupStorageInfoId);
-            }
-            listViewTasks.ItemsSource = taskInfoList;
+            GetTasks();
 
             #endregion
 
@@ -251,6 +245,17 @@ namespace DiskBackupWpfGUI
             listViewRestore.ItemsSource = backupsItems;
         }
 
+        private void GetTasks()
+        {
+            _taskInfoList = _taskInfoDal.GetList();
+
+            foreach (var item in _taskInfoList)
+            {
+                item.BackupStorageInfo = _backupStorageDal.Get(x => x.Id == item.BackupStorageInfoId);
+            }
+            listViewTasks.ItemsSource = _taskInfoList;
+        }
+
 
         #region Title Bar
         private void btnMainClose_Click(object sender, RoutedEventArgs e)
@@ -295,6 +300,7 @@ namespace DiskBackupWpfGUI
                     new TypedParameter(volumeInfoList.GetType(), volumeInfoList));
                 newCreateTask.ShowDialog();
             }
+            GetTasks();
             listViewBackupStorage.ItemsSource = GetBackupStorages(_volumeList, _backupStorageService.BackupStorageInfoList());
         }
 

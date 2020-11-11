@@ -43,6 +43,7 @@ namespace DiskBackupWpfGUI
             builder.RegisterType<BackupService>().As<IBackupService>().SingleInstance();
             builder.RegisterType<BackupStorageService>().As<IBackupStorageService>();
             builder.RegisterType<LogService>().As<ILogService>();
+            builder.RegisterType<TaskSchedulerManager>().As<ITaskSchedulerManager>();
             builder.RegisterType<BackupFullJob>();
             builder.RegisterType<BackupIncDiffJob>();
             builder.RegisterType<RestoreDiskJob>();

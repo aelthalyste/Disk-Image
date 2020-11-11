@@ -81,6 +81,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Factory\DiskBackupJobFactory.cs" />
+    <Compile Include="ITaskSchedulerManager.cs" />
     <Compile Include="Jobs\BackupFullJob.cs" />
     <Compile Include="Jobs\BackupIncDiffJob.cs" />
     <Compile Include="Jobs\RestoreDiskJob.cs" />

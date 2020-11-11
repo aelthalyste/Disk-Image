@@ -15,7 +15,7 @@ using System.Threading.Tasks;
 
 namespace DiskBackup.TaskScheduler
 {
-    public class TaskSchedulerManager
+    public class TaskSchedulerManager : ITaskSchedulerManager
     {
         public IScheduler _scheduler;
         public IJobFactory _jobFactory;
@@ -332,39 +332,6 @@ namespace DiskBackup.TaskScheduler
         }
 
         #endregion
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
         public bool CancelAllSchedule(List<TaskInfo> taskInfoList)
