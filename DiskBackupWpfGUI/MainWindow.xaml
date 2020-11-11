@@ -319,7 +319,7 @@
                         <RowDefinition />
                     </Grid.RowDefinitions>
                     <DockPanel>
-                        <ListView Name="listViewTasks" Grid.ColumnSpan="2" MinHeight="415" Margin="5,0,0,5" VerticalAlignment="Top" SelectionChanged="listViewTasks_SelectionChanged">
+                        <ListView Name="listViewTasks" Grid.ColumnSpan="2" MinHeight="415" Margin="5,0,0,5" VerticalAlignment="Top" SelectionChanged="listViewTasks_SelectionChanged" MouseDoubleClick="listViewTasks_MouseDoubleClick">
                             <ListView.View>
                                 <GridView>
                                     <GridViewColumn Width="40">
@@ -364,7 +364,7 @@
                                     <GridViewColumn Header="{DynamicResource lastStudy}" Width="125" >
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
-                                                <TextBlock Text="{Binding LastWorkingDate, StringFormat='dd.MM.yyyy HH:mm'}" TextAlignment="Center"/>
+                                                <TextBlock Text="{Binding LastWorkingDate, StringFormat='dd.MM.yyyy HH:mm'}" Style="{StaticResource MTBListViewLastWorkingDate}" TextAlignment="Center"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>

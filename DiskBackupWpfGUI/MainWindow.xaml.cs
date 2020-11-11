@@ -55,10 +55,13 @@ namespace DiskBackupWpfGUI
         private ITaskInfoDal _taskInfoDal;
         private IBackupStorageDal _backupStorageDal;
         private ITaskSchedulerManager _taskSchedulerManager;
+        private IBackupTaskDal _backupTaskDal;
+        private IStatusInfoDal _statusInfoDal;
 
         private readonly ILifetimeScope _scope;
 
-        public MainWindow(IBackupService backupService, IBackupStorageService backupStorageService, ILifetimeScope scope, ITaskInfoDal taskInfoDal, IBackupStorageDal backupStorageDal, ITaskSchedulerManager taskSchedulerManager)
+        public MainWindow(IBackupService backupService, IBackupStorageService backupStorageService, ILifetimeScope scope, ITaskInfoDal taskInfoDal,
+            IBackupStorageDal backupStorageDal, ITaskSchedulerManager taskSchedulerManager, IBackupTaskDal backupTaskDal, IStatusInfoDal statusInfoDal)
         {
             InitializeComponent();
 
@@ -66,14 +69,18 @@ namespace DiskBackupWpfGUI
             _backupStorageService = backupStorageService;
             _taskInfoDal = taskInfoDal;
             _backupStorageDal = backupStorageDal;
+            _backupTaskDal = backupTaskDal;
+            _statusInfoDal = statusInfoDal;
             _taskSchedulerManager = taskSchedulerManager;
 
+            _scope = scope;
+
             _taskSchedulerManager.InitShedulerAsync();
+
             if (!_backupService.InitTracker())
             {
                 MessageBox.Show("Driver intialize edilemedi!", "NARBULUT DİYOR Kİ;", MessageBoxButton.OK, MessageBoxImage.Error);
             }
-            _scope = scope;
 
             #region Disk Bilgileri
 
@@ -466,12 +473,26 @@ namespace DiskBackupWpfGUI
             }
         }
 
+        private void listViewTasks_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            if (listViewTasks.SelectedIndex != -1)
+            {
+                TaskInfo taskInfo = (TaskInfo)listViewTasks.SelectedItem;
+                taskInfo.StatusInfo = _statusInfoDal.Get(x => x.Id == taskInfo.StatusInfoId);
+                taskInfo.BackupTaskInfo = _backupTaskDal.Get(x => x.Id == taskInfo.BackupTaskId);
+                StatusesWindow backupStatus = _scope.Resolve<StatusesWindow>(new NamedParameter("chooseFlag", 0), new NamedParameter("statusInfo", taskInfo.StatusInfo));
+                backupStatus.Show();
+            }
+        }
+
         private void btnTaskStart_Click(object sender, RoutedEventArgs e)
         {
             TaskInfo taskInfo = (TaskInfo)listViewTasks.SelectedItem;
+
             if (taskInfo.Type == TaskType.Backup)
             {
-                if (taskInfo.BackupTaskInfo.Type ==BackupTypes.Diff || taskInfo.BackupTaskInfo.Type == BackupTypes.Inc)
+                taskInfo.BackupTaskInfo = _backupTaskDal.Get(x => x.Id == taskInfo.BackupTaskId);
+                if (taskInfo.BackupTaskInfo.Type == BackupTypes.Diff || taskInfo.BackupTaskInfo.Type == BackupTypes.Inc)
                 {
                     _taskSchedulerManager.BackupIncDiffNowJob(taskInfo);
                 }
@@ -1221,6 +1242,6 @@ namespace DiskBackupWpfGUI
             return ($"{dblSByte:0.##} {Suffix[i]}");
         }
 
-        
+
     }
 }
