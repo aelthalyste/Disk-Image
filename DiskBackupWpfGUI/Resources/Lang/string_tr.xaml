@@ -233,5 +233,9 @@
     <system:String x:Key="Success">Başarılı</system:String>
     <system:String x:Key="Fail">Başarısız</system:String>
     <system:String x:Key="NCTuntimelyTask">Zamansız görev</system:String>
+    <system:String x:Key="Ready">Hazır</system:String>
+    <system:String x:Key="Canceled">İptal edildi</system:String>
+    <system:String x:Key="Working">Çalışıyor</system:String>
+
 
 </ResourceDictionary>

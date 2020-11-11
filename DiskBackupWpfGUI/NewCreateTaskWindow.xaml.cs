@@ -25,8 +25,11 @@ namespace DiskBackupWpfGUI
     public partial class NewCreateTaskWindow : Window
     {
         private IBackupService _backupService;
-        private IBackupStorageDal _backupStorageDal;
         private IBackupStorageService _backupStorageService;
+
+        private IBackupTaskDal _backupTaskDal;
+        private IStatusInfoDal _statusInfoDal;
+        private ITaskInfoDal _taskInfoDal;
 
         private List<BackupStorageInfo> _backupStorageInfoList = new List<BackupStorageInfo>();
         private List<VolumeInfo> _volumeInfoList = new List<VolumeInfo>();
@@ -35,7 +38,8 @@ namespace DiskBackupWpfGUI
 
         private readonly Func<AddBackupAreaWindow> _createAddBackupWindow;
 
-        public NewCreateTaskWindow(List<BackupStorageInfo> backupStorageInfoList, IBackupService backupService, IBackupStorageService backupStorageService, Func<AddBackupAreaWindow> createAddBackupWindow, IBackupStorageDal backupStorageDal, List<VolumeInfo> volumeInfoList)
+        public NewCreateTaskWindow(List<BackupStorageInfo> backupStorageInfoList, IBackupService backupService, IBackupStorageService backupStorageService,
+            Func<AddBackupAreaWindow> createAddBackupWindow, List<VolumeInfo> volumeInfoList, IBackupTaskDal backupTaskDal, IStatusInfoDal statusInfoDal, ITaskInfoDal taskInfoDal)
         {
             InitializeComponent();
 
@@ -44,8 +48,12 @@ namespace DiskBackupWpfGUI
             _backupService = backupService;
             _backupStorageService = backupStorageService;
             _createAddBackupWindow = createAddBackupWindow;
-            _backupStorageDal = backupStorageDal;
             _volumeInfoList = volumeInfoList;
+            _backupTaskDal = backupTaskDal;
+            _statusInfoDal = statusInfoDal;
+            _taskInfoDal = taskInfoDal;
+            _taskInfo.BackupTaskInfo = new BackupTask();
+            _taskInfo.StatusInfo = new StatusInfo();
 
             _taskInfo.Obje = _volumeInfoList.Count();
 
@@ -56,10 +64,6 @@ namespace DiskBackupWpfGUI
             }
 
             lblBackupStorages.Text = lblBackupStorages.Text.Substring(0, lblBackupStorages.Text.Length - 2);
-
-            _taskInfo.BackupTaskInfo = new BackupTask();
-            _taskInfo.BackupTaskInfo.TaskName = "eyüp";
-
         }
 
         #region Title Bar
@@ -151,7 +155,6 @@ namespace DiskBackupWpfGUI
             {
                 // kaydet
                 _taskInfo.Type = TaskType.Backup;
-                _taskInfo.CreatedDate = DateTime.Now;
                 _taskInfo.Name = txtTaskName.Text;
                 _taskInfo.Descripiton = txtTaskDescription.Text;
                 _taskInfo.BackupTaskInfo.TaskName = txtTaskName.Text;
@@ -175,6 +178,7 @@ namespace DiskBackupWpfGUI
                     if (rbDaysTime.IsChecked.Value)
                     {
                         _taskInfo.BackupTaskInfo.AutoType = AutoRunType.DaysTime;
+                        _taskInfo.NextDate = (DateTime)tpWeeklyTime.Value;
                         if (cbDaysTime.SelectedIndex == 2) // belirli günler seçilmeli
                         {
                             _taskInfo.BackupTaskInfo.Days = ChooseDayAndMounthsWindow._days;
@@ -188,6 +192,7 @@ namespace DiskBackupWpfGUI
                     {
                         _taskInfo.BackupTaskInfo.AutoType = AutoRunType.WeeklyTime;
                         _taskInfo.BackupTaskInfo.Months = ChooseDayAndMounthsWindow._months;
+                        _taskInfo.NextDate = (DateTime)tpWeeklyTime.Value;
                         //haftalar
                         if (cbWeeklyTimeWeek.SelectedIndex == 0)
                         {
@@ -236,10 +241,37 @@ namespace DiskBackupWpfGUI
                 }
 
                 //veritabanı işlemleri gelecek
+                //backupTask kaydetme
+                var resultBackupTask = _backupTaskDal.Add(_taskInfo.BackupTaskInfo);              
+                if (resultBackupTask == null)
+                {
+                    MessageBox.Show("Ekleme başarısız.");
+                    Close();
+                }
 
+                //backupTask kaydetme
+                _taskInfo.StatusInfo.TaskName = _taskInfo.Name;
+                _taskInfo.StatusInfo.SourceObje = _taskInfo.StrObje;
+                var resultStatusInfo = _statusInfoDal.Add(_taskInfo.StatusInfo);
+                if (resultStatusInfo == null)
+                {
+                    MessageBox.Show("Ekleme başarısız.");
+                    Close();
+                }
 
-                
+                // task kayıdı
+                _taskInfo.Status = Resources["Ready"].ToString();
+                _taskInfo.StatusInfoId = resultStatusInfo.Id;
+                _taskInfo.BackupTaskId = resultBackupTask.Id;
+                var resultTaskInfo = _taskInfoDal.Add(_taskInfo);
+                if (resultTaskInfo == null)
+                {
+                    MessageBox.Show("Ekleme başarısız.");
+                    Close();
+                }
 
+                MessageBox.Show("Ekleme işlemi başarılı");
+                Close();
             }
         }
 
@@ -274,17 +306,17 @@ namespace DiskBackupWpfGUI
                 if (rbBTDifferential.IsChecked.Value) // diff
                 {
                     lblBackupType.Text = Resources["diff"].ToString();
-                    //_taskInfo.BackupTaskInfo.Type = BackupTypes.Diff;
+                    _taskInfo.BackupTaskInfo.Type = BackupTypes.Diff;
                 }
                 else if (rbBTIncremental.IsChecked.Value) // inc
                 {
                     lblBackupType.Text = Resources["inc"].ToString();
-                    //_taskInfo.BackupTaskInfo.Type = BackupTypes.Inc;
+                    _taskInfo.BackupTaskInfo.Type = BackupTypes.Inc;
                 }
                 else if (rbBTFull.IsChecked.Value) // full
                 {
                     lblBackupType.Text = Resources["full"].ToString();
-                    //_taskInfo.BackupTaskInfo.Type = BackupTypes.Full;
+                    _taskInfo.BackupTaskInfo.Type = BackupTypes.Full;
                 }
 
                 if (checkAutoRun.IsChecked.Value) // otomatik çalıştır aktif ise

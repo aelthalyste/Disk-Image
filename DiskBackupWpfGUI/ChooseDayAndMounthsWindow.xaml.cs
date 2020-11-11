@@ -19,8 +19,8 @@ namespace DiskBackupWpfGUI
     /// </summary>
     public partial class ChooseDayAndMounthsWindow : Window
     {
-        public static string _days;
-        public static string _months;
+        public static string _days = null;
+        public static string _months = null;
 
         private bool _chooseFlag;
 
@@ -29,6 +29,8 @@ namespace DiskBackupWpfGUI
             InitializeComponent();
 
             _chooseFlag = chooseFlag;
+            _days = null;
+            _months = null;
 
             //chooseFlag = true gün, false ise ay
             if (chooseFlag)
@@ -48,13 +50,15 @@ namespace DiskBackupWpfGUI
             InitializeComponent();
 
             _chooseFlag = chooseFlag;
+            _days = null;
+            _months = null;
+            MessageBox.Show("ilk geldim gün " + _days + " ay: " + _months);
 
             //chooseFlag = true gün, false ise ay
             if (chooseFlag)
             {
                 gridDays.Visibility = Visibility.Visible;
                 txtTitleBar.Text = Resources["days"].ToString();
-                _days = daysOrMounths;
                 string[] words = daysOrMounths.Split(',');
                 foreach (var word in words)
                 {
@@ -78,7 +82,6 @@ namespace DiskBackupWpfGUI
             {
                 gridMounths.Visibility = Visibility.Visible;
                 txtTitleBar.Text = Resources["mounths"].ToString();
-                _months = daysOrMounths;
                 string[] words = daysOrMounths.Split(',');
                 foreach (var word in words)
                 {
@@ -212,7 +215,7 @@ namespace DiskBackupWpfGUI
                 }
                 _months = _months.Substring(0, _months.Length - 1);
             }
-
+            MessageBox.Show(_days + " - " + _months);
             Close();
         }
     }

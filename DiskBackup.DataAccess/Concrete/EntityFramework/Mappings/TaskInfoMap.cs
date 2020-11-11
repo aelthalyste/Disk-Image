@@ -25,7 +25,7 @@ namespace DiskBackup.DataAccess.Concrete.EntityFramework.Mappings
             Property(x => x.Obje).HasColumnName("obje");
             Property(x => x.StrObje).HasColumnName("str_obje");
             Property(x => x.Status).HasColumnName("status");
-            Property(x => x.CreatedDate).HasColumnName("created_date");
+            Property(x => x.LastWorkingDate).HasColumnName("last_working_date");
             Property(x => x.NextDate).HasColumnName("next_date");
             Property(x => x.Descripiton).HasColumnName("description");
             Property(x => x.ScheduleId).HasColumnName("scheduler_id");

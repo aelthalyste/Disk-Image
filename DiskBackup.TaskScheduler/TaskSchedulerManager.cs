@@ -46,7 +46,7 @@ namespace DiskBackup.TaskScheduler
             ITrigger trigger = TriggerBuilder.Create()
                 .WithIdentity($"backupIncDiffDailyTrigger_{taskInfo.Id}", "Backup")
                 .ForJob($"backupIncDiffEverydayJob_{taskInfo.Id}", "Backup")
-                .WithSchedule(CronScheduleBuilder.DailyAtHourAndMinute(taskInfo.BackupTaskInfo.StartTime.Hour, taskInfo.BackupTaskInfo.StartTime.Minute)) // execute job daily at 22:00
+                .WithSchedule(CronScheduleBuilder.DailyAtHourAndMinute(taskInfo.NextDate.Hour, taskInfo.NextDate.Minute)) // execute job daily at 22:00
                 .Build();
 
             await _scheduler.ScheduleJob(job, trigger);
@@ -61,7 +61,7 @@ namespace DiskBackup.TaskScheduler
 
             ITrigger trigger = TriggerBuilder.Create()
                 .WithIdentity($"backupIncDiffWeekDaysTrigger_{taskInfo.Id}", "Backup")
-                .WithCronSchedule($"0 {taskInfo.BackupTaskInfo.StartTime.Minute} {taskInfo.BackupTaskInfo.StartTime.Hour}? * MON-FRI") // Haftaiçi günlerinde çalıştırma
+                .WithCronSchedule($"0 {taskInfo.NextDate.Minute} {taskInfo.NextDate.Hour}? * MON-FRI") // Haftaiçi günlerinde çalıştırma
                 .ForJob($"backupIncDiffWeekDaysJob_{taskInfo.Id}", "Backup")
                 .Build();
 
@@ -78,7 +78,7 @@ namespace DiskBackup.TaskScheduler
 
             ITrigger trigger = TriggerBuilder.Create()
                 .WithIdentity($"backupIncDiffCertainDaysTrigger_{taskInfo.Id}", "Backup")
-                .WithCronSchedule($"0 {taskInfo.BackupTaskInfo.StartTime.Minute} {taskInfo.BackupTaskInfo.StartTime.Hour}? * {taskInfo.BackupTaskInfo.Days}") // Belirli günler
+                .WithCronSchedule($"0 {taskInfo.NextDate.Minute} {taskInfo.NextDate.Hour}? * {taskInfo.BackupTaskInfo.Days}") // Belirli günler
                 .ForJob($"backupIncDiffCertainDaysJob_{taskInfo.Id}", "Backup")
                 .Build();
 
@@ -97,7 +97,7 @@ namespace DiskBackup.TaskScheduler
 
             ITrigger trigger = TriggerBuilder.Create()
                 .WithIdentity($"backupIncDiffWeeklyTrigger_{taskInfo.Id}", "Backup")
-                .WithCronSchedule($"0 {taskInfo.BackupTaskInfo.StartTime.Minute} {taskInfo.BackupTaskInfo.StartTime.Hour}? {taskInfo.BackupTaskInfo.Months} {taskInfo.BackupTaskInfo.Days} # {taskInfo.BackupTaskInfo.WeeklyTime}") // 0 15 10? * 6 # 3
+                .WithCronSchedule($"0 {taskInfo.NextDate.Minute} {taskInfo.NextDate.Hour}? {taskInfo.BackupTaskInfo.Months} {taskInfo.BackupTaskInfo.Days} # {taskInfo.BackupTaskInfo.WeeklyTime}") // 0 15 10? * 6 # 3
                 .ForJob($"backupIncDiffWeeklyJob_{taskInfo.Id}", "Backup")
                 .Build();
 
@@ -175,7 +175,7 @@ namespace DiskBackup.TaskScheduler
             ITrigger trigger = TriggerBuilder.Create()
                 .WithIdentity($"backupFullDailyTrigger_{taskInfo.Id}", "Backup")
                 .ForJob($"backupFullEverydayJob_{taskInfo.Id}", "Backup")
-                .WithSchedule(CronScheduleBuilder.DailyAtHourAndMinute(taskInfo.BackupTaskInfo.StartTime.Hour, taskInfo.BackupTaskInfo.StartTime.Minute)) // execute job daily at 22:00
+                .WithSchedule(CronScheduleBuilder.DailyAtHourAndMinute(taskInfo.NextDate.Hour, taskInfo.NextDate.Minute)) // execute job daily at 22:00
                 .Build();
 
             await _scheduler.ScheduleJob(job, trigger);
@@ -190,7 +190,7 @@ namespace DiskBackup.TaskScheduler
 
             ITrigger trigger = TriggerBuilder.Create()
                 .WithIdentity($"backupFullWeekDaysTrigger_{taskInfo.Id}", "Backup")
-                .WithCronSchedule($"0 {taskInfo.BackupTaskInfo.StartTime.Minute} {taskInfo.BackupTaskInfo.StartTime.Hour}? * MON-FRI") // Haftaiçi günlerinde çalıştırma
+                .WithCronSchedule($"0 {taskInfo.NextDate.Minute} {taskInfo.NextDate.Hour}? * MON-FRI") // Haftaiçi günlerinde çalıştırma
                 .ForJob($"backupFullWeekDaysJob_{taskInfo.Id}", "Backup")
                 .Build();
 
@@ -208,7 +208,7 @@ namespace DiskBackup.TaskScheduler
 
             ITrigger trigger = TriggerBuilder.Create()
                 .WithIdentity($"backupFullCertainDaysTrigger_{taskInfo.Id}", "Backup")
-                .WithCronSchedule($"0 {taskInfo.BackupTaskInfo.StartTime.Minute} {taskInfo.BackupTaskInfo.StartTime.Hour}? * {taskInfo.BackupTaskInfo.Days}") // Belirli günler
+                .WithCronSchedule($"0 {taskInfo.NextDate.Minute} {taskInfo.NextDate.Hour}? * {taskInfo.BackupTaskInfo.Days}") // Belirli günler
                 .ForJob($"backupFullCertainDaysJob_{taskInfo.Id}", "Backup")
                 .Build();
 
@@ -227,7 +227,7 @@ namespace DiskBackup.TaskScheduler
 
             ITrigger trigger = TriggerBuilder.Create()
                 .WithIdentity($"backupFullWeeklyTrigger_{taskInfo.Id}", "Backup")
-                .WithCronSchedule($"0 {taskInfo.BackupTaskInfo.StartTime.Minute} {taskInfo.BackupTaskInfo.StartTime.Hour}? {taskInfo.BackupTaskInfo.Months} {taskInfo.BackupTaskInfo.Days} # {taskInfo.BackupTaskInfo.WeeklyTime}") // 0 15 10? * 6 # 3
+                .WithCronSchedule($"0 {taskInfo.NextDate.Minute} {taskInfo.NextDate.Hour}? {taskInfo.BackupTaskInfo.Months} {taskInfo.BackupTaskInfo.Days} # {taskInfo.BackupTaskInfo.WeeklyTime}") // 0 15 10? * 6 # 3
                 .ForJob($"backupFullWeeklyJob_{taskInfo.Id}", "Backup")
                 .Build();
 
