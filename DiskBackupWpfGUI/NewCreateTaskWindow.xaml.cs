@@ -2,6 +2,7 @@
 using DiskBackup.Business.Concrete;
 using DiskBackup.DataAccess.Abstract;
 using DiskBackup.Entities.Concrete;
+using DiskBackup.TaskScheduler;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -30,6 +31,7 @@ namespace DiskBackupWpfGUI
         private IBackupTaskDal _backupTaskDal;
         private IStatusInfoDal _statusInfoDal;
         private ITaskInfoDal _taskInfoDal;
+        private ITaskSchedulerManager _schedulerManager;
 
         private List<BackupStorageInfo> _backupStorageInfoList = new List<BackupStorageInfo>();
         private List<VolumeInfo> _volumeInfoList = new List<VolumeInfo>();
@@ -39,7 +41,7 @@ namespace DiskBackupWpfGUI
         private readonly Func<AddBackupAreaWindow> _createAddBackupWindow;
 
         public NewCreateTaskWindow(List<BackupStorageInfo> backupStorageInfoList, IBackupService backupService, IBackupStorageService backupStorageService,
-            Func<AddBackupAreaWindow> createAddBackupWindow, List<VolumeInfo> volumeInfoList, IBackupTaskDal backupTaskDal, IStatusInfoDal statusInfoDal, ITaskInfoDal taskInfoDal)
+            Func<AddBackupAreaWindow> createAddBackupWindow, List<VolumeInfo> volumeInfoList, IBackupTaskDal backupTaskDal, IStatusInfoDal statusInfoDal, ITaskInfoDal taskInfoDal, ITaskSchedulerManager schedulerManager)
         {
             InitializeComponent();
 
@@ -54,9 +56,11 @@ namespace DiskBackupWpfGUI
             _taskInfoDal = taskInfoDal;
             _taskInfo.BackupTaskInfo = new BackupTask();
             _taskInfo.StatusInfo = new StatusInfo();
+            _schedulerManager = schedulerManager;
+            _schedulerManager.InitShedulerAsync();
 
             _taskInfo.Obje = _volumeInfoList.Count();
-
+            
             foreach (var item in _volumeInfoList)
             {
                 _taskInfo.StrObje += item.Letter;
@@ -272,6 +276,48 @@ namespace DiskBackupWpfGUI
                 }
 
                 MessageBox.Show("Ekleme işlemi başarılı");
+
+                if (resultTaskInfo.BackupTaskInfo.Type == BackupTypes.Diff || resultTaskInfo.BackupTaskInfo.Type == BackupTypes.Inc)
+                {
+                    if (resultTaskInfo.BackupTaskInfo.AutoRun)
+                    {
+                        if (resultTaskInfo.BackupTaskInfo.AutoType == AutoRunType.DaysTime)
+                        {
+                            if (cbDaysTime.SelectedIndex == 0) // everyday
+                            {
+                                _schedulerManager.BackupIncDiffEverydayJob(resultTaskInfo);
+                            }
+                            else if (cbDaysTime.SelectedIndex == 1) //weekdays
+                            {
+                                _schedulerManager.BackupIncDiffWeekDaysJob(resultTaskInfo);
+                            }
+                            else //certain
+                            {
+                                _schedulerManager.BackupIncDiffCertainDaysJob(resultTaskInfo);
+                            }
+                        }
+                        else if (resultTaskInfo.BackupTaskInfo.AutoType == AutoRunType.WeeklyTime)
+                        {
+                            _schedulerManager.BackupIncDiffWeeklyJob(resultTaskInfo);
+                        }
+                        else //periodic
+                        {
+                            if (cbPeriodicTime.SelectedIndex == 0) //saat
+                            {
+                                _schedulerManager.BackupIncDiffPeriodicHoursJob(resultTaskInfo);
+                            }
+                            else //dakika
+                            {
+                                _schedulerManager.BackupIncDiffPeriodicMinutesJob(resultTaskInfo);
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    //full gelince buraya alıcaz paşayı
+                }
+
                 Close();
             }
         }
