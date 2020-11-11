@@ -50,18 +50,19 @@ namespace DiskBackupWpfGUI
         private List<VolumeInfo> _volumeList = new List<VolumeInfo>();
         private List<TaskInfo> _taskInfoList = new List<TaskInfo>();
 
-        private IBackupService _backupService;
-        private IBackupStorageService _backupStorageService;
-        private ITaskInfoDal _taskInfoDal;
-        private IBackupStorageDal _backupStorageDal;
-        private ITaskSchedulerManager _taskSchedulerManager;
-        private IBackupTaskDal _backupTaskDal;
-        private IStatusInfoDal _statusInfoDal;
+        private readonly IBackupService _backupService;
+        private readonly IBackupStorageService _backupStorageService;
+        private readonly ITaskInfoDal _taskInfoDal;
+        private readonly IBackupStorageDal _backupStorageDal;
+        private readonly ITaskSchedulerManager _taskSchedulerManager;
+        private readonly IBackupTaskDal _backupTaskDal;
+        private readonly IStatusInfoDal _statusInfoDal;
+        private readonly IActivityLogDal _activityLogDal;
 
         private readonly ILifetimeScope _scope;
 
         public MainWindow(IBackupService backupService, IBackupStorageService backupStorageService, ILifetimeScope scope, ITaskInfoDal taskInfoDal,
-            IBackupStorageDal backupStorageDal, ITaskSchedulerManager taskSchedulerManager, IBackupTaskDal backupTaskDal, IStatusInfoDal statusInfoDal)
+            IBackupStorageDal backupStorageDal, ITaskSchedulerManager taskSchedulerManager, IBackupTaskDal backupTaskDal, IStatusInfoDal statusInfoDal, IActivityLogDal activityLogDal)
         {
             InitializeComponent();
 
@@ -72,6 +73,7 @@ namespace DiskBackupWpfGUI
             _backupTaskDal = backupTaskDal;
             _statusInfoDal = statusInfoDal;
             _taskSchedulerManager = taskSchedulerManager;
+            _activityLogDal = activityLogDal;
 
             _scope = scope;
 
@@ -130,7 +132,12 @@ namespace DiskBackupWpfGUI
 
             #endregion
 
-            BackupStorageInfo backupAreaInfo1 = new BackupStorageInfo()
+            #region ActivityLog
+
+            // real
+            listViewLog.ItemsSource = _activityLogDal.GetList();
+
+            /*BackupStorageInfo backupAreaInfo1 = new BackupStorageInfo()
             {
                 StorageName = "Narbulut"
             };
@@ -175,9 +182,9 @@ namespace DiskBackupWpfGUI
                 StrStatus = Resources[StatusType.Success.ToString()].ToString()
             });
 
-            listViewLog.ItemsSource = activityLogItems;
+            listViewLog.ItemsSource = activityLogItems;*/
             //buraya kadar uyarlandı loader'da falan da düzen gerekecek
-
+            #endregion
 
             List<BackupInfo> backupsItems = new List<BackupInfo>();
 
@@ -1099,6 +1106,17 @@ namespace DiskBackupWpfGUI
                 btnLogDelete.IsEnabled = false;
         }
 
+        private void listViewLog_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            if (listViewLog.SelectedIndex != -1)
+            {
+                ActivityLog activityLog = (ActivityLog)listViewLog.SelectedItem;
+                activityLog.StatusInfo = _statusInfoDal.Get(x => x.Id == activityLog.StatusInfoId);
+                StatusesWindow backupStatus = _scope.Resolve<StatusesWindow>(new NamedParameter("chooseFlag", 0), new NamedParameter("statusInfo", activityLog.StatusInfo));
+                backupStatus.Show();
+            }
+        }
+
 
         #endregion
 
@@ -1241,7 +1259,6 @@ namespace DiskBackupWpfGUI
 
             return ($"{dblSByte:0.##} {Suffix[i]}");
         }
-
 
     }
 }

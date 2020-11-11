@@ -1169,7 +1169,7 @@
                         <RowDefinition/>
                     </Grid.RowDefinitions>
                     <DockPanel>
-                        <ListView Name="listViewLog" MinHeight="415" Margin="5,0,0,5" VerticalAlignment="Top" SelectionChanged="listViewLog_SelectionChanged">
+                        <ListView Name="listViewLog" MinHeight="415" Margin="5,0,0,5" VerticalAlignment="Top" SelectionChanged="listViewLog_SelectionChanged" MouseDoubleClick="listViewLog_MouseDoubleClick">
                             <ListView.View>
                                 <GridView>
                                     <GridViewColumn Width="50">
