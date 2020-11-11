@@ -4,6 +4,7 @@ using DiskBackup.Business.Abstract;
 using DiskBackup.Business.Concrete;
 using DiskBackup.DataAccess.Abstract;
 using DiskBackup.Entities.Concrete;
+using DiskBackup.TaskScheduler;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -53,10 +54,11 @@ namespace DiskBackupWpfGUI
         private IBackupStorageService _backupStorageService;
         private ITaskInfoDal _taskInfoDal;
         private IBackupStorageDal _backupStorageDal;
+        private ITaskSchedulerManager _taskSchedulerManager;
 
         private readonly ILifetimeScope _scope;
 
-        public MainWindow(IBackupService backupService, IBackupStorageService backupStorageService, ILifetimeScope scope, ITaskInfoDal taskInfoDal, IBackupStorageDal backupStorageDal)
+        public MainWindow(IBackupService backupService, IBackupStorageService backupStorageService, ILifetimeScope scope, ITaskInfoDal taskInfoDal, IBackupStorageDal backupStorageDal, ITaskSchedulerManager taskSchedulerManager)
         {
             InitializeComponent();
 
@@ -64,7 +66,13 @@ namespace DiskBackupWpfGUI
             _backupStorageService = backupStorageService;
             _taskInfoDal = taskInfoDal;
             _backupStorageDal = backupStorageDal;
+            _taskSchedulerManager = taskSchedulerManager;
 
+            _taskSchedulerManager.InitShedulerAsync();
+            if (!_backupService.InitTracker())
+            {
+                MessageBox.Show("Driver intialize edilemedi!", "NARBULUT DİYOR Kİ;", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
             _scope = scope;
 
             #region Disk Bilgileri
@@ -453,7 +461,28 @@ namespace DiskBackupWpfGUI
             {
                 btnTaskDelete.IsEnabled = true;
                 btnTaskEdit.IsEnabled = true;
+                btnTaskStart.IsEnabled = true;
                 //butonlar eklenmeye devam edecek burayada da checkboxlara da
+            }
+        }
+
+        private void btnTaskStart_Click(object sender, RoutedEventArgs e)
+        {
+            TaskInfo taskInfo = (TaskInfo)listViewTasks.SelectedItem;
+            if (taskInfo.Type == TaskType.Backup)
+            {
+                if (taskInfo.BackupTaskInfo.Type ==BackupTypes.Diff || taskInfo.BackupTaskInfo.Type == BackupTypes.Inc)
+                {
+                    _taskSchedulerManager.BackupIncDiffNowJob(taskInfo);
+                }
+                else
+                {
+                    //full
+                }
+            }
+            else
+            {
+                //restore
             }
         }
 
@@ -468,14 +497,26 @@ namespace DiskBackupWpfGUI
             }
 
             if (listViewTasks.SelectedItems.Count == 1)
+            {
                 btnTaskEdit.IsEnabled = true;
+                btnTaskStart.IsEnabled = true;
+            }
             else
+            {
                 btnTaskEdit.IsEnabled = false;
+                btnTaskStart.IsEnabled = false;
+            }
 
             if (listViewTasks.SelectedItems.Count > 0)
+            {
                 btnTaskDelete.IsEnabled = true;
+                //btnTaskStart.IsEnabled = true;
+            }
             else
+            {
                 btnTaskDelete.IsEnabled = false;
+                //btnTaskStart.IsEnabled = false;
+            }
         }
 
         private void chbAllTasksChechbox_Unchecked(object sender, RoutedEventArgs e)
@@ -490,14 +531,26 @@ namespace DiskBackupWpfGUI
             }
 
             if (listViewTasks.SelectedItems.Count == 1)
+            {
                 btnTaskEdit.IsEnabled = true;
+                btnTaskStart.IsEnabled = true;
+            }
             else
+            {
                 btnTaskEdit.IsEnabled = false;
+                btnTaskStart.IsEnabled = false;
+            }
 
             if (listViewTasks.SelectedItems.Count > 0)
+            {
                 btnTaskDelete.IsEnabled = true;
+                //btnTaskStart.IsEnabled = true;
+            }
             else
+            {
                 btnTaskDelete.IsEnabled = false;
+                //btnTaskStart.IsEnabled = false;
+            }
         }
 
         private void chbTask_Checked(object sender, RoutedEventArgs e)
@@ -509,9 +562,15 @@ namespace DiskBackupWpfGUI
             }
 
             if (listViewTasks.SelectedItems.Count == 1)
+            {
                 btnTaskEdit.IsEnabled = true;
+                btnTaskStart.IsEnabled = true;
+            }
             else
+            {
                 btnTaskEdit.IsEnabled = false;
+                btnTaskStart.IsEnabled = false;
+            }
 
             if (listViewTasks.SelectedItems.Count > 0)
                 btnTaskDelete.IsEnabled = true;
@@ -525,9 +584,15 @@ namespace DiskBackupWpfGUI
             chbAllTasksChechbox.IsChecked = false;
 
             if (listViewTasks.SelectedItems.Count == 1)
+            {
                 btnTaskEdit.IsEnabled = true;
+                btnTaskStart.IsEnabled = true;
+            }
             else
+            {
                 btnTaskEdit.IsEnabled = false;
+                btnTaskStart.IsEnabled = false;
+            }
 
             if (listViewTasks.SelectedItems.Count > 0)
                 btnTaskDelete.IsEnabled = true;
@@ -563,10 +628,7 @@ namespace DiskBackupWpfGUI
             {
                 if (listViewRestore.SelectedIndex != -1)
                     btnRestore.IsEnabled = true;
-                //foreach (VolumeInfo item in listViewRestoreDisk.SelectedItems)
-                //{
-                //    MessageBox.Show(item.ToString() + "--" + item.Name + "-" + item.Letter);
-                //}
+                
             }
             else
             {
@@ -1158,5 +1220,7 @@ namespace DiskBackupWpfGUI
 
             return ($"{dblSByte:0.##} {Suffix[i]}");
         }
+
+        
     }
 }

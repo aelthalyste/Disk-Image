@@ -52,7 +52,6 @@ namespace DiskBackupWpfGUI
             _chooseFlag = chooseFlag;
             _days = null;
             _months = null;
-            MessageBox.Show("ilk geldim gün " + _days + " ay: " + _months);
 
             //chooseFlag = true gün, false ise ay
             if (chooseFlag)
@@ -215,7 +214,6 @@ namespace DiskBackupWpfGUI
                 }
                 _months = _months.Substring(0, _months.Length - 1);
             }
-            MessageBox.Show(_days + " - " + _months);
             Close();
         }
     }

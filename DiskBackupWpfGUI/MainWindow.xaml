@@ -418,7 +418,7 @@
                                 </Button.Content>
                             </Button>
                             <Button Name="btnTaskStart" ToolTip="{DynamicResource start}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5"  
-                                    Style="{StaticResource ImageButton}" Grid.Column="1">
+                                    Style="{StaticResource ImageButton}" Grid.Column="1" Click="btnTaskStart_Click" IsEnabled="False">
                                 <Button.Content>
                                     <Image Height="27" Width="27" HorizontalAlignment="Center" VerticalAlignment="Center">
                                         <Image.Style>

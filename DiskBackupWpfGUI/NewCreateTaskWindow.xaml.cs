@@ -37,7 +37,7 @@ namespace DiskBackupWpfGUI
         private List<VolumeInfo> _volumeInfoList = new List<VolumeInfo>();
 
         private TaskInfo _taskInfo = new TaskInfo();
-
+        
         private readonly Func<AddBackupAreaWindow> _createAddBackupWindow;
 
         public NewCreateTaskWindow(List<BackupStorageInfo> backupStorageInfoList, IBackupService backupService, IBackupStorageService backupStorageService,
@@ -701,7 +701,6 @@ namespace DiskBackupWpfGUI
             //chooseDays.ShowDialog();
             if (_taskInfo.BackupTaskInfo.Days == null)
             {
-                MessageBox.Show("null");
                 ChooseDayAndMounthsWindow chooseDays = new ChooseDayAndMounthsWindow(true);
                 chooseDays.ShowDialog();
                 _taskInfo.BackupTaskInfo.Days = ChooseDayAndMounthsWindow._days;
@@ -709,7 +708,6 @@ namespace DiskBackupWpfGUI
             else
             {
                 // doldurma yap
-                MessageBox.Show("dolu");
                 ChooseDayAndMounthsWindow chooseDays = new ChooseDayAndMounthsWindow(true, _taskInfo.BackupTaskInfo.Days);
                 chooseDays.ShowDialog();
                 _taskInfo.BackupTaskInfo.Days = ChooseDayAndMounthsWindow._days;
