@@ -200,30 +200,31 @@ namespace DiskBackupWpfGUI
                         {
                             if (cbDaysTime.SelectedIndex == 0) // everyday
                             {
-                                _schedulerManager.BackupIncDiffEverydayJob(resultTaskInfo);
+                                _schedulerManager.BackupIncDiffEverydayJob(resultTaskInfo).Wait();
                             }
                             else if (cbDaysTime.SelectedIndex == 1) //weekdays
                             {
-                                _schedulerManager.BackupIncDiffWeekDaysJob(resultTaskInfo);
+                                _schedulerManager.BackupIncDiffWeekDaysJob(resultTaskInfo).Wait();
                             }
                             else //certain
                             {
-                                _schedulerManager.BackupIncDiffCertainDaysJob(resultTaskInfo);
+                                _schedulerManager.BackupIncDiffCertainDaysJob(resultTaskInfo).Wait();
                             }
                         }
                         else if (resultTaskInfo.BackupTaskInfo.AutoType == AutoRunType.WeeklyTime)
                         {
-                            _schedulerManager.BackupIncDiffWeeklyJob(resultTaskInfo);
+                            _schedulerManager.BackupIncDiffWeeklyJob(resultTaskInfo).Wait();
+
                         }
                         else //periodic
                         {
                             if (cbPeriodicTime.SelectedIndex == 0) //saat
                             {
-                                _schedulerManager.BackupIncDiffPeriodicHoursJob(resultTaskInfo);
+                                _schedulerManager.BackupIncDiffPeriodicHoursJob(resultTaskInfo).Wait();
                             }
                             else //dakika
                             {
-                                _schedulerManager.BackupIncDiffPeriodicMinutesJob(resultTaskInfo);
+                                _schedulerManager.BackupIncDiffPeriodicMinutesJob(resultTaskInfo).Wait();
                             }
                         }
                     }

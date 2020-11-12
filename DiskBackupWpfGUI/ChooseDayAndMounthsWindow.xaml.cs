@@ -61,19 +61,19 @@ namespace DiskBackupWpfGUI
                 string[] words = daysOrMounths.Split(',');
                 foreach (var word in words)
                 {
-                    if (Convert.ToInt32(word) == 0)
-                        chbMonday.IsChecked = true;
                     if (Convert.ToInt32(word) == 1)
-                        chbTuesday.IsChecked = true;
+                        chbMonday.IsChecked = true;
                     if (Convert.ToInt32(word) == 2)
-                        chbWednesday.IsChecked = true;
+                        chbTuesday.IsChecked = true;
                     if (Convert.ToInt32(word) == 3)
-                        chbThursday.IsChecked = true;
+                        chbWednesday.IsChecked = true;
                     if (Convert.ToInt32(word) == 4)
-                        chbFriday.IsChecked = true;
+                        chbThursday.IsChecked = true;
                     if (Convert.ToInt32(word) == 5)
-                        chbSaturday.IsChecked = true;
+                        chbFriday.IsChecked = true;
                     if (Convert.ToInt32(word) == 6)
+                        chbSaturday.IsChecked = true;
+                    if (Convert.ToInt32(word) == 7)
                         chbSunday.IsChecked = true;
                 }
             }
@@ -134,31 +134,31 @@ namespace DiskBackupWpfGUI
             {
                 if (chbMonday.IsChecked.Value)
                 {
-                    _days += 0 + ",";
+                    _days += 1 + ",";
                 }
                 if (chbTuesday.IsChecked.Value)
                 {
-                    _days += 1 + ",";
+                    _days += 2 + ",";
                 }
                 if (chbWednesday.IsChecked.Value)
                 {
-                    _days += 2 + ",";
+                    _days += 3 + ",";
                 }
                 if (chbThursday.IsChecked.Value)
                 {
-                    _days += 3 + ",";
+                    _days += 4 + ",";
                 }
                 if (chbFriday.IsChecked.Value)
                 {
-                    _days += 4 + ",";
+                    _days += 5 + ",";
                 }
                 if (chbSaturday.IsChecked.Value)
                 {
-                    _days += 5 + ",";
+                    _days += 6 + ",";
                 }
                 if (chbSunday.IsChecked.Value)
                 {
-                    _days += 6 + ",";
+                    _days += 7 + ",";
                 }
                 _days = _days.Substring(0, _days.Length - 1);
             }
