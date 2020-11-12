@@ -93,65 +93,7 @@ namespace DiskBackupWpfGUI
         #region Next-Back-Ok-Cancel Button
         private void btnCreateTaskOk_Click(object sender, RoutedEventArgs e)
         {
-            bool errorFlag = false;
-
-            //kaydet
-            if (txtTaskName.Text.Equals("") || txtTaskDescription.Text.Equals("") || cbTargetBackupArea.SelectedIndex == -1 ||
-                txtRetentionTime.Text.Equals("") || txtFullBackup.Text.Equals("") || txtNarRetentionTime.Text.Equals("") ||
-                txtNarFullBackup.Text.Equals(""))
-            {
-                errorFlag = true;
-            }
-            else if (checkAutoRun.IsChecked.Value) // zamanlama tabı için
-            {
-                if (rbDaysTime.IsChecked.Value)
-                {
-                    if (tpDaysTime.Value.ToString().Equals(""))
-                    {
-                        errorFlag = true;
-                    }
-                    else if (cbDaysTime.SelectedIndex == 2) // belirli günler seçilmeli
-                    {
-                        if (ChooseDayAndMounthsWindow._days == null)
-                        {
-                            errorFlag = true;
-                        }    
-                    }
-                }
-                else if (rbWeeklyTime.IsChecked.Value)
-                {
-                    if (tpWeeklyTime.Value.ToString().Equals(""))
-                    {
-                        errorFlag = true;
-                    }
-                    else // aylar seçilmeli
-                    {
-                        if (ChooseDayAndMounthsWindow._months == null)
-                        {
-                            errorFlag = true;
-                        }
-                    }
-                }
-                else if (rbPeriodic.IsChecked.Value)
-                {
-                    if (txtPeriodic.Text.Equals(""))
-                    {
-                        errorFlag = true;
-                    }
-                }
-                else // radiobuttonlar seçili değil
-                {
-                    errorFlag = true;
-                }
-            }
-            if (checkTimeFailDesc.IsChecked.Value)
-            {
-                if (txtTimeFailDesc.Text.Equals("") || txtTimeWait.Text.Equals(""))
-                {
-                    errorFlag = true;
-                }
-            }
-            if (errorFlag)
+            if (ConfirmNotEmpty())
             {
                 MessageBox.Show("İlgili alanları lütfen boş geçmeyiniz.", "NARBULUT DİYOR Kİ;", MessageBoxButton.OK, MessageBoxImage.Error);
             }
@@ -245,37 +187,10 @@ namespace DiskBackupWpfGUI
                 }
 
                 //veritabanı işlemleri gelecek
-                //backupTask kaydetme
-                var resultBackupTask = _backupTaskDal.Add(_taskInfo.BackupTaskInfo);              
-                if (resultBackupTask == null)
-                {
-                    MessageBox.Show("Ekleme başarısız.");
-                    Close();
-                }
+                TaskInfo resultTaskInfo = SaveToDatabase();
 
-                //backupTask kaydetme
-                _taskInfo.StatusInfo.TaskName = _taskInfo.Name;
-                _taskInfo.StatusInfo.SourceObje = _taskInfo.StrObje;
-                var resultStatusInfo = _statusInfoDal.Add(_taskInfo.StatusInfo);
-                if (resultStatusInfo == null)
-                {
-                    MessageBox.Show("Ekleme başarısız.");
-                    Close();
-                }
-
-                // task kayıdı
-                _taskInfo.Status = Resources["Ready"].ToString();
-                _taskInfo.StatusInfoId = resultStatusInfo.Id;
-                _taskInfo.BackupTaskId = resultBackupTask.Id;
-                _taskInfo.LastWorkingDate = Convert.ToDateTime("01/01/0002");
-                var resultTaskInfo = _taskInfoDal.Add(_taskInfo);
-                if (resultTaskInfo == null)
-                {
-                    MessageBox.Show("Ekleme başarısız.");
-                    Close();
-                }
-
-                MessageBox.Show("Ekleme işlemi başarılı");
+                if (resultTaskInfo != null)
+                    MessageBox.Show("Ekleme işlemi başarılı");
 
                 if (resultTaskInfo.BackupTaskInfo.Type == BackupTypes.Diff || resultTaskInfo.BackupTaskInfo.Type == BackupTypes.Inc)
                 {
@@ -317,9 +232,9 @@ namespace DiskBackupWpfGUI
                 {
                     //full gelince buraya alıcaz paşayı
                 }
-
-                Close();
             }
+
+            Close();
         }
 
         private void btnCreateTaskBack_Click(object sender, RoutedEventArgs e)
@@ -794,6 +709,105 @@ namespace DiskBackupWpfGUI
                 lblTabHeader.Text = Resources["summary"].ToString();
                 lblTabContent.Text = Resources["NCTSummaryContent"].ToString();
             }
+        }
+
+        private bool ConfirmNotEmpty()
+        {
+            bool errorFlag = false;
+
+            // boş geçilmeme kontrolü
+            if (txtTaskName.Text.Equals("") || txtTaskDescription.Text.Equals("") || cbTargetBackupArea.SelectedIndex == -1 ||
+                txtRetentionTime.Text.Equals("") || txtFullBackup.Text.Equals("") || txtNarRetentionTime.Text.Equals("") ||
+                txtNarFullBackup.Text.Equals(""))
+            {
+                errorFlag = true;
+            }
+            else if (checkAutoRun.IsChecked.Value) // zamanlama tabı için
+            {
+                if (rbDaysTime.IsChecked.Value)
+                {
+                    if (tpDaysTime.Value.ToString().Equals(""))
+                    {
+                        errorFlag = true;
+                    }
+                    else if (cbDaysTime.SelectedIndex == 2) // belirli günler seçilmeli
+                    {
+                        if (ChooseDayAndMounthsWindow._days == null)
+                        {
+                            errorFlag = true;
+                        }
+                    }
+                }
+                else if (rbWeeklyTime.IsChecked.Value)
+                {
+                    if (tpWeeklyTime.Value.ToString().Equals(""))
+                    {
+                        errorFlag = true;
+                    }
+                    else // aylar seçilmeli
+                    {
+                        if (ChooseDayAndMounthsWindow._months == null)
+                        {
+                            errorFlag = true;
+                        }
+                    }
+                }
+                else if (rbPeriodic.IsChecked.Value)
+                {
+                    if (txtPeriodic.Text.Equals(""))
+                    {
+                        errorFlag = true;
+                    }
+                }
+                else // radiobuttonlar seçili değil
+                {
+                    errorFlag = true;
+                }
+            }
+            if (checkTimeFailDesc.IsChecked.Value)
+            {
+                if (txtTimeFailDesc.Text.Equals("") || txtTimeWait.Text.Equals(""))
+                {
+                    errorFlag = true;
+                }
+            }
+
+            return errorFlag;
+        }
+
+        private TaskInfo SaveToDatabase()
+        {
+            //backupTask kaydetme
+            var resultBackupTask = _backupTaskDal.Add(_taskInfo.BackupTaskInfo);
+            if (resultBackupTask == null)
+            {
+                MessageBox.Show("Ekleme başarısız.", "NARBULUT DİYOR Kİ;", MessageBoxButton.OK, MessageBoxImage.Error);
+                Close();
+            }
+
+            //backupTask kaydetme
+            _taskInfo.StatusInfo.TaskName = _taskInfo.Name;
+            _taskInfo.StatusInfo.SourceObje = _taskInfo.StrObje;
+            var resultStatusInfo = _statusInfoDal.Add(_taskInfo.StatusInfo);
+            if (resultStatusInfo == null)
+            {
+                MessageBox.Show("Ekleme başarısız.", "NARBULUT DİYOR Kİ;", MessageBoxButton.OK, MessageBoxImage.Error);
+                Close();
+            }
+
+            // task kayıdı
+            _taskInfo.Status = Resources["Ready"].ToString();
+            _taskInfo.StatusInfoId = resultStatusInfo.Id;
+            _taskInfo.BackupTaskId = resultBackupTask.Id;
+            _taskInfo.LastWorkingDate = Convert.ToDateTime("01/01/0002");
+            var resultTaskInfo = _taskInfoDal.Add(_taskInfo);
+            if (resultTaskInfo == null)
+            {
+                MessageBox.Show("Ekleme başarısız.", "NARBULUT DİYOR Kİ;", MessageBoxButton.OK, MessageBoxImage.Error);
+                Close();
+            }
+
+            return resultTaskInfo;
         }
 
     }

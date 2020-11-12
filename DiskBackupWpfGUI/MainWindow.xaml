@@ -1253,6 +1253,24 @@
                                     </Image>
                                 </Button.Content>
                             </Button>
+                            <!---->
+                            <Button Name="btnRefreshActivity" ToolTip="{DynamicResource refresh}" Width="32" Height="32" HorizontalAlignment="Right" Margin="0,0,0,5" 
+                                    Style="{StaticResource ImageButton}" Grid.Column="1" Click="btnRefreshActivity_Click">
+                                <Button.Content>
+                                    <Image Height="28">
+                                        <Image.Style>
+                                            <Style TargetType="Image">
+                                                <Setter Property="Source" Value="Resources/Icon/icons8_refresh.ico" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsEnabled, RelativeSource={RelativeSource AncestorType=Button}}" Value="False">
+                                                        <Setter Property="Source" Value="Resources/Icon/icons8_synchronize_disable.ico"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Image.Style>
+                                    </Image>
+                                </Button.Content>
+                            </Button>
                         </StackPanel>
                     </DockPanel>
                     <DockPanel Grid.Row="1" Grid.ColumnSpan="2">

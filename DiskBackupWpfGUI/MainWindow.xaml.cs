@@ -1260,5 +1260,9 @@ namespace DiskBackupWpfGUI
             return ($"{dblSByte:0.##} {Suffix[i]}");
         }
 
+        private void btnRefreshActivity_Click(object sender, RoutedEventArgs e)
+        {
+            listViewLog.ItemsSource = _activityLogDal.GetList();
+        }
     }
 }

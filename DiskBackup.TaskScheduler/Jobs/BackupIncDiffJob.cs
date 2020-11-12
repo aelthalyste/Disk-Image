@@ -7,6 +7,7 @@ using Quartz;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -78,7 +79,7 @@ namespace DiskBackup.TaskScheduler.Jobs
                 activityLog.EndDate = DateTime.Now;
                 activityLog.Status = StatusType.Fail;
                 activityLog.StrStatus = StatusType.Fail.ToString();
-                activityLog.StatusInfo = task.StatusInfo;
+                activityLog.StatusInfo = _statusInfoDal.Get(x => x.Id == task.StatusInfoId);
                 var resultStatusInfo = _statusInfoDal.Add(activityLog.StatusInfo);
                 activityLog.StatusInfoId = resultStatusInfo.Id;
 
@@ -89,7 +90,7 @@ namespace DiskBackup.TaskScheduler.Jobs
             activityLog.EndDate = DateTime.Now;
             activityLog.Status = StatusType.Success;
             activityLog.StrStatus = StatusType.Success.ToString();
-            activityLog.StatusInfo = task.StatusInfo;
+            activityLog.StatusInfo = _statusInfoDal.Get(x => x.Id == task.StatusInfoId);
             var resultStatusInfo2 = _statusInfoDal.Add(activityLog.StatusInfo);
             activityLog.StatusInfoId = resultStatusInfo2.Id;
         }
