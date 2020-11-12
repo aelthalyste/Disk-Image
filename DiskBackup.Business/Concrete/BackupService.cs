@@ -21,11 +21,11 @@ namespace DiskBackup.Business.Concrete
         private DiskTracker _diskTracker = new DiskTracker();
         private CSNarFileExplorer _cSNarFileExplorer = new CSNarFileExplorer();
 
-        private Dictionary<int,ManualResetEvent> _taskEventMap = new Dictionary<int, ManualResetEvent>(); // aynı işlem Stopwatch ve cancellationtoken source için de yapılacak ancak Quartz'ın pause, resume ve cancel işlemleri düzgün çalışıyorsa kullanılmayacak
-        private Dictionary<int,CancellationTokenSource> _cancellationTokenSource = new Dictionary<int, CancellationTokenSource>();
+        //private Dictionary<int,ManualResetEvent> _taskEventMap = new Dictionary<int, ManualResetEvent>(); // aynı işlem Stopwatch ve cancellationtoken source için de yapılacak ancak Quartz'ın pause, resume ve cancel işlemleri düzgün çalışıyorsa kullanılmayacak
+        //private Dictionary<int,CancellationTokenSource> _cancellationTokenSource = new Dictionary<int, CancellationTokenSource>();
         private bool _isStarted = false;
 
-        private Dictionary<int,Stopwatch> _timeElapsed = new Dictionary<int, Stopwatch>();
+        //private Dictionary<int,Stopwatch> _timeElapsedMap = new Dictionary<int, Stopwatch>();
 
         private readonly IStatusInfoDal _statusInfoDal; // status bilgilerini veritabanına yazabilmek için gerekli
 
@@ -176,16 +176,26 @@ namespace DiskBackup.Business.Concrete
 
         public bool CreateIncDiffBackup(TaskInfo taskInfo)
         {
+            Console.WriteLine("Batu Method girildi");
+            if (_statusInfoDal == null)
+                throw new Exception("StatusInfoDal is null");
             var statusInfo = _statusInfoDal.Get(si => si.Id == taskInfo.StatusInfoId); //her task için uygulanmalı
 
-            var manualResetEvent = new ManualResetEvent(true);
-            var timeElapsed = new Stopwatch();
-            _taskEventMap[taskInfo.Id] = manualResetEvent;
-            _timeElapsed[taskInfo.Id] = timeElapsed;
-            _timeElapsed[taskInfo.Id].Start();
+            if (statusInfo == null)
+                throw new Exception("statusInfo is null");
+
+            if (_diskTracker == null)
+                throw new Exception("_diskTracker is null");
+            //var manualResetEvent = new ManualResetEvent(true);
+            //_taskEventMap[taskInfo.Id] = manualResetEvent;*/
+
+            //var timeElapsed = new Stopwatch();
+            //_timeElapsedMap[taskInfo.Id] = timeElapsed;
+
+            //timeElapsed.Start();
 
             _isStarted = true;
-            var cancellationToken = _cancellationTokenSource[taskInfo.Id].Token;
+            //var cancellationToken = _cancellationTokenSource[taskInfo.Id].Token;
 
             string letters = taskInfo.StrObje;
 
@@ -211,15 +221,15 @@ namespace DiskBackup.Business.Concrete
                             FileStream file = File.Create(taskInfo.BackupStorageInfo.Path + str.FileName); //backupStorageInfo path alınıcak
                             while (true)
                             {
-                                if (cancellationToken.IsCancellationRequested)
-                                {
+                                //if (cancellationToken.IsCancellationRequested)
+                                //{
                                     //cleanup 
-                                    _diskTracker.CW_TerminateBackup(false, letter);
-                                    _taskEventMap.Remove(taskInfo.Id);
-                                    manualResetEvent.Dispose();
-                                    return false;
-                                }
-                                manualResetEvent.WaitOne();
+                                   // _diskTracker.CW_TerminateBackup(false, letter);
+                                    //_taskEventMap.Remove(taskInfo.Id);
+                                    //manualResetEvent.Dispose();
+                                   // return false;
+                                //}
+                                //manualResetEvent.WaitOne();
 
                                 Read = _diskTracker.CW_ReadStream(BAddr, letter, bufferSize);
                                 file.Write(buffer, 0, Read);
@@ -228,14 +238,15 @@ namespace DiskBackup.Business.Concrete
 
                                 statusInfo.DataProcessed = BytesReadSoFar;
                                 statusInfo.TotalDataProcessed = (long)str.CopySize;
-                                statusInfo.AverageDataRate = ((statusInfo.TotalDataProcessed / 1024.0) / 1024.0) / (_timeElapsed[taskInfo.Id].ElapsedMilliseconds / 1000); // MB/s
-                                statusInfo.InstantDataRate = ((BytesReadSoFar / 1024.0) / 1024.0) / (_timeElapsed[taskInfo.Id].ElapsedMilliseconds / 1000); // MB/s
+                                //statusInfo.AverageDataRate = ((statusInfo.TotalDataProcessed / 1024.0) / 1024.0) / (timeElapsed.ElapsedMilliseconds / 1000); // MB/s
+                                //statusInfo.InstantDataRate = ((BytesReadSoFar / 1024.0) / 1024.0) / (timeElapsed.ElapsedMilliseconds / 1000); // MB/s
 
                                 if (Read != bufferSize)
                                     break;
                             }
                             result = (long)str.CopySize == BytesReadSoFar;
                             _diskTracker.CW_TerminateBackup(result, letter); //işlemi başarılı olup olmadığı cancel gelmeden
+                            Console.WriteLine(BytesReadSoFar + " --- ");
 
                             try
                             {
@@ -250,11 +261,14 @@ namespace DiskBackup.Business.Concrete
                         }
                     }
                 }
-                statusInfo.TimeElapsed = _timeElapsed[taskInfo.Id].ElapsedMilliseconds;
+                //statusInfo.TimeElapsed = timeElapsed.ElapsedMilliseconds;
                 _statusInfoDal.Update(statusInfo);
             }
-            manualResetEvent.Dispose();
-            _taskEventMap.Remove(taskInfo.Id);
+            //manualResetEvent.Dispose();
+            //_taskEventMap.Remove(taskInfo.Id);
+
+            //_timeElapsedMap.Remove(taskInfo.Id);
+            Console.WriteLine("Batu Method çıktı");
             return result;
         }
 
@@ -265,51 +279,54 @@ namespace DiskBackup.Business.Concrete
 
         public void PauseTask(TaskInfo taskInfo)
         {
-            if (!_isStarted) throw new Exception("Backup is not started");
-            _timeElapsed[taskInfo.Id].Stop();
+            //var timeElapsed = _timeElapsedMap[taskInfo.Id];
+            //if (!_isStarted) throw new Exception("Backup is not started");
+            //timeElapsed.Stop();
             
-            var statusInfo = _statusInfoDal.Get(si => si.Id == taskInfo.StatusInfoId);
+            //var statusInfo = _statusInfoDal.Get(si => si.Id == taskInfo.StatusInfoId);
 
-            statusInfo.TimeElapsed = _timeElapsed[taskInfo.Id].ElapsedMilliseconds;
-            _statusInfoDal.Update(statusInfo);
-            if (_taskEventMap.ContainsKey(taskInfo.Id))
-            {
-                _taskEventMap[taskInfo.Id].Reset();
-            }
+            //statusInfo.TimeElapsed = timeElapsed.ElapsedMilliseconds;
+            //_statusInfoDal.Update(statusInfo);
+            //if (_taskEventMap.ContainsKey(taskInfo.Id))
+            //{
+            //    _taskEventMap[taskInfo.Id].Reset();
+            //}
         }
 
         public void CancelTask(TaskInfo taskInfo)
         {
-            _cancellationTokenSource[taskInfo.Id].Cancel();
-            _isStarted = false;
-            _timeElapsed[taskInfo.Id].Stop();
+            //var timeElapsed = _timeElapsedMap[taskInfo.Id];
+            //_cancellationTokenSource[taskInfo.Id].Cancel();
+            //_isStarted = false;
+            //timeElapsed.Stop();
 
-            var statusInfo = _statusInfoDal.Get(si => si.Id == taskInfo.StatusInfoId); 
+            //var statusInfo = _statusInfoDal.Get(si => si.Id == taskInfo.StatusInfoId); 
 
-            statusInfo.TimeElapsed = _timeElapsed[taskInfo.Id].ElapsedMilliseconds;
-            _statusInfoDal.Update(statusInfo);
+            //statusInfo.TimeElapsed = timeElapsed.ElapsedMilliseconds;
+            //_statusInfoDal.Update(statusInfo);
 
-            _timeElapsed[taskInfo.Id].Reset();
-            if (_taskEventMap.ContainsKey(taskInfo.Id))
-            {
-                _taskEventMap[taskInfo.Id].Set();
-            }
+            //timeElapsed.Reset();
+            //if (_taskEventMap.ContainsKey(taskInfo.Id))
+            //{
+            //    _taskEventMap[taskInfo.Id].Set();
+            //}
         }
 
         public void ResumeTask(TaskInfo taskInfo)
         {
-            if (!_isStarted) throw new Exception("Backup is not started");
-            _timeElapsed[taskInfo.Id].Start();
+            //var timeElapsed = _timeElapsedMap[taskInfo.Id];
+            //if (!_isStarted) throw new Exception("Backup is not started");
+            //timeElapsed.Start();
 
-            var statusInfo = _statusInfoDal.Get(si => si.Id == taskInfo.StatusInfoId); 
+            //var statusInfo = _statusInfoDal.Get(si => si.Id == taskInfo.StatusInfoId); 
 
-            statusInfo.TimeElapsed = _timeElapsed[taskInfo.Id].ElapsedMilliseconds;
-            _statusInfoDal.Update(statusInfo);
+            //statusInfo.TimeElapsed = timeElapsed.ElapsedMilliseconds;
+            //_statusInfoDal.Update(statusInfo);
 
-            if (_taskEventMap.ContainsKey(taskInfo.Id))
-            {
-                _taskEventMap[taskInfo.Id].Set();
-            }
+            //if (_taskEventMap.ContainsKey(taskInfo.Id))
+            //{
+            //    _taskEventMap[taskInfo.Id].Set();
+            //}
         }
 
         public List<FilesInBackup> GetFileInfoList()

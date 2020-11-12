@@ -34,6 +34,7 @@ namespace DiskBackup.TaskScheduler.Jobs
 
         public async Task Execute(IJobExecutionContext context)
         {
+            Console.WriteLine("Job'a girdim");
             var taskId = int.Parse(context.JobDetail.JobDataMap["taskId"].ToString());
 
             var task = _taskInfoRepository.Get(x => x.Id == taskId);
@@ -63,6 +64,7 @@ namespace DiskBackup.TaskScheduler.Jobs
             }
             catch (Exception e)
             {
+                Console.WriteLine("Catch'e düştüm");
                 if (task.BackupTaskInfo.FailTryAgain)
                 {
                     exception = new JobExecutionException(e, context.RefireCount <= task.BackupTaskInfo.FailNumberTryAgain);

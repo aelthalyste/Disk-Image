@@ -495,10 +495,9 @@ namespace DiskBackupWpfGUI
         private void btnTaskStart_Click(object sender, RoutedEventArgs e)
         {
             TaskInfo taskInfo = (TaskInfo)listViewTasks.SelectedItem;
-            taskInfo.NextDate = DateTime.Now;
-            //MessageBox.Show(taskInfo.Name + " başlatılıyor");
-            //var result = _backupService.CreateIncDiffBackup(taskInfo);
-            //MessageBox.Show(taskInfo.Name + " bitti");
+            taskInfo.NextDate = DateTime.Now + TimeSpan.FromSeconds(20);
+            taskInfo.BackupStorageInfo = _backupStorageDal.Get(x => x.Id == taskInfo.BackupStorageInfoId);
+            Console.WriteLine("Backup Başlatılıyor");
             if (taskInfo.Type == TaskType.Backup)
             {
                 taskInfo.BackupTaskInfo = _backupTaskDal.Get(x => x.Id == taskInfo.BackupTaskId);
@@ -515,6 +514,16 @@ namespace DiskBackupWpfGUI
             {
                 //restore
             }
+            Console.WriteLine("Backup bitti");
+
+            /*            
+            TaskInfo taskInfo = (TaskInfo)listViewTasks.SelectedItem;
+            taskInfo.NextDate = DateTime.Now;
+            //taskInfo.BackupStorageInfo = _backupStorageDal.Get(x => x.Id == taskInfo.BackupStorageInfoId);
+            //taskInfo.BackupTaskInfo = _backupTaskDal.Get(x => x.Id == taskInfo.BackupTaskId);
+            //MessageBox.Show(taskInfo.Name + " başlatılıyor");
+            //var result = _backupService.CreateIncDiffBackup(taskInfo);
+            //MessageBox.Show(taskInfo.Name + " bitti");*/
         }
 
         #region Checkbox Operations
