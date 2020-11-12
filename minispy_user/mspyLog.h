@@ -805,8 +805,34 @@ struct nar_file_entry {
 struct nar_file_entries_list {
     UINT32 MFTIndex;
     UINT32 EntryCount;
+    UINT32 MaxEntryCount;
     nar_file_entry* Entries;
 };
+
+inline BOOLEAN
+NarFileExplorerInitFileEntryList(nar_file_entries_list *EList, unsigned int  MaxEntryCount){
+    if(EList == NULL) FALSE;
+    EList->MFTIndex = 0;
+    EList->EntryCount = 0;
+    EList->MaxEntryCount = MaxEntryCount;
+    EList->Entries = (nar_file_entry*)malloc(MaxEntryCount*sizeof(nar_file_entry));
+    return (EList->Entries != NULL);
+}
+
+inline void
+NarFileExplorerExtentEntryList(nar_file_entries_list *EList, unsigned int NewCapacity){
+    if(EList){
+        EList->MaxEntryCount = NewCapacity;
+        EList->Entries = (nar_file_entry*)realloc(EList->Entries, NewCapacity*sizeof(nar_file_entry));
+    }
+}
+
+inline void
+NarFileExplorerFreeEntryList(nar_file_entries_list *EList){
+    if(EList == NULL) return;
+    free(EList->Entries);
+    memset(EList, 0, sizeof(*EList));
+}
 
 struct nar_backup_file_explorer_context {
     

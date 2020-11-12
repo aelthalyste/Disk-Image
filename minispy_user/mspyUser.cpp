@@ -1129,7 +1129,6 @@ NarCreateThreadCom(
     //TODO  REMOVE THIS IF0
     Context->CleaningUp = FALSE;
     
-#if 1
     Context->ShutDown = CreateSemaphoreW(NULL,
                                          0,
                                          1,
@@ -1157,7 +1156,6 @@ NarCreateThreadCom(
         printf("Could not create semaphore for thread..\n");
         DisplayError(GetLastError());
     }
-#endif
     
     return Result;
 }
@@ -1222,7 +1220,9 @@ Split(std::wstring str, std::wstring delimiter) {
 }
 
 
-// 
+/*
+       Caller MUST CALL NarFreeMFTRegionsByCommandLine to free memory allocated by this function, otherwise, it will be leaked
+*/
 nar_record*
 NarGetMFTRegionsByCommandLine(char Letter, int* OutRecordCount){
     
@@ -1321,6 +1321,11 @@ NarGetMFTRegionsByCommandLine(char Letter, int* OutRecordCount){
     
     return Result;
     
+}
+
+inline void 
+NarFreeMFTRegionsByCommandLine(nar_record *records){
+    free(records);
 }
 
 
@@ -1544,6 +1549,7 @@ GetMFTLCN(char VolumeLetter, HANDLE VolumeHandle) {
                 memcpy(ClustersExtracted, TempRecords, RecCountByCommandLine*sizeof(nar_record));
                 ClusterExtractedCount = RecCountByCommandLine;
             }
+            NarFreeMFTRegionsByCommandLine(TempRecords);
             
             // TODO (Batuhan): remove this after testing on windows server, looks like rest of the code finds some invalid regions on volume.
             if (JustExtractMFTRegions) {
@@ -6033,16 +6039,15 @@ NarGetFileListFromMFTID(nar_file_entries_list* EList, UINT64 TargetMFTID, nar_re
                             void *Entry = (char*)FileAttribute + 64;
                             
                             INT EntryParseResult = NAR_FEXP_END_MARK;
+                            
                             do {
-                                
-                                TIMED_BLOCK();
                                 
                                 memset(&EList->Entries[EList->EntryCount], 0, sizeof(EList->Entries[EList->EntryCount]));
                                 EntryParseResult = NarFileExplorerGetFileEntryFromData(Entry, &EList->Entries[EList->EntryCount]);
                                 
                                 if (EntryParseResult == NAR_FEXP_SUCCEEDED || EntryParseResult == NAR_FEXP_POSIX) {
                                     
-                                    // do not accept posix files as FILE_ENTRY at all
+                                    // do not accept POSIX files as FILE_ENTRY at all
                                     if (EntryParseResult == NAR_FEXP_SUCCEEDED) {
                                         EList->EntryCount++;
                                     }
@@ -7006,9 +7011,10 @@ NarReleaseFileExplorerContext(nar_backup_file_explorer_context* Ctx) {
         free(Ctx->MFTRecords);
     }
     
+    
     NarFreeFEVolumeHandle(Ctx->FEHandle);
-    
-    
+    NarFileExplorerFreeEntryList(&Ctx->EList);
+    NarFreeMFTRegionsByCommandLine(Ctx->MFTRecords);
     
     memset(Ctx, 0, sizeof(*Ctx));
     
@@ -7093,10 +7099,9 @@ NarInitFileExplorerContext(nar_backup_file_explorer_context* Ctx, INT32 HandleOp
     
     memset(Ctx, 0, sizeof(*Ctx));
     
-    Ctx->EList.Entries = (nar_file_entry*)malloc(75000 * sizeof(nar_file_entry));
-    if (Ctx->EList.Entries) {
+    if (NarFileExplorerInitFileEntryList(&Ctx->EList, 100000)) {
         
-        memset(Ctx->EList.Entries, 0, 75000 * sizeof(nar_file_entry));
+        memset(Ctx->EList.Entries, 0, 100000 * sizeof(nar_file_entry));
         
         memset(Ctx->CurrentDirectory, 0, sizeof(Ctx->CurrentDirectory));
         memset(Ctx->RootDir, 0, sizeof(Ctx->RootDir));
@@ -7542,7 +7547,6 @@ struct{
     LARGE_INTEGER LastCounter;
     LARGE_INTEGER WorkCounter;
     INT64 GlobalPerfCountFrequency;
-    
 }NarPerfCounter;
 
 
@@ -7591,7 +7595,6 @@ Test_NarGetRegionIntersection() {
     BOOLEAN Result = FALSE;
     
     nar_record r1[16], r2[16];
-    
     r1[0] = { 0, 200 };
     r1[1] = { 300, 200 };
     r1[2] = { 800, 100 };
