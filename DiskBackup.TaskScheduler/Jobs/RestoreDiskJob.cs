@@ -11,6 +11,7 @@ namespace DiskBackup.TaskScheduler.Jobs
     {
         public Task Execute(IJobExecutionContext context)
         {
+            //task ve backup Id'ler string geliyor
             throw new NotImplementedException();
         }
     }

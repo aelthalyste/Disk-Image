@@ -29,7 +29,7 @@ namespace DiskBackup.TaskScheduler.Jobs
 
         public async Task Execute(IJobExecutionContext context)
         {
-            var taskId = (int)context.JobDetail.JobDataMap["taskId"];
+            var taskId = int.Parse(context.JobDetail.JobDataMap["taskId"].ToString());
 
             var task = _taskInfoRepository.Get(x => x.Id == taskId);
             task.BackupStorageInfo = _backupStorageRepository.Get(x => x.Id == task.BackupStorageInfoId);

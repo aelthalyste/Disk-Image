@@ -179,7 +179,9 @@ namespace DiskBackup.Business.Concrete
             var statusInfo = _statusInfoDal.Get(si => si.Id == taskInfo.StatusInfoId); //her task için uygulanmalı
 
             var manualResetEvent = new ManualResetEvent(true);
+            var timeElapsed = new Stopwatch();
             _taskEventMap[taskInfo.Id] = manualResetEvent;
+            _timeElapsed[taskInfo.Id] = timeElapsed;
             _timeElapsed[taskInfo.Id].Start();
 
             _isStarted = true;

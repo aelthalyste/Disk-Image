@@ -343,7 +343,7 @@ namespace DiskBackup.TaskScheduler
             IJobDetail job = JobBuilder.Create<RestoreDiskJob>()
                 .WithIdentity($"restoreDiskJob_{taskInfo.Id}", "Restore")
                 .UsingJobData("taskId", taskInfo.Id.ToString())
-                .UsingJobData("backupStorageId", backupStorageInfo.Id)
+                .UsingJobData("backupStorageId", backupStorageInfo.Id.ToString())
                 .Build();
 
             ITrigger trigger = TriggerBuilder.Create()
