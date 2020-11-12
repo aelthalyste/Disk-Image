@@ -108,7 +108,6 @@ struct data_array {
         Count++;
     }
     
-    
 };
 
 template<typename T>
@@ -720,7 +719,7 @@ wchar_t*
 GetShadowPath(std::wstring Drive, CComPtr<IVssBackupComponents>& ptr);
 
 inline BOOL
-IsRegionsCollide(nar_record* R1, nar_record* R2);
+IsRegionsCollide(nar_record R1, nar_record R2);
 
 
 inline VOID

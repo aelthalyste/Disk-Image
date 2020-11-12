@@ -120,6 +120,65 @@ void NarGlfwErrorCallback(int error_code, const char* description) {
 
 }
 
+struct nar_record { UINT32 StartPos; UINT32 Len; };
+inline BOOL
+IsRegionsCollide(nar_record R1, nar_record R2) {
+    BOOL Result = FALSE;
+    UINT32 R1EndPoint = R1.StartPos + R1.Len;
+    UINT32 R2EndPoint = R2.StartPos + R2.Len;
+
+    if (R1.StartPos == R2.StartPos && R1.Len == R2.Len) {
+        return TRUE;
+    }
+
+    if ((R1EndPoint <= R2EndPoint
+        && R1EndPoint >= R2.StartPos)
+        || (R2EndPoint <= R1EndPoint
+            && R2EndPoint >= R1.StartPos)
+        ) {
+        Result = TRUE;
+    }
+
+    return Result;
+}
+
+
+void
+MergeRegions(nar_record* R, int Len, int* NewLen) {
+
+    UINT32 MergedRecordsIndex = 0;
+    UINT32 CurrentIter = 0;
+
+    for (;;) {
+        if (CurrentIter >= Len) {
+            break;
+        }
+
+        UINT32 EndPointTemp = R[CurrentIter].StartPos + R[CurrentIter].Len;
+
+        if (IsRegionsCollide(&R[MergedRecordsIndex], &R[CurrentIter])) {
+            UINT32 EP1 = R[CurrentIter].StartPos + R[CurrentIter].Len;
+            UINT32 EP2 = R[MergedRecordsIndex].StartPos + R[MergedRecordsIndex].Len;
+
+            EndPointTemp = MAX(EP1, EP2);
+            R[MergedRecordsIndex].Len = EndPointTemp - R[MergedRecordsIndex].StartPos;
+
+            CurrentIter++;
+        }
+        else {
+            MergedRecordsIndex++;
+            R[MergedRecordsIndex] = R[CurrentIter];
+        }
+
+
+    }
+
+    *NewLen = MergedRecordsIndex + 1;
+    R = (nar_record*)realloc(R, sizeof(nar_record) * (*NewLen));
+
+}
+
+
 int
 main() {
 

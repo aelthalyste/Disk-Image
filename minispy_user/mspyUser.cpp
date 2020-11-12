@@ -98,7 +98,7 @@ MergeRegions(data_array<nar_record>* R) {
         
         UINT32 EndPointTemp = R->Data[CurrentIter].StartPos + R->Data[CurrentIter].Len;
         
-        if (IsRegionsCollide(&R->Data[MergedRecordsIndex], &R->Data[CurrentIter])) {
+        if (IsRegionsCollide(R->Data[MergedRecordsIndex], R->Data[CurrentIter])) {
             UINT32 EP1 = R->Data[CurrentIter].StartPos + R->Data[CurrentIter].Len;
             UINT32 EP2 = R->Data[MergedRecordsIndex].StartPos + R->Data[MergedRecordsIndex].Len;
             
@@ -1081,19 +1081,20 @@ GetShadowPath(std::wstring Drive, CComPtr<IVssBackupComponents>& ptr) {
 
 
 inline BOOL
-IsRegionsCollide(nar_record* R1, nar_record* R2) {
-    BOOL Result = FALSE;
-    UINT32 R1EndPoint = R1->StartPos + R1->Len;
-    UINT32 R2EndPoint = R2->StartPos + R2->Len;
+IsRegionsCollide(nar_record R1, nar_record R2) {
     
-    if (R1->StartPos == R2->StartPos && R1->Len == R2->Len) {
+    BOOL Result = FALSE;
+    UINT32 R1EndPoint = R1.StartPos + R1.Len;
+    UINT32 R2EndPoint = R2.StartPos + R2.Len;
+    
+    if (R1.StartPos == R2.StartPos && R1.Len == R2.Len) {
         return TRUE;
     }
     
     if ((R1EndPoint <= R2EndPoint
-         && R1EndPoint >= R2->StartPos)
+         && R1EndPoint >= R2.StartPos)
         || (R2EndPoint <= R1EndPoint
-            && R2EndPoint >= R1->StartPos)
+            && R2EndPoint >= R1.StartPos)
         ) {
         Result = TRUE;
     }
@@ -7637,6 +7638,87 @@ NarGetProductName(char* OutName) {
     
 }
 
+#include <iostream>
+
+
+void EnesMergeRegions(nar_record* InputRegions, int InputLen, int OutNewInputLen) {
+    
+    for (size_t i = 0; i < 10; i++)
+    {
+        while (true)
+        {
+            if (InputRegions[i].StartPos != -1)
+            {
+                for (size_t j = 0; j < 10; j++)
+                {
+                    if (InputRegions[j].StartPos != -1 && i != j)
+                    {
+                        if (InputRegions[j].StartPos > InputRegions[i].StartPos &&
+                            InputRegions[j].StartPos > InputRegions[i].Len &&
+                            InputRegions[j].StartPos > InputRegions[i].StartPos + InputRegions[i].Len)
+                        {
+                            
+                        }
+                        else if (InputRegions[j].StartPos > InputRegions[i].StartPos &&
+                                 InputRegions[j].StartPos < InputRegions[i].Len &&
+                                 InputRegions[j].StartPos + InputRegions[j].Len < InputRegions[i].StartPos + InputRegions[i].Len)
+                        {
+                            InputRegions[j].StartPos = -1;
+                            InputRegions[j].Len = -1;
+                        }
+                        else if (InputRegions[j].StartPos > InputRegions[i].StartPos &&
+                                 InputRegions[j].StartPos > InputRegions[i].Len &&
+                                 InputRegions[j].StartPos + InputRegions[j].Len > InputRegions[i].StartPos + InputRegions[i].Len)
+                        {
+                            InputRegions[i].Len = (InputRegions[j].StartPos + InputRegions[j].Len) - InputRegions[i].StartPos;
+                            InputRegions[j].StartPos = -1;
+                            InputRegions[j].Len = -1;
+                        }
+                        else if (InputRegions[j].StartPos > InputRegions[i].StartPos &&
+                                 InputRegions[j].StartPos < InputRegions[i].StartPos + InputRegions[i].Len &&
+                                 InputRegions[j].StartPos + InputRegions[j].Len > InputRegions[i].StartPos + InputRegions[i].Len)
+                        {
+                            InputRegions[i].Len = (InputRegions[j].StartPos + InputRegions[j].Len) - InputRegions[i].StartPos;
+                            InputRegions[j].StartPos = -1;
+                            InputRegions[j].Len = -1;
+                        }
+                    }
+                }
+            }
+            break;
+        }
+    }
+    
+    
+    
+    for (size_t i = 0; i < 10; i++)
+    {
+        if (InputRegions[i].StartPos != -1)
+        {
+            std::cout << InputRegions[i].StartPos << " --> " << InputRegions[i].Len << '\n';
+        }
+    }
+}
+
+void EnesTest() {
+    
+    nar_record testArray[10];
+    
+    testArray[0] = { 0,  150 };
+    testArray[1] = { 80, 40 };
+    testArray[2] = { 160, 20 };
+    testArray[3] = { 170, 30 };
+    testArray[4] = { 195, 50 };
+    testArray[5] = { 250, 150 };
+    testArray[6] = { 300, 500 };
+    testArray[7] = { 400, 600 };
+    testArray[8] = { 600, 80 };
+    testArray[9] = { 680, 450 };
+    
+    int newlen = 0;
+    
+    EnesMergeRegions(testArray, 10, newlen);
+}
 
 int
 main(
@@ -7644,7 +7726,9 @@ main(
      CHAR* argv[]
      ) {
     
+    EnesTest();
     
+    return 0;
     
     nar_backup_file_explorer_context ctx;
     
