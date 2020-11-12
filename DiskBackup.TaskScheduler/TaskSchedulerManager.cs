@@ -167,15 +167,16 @@ namespace DiskBackup.TaskScheduler
 
         public async Task BackupIncDiffNowJob(TaskInfo taskInfo)
         {
+            Console.WriteLine("job'ın üzeri");
             IJobDetail job = JobBuilder.Create<BackupIncDiffJob>()
                 .WithIdentity($"backupIncDiffNowJob_{taskInfo.Id}", "Backup")
                 .UsingJobData("taskId", taskInfo.Id.ToString())
                 .Build();
-
+            Console.WriteLine("triggerin üzeri");
             ITrigger trigger = TriggerBuilder.Create()
                 .WithIdentity($"backupIncDiffNowTrigger_{taskInfo.Id}", "Backup")
                 .ForJob($"backupIncDiffNowJob_{taskInfo.Id}", "Backup")
-                .StartAt(taskInfo.NextDate) // now yollandığında hemen çalıştıracak
+                .WithSimpleSchedule(x => x.WithIntervalInSeconds(20).WithRepeatCount(0))
                 .Build();
 
             taskInfo.ScheduleId = $"backupIncDiffNowJob_{taskInfo.Id}/Backup";
