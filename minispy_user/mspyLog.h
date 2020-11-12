@@ -38,7 +38,8 @@ Environment:
 
 static void
 NarLog(const char *str, ...){
-
+    
+    
     //const static HANDLE File = CreateFileA("NAR_APP_LOG_FILE.txt", GENERIC_WRITE|GENERIC_READ, FILE_SHARE_READ|FILE_SHARE_WRITE, 0, CREATE_ALWAYS, 0, 0);
     //static SYSTEMTIME Time = {};
     //
@@ -47,36 +48,35 @@ NarLog(const char *str, ...){
     //va_list ap;
     //static char buf[1024];
     //static char TimeStrBuf[128];
-
+    //
     //memset(&Time, 0, sizeof(Time));
     //memset(buf, 0, sizeof(buf));
     //memset(TimeStrBuf, 0, sizeof(TimeStrBuf));
-    
+    //
     //GetLocalTime(&Time);
     //sprintf(TimeStrBuf, "[%i:%i:%i]: ", Time.wHour, Time.wMinute, Time.wSecond);
-
+    //
     //va_start(ap,str);
     //vsprintf(buf, str, ap);
     //va_end(ap);
-    
-    // safe cast
+    //
+    //// safe cast
     //DWORD Len = (DWORD)strlen(buf);
     //DWORD H = 0;
-
+    //
     //WriteFile(File, TimeStrBuf, (DWORD)strlen(TimeStrBuf), &H, 0);
     //WriteFile(File, buf, Len, &H, 0);
     //OutputDebugStringA(buf);
-        
+    //
     //FlushFileBuffers(File);
-
+    
     char szBuff[1024];
     va_list arg;
     va_start(arg, str);
     _vsnprintf(szBuff, sizeof(szBuff), str, arg);
     va_end(arg);
-
     OutputDebugStringA(szBuff);
-
+    
 }
 
 
@@ -256,18 +256,18 @@ struct volume_backup_inf {
     struct {
         BOOLEAN IsActive;
     }FilterFlags;
-
+    
     // when backing up, we dont want to mess up with log file while setting up file pointers
     // since msging thread has to append, but program itself may read from start, that will
     // eventually cause bugs. This mutex ensures there are no more than one thread using LogHandle
     HANDLE FileWriteMutex;
-
+    
     INT32 Version;
     DWORD ClusterSize;    
     
     
     HANDLE LogHandle; //Handle to file that is logging volume's changes.
-
+    
     ////Incremental change count of the volume, this value will be reseted after every SUCCESSFUL backup operation
     // this value times sizeof(nar_record) indicates how much data appended since last backup, useful when doing incremental backups
     // we dont need that actually, possiblenewbackupregionoffsetmark - lastbackupoffset is equal to that thing
@@ -276,11 +276,11 @@ struct volume_backup_inf {
     // INdicates where last backup regions end in local metadata. bytes after that offset is non-backed up parts of the volume.
     // this value + increcordcount*sizeof(nar_record) is PossibleNewBackupRegionOffsetMark
     INT64 LastBackupRegionOffset;
-
+    
     struct{
         INT64 PossibleNewBackupRegionOffsetMark;
     }ActiveBackupInf;
-
+    
     DWORD VolumeTotalClusterCount;
     
     /*
@@ -293,7 +293,7 @@ struct volume_backup_inf {
     stream Stream;
     // ONLY VALID DURING BACKUP STAGE, WILL BE CLEARED AFTER TERMINATEBACKUP CALLED.
     data_array<nar_record> MFTLCN;
-
+    
     CComPtr<IVssBackupComponents> VSSPTR;
     
 };
@@ -789,15 +789,15 @@ struct nar_fe_volume_handle{
 
 // could be either file or dir
 struct nar_file_entry {
-
+    
     BOOLEAN IsDirectory;
-
+    
     UINT64 MFTFileIndex;
     UINT64 Size; // file size in bytes
-
+    
     UINT64 CreationTime;
     UINT64 LastModifiedTime;
-
+    
     wchar_t Name[MAX_PATH + 1]; // max path + 1 for null termination
 };
 
@@ -809,21 +809,21 @@ struct nar_file_entries_list {
 };
 
 struct nar_backup_file_explorer_context {
-
+    
     char Letter;
     nar_fe_volume_handle FEHandle;
     INT32 ClusterSize;
     wchar_t RootDir[256];
-
+    
     UINT32 LastIndx;
-
+    
     int MFTRecordsCount;
     
     struct {
         INT16 I;
         UINT64 S[512];
     }HistoryStack;
-
+    
     nar_record *MFTRecords;
     nar_file_entries_list EList;
     
@@ -832,33 +832,33 @@ struct nar_backup_file_explorer_context {
 
 
 struct nar_file_version_stack {
-
+    
     /*
         Indicates how many version we must go back to start restore operation from given version.
         If let's say user requested from version 9, restore that file, we search 8-7-6-5th versions, and couldnt find file
         in 4th one. we must set this parameter as 5(we are not including latest version).
     */
     INT32 VersionsFound;
-
+    
     /*
         Indicates which version we must start iterating when actually restoring file
     */
     INT32 StartingVersion;
-
+    
     // Path to file to be searched in backups
     wchar_t* FilePath;
-
+    
     // path to search for backups in actual machine. unlikely null 
     wchar_t* RootDir;
-
+    
     /*
         Offset to the file's mft record in backup file. Backful file begin + this value will lead
         file pointer to mft record
     */
-
+    
     // 0th element is first backup that contains file, goes up to  (VersionsFound)
     UINT64* FileAbsoluteMFTOffset;
-
+    
 };
 
 struct nar_fe_search_result {
@@ -868,25 +868,25 @@ struct nar_fe_search_result {
 };
 
 struct lcn_from_mft_query_result {
-
+    
     enum {
         FAIL = 0x0,
         SUCCESS = 0x1,
         HAS_DATA_IN_MFT = 0x2,
         FILE_FITS_MFT = 0x4
     };
-
+    
     INT8 Flags;
-
+    
     // valid if record contains file data in it
     INT16 DataOffset;
     INT16 DataLen;
-
+    
     // i dont want to use dynamically allocated array then free it. Since these tasks are disk IO bounded, i can totally neglect cache behavior(thats a big sin) and preallocate big stack array and never have to deal with freeing it
     // probably %95 of it will be empty most of the time
     INT32 RecordCount;
     nar_record Records[1024];
-
+    
 };
 
 

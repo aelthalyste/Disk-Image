@@ -299,9 +299,18 @@ NarGetProductName(char *OutName) {
 
 }
 
+int
+foobar(int a, int b) {
+    int c = a + b;
+    c = c + a - b;
+    c = c + b - a;
+    return c;
+}
+
 int main() {
     
-    
+    return 0;
+
     wchar_t str[] = L"C:\\program files\\randomprogram\\subfolder\\executable.exe";
     wchar_t* pwc = 0;
     wchar_t* State = 0;

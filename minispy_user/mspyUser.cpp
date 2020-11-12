@@ -39,11 +39,58 @@ _Analysis_mode_(_Analysis_code_type_user_code_)
 #include "mspyLog.h"
 
 
+#define TIMED_BLOCK__(Number, ...) timed_block timed_##Number(__COUNTER__, __LINE__, __FUNCTION__);
+#define TIMED_BLOCK_(Number, ...)  TIMED_BLOCK__(Number,  ## __VA__ARGS__)
+#define TIMED_BLOCK(...)           TIMED_BLOCK_(__LINE__, ## __VA__ARGS__)
+
+
+struct debug_record {
+    char* FunctionName;
+    uint64_t Clocks;
+    
+    uint32_t ThreadIndex;
+    uint32_t LineNumber;
+    uint32_t HitCount;
+};
+
+debug_record GlobalDebugRecordArray[];
+
+#define TIMER_END_TRANSLATION_UNIT() debug_record GlobalDebugRecordArray[__COUNTER__];
+
+
+struct timed_block {
+    
+    debug_record* mRecord;
+    
+    timed_block(int Counter, int LineNumber, char* FunctionName) {
+        
+        mRecord = GlobalDebugRecordArray + Counter;
+        mRecord->FunctionName   = FunctionName;
+        mRecord->LineNumber     = LineNumber;
+        mRecord->ThreadIndex    = 0;
+        mRecord->Clocks        -= __rdtsc();
+        mRecord->HitCount++;
+        
+    }
+    
+    ~timed_block() {
+        mRecord->Clocks += __rdtsc();
+    }
+    
+};
+
+inline void
+PrintDebugRecords();
+
+
+/*
+    ASSUMES RECORDS ARE SORTED
+*/
 void
 MergeRegions(data_array<nar_record>* R) {
     UINT32 MergedRecordsIndex = 0;
     UINT32 CurrentIter = 0;
-
+    
     for (;;) {
         if (CurrentIter >= R->Count) {
             break;
@@ -67,10 +114,41 @@ MergeRegions(data_array<nar_record>* R) {
         
         
     }
+    
     R->Count = MergedRecordsIndex + 1;
     R->Data = (nar_record*)realloc(R->Data, sizeof(nar_record) * R->Count);
     
 }
+
+void
+TestMergeRegions(){
+    
+    nar_record testArray[20];
+    
+    testArray[0] = {0,  150};
+    testArray[1] = {80, 40};
+    testArray[2] = {160, 20};
+    testArray[3] = {170, 30};
+    testArray[4] = {195, 50};
+    testArray[5] = {250, 150};
+    testArray[6] = {300, 500};
+    testArray[7] = {400, 600};
+    testArray[8] = {600, 80};
+    testArray[9] = {680, 450};
+    
+    data_array<nar_record> r;
+    r.Count = 10;
+    r.Data = &testArray[0];
+    MergeRegions(&r);
+    
+    for(int i = 0; i<r.Count; i++){
+        printf("%u\t%u\n", r.Data[i].StartPos, r.Data[i].Len);
+    }
+    
+}
+
+
+
 
 #if 0 // OPTIMIZED INCREMENTAL MERGE ALORITHM
 
@@ -573,7 +651,7 @@ CopyData(HANDLE S, HANDLE D, ULONGLONG Len) {
     
     UINT32 BufSize = 64 * 1024 * 1024; //64 MB
     ULONGLONG TotalCopied = 0;
-
+    
     void* Buffer = malloc(BufSize);
     if (Buffer != NULL) {
         ULONGLONG BytesRemaining = Len;
@@ -616,7 +694,7 @@ CopyData(HANDLE S, HANDLE D, ULONGLONG Len) {
                 else {
                     TotalCopied += BytesRemaining;
                 }
-
+                
             }
             
         }
@@ -722,7 +800,7 @@ SaveExtraPartitions(volume_backup_inf* V) {
                                     }
                                     CLEANHANDLE(SP);
                                 }
-
+                                
                             }
                             if (PI->PartitionStyle == PARTITION_STYLE_GPT) {
                                 
@@ -909,9 +987,9 @@ InitVolumeInf(volume_backup_inf* VolInf, wchar_t Letter, BackupType Type) {
         else {
             printf("Couldnt create mutex for volume backup information structure\n");
         }
-
+        
         printf("Initialized volume inf %c, cluster size %i, volume cluster count %i\n", VolInf->Letter, VolInf->ClusterSize, VolInf->VolumeTotalClusterCount);
-
+        
     }
     else {
         printf("Cant get disk information from WINAPI\n");
@@ -1150,23 +1228,23 @@ NarGetMFTRegionsByCommandLine(char Letter, int* OutRecordCount){
     
     char CmdBuffer[512];
     char OutputName[] = "naroutput.txt";
-
+    
     sprintf(CmdBuffer, "fsutil file queryextents %c:\\$MFT > %s", Letter, OutputName);
     system(CmdBuffer);
-
+    
     file_read FileContents = NarReadFile(OutputName);
-
+    
     char* str = (char*)FileContents.Data;
-
+    
     if (str == NULL || OutRecordCount == NULL) return 0;
-
-
+    
+    
     size_t ResultSize = 128 * sizeof(nar_record);
     nar_record* Result = (nar_record*)malloc(ResultSize);
     memset(Result, 0, ResultSize);
-
+    
     int RecordFound = 0;
-
+    
     char *prev = str;
     char *next = str;
     
@@ -1176,38 +1254,38 @@ NarGetMFTRegionsByCommandLine(char Letter, int* OutRecordCount){
     memset(ClustersHexStr, 0, sizeof(ClustersHexStr));
     memset(LCNHexStr, 0, sizeof(LCNHexStr));
     memset(Line, 0, sizeof(Line));
-
+    
     while(TRUE){
-
+        
         while(*next != '\n' && *next != 0 && *next != -3){
             next++;
         }
-
-        if(next != prev){
         
+        if(next != prev){
+            
             // some lines might be ending with /r/n depending on if file is created as text file in windows. delete /r to make parsing easier 
             int StrLen = (int)(next - prev); // acceptable conversion
-
+            
             if (*(next - 1) == '\r') StrLen--;
-
+            
             memcpy(Line, prev, StrLen);
             Line[StrLen] = 0; // null termination by hand
             
-
+            
             // there isnt any overheat to search all of them at once, we are dealing with very short strings here
             char *p1 = strstr(Line, "VCN:");
             char *p2 = strstr(Line, "Clusters:");
             char *p3 = strstr(Line, "LCN:");
-                        
-
+            
+            
             if (p1 && p2 && p3) {
                 
                 p2 += sizeof("Clusters:");
                 size_t LCNHexStrLen = (size_t)(p3 - p2) + 1;
                 memcpy(LCNHexStr, p2, LCNHexStrLen);
                 LCNHexStr[LCNHexStrLen] = 0;
-
-
+                
+                
                 p3 += sizeof("LCN:");
                 size_t ClustersHexStrLen = strlen(p3);
                 memcpy(ClustersHexStr, p3, ClustersHexStrLen);
@@ -1215,34 +1293,34 @@ NarGetMFTRegionsByCommandLine(char Letter, int* OutRecordCount){
                 
                 long LCNStart = strtol(ClustersHexStr, 0, 16);
                 long LCNLen = strtol(LCNHexStr, 0, 16);
-
+                
                 Result[RecordFound].StartPos = LCNStart;
                 Result[RecordFound].Len = LCNLen;
                 RecordFound++;
-
+                
                 // valid line
             }
             else {
                 // invalid line
             }
-
+            
             prev = (++next);
-
-
+            
+            
         }
         else{
             break;
         }
-
+        
     }
-
+    
     *OutRecordCount = RecordFound;
-
+    
     Result = (nar_record*)realloc(Result, RecordFound * sizeof(nar_record));
     FreeFileRead(FileContents);
-
+    
     return Result;
-
+    
 }
 
 
@@ -1253,13 +1331,13 @@ NarGetMFTRegionsByCommandLine(char Letter, int* OutRecordCount){
 
 data_array<nar_record>
 GetMFTLCN(char VolumeLetter, HANDLE VolumeHandle) {
-
+    
     BOOLEAN JustExtractMFTRegions = FALSE;
-
+    
     UINT32 MEMORY_BUFFER_SIZE = 1024LL * 1024LL * 1024LL;
     UINT32 ClusterExtractedBufferSize = 1024 * 1024 * 5;
     INT32 ClusterSize = NarGetVolumeClusterSize(VolumeLetter);
-
+    
     struct {
         UINT32 Count[8];
         UINT32 Start[8];
@@ -1267,86 +1345,86 @@ GetMFTLCN(char VolumeLetter, HANDLE VolumeHandle) {
     
     nar_record* ClustersExtracted = (nar_record*)malloc(ClusterExtractedBufferSize);
     unsigned int ClusterExtractedCount = 0;
-
+    
     if (ClustersExtracted != 0) {
         memset(ClustersExtracted, 0, ClusterExtractedBufferSize);
     }
     
 #define NAR_INSERT_CLUSTER(START, LEN) ClustersExtracted[ClusterExtractedCount++] = {(UINT32)(START), (UINT32)(LEN) };
 #define NAR_MFT_DBG_INFO 0
-
-
+    
+    
 #if NAR_MFT_DBG_INFO
 #define DBG_INC(v) (v)++;
 #else
 #define DBG_INC(v) (v);
 #endif
-
+    
     int DBG_INDX_FOUND = 0;
     int DBG_TOTAL_DIR_FOUND = 0;
     int DBG_CLUSTER_COUNT = 0;
     int DBG_TOTAL_FILES_FOUND = 0;
-
+    
     UNREFERENCED_PARAMETER(DBG_INDX_FOUND);
     UNREFERENCED_PARAMETER(DBG_TOTAL_DIR_FOUND);
     UNREFERENCED_PARAMETER(DBG_CLUSTER_COUNT);
     UNREFERENCED_PARAMETER(DBG_TOTAL_FILES_FOUND);
-
-
+    
+    
     memset(&DEBUG_CLUSTER_INFORMATION, 0, sizeof(DEBUG_CLUSTER_INFORMATION));
-
-//#define DBG_INSERT(START,COUNT) DEBUG_CLUSTER_INFORMATION.Start[DBG_CLUSTER_COUNT] = (UINT32)(START); DEBUG_CLUSTER_INFORMATION.Count[DBG_CLUSTER_COUNT] = (UINT32)(COUNT); (DBG_CLUSTER_COUNT)++;
+    
+    //#define DBG_INSERT(START,COUNT) DEBUG_CLUSTER_INFORMATION.Start[DBG_CLUSTER_COUNT] = (UINT32)(START); DEBUG_CLUSTER_INFORMATION.Count[DBG_CLUSTER_COUNT] = (UINT32)(COUNT); (DBG_CLUSTER_COUNT)++;
 #define DBG_INSERT(START,COUNT) do{(START);(COUNT);}while(0);
     
     void* FileBuffer = malloc(MEMORY_BUFFER_SIZE);
     UINT32 FileBufferCount = MEMORY_BUFFER_SIZE / 1024LL;
-
+    
     if (FileBuffer) {
         char VolumeName[64];
         sprintf(VolumeName, "\\\\.\\%c:", VolumeLetter);
-
+        
         INT16 DirectoryFlag = 0x0002;
         INT32 FileRecordSize = 1024;
         INT16 FlagOffset = 22;
         INT32 NAR_INDEX_ALLOCATION_FLAG = 0xA0;
-
+        
         
         if (VolumeHandle != INVALID_HANDLE_VALUE) {
-
+            
             DWORD BR = 0;
-
+            
             // NOTE(Batuhan): IMPORTANT, first mft entry offset is hardcoded, for different sector sizes that might
             // change. sadly i havent found official document to says like, mft starts at 0x10th sector.
             // on my machine it always starts from 0x10th sector. which is second cluster if your sector size is 512
             // and cluster size is 8*sector
-
-
+            
+            
 #if 0
             DWORD MFTOffset = 8192; // 0x10th Offset
             if(NarSetFilePointer(VolumeHandle, MFTOffset)){
-
-
+                
+                
                 if(ReadFile(VolumeHandle, FileBuffer, 1024, &BR, 0) && BR == 1024){
-
+                    
                     void *FileRecord = FileBuffer;
-
+                    
                     INT16 FirstAttributeOffset = *(INT16*)((BYTE*)FileRecord + 20);
                     void* FileAttribute = (BYTE*)FileRecord + FirstAttributeOffset;
-
+                    
                     
                     INT32 RemainingLen = *(INT32*)((BYTE*)FileRecord + 24); // Real size of the file record
                     RemainingLen -= (FirstAttributeOffset + 8); //8 byte for end of record mark, remaining len includes it too.
-
+                    
                     
                     while(RemainingLen > 0){
-
+                        
                         // 0x80 == $DATA
                         if ((*(INT32*)FileAttribute & 0x80) == 0x80){
-
+                            
                             INT32 DataRunsOffset = *(INT32*)((BYTE*)FileAttribute + 32);
-
+                            
                             void* DataRuns = (char*)FileAttribute + DataRunsOffset;
-
+                            
                             // So it looks like dataruns doesnt actually tells you LCN, to save up space, they kinda use smt like 
                             // winapi's deviceiocontrol routine, maybe the reason for fetching VCN-LCN maps from winapi is weird because 
                             // thats how its implemented at ntfs at first place. who knows
@@ -1361,16 +1439,16 @@ GetMFTLCN(char VolumeLetter, HANDLE VolumeHandle) {
 
                                 LCN[n] = LCN[n-1] + datarun cluster
                             */
-
+                            
                             char Size = *(BYTE*)DataRuns;
                             INT8 ClusterCountSize = (Size & 0x0F);
                             INT8 FirstClusterSize = (Size & 0xF0) >> 4;
-
+                            
                             // Swipe to left to clear extra bits, then swap back to get correct result.
                             INT64 ClusterCount = *(INT64*)((char*)DataRuns + 1); // 1 byte for size variable
                             ClusterCount = ClusterCount & ~(0xFFFFFFFFFFFFFFFFULL << (ClusterCountSize * 8));
                             // cluster count must be > 0, no need to do 2s complement on it
-
+                            
                             //same operation
                             INT64 FirstCluster = *(INT64*)((char*)DataRuns + 1 + ClusterCountSize);
                             FirstCluster = FirstCluster & ~(0xFFFFFFFFFFFFFFFFULL << (FirstClusterSize * 8));
@@ -1378,21 +1456,21 @@ GetMFTLCN(char VolumeLetter, HANDLE VolumeHandle) {
                             if ((FirstCluster >> ((FirstClusterSize - 1) * 8 + 7)) & 1U) {
                                 FirstCluster = FirstCluster | ((0xFFFFFFFFFFFFFFFULL << (FirstClusterSize * 8)));
                             }
-
-
-
+                            
+                            
+                            
                             INT64 OldClusterStart = FirstCluster;
                             void* D = (BYTE*)DataRuns + FirstClusterSize + ClusterCountSize + 1;
-
-
+                            
+                            
                             DBG_INSERT(FirstCluster, ClusterCount);
                             NAR_INSERT_CLUSTER(FirstCluster, ClusterCount);
                             
                             DBG_INC(DBG_INDX_FOUND);
                             while (*(BYTE*)D) {
-
+                                
                                 Size = *(BYTE*)D;
-
+                                
                                 //UPDATE: Even tho entry finishes at 8 byte aligment, it doesnt finish itself here, adds at least 1 byte for zero termination to indicate its end
                                 //so rather than tracking how much we read so far, we can check if we encountered zero termination
                                 // NOTE(Batuhan): Each entry is at 8byte aligment, so lets say we thought there must be smt like 80 bytes reserved for 0xA0 attribute
@@ -1400,32 +1478,32 @@ GetMFTLCN(char VolumeLetter, HANDLE VolumeHandle) {
                                 // We can keep track how many bytes we read so far etc etc, but rather than that, if we just check if size is 0, which means rest is just filler 
                                 // bytes to aligment border, we can break early.
                                 if (Size == 0) break;  
-
-
+                                
+                                
                                 // extract 4bit nibbles from size
                                 ClusterCountSize = (Size & 0x0F);
                                 FirstClusterSize = (Size & 0xF0) >> 4;
-
+                                
                                 // Sparse files may cause that, but not sure about what is sparse and if it effects directories. 
                                 // If not, nothing to worry about, branch predictor should take care of that
                                 if (ClusterCountSize == 0 || FirstClusterSize == 0)break;
-
+                                
                                 // Swipe to left to clear extra bits, then swap back to get correct result.
                                 ClusterCount = *(INT64*)((BYTE*)D + 1);
                                 ClusterCount = ClusterCount & ~(0xFFFFFFFFFFFFFFFFULL << (ClusterCountSize * 8));
-
+                                
                                 //same operation
                                 FirstCluster = *(INT64*)((BYTE*)D + 1 + ClusterCountSize);
                                 FirstCluster = FirstCluster & ~(0xFFFFFFFFFFFFFFFFULL << (FirstClusterSize * 8));
                                 if ((FirstCluster >> ((FirstClusterSize - 1) * 8 + 7)) & 1U) {
                                     FirstCluster = FirstCluster | (0xFFFFFFFFFFFFFFFFULL << (FirstClusterSize * 8));
                                 }
-
-
+                                
+                                
                                 FirstCluster += OldClusterStart;
                                 // Update tail
                                 OldClusterStart = FirstCluster;
-
+                                
                                 D = (BYTE*)D + (FirstClusterSize + ClusterCountSize + 1);
                                 DBG_INSERT(FirstCluster, ClusterCount);
                                 NAR_INSERT_CLUSTER(FirstCluster, ClusterCount);
@@ -1435,38 +1513,38 @@ GetMFTLCN(char VolumeLetter, HANDLE VolumeHandle) {
                                 
                             }
                             break;
-
+                            
                         }
-
+                        
                         if ((*(INT32*)FileAttribute & 0x80) > 0x80){
                             printf("Couldnt find 0x80 file attribute for $MFT\n");
                             break;// early termination
                         }
-
-
-
+                        
+                        
+                        
                         // found neither Data nor attr bigger than it, just substract attribute size from remaininglen to determine if we should keep iterating
-
+                        
                         RemainingLen -= (*(INT32*)((BYTE*)FileAttribute + 4));
                         FileAttribute = (BYTE*)FileAttribute + *(INT32*)((BYTE*)FileAttribute + 4);
-
+                        
                     }
-
+                    
                 }
-
-
+                
+                
             }
-
+            
 #endif
-
-
+            
+            
             int RecCountByCommandLine = 0;
             nar_record* TempRecords = NarGetMFTRegionsByCommandLine(VolumeLetter, &RecCountByCommandLine);
             if (TempRecords != 0 && RecCountByCommandLine != 0) {
                 memcpy(ClustersExtracted, TempRecords, RecCountByCommandLine*sizeof(nar_record));
                 ClusterExtractedCount = RecCountByCommandLine;
             }
-
+            
             // TODO (Batuhan): remove this after testing on windows server, looks like rest of the code finds some invalid regions on volume.
             if (JustExtractMFTRegions) {
                 printf("Found %i regions\n", ClusterExtractedCount);
@@ -1476,34 +1554,34 @@ GetMFTLCN(char VolumeLetter, HANDLE VolumeHandle) {
                 goto EARLY_TERMINATION;
             }
             
-
+            
             //nar_region *MFTRegions = 0;
             //goto EARLY_TERMINATION;
-
+            
             unsigned int MFTRegionCount = ClusterExtractedCount;
             
             for (unsigned int MFTOffsetIndex = 0; MFTOffsetIndex < MFTRegionCount; MFTOffsetIndex++) {
-
+                
                 ULONGLONG Offset = (ULONGLONG)ClustersExtracted[MFTOffsetIndex].StartPos * (UINT64)ClusterSize;
                 INT32 FilePerCluster = ClusterSize / 1024;
                 ULONGLONG FileCount = (ULONGLONG)ClustersExtracted[MFTOffsetIndex].Len * (UINT64)FilePerCluster;
-
+                
                 // set file pointer to actual records
                 if (NarSetFilePointer(VolumeHandle, Offset)) {
-
+                    
                     // NOTE(Batuhan): Check if we can read all file records at once
-
+                    
                     if (FileBufferCount > FileCount) {
                         // We can read all file records for given data region
-
+                        
                         if (ReadFile(VolumeHandle, FileBuffer, FileCount * 1024, &BR, 0) && BR == FileCount * 1024) {
-
-
+                            
+                            
                             for (unsigned int FileRecordIndex = 0; FileRecordIndex < FileCount; FileRecordIndex++) {
-
-
+                                
+                                
                                 void* FileRecord = (BYTE*)FileBuffer + (UINT64)FileRecordSize * (UINT64)FileRecordIndex;
-
+                                
                                 // file flags are at 22th offset in the record
                                 if (*(INT32*)FileRecord != 'ELIF') {
                                     // block doesnt start with 'FILE0', skip
@@ -1513,7 +1591,7 @@ GetMFTLCN(char VolumeLetter, HANDLE VolumeHandle) {
                                 DBG_INC(DBG_TOTAL_FILES_FOUND);
                                 INT16 Flags = *(INT16*)((BYTE*)FileRecord + FlagOffset);
                                 
-
+                                
                                 if ((Flags & DirectoryFlag) == DirectoryFlag) {
                                     // that is a directory 
                                     DBG_INC(DBG_TOTAL_DIR_FOUND);
@@ -1521,25 +1599,25 @@ GetMFTLCN(char VolumeLetter, HANDLE VolumeHandle) {
                                     /*
                                     As far as i know, attributes will be sorted. so i can early terminate if i can just compare CurrentAttr>INDEX_ALLOCCATION
                                     */
-
+                                    
                                     INT16 FirstAttributeOffset = (*(INT16*)((BYTE*)FileRecord + 20));
                                     void* FileAttribute = (char*)FileRecord + FirstAttributeOffset;
-
+                                    
                                     INT32 RemainingLen = *(INT32*)((BYTE*)FileRecord + 24); // Real size of the file record
                                     RemainingLen -= (FirstAttributeOffset + 8); //8 byte for end of record mark, remaining len includes it too.
-
+                                    
                                     // iterate until file attr 0xA0 found, which is INDEX_ALLOCATION
                                     // maybe some dir does not contain INDEX_ALLOCATION, like empty dirs, or other things i am not aware of.
                                     // its better write solid solution
-
+                                    
                                     while (RemainingLen > 0) {
-
+                                        
                                         if ((*(INT32*)FileAttribute & NAR_INDEX_ALLOCATION_FLAG) == NAR_INDEX_ALLOCATION_FLAG) {
-
+                                            
                                             INT32 DataRunsOffset = *(INT32*)((BYTE*)FileAttribute + 32);
-
+                                            
                                             void* DataRuns = (char*)FileAttribute + DataRunsOffset;
-
+                                            
                                             // So it looks like dataruns doesnt actually tells you LCN, to save up space, they kinda use smt like 
                                             // winapi's deviceiocontrol routine, maybe the reason for fetching VCN-LCN maps from winapi is weird because 
                                             // thats how its implemented at ntfs at first place. who knows
@@ -1553,16 +1631,16 @@ GetMFTLCN(char VolumeLetter, HANDLE VolumeHandle) {
 
                                             LCN[n] = LCN[n-1] + datarun cluster
                                             */
-
+                                            
                                             char Size = *(BYTE*)DataRuns;
                                             INT8 ClusterCountSize = (Size & 0x0F);
                                             INT8 FirstClusterSize = (Size & 0xF0) >> 4;
-
+                                            
                                             // Swipe to left to clear extra bits, then swap back to get correct result.
                                             INT64 ClusterCount = *(INT64*)((char*)DataRuns + 1); // 1 byte for size variable
                                             ClusterCount = ClusterCount & ~(0xFFFFFFFFFFFFFFFFULL << (ClusterCountSize * 8));
                                             // cluster count must be > 0, no need to do 2s complement on it
-
+                                            
                                             //same operation
                                             INT64 FirstCluster = *(INT64*)((char*)DataRuns + 1 + ClusterCountSize);
                                             FirstCluster = FirstCluster & ~(0xFFFFFFFFFFFFFFFFULL << (FirstClusterSize * 8));
@@ -1570,20 +1648,20 @@ GetMFTLCN(char VolumeLetter, HANDLE VolumeHandle) {
                                             if ((FirstCluster >> ((FirstClusterSize - 1) * 8 + 7)) & 1U) {
                                                 FirstCluster = FirstCluster | ((0xFFFFFFFFFFFFFFFULL << (FirstClusterSize * 8)));
                                             }
-
-
+                                            
+                                            
                                             INT64 OldClusterStart = FirstCluster;
                                             void* D = (BYTE*)DataRuns + FirstClusterSize + ClusterCountSize + 1;
-
-
+                                            
+                                            
                                             DBG_INSERT(FirstCluster, ClusterCount);
                                             NAR_INSERT_CLUSTER(FirstCluster, ClusterCount);
                                             
                                             DBG_INC(DBG_INDX_FOUND);
                                             while (*(BYTE*)D) {
-
+                                                
                                                 Size = *(BYTE*)D;
-
+                                                
                                                 //UPDATE: Even tho entry finishes at 8 byte aligment, it doesnt finish itself here, adds at least 1 byte for zero termination to indicate its end
                                                 //so rather than tracking how much we read so far, we can check if we encountered zero termination
                                                 // NOTE(Batuhan): Each entry is at 8byte aligment, so lets say we thought there must be smt like 80 bytes reserved for 0xA0 attribute
@@ -1591,83 +1669,83 @@ GetMFTLCN(char VolumeLetter, HANDLE VolumeHandle) {
                                                 // We can keep track how many bytes we read so far etc etc, but rather than that, if we just check if size is 0, which means rest is just filler 
                                                 // bytes to aligment border, we can break early.
                                                 if (Size == 0) break;
-
-
-
+                                                
+                                                
+                                                
                                                 // extract 4bit nibbles from size
                                                 ClusterCountSize = (Size & 0x0F);
                                                 FirstClusterSize = (Size & 0xF0) >> 4;
-
+                                                
                                                 // Sparse files may cause that, but not sure about what is sparse and if it effects directories. 
                                                 // If not, nothing to worry about, branch predictor should take care of that
                                                 if (ClusterCountSize == 0 || FirstClusterSize == 0)break;
-
+                                                
                                                 // Swipe to left to clear extra bits, then swap back to get correct result.
                                                 ClusterCount = *(INT64*)((BYTE*)D + 1);
                                                 ClusterCount = ClusterCount & ~(0xFFFFFFFFFFFFFFFFULL << (ClusterCountSize * 8));
-
+                                                
                                                 //same operation
                                                 FirstCluster = *(INT64*)((BYTE*)D + 1 + ClusterCountSize);
                                                 FirstCluster = FirstCluster & ~(0xFFFFFFFFFFFFFFFFULL << (FirstClusterSize * 8));
                                                 if ((FirstCluster >> ((FirstClusterSize - 1) * 8 + 7)) & 1U) {
                                                     FirstCluster = FirstCluster | (0xFFFFFFFFFFFFFFFFULL << (FirstClusterSize * 8));
                                                 }
-
-
+                                                
+                                                
                                                 //if(TempVariable > 1 && FirstCluster < 0){
                                                 //    dbgbreak
                                                 //}
-
-
+                                                
+                                                
                                                 FirstCluster += OldClusterStart;
                                                 // Update tail
                                                 OldClusterStart = FirstCluster;
-
+                                                
                                                 D = (BYTE*)D + (FirstClusterSize + ClusterCountSize + 1);
                                                 DBG_INSERT(FirstCluster, ClusterCount);
                                                 NAR_INSERT_CLUSTER(FirstCluster, ClusterCount);
                                                 DBG_INC(DBG_INDX_FOUND);
                                                 
                                             }
-
-
+                                            
+                                            
                                             // found INDEX_ALLOCATION attribute
                                             break;
                                         }
-
+                                        
                                         if ((*(INT32*)FileAttribute & NAR_INDEX_ALLOCATION_FLAG) > NAR_INDEX_ALLOCATION_FLAG) break;// early termination
-
-
+                                        
+                                        
                                         // found neither indexallocation nor attr bigger than it, just substract attribute size from remaininglen to determine if we should keep iterating
                                         INT32 AttrSize = (*(unsigned short*)((BYTE*)FileAttribute + 4));
                                         RemainingLen -= AttrSize;
                                         FileAttribute = (BYTE*)FileAttribute + AttrSize;
                                         if (AttrSize == 0) break;
-
+                                        
                                     }
-
-
+                                    
+                                    
                                 }
                                 else {
                                     // not a directory, skip
                                     continue;
                                 }
-
-
+                                
+                                
                             }
-
-
-
+                            
+                            
+                            
                         }
                         else {
                             printf("Couldnt read file records\n");
 #if _DEBUG
                             DebugBreak();
 #endif
-
+                            
                         }
-
-
+                        
+                        
                     }
                     else {
 #if _DEBUG
@@ -1675,46 +1753,46 @@ GetMFTLCN(char VolumeLetter, HANDLE VolumeHandle) {
 #endif
                         printf("FileCount %i\t FileBufferCount %i\n", FileCount, FileBufferCount);
                         // must iterate 
-
+                        
                     }
-
-
+                    
+                    
                 }
                 else {
-                printf("Couldnt set file pointer to %I64d\n", Offset);
+                    printf("Couldnt set file pointer to %I64d\n", Offset);
                 }
-
-
-
+                
+                
+                
             }
-
-
-
-
+            
+            
+            
+            
         }
         else {
             // couldnt open volume as file
             printf("VSSVolumeHandle was invalid \n");
             DisplayError(GetLastError());
         }
-
+        
     }
     else {
         printf("FATAL: Couldnt allocate memory for file buffer\n");
         // NOTE(Batuhan): cant allocate memory
     }
-
+    
     
     EARLY_TERMINATION:
-
-
+    
+    
     // TODO remove that check
-
+    
     data_array<nar_record> Result = { 0 };
     ClustersExtracted = (nar_record*)realloc(ClustersExtracted, ClusterExtractedCount * sizeof(nar_record));
     Result.Data = ClustersExtracted;
     Result.Count = ClusterExtractedCount;
-
+    
     qsort(Result.Data, Result.Count, sizeof(nar_record), CompareNarRecords);
     MergeRegions(&Result);
     
@@ -1728,15 +1806,15 @@ GetMFTLCN(char VolumeLetter, HANDLE VolumeHandle) {
             break;
         }
     }
-
+    
     if (TruncateIndex > 0) {
         
         printf("INDEX_ALLOCATION blocks exceeds volume size, truncating from index %i\n", TruncateIndex);
         Result.Data = (nar_record*)realloc(Result.Data, TruncateIndex * sizeof(nar_record));
         Result.Count = TruncateIndex;
-
+        
     }
-
+    
     return Result;
 }
 
@@ -1828,8 +1906,8 @@ GetVolumesOnTrack(PLOG_CONTEXT C, volume_information* Out, unsigned int BufferSi
         if (V->INVALIDATEDENTRY) {
             continue;
         }
-
-  
+        
+        
         
         Out[VolumesFound].Letter = (char)V->Letter;
         Out[VolumesFound].Bootable = V->IsOSVolume;
@@ -1934,7 +2012,7 @@ RemoveVolumeFromTrack(LOG_CONTEXT *C, wchar_t L) {
         volume_backup_inf* V = &C->Volumes.Data[ID];
         DetachVolume(V);
         V->INVALIDATEDENTRY = TRUE;
-
+        
         // Since searching volume in context done via checking letters, if I assign 0 to letter, it cant be detected, since its not any character at all, just null termination.
         V->Letter = 0;
         NarRemoveVolumeFromKernelList(L, C->Port);
@@ -2041,16 +2119,16 @@ ReadStream(volume_backup_inf* VolInf, void* Buffer, unsigned int TotalSize) {
     //TotalSize MUST be multiple of cluster size
     UINT32 Result = 0;
     BOOLEAN ErrorOccured = FALSE;
-
+    
     // int ClustersToRead = (int)TotalSize / (int)VolInf->ClusterSize;
-
-
+    
+    
     if (TotalSize == 0) {
         printf("Passed totalsize as 0, terminating now\n");
         return TRUE;
     }
     
-
+    
     unsigned int RemainingSize = TotalSize;
     void* CurrentBufferOffset = Buffer;
     
@@ -2058,47 +2136,47 @@ ReadStream(volume_backup_inf* VolInf, void* Buffer, unsigned int TotalSize) {
         printf("End of the stream\n", VolInf->Stream.RecIndex, VolInf->Stream.Records.Count);
         return Result;
     }
-
+    
     while (RemainingSize) {
-
+        
         if ((UINT)VolInf->Stream.RecIndex >= VolInf->Stream.Records.Count) {
             printf("Rec index was higher than record's count, result %u, rec_index %i rec_count %i\n", Result, VolInf->Stream.RecIndex, VolInf->Stream.Records.Count);
             return Result;
         }
-
+        
         DWORD BytesReadAfterOperation = 0;
-
+        
         UINT64 ClustersRemainingByteSize = (UINT64)VolInf->Stream.Records.Data[VolInf->Stream.RecIndex].Len - (UINT64)VolInf->Stream.ClusterIndex;
         ClustersRemainingByteSize *= VolInf->ClusterSize;
-
+        
         DWORD ReadSize = (DWORD)MIN((UINT64)RemainingSize, ClustersRemainingByteSize); // safe to truncate, since remainingsize's max value is UINT32_MAX, and its MIN macro
         // we expect max value of DWORD.
-
+        
         ULONGLONG FilePtrTarget = (ULONGLONG)VolInf->ClusterSize * ((ULONGLONG)VolInf->Stream.Records.Data[VolInf->Stream.RecIndex].StartPos + (ULONGLONG)VolInf->Stream.ClusterIndex);
         if (NarSetFilePointer(VolInf->Stream.Handle, FilePtrTarget)) {
-
+            
             BOOL OperationResult = ReadFile(VolInf->Stream.Handle, CurrentBufferOffset, ReadSize, &BytesReadAfterOperation, 0);
             Result += BytesReadAfterOperation;
             if (!OperationResult || BytesReadAfterOperation != ReadSize) {
-              printf("STREAM ERROR: Couldnt read %lu bytes, instead read %lu, error code %i\n", ReadSize, BytesReadAfterOperation, OperationResult);
-              printf("rec_index % i rec_count % i, remaining bytes %I64u, offset at disk %I64u\n", VolInf->Stream.RecIndex, VolInf->Stream.Records.Count, ClustersRemainingByteSize, FilePtrTarget);
-              printf("Total bytes read for buffer %u\n", Result);
-
-              NarDumpToFile("STREAM_OVERFLOW_ERROR_LOGS", VolInf->Stream.Records.Data, VolInf->Stream.Records.Count*sizeof(nar_record));
-
-              ErrorOccured = TRUE;
-          }
-
-
+                printf("STREAM ERROR: Couldnt read %lu bytes, instead read %lu, error code %i\n", ReadSize, BytesReadAfterOperation, OperationResult);
+                printf("rec_index % i rec_count % i, remaining bytes %I64u, offset at disk %I64u\n", VolInf->Stream.RecIndex, VolInf->Stream.Records.Count, ClustersRemainingByteSize, FilePtrTarget);
+                printf("Total bytes read for buffer %u\n", Result);
+                
+                NarDumpToFile("STREAM_OVERFLOW_ERROR_LOGS", VolInf->Stream.Records.Data, VolInf->Stream.Records.Count*sizeof(nar_record));
+                
+                ErrorOccured = TRUE;
+            }
+            
+            
         }
         else {
             printf("Couldnt set file pointer to %I64d\n", FilePtrTarget);
             ErrorOccured = TRUE;
         }
-
+        
         INT32 ClusterToIterate = (INT32)(BytesReadAfterOperation / 4096);
         VolInf->Stream.ClusterIndex += ClusterToIterate;
-
+        
         if ((UINT32)VolInf->Stream.ClusterIndex == VolInf->Stream.Records.Data[VolInf->Stream.RecIndex].Len) {
             VolInf->Stream.ClusterIndex = 0;
             VolInf->Stream.RecIndex++;
@@ -2107,27 +2185,27 @@ ReadStream(volume_backup_inf* VolInf, void* Buffer, unsigned int TotalSize) {
             printf("ClusterIndex exceeded region len, that MUST NOT happen at any circumstance\n");
             ErrorOccured = TRUE;
         }
-
+        
         if (BytesReadAfterOperation % VolInf->ClusterSize != 0) {
             printf("Couldnt read cluster aligned size, error, read %i bytes instead of %i\n", BytesReadAfterOperation, ReadSize);
         }
-
+        
         RemainingSize -= BytesReadAfterOperation;
         CurrentBufferOffset = (char*)Buffer + (Result);
         if (ErrorOccured) break;
-
+        
     }
-
+    
     if (ErrorOccured) return 0;
-
+    
     return Result;
-
-
+    
+    
 }
 
 BOOLEAN
 TerminateBackup(volume_backup_inf* V, BOOLEAN Succeeded) {
-
+    
     BOOLEAN Return = FALSE;
     if (!V) return FALSE;
     
@@ -2164,18 +2242,18 @@ TerminateBackup(volume_backup_inf* V, BOOLEAN Succeeded) {
         
         // after 
         V->Version = 0;
-
+        
     }
     else {
         //Termination of diff-inc backup
         printf("Termination of diff-inc backup\n");
         
         if (Succeeded) {
-
+            
             // NOTE(Batuhan):
             printf("Will save metadata to working directory, Version : %i\n", V->Version);
             SaveMetadata((char)V->Letter, V->Version, V->ClusterSize, V->BT, V->Stream.Records, V->Stream.Handle, V->MFTLCN);
-
+            
             /*
          Since merge algorithm may have change size of the record buffer,
             we should overwrite and truncate it
@@ -2185,14 +2263,14 @@ TerminateBackup(volume_backup_inf* V, BOOLEAN Succeeded) {
             V->Version++;
             V->LastBackupRegionOffset = V->ActiveBackupInf.PossibleNewBackupRegionOffsetMark;
             V->ActiveBackupInf.PossibleNewBackupRegionOffsetMark = 0;
-
+            
             //backup operation succeeded condition end (for diff and inc)
         }
         else{
             printf("Backup failed for inc-diff operation\n");
         }
         
-
+        
     }
     
     CLEANHANDLE(V->Stream.Handle);
@@ -2202,7 +2280,7 @@ TerminateBackup(volume_backup_inf* V, BOOLEAN Succeeded) {
     V->Stream.ClusterIndex = 0;
     V->VSSPTR.Release();
     FreeDataArray(&V->MFTLCN);
-
+    
     
     return Return;
 }
@@ -2222,7 +2300,7 @@ Type is optional, after first backup
 BOOLEAN
 SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, DotNetStreamInf* SI) {
     
-
+    
     BOOLEAN Return = FALSE;
     
     int ID = GetVolumeID(C, L);
@@ -2239,52 +2317,52 @@ SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, DotNetStreamInf* SI) {
     }
     
     
-
+    
     
     volume_backup_inf* VolInf = &C->Volumes.Data[ID];
     printf("Entered setup stream for volume %c, version %i\n", (char)L, VolInf->Version);
-
+    
     VolInf->VSSPTR.Release();
     VolInf->Stream.ClusterIndex = 0;
     VolInf->Stream.RecIndex = 0;
     VolInf->Stream.Records.Count = 0;
     
     auto SetupMFTLCNandAppendStream = [&]() {
-
+        
         VolInf->MFTLCN = GetMFTLCN((char)L, VolInf->Stream.Handle);
         if (VolInf->MFTLCN.Data != 0) {
-
+            
             printf("Parsed MFTLCN for volume %c for version %i, count %u", (wchar_t)VolInf->Letter, VolInf->Version, VolInf->MFTLCN.Count);
             VolInf->Stream.Records.Data = (nar_record*)realloc(VolInf->Stream.Records.Data, (VolInf->Stream.Records.Count + VolInf->MFTLCN.Count) * sizeof(nar_record));
             memcpy(&VolInf->Stream.Records.Data[VolInf->Stream.Records.Count], VolInf->MFTLCN.Data, VolInf->MFTLCN.Count * sizeof(nar_record));
-
+            
             VolInf->Stream.Records.Count += VolInf->MFTLCN.Count;
             qsort(VolInf->Stream.Records.Data, VolInf->Stream.Records.Count, sizeof(nar_record), CompareNarRecords);
             MergeRegions(&VolInf->Stream.Records);
-
-
+            
+            
         }
         else {
             printf("Couldnt parse MFT at setupstream function for volume %c, version %i\n", L, VolInf->Version);
-
+            
         }
-
-
+        
+        
     };
-
+    
     if (SetupStreamHandle(VolInf)) {
-
+        
         // NOTE(Batuhan): Experimental feature, from now on (06.10.2020), every binary data MUST contain MFTLCN with extended INDEX_ALLOCATION data.
         // that helps file explorer to search that volume 
         
-
+        
         printf("Setup stream handle successfully\n");
         if (!VolInf->FullBackupExists) {
             printf("Fullbackup stream is preparing\n");
             //Fullbackup stream
             if (SetFullRecords(VolInf)) {
                 SetupMFTLCNandAppendStream();
-
+                
                 Return = TRUE;
             }
             else {
@@ -2300,7 +2378,7 @@ SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, DotNetStreamInf* SI) {
                 for (unsigned int i = 0; i < VolInf->Stream.Records.Count; i++) {
                     SI->ClusterCount += VolInf->Stream.Records.Data[i].Len;
                 }
-
+                
             }
             
         }
@@ -2308,7 +2386,7 @@ SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, DotNetStreamInf* SI) {
             //Incremental or diff stream
             BackupType T = VolInf->BT;
             
-
+            
             if (T == BackupType::Diff) {
                 if (SetDiffRecords(VolInf)) {
                     Return = TRUE;
@@ -2346,12 +2424,12 @@ SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, DotNetStreamInf* SI) {
         printf("SetupStreamHandle failed\n");
     }
     
-
+    
     {
         volume_backup_inf* V = VolInf;
         
         SetupMFTLCNandAppendStream();
-
+        
         unsigned int TruncateIndex = 0;
         
         for(unsigned int RecordIndex = 0; RecordIndex < V->Stream.Records.Count; RecordIndex++){
@@ -2362,7 +2440,7 @@ SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, DotNetStreamInf* SI) {
             }
             
         }
-
+        
         if(TruncateIndex > 0){
             printf("Found regions that exceeds volume size, truncating stream record array from %i to %i\n", V->Stream.Records.Count, TruncateIndex);
             V->Stream.Records.Data = (nar_record*)realloc(V->Stream.Records.Data, TruncateIndex*sizeof(nar_record));            
@@ -2372,13 +2450,13 @@ SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, DotNetStreamInf* SI) {
             for (unsigned int i = 0; i < VolInf->Stream.Records.Count; i++) {
                 SI->ClusterCount += VolInf->Stream.Records.Data[i].Len;
             }
-
+            
         }
-
+        
     }
-
+    
     printf("Totalbytes should be backed up %I64u\n", (UINT64)SI->ClusterCount*(UINT64)SI->ClusterSize);
-
+    
     
     return Return;
 }
@@ -2391,13 +2469,13 @@ SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, DotNetStreamInf* SI) {
 */
 nar_record*
 GetVolumeRegionsFromBitmap(HANDLE VolumeHandle, UINT32* OutRecordCount) {
-
+    
     if(OutRecordCount == NULL) return NULL;
-
+    
     nar_record* Records = NULL;
     UINT32 RecordCount = 0;
-
-
+    
+    
     STARTING_LCN_INPUT_BUFFER StartingLCN;
     StartingLCN.StartingLcn.QuadPart = 0;
     ULONGLONG MaxClusterCount = 0;
@@ -2406,7 +2484,7 @@ GetVolumeRegionsFromBitmap(HANDLE VolumeHandle, UINT32* OutRecordCount) {
     VOLUME_BITMAP_BUFFER* Bitmap = (VOLUME_BITMAP_BUFFER*)malloc(BufferSize);
     
     if (Bitmap != NULL) {
-    
+        
         HRESULT R = DeviceIoControl(VolumeHandle, FSCTL_GET_VOLUME_BITMAP, &StartingLCN, sizeof(StartingLCN), Bitmap, BufferSize, 0, 0);
         if (SUCCEEDED(R)) {
             
@@ -2421,26 +2499,26 @@ GetVolumeRegionsFromBitmap(HANDLE VolumeHandle, UINT32* OutRecordCount) {
             Records = (nar_record*)malloc(RecordBufferSize);
             
             memset(Records, 0, RecordBufferSize);
-
+            
             Records[0] = { 0,1 };
             RecordCount++; 
-
+            
             ClustersRead++;
             BitmapMask <<= 1;
-
+            
             while (ClustersRead < MaxClusterCount) {
-           
+                
                 if ((*BitmapIndex & BitmapMask) == BitmapMask) {
-
+                    
                     if (LastActiveCluster == ClustersRead - 1) {
                         Records[RecordCount].Len++;
                     }
                     else {
                         Records[++RecordCount] = { ClustersRead, 1 };
                     }
-
+                    
                     LastActiveCluster = ClustersRead;
-
+                    
                 }
                 BitmapMask <<= 1;
                 if (BitmapMask == 0) {
@@ -2449,33 +2527,33 @@ GetVolumeRegionsFromBitmap(HANDLE VolumeHandle, UINT32* OutRecordCount) {
                 }
                 ClustersRead++;
             }
-
+            
             printf("Successfully set fullbackup records\n");
-
-
+            
+            
         }
         else {
             // NOTE(Batuhan): DeviceIOControl failed
             printf("Get volume bitmap failed [DeviceIoControl].\n");
             printf("Result was -> %d\n", R);
         }
-
+        
     }
     else {
         printf("Couldn't allocate memory for bitmap buffer, tried to allocate %u bytes!\n", BufferSize);
     }
-
-
+    
+    
     free(Bitmap);
     
     if(Records != NULL){
-      Records = (nar_record*)realloc(Records, RecordCount*sizeof(nar_record));
-      (*OutRecordCount) = RecordCount;
+        Records = (nar_record*)realloc(Records, RecordCount*sizeof(nar_record));
+        (*OutRecordCount) = RecordCount;
     }
     else{
-      (*OutRecordCount) = 0;
+        (*OutRecordCount) = 0;
     }
-
+    
     return Records;
 }
 
@@ -2488,7 +2566,7 @@ SetFullRecords(volume_backup_inf* V) {
     UINT32 Count = 0;
     V->Stream.Records.Data  = GetVolumeRegionsFromBitmap(V->Stream.Handle, &Count);
     V->Stream.Records.Count = Count;
-
+    
     return (V->Stream.Records.Data != NULL);
 }
 
@@ -2500,58 +2578,58 @@ SetIncRecords(volume_backup_inf* VolInf) {
         printf("SetIncRecords: VolInf was null\n");
         return FALSE;
     }
-
+    
     VolInf->Stream.Records.Data = 0;
     VolInf->Stream.Records.Count = 0;
-
+    
     DWORD TargetReadSize = 0;
     DWORD BytesRead = 0;
-
+    
     DWORD RetVal = WaitForSingleObject(VolInf->FileWriteMutex, 500);
     if(RetVal == WAIT_OBJECT_0) {
-
+        
         FlushFileBuffers(VolInf->LogHandle);       
         
         // safe to read from V->LogHandle
-
+        
         if(VolInf->ActiveBackupInf.PossibleNewBackupRegionOffsetMark - VolInf->LastBackupRegionOffset < 0xFFFFFFFFll){
             // NOTE(Batuhan): Assumption made here, change in log file size does not exceed 32 bit max integer value.
             TargetReadSize = (DWORD)(VolInf->ActiveBackupInf.PossibleNewBackupRegionOffsetMark - VolInf->LastBackupRegionOffset);
-        
+            
             if(NarSetFilePointer(VolInf->LogHandle, (UINT64)VolInf->LastBackupRegionOffset)){
                 
                 VolInf->Stream.Records.Data = (nar_record*)malloc(TargetReadSize);
                 memset(VolInf->Stream.Records.Data, 0, TargetReadSize);
                 VolInf->Stream.Records.Count = TargetReadSize/sizeof(nar_record);
-
+                
                 if(ReadFile(VolInf->LogHandle, VolInf->Stream.Records.Data, TargetReadSize, &BytesRead, 0) && BytesRead == TargetReadSize){
                     
                     qsort(VolInf->Stream.Records.Data, VolInf->Stream.Records.Count, sizeof(nar_record), CompareNarRecords);
                     MergeRegions(&VolInf->Stream.Records);
                     Result = TRUE;
-
+                    
                 }
                 else{
-
+                    
                     printf("SetIncRecords Couldnt read %lu, instead read %lu\n", TargetReadSize, BytesRead);
                     DisplayError(GetLastError());
-
+                    
                 }
-
+                
             }
             else{
                 printf("Couldnt set file pointer\n");
             }
-
+            
         }
         else{
             printf("Records appended since last backups size exceeds 4GB, size %I64u\n", VolInf->ActiveBackupInf.PossibleNewBackupRegionOffsetMark - VolInf->LastBackupRegionOffset);
             // TODO exceeds 4GB limit
         }
-
-
+        
+        
         ReleaseMutex(VolInf->FileWriteMutex);
-
+        
     }
     else{
         
@@ -2568,9 +2646,9 @@ SetIncRecords(volume_backup_inf* VolInf) {
         else{
             printf("UNDEFINED\n");
         }
-
+        
         printf("\n");
-
+        
     }
     
     
@@ -2692,10 +2770,10 @@ WriteStream(restore_inf* RestoreInf, void* Data, int Size) {
 
 BOOLEAN
 SetDiffRecords(volume_backup_inf* V) {
-
+    
     printf("Entered SetDiffRecords\n");
     BOOLEAN Result = FALSE;
-
+    
     if (V == NULL || V->LogHandle == INVALID_HANDLE_VALUE) {
         
         if(V){
@@ -2706,11 +2784,11 @@ SetDiffRecords(volume_backup_inf* V) {
         else{
             printf("volume backup inf structure was null\n");
         }
-
+        
         return FALSE;
-
+        
     }
-
+    
     DWORD WINAPIRetVAL = WaitForSingleObject(V->FileWriteMutex, 500);
     if(WINAPIRetVAL == WAIT_OBJECT_0){
         FlushFileBuffers(V->LogHandle);
@@ -2722,47 +2800,47 @@ SetDiffRecords(volume_backup_inf* V) {
             // NOTE (Batuhan): IMPORTANT, so if total log size exceeds 4GB, we cant backup succcessfully, since reading file larger than 4GB is 
             // problem by itself, one can do partially load file and continuously compress it via qsort & mergeregions. then final log size drastically
             // becames lower.
-
+            
             DWORD TargetReadSize = (DWORD)V->ActiveBackupInf.PossibleNewBackupRegionOffsetMark; // not so safe to truncate
             DWORD BytesRead = 0;
-
+            
             if(NarSetFilePointer(V->LogHandle, 0)){
-
+                
                 V->Stream.Records.Data = (nar_record*)malloc(TargetReadSize);
                 V->Stream.Records.Count = TargetReadSize / sizeof(nar_record);
-
+                
                 if(ReadFile(V->LogHandle, V->Stream.Records.Data, TargetReadSize, &BytesRead,0) && BytesRead == TargetReadSize){
-
+                    
                     printf("Succ read diff records, will sort and merge regions to save in space\n");
                     qsort(V->Stream.Records.Data, V->Stream.Records.Count, sizeof(nar_record), CompareNarRecords);
                     MergeRegions(&V->Stream.Records);
                     Result = TRUE;
-
+                    
                 }
                 else{
-
+                    
                     printf("SetDiffRecords Couldnt read %lu, instead read %lu\n", TargetReadSize, BytesRead);
                     DisplayError(GetLastError());
                     
                 }
-
+                
             }
             else{
                 
                 printf("Couldnt set file pointer to beginning of the file\n");
-
+                
             }
-
+            
         }  
         else{
             printf("LogFile size exceeds 4GB, cant process that much log, %I64d\n", V->ActiveBackupInf.PossibleNewBackupRegionOffsetMark);
         }
-
+        
         ReleaseMutex(V->FileWriteMutex);
-
+        
     }
     else{
-
+        
         printf("Couldnt lock write file, ");
         if(WINAPIRetVAL == WAIT_TIMEOUT){
             printf("TIMEOUT");   
@@ -2776,40 +2854,40 @@ SetDiffRecords(volume_backup_inf* V) {
         else{
             printf("UNDEFINED\n");
         }
-
+        
         printf("\n");
-
+        
     }
-
-
-
+    
+    
+    
 #if 0
     if (V->ActiveBackupInf.PossibleNewBackupRegionOffsetMark > 0xFFFFFFFFll) {
         // TODO(Batuhan) :
     }
-
+    
     V->ActiveBackupInf.PossibleNewBackupRegionOffsetMark;
-
+    
     V->Stream.Records.Data = (nar_record*)malloc(V->ActiveBackupInf.PossibleNewBackupRegionOffsetMark);
     V->Stream.Records.Count = V->ActiveBackupInf.PossibleNewBackupRegionOffsetMark / sizeof(nar_record);
-
+    
     DWORD BytesRead = 0;
     DWORD TargetReadSize = (DWORD)V->ActiveBackupInf.PossibleNewBackupRegionOffsetMark;
     Result = ReadFile(V->LogHandle, V->Stream.Records.Data, TargetReadSize, &BytesRead, 0);
-
+    
     if (Result && TargetReadSize == BytesRead) {
         // thats it?
     }
     else {
         // TODO(Batuhan): 
-
+        
     }
 #endif
-
-
+    
+    
     return Result;
 }
-    
+
 
 
 
@@ -2826,13 +2904,13 @@ SetupStreamHandle(volume_backup_inf* VolInf) {
     VolInf->FilterFlags.IsActive = TRUE;
     
     if (VolInf->FullBackupExists) {
-
+        
         DWORD RetVal = WaitForSingleObject(VolInf->FileWriteMutex, 500);
         if(RetVal == WAIT_OBJECT_0){
-
+            
             LARGE_INTEGER CurrentFilePtr = {0};
             FlushFileBuffers(VolInf->LogHandle);
-
+            
             if(GetFileSizeEx(VolInf->LogHandle, &CurrentFilePtr) != 0){
                 VolInf->ActiveBackupInf.PossibleNewBackupRegionOffsetMark = CurrentFilePtr.QuadPart;
                 printf("Current log file size %I64d\n", CurrentFilePtr.QuadPart);
@@ -2841,29 +2919,29 @@ SetupStreamHandle(volume_backup_inf* VolInf) {
                 printf("Couldnt get log file size\n");
                 DisplayError(GetLastError());
             }
-
+            
             ReleaseMutex(VolInf->FileWriteMutex);
-
+            
         }
         else{
             printf("Couldnt lock file write mutex @ setupstreamhandle, returning false\n");
             return FALSE;
         }
-    
+        
 #if 0
         if (!DetachVolume(VolInf)) {
             printf("Detach volume failed\n");
             return FALSE;
         }
         else{
-
             
-
+            
+            
         }
 #endif
-
+        
         printf("Volume %c detached!\n", VolInf->Letter);
-
+        
     }
     
     WCHAR Temp[] = L"!:\\";
@@ -2883,10 +2961,10 @@ SetupStreamHandle(volume_backup_inf* VolInf) {
         std::wstring LogFileName = GenerateLogFileName(VolInf->Letter);
         VolInf->LogHandle = CreateFileW(LogFileName.c_str(), GENERIC_WRITE | GENERIC_READ, 0, 0, CREATE_ALWAYS, 0, 0);
         if(VolInf->LogHandle != INVALID_HANDLE_VALUE){
-
+            
             DWORD RetVal = WaitForSingleObject(VolInf->FileWriteMutex, 500);
             if(RetVal == WAIT_OBJECT_0){
-
+                
                 LARGE_INTEGER CurrentFilePtr = {0};
                 if(GetFileSizeEx(VolInf->LogHandle, &CurrentFilePtr) != 0){
                     VolInf->ActiveBackupInf.PossibleNewBackupRegionOffsetMark = CurrentFilePtr.QuadPart;
@@ -2896,7 +2974,7 @@ SetupStreamHandle(volume_backup_inf* VolInf) {
                     printf("COuldnt get log file size, !VolInf->FullBackupExists\n");
                     DisplayError(GetLastError());
                 }
-
+                
                 ReleaseMutex(VolInf->FileWriteMutex);
 				
             }
@@ -2904,14 +2982,14 @@ SetupStreamHandle(volume_backup_inf* VolInf) {
                 printf("Couldnt lock file write mutex @ setupstreamhandle, returning false\n");
                 return FALSE;
             }
-
+            
         }
         else{
             printf("Couldnt create log file for volume %c\n", VolInf->Letter);      
             DisplayError(GetLastError());
             return FALSE;  
         }
-
+        
         
     }
     
@@ -2944,13 +3022,13 @@ SetupVSS() {
         NOTE(Batuhan): in managed code we dont need to initialize these stuff. since i am shipping code as textual to wrapper, i can detect clr compilation and switch to correct way to initialize
         vss stuff
      */
-
+    
 #if (_MANAGED == 1) || (_M_CEE == 1)
     return TRUE;
 #else
     BOOLEAN Return = TRUE;
     HRESULT hResult = 0;
-
+    
     // TODO (Batuhan): Remove that thing if 
     hResult = CoInitializeEx(NULL, COINIT_MULTITHREADED);
     if (!SUCCEEDED(hResult)) {
@@ -2958,19 +3036,19 @@ SetupVSS() {
         DisplayError(GetLastError());
         Return = FALSE;
     }
-
+    
     hResult = CoInitializeSecurity(
-        NULL,                           //  Allow *all* VSS writers to communicate back!
-        -1,                             //  Default COM authentication service
-        NULL,                           //  Default COM authorization service
-        NULL,                           //  reserved parameter
-        RPC_C_AUTHN_LEVEL_PKT_PRIVACY,  //  Strongest COM authentication level
-        RPC_C_IMP_LEVEL_IMPERSONATE,    //  Minimal impersonation abilities
-        NULL,                           //  Default COM authentication settings
-        EOAC_DYNAMIC_CLOAKING,          //  Cloaking
-        NULL                            //  Reserved parameter
-    );
-
+                                   NULL,                           //  Allow *all* VSS writers to communicate back!
+                                   -1,                             //  Default COM authentication service
+                                   NULL,                           //  Default COM authorization service
+                                   NULL,                           //  reserved parameter
+                                   RPC_C_AUTHN_LEVEL_PKT_PRIVACY,  //  Strongest COM authentication level
+                                   RPC_C_IMP_LEVEL_IMPERSONATE,    //  Minimal impersonation abilities
+                                   NULL,                           //  Default COM authentication settings
+                                   EOAC_DYNAMIC_CLOAKING,          //  Cloaking
+                                   NULL                            //  Reserved parameter
+                                   );
+    
     if (!SUCCEEDED(hResult)) {
         printf("Failed CoInitializeSecurity function %d\n", hResult);
         DisplayError(GetLastError());
@@ -2978,8 +3056,8 @@ SetupVSS() {
     }
     return Return;
 #endif
-
-
+    
+    
 }
 
 BOOLEAN
@@ -3061,7 +3139,7 @@ OfflineRestoreCleanDisk(restore_inf* R, int DiskID) {
         if (M.DiskType == NAR_DISKTYPE_GPT) {
             
             printf("GPT Disk will be formatted as (Volume size %I64d, EFIPartitionSizeMB %u, RecoverySize %u)\n", M.VolumeSize, M.GPT_EFIPartitionSize/ (1024 * 1024), M.Size.Recovery);
-
+            
             if (NarCreateCleanGPTBootablePartition(DiskID, (int)(M.VolumeSize / (1024ull * 1024ull)), (int)(M.GPT_EFIPartitionSize / (1024ull * 1024ull)), (int)(M.Size.Recovery / (1024ull * 1024ull)), (char)R->TargetLetter)) {
                 Result = TRUE;
                 printf("Successfully created bootable gpt partition\n");
@@ -3074,7 +3152,7 @@ OfflineRestoreCleanDisk(restore_inf* R, int DiskID) {
         if (M.DiskType == NAR_DISKTYPE_MBR) {
             
             printf("MBR Disk will be formatted as (Volume size %I64d, SystemPartitionMB %u, RecoverySize %u)\n", M.VolumeSize, M.MBR_SystemPartitionSize/ (1024 * 1024), M.Size.Recovery);
-
+            
             if (NarCreateCleanMBRBootPartition(DiskID, (char)R->TargetLetter, (int)(M.VolumeSize / (1024ull * 1024ull)), (int)(M.MBR_SystemPartitionSize / (1024ull * 1024ull)), (int)(M.Size.Recovery / (1024ull * 1024ull)))) {
                 Result = TRUE;
             }
@@ -3097,7 +3175,7 @@ OfflineRestoreCleanDisk(restore_inf* R, int DiskID) {
         }
         if (M.DiskType == NAR_DISKTYPE_MBR) {
             /*TODO*MBR */
-
+            
             if ( FALSE) {
                 // TODO(Batuhan):
                 // Result;
@@ -3111,30 +3189,30 @@ OfflineRestoreCleanDisk(restore_inf* R, int DiskID) {
     
     // TODO (Batuhan): wait 2 second prior to bcdboot to ensure volume is usable after diskpart operations 
     Sleep(1500); 
-
+    
     if (Result) {
         
         Result = OfflineRestoreToVolume(R, TRUE);
         if (Result) {
             
             if (M.IsOSVolume) {
-
-
+                
+                
                 if (!RestoreRecoveryFile(*R)) {
                     printf("Couldnt restore recovery partition\n");
                 }
                 else {
                     printf("Successfully restored recovery partition, continuing on boot repair\n");
                 }
-
+                
                 NarRepairBoot((char)R->TargetLetter);
                 NarRemoveLetter(NAR_EFI_PARTITION_LETTER);
                 NarRemoveLetter(NAR_RECOVERY_PARTITION_LETTER);
-
+                
                 printf("Restored to volume %c, to version %i\n", (char)R->TargetLetter, R->Version);
-
-
-
+                
+                
+                
             }
             else {
                 printf("Skipping boot repair since backup doesnt contain OS\n");
@@ -3176,7 +3254,7 @@ OfflineRestoreToVolume(restore_inf* R, BOOLEAN ShouldFormat) {
             printf("Error MFTMetadata %c\n", BM.Errors.MFTMetadata);
             printf("Error MFT %c\n", BM.Errors.MFT);
             printf("Error Recovery %c\n", BM.Errors.Recovery);
-
+            
             Result = FALSE;
         }
     }
@@ -3203,7 +3281,7 @@ OfflineRestoreToVolume(restore_inf* R, BOOLEAN ShouldFormat) {
         
         // Wait for diskpart operation to complete
         Sleep(2500);
-
+        
         HANDLE Volume = NarOpenVolume((char)R->TargetLetter);
         if (Volume != INVALID_HANDLE_VALUE) {
             if (Version == NAR_FULLBACKUP_VERSION) {
@@ -3240,13 +3318,13 @@ OfflineRestoreToVolume(restore_inf* R, BOOLEAN ShouldFormat) {
 inline BOOLEAN
 NarRemoveLetter(char Letter){
     char Buffer[128];
-
+    
     sprintf(Buffer, 
-        "select volume %c\n"
-        "remove letter %c\n"
-        "exit\n", Letter, Letter);
-
-
+            "select volume %c\n"
+            "remove letter %c\n"
+            "exit\n", Letter, Letter);
+    
+    
     char InputFN[] = "NARDPINPUT";
     if(NarDumpToFile(InputFN, Buffer, (unsigned int)strlen(Buffer))){
         sprintf(Buffer, "diskpart /s %s", InputFN);
@@ -3254,7 +3332,7 @@ NarRemoveLetter(char Letter){
         system(Buffer);
         return TRUE;
     }
-
+    
     printf("COULDNT DUMP CONTENTS TO FILE, RETURNING FALSE CODE (NARREMOVELETTER)\n");
     return FALSE;
 }
@@ -3394,9 +3472,9 @@ NarSetVolumeSize(char Letter, int TargetSizeMB) {
     ULARGE_INTEGER TOTAL_SIZE = { 0 };
     GetDiskFreeSpaceExA(Buffer, 0, &TOTAL_SIZE, 0);
     VolSizeMB = (int)(TOTAL_SIZE.QuadPart / (1024ull * 1024ull)); // byte to MB
-
+    
     printf("Volume %c's size is %i, target size %i\n", Letter, VolSizeMB, TargetSizeMB);
-
+    
     if (VolSizeMB == TargetSizeMB) {
         return TRUE;
     }
@@ -3471,14 +3549,14 @@ NarGetDisks() {
     Result.Data = (disk_information*)malloc(sizeof(disk_information) * 32);
     Result.Count = 32;
     memset(Result.Data, 0, sizeof(disk_information) * 32);
-
+    
     DWORD DriveLayoutSize = 1024 * 4;
     int DGEXSize = 1024 * 4;
     
     DWORD MemorySize = DriveLayoutSize + DGEXSize;
     void* Memory = VirtualAlloc(0, MemorySize, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
-
-
+    
+    
     DRIVE_LAYOUT_INFORMATION_EX* DriveLayout = (DRIVE_LAYOUT_INFORMATION_EX*)(Memory);
     DISK_GEOMETRY_EX* DGEX = (DISK_GEOMETRY_EX*)((char*)Memory + DriveLayoutSize);    
     
@@ -3493,11 +3571,11 @@ NarGetDisks() {
         if(Disk == INVALID_HANDLE_VALUE){
             continue;
         }
-
+        
         Result.Data[Found].ID = (int)DiskID;
         
         if (DeviceIoControl(Disk, IOCTL_DISK_GET_DRIVE_LAYOUT_EX, 0, 0, DriveLayout, DriveLayoutSize, &HELL, 0)) {
-
+            
             if (DriveLayout->PartitionStyle == PARTITION_STYLE_MBR) {
                 Result.Data[Found].Type = NAR_DISKTYPE_MBR;
             }
@@ -3507,30 +3585,30 @@ NarGetDisks() {
             if (DriveLayout->PartitionStyle == PARTITION_STYLE_RAW) {
                 Result.Data[Found].Type = NAR_DISKTYPE_RAW;
             }
-
+            
             if(DriveLayout->PartitionStyle != PARTITION_STYLE_RAW
-                && DriveLayout->PartitionStyle != PARTITION_STYLE_GPT
-                && DriveLayout->PartitionStyle != PARTITION_STYLE_MBR){
+               && DriveLayout->PartitionStyle != PARTITION_STYLE_GPT
+               && DriveLayout->PartitionStyle != PARTITION_STYLE_MBR){
                 printf("Drive layout style was undefined, %s\n", StrBuf);
                 continue;
             }
-
+            
         }
         else {
             printf("Can't get drive layout for disk %s\n", StrBuf);
         }
-
+        
         if (DeviceIoControl(Disk, IOCTL_DISK_GET_DRIVE_GEOMETRY_EX, 0, 0, DGEX, (DWORD)DGEXSize, &HELL, 0)) {
             Result.Data[Found].Size = (ULONGLONG)DGEX->DiskSize.QuadPart;
         }
         else {
             printf("Can't get drive layout for disk %s\n", StrBuf);
         }
-
+        
         CloseHandle(Disk);
         memset(Memory, 0, MemorySize);
         Found++;
-
+        
     }
     
     
@@ -3571,18 +3649,18 @@ NarGetVolumes() {
             VolumeString[0] = (wchar_t)('A' + (char)CurrentDriveIndex);
             ULARGE_INTEGER TotalSize = { 0 };
             ULARGE_INTEGER FreeSize = { 0 };
-
+            
             volume_information T = { 0 };
             
             if (GetDiskFreeSpaceExW(VolumeString, 0, &TotalSize, &FreeSize)) {
                 T.Letter = 'A' + CurrentDriveIndex;
                 T.TotalSize = TotalSize.QuadPart;
                 T.FreeSize = FreeSize.QuadPart;
-
+                
                 T.Bootable = (WindowsLetter == T.Letter);
                 T.DiskType = NarGetVolumeDiskType(T.Letter);
                 T.DiskID = NarGetVolumeDiskID(T.Letter);
-
+                
                 {
                     WCHAR fileSystemName[MAX_PATH + 1] = { 0 };
                     DWORD serialNumber = 0;
@@ -3590,7 +3668,7 @@ NarGetVolumes() {
                     DWORD fileSystemFlags = 0;
                     GetVolumeInformationW(VolumeString, T.VolumeName, sizeof(T.VolumeName), &serialNumber, &maxComponentLen, &fileSystemFlags, fileSystemName, sizeof(fileSystemName));
                 }
-
+                
                 Result.Insert(T);
             }
             
@@ -3749,19 +3827,19 @@ NarCreateCleanGPTPartition(int DiskID, int VolumeSizeMB, char Letter) {
 
 BOOLEAN
 NarCreateCleanMBRPartition(int DiskID, char VolumeLetter, int VolumeSize) {
-
+    
     char Buffer[2048];
     sprintf(Buffer, 
-        "select disk %i\n"
-        "clean\n"
-        "convert mbr\n"
-        "create partition primary size %i\n"
-        "format fs = ntfs quick\n"
-        "assign letter %c\n"
-        "exit\n",
-        DiskID, VolumeSize, VolumeLetter
-        );
-
+            "select disk %i\n"
+            "clean\n"
+            "convert mbr\n"
+            "create partition primary size %i\n"
+            "format fs = ntfs quick\n"
+            "assign letter %c\n"
+            "exit\n",
+            DiskID, VolumeSize, VolumeLetter
+            );
+    
     char InputFN[] = "NARDPINPUT";
     if (NarDumpToFile(InputFN, Buffer, strlen(Buffer))) {
         sprintf(Buffer, "diskpart /s %s", InputFN);
@@ -3770,10 +3848,10 @@ NarCreateCleanMBRPartition(int DiskID, char VolumeLetter, int VolumeSize) {
         return TRUE;
     }
     
-
+    
     printf("NarCreateCleanMBRPartition IS NOT IMPLEMENTED\n");
     return FALSE;
-
+    
 }
 
 
@@ -3782,26 +3860,26 @@ NarCreateCleanMBRBootPartition(int DiskID, char VolumeLetter, int VolumeSizeMB, 
     
     char Buffer[2048];
     memset(Buffer, 0, 2048);
-
+    
     sprintf(Buffer, 
-        "select disk %i\n"
-        "clean\n"
-        "convert mbr\n"
-        // SYSTEM PARTITION
-        "create partition primary size = %i\n"
-        "format quick fs = ntfs label = System\n"
-        "active"
-        // WINDOWS PARTITION
-        "create partition primary size %i\n" // in MB
-        "format quick fs = ntfs label = Windows\n"
-        "assign letter %c\n"
-        //Recovery tools
-        "create partition primary\n"
-        "set id = 27\n"
-        "exit\n", 
-        DiskID, SystemPartitionSizeMB, VolumeLetter, VolumeSizeMB, VolumeLetter);
-
-
+            "select disk %i\n"
+            "clean\n"
+            "convert mbr\n"
+            // SYSTEM PARTITION
+            "create partition primary size = %i\n"
+            "format quick fs = ntfs label = System\n"
+            "active"
+            // WINDOWS PARTITION
+            "create partition primary size %i\n" // in MB
+            "format quick fs = ntfs label = Windows\n"
+            "assign letter %c\n"
+            //Recovery tools
+            "create partition primary\n"
+            "set id = 27\n"
+            "exit\n", 
+            DiskID, SystemPartitionSizeMB, VolumeLetter, VolumeSizeMB, VolumeLetter);
+    
+    
     char InputFN[] = "NARDPINPUTFORMBR";
     if (NarDumpToFile(InputFN, Buffer, strlen(Buffer))) {
         sprintf(Buffer, "diskpart /s %s", InputFN);
@@ -3809,10 +3887,10 @@ NarCreateCleanMBRBootPartition(int DiskID, char VolumeLetter, int VolumeSizeMB, 
         system(Buffer);
         return TRUE;
     }
-
-
+    
+    
     return FALSE;
-
+    
 }
 
 
@@ -4064,9 +4142,9 @@ NarGetVolumeDiskID(char Letter) {
         else {
             printf("Cant open drive %c as file\n", Letter);
         }
-    
+        
         CloseHandle(Drive);
-
+        
     }
     else{
         printf("Couldnt get kernel compatible volume GUID\n");
@@ -4085,7 +4163,7 @@ NarIsFullBackup(int Version) {
 
 inline std::wstring
 GenerateMetadataName(wchar_t Letter, int Version) {
-
+    
     std::wstring Result = WideMetadataFileNameDraft;
     Result += Letter;
     if (Version == NAR_FULLBACKUP_VERSION) {
@@ -4198,7 +4276,7 @@ RestoreVersionWithoutLoop(restore_inf R, BOOLEAN RestoreMFT, HANDLE Volume) {
             R.RootDir += L"\\";
         }
     }
-
+    
     if (Volume == INVALID_HANDLE_VALUE) {
         printf("Volume handle was invalid for backup ID %i, creating new handle\n", R.Version);
         Volume = NarOpenVolume((char)R.TargetLetter);
@@ -4549,10 +4627,10 @@ RestoreIncVersion(restore_inf R, HANDLE Volume) {
             Result = FALSE;
         }
     }
-
-
+    
+    
     // NOTE(Batuhan): restores to full first, then incrementally builds volume to version    
-
+    
     restore_inf SubVersionR;
     SubVersionR.RootDir = R.RootDir;
     SubVersionR.SrcLetter = R.SrcLetter;
@@ -4649,7 +4727,7 @@ ReadMetadata(wchar_t Letter, int Version, std::wstring RootDir) {
     std::wstring FileName = RootDir + GenerateMetadataName(Letter, Version);
     
     backup_metadata BM = { 0 };
-
+    
     HANDLE F = CreateFile(FileName.c_str(), GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, 0, 0);
     if (F != INVALID_HANDLE_VALUE) {
         if (ReadFile(F, &BM, sizeof(BM), &BytesOperated, 0) && BytesOperated == sizeof(BM)) {
@@ -4731,7 +4809,7 @@ InitBackupMetadataEx(wchar_t Letter, int Version, std::wstring RootDir) {
     else {
         printf("Couldn't open file %S\n", BMEX->FilePath.c_str());
     }
-
+    
     if (ErrorOccured) {
         printf("Error occured while initializing metadata extended structure, freeing regions metadata memory\n");
         free(BMEX);
@@ -4739,7 +4817,7 @@ InitBackupMetadataEx(wchar_t Letter, int Version, std::wstring RootDir) {
     
     CloseHandle(File);
     return BMEX;
-
+    
 }
 
 
@@ -4816,7 +4894,7 @@ SaveMetadata(char Letter, int Version, int ClusterSize, BackupType BT,
     DWORD BytesWritten = 0;
     backup_metadata BM = { 0 };
     ULONGLONG BaseOffset = sizeof(BM);
-
+    
     
     BOOLEAN Result = FALSE;
     char StringBuffer[1024];
@@ -4849,7 +4927,7 @@ SaveMetadata(char Letter, int Version, int ClusterSize, BackupType BT,
     BM.VolumeSize = NarGetVolumeSize(BM.Letter);
     
     NarGetProductName(BM.ProductName);
-
+    
     memset(&BM.Size, 0, sizeof(BM.Size));
     memset(&BM.Offset, 0, sizeof(BM.Offset));
     memset(&BM.Errors, 0, sizeof(BM.Errors));
@@ -4878,13 +4956,13 @@ SaveMetadata(char Letter, int Version, int ClusterSize, BackupType BT,
     write it to the file, if any error occurs during this operation, BM.Size.MFT wil be corrected and marked as corrupt
     @BM.Errors.MFT
       */
-
+    
     if(MFTLCN.Data == NULL){
         MFTLCN = GetMFTLCN(Letter, VSSHandle);
     }
-
     
-
+    
+    
     if (MFTLCN.Count > 0) {
         BM.Size.MFTMetadata = MFTLCN.Count * sizeof(nar_record);
         for (int i = 0; i < MFTLCN.Count; i++) {
@@ -4913,7 +4991,7 @@ SaveMetadata(char Letter, int Version, int ClusterSize, BackupType BT,
     
     // NOTE(Batuhan): since MFT size is > 0 if only non-full backup, we dont need to check Version < 0
     if (BM.Size.MFT && !BM.Errors.MFT && MFTLCN.Data != NULL) {
-
+        
         //Save current file pointer in case of failure, so we can roll back to old pointer.
         ULONGLONG OldFilePointer = NarGetFilePointer(MetadataFile);
         if (WriteFile(MetadataFile, MFTLCN.Data, BM.Size.MFTMetadata, &BytesWritten, 0) && BytesWritten == BM.Size.MFTMetadata) {
@@ -4958,7 +5036,7 @@ SaveMetadata(char Letter, int Version, int ClusterSize, BackupType BT,
         // NOTE(Batuhan): that's not an error
     }
     
-
+    
     /*
 layout of disks (fundamental level, gpt might contain extra data partitions)
 for extra information visit:
@@ -4979,11 +5057,11 @@ recovery
 
     */
     // NOTE(Batuhan): Recovery partition's data is stored on metadata only if it's both full and OS volume backup
-
     
-
+    
+    
 #if 1
-
+    
     if (BM.IsOSVolume && BM.Version == NAR_FULLBACKUP_VERSION) {
         
         // recovery partition exists for both GPT and MBR, AppendRecoveryToFile can detect disk type and append it accordingly
@@ -5001,33 +5079,33 @@ recovery
         }
         
     }
-
+    
     if(BM.IsOSVolume){
-
+        
         GUID GUIDMSRPartition = { 0 }; // microsoft reserved partition guid
         GUID GUIDSystemPartition = { 0 }; // efi-system partition guid
         GUID GUIDRecoveryPartition = { 0 }; // recovery partition guid
-
+        
         StrToGUID("{e3c9e316-0b5c-4db8-817d-f92df00215ae}", &GUIDMSRPartition);
         StrToGUID("{c12a7328-f81f-11d2-ba4b-00a0c93ec93b}", &GUIDSystemPartition);
         StrToGUID("{de94bba4-06d1-4d40-a16a-bfd50179d6ac}", &GUIDRecoveryPartition);
-
-
+        
+        
         int DiskID = NarGetVolumeDiskID(BM.Letter);
         char DiskPath[128];
         sprintf(DiskPath, "\\\\?\\PhysicalDrive%i", DiskID);
         HANDLE DiskHandle = CreateFileA(DiskPath, GENERIC_READ, FILE_SHARE_WRITE | FILE_SHARE_READ | FILE_SHARE_DELETE, 0, OPEN_EXISTING, 0, 0);
         if(DiskHandle != INVALID_HANDLE_VALUE){
-
+            
             DWORD DLSize = 1024*2;
             DRIVE_LAYOUT_INFORMATION_EX *DL = (DRIVE_LAYOUT_INFORMATION_EX*)malloc(DLSize);
             DWORD Hell = 0;
             if (DeviceIoControl(DiskHandle, IOCTL_DISK_GET_DRIVE_LAYOUT_EX, 0, 0, DL, DLSize, &Hell, 0)) {
                 
                 if (DL->PartitionStyle == PARTITION_STYLE_GPT) {
-
+                    
                     for (unsigned int PartitionIndex = 0; PartitionIndex < DL->PartitionCount; PartitionIndex++) {
-
+                        
                         PARTITION_INFORMATION_EX* PI = &DL->PartitionEntry[PartitionIndex];
                         // NOTE(Batuhan): Finding recovery partition via GUID
                         if (IsEqualGUID(PI->Gpt.PartitionType, GUIDRecoveryPartition)) {
@@ -5036,12 +5114,12 @@ recovery
                         if(IsEqualGUID(PI->Gpt.PartitionType, GUIDSystemPartition)){
                             BM.GPT_EFIPartitionSize = PI->PartitionLength.QuadPart;
                         }
-
+                        
                     }
-
+                    
                 }
                 else if(DL->PartitionStyle == PARTITION_STYLE_MBR){
-
+                    
                     for (unsigned int PartitionIndex = 0; PartitionIndex < DL->PartitionCount; ++PartitionIndex){
                         
                         PARTITION_INFORMATION_EX* PI = &DL->PartitionEntry[PartitionIndex];
@@ -5051,9 +5129,9 @@ recovery
                             break;
                         }
                         
-
+                        
                     }
-
+                    
                 }
                 
                 
@@ -5065,16 +5143,16 @@ recovery
             
             free(DL);
             CloseHandle(DiskHandle);
-
+            
         }
         else{
             printf("Couldn't open disk %i as file, for volume %c's metadata @ version %i\n", DiskID, BM.Letter, BM.Version);
         }
         
     }
-
+    
 #endif
-
+    
     /*
     // NOTE(Batuhan): fill BM.Offset struct
     offset[n] = offset[n-1] + size[n-1]
@@ -5101,7 +5179,7 @@ recovery
     FreeDataArray(&MFTLCN);
     
     printf("SaveMetadata returns %i\n", Result);
-        
+    
     return Result;
     
 }
@@ -5122,7 +5200,7 @@ NarTruncateFile(HANDLE F, ULONGLONG TargetSize) {
     }
     
     return FALSE;
-
+    
 }
 
 inline ULONGLONG
@@ -5177,13 +5255,13 @@ RestoreRecoveryFile(restore_inf R) {
         
         HANDLE MetadataFile = CreateFileW(MFN.c_str(), GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, 0, 0);
         if (MetadataFile != INVALID_HANDLE_VALUE) {
-
+            
             if (NarSetFilePointer(MetadataFile, B.Offset.Recovery)) {
                 if (CopyData(RecoveryPartitionHandle, MetadataFile, B.Size.Recovery)) {
                     //NOTE(Batuhan): Success
                     printf("Successfully restored recovery partition from backup metadata\n");
                     Result = TRUE;
-
+                    
                 }
                 else {
                     printf("Couldnt copy recovery file to disk\n");
@@ -5192,12 +5270,12 @@ RestoreRecoveryFile(restore_inf R) {
             else {
                 printf("Couldnt set metadata file pointer to where recovery partition resides\n");
             }
-
+            
         }
         else {
             printf("Cant open metadata file %S\n", MFN.c_str());
         }
-
+        
     }
     else {
         printf("Couldnt open recovery partition's volume (%c) as volume", NAR_RECOVERY_PARTITION_LETTER);
@@ -5205,7 +5283,7 @@ RestoreRecoveryFile(restore_inf R) {
     
     CloseHandle(MetadataFile);
     CloseHandle(RecoveryPartitionHandle);
-
+    
     return Result;
 }
 
@@ -5234,7 +5312,7 @@ AppendRecoveryToFile(HANDLE File, char Letter) {
             if (DeviceIoControl(Disk, IOCTL_DISK_GET_DRIVE_LAYOUT_EX, 0, 0, DL, BufferSize, &Hell, 0)) {
                 
                 if (DL->PartitionStyle == PARTITION_STYLE_GPT) {
-
+                    
                     for (unsigned int PartitionIndex = 0; PartitionIndex < DL->PartitionCount; PartitionIndex++) {
                         PARTITION_INFORMATION_EX* PI = &DL->PartitionEntry[PartitionIndex];
                         
@@ -5254,20 +5332,20 @@ AppendRecoveryToFile(HANDLE File, char Letter) {
                         }
                         
                     }
-
+                    
                 }
                 else if(DL->PartitionStyle == PARTITION_STYLE_MBR){
                     // TODO
                     
-
+                    
                     for (unsigned int PartitionIndex = 0; PartitionIndex < DL->PartitionCount; ++PartitionIndex){
                         
                         PARTITION_INFORMATION_EX* PI = &DL->PartitionEntry[PartitionIndex];
                         
                         //
-
+                        
                     }
-
+                    
                 }
                 
                 
@@ -5346,10 +5424,10 @@ NarGetBackupsInDirectory(const wchar_t* Directory, backup_metadata* B, int Buffe
                             //NOTE(Batuhan): File name indicated from metadata and actual file name matches
                             //Even though metadatas match, actual binary data may not exist at all or even, metadata itself might be corrupted too, or missing. Check it
                             
-
+                            
                             BackupFound++;
                             printf("Backup found %S\n", FDATA.cFileName);
-
+                            
 #if 0
                             //NOTE(Batuhan): check if actual binary data exists in path and valid in size
                             wcscpy(wstrbuffer, Directory);
@@ -5360,7 +5438,7 @@ NarGetBackupsInDirectory(const wchar_t* Directory, backup_metadata* B, int Buffe
                                 }
                             }
 #endif
-
+                            
                         }
                         else {
                             //NOTE(Batuhan): File name indicated from metadata and actual file name does NOT match.
@@ -5415,7 +5493,7 @@ AppendMFTFile(HANDLE File, HANDLE VSSHandle, data_array<nar_record> MFTLCN, int 
             }
             
             //printf("Will copy %I64u bytes to append MFT to file\n", (ULONGLONG)MFTLCN.Data[i].Len * (ULONGLONG)ClusterSize);
-
+            
             if (!CopyData(VSSHandle, File, (ULONGLONG)MFTLCN.Data[i].Len * (ULONGLONG)ClusterSize)) {
                 printf("Error occured while copying MFT file\n");
                 goto Exit;
@@ -5478,7 +5556,7 @@ NarLoadBootState() {
             else {
                 
                 printf("Found previous backup files, will initialize CONTEXT accordingly\n");
-
+                
                 DWORD BR = 0;
                 nar_boot_track_data* BootTrackData = (nar_boot_track_data*)malloc(Size);
                 if (BootTrackData != NULL) {
@@ -5498,7 +5576,7 @@ NarLoadBootState() {
                                 VolInf.FullBackupExists = TRUE;
                                 VolInf.Version = BootTrackData[i].Version;
                                 std::wstring LogFileName = GenerateLogFileName(VolInf.Letter);
-
+                                
                                 VolInf.LogHandle = CreateFileW(LogFileName.c_str(), GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, 0, 0);
                                 
                                 if (VolInf.LogHandle != INVALID_HANDLE_VALUE) {
@@ -5573,10 +5651,10 @@ NarLoadBootState() {
 
 BOOLEAN
 NarSaveBootState(LOG_CONTEXT* CTX) {
-
+    
     if (CTX == NULL || CTX->Volumes.Data == NULL){
-         printf("Either CTX or its volume data was NULL, terminating NarSaveBootState\n");
-         return FALSE;
+        printf("Either CTX or its volume data was NULL, terminating NarSaveBootState\n");
+        return FALSE;
     }
     
     BOOLEAN Result = TRUE;
@@ -5586,7 +5664,7 @@ NarSaveBootState(LOG_CONTEXT* CTX) {
     if (GetWindowsDirectoryA(FileNameBuffer, 64)) {
         strcat(FileNameBuffer, "\\");
         strcat(FileNameBuffer, NAR_BOOTFILE_NAME);
-
+        
         HANDLE File = CreateFileA(FileNameBuffer, GENERIC_WRITE, 0, 0, CREATE_ALWAYS, 0, 0);
         if (File != INVALID_HANDLE_VALUE) {
             printf("Created file to write boot information\n");
@@ -5600,7 +5678,7 @@ NarSaveBootState(LOG_CONTEXT* CTX) {
                     Pack.Version = (char)CTX->Volumes.Data[i].Version; // for testing purposes, 128 version looks like fine
                     Pack.BackupType = (char)CTX->Volumes.Data[i].BT;
                     Pack.LastBackupOffset = (UINT64)CTX->Volumes.Data[i].LastBackupRegionOffset;
-
+                    
                     DWORD BR = 0;
                     
                     if (WriteFile(File, &Pack, sizeof(Pack), &BR, 0) && BR == sizeof(Pack)) {
@@ -5615,7 +5693,7 @@ NarSaveBootState(LOG_CONTEXT* CTX) {
                 else{
                     continue;    
                 }
-
+                
                 
             }
             
@@ -5627,7 +5705,7 @@ NarSaveBootState(LOG_CONTEXT* CTX) {
         }
         
         CloseHandle(File);
-            
+        
     }
     
     
@@ -5649,11 +5727,11 @@ NarSubMemoryExists(void *mem1, void* mem2, int mem1len, int mem2len){
     
     char *S1 = (char*)mem1;
     char *S2 = (char*)mem2;
-
-
+    
+    
     int k = 0;
     int j = 0;
-
+    
     while (k < mem1len && j < mem2len){
         
         if(S1[k] == S2[j]){
@@ -5670,37 +5748,37 @@ NarSubMemoryExists(void *mem1, void* mem2, int mem1len, int mem2len){
                     break;
                 }
             }
-
+            
             if(j == mem2len){
                 return TRUE;
             }
             
             k = temp;
-
+            
         }
         else{
             k++;
             j = 0;
         }
-
+        
     }
-
+    
     return FALSE;
 }
 
 
 
 void foo(){
-
+    
     nar_record *VolumeRecords;
     file_read f = NarReadFile("records");
     VolumeRecords = (nar_record*)f.Data; 
     UINT32 RecordCount = f.Len / sizeof(nar_record);
-
+    
     ULONGLONG TargetFilePointer = 0;
-
+    
     NarCreateCleanGPTBootablePartition(1, 61440, 100, 529, 'E');
-
+    
     HANDLE OutputFile = CreateFile(L"BinaryFile", GENERIC_WRITE | GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, 0, 0);
     if(OutputFile == INVALID_HANDLE_VALUE) {
         printf("Couldnt open outputfile \n");
@@ -5708,39 +5786,40 @@ void foo(){
     }
     
     if (NarSetFilePointer(OutputFile, 0)) {
-
+        
         HANDLE VolumeHandle = NarOpenVolume('E');
         
         if (VolumeHandle != INVALID_HANDLE_VALUE) {
-
+            
             for (int i = 0; i < RecordCount; i++) {
-
+                
                 TargetFilePointer = (ULONGLONG)VolumeRecords[i].StartPos * (ULONGLONG)4096;
                 if (NarSetFilePointer(VolumeHandle, TargetFilePointer)) {
-
+                    
                     ULONGLONG CopyLen = (ULONGLONG)VolumeRecords[i].Len * (ULONGLONG)4096;
                     if (!CopyData(OutputFile, VolumeHandle, CopyLen)) {
                         printf("Couldnt copy %I64d bytes from starting pos of %I64d\n", (ULONGLONG)VolumeRecords[i].Len * (ULONGLONG)4096, TargetFilePointer);
                     }
-
+                    
                 }
-
+                
             }
-
+            
             printf("DONE RESTORE OPERATION\n");
-
+            
         }
         else {
-
+            
         }
-
+        
     }
     else {
         printf("Couldnt set file pointer to beginning of the file\n");
     }
-
-
+    
+    
 }
+
 
 inline void
 NarPushDirectoryStack(nar_backup_file_explorer_context *Ctx, UINT64 ID) {
@@ -5755,24 +5834,143 @@ NarPopDirectoryStack(nar_backup_file_explorer_context* Ctx) {
     }
 }
 
+
+inline BOOLEAN
+NarParseIndexAllocationAttribute(void *IndexAttribute, nar_record *OutRegions, INT32 MaxRegionLen, INT32 *OutRegionsFound){
+    
+    TIMED_BLOCK();
+    
+    if(IndexAttribute == NULL || OutRegions == NULL || OutRegionsFound == NULL) return FALSE;
+    
+    BOOLEAN Result = TRUE;
+    INT32 InternalRegionsFound = 0;
+    
+    INT32 DataRunsOffset = *(INT32*)((BYTE*)IndexAttribute + 32);
+    void* DataRuns = (char*)IndexAttribute + DataRunsOffset;
+    
+    // So it looks like dataruns doesnt actually tells you LCN, to save up space, they kinda use smt like 
+    // winapi's deviceiocontrol routine, maybe the reason for fetching VCN-LCN maps from winapi is weird because 
+    // thats how its implemented at ntfs at first place. who knows
+    // so thats how it looks
+    /*
+    first one is always absolute LCN in the volume. rest of it is addition to previous one. if file is fragmanted, value will be
+    negative. so we dont have to check some edge cases here.
+    second data run will be lets say 0x11 04 43
+    and first one                    0x11 10 10
+    starting lcn is 0x10, but second data run does not start from 0x43, it starts from 0x10 + 0x43
+
+    LCN[n] = LCN[n-1] + datarun cluster
+    */
+    
+    char Size = *(BYTE*)DataRuns;
+    INT8 ClusterCountSize = (Size & 0x0F);
+    INT8 FirstClusterSize = (Size & 0xF0) >> 4;
+    
+    // Swipe to left to clear extra bits, then swap back to get correct result.
+    INT64 ClusterCount = *(INT64*)((char*)DataRuns + 1); // 1 byte for size variable
+    ClusterCount = ClusterCount & ~(0xFFFFFFFFFFFFFFFFULL << (ClusterCountSize * 8));
+    // cluster count must be > 0, no need to do 2s complement on it
+    
+    //same operation
+    INT64 FirstCluster = *(INT64*)((char*)DataRuns + 1 + ClusterCountSize);
+    FirstCluster = FirstCluster & ~(0xFFFFFFFFFFFFFFFFULL << (FirstClusterSize * 8));
+    // 2s complement to support negative values
+    if ((FirstCluster >> ((FirstClusterSize - 1) * 8 + 7)) & 1U) {
+        FirstCluster = FirstCluster | ((0xFFFFFFFFFFFFFFFULL << (FirstClusterSize * 8)));
+    }
+    
+    INT64 OldClusterStart = FirstCluster;
+    void* D = (BYTE*)DataRuns + FirstClusterSize + ClusterCountSize + 1;
+    
+    OutRegions[InternalRegionsFound].StartPos = (UINT32)FirstCluster;
+    OutRegions[InternalRegionsFound].Len   = (UINT32)ClusterCount;
+    InternalRegionsFound++;
+    
+    if(InternalRegionsFound > MaxRegionLen){
+        goto NOT_ENOUGH_MEMORY;
+    }
+    
+    //DBG_INC(DBG_INDX_FOUND);
+    while (*(BYTE*)D) {
+        
+        Size = *(BYTE*)D;
+        
+        //UPDATE: Even tho entry finishes at 8 byte aligment, it doesnt finish itself here, adds at least 1 byte for zero termination to indicate its end
+        //so rather than tracking how much we read so far, we can check if we encountered zero termination
+        // NOTE(Batuhan): Each entry is at 8byte aligment, so lets say we thought there must be smt like 80 bytes reserved for 0xA0 attribute
+        // but since data run's size is not constant, it might finish at not exact multiple of 8, like 75, so rest of the 5 bytes are 0
+        // We can keep track how many bytes we read so far etc etc, but rather than that, if we just check if size is 0, which means rest is just filler 
+        // bytes to aligment border, we can break early.
+        if (Size == 0) break;
+        
+        // extract 4bit nibbles from size
+        ClusterCountSize = (Size & 0x0F);
+        FirstClusterSize = (Size & 0xF0) >> 4;
+        
+        // Sparse files may cause that, but not sure about what is sparse and if it effects directories. 
+        // If not, nothing to worry about, branch predictor should take care of that
+        if (ClusterCountSize == 0 || FirstClusterSize == 0)break;
+        
+        // Swipe to left to clear extra bits, then swap back to get correct result.
+        ClusterCount = *(INT64*)((BYTE*)D + 1);
+        ClusterCount = ClusterCount & ~(0xFFFFFFFFFFFFFFFFULL << (ClusterCountSize * 8));
+        
+        //same operation
+        FirstCluster = *(INT64*)((BYTE*)D + 1 + ClusterCountSize);
+        FirstCluster = FirstCluster & ~(0xFFFFFFFFFFFFFFFFULL << (FirstClusterSize * 8));
+        if ((FirstCluster >> ((FirstClusterSize - 1) * 8 + 7)) & 1U) {
+            FirstCluster = FirstCluster | (0xFFFFFFFFFFFFFFFFULL << (FirstClusterSize * 8));
+        }
+        
+        FirstCluster += OldClusterStart;
+        // Update tail
+        OldClusterStart = FirstCluster;
+        
+        D = (BYTE*)D + (FirstClusterSize + ClusterCountSize + 1);
+        DBG_INSERT(FirstCluster, ClusterCount);
+        
+        OutRegions[InternalRegionsFound].StartPos = (UINT32)FirstCluster;
+        OutRegions[InternalRegionsFound].Len   = (UINT32)ClusterCount;
+        InternalRegionsFound++;
+        if(InternalRegionsFound > MaxRegionLen){
+            goto NOT_ENOUGH_MEMORY;
+        }
+        
+    }
+    
+    
+    *OutRegionsFound = InternalRegionsFound;
+    return Result;
+    
+    NOT_ENOUGH_MEMORY:;
+    
+    Result = FALSE;
+    printf("No more memory left to insert index_allocation records to output array\n");
+    *OutRegionsFound = 0;
+    return Result;
+    
+}
+
+
 inline void
 NarGetFileListFromMFTID(nar_file_entries_list* EList, UINT64 TargetMFTID, nar_record* MFTRegions, UINT32 MFTRegionCount, UINT32 ClusterSize, nar_fe_volume_handle FEHandle) {
-
+    
+    
     if (!EList) return;
-
+    
     if (ClusterSize < 1024) {
         *(int*)0 = 0;
     }
-
+    
     UINT64 FileCountInRegion = 0;
     UINT32 FileCountPerCluster = ClusterSize / 1024;
     UINT64 AdvancedFileCountSoFar = 0;
-
+    
     UINT64 FileOffsetFromRegion = 0;
     UINT64 FileOffsetAtVolume = 0;
-
+    
     for (UINT32 RegionIndex = 0; RegionIndex < MFTRegionCount; RegionIndex++) {
-
+        
         FileCountInRegion = (UINT64)MFTRegions[RegionIndex].Len * (UINT64)FileCountPerCluster;
         if (FileCountInRegion + AdvancedFileCountSoFar >= TargetMFTID) {
             // found
@@ -5780,52 +5978,50 @@ NarGetFileListFromMFTID(nar_file_entries_list* EList, UINT64 TargetMFTID, nar_re
             FileOffsetAtVolume = (UINT64)MFTRegions[RegionIndex].StartPos * (UINT64)ClusterSize + FileOffsetFromRegion * 1024;
             break;
         }
-
+        
         AdvancedFileCountSoFar += FileCountInRegion;
-
+        
     }
-
-
+    
+    
     if (NarFileExplorerSetFilePointer(FEHandle, FileOffsetAtVolume)) {
-
+        
         BYTE Buffer[1024];
         memset(Buffer, 0, sizeof(Buffer));
-
+        
         UINT32 IndexRegionsFound = 0;
-
-        struct {
-            UINT32 Start;
-            UINT32 Len;
-        }INDX_ALL_REGIONS[64];
-
+        
+        nar_record INDX_ALL_REGIONS[64];
+        
         DWORD BytesRead = 0;
-
+        
         if (NarFileExplorerReadVolume(FEHandle, Buffer, 1024, &BytesRead) && BytesRead == 1024) {
-
+            
+            
             // do parsing stuff
             void* FileRecord = &Buffer[0];
-
+            
             INT16 FlagOffset = 22;
             INT32 NAR_INDEX_ALLOCATION_FLAG = 0xA0;
-
+            
             INT16 Flags = *(INT16*)((BYTE*)FileRecord + FlagOffset);
             INT16 DirectoryFlag = 0x0002;
-
+            
             if((Flags & DirectoryFlag) == DirectoryFlag){
-
+                
                 INT16 FirstAttributeOffset = (*(INT16*)((BYTE*)FileRecord + 20));
                 void* FileAttribute = (char*)FileRecord + FirstAttributeOffset;
-
+                
                 INT32 RemainingLen = *(INT32*)((BYTE*)FileRecord + 24); // Real size of the file record
                 RemainingLen -= (FirstAttributeOffset + 8); //8 byte for end of record mark, remaining len includes it too.
-
+                
                 // iterate until file attr 0xA0 found, which is INDEX_ALLOCATION
                 // maybe some dir does not contain INDEX_ALLOCATION, like empty dirs, or other things i am not aware of.
                 // its better write solid solution
-
+                
                 while (RemainingLen > 0) {
-
-
+                    
+                    
                     // check INDEX_ROOT
                     if ((*(INT32*)FileAttribute & 0x90) == 0x90) {
                         
@@ -5833,179 +6029,92 @@ NarGetFileListFromMFTID(nar_file_entries_list* EList, UINT64 TargetMFTID, nar_re
                         UINT32 AttributeLen = *(UINT32*)((char*)FileAttribute + 16);
                         if (AttributeLen != 56 || LenIncludingHeader != 88) {
                             // entries start after 64 bytes
-
+                            
                             void *Entry = (char*)FileAttribute + 64;
-
+                            
                             INT EntryParseResult = NAR_FEXP_END_MARK;
                             do {
-
+                                
+                                TIMED_BLOCK();
+                                
                                 memset(&EList->Entries[EList->EntryCount], 0, sizeof(EList->Entries[EList->EntryCount]));
                                 EntryParseResult = NarFileExplorerGetFileEntryFromData(Entry, &EList->Entries[EList->EntryCount]);
-
+                                
                                 if (EntryParseResult == NAR_FEXP_SUCCEEDED || EntryParseResult == NAR_FEXP_POSIX) {
-
+                                    
                                     // do not accept posix files as FILE_ENTRY at all
                                     if (EntryParseResult == NAR_FEXP_SUCCEEDED) {
                                         EList->EntryCount++;
                                     }
-
+                                    
                                     UINT16 EntrySize = NAR_FEXP_INDX_ENTRY_SIZE(Entry);
                                     Entry = (char*)Entry + EntrySize;
                                 }
-
+                                
                             } while (EntryParseResult != NAR_FEXP_END_MARK);
-
-
+                            
+                            
                         }
                         else {
                             // index_root is empty
                         }
-
+                        
                     }
-
+                    
                     if ((*(INT32*)FileAttribute & NAR_INDEX_ALLOCATION_FLAG) == NAR_INDEX_ALLOCATION_FLAG) {
-
-                        INT32 DataRunsOffset = *(INT32*)((BYTE*)FileAttribute + 32);
-
-                        void* DataRuns = (char*)FileAttribute + DataRunsOffset;
-
-                        // So it looks like dataruns doesnt actually tells you LCN, to save up space, they kinda use smt like 
-                        // winapi's deviceiocontrol routine, maybe the reason for fetching VCN-LCN maps from winapi is weird because 
-                        // thats how its implemented at ntfs at first place. who knows
-                        // so thats how it looks
-                        /*
-                        first one is always absolute LCN in the volume. rest of it is addition to previous one. if file is fragmanted, value will be
-                        negative. so we dont have to check some edge cases here.
-                        second data run will be lets say 0x11 04 43
-                        and first one                    0x11 10 10
-                        starting lcn is 0x10, but second data run does not start from 0x43, it starts from 0x10 + 0x43
-
-                        LCN[n] = LCN[n-1] + datarun cluster
-                        */
-
-                        char Size = *(BYTE*)DataRuns;
-                        INT8 ClusterCountSize = (Size & 0x0F);
-                        INT8 FirstClusterSize = (Size & 0xF0) >> 4;
-
-                        // Swipe to left to clear extra bits, then swap back to get correct result.
-                        INT64 ClusterCount = *(INT64*)((char*)DataRuns + 1); // 1 byte for size variable
-                        ClusterCount = ClusterCount & ~(0xFFFFFFFFFFFFFFFFULL << (ClusterCountSize * 8));
-                        // cluster count must be > 0, no need to do 2s complement on it
-
-                        //same operation
-                        INT64 FirstCluster = *(INT64*)((char*)DataRuns + 1 + ClusterCountSize);
-                        FirstCluster = FirstCluster & ~(0xFFFFFFFFFFFFFFFFULL << (FirstClusterSize * 8));
-                        // 2s complement to support negative values
-                        if ((FirstCluster >> ((FirstClusterSize - 1) * 8 + 7)) & 1U) {
-                            FirstCluster = FirstCluster | ((0xFFFFFFFFFFFFFFFULL << (FirstClusterSize * 8)));
+                        
+                        
+                        INT32 OutLen;
+                        if(NarParseIndexAllocationAttribute(FileAttribute, &INDX_ALL_REGIONS[IndexRegionsFound], 64 - IndexRegionsFound, &OutLen)){
+                            IndexRegionsFound += OutLen;
                         }
-
-
-                        INT64 OldClusterStart = FirstCluster;
-                        void* D = (BYTE*)DataRuns + FirstClusterSize + ClusterCountSize + 1;
-
-
-                        INDX_ALL_REGIONS[IndexRegionsFound].Start = (UINT32)FirstCluster;
-                        INDX_ALL_REGIONS[IndexRegionsFound].Len   = (UINT32)ClusterCount;
-                        IndexRegionsFound++;
-
-                        //DBG_INC(DBG_INDX_FOUND);
-                        while (*(BYTE*)D) {
-
-                            Size = *(BYTE*)D;
-
-                            //UPDATE: Even tho entry finishes at 8 byte aligment, it doesnt finish itself here, adds at least 1 byte for zero termination to indicate its end
-                            //so rather than tracking how much we read so far, we can check if we encountered zero termination
-                            // NOTE(Batuhan): Each entry is at 8byte aligment, so lets say we thought there must be smt like 80 bytes reserved for 0xA0 attribute
-                            // but since data run's size is not constant, it might finish at not exact multiple of 8, like 75, so rest of the 5 bytes are 0
-                            // We can keep track how many bytes we read so far etc etc, but rather than that, if we just check if size is 0, which means rest is just filler 
-                            // bytes to aligment border, we can break early.
-                            if (Size == 0) break;
-
-
-
-                            // extract 4bit nibbles from size
-                            ClusterCountSize = (Size & 0x0F);
-                            FirstClusterSize = (Size & 0xF0) >> 4;
-
-                            // Sparse files may cause that, but not sure about what is sparse and if it effects directories. 
-                            // If not, nothing to worry about, branch predictor should take care of that
-                            if (ClusterCountSize == 0 || FirstClusterSize == 0)break;
-
-                            // Swipe to left to clear extra bits, then swap back to get correct result.
-                            ClusterCount = *(INT64*)((BYTE*)D + 1);
-                            ClusterCount = ClusterCount & ~(0xFFFFFFFFFFFFFFFFULL << (ClusterCountSize * 8));
-
-                            //same operation
-                            FirstCluster = *(INT64*)((BYTE*)D + 1 + ClusterCountSize);
-                            FirstCluster = FirstCluster & ~(0xFFFFFFFFFFFFFFFFULL << (FirstClusterSize * 8));
-                            if ((FirstCluster >> ((FirstClusterSize - 1) * 8 + 7)) & 1U) {
-                                FirstCluster = FirstCluster | (0xFFFFFFFFFFFFFFFFULL << (FirstClusterSize * 8));
-                            }
-
-
-                            //if(TempVariable > 1 && FirstCluster < 0){
-                            //    dbgbreak
-                            //}
-
-
-                            FirstCluster += OldClusterStart;
-                            // Update tail
-                            OldClusterStart = FirstCluster;
-
-                            D = (BYTE*)D + (FirstClusterSize + ClusterCountSize + 1);
-                            DBG_INSERT(FirstCluster, ClusterCount);
-
-                            INDX_ALL_REGIONS[IndexRegionsFound].Start = FirstCluster;
-                            INDX_ALL_REGIONS[IndexRegionsFound].Len = ClusterCount;
-                            IndexRegionsFound++;
-
-                            //DBG_INC(DBG_INDX_FOUND);
-
+                        else{
+                            printf("Failed to parse index allocation info\n");
                         }
-
-
+                        
+                        
                         // found INDEX_ALLOCATION attribute
                         break;
                     }
-
+                    
                     if ((*(INT32*)FileAttribute & NAR_INDEX_ALLOCATION_FLAG) > NAR_INDEX_ALLOCATION_FLAG) break;// early termination
-
-
+                    
+                    
                     // found neither indexallocation nor attr bigger than it, just substract attribute size from remaininglen to determine if we should keep iterating
                     INT32 AttrSize = (*(unsigned short*)((BYTE*)FileAttribute + 4));
                     RemainingLen -= AttrSize;
                     FileAttribute = (BYTE*)FileAttribute + AttrSize;
                     if (AttrSize == 0) break;
-
+                    
                 }
-
-
+                
+                
             }
-
-
-
+            
+            
+            
             for (UINT32 IndexRegionIndex = 0; IndexRegionIndex < IndexRegionsFound; IndexRegionIndex++) {
-
-                if (NarFileExplorerSetFilePointer(FEHandle, (UINT64)INDX_ALL_REGIONS[IndexRegionIndex].Start * (UINT64)ClusterSize)) {
-
+                
+                if (NarFileExplorerSetFilePointer(FEHandle, (UINT64)INDX_ALL_REGIONS[IndexRegionIndex].StartPos * (UINT64)ClusterSize)) {
+                    
                     size_t IndxBufferSize = (UINT64)INDX_ALL_REGIONS[IndexRegionIndex].Len * (UINT64)ClusterSize;
-
+                    
                     void* IndxBuffer = malloc(IndxBufferSize);
-
+                    
                     if (IndxBuffer) {
-
                         
                         if (NarFileExplorerReadVolume(FEHandle, IndxBuffer, (DWORD)IndxBufferSize, &BytesRead) && BytesRead == IndxBufferSize) {
                             
-                            // _mm_prefetch((const char*)IndxBuffer, _MM_HINT_T0);
-
+                            //_mm_prefetch((const char*)IndxBuffer, _MM_HINT_T0);
+                            
                             // inspect each clusters in region
+                            
                             for (UINT32 IndxRegionClusterIndex = 0; IndxRegionClusterIndex < (IndxBufferSize / 4096); IndxRegionClusterIndex++) {
                                 
-
+                                TIMED_BLOCK();
+                                
                                 void* IndxCluster = (char*)IndxBuffer + (UINT64)IndxRegionClusterIndex * 4096;
-
+                                
                                 // skip first 64 bytes, first file entry, 88 if ROOT's first region, i hate ntfs
                                 if (TargetMFTID == 5 && IndexRegionIndex == 0 && IndxRegionClusterIndex == 0) {
                                     IndxCluster = (char*)IndxCluster + 88;
@@ -6014,12 +6123,10 @@ NarGetFileListFromMFTID(nar_file_entries_list* EList, UINT64 TargetMFTID, nar_re
                                     IndxCluster = (char*)IndxCluster + 64;
                                 }
                                 
-                                char ZeroBytes[24];
-                                memset(ZeroBytes, 0, sizeof(ZeroBytes));
-
+                                
                                 INT EntryParseResult = NAR_FEXP_END_MARK;
                                 do {
-
+                                    
                                     memset(&EList->Entries[EList->EntryCount], 0, sizeof(EList->Entries[EList->EntryCount]));
                                     EntryParseResult = NarFileExplorerGetFileEntryFromData(IndxCluster, &EList->Entries[EList->EntryCount]);
                                     
@@ -6029,56 +6136,48 @@ NarGetFileListFromMFTID(nar_file_entries_list* EList, UINT64 TargetMFTID, nar_re
                                         if (EntryParseResult == NAR_FEXP_SUCCEEDED) {
                                             EList->EntryCount++;
                                         }
-
+                                        
                                         UINT16 EntrySize = NAR_FEXP_INDX_ENTRY_SIZE(IndxCluster);
                                         IndxCluster = (char*)IndxCluster + EntrySize;
                                     }
                                     
-
+                                    
                                 } while (EntryParseResult != NAR_FEXP_END_MARK);
-
-
+                                
+                                
                             }
-
-
-
+                            
+                            
+                            
                         }
                         else {
                             // readfile failed for indx region
                         }
-
+                        
                         free(IndxBuffer);
                     }
                     else {
                         // printf("Couldnt allocate memory");
                     }
-
+                    
                 }
                 else {
                     // couldnt set file pointer for index's ith region
                 }
-
+                
             }
-
-
+            
+            
         }
         else {
             // couldnt read file entry
         }
-
+        
     }
     else {
         // set file pointer failed
     }
     
-    //if (1) {
-    //    for (int i = 0; i < EList->EntryCount; i++) {
-    //        if (EList->Entries[i].Size > 0) {
-    //            printf("%S size %I64u %I64u\n", EList->Entries[i].Name, EList->Entries[i].Size, EList->Entries[i].MFTFileIndex);
-    //        }
-    //    }
-    //}
-
     
 }
 
@@ -6087,22 +6186,22 @@ NarGetFileListFromMFTID(nar_file_entries_list* EList, UINT64 TargetMFTID, nar_re
 
 inline void
 RestoreFolder(nar_backup_file_explorer_context *ctx, UINT32 SelectedListID, const wchar_t *RootDir){
-
+    
     NarFileExplorerPushDirectory(ctx, SelectedListID);
-
+    
     for(int i = 0; i < ctx->EList.EntryCount; i++){
-
+        
         // check if directory
         if(ctx->EList.Entries[i].IsDirectory){
-
+            
         }
         else{
-
+            
         }
-
-
+        
+        
     }
-
+    
 }
 
 
@@ -6112,7 +6211,7 @@ NarFreeFileVersionStack(nar_file_version_stack Stack){
     
     if(Stack.FilePath != NULL) free(Stack.FilePath);
     if(Stack.FileAbsoluteMFTOffset != NULL) free(Stack.FileAbsoluteMFTOffset);
-
+    
     //if(Stack->LCNRecords != NULL){
     //    
     //    for(int i = 0; i<VersionsFound; i++){
@@ -6122,9 +6221,9 @@ NarFreeFileVersionStack(nar_file_version_stack Stack){
     //
     //}
     
-
+    
     if(Stack.RootDir != NULL) free(Stack.RootDir);
-
+    
 }
 
 // Path: any path name that contains trailing backslash
@@ -6135,11 +6234,11 @@ inline void
 NarGetFileNameFromPath(const wchar_t* Path, wchar_t *OutName, INT32 OutMaxLen) {
     
     if (!Path || !OutName) return;
-
+    
     memset(OutName, 0, OutMaxLen);
-
+    
     size_t PathLen = wcslen(Path);
-
+    
     if (PathLen > OutMaxLen) return;
     
     INT TrimPoint = PathLen - 1;
@@ -6148,9 +6247,9 @@ NarGetFileNameFromPath(const wchar_t* Path, wchar_t *OutName, INT32 OutMaxLen) {
     }
     
     if (TrimPoint < 0) TrimPoint = 0;
-
+    
     memcpy(OutName, &Path[TrimPoint], 2 * (PathLen - TrimPoint));
-
+    
 }
 
 /*
@@ -6169,10 +6268,10 @@ NarGetFileNameFromPath(const wchar_t* Path, wchar_t *OutName, INT32 OutMaxLen) {
 */
 inline BOOLEAN
 NarRestoreFileFromBackups(wchar_t *RootDir, wchar_t *FileName, wchar_t *RestoreTo, wchar_t VolumeLetter, INT32 InVersion){
-
-
+    
+    
     if(RootDir == NULL || FileName == NULL) return FALSE;
-
+    
     BOOLEAN Result = FALSE;
     HANDLE RestoreFileHandle = INVALID_HANDLE_VALUE;
     
@@ -6187,11 +6286,11 @@ NarRestoreFileFromBackups(wchar_t *RootDir, wchar_t *FileName, wchar_t *RestoreT
             printf("Coulnd't create target restore path %S\n", fn);
             return FALSE;
         }
-
+        
     }
     
     void* MemoryBuffer = malloc(1024);
-
+    
     nar_file_version_stack FileStack = NarSearchFileInVersions(RootDir, VolumeLetter, InVersion, FileName);
     if(FileStack.VersionsFound < 0){
         printf("Failed to create file history stack for file %S for volume %c based on version %i\n", FileName, VolumeLetter, InVersion);
@@ -6199,21 +6298,21 @@ NarRestoreFileFromBackups(wchar_t *RootDir, wchar_t *FileName, wchar_t *RestoreT
     }
     
     INT32 VersionUpTo = FileStack.StartingVersion + FileStack.VersionsFound;
-
+    
     nar_fe_volume_handle FEHandle = {0};
     
     for (
-        int VersionID = FileStack.StartingVersion;
-        VersionID < VersionUpTo;  
-        VersionID++) {
-                    
+         int VersionID = FileStack.StartingVersion;
+         VersionID < VersionUpTo;  
+         VersionID++) {
+        
         memset(&FEHandle, 0, sizeof(FEHandle));
-
+        
         if (NarInitFEVolumeHandle(&FEHandle, NAR_FE_HAND_OPT_READ_BACKUP_VOLUME, VolumeLetter, VersionID, RootDir)) {
             
             NarFileExplorerSetFilePointer(FEHandle, FileStack.FileAbsoluteMFTOffset[VersionID - FileStack.StartingVersion]);
             memset(MemoryBuffer, 0, 1024);
-
+            
             DWORD BytesRead = 0;
             if (!NarFileExplorerReadVolume(FEHandle, MemoryBuffer, 1024, &BytesRead) || BytesRead != 1024) {
                 printf("Couldn't read mft record of the file %S from volume %c's %i'th backup. Aborting file restore opeartion!\n", FileName, VolumeLetter, VersionID);
@@ -6230,7 +6329,7 @@ NarRestoreFileFromBackups(wchar_t *RootDir, wchar_t *FileName, wchar_t *RestoreT
             INT32 ISectionCount = 0;
             nar_record* IntersectionRegions = 0;
             NarGetRegionIntersection(FEHandle.BMEX->RegionsMetadata.Data, QResult.Records, &IntersectionRegions, FEHandle.BMEX->RegionsMetadata.Count, QResult.RecordCount, &ISectionCount);
-
+            
             if(ISectionCount != 0){
                 // IMPORTANT TODO(Batuhan): special code for data in 
                 // copy intersections
@@ -6239,67 +6338,68 @@ NarRestoreFileFromBackups(wchar_t *RootDir, wchar_t *FileName, wchar_t *RestoreT
                     
                     UINT64 CopyLen   = (UINT64)IntersectionRegions[RegIndex].Len      * FEHandle.BMEX->M.ClusterSize;
                     UINT64 CopyStart = (UINT64)IntersectionRegions[RegIndex].StartPos * FEHandle.BMEX->M.ClusterSize;
-
+                    
                     if (NarFileExplorerSetFilePointer(FEHandle, CopyStart)) {
-
+                        
                         if (CopyData(FEHandle.VolumeHandle, RestoreFileHandle, CopyLen) == FALSE) {
                             printf("Failed to copy file %S's %I64u bytes from volume %c's version %i at offset %I64u\n", FileName, CopyLen, VolumeLetter, VersionID, CopyStart);
                         }
-
+                        
                     }
                     else {
                         // TODO log
                     }
-
+                    
                 }
-
+                
             }
             else{
                 printf("Couldn't find any regions that intersects with file's regions in volume %c version %i, for file %S, skipping this version\n",VolumeLetter, VersionID, FileName);
             }
-
+            
             NarFreeRegionIntersection(IntersectionRegions);
-
+            
         }
         else{
             printf("Couldn't initialize volume %c's handle to restore file %S from version %i. File's integrity might be broken, thus resulting corrupt file. Aborting restore!\n", VolumeLetter, FileName, VersionID);
             goto ABORT;
         }
-
+        
         
     }
-
     
-
+    
+    
     Result = TRUE;
-
+    
     ABORT:
-
+    
     free(MemoryBuffer);
     NarFreeFileVersionStack(FileStack);
     NarFreeFEVolumeHandle(FEHandle);
     
     return Result;
-
+    
 }
 
 
 /*
     Gets the intersection of the r1 and r2 arrays, writes new array to dynamicall allocated r3 array, and sets intersections pointer to that pointers adress
-    after caller has done with that r3 array, it MUST call NarFreeRegionIntersections with intersections parameter that has passed here. Otherwise memory will be leaked
+    after caller has done with that r3 array, caller MUST call NarFreeRegionIntersections with intersections parameter that has passed here. Otherwise memory will be leaked
+    ASSUMES R1 AND R2 ARE SORTED
 */
 inline void
 NarGetRegionIntersection(nar_record* r1, nar_record* r2, nar_record** intersections, INT32 len1, INT32 len2, INT32 *IntersectionLen) {
     
     if (!r1 || !r2 || !intersections) return;
-
+    
     int i1, i2, i3;
     i1 = i2 = i3 = 0;
-
+    
     //memset(r3, 0, len3 * sizeof(*r3));
     UINT32 r3cap = len2;
     nar_record* r3 = (nar_record*)malloc(r3cap * sizeof(nar_record));
-
+    
     // logic behind iteration, ALWAYS iterate item that has LOWER END.
     while (TRUE) {
         
@@ -6311,10 +6411,10 @@ NarGetRegionIntersection(nar_record* r1, nar_record* r2, nar_record** intersecti
             r3cap *= 2;
             r3 = (nar_record*)realloc(r3, r3cap * sizeof(nar_record));
         }
-
+        
         UINT32 r1end = r1[i1].StartPos + r1[i1].Len;
         UINT32 r2end = r2[i2].StartPos + r2[i2].Len;
-
+        
         /*
        r2          -----------------
        r1 -----
@@ -6329,7 +6429,7 @@ NarGetRegionIntersection(nar_record* r1, nar_record* r2, nar_record** intersecti
       r2 -----
       not touching, iterate r1
        */
-
+        
         if (r2end < r1[i1].StartPos) {
             i2++;
             continue;
@@ -6363,16 +6463,16 @@ NarGetRegionIntersection(nar_record* r1, nar_record* r2, nar_record** intersecti
         r3[i3].StartPos = IntersectionStart;
         r3[i3].Len = IntersectionEnd - IntersectionStart;
         i3++;
-
+        
         if (r1end < r2end) i1++;
         else               i2++;
-
+        
     }
     
     r3 = (nar_record*)realloc(r3, i3 * sizeof(nar_record));
     *IntersectionLen = i3;
     *intersections = r3;
-
+    
 }
 
 
@@ -6386,26 +6486,26 @@ inline lcn_from_mft_query_result
 ReadLCNFromMFTRecord(void* RecordStart) {
     
     // if file can fit in MFT, 
-
+    
     lcn_from_mft_query_result Result = { 0 };
-
+    
     if (RecordStart == NULL) {
         Result.Flags = Result.FAIL;
         return Result;
     }
-
+    
     //if (Records == NULL || RecordStart == NULL || RecordsFound == NULL) return Result;
-
+    
     if (*(INT32*)RecordStart != 'ELIF') {
         Result.Flags = Result.FAIL;
         return Result;
     }
-
+    
     void* FileRecord = RecordStart;
     INT16 FirstAttributeOffset = *(INT16*)((BYTE*)FileRecord + 20);
     void* FileAttribute = (BYTE*)FileRecord + FirstAttributeOffset;
-
-
+    
+    
     INT32 RemainingLen = *(INT32*)((BYTE*)FileRecord + 24); // Real size of the file record
     RemainingLen -= (FirstAttributeOffset + 8); //8 byte for end of record mark, remaining len includes it too.
     
@@ -6414,17 +6514,17 @@ ReadLCNFromMFTRecord(void* RecordStart) {
     };
     
     while(RemainingLen > 0){
-
+        
         // 0x80 == $DATA
         if ((*(INT32*)FileAttribute & 0x80) == 0x80){
-
-
+            
+            
             // skip if data attribute is smt like Zone.Identifier or another alternate stream.
             UINT8 AttributeNameLen = *((UINT8*)FileAttribute + 9);
             if (AttributeNameLen != 0) {
                 goto SKIP_POINT;
             }
-
+            
             // skip if attribute represents resident data. this means file has some data in it's record itself. 
             UINT8 AttributeResident = *(UINT8*)FileAttribute + 8;
             if(AttributeResident){
@@ -6432,11 +6532,11 @@ ReadLCNFromMFTRecord(void* RecordStart) {
                 Result.Flags |= Result.HAS_DATA_IN_MFT;
                 goto SKIP_POINT;
             }
-
-
+            
+            
             INT32 DataRunsOffset = *(INT32*)((BYTE*)FileAttribute + 32);
             void* DataRuns = (char*)FileAttribute + DataRunsOffset;
-
+            
             // So it looks like dataruns doesnt actually tells you LCN, to save up space, they kinda use smt like 
             // winapi's deviceiocontrol routine, maybe the reason for fetching VCN-LCN maps from winapi is weird because 
             // thats how its implemented at ntfs at first place. who knows
@@ -6451,16 +6551,16 @@ ReadLCNFromMFTRecord(void* RecordStart) {
 
                 LCN[n] = LCN[n-1] + datarun cluster
             */
-
+            
             char Size = *(BYTE*)DataRuns;
             INT8 ClusterCountSize = (Size & 0x0F);
             INT8 FirstClusterSize = (Size & 0xF0) >> 4;
-
+            
             // Swipe to left to clear extra bits, then swap back to get correct result.
             INT64 ClusterCount = *(INT64*)((char*)DataRuns + 1); // 1 byte for size variable
             ClusterCount = ClusterCount & ~(0xFFFFFFFFFFFFFFFFULL << (ClusterCountSize * 8));
             // cluster count must be > 0, no need to do 2s complement on it
-
+            
             //same operation
             INT64 FirstCluster = *(INT64*)((char*)DataRuns + 1 + ClusterCountSize);
             FirstCluster = FirstCluster & ~(0xFFFFFFFFFFFFFFFFULL << (FirstClusterSize * 8));
@@ -6468,15 +6568,15 @@ ReadLCNFromMFTRecord(void* RecordStart) {
             if ((FirstCluster >> ((FirstClusterSize - 1) * 8 + 7)) & 1U) {
                 FirstCluster = FirstCluster | ((0xFFFFFFFFFFFFFFFULL << (FirstClusterSize * 8)));
             }
-
+            
             INT64 OldClusterStart = FirstCluster;
             void* D = (BYTE*)DataRuns + FirstClusterSize + ClusterCountSize + 1;
             InsertToResult(FirstCluster, ClusterCount);
             
             while (*(BYTE*)D) {
-
+                
                 Size = *(BYTE*)D;
-
+                
                 //UPDATE: Even tho entry finishes at 8 byte aligment, it doesnt finish itself here, adds at least 1 byte for zero termination to indicate its end
                 //so rather than tracking how much we read so far, we can check if we encountered zero termination
                 // NOTE(Batuhan): Each entry is at 8byte aligment, so lets say we thought there must be smt like 80 bytes reserved for 0xA0 attribute
@@ -6484,67 +6584,66 @@ ReadLCNFromMFTRecord(void* RecordStart) {
                 // We can keep track how many bytes we read so far etc etc, but rather than that, if we just check if size is 0, which means rest is just filler 
                 // bytes to aligment border, we can break early.
                 if (Size == 0) break;  
-
-
+                
+                
                 // extract 4bit nibbles from size
                 ClusterCountSize = (Size & 0x0F);
                 FirstClusterSize = (Size & 0xF0) >> 4;
-
+                
                 // Sparse files may cause that, but not sure about what is sparse and if it effects directories. 
                 // If not, nothing to worry about, branch predictor should take care of that
                 if (ClusterCountSize == 0 || FirstClusterSize == 0)break;
-
+                
                 // Swipe to left to clear extra bits, then swap back to get correct result.
                 ClusterCount = *(INT64*)((BYTE*)D + 1);
                 ClusterCount = ClusterCount & ~(0xFFFFFFFFFFFFFFFFULL << (ClusterCountSize * 8));
-
+                
                 //same operation
                 FirstCluster = *(INT64*)((BYTE*)D + 1 + ClusterCountSize);
                 FirstCluster = FirstCluster & ~(0xFFFFFFFFFFFFFFFFULL << (FirstClusterSize * 8));
                 if ((FirstCluster >> ((FirstClusterSize - 1) * 8 + 7)) & 1U) {
                     FirstCluster = FirstCluster | (0xFFFFFFFFFFFFFFFFULL << (FirstClusterSize * 8));
                 }
-
-
+                
+                
                 FirstCluster += OldClusterStart;
                 // Update tail
                 OldClusterStart = FirstCluster;
-
-                D = (BYTE*)D + (FirstClusterSize + ClusterCountSize + 1);
-
-                InsertToResult((UINT32)FirstCluster, (UINT32)ClusterCount); // this isnt actually a narrowing at all. nothing to worry about(hope so)
                 
+                D = (BYTE*)D + (FirstClusterSize + ClusterCountSize + 1);
+                
+                InsertToResult((UINT32)FirstCluster, (UINT32)ClusterCount); // this isnt actually a narrowing at all. nothing to worry about(hope so)
                 
             }
             break;
-
+            
         }
-
+        
         if ((*(INT32*)FileAttribute & 0x80) > 0x80){
             printf("Couldnt find 0x80 file attribute for $MFT\n");
             break;// early termination
         }
-
-
-
+        
+        
+        
         SKIP_POINT:
         // found neither Data nor attr bigger than it, just substract attribute size from remaininglen to determine if we should keep iterating
-
+        
         RemainingLen -= (*(INT32*)((BYTE*)FileAttribute + 4));
         FileAttribute = (BYTE*)FileAttribute + *(INT32*)((BYTE*)FileAttribute + 4);
-
+        
     }
-
-
+    
+    
     if(Result.RecordCount == 0 
-        && Result.Flags != Result.FAIL 
-        && (Result.Flags & Result.HAS_DATA_IN_MFT) == Result.HAS_DATA_IN_MFT
-        ){
+       && Result.Flags != Result.FAIL 
+       && (Result.Flags & Result.HAS_DATA_IN_MFT) == Result.HAS_DATA_IN_MFT
+       ){
         Result.Flags |= Result.FILE_FITS_MFT;
     }
-
+    
     return Result;
-
+    
 }
 
 
@@ -6554,24 +6653,24 @@ ReadLCNFromMFTRecord(void* RecordStart) {
 inline void
 ReadFileDataFromMFT(void *RecordStart, lcn_from_mft_query_result QueryResult, void *OutData, INT32 *DataLen){
     
-
+    
     if(RecordStart == NULL || OutData == NULL ||  DataLen == NULL){
         assert(FALSE);
         return;
     }
-
+    
     if(QueryResult.Flags != QueryResult.FAIL){
-
+        
         if(QueryResult.DataOffset + QueryResult.DataLen < 1024){            
             void *Data = (char*)RecordStart + QueryResult.DataOffset;
             INT32 DLen = QueryResult.DataLen;
-
+            
             memcpy(OutData, Data, DLen);
             *DataLen = DLen;
         }
-
+        
     }
-
+    
 }
 
 
@@ -6583,38 +6682,38 @@ ReadFileDataFromMFT(void *RecordStart, lcn_from_mft_query_result QueryResult, vo
 */
 nar_file_version_stack
 NarSearchFileInVersions(wchar_t *RootDir, wchar_t VolumeLetter, INT32 CeilVersion, wchar_t *FileName){
-
+    
     nar_file_version_stack Result;
     memset(&Result, 0, sizeof(Result));
-
+    
     if(FileName == NULL || RootDir == NULL){
         return Result;
     }
-        
+    
     size_t RootDirSize = RootDir ? wcslen(FileName)*sizeof(wchar_t) : 0; 
     size_t FileNameSize = wcslen(FileName)*sizeof(wchar_t);
-
+    
     // Reserve space via assuming file exists in all backups back to full backup. Since structure is small there isnt an overheat for memory
     Result.RootDir = (wchar_t*)malloc(RootDirSize);
     Result.FilePath = (wchar_t*)malloc(FileNameSize);
-
+    
     memset(Result.RootDir, 0, RootDirSize);
     memset(Result.FilePath, 0, FileNameSize);
-
     
-
+    
+    
     size_t RelativeOffsetPtrSize = CeilVersion*sizeof(Result.FileAbsoluteMFTOffset);
     // size_t LCNRecordsPtrSize = CeilVersion*sizeof(Result.LCNRecords);
-
+    
     Result.FileAbsoluteMFTOffset = (UINT64*)malloc(RelativeOffsetPtrSize);
     // Result.LCNRecords = (UINT64*)malloc(LCNRecordsPtrSize);
     
     memset(&Result.FileAbsoluteMFTOffset, 0, RelativeOffsetPtrSize);
     // memset(Result.LCNRecords, 0, LCNRecordsPtrSize);
-
-
+    
+    
     INT32 StartingVersion = CeilVersion;
-
+    
     INT32 VersStackID = 0;
     for(int i = CeilVersion; i!= NAR_FULLBACKUP_VERSION; i--){
         
@@ -6622,17 +6721,17 @@ NarSearchFileInVersions(wchar_t *RootDir, wchar_t VolumeLetter, INT32 CeilVersio
             printf("Version ID cant be lower than NAR_FULLBACKUP_VERSION(RootDir: %S, FileName: %S, Volume letter: %c, Selected version %i)\n", RootDir, FileName, VolumeLetter, CeilVersion);
             break;
         }
-
+        
         nar_fe_search_result SearchResult = NarSearchFileInVolume(RootDir, FileName, VolumeLetter, i);
         if(SearchResult.Found == TRUE){
             Result.FileAbsoluteMFTOffset[Result.VersionsFound++] = SearchResult.AbsoluteMFTRecordOffset;
             Result.StartingVersion = i;
         }
-
+        
     }
-
+    
     return Result;
-
+    
 }
 
 
@@ -6642,28 +6741,28 @@ NarSearchFileInVersions(wchar_t *RootDir, wchar_t VolumeLetter, INT32 CeilVersio
 */
 inline nar_fe_search_result
 NarSearchFileInVolume(wchar_t* RootDir, wchar_t *FileName, wchar_t VolumeLetter, INT32 Version){
-
+    
     nar_fe_search_result Result = {0};    
     nar_backup_file_explorer_context Ctx = {0};
-
+    
     if(NarInitFileExplorerContext(&Ctx, NAR_FE_HAND_OPT_READ_BACKUP_VOLUME, VolumeLetter, Version, RootDir)){
-
+        
         wchar_t *Token = 0;        
         wchar_t *TokenStatus = 0;
         Token = wcstok(FileName, L"\\", &TokenStatus);
         
         // skip first token since first one will always be volume name skip it.
         Token = wcstok(0, L"\\", &TokenStatus);
-
+        
         INT32 FoundFileListID = -1;
-
+        
         while(Token != NULL){
-
+            
             BOOLEAN FileFound = FALSE;
             // search for file named Token
-
+            
             INT32 EntryCount = Ctx.EList.EntryCount;
-
+            
             // TODO(Batuhan) prefetch entry list
             for(int i =0; i< EntryCount; i++){
                 
@@ -6674,20 +6773,20 @@ NarSearchFileInVolume(wchar_t* RootDir, wchar_t *FileName, wchar_t VolumeLetter,
                     FoundFileListID = i;
                     break;
                 }
-
+                
             }
-        
+            
             if(!FileFound) {
                 FoundFileListID = -1;
                 break;
             }
-        
+            
             NarFileExplorerPushDirectory(&Ctx, FoundFileListID);
-
+            
             Token = wcstok(0, L"\\", &TokenStatus);
         }
-
-
+        
+        
         if(FoundFileListID > 0){
             
             // success
@@ -6696,63 +6795,63 @@ NarSearchFileInVolume(wchar_t* RootDir, wchar_t *FileName, wchar_t VolumeLetter,
             
             // NOTE(Batuhan): Find absolute offset from mft records, then use FindPointOffsetInRecords to convert that abs offset to relative one
             INT64 MFTAbsolutePosition = -1;
-
+            
             INT32 FileRecordPerCluster = Ctx.ClusterSize / 1024;
             INT64 AdvancedFileCountSoFar = 0;
-
+            
             for(int i = 0; i<Ctx.MFTRecordsCount; i++){
                 
                 INT64 FileCountInRegion = (UINT64)FileRecordPerCluster * (UINT64)Ctx.MFTRecords[i].Len;
                 if(AdvancedFileCountSoFar + FileCountInRegion > FileMFTID){
                     
                     INT64 RemainingFileCountInRegion = FileMFTID - AdvancedFileCountSoFar;
-
+                    
                     INT64 FileOffsetFromRegion = (INT64)Ctx.MFTRecords[i].StartPos * (INT64)FileRecordPerCluster + (INT64)RemainingFileCountInRegion;
                     FileOffsetFromRegion = FileOffsetFromRegion * 1024;
                     MFTAbsolutePosition = FileOffsetFromRegion;
                     break;
-
+                    
                 }
                 else{
                     // continue iterating
                 }
-
+                
             }
-
+            
             if(Ctx.FEHandle.BMEX != NULL){
                 
                 // 
                 // succ found absolute position from mft 
-
+                
                 Result.AbsoluteMFTRecordOffset = MFTAbsolutePosition;
                 Result.Found = TRUE;
                 Result.FileMFTID = FileMFTID;
-
+                
             }
             else{
                 
                 printf("NARFE Handle's context was null, terminating early(File: %S, RootDir: %S, VolumeLetter: %c, Version: %i)\n", FileName, RootDir, VolumeLetter, Version);
                 // BMEX shouldnt be null
-
+                
             }
-
-
+            
+            
         }
         else{
             printf("Failed to find file %S in in volume %c in version %i in root dir %S\n", FileName, VolumeLetter, Version, RootDir);
         }
-
-
+        
+        
     }
     else{
         printf("Couldnt initialize file explorer context for volume %c for version %i to restore file %S from root directory %S\n", VolumeLetter, Version, FileName, RootDir);
     }
-
-
+    
+    
     NarReleaseFileExplorerContext(&Ctx);
-
+    
     return Result;
-
+    
 }
 
 
@@ -6765,37 +6864,41 @@ NarSearchFileInVolume(wchar_t* RootDir, wchar_t *FileName, wchar_t VolumeLetter,
 */
 inline INT
 NarFileExplorerGetFileEntryFromData(void *IndxCluster, nar_file_entry *OutFileEntry){
-
+    
+    
+    TIMED_BLOCK();
+    
     memset(OutFileEntry, 0, sizeof(*OutFileEntry));
-
+    
+    
     UINT16 EntrySize = *(UINT16*)((char*)IndxCluster + 8);
     UINT16 AttrSize = *(UINT16*)((char*)IndxCluster + 10);
     if (EntrySize == 16 || EntrySize == 24 || AttrSize == 0) {
         return NAR_FEXP_END_MARK;
     }
-
+    
     // check if POSIX entry
     if (*((char*)IndxCluster + NAR_POSIX_OFFSET) == NAR_POSIX) {
         return NAR_FEXP_POSIX;
     }
-
+    
     UINT8 NameLen = *(UINT8*)((char*)IndxCluster + NAR_NAME_LEN_OFFSET);
     UINT64 MagicNumber = *(UINT64*)IndxCluster;
     MagicNumber = MagicNumber & (0x0000FFFFFFFFFFFF);
-
+    
     // DO MASK AND TRUNCATE 2 BYTES TO FIND MFTINDEX OF THE FILE
-
+    
     // useful information here
     UINT64 CreationTime = *(UINT64*)((char*)IndxCluster + NAR_TIME_OFFSET);
     UINT64 ModificationTime = *(UINT64*)((char*)IndxCluster + NAR_TIME_OFFSET + 8);
     UINT64 FileSize = *(UINT64*)((char*)IndxCluster + NAR_SIZE_OFFSET);
     UINT64 Attributes = *(UINT64*)((char*)IndxCluster + NAR_ATTRIBUTE_OFFSET);
-
+    
     char* NamePtr = ((char*)IndxCluster + NAR_NAME_OFFSET);
     if (*NamePtr == 0) {
         // that shouldnt happen
     }
-
+    
     memcpy(&OutFileEntry->Name[0], NamePtr, NameLen * sizeof(wchar_t));
     
     // push stuff
@@ -6803,28 +6906,28 @@ NarFileExplorerGetFileEntryFromData(void *IndxCluster, nar_file_entry *OutFileEn
     OutFileEntry->Size = FileSize;
     OutFileEntry->CreationTime = CreationTime;
     OutFileEntry->LastModifiedTime = ModificationTime;
-
+    
     OutFileEntry->IsDirectory = FALSE;
-
-
+    
+    
     if (Attributes > 10000000) {
         OutFileEntry->IsDirectory = TRUE;
     }
-
+    
     return NAR_FEXP_SUCCEEDED;
-
-
+    
+    
 }
 
 
 inline void 
 NarFileExplorerPushDirectory(nar_backup_file_explorer_context* Ctx, UINT32 SelectedListID) {
-
+    
     if (!Ctx) {
         printf("Context was null\n");
         return;
     }
-
+    
     if (SelectedListID > Ctx->EList.EntryCount) {
         printf("ID exceeds size\n");
         return;
@@ -6833,30 +6936,30 @@ NarFileExplorerPushDirectory(nar_backup_file_explorer_context* Ctx, UINT32 Selec
         printf("Not a directory\n");
         return;
     }
-
+    
     UINT64 NewMFTID = Ctx->EList.Entries[SelectedListID].MFTFileIndex;
-
+    
     printf("Pushing %I64u to stack\n", NewMFTID);
-
+    
     
     Ctx->EList.MFTIndex = NewMFTID;
     wcscat(Ctx->CurrentDirectory, Ctx->EList.Entries[SelectedListID].Name);
     wcscat(Ctx->CurrentDirectory, L"\\");
     NarPushDirectoryStack(Ctx, NewMFTID);
-
+    
     Ctx->EList.EntryCount = 0;
-
+    
     NarGetFileListFromMFTID(&Ctx->EList, NewMFTID, Ctx->MFTRecords, Ctx->MFTRecordsCount, 4096, Ctx->FEHandle);
     
-
-
+    
+    
 }
 
 inline void
 NarFileExplorerPopDirectory(nar_backup_file_explorer_context* Ctx) {
-
+    
     NarPopDirectoryStack(Ctx);
-
+    
     Ctx->EList.EntryCount = 0;
     Ctx->EList.MFTIndex = Ctx->HistoryStack.S[Ctx->HistoryStack.I];
     NarGetFileListFromMFTID(&Ctx->EList, Ctx->HistoryStack.S[Ctx->HistoryStack.I], Ctx->MFTRecords, Ctx->MFTRecordsCount, Ctx->ClusterSize, Ctx->FEHandle);
@@ -6869,9 +6972,9 @@ NarFileExplorerPopDirectory(nar_backup_file_explorer_context* Ctx) {
             break;
         }
     }
-
+    
     Ctx->CurrentDirectory[CutPoint + 1] = L'\0';
-
+    
 }
 
 inline void
@@ -6888,27 +6991,27 @@ NarFileExplorerPrint(nar_backup_file_explorer_context* Ctx) {
             printf("%-50S %I64u KB\n", Ctx->EList.Entries[i].Name, Ctx->EList.Entries[i].Size / 1024);
         }
     }
-
+    
 }
 
 inline void
 NarReleaseFileExplorerContext(nar_backup_file_explorer_context* Ctx) {
     
     if (!Ctx) return; 
-
+    
     if (Ctx->EList.Entries != 0) {
         free(Ctx->EList.Entries);
     }
     if (Ctx->MFTRecords != 0) {
         free(Ctx->MFTRecords);
     }
-
+    
     NarFreeFEVolumeHandle(Ctx->FEHandle);
-
-
-
+    
+    
+    
     memset(Ctx, 0, sizeof(*Ctx));
-
+    
 }
 
 inline INT32
@@ -6916,7 +7019,7 @@ NarGetVolumeClusterSize(char Letter){
     
     char V[] = "!:\\";
     V[0] = Letter;
-
+    
     INT32 Result = 0;
     DWORD SectorsPerCluster = 0;
     DWORD BytesPerSector = 0;
@@ -6927,7 +7030,7 @@ NarGetVolumeClusterSize(char Letter){
     else{
         printf("Couldnt get disk free space for volume %c\n", Letter);
     }
-
+    
     return Result;
 }
 
@@ -6940,7 +7043,7 @@ ReadMFTLCNFromMetadata(HANDLE FHandle, backup_metadata Metadata, void *Buffer){
         
         // Caller must validate metadata integrity, but it's likely that something invalid may be passed here, check it anyway there isnt a cost
         if(NarSetFilePointer(FHandle, Metadata.Offset.MFTMetadata)){
-
+            
             DWORD BR = 0;        
             if(ReadFile(FHandle, Buffer, Metadata.Size.MFTMetadata, &BR, 0) && BR == Metadata.Size.MFTMetadata){
                 Result = TRUE;
@@ -6950,7 +7053,7 @@ ReadMFTLCNFromMetadata(HANDLE FHandle, backup_metadata Metadata, void *Buffer){
                 printf("Readfile failed for ReadMFTLCNFromMetadata, tried to read %i bytes, instead read %i\n", Metadata.Size.MFTMetadata, BR);
                 DisplayError(GetLastError());
             }
-
+            
         }
         else{
             printf("Couldnt set file pointer to %I64d to read mftlcn from metadata\n", Metadata.Offset.MFTMetadata);
@@ -6962,7 +7065,7 @@ ReadMFTLCNFromMetadata(HANDLE FHandle, backup_metadata Metadata, void *Buffer){
         printf("Metadata handle was invalid, terminating ReadMFTLCNFromMetadata\n");
         // handle was invalid
     }
-
+    
     return Result;
 }
 
@@ -6977,30 +7080,32 @@ ReadMFTLCNFromMetadata(HANDLE FHandle, backup_metadata Metadata, void *Buffer){
 */
 inline BOOLEAN
 NarInitFileExplorerContext(nar_backup_file_explorer_context* Ctx, INT32 HandleOptions, char Letter, int Version, wchar_t *RootDir) {
-
+    
+    
+    
     if (!Ctx) goto NAR_FAIL_TERMINATE;;
     
     if(HandleOptions != NAR_FE_HAND_OPT_READ_BACKUP_VOLUME && HandleOptions != NAR_FE_HAND_OPT_READ_MOUNTED_VOLUME){
         printf("Passed invalid HandleOptions to NarInitFileExplorerContext\n");
         goto NAR_FAIL_TERMINATE;
     }
-
-
+    
+    
     memset(Ctx, 0, sizeof(*Ctx));
-
+    
     Ctx->EList.Entries = (nar_file_entry*)malloc(75000 * sizeof(nar_file_entry));
     if (Ctx->EList.Entries) {
-
+        
         memset(Ctx->EList.Entries, 0, 75000 * sizeof(nar_file_entry));
-
+        
         memset(Ctx->CurrentDirectory, 0, sizeof(Ctx->CurrentDirectory));
         memset(Ctx->RootDir, 0, sizeof(Ctx->RootDir));
         memset(&Ctx->HistoryStack, 0, sizeof(Ctx->HistoryStack));
-
+        
         if (NarInitFEVolumeHandle(&Ctx->FEHandle, HandleOptions, Letter, Version, RootDir)) {
-
+            
             BOOLEAN Status = FALSE;
-
+            
             if(HandleOptions == NAR_FE_HAND_OPT_READ_MOUNTED_VOLUME){
                 Ctx->ClusterSize = NarGetVolumeClusterSize(Letter);
                 Ctx->MFTRecords = (nar_record*)NarGetMFTRegionsByCommandLine(Letter, &Ctx->MFTRecordsCount);
@@ -7021,7 +7126,7 @@ NarInitFileExplorerContext(nar_backup_file_explorer_context* Ctx, INT32 HandleOp
                         else{
                             printf("Couldnt read MFTLCN from metadata\n");
                         }
-
+                        
                     }
                     else{
                         printf("Failed to allocate memory for MFTLCN to read from backup metadata\n");
@@ -7036,7 +7141,7 @@ NarInitFileExplorerContext(nar_backup_file_explorer_context* Ctx, INT32 HandleOp
                 }
                 // extract MFT regions from backup metadata
             }
-
+            
             if (Status) {
                 
             }
@@ -7044,11 +7149,11 @@ NarInitFileExplorerContext(nar_backup_file_explorer_context* Ctx, INT32 HandleOp
                 // TODO (Batuhan) :
                 // MFT Record setup has been failed, abort
             }
-
+            
             Ctx->EList.EntryCount = 0;
             Ctx->EList.MFTIndex = NAR_ROOT_MFT_ID;
             Ctx->HistoryStack.I = -1;
-
+            
             NarGetFileListFromMFTID(&Ctx->EList, NAR_ROOT_MFT_ID, Ctx->MFTRecords, Ctx->MFTRecordsCount, Ctx->ClusterSize, Ctx->FEHandle);
             NarPushDirectoryStack(Ctx, NAR_ROOT_MFT_ID);
             
@@ -7058,33 +7163,82 @@ NarInitFileExplorerContext(nar_backup_file_explorer_context* Ctx, INT32 HandleOp
             
 #if 0 // performance test
             
-                Ctx->EList.EntryCount = 0;
-                NarGetFileListFromMFTID(&Ctx->EList, 44571, Ctx->MFTRecords, Ctx->MFTRecordsCount, Ctx->ClusterSize, Ctx->FEHandle);
-
-                Ctx->EList.EntryCount = 0;
-                NarGetFileListFromMFTID(&Ctx->EList, 120848, Ctx->MFTRecords, Ctx->MFTRecordsCount, Ctx->ClusterSize, Ctx->FEHandle);
-
-
-                Ctx->EList.EntryCount = 0;
-                NarGetFileListFromMFTID(&Ctx->EList, 98328, Ctx->MFTRecords, Ctx->MFTRecordsCount, Ctx->ClusterSize, Ctx->FEHandle);
-
-                Ctx->EList.EntryCount = 0;
-                NarGetFileListFromMFTID(&Ctx->EList, 43085, Ctx->MFTRecords, Ctx->MFTRecordsCount, Ctx->ClusterSize, Ctx->FEHandle);
-
-                Ctx->EList.EntryCount = 0;
-                NarGetFileListFromMFTID(&Ctx->EList, 204837, Ctx->MFTRecords, Ctx->MFTRecordsCount, Ctx->ClusterSize, Ctx->FEHandle);
-
-                Ctx->EList.EntryCount = 0;
-                NarGetFileListFromMFTID(&Ctx->EList, 221313, Ctx->MFTRecords, Ctx->MFTRecordsCount, Ctx->ClusterSize, Ctx->FEHandle);
-
-                Ctx->EList.EntryCount = 0;
-                NarGetFileListFromMFTID(&Ctx->EList, 228462, Ctx->MFTRecords, Ctx->MFTRecordsCount, Ctx->ClusterSize, Ctx->FEHandle);
-
-                Ctx->EList.EntryCount = 0;
-                NarGetFileListFromMFTID(&Ctx->EList, 229948, Ctx->MFTRecords, Ctx->MFTRecordsCount, Ctx->ClusterSize, Ctx->FEHandle);
-
+            Ctx->EList.EntryCount = 0;
+            NarGetFileListFromMFTID(&Ctx->EList, 44571, Ctx->MFTRecords, Ctx->MFTRecordsCount, Ctx->ClusterSize, Ctx->FEHandle);
+            
+            Ctx->EList.EntryCount = 0;
+            NarGetFileListFromMFTID(&Ctx->EList, 120848, Ctx->MFTRecords, Ctx->MFTRecordsCount, Ctx->ClusterSize, Ctx->FEHandle);
+            
+            
+            Ctx->EList.EntryCount = 0;
+            NarGetFileListFromMFTID(&Ctx->EList, 98328, Ctx->MFTRecords, Ctx->MFTRecordsCount, Ctx->ClusterSize, Ctx->FEHandle);
+            
+            Ctx->EList.EntryCount = 0;
+            NarGetFileListFromMFTID(&Ctx->EList, 43085, Ctx->MFTRecords, Ctx->MFTRecordsCount, Ctx->ClusterSize, Ctx->FEHandle);
+            
+            Ctx->EList.EntryCount = 0;
+            NarGetFileListFromMFTID(&Ctx->EList, 204837, Ctx->MFTRecords, Ctx->MFTRecordsCount, Ctx->ClusterSize, Ctx->FEHandle);
+            
+            Ctx->EList.EntryCount = 0;
+            NarGetFileListFromMFTID(&Ctx->EList, 221313, Ctx->MFTRecords, Ctx->MFTRecordsCount, Ctx->ClusterSize, Ctx->FEHandle);
+            
+            Ctx->EList.EntryCount = 0;
+            NarGetFileListFromMFTID(&Ctx->EList, 228462, Ctx->MFTRecords, Ctx->MFTRecordsCount, Ctx->ClusterSize, Ctx->FEHandle);
+            
+            Ctx->EList.EntryCount = 0;
+            NarGetFileListFromMFTID(&Ctx->EList, 229948, Ctx->MFTRecords, Ctx->MFTRecordsCount, Ctx->ClusterSize, Ctx->FEHandle);
+            
+            Ctx->EList.EntryCount = 0;
+            NarGetFileListFromMFTID(&Ctx->EList, 44571, Ctx->MFTRecords, Ctx->MFTRecordsCount, Ctx->ClusterSize, Ctx->FEHandle);
+            
+            Ctx->EList.EntryCount = 0;
+            NarGetFileListFromMFTID(&Ctx->EList, 120848, Ctx->MFTRecords, Ctx->MFTRecordsCount, Ctx->ClusterSize, Ctx->FEHandle);
+            
+            
+            Ctx->EList.EntryCount = 0;
+            NarGetFileListFromMFTID(&Ctx->EList, 98328, Ctx->MFTRecords, Ctx->MFTRecordsCount, Ctx->ClusterSize, Ctx->FEHandle);
+            
+            Ctx->EList.EntryCount = 0;
+            NarGetFileListFromMFTID(&Ctx->EList, 43085, Ctx->MFTRecords, Ctx->MFTRecordsCount, Ctx->ClusterSize, Ctx->FEHandle);
+            
+            Ctx->EList.EntryCount = 0;
+            NarGetFileListFromMFTID(&Ctx->EList, 204837, Ctx->MFTRecords, Ctx->MFTRecordsCount, Ctx->ClusterSize, Ctx->FEHandle);
+            
+            Ctx->EList.EntryCount = 0;
+            NarGetFileListFromMFTID(&Ctx->EList, 221313, Ctx->MFTRecords, Ctx->MFTRecordsCount, Ctx->ClusterSize, Ctx->FEHandle);
+            
+            Ctx->EList.EntryCount = 0;
+            NarGetFileListFromMFTID(&Ctx->EList, 228462, Ctx->MFTRecords, Ctx->MFTRecordsCount, Ctx->ClusterSize, Ctx->FEHandle);
+            
+            Ctx->EList.EntryCount = 0;
+            NarGetFileListFromMFTID(&Ctx->EList, 229948, Ctx->MFTRecords, Ctx->MFTRecordsCount, Ctx->ClusterSize, Ctx->FEHandle);
+            
+            Ctx->EList.EntryCount = 0;
+            NarGetFileListFromMFTID(&Ctx->EList, 44571, Ctx->MFTRecords, Ctx->MFTRecordsCount, Ctx->ClusterSize, Ctx->FEHandle);
+            
+            Ctx->EList.EntryCount = 0;
+            NarGetFileListFromMFTID(&Ctx->EList, 120848, Ctx->MFTRecords, Ctx->MFTRecordsCount, Ctx->ClusterSize, Ctx->FEHandle);
+            
+            
+            Ctx->EList.EntryCount = 0;
+            NarGetFileListFromMFTID(&Ctx->EList, 98328, Ctx->MFTRecords, Ctx->MFTRecordsCount, Ctx->ClusterSize, Ctx->FEHandle);
+            
+            Ctx->EList.EntryCount = 0;
+            NarGetFileListFromMFTID(&Ctx->EList, 43085, Ctx->MFTRecords, Ctx->MFTRecordsCount, Ctx->ClusterSize, Ctx->FEHandle);
+            
+            Ctx->EList.EntryCount = 0;
+            NarGetFileListFromMFTID(&Ctx->EList, 204837, Ctx->MFTRecords, Ctx->MFTRecordsCount, Ctx->ClusterSize, Ctx->FEHandle);
+            
+            Ctx->EList.EntryCount = 0;
+            NarGetFileListFromMFTID(&Ctx->EList, 221313, Ctx->MFTRecords, Ctx->MFTRecordsCount, Ctx->ClusterSize, Ctx->FEHandle);
+            
+            Ctx->EList.EntryCount = 0;
+            NarGetFileListFromMFTID(&Ctx->EList, 228462, Ctx->MFTRecords, Ctx->MFTRecordsCount, Ctx->ClusterSize, Ctx->FEHandle);
+            
+            Ctx->EList.EntryCount = 0;
+            NarGetFileListFromMFTID(&Ctx->EList, 229948, Ctx->MFTRecords, Ctx->MFTRecordsCount, Ctx->ClusterSize, Ctx->FEHandle);
 #endif
-
+            
         }
         else {
             goto NAR_FAIL_TERMINATE;
@@ -7095,14 +7249,14 @@ NarInitFileExplorerContext(nar_backup_file_explorer_context* Ctx, INT32 HandleOp
     }
     
     return TRUE;
-
+    
     NAR_FAIL_TERMINATE:
     if(Ctx){
         NarReleaseFileExplorerContext(Ctx);
     }
-
+    
     return FALSE;
-
+    
 }
 
 
@@ -7116,27 +7270,27 @@ NarInitFileExplorerContext(nar_backup_file_explorer_context* Ctx, INT32 HandleOp
 */
 inline BOOLEAN
 NarFileExplorerSetFilePointer(nar_fe_volume_handle FEV, UINT64 NewFilePointer){
-
+    
     BOOLEAN Result = FALSE;
-
+    
     if(FEV.VolumeHandle != INVALID_HANDLE_VALUE){
         if(FEV.BMEX == NULL){
             // normal file handle, safe to call NarSetFilePointer
             Result = NarSetFilePointer(FEV.VolumeHandle, NewFilePointer);
         }
         else{
-
+            
             UINT64 NewFilePtrInCluster = NewFilePointer / FEV.BMEX->M.ClusterSize;
             UINT64 ClusterOffset =  NewFilePointer % FEV.BMEX->M.ClusterSize;
             printf("Converted new file pointer to cluster space, new cluster %I64u, addition in bytes %I64u",NewFilePtrInCluster, ClusterOffset);
-
+            
             // backup file handle, must calculate relative offset.
             UINT64 RelativePointerInCluster = FindPointOffsetInRecords(FEV.BMEX->RegionsMetadata.Data, FEV.BMEX->RegionsMetadata.Count, NewFilePtrInCluster);
             if(RelativePointerInCluster != NAR_POINT_OFFSET_FAILED){
                 
                 printf("Converted absolute file ptr %I64u to relative file cluster pointer %I64d, with addition of %I64u bytes\n", NewFilePointer, RelativePointerInCluster, ClusterOffset);
                 UINT64 RelativeFilePointerTarget = RelativePointerInCluster * FEV.BMEX->M.ClusterSize + ClusterOffset;
-
+                
                 Result = NarSetFilePointer(FEV.VolumeHandle, RelativeFilePointerTarget);                
                 if(!Result){
                     printf("Couldnt set relative file pointer %I64d\n", RelativeFilePointerTarget);
@@ -7144,19 +7298,19 @@ NarFileExplorerSetFilePointer(nar_fe_volume_handle FEV, UINT64 NewFilePointer){
                 else{
                     Result = TRUE;
                 }
-
+                
             }
             else{
                 printf("Failed to move absolute file ptr(%I64u)\n", NewFilePointer);
                 // failed
             }
-
+            
         }
     }
     else{
         printf("Volume handle was invalid\n");
     }
-
+    
     return Result;
 }
 
@@ -7167,14 +7321,14 @@ NarFileExplorerReadVolume(nar_fe_volume_handle FEV, void* Buffer, DWORD ReadSize
     // mft may throw up some special regions for weird directories
     // for now, ill accept as everything will be fine, if any error occurs in file explorer, i might need to implement some safe procedure
     // to be sure that read length doesnt exceed current region
-
+    
     if(FEV.BMEX == NULL){
         // normal file handle
     }
     else{
-
+        
     }
-
+    
     return ReadFile(FEV.VolumeHandle, Buffer, ReadSize, OutBytesRead, 0);
 }
 
@@ -7186,16 +7340,16 @@ inline char
 NarGetAvailableVolumeLetter() {
     
     DWORD Drives = GetLogicalDrives();
-
+    
     for (int CurrentDriveIndex = 0; CurrentDriveIndex < 26; CurrentDriveIndex++) {
         if (Drives & (1 << CurrentDriveIndex)) {
-
+            
         }
         else {
             return ('A' + (char)CurrentDriveIndex);
         }
     }
-
+    
     return 0;
 }
 
@@ -7210,11 +7364,11 @@ NarGetAvailableVolumeLetter() {
 */
 inline BOOLEAN 
 NarInitFEVolumeHandle(nar_fe_volume_handle *FEV, INT32 HandleOptions, char VolumeLetter, INT32 Version, wchar_t *RootDir) {
-
+    
     if (!FEV) return FALSE;
-
+    
     BOOLEAN Result = FALSE;
-
+    
     if(HandleOptions != NAR_FE_HAND_OPT_READ_MOUNTED_VOLUME && HandleOptions != NAR_FE_HAND_OPT_READ_BACKUP_VOLUME){
         printf("Invalid HandleOptions argument passed to NarInitFEVolumeHandle\n");
         return FALSE;
@@ -7223,23 +7377,23 @@ NarInitFEVolumeHandle(nar_fe_volume_handle *FEV, INT32 HandleOptions, char Volum
     if(HandleOptions == NAR_FE_HAND_OPT_READ_BACKUP_VOLUME){
         
         wchar_t Path[1024];
-
+        
         memset(Path, 0, sizeof(Path));
-
+        
         if(RootDir != NULL){
             wcscat(Path, RootDir);
             wcscat(Path, L"\\");
         }
-
+        
         std::wstring BinaryFileName = GenerateBinaryFileName((wchar_t)VolumeLetter, Version);
-
+        
         wcscat(Path, BinaryFileName.c_str());
         printf("Target file path to initialize file explorer volume handle : %s\n", Path);
-
+        
         FEV->VolumeHandle = CreateFileW(Path, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, 0, 0);
-
+        
         if(FEV->VolumeHandle != INVALID_HANDLE_VALUE){
-
+            
             FEV->BMEX = InitBackupMetadataEx(VolumeLetter, Version, Path);
             if(FEV->BMEX != NULL){
                 Result = TRUE;
@@ -7247,16 +7401,16 @@ NarInitFEVolumeHandle(nar_fe_volume_handle *FEV, INT32 HandleOptions, char Volum
             else{
                 printf("Couldnt initialize backup metadata for volume %c for version %i from path %s\n", VolumeLetter, Version, RootDir);
             }
-
+            
         }  
         else{
             printf("Couldnt open file %s for FE Volume handle\n", Path);
             DisplayError(GetLastError());
         }
-
+        
     }
     if(HandleOptions == NAR_FE_HAND_OPT_READ_MOUNTED_VOLUME){
-
+        
         FEV->BMEX = 0;
         FEV->VolumeHandle = NarOpenVolume(VolumeLetter);
         if(FEV->VolumeHandle != INVALID_HANDLE_VALUE){
@@ -7266,8 +7420,8 @@ NarInitFEVolumeHandle(nar_fe_volume_handle *FEV, INT32 HandleOptions, char Volum
             printf("Failed to open volume for file explorer for volume %c\n", VolumeLetter);
         }
     }
-
-
+    
+    
     // failed
     if(!Result){
         if(FEV){
@@ -7279,7 +7433,7 @@ NarInitFEVolumeHandle(nar_fe_volume_handle *FEV, INT32 HandleOptions, char Volum
             }
         }
     }
-
+    
     return Result;
 }
 
@@ -7289,13 +7443,13 @@ NarFreeFEVolumeHandle(nar_fe_volume_handle FEV) {
     {
         CloseHandle(FEV.VolumeHandle);
         FEV.VolumeHandle = INVALID_HANDLE_VALUE;
-
+        
         if(FEV.BMEX != NULL){
             FreeBackupMetadataEx(FEV.BMEX);
             FEV.BMEX = 0;
         }
     }
-
+    
 }
 
 
@@ -7305,16 +7459,16 @@ NarFreeFEVolumeHandle(nar_fe_volume_handle FEV) {
 // returns NAR_POINT_OFFSET_FAILED if fails to find given offset, 
 inline INT64 
 FindPointOffsetInRecords(nar_record *Records, INT32 Len, INT64 Offset){
-
+    
     if(!Records) return NAR_POINT_OFFSET_FAILED;
-
+    
     INT64 Result = 0;
     BOOLEAN Found = FALSE;
     
     for(int i = 0; i < Len; i++){
         
         if(Offset <= (INT64)Records[i].StartPos + (INT64)Records[i].Len){
-
+            
             INT64 Diff = (Offset - (INT64)Records[i].StartPos);
             if (Diff < 0) {
                 // Exceeded offset, this means we cant relate our Offset and Records data, return failcode
@@ -7324,17 +7478,17 @@ FindPointOffsetInRecords(nar_record *Records, INT32 Len, INT64 Offset){
                 Result += Diff;
                 Found = TRUE;
             }
-
+            
             break;
-
+            
         }
         
-
+        
         Result += Records[i].Len;
-
+        
     }
-
-
+    
+    
     return (Found ? Result : NAR_POINT_OFFSET_FAILED);
 }
 
@@ -7344,11 +7498,11 @@ FindPointOffsetInRecords(nar_record *Records, INT32 Len, INT64 Offset){
 
 void
 TestFindPointOffsetInRecords(){
-
-
+    
+    
     nar_record* Recs = new nar_record[100];
     memset(Recs, 0, sizeof(nar_record) * 100);
-
+    
     Recs[0] = {0, 100};
     Recs[1] = {150, 200};
     Recs[2] = {520, 150};
@@ -7357,28 +7511,28 @@ TestFindPointOffsetInRecords(){
     Recs[5] = {1500, 75};
     Recs[6] = {1700, 420};
     Recs[7] = {5200, 500};
-
+    
     INT64 Answer = FindPointOffsetInRecords(Recs, 8, 1350);
     printf("HELL ==== %I64d\n", Answer);
-
+    
     Answer = FindPointOffsetInRecords(Recs, 8, 1000);
     printf("HELL ==== %I64d\n", Answer);
-
+    
     Answer = FindPointOffsetInRecords(Recs, 8, 70);
     printf("HELL ==== %I64d\n", Answer);
-
+    
     Answer = FindPointOffsetInRecords(Recs, 8, 5400);
     printf("HELL ==== %I64d\n", Answer);
-
+    
     Answer = FindPointOffsetInRecords(Recs, 8, 2000);
     printf("HELL ==== %I64d\n", Answer);
-
+    
     Answer = FindPointOffsetInRecords(Recs, 8, 3000);
     printf("HELL ==== %I64d\n", Answer);
-
-
+    
+    
     return;
-
+    
 }
 
 
@@ -7388,7 +7542,7 @@ struct{
     LARGE_INTEGER LastCounter;
     LARGE_INTEGER WorkCounter;
     INT64 GlobalPerfCountFrequency;
-
+    
 }NarPerfCounter;
 
 
@@ -7415,7 +7569,7 @@ NarInitPerfCounter(){
     LARGE_INTEGER PerfCountFreqResult;
     QueryPerformanceFrequency(&PerfCountFreqResult);
     NarPerfCounter.GlobalPerfCountFrequency = PerfCountFreqResult.QuadPart;
-
+    
 }
 
 inline void
@@ -7433,24 +7587,24 @@ NarEndPerfCounter(){
 
 inline BOOLEAN
 Test_NarGetRegionIntersection() {
-
+    
     BOOLEAN Result = FALSE;
-
+    
     nar_record r1[16], r2[16];
-
+    
     r1[0] = { 0, 200 };
     r1[1] = { 300, 200 };
     r1[2] = { 800, 100 };
     r1[3] = { 1200, 800 };
     r1[4] = { 2100, 200 };
-
+    
     r2[0] = { 80, 70 };
     r2[1] = { 250, 100 };
     r2[2] = { 700, 50 };
     r2[3] = { 1100, 300 };
     r2[4] = { 1500, 50 };
     r2[5] = { 1600, 800 };
-
+    
     INT32 found = 0;
     nar_record* r3 = 0;
     NarGetRegionIntersection(r1, r2, &r3, 5, 6, &found);
@@ -7458,26 +7612,26 @@ Test_NarGetRegionIntersection() {
         printf("%i\t%i\n", r3[i].StartPos, r3[i].Len);
     }
     NarFreeRegionIntersection(r3);
-
+    
     for (int i = 0; i < found; i++) {
         printf("%i\t%i\n", r3[i].StartPos, r3[i].Len);
     }
-
-
+    
+    
     return Result;
 }
 
 
 inline void
 NarGetProductName(char* OutName) {
-
+    
     HKEY Key;
     if (RegOpenKeyA(HKEY_LOCAL_MACHINE, "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion", &Key) == ERROR_SUCCESS) {
         DWORD H = 0;
         RegGetValueA(Key, 0, "ProductName", RRF_RT_ANY, 0, OutName, &H);
         RegCloseKey(Key);
     }
-
+    
 }
 
 
@@ -7487,11 +7641,12 @@ main(
      CHAR* argv[]
      ) {
     
-
+    
+    
     nar_backup_file_explorer_context ctx;
-
+    
     NarInitFileExplorerContext(&ctx, NAR_FE_HAND_OPT_READ_MOUNTED_VOLUME, 'C', 0, NULL);
-        
+    
     NarFileExplorerPrint(&ctx);
     
     int ListID = 0;
@@ -7501,45 +7656,49 @@ main(
         if (ListID == -42) {
             break;
         }
-
+        
         if (ListID < 0) {
             NarFileExplorerPopDirectory(&ctx);
         }
         else {
             NarFileExplorerPushDirectory(&ctx, ListID);
         }
-
+        
         NarFileExplorerPrint(&ctx);
-
+        
         Sleep(16);
     }
-
+    
+    PrintDebugRecords();
+    
+    return 0;
+    
     NarReleaseFileExplorerContext(&ctx);
     
-
+    
     NarInitFileExplorerContext(&ctx, NAR_FE_HAND_OPT_READ_MOUNTED_VOLUME, 'C', 0, NULL);
     NarFileExplorerPrint(&ctx);
     NarReleaseFileExplorerContext(&ctx);
-
-
+    
+    
     printf("Freed smt\n");
     
     int bloke_optimization;
     scanf("%i", &bloke_optimization);
-
+    
     printf("optimization blocked %i\n", bloke_optimization);
-
+    
     return 0;
-
+    
     wchar_t B[50];
     if(NarGetVolumeGUIDKernelCompatible(L'C', &B[0])){
         printf("%s\n", B);
     }
-
-
+    
+    
     return 0;
     
-
+    
     HRESULT hResult = 0;
     hResult = CoInitializeEx(NULL, COINIT_MULTITHREADED);
     if (!SUCCEEDED(hResult)) {
@@ -7565,9 +7724,9 @@ main(
         DisplayError(GetLastError());
         return FALSE;
     }
-
+    
     // force bluescreen
-
+    
     WCHAR Temp[] = L"!:\\";
     Temp[0] = L'C';
     
@@ -7581,18 +7740,18 @@ main(
     }
     
     CComPtr<IVssBackupComponents> IVSSPTR;
-
+    
     wchar_t* A = GetShadowPath(Temp, IVSSPTR);
-
+    
     printf("%S\n", A);
-
+    
     while (1) {
         Sleep(250);
     }
-
+    
     
     return 0;
-
+    
     printf("r to restore\n");
     if(getchar() == 'r') {
         foo();
@@ -7600,47 +7759,47 @@ main(
     }
     
     
-   
-
-
+    
+    
+    
     wchar_t OutputBinaryFileName[] = L"BinaryFile";
     CComPtr<IVssBackupComponents> VSSPTR;
     
     wchar_t *ShadowPath = GetShadowPath(L"C:\\", VSSPTR);
-
+    
     HANDLE VolumeHandle = CreateFile(ShadowPath, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, 0, 0);
     if(VolumeHandle != INVALID_HANDLE_VALUE){
-
+        
         UINT32 RecordCount = 0;
         nar_record* VolumeRecords = GetVolumeRegionsFromBitmap(VolumeHandle, &RecordCount);
         
         HANDLE OutputFile = CreateFile(OutputBinaryFileName, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, CREATE_ALWAYS, 0, 0);
-
+        
         BOOLEAN Result = 0;
         ULONGLONG TargetFilePointer = 0;
         for(int i = 0; i<RecordCount; i++){
             
             TargetFilePointer = (ULONGLONG)VolumeRecords[i].StartPos*(ULONGLONG)4096;
-
+            
             Result = NarSetFilePointer(VolumeHandle, TargetFilePointer);
             if(Result){
-
+                
                 if(!CopyData(VolumeHandle, OutputFile, (ULONGLONG)VolumeRecords[i].Len*(ULONGLONG)4096)){
                     printf("Couldnt copy %I64d bytes from starting pos of %I64d\n", (ULONGLONG)VolumeRecords[i].Len*(ULONGLONG)4096, TargetFilePointer);
                 }
                 printf("Copied %i regions out of %i\r", i, RecordCount);
-
+                
             }
             else{
                 printf("Couldnt set file pointer to %I64d, region len was %I64d\n",TargetFilePointer);
             }
-
-
+            
+            
         }
-
+        
         NarDumpToFile("records", VolumeRecords, RecordCount*sizeof(nar_record));
-
-
+        
+        
         printf("\n");
         printf("DONE BACKING UP VOLUME C\n");
         
@@ -7654,16 +7813,16 @@ main(
             if (input != 'r' && input != 'q') {
                 printf("Press R to restore volume to volume E, press q to exit\n");
             }
-
+            
             if (input == 'q') {
                 break;
             }
-
+            
             if (input == 'r') {
                 
-
+                
                 NarCreateCleanGPTBootablePartition(1, 61440, 100, 529, 'E');
-
+                
                 if (NarSetFilePointer(OutputFile, 0)) {
                     
                     VolumeHandle = NarOpenVolume('E');
@@ -7678,50 +7837,50 @@ main(
                                 if (!CopyData(OutputFile, VolumeHandle, CopyLen)) {
                                     printf("Couldnt copy %I64d bytes from starting pos of %I64d\n", (ULONGLONG)VolumeRecords[i].Len * (ULONGLONG)4096, TargetFilePointer);
                                 }
-
+                                
                             }
-
+                            
                         }
-
+                        
                         printf("DONE RESTORE OPERATION\n");
                         
                         break;
-
+                        
                     }
                     else {
-                    
+                        
                     }
-
+                    
                 }
                 else {
                     printf("Couldnt set file pointer to beginning of the file\n");
                 }
-
+                
             }
-
+            
             Sleep(250);
         }
-
-
+        
+        
     }
     else{
         printf("Couldnt open volume C's shadow path\n");
     }
-
-
+    
+    
     printf("DONE WHOLE OPERATION\n");
-
+    
     return 0;
-
+    
     data_array<nar_record> R = GetMFTLCN('C', NarOpenVolume('C'));
     
     for(int i= 0; i<R.Count;i++){
         printf("%i\t%i\n", R.Data[i].StartPos, R.Data[i].Len);
     }
-
-
+    
+    
     return 0;
-
+    
     
     // tests
 #if 0
@@ -7732,12 +7891,12 @@ main(
     char s5[] = "estri";
     char s6[] = "ingix";
     char s7[] = "edenem";
-
-
+    
+    
     if(StrFind(s1,s2,strlen(s1),strlen(s2))){
         printf("Found substring s2 in s1\n");
     }
-
+    
     if(StrFind(s1,s3,strlen(s1),strlen(s3))){
         printf("Found substring s3 in s1\n");
     }
@@ -7749,55 +7908,55 @@ main(
     if(StrFind(s1,s5,strlen(s1),strlen(s5))){
         printf("Found substring s5 in s1\n");
     }
-
+    
     if (StrFind(s1, s6, strlen(s1), strlen(s6))) {
         printf("Found substring s6 in s1\n");
     }
-
+    
     if (StrFind(s1, s7, strlen(s1), strlen(s7))) {
         printf("Found substring s7 in s1\n");
     }
 #endif
-
+    
     data_array<disk_information> Disks = NarGetDisks();
-
+    
     for(unsigned int i = 0; i<Disks.Count; i++){
         printf("ID:   %i\n", Disks.Data[i].ID);
         printf("Type: %c\n", Disks.Data[i].Type);
         printf("Size: %I64u\n", Disks.Data[i].Size);
         printf("###############\n");
     }
-
-
-
+    
+    
+    
     return 0;    
-   
+    
     
     
     if (TRUE) {
         //wchar_t* path = GetShadowPath(L"C:\\", ptr);
-
+        
         HANDLE VSSHandle = CreateFileW(L"\\\\.\\C:", GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, FILE_READ_ATTRIBUTES, 0);
         if (1) {
-
+            
             if (VSSHandle != INVALID_HANDLE_VALUE) {
                 GetMFTLCN('C', VSSHandle);
             }
             else {
                 DebugBreak();
             }
-
+            
         }
         else {
             
         }
-
+        
         
     }
     else {
         DebugBreak();
     }
-
+    
     return 0;
     
     {
@@ -7894,7 +8053,7 @@ main(
     CloseHandle(Port);
     
     return 0;
-
+    
     return 0;
 }
 
@@ -7983,4 +8142,17 @@ DisplayError(DWORD Code) {
     //
     
     printf("    %ws\n", buffer);
+}
+
+
+TIMER_END_TRANSLATION_UNIT();
+
+inline void
+PrintDebugRecords() {
+    
+    int len = sizeof(GlobalDebugRecordArray) / sizeof(debug_record);
+    for (int i = 0; i < len; i++) {
+        printf("%s avclocks: %.3fat line %i, hit count %i\n", GlobalDebugRecordArray[i].FunctionName, (double)GlobalDebugRecordArray[i].Clocks / GlobalDebugRecordArray[i].HitCount, GlobalDebugRecordArray[i].LineNumber, GlobalDebugRecordArray[i].HitCount);
+    }
+    
 }
