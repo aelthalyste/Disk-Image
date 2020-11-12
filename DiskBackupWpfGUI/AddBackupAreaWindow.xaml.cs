@@ -156,7 +156,7 @@ namespace DiskBackupWpfGUI
             //kaydet
             if (rbLocalDisc.IsChecked.Value) // yerel disk
             {
-                if (txtBackupAreaName.Text.Equals("") || txtBackupAreaDescription.Text.Equals("") || txtSettingsFolderPath.Text.Equals(""))
+                if (txtBackupAreaName.Text.Equals("") || txtSettingsFolderPath.Text.Equals(""))
                 {
                     MessageBox.Show("İlgili alanları lütfen boş geçmeyiniz. Yerel Disk","NARBULUT DİYOR Kİ;", MessageBoxButton.OK, MessageBoxImage.Error);
                     controlFlag = false;

@@ -37,7 +37,7 @@ namespace DiskBackupWpfGUI
         private List<VolumeInfo> _volumeInfoList = new List<VolumeInfo>();
 
         private TaskInfo _taskInfo = new TaskInfo();
-        
+
         private readonly Func<AddBackupAreaWindow> _createAddBackupWindow;
 
         public NewCreateTaskWindow(List<BackupStorageInfo> backupStorageInfoList, IBackupService backupService, IBackupStorageService backupStorageService,
@@ -60,7 +60,7 @@ namespace DiskBackupWpfGUI
             _schedulerManager.InitShedulerAsync();
 
             _taskInfo.Obje = _volumeInfoList.Count();
-            
+
             foreach (var item in _volumeInfoList)
             {
                 _taskInfo.StrObje += item.Letter;
@@ -124,7 +124,7 @@ namespace DiskBackupWpfGUI
                     if (rbDaysTime.IsChecked.Value)
                     {
                         _taskInfo.BackupTaskInfo.AutoType = AutoRunType.DaysTime;
-                        _taskInfo.NextDate = (DateTime)tpWeeklyTime.Value;
+                        _taskInfo.NextDate = (DateTime)tpDaysTime.Value;
                         if (cbDaysTime.SelectedIndex == 2) // belirli günler seçilmeli
                         {
                             _taskInfo.BackupTaskInfo.Days = ChooseDayAndMounthsWindow._days;
@@ -232,9 +232,9 @@ namespace DiskBackupWpfGUI
                 {
                     //full gelince buraya alıcaz paşayı
                 }
+                Close();
             }
 
-            Close();
         }
 
         private void btnCreateTaskBack_Click(object sender, RoutedEventArgs e)
@@ -264,7 +264,7 @@ namespace DiskBackupWpfGUI
             if (NCTTabControl.SelectedIndex == 5)
             {
                 lblTaskName.Text = txtTaskName.Text;
-        
+
                 if (rbBTDifferential.IsChecked.Value) // diff
                 {
                     lblBackupType.Text = Resources["diff"].ToString();
@@ -716,9 +716,8 @@ namespace DiskBackupWpfGUI
             bool errorFlag = false;
 
             // boş geçilmeme kontrolü
-            if (txtTaskName.Text.Equals("") || txtTaskDescription.Text.Equals("") || cbTargetBackupArea.SelectedIndex == -1 ||
-                txtRetentionTime.Text.Equals("") || txtFullBackup.Text.Equals("") || txtNarRetentionTime.Text.Equals("") ||
-                txtNarFullBackup.Text.Equals(""))
+            if (txtTaskName.Text.Equals("") || cbTargetBackupArea.SelectedIndex == -1 || txtRetentionTime.Text.Equals("") || 
+                txtFullBackup.Text.Equals("") || txtNarRetentionTime.Text.Equals("") || txtNarFullBackup.Text.Equals(""))
             {
                 errorFlag = true;
             }
@@ -782,7 +781,7 @@ namespace DiskBackupWpfGUI
             if (resultBackupTask == null)
             {
                 MessageBox.Show("Ekleme başarısız.", "NARBULUT DİYOR Kİ;", MessageBoxButton.OK, MessageBoxImage.Error);
-                Close();
+                return null;
             }
 
             //backupTask kaydetme
@@ -792,7 +791,7 @@ namespace DiskBackupWpfGUI
             if (resultStatusInfo == null)
             {
                 MessageBox.Show("Ekleme başarısız.", "NARBULUT DİYOR Kİ;", MessageBoxButton.OK, MessageBoxImage.Error);
-                Close();
+                return null;
             }
 
             // task kayıdı
@@ -804,7 +803,7 @@ namespace DiskBackupWpfGUI
             if (resultTaskInfo == null)
             {
                 MessageBox.Show("Ekleme başarısız.", "NARBULUT DİYOR Kİ;", MessageBoxButton.OK, MessageBoxImage.Error);
-                Close();
+                return null;
             }
 
             return resultTaskInfo;

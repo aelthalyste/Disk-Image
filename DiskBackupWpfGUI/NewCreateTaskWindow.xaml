@@ -262,7 +262,7 @@
                             <StackPanel Orientation="Horizontal" Margin="0,20,0,10">
                                 <RadioButton Name="rbDaysTime" GroupName="rbtnSchedular" Content="{DynamicResource dailyTime}" Checked="rbDaysTime_Checked" Unchecked="rbDaysTime_Unchecked" VerticalContentAlignment="Center" Margin="5,0,0,0" />
                                 <StackPanel Name="stackDaysTime" Orientation="Horizontal" IsEnabled="False">
-                                    <xctk:TimePicker Name="tpDaysTime" Margin="50,0,0,0" MouseWheelActiveTrigger="Focused" Width="80" Height="26" Value="22:00" />
+                                    <xctk:TimePicker Name="tpDaysTime" Margin="50,0,0,0" MouseWheelActiveTrigger="Focused" Width="80" Height="26" Value="22:00"/>
                                     <ComboBox Name="cbDaysTime" Width="280" Margin="20,0,20,0" SelectedIndex="0" SelectionChanged="cbDaysTime_SelectionChanged">
                                         <ComboBoxItem Content="{DynamicResource everyday}"></ComboBoxItem>
                                         <ComboBoxItem Content="{DynamicResource weekdays}"></ComboBoxItem>

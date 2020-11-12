@@ -282,7 +282,7 @@ namespace DiskBackupWpfGUI
         #region Title Bar
         private void btnMainClose_Click(object sender, RoutedEventArgs e)
         {
-            Close();
+            Environment.Exit(0);
         }
 
         private void btnMainMin_Click(object sender, RoutedEventArgs e)
@@ -495,23 +495,25 @@ namespace DiskBackupWpfGUI
         private void btnTaskStart_Click(object sender, RoutedEventArgs e)
         {
             TaskInfo taskInfo = (TaskInfo)listViewTasks.SelectedItem;
-
-            if (taskInfo.Type == TaskType.Backup)
-            {
-                taskInfo.BackupTaskInfo = _backupTaskDal.Get(x => x.Id == taskInfo.BackupTaskId);
-                if (taskInfo.BackupTaskInfo.Type == BackupTypes.Diff || taskInfo.BackupTaskInfo.Type == BackupTypes.Inc)
-                {
-                    _taskSchedulerManager.BackupIncDiffNowJob(taskInfo);
-                }
-                else
-                {
-                    //full
-                }
-            }
-            else
-            {
-                //restore
-            }
+            MessageBox.Show(taskInfo.Name + " başlatılıyor");
+            var result = _backupService.CreateIncDiffBackup(taskInfo);
+            MessageBox.Show(taskInfo.Name + " bitti");
+            //if (taskInfo.Type == TaskType.Backup)
+            //{
+            //    taskInfo.BackupTaskInfo = _backupTaskDal.Get(x => x.Id == taskInfo.BackupTaskId);
+            //    if (taskInfo.BackupTaskInfo.Type == BackupTypes.Diff || taskInfo.BackupTaskInfo.Type == BackupTypes.Inc)
+            //    {
+            //        _taskSchedulerManager.BackupIncDiffNowJob(taskInfo);
+            //    }
+            //    else
+            //    {
+            //        //full
+            //    }
+            //}
+            //else
+            //{
+            //    //restore
+            //}
         }
 
         #region Checkbox Operations
