@@ -1,6 +1,8 @@
 ﻿using DiskBackup.Business.Abstract;
 using DiskBackup.Business.Concrete;
+using DiskBackup.DataAccess.Abstract;
 using DiskBackup.Entities.Concrete;
+using DiskBackup.TaskScheduler;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -23,18 +25,49 @@ namespace DiskBackupWpfGUI
     /// </summary>
     public partial class NewCreateTaskWindow : Window
     {
-        private IBackupService _backupService = new BackupManager();
-        private IBackupStorageService _backupStorageService = new BackupStorageManager();
+        private IBackupService _backupService;
+        private IBackupStorageService _backupStorageService;
+
+        private IBackupTaskDal _backupTaskDal;
+        private IStatusInfoDal _statusInfoDal;
+        private ITaskInfoDal _taskInfoDal;
+        private ITaskSchedulerManager _schedulerManager;
 
         private List<BackupStorageInfo> _backupStorageInfoList = new List<BackupStorageInfo>();
+        private List<VolumeInfo> _volumeInfoList = new List<VolumeInfo>();
 
-        public NewCreateTaskWindow(List<BackupStorageInfo> backupStorageInfoList)
+        private TaskInfo _taskInfo = new TaskInfo();
+
+        private readonly Func<AddBackupAreaWindow> _createAddBackupWindow;
+
+        public NewCreateTaskWindow(List<BackupStorageInfo> backupStorageInfoList, IBackupService backupService, IBackupStorageService backupStorageService,
+            Func<AddBackupAreaWindow> createAddBackupWindow, List<VolumeInfo> volumeInfoList, IBackupTaskDal backupTaskDal, IStatusInfoDal statusInfoDal, ITaskInfoDal taskInfoDal, ITaskSchedulerManager schedulerManager)
         {
             InitializeComponent();
 
             _backupStorageInfoList = backupStorageInfoList;
-
             cbTargetBackupArea.ItemsSource = _backupStorageInfoList;
+            _backupService = backupService;
+            _backupStorageService = backupStorageService;
+            _createAddBackupWindow = createAddBackupWindow;
+            _volumeInfoList = volumeInfoList;
+            _backupTaskDal = backupTaskDal;
+            _statusInfoDal = statusInfoDal;
+            _taskInfoDal = taskInfoDal;
+            _taskInfo.BackupTaskInfo = new BackupTask();
+            _taskInfo.StatusInfo = new StatusInfo();
+            _schedulerManager = schedulerManager;
+            _schedulerManager.InitShedulerAsync();
+
+            _taskInfo.Obje = _volumeInfoList.Count();
+
+            foreach (var item in _volumeInfoList)
+            {
+                _taskInfo.StrObje += item.Letter;
+                lblBackupStorages.Text += (item.Letter + ", ");
+            }
+
+            lblBackupStorages.Text = lblBackupStorages.Text.Substring(0, lblBackupStorages.Text.Length - 2);
         }
 
         #region Title Bar
@@ -60,7 +93,149 @@ namespace DiskBackupWpfGUI
         #region Next-Back-Ok-Cancel Button
         private void btnCreateTaskOk_Click(object sender, RoutedEventArgs e)
         {
-            //kaydet
+            if (ConfirmNotEmpty())
+            {
+                MessageBox.Show("İlgili alanları lütfen boş geçmeyiniz.", "NARBULUT DİYOR Kİ;", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            else
+            {
+                // kaydet
+                _taskInfo.Type = TaskType.Backup;
+                _taskInfo.Name = txtTaskName.Text;
+                _taskInfo.Descripiton = txtTaskDescription.Text;
+                _taskInfo.BackupTaskInfo.TaskName = txtTaskName.Text;
+
+                // hedefdeki retentiontime vs
+                _taskInfo.BackupTaskInfo.RetentionTime = Convert.ToInt32(txtRetentionTime.Text);
+                _taskInfo.BackupTaskInfo.FullOverwrite = chbFullOverwrite.IsChecked.Value;
+                _taskInfo.BackupTaskInfo.FullBackup = Convert.ToInt32(txtFullBackup.Text);
+                if (_taskInfo.BackupStorageInfo.IsCloud)
+                {
+                    _taskInfo.BackupTaskInfo.NarRetentionTime = Convert.ToInt32(txtNarRetentionTime.Text);
+                    _taskInfo.BackupTaskInfo.NarFullOverwrite = chbNarFullOverwrite.IsChecked.Value;
+                    _taskInfo.BackupTaskInfo.NarFullBackup = Convert.ToInt32(txtNarFullBackup.Text);
+                }
+
+                // zamanlama
+                _taskInfo.BackupTaskInfo.AutoRun = checkAutoRun.IsChecked.Value;
+                if (checkAutoRun.IsChecked.Value)
+                {
+                    //radio buton değerler işlenecek
+                    if (rbDaysTime.IsChecked.Value)
+                    {
+                        _taskInfo.BackupTaskInfo.AutoType = AutoRunType.DaysTime;
+                        _taskInfo.NextDate = (DateTime)tpDaysTime.Value;
+                        if (cbDaysTime.SelectedIndex == 2) // belirli günler seçilmeli
+                        {
+                            _taskInfo.BackupTaskInfo.Days = ChooseDayAndMounthsWindow._days;
+                        }
+                        else
+                        {
+                            _taskInfo.BackupTaskInfo.Days = null;
+                        }
+                    }
+                    else if (rbWeeklyTime.IsChecked.Value)
+                    {
+                        _taskInfo.BackupTaskInfo.AutoType = AutoRunType.WeeklyTime;
+                        _taskInfo.BackupTaskInfo.Months = ChooseDayAndMounthsWindow._months;
+                        _taskInfo.NextDate = (DateTime)tpWeeklyTime.Value;
+                        //haftalar
+                        if (cbWeeklyTimeWeek.SelectedIndex == 0)
+                        {
+                            _taskInfo.BackupTaskInfo.WeeklyTime = WeeklyType.First;
+                        }
+                        else if (cbWeeklyTimeWeek.SelectedIndex == 1)
+                        {
+                            _taskInfo.BackupTaskInfo.WeeklyTime = WeeklyType.Second;
+                        }
+                        else if (cbWeeklyTimeWeek.SelectedIndex == 2)
+                        {
+                            _taskInfo.BackupTaskInfo.WeeklyTime = WeeklyType.Third;
+                        }
+                        else
+                        {
+                            _taskInfo.BackupTaskInfo.WeeklyTime = WeeklyType.Fourth;
+                        }
+                        //günler
+                        _taskInfo.BackupTaskInfo.Days = cbWeeklyTimeDays.SelectedIndex.ToString();
+                    }
+                    else if (rbPeriodic.IsChecked.Value)
+                    {
+                        _taskInfo.BackupTaskInfo.AutoType = AutoRunType.Periodic;
+                        _taskInfo.BackupTaskInfo.PeriodicTime = Convert.ToInt32(txtPeriodic.Text);
+                        if (cbPeriodicTime.SelectedIndex == 0)
+                        {
+                            _taskInfo.BackupTaskInfo.PeriodicTimeType = PeriodicType.Hour;
+                        }
+                        else
+                        {
+                            _taskInfo.BackupTaskInfo.PeriodicTimeType = PeriodicType.Minute;
+                        }
+                    }
+                    else
+                    {
+                        _taskInfo.BackupTaskInfo.Months = null;
+                    }
+                }
+
+                //başarısız tekrar dene
+                _taskInfo.BackupTaskInfo.FailTryAgain = checkTimeFailDesc.IsChecked.Value;
+                if (checkTimeFailDesc.IsChecked.Value)
+                {
+                    _taskInfo.BackupTaskInfo.FailNumberTryAgain = Convert.ToInt32(txtTimeFailDesc.Text);
+                    _taskInfo.BackupTaskInfo.WaitNumberTryAgain = Convert.ToInt32(txtTimeWait.Text);
+                }
+
+                //veritabanı işlemleri gelecek
+                TaskInfo resultTaskInfo = SaveToDatabase();
+
+                if (resultTaskInfo != null)
+                    MessageBox.Show("Ekleme işlemi başarılı");
+
+                if (resultTaskInfo.BackupTaskInfo.Type == BackupTypes.Diff || resultTaskInfo.BackupTaskInfo.Type == BackupTypes.Inc)
+                {
+                    if (resultTaskInfo.BackupTaskInfo.AutoRun)
+                    {
+                        if (resultTaskInfo.BackupTaskInfo.AutoType == AutoRunType.DaysTime)
+                        {
+                            if (cbDaysTime.SelectedIndex == 0) // everyday
+                            {
+                                _schedulerManager.BackupIncDiffEverydayJob(resultTaskInfo).Wait();
+                            }
+                            else if (cbDaysTime.SelectedIndex == 1) //weekdays
+                            {
+                                _schedulerManager.BackupIncDiffWeekDaysJob(resultTaskInfo).Wait();
+                            }
+                            else //certain
+                            {
+                                _schedulerManager.BackupIncDiffCertainDaysJob(resultTaskInfo).Wait();
+                            }
+                        }
+                        else if (resultTaskInfo.BackupTaskInfo.AutoType == AutoRunType.WeeklyTime)
+                        {
+                            _schedulerManager.BackupIncDiffWeeklyJob(resultTaskInfo).Wait();
+
+                        }
+                        else //periodic
+                        {
+                            if (cbPeriodicTime.SelectedIndex == 0) //saat
+                            {
+                                _schedulerManager.BackupIncDiffPeriodicHoursJob(resultTaskInfo).Wait();
+                            }
+                            else //dakika
+                            {
+                                _schedulerManager.BackupIncDiffPeriodicMinutesJob(resultTaskInfo).Wait();
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    //full gelince buraya alıcaz paşayı
+                }
+                Close();
+            }
+
         }
 
         private void btnCreateTaskBack_Click(object sender, RoutedEventArgs e)
@@ -84,6 +259,48 @@ namespace DiskBackupWpfGUI
                     NCTTabControl.SelectedIndex += 1;
                 }
                 NCTTabControl.SelectedIndex += 1;
+            }
+
+            // özet yazımı
+            if (NCTTabControl.SelectedIndex == 5)
+            {
+                lblTaskName.Text = txtTaskName.Text;
+
+                if (rbBTDifferential.IsChecked.Value) // diff
+                {
+                    lblBackupType.Text = Resources["diff"].ToString();
+                    _taskInfo.BackupTaskInfo.Type = BackupTypes.Diff;
+                }
+                else if (rbBTIncremental.IsChecked.Value) // inc
+                {
+                    lblBackupType.Text = Resources["inc"].ToString();
+                    _taskInfo.BackupTaskInfo.Type = BackupTypes.Inc;
+                }
+                else if (rbBTFull.IsChecked.Value) // full
+                {
+                    lblBackupType.Text = Resources["full"].ToString();
+                    _taskInfo.BackupTaskInfo.Type = BackupTypes.Full;
+                }
+
+                if (checkAutoRun.IsChecked.Value) // otomatik çalıştır aktif ise
+                {
+                    if (rbDaysTime.IsChecked.Value) // günlük
+                    {
+                        lblWorkingTimeTask.Text = Resources["dailyTime"].ToString();
+                    }
+                    else if (rbWeeklyTime.IsChecked.Value) // haftalık
+                    {
+                        lblWorkingTimeTask.Text = Resources["weeklyTime"].ToString();
+                    }
+                    else if (rbPeriodic.IsChecked.Value) // periyodik
+                    {
+                        lblWorkingTimeTask.Text = Resources["periodic"].ToString();
+                    }
+                }
+                else
+                {
+                    lblWorkingTimeTask.Text = Resources["NCTuntimelyTask"].ToString();
+                }
             }
         }
         private void btnCreateTaskCancel_Click(object sender, RoutedEventArgs e)
@@ -156,18 +373,18 @@ namespace DiskBackupWpfGUI
                             gridIsCloud.Visibility = Visibility.Hidden;
                         }
 
-
+                        _taskInfo.BackupStorageInfo = item;
+                        _taskInfo.BackupStorageInfoId = item.Id;
 
                         break;
                     }
                 }
-
             }
         }
 
         private void btnTargetAdd_Click(object sender, RoutedEventArgs e)
         {
-            AddBackupAreaWindow addBackupArea = new AddBackupAreaWindow();
+            AddBackupAreaWindow addBackupArea = _createAddBackupWindow();
             addBackupArea.ShowDialog();
 
             //karşılaştırma yapıp ekleneni yeniden gösteriyoruz
@@ -182,7 +399,8 @@ namespace DiskBackupWpfGUI
                 }
             }
 
-            cbTargetBackupArea.ItemsSource = MainWindow.GetBackupStorages(volumeList, _backupStorageService.BackupStorageInfoList());
+            _backupStorageInfoList = MainWindow.GetBackupStorages(volumeList, _backupStorageService.BackupStorageInfoList());
+            cbTargetBackupArea.ItemsSource = _backupStorageInfoList;
         }
 
         #region Arrow Button
@@ -395,14 +613,39 @@ namespace DiskBackupWpfGUI
 
         private void btnDaysTimeDays_Click(object sender, RoutedEventArgs e)
         {
-            ChooseDayAndMounthsWindow chooseDays = new ChooseDayAndMounthsWindow(true);
-            chooseDays.ShowDialog();
+            //ChooseDayAndMounthsWindow chooseDays = new ChooseDayAndMounthsWindow(true);
+            //chooseDays.ShowDialog();
+            if (_taskInfo.BackupTaskInfo.Days == null)
+            {
+                ChooseDayAndMounthsWindow chooseDays = new ChooseDayAndMounthsWindow(true);
+                chooseDays.ShowDialog();
+                _taskInfo.BackupTaskInfo.Days = ChooseDayAndMounthsWindow._days;
+            }
+            else
+            {
+                // doldurma yap
+                ChooseDayAndMounthsWindow chooseDays = new ChooseDayAndMounthsWindow(true, _taskInfo.BackupTaskInfo.Days);
+                chooseDays.ShowDialog();
+                _taskInfo.BackupTaskInfo.Days = ChooseDayAndMounthsWindow._days;
+            }
         }
 
         private void btnWeeklyTimeWeek_Click(object sender, RoutedEventArgs e)
         {
-            ChooseDayAndMounthsWindow chooseMounths = new ChooseDayAndMounthsWindow(false);
-            chooseMounths.ShowDialog();
+            //ChooseDayAndMounthsWindow chooseMounths = new ChooseDayAndMounthsWindow(false);
+            //chooseMounths.ShowDialog();
+            if (_taskInfo.BackupTaskInfo.Months == null)
+            {
+                ChooseDayAndMounthsWindow chooseMounths = new ChooseDayAndMounthsWindow(false);
+                chooseMounths.ShowDialog();
+                _taskInfo.BackupTaskInfo.Months = ChooseDayAndMounthsWindow._months;
+            }
+            else
+            {
+                ChooseDayAndMounthsWindow chooseDays = new ChooseDayAndMounthsWindow(false, _taskInfo.BackupTaskInfo.Months);
+                chooseDays.ShowDialog();
+                _taskInfo.BackupTaskInfo.Months = ChooseDayAndMounthsWindow._months;
+            }
         }
 
         private bool _daysBtnControl = false;
@@ -467,6 +710,104 @@ namespace DiskBackupWpfGUI
                 lblTabHeader.Text = Resources["summary"].ToString();
                 lblTabContent.Text = Resources["NCTSummaryContent"].ToString();
             }
+        }
+
+        private bool ConfirmNotEmpty()
+        {
+            bool errorFlag = false;
+
+            // boş geçilmeme kontrolü
+            if (txtTaskName.Text.Equals("") || cbTargetBackupArea.SelectedIndex == -1 || txtRetentionTime.Text.Equals("") || 
+                txtFullBackup.Text.Equals("") || txtNarRetentionTime.Text.Equals("") || txtNarFullBackup.Text.Equals(""))
+            {
+                errorFlag = true;
+            }
+            else if (checkAutoRun.IsChecked.Value) // zamanlama tabı için
+            {
+                if (rbDaysTime.IsChecked.Value)
+                {
+                    if (tpDaysTime.Value.ToString().Equals(""))
+                    {
+                        errorFlag = true;
+                    }
+                    else if (cbDaysTime.SelectedIndex == 2) // belirli günler seçilmeli
+                    {
+                        if (ChooseDayAndMounthsWindow._days == null)
+                        {
+                            errorFlag = true;
+                        }
+                    }
+                }
+                else if (rbWeeklyTime.IsChecked.Value)
+                {
+                    if (tpWeeklyTime.Value.ToString().Equals(""))
+                    {
+                        errorFlag = true;
+                    }
+                    else // aylar seçilmeli
+                    {
+                        if (ChooseDayAndMounthsWindow._months == null)
+                        {
+                            errorFlag = true;
+                        }
+                    }
+                }
+                else if (rbPeriodic.IsChecked.Value)
+                {
+                    if (txtPeriodic.Text.Equals(""))
+                    {
+                        errorFlag = true;
+                    }
+                }
+                else // radiobuttonlar seçili değil
+                {
+                    errorFlag = true;
+                }
+            }
+            if (checkTimeFailDesc.IsChecked.Value)
+            {
+                if (txtTimeFailDesc.Text.Equals("") || txtTimeWait.Text.Equals(""))
+                {
+                    errorFlag = true;
+                }
+            }
+
+            return errorFlag;
+        }
+
+        private TaskInfo SaveToDatabase()
+        {
+            //backupTask kaydetme
+            var resultBackupTask = _backupTaskDal.Add(_taskInfo.BackupTaskInfo);
+            if (resultBackupTask == null)
+            {
+                MessageBox.Show("Ekleme başarısız.", "NARBULUT DİYOR Kİ;", MessageBoxButton.OK, MessageBoxImage.Error);
+                return null;
+            }
+
+            //backupTask kaydetme
+            _taskInfo.StatusInfo.TaskName = _taskInfo.Name;
+            _taskInfo.StatusInfo.SourceObje = _taskInfo.StrObje;
+            var resultStatusInfo = _statusInfoDal.Add(_taskInfo.StatusInfo);
+            if (resultStatusInfo == null)
+            {
+                MessageBox.Show("Ekleme başarısız.", "NARBULUT DİYOR Kİ;", MessageBoxButton.OK, MessageBoxImage.Error);
+                return null;
+            }
+
+            // task kayıdı
+            _taskInfo.Status = Resources["Ready"].ToString();
+            _taskInfo.StatusInfoId = resultStatusInfo.Id;
+            _taskInfo.BackupTaskId = resultBackupTask.Id;
+            _taskInfo.LastWorkingDate = Convert.ToDateTime("01/01/0002");
+            var resultTaskInfo = _taskInfoDal.Add(_taskInfo);
+            if (resultTaskInfo == null)
+            {
+                MessageBox.Show("Ekleme başarısız.", "NARBULUT DİYOR Kİ;", MessageBoxButton.OK, MessageBoxImage.Error);
+                return null;
+            }
+
+            return resultTaskInfo;
         }
 
     }

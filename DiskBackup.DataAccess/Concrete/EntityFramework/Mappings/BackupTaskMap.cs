@@ -29,7 +29,7 @@ namespace DiskBackup.DataAccess.Concrete.EntityFramework.Mappings
             Property(x => x.FailNumberTryAgain).HasColumnName("fail_number_try_again");
             Property(x => x.WaitNumberTryAgain).HasColumnName("wait_number_try_again");
             Property(x => x.AutoType).HasColumnName("auto_run_type");
-            Property(x => x.StartTime).HasColumnName("start_time");
+            //Property(x => x.StartTime).HasColumnName("start_time");
             Property(x => x.Days).HasColumnName("days");
             Property(x => x.Months).HasColumnName("months");
             Property(x => x.WeeklyTime).HasColumnName("weekly_time");

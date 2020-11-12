@@ -105,7 +105,7 @@
                 <Grid Background="White">
                     <StackPanel Margin="10,10,20,10">
                         <TextBlock Text="{DynamicResource BackupType}" Margin="0,0,0,20" />
-                        <RadioButton Name="rbBTDifferential" GroupName="rbBackupType" Content="{DynamicResource diff}" />
+                        <RadioButton Name="rbBTDifferential" GroupName="rbBackupType" Content="{DynamicResource diff}" IsChecked="True"/>
                         <TextBlock Text="{DynamicResource diffDescription}" Margin="40,10,0,20" />
                         <RadioButton Name="rbBTIncremental" GroupName="rbBackupType" Content="{DynamicResource inc}"/>
                         <TextBlock Text="{DynamicResource incDescription}" Margin="40,10,0,20" />
@@ -179,7 +179,7 @@
                                     </StackPanel>
                                     <TextBlock Text="{DynamicResource day}" Margin="10,0,0,0" VerticalAlignment="Center"></TextBlock>
                                 </StackPanel>
-                                <CheckBox Content="{DynamicResource fullOverwrite}" Margin="0,10" IsChecked="True"/>
+                                <CheckBox Name="chbFullOverwrite" Content="{DynamicResource fullOverwrite}" Margin="0,10" IsChecked="True"/>
                                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                     <TextBlock Text="{DynamicResource fullBackup}" VerticalAlignment="Center"/>
                                     <TextBox Name="txtFullBackup" Text="2" Width="50" Height="28" FontSize="13" Margin="35,0,0,0" VerticalContentAlignment="Center" MaxLength="3"/>
@@ -233,7 +233,7 @@
                                     </StackPanel>
                                     <TextBlock Text="{DynamicResource day}" Margin="10,0,0,0" VerticalAlignment="Center"></TextBlock>
                                 </StackPanel>
-                                <CheckBox Content="{DynamicResource fullOverwrite}" Margin="0,10" IsChecked="True"/>
+                                <CheckBox Name="chbNarFullOverwrite" Content="{DynamicResource fullOverwrite}" Margin="0,10" IsChecked="True"/>
                                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                     <TextBlock Text="{DynamicResource fullBackup}" VerticalAlignment="Center"/>
                                     <TextBox Name="txtNarFullBackup" Text="2" Width="50" Height="28" FontSize="13" Margin="35,0,0,0" VerticalContentAlignment="Center" MaxLength="3"/>
@@ -262,7 +262,7 @@
                             <StackPanel Orientation="Horizontal" Margin="0,20,0,10">
                                 <RadioButton Name="rbDaysTime" GroupName="rbtnSchedular" Content="{DynamicResource dailyTime}" Checked="rbDaysTime_Checked" Unchecked="rbDaysTime_Unchecked" VerticalContentAlignment="Center" Margin="5,0,0,0" />
                                 <StackPanel Name="stackDaysTime" Orientation="Horizontal" IsEnabled="False">
-                                    <xctk:TimePicker Name="tpDaysTime" Margin="50,0,0,0" MouseWheelActiveTrigger="Focused" Width="80" Height="26" Value="22:00" />
+                                    <xctk:TimePicker Name="tpDaysTime" Margin="50,0,0,0" MouseWheelActiveTrigger="Focused" Width="80" Height="26" Value="22:00"/>
                                     <ComboBox Name="cbDaysTime" Width="280" Margin="20,0,20,0" SelectedIndex="0" SelectionChanged="cbDaysTime_SelectionChanged">
                                         <ComboBoxItem Content="{DynamicResource everyday}"></ComboBoxItem>
                                         <ComboBoxItem Content="{DynamicResource weekdays}"></ComboBoxItem>
@@ -405,10 +405,10 @@
                                     <TextBlock Text=":" Margin="0,0,0,5" />
                                 </StackPanel>
                                 <StackPanel Grid.Column="2" >
-                                    <TextBlock Margin="0,0,0,5">İŞLETİM SİSTEMİ YEDEĞİ</TextBlock>
-                                    <TextBlock Margin="0,0,0,5">DUMMY DATA</TextBlock>
-                                    <TextBlock Margin="0,0,0,5">C_D_E</TextBlock>
-                                    <TextBlock Margin="0,0,0,5">BUGÜN ŞU SAAT HAFTADA 2 AYDA 4 YILDA 1</TextBlock>
+                                    <TextBlock Name="lblTaskName" Margin="0,0,0,5">İŞLETİM SİSTEMİ YEDEĞİ</TextBlock>
+                                    <TextBlock Name="lblBackupType" Margin="0,0,0,5">DUMMY DATA</TextBlock>
+                                    <TextBlock Name="lblBackupStorages" Margin="0,0,0,5"></TextBlock>
+                                    <TextBlock Name="lblWorkingTimeTask" Margin="0,0,0,5" Text="{DynamicResource NCTuntimelyTask}"></TextBlock>
                                 </StackPanel>
                             </Grid>
                         </StackPanel>

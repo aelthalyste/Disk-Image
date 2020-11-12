@@ -1,4 +1,7 @@
-﻿using DiskBackup.DataAccess.Core;
+﻿using Autofac;
+using DiskBackup.Business.Abstract;
+using DiskBackup.DataAccess.Abstract;
+using DiskBackup.DataAccess.Core;
 using DiskBackup.Entities.Concrete;
 using DiskBackup.TaskScheduler.Jobs;
 using Quartz;
@@ -11,23 +14,21 @@ using System.Threading.Tasks;
 
 namespace DiskBackup.TaskScheduler.Factory
 {
-    public class RestoreVolumeFactory : IJobFactory
+    public class DiskBackupJobFactory : IJobFactory
     {
-        private readonly IEntityRepository<BackupInfo> _backupInfoRepository;
-
-        public RestoreVolumeFactory(IEntityRepository<BackupInfo> backupInfoRepository)
+        private readonly ILifetimeScope _scope;
+        public DiskBackupJobFactory(ILifetimeScope scope)
         {
-            _backupInfoRepository = backupInfoRepository;
+            _scope = scope;
         }
-
         public IJob NewJob(TriggerFiredBundle bundle, IScheduler scheduler)
         {
-            return new RestoreVolumeJob(_backupInfoRepository);
+            return (IJob)_scope.Resolve(bundle.JobDetail.JobType);
         }
 
         public void ReturnJob(IJob job)
         {
-            throw new NotImplementedException();
+            //throw new NotImplementedException();
         }
     }
 }

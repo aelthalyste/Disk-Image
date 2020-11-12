@@ -167,10 +167,11 @@
                     </Grid.RowDefinitions>
                     <DockPanel>
                         <StackPanel>
-                            <Button Name="btnCreateTask" HorizontalAlignment="Left" Margin="10,4,85,4" Style="{StaticResource CreateTaskButton}" Width="110" Height="32" Grid.Column="0" Click="btnCreateTask_Click">
+                            <Button Name="btnCreateTask" HorizontalAlignment="Left" Margin="10,4,85,4" Style="{StaticResource CreateTaskButton}" 
+                                    Width="110" Height="32" Grid.Column="0" Click="btnCreateTask_Click" IsEnabled="False">
                                 <Button.Content>
                                     <StackPanel Orientation="Horizontal">
-                                        <Image Height="22">
+                                        <Image Height="26">
                                             <Image.Style>
                                                 <Style TargetType="Image">
                                                     <Setter Property="Source" Value="Resources/Icon/u58.png" />
@@ -181,7 +182,7 @@
                                     </StackPanel>
                                 </Button.Content>
                             </Button>
-                            <ListView Name="listViewDisk" MinHeight="370" Margin="5">
+                            <ListView Name="listViewDisk" MinHeight="370" Margin="5" SelectionChanged="listViewDisk_SelectionChanged">
                                 <ListView.View>
                                     <GridView>
                                         <GridViewColumn Width="40">
@@ -318,7 +319,7 @@
                         <RowDefinition />
                     </Grid.RowDefinitions>
                     <DockPanel>
-                        <ListView Name="listViewTasks" Grid.ColumnSpan="2" MinHeight="415" Margin="5,0,0,5" VerticalAlignment="Top" SelectionChanged="listViewTasks_SelectionChanged">
+                        <ListView Name="listViewTasks" Grid.ColumnSpan="2" MinHeight="415" Margin="5,0,0,5" VerticalAlignment="Top" SelectionChanged="listViewTasks_SelectionChanged" MouseDoubleClick="listViewTasks_MouseDoubleClick">
                             <ListView.View>
                                 <GridView>
                                     <GridViewColumn Width="40">
@@ -335,67 +336,72 @@
                                     <GridViewColumn Header="{DynamicResource type}" Width="65">
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
-                                                <TextBlock Text="{Binding TaskType}" TextAlignment="Left"/>
+                                                <TextBlock Style="{StaticResource MTBListViewType}" TextAlignment="Center"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
                                     <GridViewColumn Header="{DynamicResource taskName}" Width="135">
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
-                                                <TextBlock Text="{Binding TaskName}" TextAlignment="Left"/>
+                                                <TextBlock Text="{Binding Name}" TextAlignment="Left"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
                                     <GridViewColumn Header="{DynamicResource object}" Width="65" >
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
-                                                <TextBlock Text="{Binding Object}" TextAlignment="Center"/>
+                                                <TextBlock Text="{Binding Obje}" TextAlignment="Center"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
                                     <GridViewColumn Header="{DynamicResource statu}" Width="125" >
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
-                                                <TextBlock Text="{Binding Statu}" TextAlignment="Center"/>
+                                                <TextBlock Text="{Binding Status}" TextAlignment="Center"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
                                     <GridViewColumn Header="{DynamicResource lastStudy}" Width="125" >
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
-                                                <TextBlock Text="{Binding LastStudy}" TextAlignment="Center"/>
+                                                <TextBlock Text="{Binding LastWorkingDate, StringFormat='dd.MM.yyyy HH:mm'}" Style="{StaticResource MTBListViewLastWorkingDate}" TextAlignment="Center"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
                                     <GridViewColumn Header="{DynamicResource nextStudy}" Width="125" >
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
-                                                <TextBlock Text="{Binding NextStudy}" TextAlignment="Center"/>
+                                                <TextBlock Text="{Binding NextDate, StringFormat='dd.MM.yyyy HH:mm'}" TextAlignment="Center"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
                                     <GridViewColumn Header="{DynamicResource target}" Width="175" >
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
-                                                <TextBlock Text="{Binding Target.Name}" TextAlignment="Center"/>
+                                                <TextBlock Text="{Binding BackupStorageInfo.StorageName}" TextAlignment="Center"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
                                     <GridViewColumn Header="{DynamicResource description}" Width="175" >
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
-                                                <TextBlock Text="{Binding Description}" TextWrapping="Wrap" TextAlignment="Center"/>
+                                                <TextBlock Text="{Binding Descripiton}" TextWrapping="Wrap" TextAlignment="Center"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
                                 </GridView>
                             </ListView.View>
+                            <ListView.ItemContainerStyle>
+                                <Style TargetType="ListViewItem">
+                                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                </Style>
+                            </ListView.ItemContainerStyle>
                         </ListView>
                     </DockPanel>
                     <DockPanel Grid.Column="1" VerticalAlignment="Top" Height="415" Background="#F2F2F2">
                         <StackPanel HorizontalAlignment="Center">
                             <Button Name="btnTaskEdit" ToolTip="{DynamicResource edit}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,25,0,5" 
-                                    Style="{StaticResource ImageButton}" Grid.Column="1">
+                                    Style="{StaticResource ImageButton}" Grid.Column="1" IsEnabled="False">
                                 <Button.Content>
                                     <Image Height="25" Width="25" HorizontalAlignment="Center" VerticalAlignment="Center">
                                         <Image.Style>
@@ -412,7 +418,7 @@
                                 </Button.Content>
                             </Button>
                             <Button Name="btnTaskStart" ToolTip="{DynamicResource start}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5"  
-                                    Style="{StaticResource ImageButton}" Grid.Column="1">
+                                    Style="{StaticResource ImageButton}" Grid.Column="1" Click="btnTaskStart_Click" IsEnabled="False">
                                 <Button.Content>
                                     <Image Height="27" Width="27" HorizontalAlignment="Center" VerticalAlignment="Center">
                                         <Image.Style>
@@ -544,7 +550,7 @@
                                 </Button.Content>
                             </Button>
                             <Button Name="btnTaskDelete" ToolTip="{DynamicResource delete}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5" 
-                                    Style="{StaticResource ImageButton}" Grid.Column="1" >
+                                    Style="{StaticResource ImageButton}" Grid.Column="1" IsEnabled="False">
                                 <Button.Content>
                                     <Image HorizontalAlignment="Center" VerticalAlignment="Center">
                                         <Image.Style>
@@ -606,7 +612,7 @@
                                         Grid.Column="0" Click="btnRestore_Click" IsEnabled="False">
                                     <Button.Content>
                                         <StackPanel Orientation="Horizontal">
-                                            <Image Height="22">
+                                            <Image Height="26">
                                                 <Image.Style>
                                                     <Style TargetType="Image">
                                                         <Setter Property="Source" Value="Resources/Icon/u58.png" />
@@ -1163,7 +1169,7 @@
                         <RowDefinition/>
                     </Grid.RowDefinitions>
                     <DockPanel>
-                        <ListView Name="listViewLog" MinHeight="415" Margin="5,0,0,5" VerticalAlignment="Top" SelectionChanged="listViewLog_SelectionChanged">
+                        <ListView Name="listViewLog" MinHeight="415" Margin="5,0,0,5" VerticalAlignment="Top" SelectionChanged="listViewLog_SelectionChanged" MouseDoubleClick="listViewLog_MouseDoubleClick">
                             <ListView.View>
                                 <GridView>
                                     <GridViewColumn Width="50">
@@ -1190,14 +1196,14 @@
                                     <GridViewColumn Header="{DynamicResource type}" Width="125" >
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
-                                                <TextBlock Text="{Binding TaskInfo.Type}" TextAlignment="Center"/>
+                                                <TextBlock Text="{Binding Type}" TextAlignment="Center"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
                                     <GridViewColumn Header="{DynamicResource taskName}" Width="180" >
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
-                                                <TextBlock Text="{Binding TaskInfo.Name}" TextAlignment="Center"/>
+                                                <TextBlock Text="{Binding TaskInfoName}" TextAlignment="Center"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
@@ -1240,6 +1246,24 @@
                                                         <Setter Property="Source" Value="Resources/Icon/icons8_unavailable.ico"/>
                                                         <Setter Property="Height" Value="25"/>
                                                         <Setter Property="Width" Value="25"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Image.Style>
+                                    </Image>
+                                </Button.Content>
+                            </Button>
+                            <!---->
+                            <Button Name="btnRefreshActivity" ToolTip="{DynamicResource refresh}" Width="32" Height="32" HorizontalAlignment="Right" Margin="0,0,0,5" 
+                                    Style="{StaticResource ImageButton}" Grid.Column="1" Click="btnRefreshActivity_Click">
+                                <Button.Content>
+                                    <Image Height="28">
+                                        <Image.Style>
+                                            <Style TargetType="Image">
+                                                <Setter Property="Source" Value="Resources/Icon/icons8_refresh.ico" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsEnabled, RelativeSource={RelativeSource AncestorType=Button}}" Value="False">
+                                                        <Setter Property="Source" Value="Resources/Icon/icons8_synchronize_disable.ico"/>
                                                     </DataTrigger>
                                                 </Style.Triggers>
                                             </Style>

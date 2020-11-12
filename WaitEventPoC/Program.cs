@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -13,14 +14,26 @@ namespace WaitEventPoC
 
         static void Main(string[] args)
         {
-            var backup = new BackupManager();
-            backup.CreateBackup();
-            Console.ReadLine();
-            backup.Pause();
-            Console.ReadLine();
-            backup.Resume();
-            Console.ReadLine();
-            backup.CancelTask();
+            //var backup = new BackupManager();
+            //backup.CreateBackup();
+            //Console.ReadLine();
+            //backup.Pause();
+            //Console.ReadLine();
+            //backup.Resume();
+            //Console.ReadLine();
+            //backup.CancelTask();
+            try
+            {
+                using (new NetworkConnection(@"\\10.34.0.146\source", new System.Net.NetworkCredential("cloudne", "123456")))
+                {
+                    var dirInfo = new DirectoryInfo(@"\\10.34.0.146\");
+                    Console.WriteLine(dirInfo.Exists);
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+            }
             Console.ReadLine();
         }
         static void Pause()

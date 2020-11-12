@@ -158,7 +158,7 @@
                                     <TextBlock Text=":" Margin="0,0,0,5" />
                                 </StackPanel>
                                 <StackPanel Grid.Column="2">
-                                    <TextBlock Name="lblName" Text="İşletim Sistemi Yedeği" Margin="0,0,0,5" />
+                                    <TextBlock Name="lblTaskName" Text="İşletim Sistemi Yedeği" Margin="0,0,0,5" />
                                     <TextBlock Name="lblArea2Restore" Text="C:" Margin="0,0,0,5" />
                                     <TextBlock Name="lblDisk2Restore" Text="1" Margin="0,0,0,5" />
                                     <TextBlock Name="lblBootableArea" Text="Evet" Margin="0,0,0,5" />

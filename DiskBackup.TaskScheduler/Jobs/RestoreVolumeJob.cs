@@ -1,5 +1,6 @@
 ﻿using DiskBackup.Business.Abstract;
 using DiskBackup.Business.Concrete;
+using DiskBackup.DataAccess.Abstract;
 using DiskBackup.DataAccess.Core;
 using DiskBackup.Entities.Concrete;
 using Quartz;
@@ -14,18 +15,18 @@ namespace DiskBackup.TaskScheduler.Jobs
     public class RestoreVolumeJob : IJob
     {
         private readonly IBackupService _backupService;
-        private readonly IEntityRepository<BackupInfo> _backupInfoRepository;
+        private readonly IBackupInfoDal _backupInfoRepository;
 
-        public RestoreVolumeJob(IEntityRepository<BackupInfo> backupInfoRepository)
+        public RestoreVolumeJob(IBackupInfoDal backupInfoRepository, IBackupService backupService)
         {
-            _backupService = new BackupManager();
             _backupInfoRepository = backupInfoRepository;
+            _backupService = backupService;
         }
 
         public Task Execute(IJobExecutionContext context)
         {
             var volumeLetter = (char)context.JobDetail.JobDataMap["volumeLetter"];
-            var backupInfoId = (int)context.JobDetail.JobDataMap["backupInfoId"];
+            var backupInfoId = int.Parse(context.JobDetail.JobDataMap["backupInfoId"].ToString());
 
             var backupInfo = _backupInfoRepository.Get(x => x.Id == backupInfoId);
 

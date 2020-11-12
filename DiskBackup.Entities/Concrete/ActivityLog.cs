@@ -19,6 +19,7 @@ namespace DiskBackup.Entities.Concrete
         public DateTime EndDate { get; set; }
         public StatusType Status { get; set; }  // Enum yapıp app.xaml'da gösterim anı için dictionary kullanımından vazgeçilebilir....
         public string StrStatus { get; set; }
+        public DetailedMissionType Type { get; set; }
 
     }
 
@@ -26,6 +27,14 @@ namespace DiskBackup.Entities.Concrete
     {
         Success = 0,
         Fail = 1
+    }
+
+    public enum DetailedMissionType
+    {
+        Diff = 0,
+        Inc = 1,
+        Full = 2,
+        Restore = 3
     }
 
 }

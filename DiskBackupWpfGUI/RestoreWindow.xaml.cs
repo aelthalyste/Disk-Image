@@ -65,7 +65,7 @@ namespace DiskBackupWpfGUI
             // özet yazımı
             if (RTabControl.SelectedIndex == 2)
             {
-                lblName.Text = txtTaskName.Text;
+                lblTaskName.Text = txtTaskName.Text;
 
                 if (rbStartNow.IsChecked.Value) // hemen çalıştır
                 {

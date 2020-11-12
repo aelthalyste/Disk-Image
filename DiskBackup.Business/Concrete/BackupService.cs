@@ -1,4 +1,5 @@
 ﻿using DiskBackup.Business.Abstract;
+using DiskBackup.DataAccess.Abstract;
 using DiskBackup.DataAccess.Concrete.EntityFramework;
 using DiskBackup.DataAccess.Core;
 using DiskBackup.Entities.Concrete;
@@ -15,23 +16,22 @@ using System.Threading.Tasks;
 
 namespace DiskBackup.Business.Concrete
 {
-    public class BackupManager : IBackupService
+    public class BackupService : IBackupService
     {
         private DiskTracker _diskTracker = new DiskTracker();
         private CSNarFileExplorer _cSNarFileExplorer = new CSNarFileExplorer();
 
-        private ManualResetEvent _manualResetEvent = new ManualResetEvent(true); // Melik Bey ile beraber bakacağız DI'dan önce
-        private CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        private Dictionary<int,ManualResetEvent> _taskEventMap = new Dictionary<int, ManualResetEvent>(); // aynı işlem Stopwatch ve cancellationtoken source için de yapılacak ancak Quartz'ın pause, resume ve cancel işlemleri düzgün çalışıyorsa kullanılmayacak
+        private Dictionary<int,CancellationTokenSource> _cancellationTokenSource = new Dictionary<int, CancellationTokenSource>();
         private bool _isStarted = false;
 
-        private Stopwatch _timeElapsed = new Stopwatch();
-        private StatusInfo _statusInfo = new StatusInfo();
+        private Dictionary<int,Stopwatch> _timeElapsed = new Dictionary<int, Stopwatch>();
 
-        private readonly IEntityRepository<StatusInfo> _statusInfoRepository; // status bilgilerini veritabanına yazabilmek için gerekli
+        private readonly IStatusInfoDal _statusInfoDal; // status bilgilerini veritabanına yazabilmek için gerekli
 
-        public BackupManager()
+        public BackupService(IStatusInfoDal statusInfoRepository)
         {
-            _statusInfoRepository = new EfStatusInfoDal();
+            _statusInfoDal = statusInfoRepository;
         }
 
         public bool InitTracker()
@@ -45,7 +45,6 @@ namespace DiskBackup.Business.Concrete
         {
             //rootDir string biz buraya ne dönücez
             _cSNarFileExplorer.CW_Init('C', 0, "");
-
         }
 
         public List<DiskInformation> GetDiskList()
@@ -177,11 +176,16 @@ namespace DiskBackup.Business.Concrete
 
         public bool CreateIncDiffBackup(TaskInfo taskInfo)
         {
-            _statusInfo = taskInfo.StatusInfo;
-            _timeElapsed.Start();
+            var statusInfo = _statusInfoDal.Get(si => si.Id == taskInfo.StatusInfoId); //her task için uygulanmalı
+
+            var manualResetEvent = new ManualResetEvent(true);
+            var timeElapsed = new Stopwatch();
+            _taskEventMap[taskInfo.Id] = manualResetEvent;
+            _timeElapsed[taskInfo.Id] = timeElapsed;
+            _timeElapsed[taskInfo.Id].Start();
 
             _isStarted = true;
-            var cancellationToken = _cancellationTokenSource.Token;
+            var cancellationToken = _cancellationTokenSource[taskInfo.Id].Token;
 
             string letters = taskInfo.StrObje;
 
@@ -192,65 +196,65 @@ namespace DiskBackup.Business.Concrete
             int Read = 0;
             bool result = false;
 
-            _statusInfo.TaskName = taskInfo.Name;
-            _statusInfo.FileName = taskInfo.BackupStorageInfo.Path + "/" + str.MetadataFileName;
-            _statusInfo.SourceObje = taskInfo.StrObje;
+            statusInfo.TaskName = taskInfo.Name;
+            statusInfo.FileName = taskInfo.BackupStorageInfo.Path + "/" + str.MetadataFileName;
+            statusInfo.SourceObje = taskInfo.StrObje;
 
-            Task.Run(() =>
+            foreach (var letter in letters) // C D E F
             {
-                foreach (var letter in letters) // C D E F
+                if (_diskTracker.CW_SetupStream(letter, (int)taskInfo.BackupTaskInfo.Type, str)) // 0 diff, 1 inc, full (2) ucu gelmediğinden ayrılabilir veya aynı devam edebilir
                 {
-                    if (_diskTracker.CW_SetupStream(letter, (int)taskInfo.BackupTaskInfo.Type, str)) // 0 diff, 1 inc, full (2) ucu gelmediğinden ayrılabilir veya aynı devam edebilir
+                    unsafe
                     {
-                        unsafe
+                        fixed (byte* BAddr = &buffer[0])
                         {
-                            fixed (byte* BAddr = &buffer[0])
+                            FileStream file = File.Create(taskInfo.BackupStorageInfo.Path + str.FileName); //backupStorageInfo path alınıcak
+                            while (true)
                             {
-                                FileStream file = File.Create(taskInfo.BackupStorageInfo.Path + str.FileName); //backupStorageInfo path alınıcak
-                                while (true)
+                                if (cancellationToken.IsCancellationRequested)
                                 {
-                                    if (cancellationToken.IsCancellationRequested)
-                                    {
-                                        //cleanup 
-                                        _diskTracker.CW_TerminateBackup(false, letter);
-                                        return;
-                                    }
-                                    _manualResetEvent.WaitOne();
-
-                                    Read = _diskTracker.CW_ReadStream(BAddr, letter, bufferSize);
-                                    file.Write(buffer, 0, Read);
-                                    BytesReadSoFar += Read;
-
-
-                                    _statusInfo.DataProcessed = BytesReadSoFar;
-                                    _statusInfo.TotalDataProcessed = (long)str.CopySize;
-                                    _statusInfo.AverageDataRate = ((_statusInfo.TotalDataProcessed / 1024.0) / 1024.0) / (_timeElapsed.ElapsedMilliseconds / 1000); // MB/s
-                                    _statusInfo.InstantDataRate = ((BytesReadSoFar / 1024.0) / 1024.0) / (_timeElapsed.ElapsedMilliseconds / 1000); // MB/s
-
-                                    if (Read != bufferSize)
-                                        break;
+                                    //cleanup 
+                                    _diskTracker.CW_TerminateBackup(false, letter);
+                                    _taskEventMap.Remove(taskInfo.Id);
+                                    manualResetEvent.Dispose();
+                                    return false;
                                 }
-                                result = (long)str.CopySize == BytesReadSoFar;
-                                _diskTracker.CW_TerminateBackup(result, letter); //işlemi başarılı olup olmadığı cancel gelmeden
+                                manualResetEvent.WaitOne();
 
-                                try
-                                {
-                                    File.Copy(str.MetadataFileName, taskInfo.BackupStorageInfo.Path + str.MetadataFileName); //backupStorageInfo path alınıcak
-                                    //backupStorageInfo.Path ters slaş '\' ile bitmeli
-                                }
-                                catch (IOException iox)
-                                {
-                                    //MessageBox.Show(iox.Message);
-                                }
-                                file.Close();
+                                Read = _diskTracker.CW_ReadStream(BAddr, letter, bufferSize);
+                                file.Write(buffer, 0, Read);
+                                BytesReadSoFar += Read;
+
+
+                                statusInfo.DataProcessed = BytesReadSoFar;
+                                statusInfo.TotalDataProcessed = (long)str.CopySize;
+                                statusInfo.AverageDataRate = ((statusInfo.TotalDataProcessed / 1024.0) / 1024.0) / (_timeElapsed[taskInfo.Id].ElapsedMilliseconds / 1000); // MB/s
+                                statusInfo.InstantDataRate = ((BytesReadSoFar / 1024.0) / 1024.0) / (_timeElapsed[taskInfo.Id].ElapsedMilliseconds / 1000); // MB/s
+
+                                if (Read != bufferSize)
+                                    break;
                             }
+                            result = (long)str.CopySize == BytesReadSoFar;
+                            _diskTracker.CW_TerminateBackup(result, letter); //işlemi başarılı olup olmadığı cancel gelmeden
+
+                            try
+                            {
+                                File.Copy(str.MetadataFileName, taskInfo.BackupStorageInfo.Path + str.MetadataFileName); //backupStorageInfo path alınıcak
+                                                                                                                         //backupStorageInfo.Path ters slaş '\' ile bitmeli
+                            }
+                            catch (IOException iox)
+                            {
+                                //MessageBox.Show(iox.Message);
+                            }
+                            file.Close();
                         }
                     }
-                    _statusInfo.TimeElapsed = _timeElapsed.ElapsedMilliseconds;
-                    _statusInfoRepository.Update(_statusInfo);
                 }
-            });
-
+                statusInfo.TimeElapsed = _timeElapsed[taskInfo.Id].ElapsedMilliseconds;
+                _statusInfoDal.Update(statusInfo);
+            }
+            manualResetEvent.Dispose();
+            _taskEventMap.Remove(taskInfo.Id);
             return result;
         }
 
@@ -262,36 +266,50 @@ namespace DiskBackup.Business.Concrete
         public void PauseTask(TaskInfo taskInfo)
         {
             if (!_isStarted) throw new Exception("Backup is not started");
-            _timeElapsed.Stop();
+            _timeElapsed[taskInfo.Id].Stop();
+            
+            var statusInfo = _statusInfoDal.Get(si => si.Id == taskInfo.StatusInfoId);
 
-            _statusInfo.TimeElapsed = _timeElapsed.ElapsedMilliseconds;
-            _statusInfoRepository.Update(_statusInfo);
-
-            _manualResetEvent.Reset();
+            statusInfo.TimeElapsed = _timeElapsed[taskInfo.Id].ElapsedMilliseconds;
+            _statusInfoDal.Update(statusInfo);
+            if (_taskEventMap.ContainsKey(taskInfo.Id))
+            {
+                _taskEventMap[taskInfo.Id].Reset();
+            }
         }
 
         public void CancelTask(TaskInfo taskInfo)
         {
-            _cancellationTokenSource.Cancel();
+            _cancellationTokenSource[taskInfo.Id].Cancel();
             _isStarted = false;
-            _timeElapsed.Stop();
+            _timeElapsed[taskInfo.Id].Stop();
 
-            _statusInfo.TimeElapsed = _timeElapsed.ElapsedMilliseconds;
-            _statusInfoRepository.Update(_statusInfo);
+            var statusInfo = _statusInfoDal.Get(si => si.Id == taskInfo.StatusInfoId); 
 
-            _timeElapsed.Reset();
-            _manualResetEvent.Set();
+            statusInfo.TimeElapsed = _timeElapsed[taskInfo.Id].ElapsedMilliseconds;
+            _statusInfoDal.Update(statusInfo);
+
+            _timeElapsed[taskInfo.Id].Reset();
+            if (_taskEventMap.ContainsKey(taskInfo.Id))
+            {
+                _taskEventMap[taskInfo.Id].Set();
+            }
         }
 
         public void ResumeTask(TaskInfo taskInfo)
         {
             if (!_isStarted) throw new Exception("Backup is not started");
-            _timeElapsed.Start();
+            _timeElapsed[taskInfo.Id].Start();
 
-            _statusInfo.TimeElapsed = _timeElapsed.ElapsedMilliseconds;
-            _statusInfoRepository.Update(_statusInfo);
+            var statusInfo = _statusInfoDal.Get(si => si.Id == taskInfo.StatusInfoId); 
 
-            _manualResetEvent.Set();
+            statusInfo.TimeElapsed = _timeElapsed[taskInfo.Id].ElapsedMilliseconds;
+            _statusInfoDal.Update(statusInfo);
+
+            if (_taskEventMap.ContainsKey(taskInfo.Id))
+            {
+                _taskEventMap[taskInfo.Id].Set();
+            }
         }
 
         public List<FilesInBackup> GetFileInfoList()

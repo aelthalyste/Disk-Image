@@ -13,6 +13,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
+using DiskBackup.Business.Abstract;
 using DiskBackup.Business.Concrete;
 using DiskBackup.Entities.Concrete;
 using NarDIWrapper;
@@ -24,14 +25,14 @@ namespace DiskBackupWpfGUI
     /// </summary>
     public partial class FileExplorerWindow : Window
     {
-        BackupManager _backupManager = new BackupManager();
+        IBackupService _backupManager;
         List<FilesInBackup> _filesInBackupList = new List<FilesInBackup>();
         private bool _fileAllControl;
 
-        public FileExplorerWindow()
+        public FileExplorerWindow(IBackupService backupManager)
         {
             InitializeComponent();
-
+            _backupManager = backupManager;
             BackupInfo backupInfo = new BackupInfo();
 
             _backupManager.InitFileExplorer(backupInfo);
@@ -42,7 +43,7 @@ namespace DiskBackupWpfGUI
             listViewFileExplorer.ItemsSource = _filesInBackupList;
             SortItems();
             txtfileExplorerPath.Text = _backupManager.GetCurrentDirectory();
-
+            
         }
 
         #region Title Bar
