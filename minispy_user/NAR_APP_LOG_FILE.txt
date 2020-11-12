@@ -1,0 +1,180 @@
+[18:48:12]: 0	-> [18:48:12]: DIR: MSOCache                                           0 KB
+[18:48:12]: 1	-> [18:48:12]: $AttrDef                                           2 KB
+[18:48:12]: 2	-> [18:48:12]: $BadClus                                           0 KB
+[18:48:12]: 3	-> [18:48:12]: $Bitmap                                            7372 KB
+[18:48:12]: 4	-> [18:48:12]: $Boot                                              8 KB
+[18:48:12]: 5	-> [18:48:12]: DIR: $Extend                                            0 KB
+[18:48:12]: 6	-> [18:48:12]: $LogFile                                           65536 KB
+[18:48:12]: 7	-> [18:48:12]: $MFT                                               670976 KB
+[18:48:12]: 8	-> [18:48:12]: $MFTMirr                                           4 KB
+[18:48:12]: 9	-> [18:48:12]: DIR: $Recycle.Bin                                       0 KB
+[18:48:12]: 10	-> [18:48:13]: DIR: $Secure                                            0 KB
+[18:48:13]: 11	-> [18:48:13]: $UpCase                                            128 KB
+[18:48:13]: 12	-> [18:48:13]: $Volume                                            0 KB
+[18:48:13]: 13	-> [18:48:13]: DIR: .                                                  0 KB
+[18:48:13]: 14	-> [18:48:13]: DIR: Batuhan                                            0 KB
+[18:48:13]: 15	-> [18:48:13]: bootTel.dat                                        0 KB
+[18:48:13]: 16	-> [18:48:13]: DIR: Documents and Settings                             0 KB
+[18:48:13]: 17	-> [18:48:13]: hiberfil.sys                                       1636852 KB
+[18:48:13]: 18	-> [18:48:13]: DIR: Intel                                              0 KB
+[18:48:13]: 19	-> [18:48:13]: NARCMDOUTPUT                                       0 KB
+[18:48:13]: 20	-> [18:48:13]: DIR: OneDriveTemp                                       0 KB
+[18:48:13]: 21	-> [18:48:13]: pagefile.sys                                       11402812 KB
+[18:48:13]: 22	-> [18:48:13]: DIR: PerfLogs                                           0 KB
+[18:48:13]: 23	-> [18:48:13]: DIR: Program Files                                      0 KB
+[18:48:14]: 24	-> [18:48:14]: DIR: Program Files (x86)                                0 KB
+[18:48:14]: 25	-> [18:48:14]: DIR: ProgramData                                        0 KB
+[18:48:14]: 26	-> [18:48:14]: DIR: Recovery                                           0 KB
+[18:48:14]: 27	-> [18:48:14]: DIR: slprj                                              279275953455104 KB
+[18:48:14]: 28	-> [18:48:14]: DIR: ST                                                 0 KB
+[18:48:14]: 29	-> [18:48:14]: DIR: SteamLibrary                                       0 KB
+[18:48:14]: 30	-> [18:48:14]: swapfile.sys                                       278528 KB
+[18:48:14]: 31	-> [18:48:14]: DIR: System Volume Information                          279275953455104 KB
+[18:48:14]: 32	-> [18:48:14]: DIR: Users                                              0 KB
+[18:48:14]: 33	-> [18:48:14]: DIR: Windows                                            0 KB
+[18:48:16]: Pushing 204837 to stack
+[18:48:16]: 0	-> [18:48:16]: DIR: addins                                             0 KB
+[18:48:16]: 1	-> [18:48:16]: DIR: appcompat                                          0 KB
+[18:48:16]: 2	-> [18:48:16]: DIR: apppatch                                           0 KB
+[18:48:16]: 3	-> [18:48:16]: DIR: AppReadiness                                       0 KB
+[18:48:16]: 4	-> [18:48:16]: DIR: assembly                                           0 KB
+[18:48:16]: 5	-> [18:48:16]: DIR: bcastdvr                                           0 KB
+[18:48:16]: 6	-> [18:48:16]: DIR: bfsvc.exe                                          71 KB
+[18:48:16]: 7	-> [18:48:16]: DIR: BitLockerDiscoveryVolumeContents                   0 KB
+[18:48:17]: 8	-> [18:48:17]: DIR: Boot                                               0 KB
+[18:48:17]: 9	-> [18:48:17]: bootstat.dat                                       66 KB
+[18:48:17]: 10	-> [18:48:17]: DIR: Branding                                           0 KB
+[18:48:17]: 11	-> [18:48:17]: DIR: CbsTemp                                            0 KB
+[18:48:17]: 12	-> [18:48:17]: DIR: clspack.exe                                        43 KB
+[18:48:17]: 13	-> [18:48:17]: DIR: Containers                                         0 KB
+[18:48:17]: 14	-> [18:48:17]: DIR: CSC                                                0 KB
+[18:48:17]: 15	-> [18:48:17]: DIR: Cursors                                            0 KB
+[18:48:17]: 16	-> [18:48:17]: DIR: debug                                              0 KB
+[18:48:17]: 17	-> [18:48:17]: diagerr.xm[18:48:17]: 18	-> [18:48:17]: DIR: diagnostics                                        0 KB
+[18:48:17]: 19	-> [18:48:17]: DIR: DiagTrack                                          0 KB
+[18:48:17]: 20	-> [18:48:17]: diagwrn.xml                                        7 KB
+[18:48:17]: 21	-> [18:48:17]: DIR: DigitalLocker                                      0 KB
+[18:48:17]: 22	-> [18:48:17]: DirectX.log                                        68 KB
+[18:48:17]: 23	-> [18:48:17]: DPINST.LOG                                         19 KB
+[18:48:17]: 24	-> [18:48:17]: DIR: ELAMBKUP                                           0 KB
+[18:48:17]: 25	-> [18:48:17]: DIR: en-US                                              0 KB
+[18:48:17]: 26	-> [18:48:17]: DIR: explorer.exe                                       4516 KB
+[18:48:17]: 27	-> [18:48:17]: extrac32.exe                                       101 KB
+[18:48:17]: 28	-> [18:48:17]: filog.ini                                          0 KB
+[18:48:17]: 29	-> [18:48:18]: DIR: Fonts                                              0 KB
+[18:48:18]: 30	-> [18:48:18]: FPWINProHtmlHelp.bmp                               5 KB
+[18:48:18]: 31	-> [18:48:18]: FRONTPG.INI                                        0 KB
+[18:48:18]: 32	-> [18:48:18]: DIR: GameBarPresenceWriter                              0 KB
+[18:48:18]: 33	-> [18:48:18]: DIR: Globalization                                      0 KB
+[18:48:18]: 34	-> [18:48:18]: DIR: Help                                               0 KB
+[18:48:18]: 35	-> [18:48:18]: DIR: HelpPane.exe                                       1035 KB
+[18:48:18]: 36	-> [18:48:18]: DIR: hh.exe                                             18 KB
+[18:48:18]: 37	-> [18:48:18]: DIR: IdentityCRL                                        0 KB
+[18:48:18]: 38	-> [18:48:18]: DIR: IME                                                0 KB
+[18:48:18]: 39	-> [18:48:18]: DIR: ImmersiveControlPanel                              0 KB
+[18:48:18]: 40	-> [18:48:18]: DIR: INF                                                0 KB
+[18:48:18]: 41	-> [18:48:18]: DIR: Minidump                                           0 KB
+[18:48:18]: 42	-> [18:48:18]: DIR: ModemLogs                                          0 KB
+[18:48:18]: 43	-> [18:48:18]: DIR: msapps                                             0 KB
+[18:48:18]: 44	-> [18:48:18]: MSDFMAP.INI                                        1 KB
+[18:48:18]: 45	-> [18:48:18]: MusiccityDownload.exe                              29 KB
+[18:48:18]: 46	-> [18:48:18]: NARBOOTFILE                                        0 KB
+[18:48:18]: 47	-> [18:48:18]: DIR: notepad.ex[18:48:18]: 48	-> [18:48:18]: NvContainerRecovery.bat                            1 KB
+[18:48:18]: 49	-> [18:48:18]: DIR: OCR                                                0 KB
+[18:48:18]: 50	-> [18:48:18]: ODBC.INI                                           0 KB
+[18:48:18]: 51	-> [18:48:19]: DIR: ODBCINST.INI                                       0 KB
+[18:48:19]: 52	-> [18:48:19]: DIR: Offline Web Pages                                  0 KB
+[18:48:19]: 53	-> [18:48:19]: DIR: Panther                                            0 KB
+[18:48:19]: 54	-> [18:48:19]: DIR: PCHEALTH                                           0 KB
+[18:48:19]: 55	-> [18:48:19]: DIR: Performance                                        0 KB
+[18:48:19]: 56	-> [18:48:19]: PFRO.log                                           92 KB
+[18:48:19]: 57	-> [18:48:19]: DIR: PidVid_List.dll                                    2 KB
+[18:48:19]: 58	-> [18:48:19]: DIR: PLA                                                0 KB
+[18:48:19]: 59	-> [18:48:19]: DIR: PolicyDefinitions                                  0 KB
+[18:48:19]: 60	-> [18:48:19]: DIR: Prefetch                                           0 KB
+[18:48:19]: 61	-> [18:48:19]: DIR: PrintDialog                                        0 KB
+[18:48:19]: 62	-> [18:48:19]: Professional.xml                                   34 KB
+[18:48:19]: 63	-> [18:48:19]: DIR: Provisioni[18:48:19]: 64	-> [18:48:19]: py.exe                                             888 KB
+[18:48:19]: 65	-> [18:48:19]: pyshellext.amd64.dll                               59 KB
+[18:48:19]: 66	-> [18:48:19]: pyw.exe                                            888 KB
+[18:48:19]: 67	-> [18:48:19]: DIR: ShellExperiences                                   0 KB
+[18:48:19]: 68	-> [18:48:19]: DIR: SKB                                                0 KB
+[18:48:19]: 69	-> [18:48:19]: DIR: SoftwareDistribution                               0 KB
+[18:48:19]: 70	-> [18:48:19]: DIR: Speech                                             0 KB
+[18:48:19]: 71	-> [18:48:19]: DIR: Speech_OneCore                                     0 KB
+[18:48:19]: 72	-> [18:48:19]: DIR: splwow64.exe                                       129 KB
+[18:48:19]: 73	-> [18:48:20]: DIR: symbols                                            0 KB
+[18:48:20]: 74	-> [18:48:20]: DIR: System                                             0 KB
+[18:48:20]: 75	-> [18:48:20]: system.ini                                         0 KB
+[18:48:20]: 76	-> [18:48:20]: DIR: System32                                           0 KB
+[18:48:20]: 77	-> [18:48:20]: DIR: SystemApps                                         0 KB
+[18:48:20]: 78	-> [18:48:20]: DIR: SystemResources                                    0 KB
+[18:48:20]: 79	-> [18:48:20]: DIR: SysWOW[18:48:20]: 80	-> [18:48:20]: DIR: TAPI                                               0 KB
+[18:48:20]: 81	-> [18:48:20]: DIR: Tasks                                              0 KB
+[18:48:20]: 82	-> [18:48:20]: DIR: Temp                                               0 KB
+[18:48:20]: 83	-> [18:48:20]: DIR: TextInput                                          0 KB
+[18:48:20]: 84	-> [18:48:20]: DIR: tracing                                            0 KB
+[18:48:20]: 85	-> [18:48:20]: DIR: Registration                                       0 KB
+[18:48:20]: 86	-> [18:48:20]: DIR: RemotePackages                                     0 KB
+[18:48:20]: 87	-> [18:48:20]: DIR: rescache                                           0 KB
+[18:48:20]: 88	-> [18:48:20]: DIR: Resources                                          0 KB
+[18:48:20]: 89	-> [18:48:20]: DIR: rlt8723a_chip_bt40_fw_asic_rom_patch.dll           36 KB
+[18:48:20]: 90	-> [18:48:20]: DIR: RtkBtManServ.exe                                   692 KB
+[18:48:20]: 91	-> [18:48:20]: DIR: rtl8723b_mp_chip_bt40_fw_asic_rom_patch_new.dll    49 KB
+[18:48:20]: 92	-> [18:48:20]: DIR: rtl8723b_mp_chip_bt40_fw_aic_rom_patch_new_s1.dll 49 KB
+[18:48:20]: 93	-> [18:48:20]: DIR: rtl8761a_mp_chip_bt40_fw_asic_rom_patch_8192ee_new.dll 68 KB
+[18:48:20]: 94	-> [18:48:21]: DIR: rtl8761a_mp_chip_bt40_fw_asic_rom_patch_8812ae_new.dll 50 KB
+[18:48:21]: 95	-> [18:48:21]: DIR: rtl8761a_mp_chip_bt40_fw_asic_rom_patch_8814ae_new.dll 71 KB
+[18:48:21]: 96	-> [18:48:21]: DIR: rtl8761a_mp_chip_bt40_fw_asic_rom_patch_new.dll    62 KB
+[18:48:21]: 97	-> [18:48:21]: DIR: rtl8821a_mp_chip_bt40_fw_asic_rom_patch_new.dll    37 KB
+[18:48:21]: 98	-> [18:48:21]: DIR: SchCache                                           0 KB
+[18:48:21]: 99	-> [18:48:21]: DIR: schemas                                            17867063951360 KB
+[18:48:21]: 100	-> [18:48:21]: DIR: security                                           0 KB
+[18:48:21]: 101	-> [18:48:21]: DIR: ServiceProfiles                                    0 KB
+[18:48:21]: 102	-> [18:48:21]: DIR: ServiceState                                       0 KB
+[18:48:21]: 103	-> [18:48:21]: DIR: servicing                                          0 KB
+[18:48:21]: 104	-> [18:48:21]: setdebug.exe                                       41 KB
+[18:48:21]: 105	-> [18:48:21]: DIR: Setup                                              0 KB
+[18:48:21]: 106	-> [18:48:21]: setupact.log                                       1 KB
+[18:48:21]: 107	-> [18:48:21]: setuperr.log                                       0 KB
+[18:48:21]: 108	-> [18:48:21]: DIR: Downloaded Program Files                           0 KB
+[18:48:21]: 109	-> [18:48:21]: DIR: InfusedApps                                        0 KB
+[18:48:21]: 110	-> [18:48:21]: DIR: Migration                                          0 KB
+[18:48:21]: 111	-> [18:48:21]: DIR: regedit.exe                                        350 KB
+[18:48:21]: 112	-> [18:48:21]: DIR: rtl8761a_mp_chip_bt40_fw_asic_rom_patch_8192eu_new.dll 65 KB
+[18:48:21]: 113	-> [18:48:21]: DIR: ShellComponents                                    0 KB
+[18:48:21]: 114	-> [18:48:22]: DIR: twain_32                                           0 KB
+[18:48:22]: 115	-> [18:48:22]: DIR: twain_32.dll                                       63 KB
+[18:48:22]: 116	-> [18:48:22]: DIR: UCI                                                0 KB
+[18:48:22]: 117	-> [18:48:22]: DIR: UpdateAssistantV2                                  0 KB
+[18:48:22]: 118	-> [18:48:22]: vbaddin.ini                                        0 KB
+[18:48:22]: 119	-> [18:48:22]: DIR: Vss                                                0 KB
+[18:48:22]: 120	-> [18:48:22]: DIR: WaaS                                               0 KB
+[18:48:22]: 121	-> [18:48:22]: DIR: Web                                                0 KB
+[18:48:22]: 122	-> [18:48:22]: win.ini                                            0 KB
+[18:48:22]: 123	-> [18:48:22]: WindowsShell.Manifest                              0 KB
+[18:48:22]: 124	-> [18:48:22]: WindowsUpdate.log                                  0 KB
+[18:48:22]: 125	-> [18:48:22]: DIR: winhlp32.exe                                       11 KB
+[18:48:22]: 126	-> [18:48:22]: DIR: WinSxS                                             0 KB
+[18:48:22]: 127	-> [18:48:22]: wjview.exe                                         144 KB
+[18:48:22]: 128	-> [18:48:22]: WMSysPr9.prx                                       309 KB
+[18:48:22]: 129	-> [18:48:22]: DIR: write.exe                                          11 KB
+[18:48:22]: 130	-> [18:48:22]: DIR: InputMethod                                        0 KB
+[18:48:22]: 131	-> [18:48:22]: DIR: Installer                                          0 KB
+[18:48:22]: 132	-> [18:48:22]: jautoexp.dat                                       6 KB
+[18:48:22]: 133	-> [18:48:22]: JAUTOEXP.INI                                       13 KB
+[18:48:22]: 134	-> [18:48:22]: DIR: Java                                               0 KB
+[18:48:22]: 135	-> [18:48:22]: jview.exe                                          150 KB
+[18:48:22]: 136	-> [18:48:23]: DIR: L2Schemas                                          0 KB
+[18:48:23]: 137	-> [18:48:23]: DIR: LanguageOverlayCac[18:48:23]: 138	-> [18:48:23]: DIR: LastGood                                           0 KB
+[18:48:23]: 139	-> [18:48:23]: DIR: LastGood.Tmp                                       0 KB
+[18:48:23]: 140	-> [18:48:23]: DIR: LiveKernelReports                                  0 KB
+[18:48:23]: 141	-> [18:48:23]: llatsni3.exe                                       144 KB
+[18:48:23]: 142	-> [18:48:23]: DIR: Logs                                               0 KB
+[18:48:23]: 143	-> [18:48:23]: MAMCityDownload.ocx                                88 KB
+[18:48:23]: 144	-> [18:48:23]: MASetupCaller.dll                                  322 KB
+[18:48:23]: 145	-> [18:48:23]: mdm.ini                                            0 KB
+[18:48:23]: 146	-> [18:48:23]: DIR: Media                                              0 KB
+[18:48:23]: 147	-> [18:48:23]: MEMORY.DMP                                         808009 KB
+[18:48:23]: 148	-> [18:48:23]: mib.bin                                            42 KB
+[18:48:23]: 149	-> [18:48:23]: DIR: Microsoft.NET                                      0 KB
