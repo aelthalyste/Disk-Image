@@ -803,7 +803,7 @@ struct nar_file_entry {
 
 // represents files in directory
 struct nar_file_entries_list {
-    UINT32 MFTIndex;
+    UINT64 MFTIndex;
     UINT32 EntryCount;
     UINT32 MaxEntryCount;
     nar_file_entry* Entries;

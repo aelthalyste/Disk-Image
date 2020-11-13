@@ -18,9 +18,6 @@
     <ClCompile Include="mspyUser.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="mspyLog.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="mspyUser.rc">

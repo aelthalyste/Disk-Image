@@ -198,7 +198,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="mspyLog.cpp" />
     <ClCompile Include="mspyUser.cpp" />
     <ResourceCompile Include="mspyUser.rc" />
   </ItemGroup>

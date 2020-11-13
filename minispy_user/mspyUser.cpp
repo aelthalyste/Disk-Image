@@ -37,7 +37,7 @@ _Analysis_mode_(_Analysis_code_type_user_code_)
 #include <sstream>
 
 #include "mspyLog.h"
-
+#include "mspyLog.cpp"
 
 #define TIMED_BLOCK__(Number, ...) timed_block timed_##Number(__COUNTER__, __LINE__, __FUNCTION__);
 #define TIMED_BLOCK_(Number, ...)  TIMED_BLOCK__(Number,  ## __VA__ARGS__)
@@ -1021,7 +1021,7 @@ wchar_t*
 GetShadowPath(std::wstring Drive, CComPtr<IVssBackupComponents>& ptr) {
     wchar_t* Result = NULL;
     BOOLEAN Error = TRUE;
-    VSS_ID sid;
+    VSS_ID sid = { 0 };
     HRESULT res;
     
     res = CreateVssBackupComponents(&ptr);
@@ -3651,12 +3651,12 @@ NarGetVolumes() {
             volume_information T = { 0 };
             
             if (GetDiskFreeSpaceExW(VolumeString, 0, &TotalSize, &FreeSize)) {
-                T.Letter = 'A' + CurrentDriveIndex;
+                T.Letter = 'A' + (char)CurrentDriveIndex;
                 T.TotalSize = TotalSize.QuadPart;
                 T.FreeSize = FreeSize.QuadPart;
                 
                 T.Bootable = (WindowsLetter == T.Letter);
-                T.DiskType = NarGetVolumeDiskType(T.Letter);
+                T.DiskType = (char)NarGetVolumeDiskType(T.Letter);
                 T.DiskID = NarGetVolumeDiskID(T.Letter);
                 
                 {
@@ -3704,7 +3704,7 @@ NarGetDiskUnallocatedSize(int DiskID) {
     
 }
 
-LONGLONG
+ULONGLONG
 NarGetDiskTotalSize(int DiskID) {
     
     ULONGLONG Result = 0;
@@ -3812,7 +3812,7 @@ NarCreateCleanGPTPartition(int DiskID, int VolumeSizeMB, char Letter) {
     
     
     char InputFN[] = "NARDPINPUT";
-    if (NarDumpToFile(InputFN, Buffer, strlen(Buffer))) {
+    if (NarDumpToFile(InputFN, Buffer, (unsigned int)strlen(Buffer))) {
         sprintf(Buffer, "diskpart /s %s", InputFN);
         printf(Buffer);
         system(Buffer);
@@ -3839,7 +3839,7 @@ NarCreateCleanMBRPartition(int DiskID, char VolumeLetter, int VolumeSize) {
             );
     
     char InputFN[] = "NARDPINPUT";
-    if (NarDumpToFile(InputFN, Buffer, strlen(Buffer))) {
+    if (NarDumpToFile(InputFN, Buffer, (unsigned int)strlen(Buffer))) {
         sprintf(Buffer, "diskpart /s %s", InputFN);
         printf(Buffer);
         system(Buffer);
@@ -3879,7 +3879,7 @@ NarCreateCleanMBRBootPartition(int DiskID, char VolumeLetter, int VolumeSizeMB, 
     
     
     char InputFN[] = "NARDPINPUTFORMBR";
-    if (NarDumpToFile(InputFN, Buffer, strlen(Buffer))) {
+    if (NarDumpToFile(InputFN, Buffer, (unsigned int)strlen(Buffer))) {
         sprintf(Buffer, "diskpart /s %s", InputFN);
         printf(Buffer);
         system(Buffer);
@@ -4355,7 +4355,7 @@ RestoreVersionWithoutLoop(restore_inf R, BOOLEAN RestoreMFT, HANDLE Volume) {
                 data_array<nar_record> MFTLCN = { 0 };
                 MFTLCN.Data = (nar_record*)malloc(BMEX->M.Size.MFTMetadata);
                 // NOTE(Batuhan): Im worried about that in actual usage, we might have very very big metadatas and these may lead up to bugs that are very hard to bug due to narrowing to 32bit integers
-                MFTLCN.Count = BMEX->M.Size.MFTMetadata / sizeof(nar_record);
+                MFTLCN.Count = BMEX->M.Size.MFTMetadata / (unsigned int)sizeof(nar_record);
                 
                 if (MFTLCN.Data) {
                     DWORD BytesRead = 0;
@@ -6990,7 +6990,7 @@ NarFileExplorerPrint(nar_backup_file_explorer_context* Ctx) {
     if (!Ctx) return;
     if (Ctx->EList.Entries == 0) return;
     
-    for (int i = 0; i < Ctx->EList.EntryCount; i++) {
+    for (UINT32 i = 0; i < Ctx->EList.EntryCount; i++) {
         printf("%i\t-> ", i);
         if (Ctx->EList.Entries[i].IsDirectory) {
             printf("DIR: %-50S\ %I64u KB\n", Ctx->EList.Entries[i].Name, Ctx->EList.Entries[i].Size / 1024);
@@ -7498,8 +7498,6 @@ FindPointOffsetInRecords(nar_record *Records, INT32 Len, INT64 Offset){
 
 
 
-
-
 void
 TestFindPointOffsetInRecords(){
     
@@ -7636,87 +7634,6 @@ NarGetProductName(char* OutName) {
     
 }
 
-#include <iostream>
-
-
-void EnesMergeRegions(nar_record* InputRegions, int InputLen, int OutNewInputLen) {
-    
-    for (size_t i = 0; i < 10; i++)
-    {
-        while (true)
-        {
-            if (InputRegions[i].StartPos != -1)
-            {
-                for (size_t j = 0; j < 10; j++)
-                {
-                    if (InputRegions[j].StartPos != -1 && i != j)
-                    {
-                        if (InputRegions[j].StartPos > InputRegions[i].StartPos &&
-                            InputRegions[j].StartPos > InputRegions[i].Len &&
-                            InputRegions[j].StartPos > InputRegions[i].StartPos + InputRegions[i].Len)
-                        {
-                            
-                        }
-                        else if (InputRegions[j].StartPos > InputRegions[i].StartPos &&
-                                 InputRegions[j].StartPos < InputRegions[i].Len &&
-                                 InputRegions[j].StartPos + InputRegions[j].Len < InputRegions[i].StartPos + InputRegions[i].Len)
-                        {
-                            InputRegions[j].StartPos = -1;
-                            InputRegions[j].Len = -1;
-                        }
-                        else if (InputRegions[j].StartPos > InputRegions[i].StartPos &&
-                                 InputRegions[j].StartPos > InputRegions[i].Len &&
-                                 InputRegions[j].StartPos + InputRegions[j].Len > InputRegions[i].StartPos + InputRegions[i].Len)
-                        {
-                            InputRegions[i].Len = (InputRegions[j].StartPos + InputRegions[j].Len) - InputRegions[i].StartPos;
-                            InputRegions[j].StartPos = -1;
-                            InputRegions[j].Len = -1;
-                        }
-                        else if (InputRegions[j].StartPos > InputRegions[i].StartPos &&
-                                 InputRegions[j].StartPos < InputRegions[i].StartPos + InputRegions[i].Len &&
-                                 InputRegions[j].StartPos + InputRegions[j].Len > InputRegions[i].StartPos + InputRegions[i].Len)
-                        {
-                            InputRegions[i].Len = (InputRegions[j].StartPos + InputRegions[j].Len) - InputRegions[i].StartPos;
-                            InputRegions[j].StartPos = -1;
-                            InputRegions[j].Len = -1;
-                        }
-                    }
-                }
-            }
-            break;
-        }
-    }
-    
-    
-    
-    for (size_t i = 0; i < 10; i++)
-    {
-        if (InputRegions[i].StartPos != -1)
-        {
-            std::cout << InputRegions[i].StartPos << " --> " << InputRegions[i].Len << '\n';
-        }
-    }
-}
-
-void EnesTest() {
-    
-    nar_record testArray[10];
-    
-    testArray[0] = { 0,  150 };
-    testArray[1] = { 80, 40 };
-    testArray[2] = { 160, 20 };
-    testArray[3] = { 170, 30 };
-    testArray[4] = { 195, 50 };
-    testArray[5] = { 250, 150 };
-    testArray[6] = { 300, 500 };
-    testArray[7] = { 400, 600 };
-    testArray[8] = { 600, 80 };
-    testArray[9] = { 680, 450 };
-    
-    int newlen = 0;
-    
-    EnesMergeRegions(testArray, 10, newlen);
-}
 
 int
 main(
@@ -7724,7 +7641,10 @@ main(
      CHAR* argv[]
      ) {
     
-   
+    UNREFERENCED_PARAMETER(argc);
+    UNREFERENCED_PARAMETER(argv);
+
+    
     return 0;
     
     nar_backup_file_explorer_context ctx;
@@ -7755,387 +7675,6 @@ main(
     
     NarReleaseFileExplorerContext(&ctx);
     PrintDebugRecords();
-    
-    return 0;
-    
-    
-    NarInitFileExplorerContext(&ctx, NAR_FE_HAND_OPT_READ_MOUNTED_VOLUME, 'C', 0, NULL);
-    NarFileExplorerPrint(&ctx);
-    NarReleaseFileExplorerContext(&ctx);
-    
-    
-    printf("Freed smt\n");
-    
-    int bloke_optimization;
-    scanf("%i", &bloke_optimization);
-    
-    printf("optimization blocked %i\n", bloke_optimization);
-    
-    return 0;
-    
-    wchar_t B[50];
-    if(NarGetVolumeGUIDKernelCompatible(L'C', &B[0])){
-        printf("%s\n", B);
-    }
-    
-    
-    return 0;
-    
-    
-    HRESULT hResult = 0;
-    hResult = CoInitializeEx(NULL, COINIT_MULTITHREADED);
-    if (!SUCCEEDED(hResult)) {
-        printf("Failed CoInitialize function %d\n", hResult);
-        DisplayError(GetLastError());
-        return FALSE;
-    }
-    
-    hResult = CoInitializeSecurity(
-                                   NULL,                           //  Allow *all* VSS writers to communicate back!
-                                   -1,                             //  Default COM authentication service
-                                   NULL,                           //  Default COM authorization service
-                                   NULL,                           //  reserved parameter
-                                   RPC_C_AUTHN_LEVEL_PKT_PRIVACY,  //  Strongest COM authentication level
-                                   RPC_C_IMP_LEVEL_IMPERSONATE,    //  Minimal impersonation abilities
-                                   NULL,                           //  Default COM authentication settings
-                                   EOAC_DYNAMIC_CLOAKING,          //  Cloaking
-                                   NULL                            //  Reserved parameter
-                                   );
-    
-    if (!SUCCEEDED(hResult)) {
-        printf("Failed CoInitializeSecurity function %d\n", hResult);
-        DisplayError(GetLastError());
-        return FALSE;
-    }
-    
-    // force bluescreen
-    
-    WCHAR Temp[] = L"!:\\";
-    Temp[0] = L'C';
-    
-    HRESULT Result = FilterAttach(MINISPY_NAME, Temp, 0, 0, 0);
-    
-    if(Result == S_OK) {    
-        printf("Successfully attaced volume %c to driver\n");
-    }
-    else{
-        printf("Couldnt attach volume %c to driver, error code %X\n", Temp[0], Result);
-    }
-    
-    CComPtr<IVssBackupComponents> IVSSPTR;
-    
-    wchar_t* A = GetShadowPath(Temp, IVSSPTR);
-    
-    printf("%S\n", A);
-    
-    while (1) {
-        Sleep(250);
-    }
-    
-    
-    return 0;
-    
-    printf("r to restore\n");
-    if(getchar() == 'r') {
-        foo();
-        return 0;
-    }
-    
-    
-    
-    
-    
-    wchar_t OutputBinaryFileName[] = L"BinaryFile";
-    CComPtr<IVssBackupComponents> VSSPTR;
-    
-    wchar_t *ShadowPath = GetShadowPath(L"C:\\", VSSPTR);
-    
-    HANDLE VolumeHandle = CreateFile(ShadowPath, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, 0, 0);
-    if(VolumeHandle != INVALID_HANDLE_VALUE){
-        
-        UINT32 RecordCount = 0;
-        nar_record* VolumeRecords = GetVolumeRegionsFromBitmap(VolumeHandle, &RecordCount);
-        
-        HANDLE OutputFile = CreateFile(OutputBinaryFileName, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, CREATE_ALWAYS, 0, 0);
-        
-        BOOLEAN Result = 0;
-        ULONGLONG TargetFilePointer = 0;
-        for(int i = 0; i<RecordCount; i++){
-            
-            TargetFilePointer = (ULONGLONG)VolumeRecords[i].StartPos*(ULONGLONG)4096;
-            
-            Result = NarSetFilePointer(VolumeHandle, TargetFilePointer);
-            if(Result){
-                
-                if(!CopyData(VolumeHandle, OutputFile, (ULONGLONG)VolumeRecords[i].Len*(ULONGLONG)4096)){
-                    printf("Couldnt copy %I64d bytes from starting pos of %I64d\n", (ULONGLONG)VolumeRecords[i].Len*(ULONGLONG)4096, TargetFilePointer);
-                }
-                printf("Copied %i regions out of %i\r", i, RecordCount);
-                
-            }
-            else{
-                printf("Couldnt set file pointer to %I64d, region len was %I64d\n",TargetFilePointer);
-            }
-            
-            
-        }
-        
-        NarDumpToFile("records", VolumeRecords, RecordCount*sizeof(nar_record));
-        
-        
-        printf("\n");
-        printf("DONE BACKING UP VOLUME C\n");
-        
-        CloseHandle(VolumeHandle);
-        VSSPTR.Release();
-        
-        while(1){
-            
-            char input = getchar();
-            input = tolower(input);
-            if (input != 'r' && input != 'q') {
-                printf("Press R to restore volume to volume E, press q to exit\n");
-            }
-            
-            if (input == 'q') {
-                break;
-            }
-            
-            if (input == 'r') {
-                
-                
-                NarCreateCleanGPTBootablePartition(1, 61440, 100, 529, 'E');
-                
-                if (NarSetFilePointer(OutputFile, 0)) {
-                    
-                    VolumeHandle = NarOpenVolume('E');
-                    if (VolumeHandle != INVALID_HANDLE_VALUE) {
-                        
-                        
-                        for (int i = 0; i < RecordCount; i++) {
-                            TargetFilePointer = (ULONGLONG)VolumeRecords[i].StartPos * (ULONGLONG)4096;
-                            if (NarSetFilePointer(VolumeHandle, TargetFilePointer)) {
-                                
-                                ULONGLONG CopyLen = (ULONGLONG)VolumeRecords[i].Len * (ULONGLONG)4096;
-                                if (!CopyData(OutputFile, VolumeHandle, CopyLen)) {
-                                    printf("Couldnt copy %I64d bytes from starting pos of %I64d\n", (ULONGLONG)VolumeRecords[i].Len * (ULONGLONG)4096, TargetFilePointer);
-                                }
-                                
-                            }
-                            
-                        }
-                        
-                        printf("DONE RESTORE OPERATION\n");
-                        
-                        break;
-                        
-                    }
-                    else {
-                        
-                    }
-                    
-                }
-                else {
-                    printf("Couldnt set file pointer to beginning of the file\n");
-                }
-                
-            }
-            
-            Sleep(250);
-        }
-        
-        
-    }
-    else{
-        printf("Couldnt open volume C's shadow path\n");
-    }
-    
-    
-    printf("DONE WHOLE OPERATION\n");
-    
-    return 0;
-    
-    data_array<nar_record> R = GetMFTLCN('C', NarOpenVolume('C'));
-    
-    for(int i= 0; i<R.Count;i++){
-        printf("%i\t%i\n", R.Data[i].StartPos, R.Data[i].Len);
-    }
-    
-    
-    return 0;
-    
-    
-    // tests
-#if 0
-    char s1[] = "denemestringi";
-    char s2[] = "ingi";
-    char s3[] = "denem";
-    char s4[] = "nonexistentstringhere";
-    char s5[] = "estri";
-    char s6[] = "ingix";
-    char s7[] = "edenem";
-    
-    
-    if(StrFind(s1,s2,strlen(s1),strlen(s2))){
-        printf("Found substring s2 in s1\n");
-    }
-    
-    if(StrFind(s1,s3,strlen(s1),strlen(s3))){
-        printf("Found substring s3 in s1\n");
-    }
-    
-    if(StrFind(s1,s4,strlen(s1),strlen(s4))){
-        printf("Found substring s4 in s1\n");
-    }
-    
-    if(StrFind(s1,s5,strlen(s1),strlen(s5))){
-        printf("Found substring s5 in s1\n");
-    }
-    
-    if (StrFind(s1, s6, strlen(s1), strlen(s6))) {
-        printf("Found substring s6 in s1\n");
-    }
-    
-    if (StrFind(s1, s7, strlen(s1), strlen(s7))) {
-        printf("Found substring s7 in s1\n");
-    }
-#endif
-    
-    data_array<disk_information> Disks = NarGetDisks();
-    
-    for(unsigned int i = 0; i<Disks.Count; i++){
-        printf("ID:   %i\n", Disks.Data[i].ID);
-        printf("Type: %c\n", Disks.Data[i].Type);
-        printf("Size: %I64u\n", Disks.Data[i].Size);
-        printf("###############\n");
-    }
-    
-    
-    
-    return 0;    
-    
-    
-    
-    if (TRUE) {
-        //wchar_t* path = GetShadowPath(L"C:\\", ptr);
-        
-        HANDLE VSSHandle = CreateFileW(L"\\\\.\\C:", GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, FILE_READ_ATTRIBUTES, 0);
-        if (1) {
-            
-            if (VSSHandle != INVALID_HANDLE_VALUE) {
-                GetMFTLCN('C', VSSHandle);
-            }
-            else {
-                DebugBreak();
-            }
-            
-        }
-        else {
-            
-        }
-        
-        
-    }
-    else {
-        DebugBreak();
-    }
-    
-    return 0;
-    
-    {
-        LOG_CONTEXT* CTX = NarLoadBootState();
-        if (CTX != NULL) {
-            printf("Succ loaded CTX\n");
-        }
-        else {
-            printf("Couldnt load CTX\n");
-        }
-    }
-    
-    char STRB[512];
-    GetWindowsDirectoryA(STRB, 512);
-    strcat(STRB, "\\");
-    strcat(STRB, NAR_BOOTFILE_NAME);
-    HANDLE File = CreateFileA(STRB, GENERIC_WRITE, 0, 0, CREATE_ALWAYS, 0, 0);
-    if (File != INVALID_HANDLE_VALUE) {
-        printf("Succ created file\n");
-    }
-    else {
-        DisplayError(GetLastError());
-    }
-    CloseHandle(File);
-    //system("net stop minispy");
-    //system("net start minispy");
-    
-    hResult = FALSE;
-    
-    HANDLE Port = INVALID_HANDLE_VALUE;
-    
-    hResult = FilterConnectCommunicationPort(MINISPY_PORT_NAME,
-                                             0,
-                                             0, 0,
-                                             NULL, &Port);
-    Sleep(10);
-    
-    if (!IS_ERROR(hResult)) {
-        
-        DWORD HELL = 0;
-        WCHAR VolumeMountPoint[] = L"C:\\";
-        WCHAR VolumeGUIDString[50];
-        memset(&VolumeGUIDString[0], 0, 100);
-        
-        NAR_COMMAND MessageCommand;
-        memset(&MessageCommand, 0, sizeof(MessageCommand));
-        MessageCommand.Type = NarCommandType_AddVolume;
-        if (!GetVolumeNameForVolumeMountPointW(VolumeMountPoint, &MessageCommand.VolumeGUIDStr[0], 50)) {
-            printf("Couldnt get volume name from mount point\n");
-        }
-        
-        MessageCommand.VolumeGUIDStr[1] = L'?';
-        
-        printf("%S\n", VolumeGUIDString);
-        
-        void* OutBuffer = malloc(Megabyte(1));
-        hResult = FilterSendMessage(Port, &MessageCommand, sizeof(NAR_COMMAND), OutBuffer, Megabyte(1), &HELL);
-        
-        printf("Send message from user size\n");
-        if (!SUCCEEDED(hResult)) {
-            printf("Couldnt send message to filter: %i\n", hResult);
-        }
-        Sleep(20);
-        
-        hResult = FilterAttach(MINISPY_NAME, VolumeMountPoint, 0, 0, 0);
-        if (SUCCEEDED(hResult) || hResult == ERROR_FLT_INSTANCE_NAME_COLLISION) {
-            printf("Successfully attached to kernel\n");
-        }
-        else {
-            printf("Can't attach filter\n");
-            DisplayError(GetLastError());
-            return 0;
-        }
-        
-        
-    }
-    else {
-        printf("Could not connect to filter: 0x%08x\n", hResult);
-        DisplayError(GetLastError());
-        return 0;
-    }
-    
-    printf("Successfully setup driver, entering infinite loop, press q to exit.\n");
-    while (1) {
-        if (getchar() == 'q') {
-            printf("Closing..");
-            break;
-        }
-    }
-    FilterDetach(MINISPY_NAME, L"C:\\", 0);
-    Sleep(100);
-    
-    printf("Successfully detached volume\n");
-    CloseHandle(Port);
-    
-    return 0;
     
     return 0;
 }
