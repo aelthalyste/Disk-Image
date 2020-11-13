@@ -73,7 +73,10 @@ namespace DiskBackup.TaskScheduler.Jobs
             if (!result)
             {
                 Console.WriteLine("false oldu batudan geldi");
-                exception = new JobExecutionException(context.RefireCount <= task.BackupTaskInfo.FailNumberTryAgain);
+                if (task.BackupTaskInfo.FailTryAgain)
+                {
+                    exception = new JobExecutionException(context.RefireCount <= task.BackupTaskInfo.FailNumberTryAgain);
+                }
             }
 
             if (exception != null)
