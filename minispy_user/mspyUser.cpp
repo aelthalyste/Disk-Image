@@ -2216,6 +2216,7 @@ TerminateBackup(volume_backup_inf* V, BOOLEAN Succeeded) {
     BOOLEAN Return = FALSE;
     if (!V) return FALSE;
     
+    printf("Succeeded %c for volume %c\n", Succeeded, V->Letter);
     
     if (!V->FullBackupExists) {
         //Termination of fullbackup
@@ -2280,12 +2281,16 @@ TerminateBackup(volume_backup_inf* V, BOOLEAN Succeeded) {
         
     }
     
+    
     CLEANHANDLE(V->Stream.Handle);
+    
+    printf("%c\n", V->Stream.Records.Data);
     CLEANMEMORY(V->Stream.Records.Data);
     V->Stream.Records.Count = 0;
     V->Stream.RecIndex = 0;
     V->Stream.ClusterIndex = 0;
     V->VSSPTR.Release();
+    
     FreeDataArray(&V->MFTLCN);
     
     
