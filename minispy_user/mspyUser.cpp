@@ -7724,8 +7724,7 @@ main(
      CHAR* argv[]
      ) {
     
-    LOG_CONTEXT CTX* = NarLoadBootState();
-    
+   
     return 0;
     
     nar_backup_file_explorer_context ctx;
