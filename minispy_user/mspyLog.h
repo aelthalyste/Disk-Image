@@ -40,42 +40,44 @@ static void
 NarLog(const char *str, ...){
     
     
-    //const static HANDLE File = CreateFileA("NAR_APP_LOG_FILE.txt", GENERIC_WRITE|GENERIC_READ, FILE_SHARE_READ|FILE_SHARE_WRITE, 0, CREATE_ALWAYS, 0, 0);
-    //static SYSTEMTIME Time = {};
-    //
-    //SetFilePointer(File, 0, 0, FILE_END);
-    //
-    //va_list ap;
-    //static char buf[1024];
-    //static char TimeStrBuf[128];
-    //
-    //memset(&Time, 0, sizeof(Time));
-    //memset(buf, 0, sizeof(buf));
-    //memset(TimeStrBuf, 0, sizeof(TimeStrBuf));
-    //
-    //GetLocalTime(&Time);
-    //sprintf(TimeStrBuf, "[%i:%i:%i]: ", Time.wHour, Time.wMinute, Time.wSecond);
-    //
-    //va_start(ap,str);
-    //vsprintf(buf, str, ap);
-    //va_end(ap);
-    //
-    //// safe cast
-    //DWORD Len = (DWORD)strlen(buf);
-    //DWORD H = 0;
-    //
-    //WriteFile(File, TimeStrBuf, (DWORD)strlen(TimeStrBuf), &H, 0);
-    //WriteFile(File, buf, Len, &H, 0);
-    //OutputDebugStringA(buf);
-    //
-    //FlushFileBuffers(File);
+    const static HANDLE File = CreateFileA("NAR_APP_LOG_FILE.txt", GENERIC_WRITE|GENERIC_READ, FILE_SHARE_READ|FILE_SHARE_WRITE, 0, CREATE_ALWAYS, 0, 0);
+    static SYSTEMTIME Time = {};
     
+    SetFilePointer(File, 0, 0, FILE_END);
+    //
+    va_list ap;
+    static char buf[1024];
+    static char TimeStrBuf[128];
+    
+    memset(&Time, 0, sizeof(Time));
+    memset(buf, 0, sizeof(buf));
+    memset(TimeStrBuf, 0, sizeof(TimeStrBuf));
+    
+    GetLocalTime(&Time);
+    sprintf(TimeStrBuf, "[%i:%i:%i]: ", Time.wHour, Time.wMinute, Time.wSecond);
+    
+    va_start(ap,str);
+    vsprintf(buf, str, ap);
+    va_end(ap);
+    
+    // safe cast
+    DWORD Len = (DWORD)strlen(buf);
+    DWORD H = 0;
+    
+    WriteFile(File, TimeStrBuf, (DWORD)strlen(TimeStrBuf), &H, 0);
+    WriteFile(File, buf, Len, &H, 0);
+    OutputDebugStringA(buf);
+    
+    FlushFileBuffers(File);
+    
+#if 0    
     char szBuff[1024];
     va_list arg;
     va_start(arg, str);
     _vsnprintf(szBuff, sizeof(szBuff), str, arg);
     va_end(arg);
     OutputDebugStringA(szBuff);
+#endif
     
 }
 
@@ -850,7 +852,7 @@ struct nar_backup_file_explorer_context {
     wchar_t RootDir[256];
     
     BYTE HandleOption;
-
+    
     UINT32 LastIndx;
     
     int MFTRecordsCount;
