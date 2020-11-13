@@ -1210,7 +1210,7 @@
                                     <GridViewColumn Header="{DynamicResource target}" Width="180" >
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
-                                                <TextBlock Text="{Binding BackupStorageInfo.StorageName}" TextAlignment="Center"/>
+                                                <TextBlock Text="{Binding BackupStoragePath}" TextAlignment="Center"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>

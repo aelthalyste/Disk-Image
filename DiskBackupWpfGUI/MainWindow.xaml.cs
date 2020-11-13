@@ -49,6 +49,7 @@ namespace DiskBackupWpfGUI
         private List<DiskInformation> _diskList = new List<DiskInformation>();
         private List<VolumeInfo> _volumeList = new List<VolumeInfo>();
         private List<TaskInfo> _taskInfoList = new List<TaskInfo>();
+        private List<ActivityLog> _activityLogList = new List<ActivityLog>();
 
         private readonly IBackupService _backupService;
         private readonly IBackupStorageService _backupStorageService;
@@ -135,7 +136,7 @@ namespace DiskBackupWpfGUI
             #region ActivityLog
 
             // real
-            listViewLog.ItemsSource = _activityLogDal.GetList();
+            ShowActivityLog();
 
             /*BackupStorageInfo backupAreaInfo1 = new BackupStorageInfo()
             {
@@ -1129,6 +1130,22 @@ namespace DiskBackupWpfGUI
             }
         }
 
+        private void btnRefreshActivity_Click(object sender, RoutedEventArgs e)
+        {
+            ShowActivityLog();
+        }
+
+        private void ShowActivityLog()
+        {
+            //veritabanı ile düzeltme yapılabilir adam yolla alakalı değişiklik vesaire yaparsa bu da değişiyor
+            _activityLogList = _activityLogDal.GetList();
+            foreach (var item in _activityLogList)
+            {
+                item.StrStatus = Resources[$"{item.StrStatus}"].ToString();
+            }
+
+            listViewLog.ItemsSource = _activityLogList;
+        }
 
         #endregion
 
@@ -1272,9 +1289,5 @@ namespace DiskBackupWpfGUI
             return ($"{dblSByte:0.##} {Suffix[i]}");
         }
 
-        private void btnRefreshActivity_Click(object sender, RoutedEventArgs e)
-        {
-            listViewLog.ItemsSource = _activityLogDal.GetList();
-        }
     }
 }
