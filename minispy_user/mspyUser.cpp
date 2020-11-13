@@ -1,8 +1,6 @@
 /*
   I do unity builds, so I dont check if declared functions in .h file, I just write it in cpp file and if any build gives me error then
   I add it to .h file.
-
-  check if INDEX_ALLOCATION falls inside MFT cluster regions
 */
 
 
@@ -22,6 +20,8 @@ _Analysis_mode_(_Analysis_code_type_user_code_)
 #include <vswriter.h>
 #include <vsbackup.h>
 #include <vsmgmt.h>
+#include <wchar.h>
+
 
 // VDS includes
 #include <vds.h>
@@ -30,12 +30,12 @@ _Analysis_mode_(_Analysis_code_type_user_code_)
 #include <atlbase.h>
 #include <vector>
 #include <string>
-#include <list>
 
 #include <fstream>
 #include <streambuf>
 #include <sstream>
 
+#include "minispy.h"
 #include "mspyLog.h"
 #include "mspyLog.cpp"
 
@@ -7643,7 +7643,7 @@ main(
     
     UNREFERENCED_PARAMETER(argc);
     UNREFERENCED_PARAMETER(argv);
-
+    
     
     return 0;
     
