@@ -44,6 +44,7 @@ namespace DiskBackup.Business.Concrete
         public void InitFileExplorer(BackupInfo backupInfo) //initTracker'la aynı mantıkla çalışır mı? (Explorer ctor'da 1 kere çağrılma)
         {
             //rootDir string biz buraya ne dönücez
+            // yedek volumu, versiondan gelecek, "E:\ebru-eyupDeneme"-- ters slaş ekle sonuna
             _cSNarFileExplorer.CW_Init('C', 0, "");
         }
 
@@ -166,10 +167,10 @@ namespace DiskBackup.Business.Concrete
 
         public bool RestoreBackupDisk(BackupInfo backupInfo, DiskInformation diskInformation)
         {
-            //diskTracker.CW_RestoreToFreshDisk(targetLetter, myBackupMetadata.Letter, myBackupMetadata.Version, diskID, myMain.myPath);
-            //pathde sadece path varmış dosya adı yokmuş
-            //target letter nerden
             //batudan fonksiyon gelecek o fonksiyon hangi harfle restore edeceğini dönecek ve batu o harfle restore edecek
+            //DiskTracker.CW_GetFirstAvailableVolumeLetter(); Batuhandan müsait letter alınması
+            //DiskTracker.CW_RestoreToFreshDisk(DiskTracker.CW_GetFirstAvailableVolumeLetter(), "backup harfi", "version bilgisi", "diskId", "backup'ın bulunduğu yol *\*");
+            //pathde sadece path varmış dosya adı yokmuş
             //CW_GetFirstAvailableVolumeLetter ile boş olan volume'ü alıp batuhan'a dönerek o volume restore gerçekleştirilecek
             throw new NotImplementedException();
         }

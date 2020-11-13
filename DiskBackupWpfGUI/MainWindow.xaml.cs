@@ -7,6 +7,7 @@ using DiskBackup.Entities.Concrete;
 using DiskBackup.TaskScheduler;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
@@ -1145,6 +1146,8 @@ namespace DiskBackupWpfGUI
             }
 
             listViewLog.ItemsSource = _activityLogList;
+            CollectionView view = (CollectionView)CollectionViewSource.GetDefaultView(listViewLog.ItemsSource);
+            view.SortDescriptions.Add(new SortDescription("Id", ListSortDirection.Descending));
         }
 
         #endregion
@@ -1289,5 +1292,18 @@ namespace DiskBackupWpfGUI
             return ($"{dblSByte:0.##} {Suffix[i]}");
         }
 
+        private void btnLogDelete_Click(object sender, RoutedEventArgs e)
+        {
+            MessageBoxResult result = MessageBox.Show($"{listViewLog.SelectedItems.Count} adet veri silinecek. Onaylıyor musunuz?", "Narbulut diyor ki; ", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
+            if (result == MessageBoxResult.Yes)
+            {
+                foreach (ActivityLog item in listViewLog.SelectedItems)
+                {
+                    _statusInfoDal.Delete(_statusInfoDal.Get(x => x.Id == item.StatusInfoId));
+                    _activityLogDal.Delete(item);
+                }
+                ShowActivityLog();
+            }
+        }
     }
 }
