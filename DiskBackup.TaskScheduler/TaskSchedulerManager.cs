@@ -175,7 +175,6 @@ namespace DiskBackup.TaskScheduler
             Console.WriteLine("triggerin üzeri");
             ITrigger trigger = TriggerBuilder.Create()
                 .WithIdentity($"backupIncDiffNowTrigger_{taskInfo.Id}", "Backup")
-                .ForJob($"backupIncDiffNowJob_{taskInfo.Id}", "Backup")
                 .WithSimpleSchedule(x => x.WithIntervalInSeconds(20).WithRepeatCount(0))
                 .Build();
 

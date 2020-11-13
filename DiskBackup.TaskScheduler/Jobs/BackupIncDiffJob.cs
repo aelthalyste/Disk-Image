@@ -48,8 +48,7 @@ namespace DiskBackup.TaskScheduler.Jobs
 
             ActivityLog activityLog = new ActivityLog {
                 TaskInfoName = task.Name,
-                BackupStorageInfo = task.BackupStorageInfo,
-                BackupStorageInfoId = task.BackupStorageInfoId,
+                BackupStoragePath = task.BackupStorageInfo.Path,
                 StartDate = DateTime.Now,
                 Type = (DetailedMissionType)task.BackupTaskInfo.Type,
                 
@@ -73,6 +72,7 @@ namespace DiskBackup.TaskScheduler.Jobs
 
             if (!result)
             {
+                Console.WriteLine("false oldu batudan geldi");
                 exception = new JobExecutionException(context.RefireCount <= task.BackupTaskInfo.FailNumberTryAgain);
             }
 
@@ -84,7 +84,8 @@ namespace DiskBackup.TaskScheduler.Jobs
                 activityLog.StatusInfo = _statusInfoDal.Get(x => x.Id == task.StatusInfoId);
                 var resultStatusInfo = _statusInfoDal.Add(activityLog.StatusInfo);
                 activityLog.StatusInfoId = resultStatusInfo.Id;
-
+                _activityLogDal.Add(activityLog);
+                Console.WriteLine(exception.ToString());
                 await Task.Delay(TimeSpan.FromMinutes(task.BackupTaskInfo.WaitNumberTryAgain));
                 throw exception;
             }
@@ -95,6 +96,7 @@ namespace DiskBackup.TaskScheduler.Jobs
             activityLog.StatusInfo = _statusInfoDal.Get(x => x.Id == task.StatusInfoId);
             var resultStatusInfo2 = _statusInfoDal.Add(activityLog.StatusInfo);
             activityLog.StatusInfoId = resultStatusInfo2.Id;
+            _activityLogDal.Add(activityLog);
         }
     }
 }
