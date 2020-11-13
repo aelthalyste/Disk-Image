@@ -2216,7 +2216,7 @@ TerminateBackup(volume_backup_inf* V, BOOLEAN Succeeded) {
     BOOLEAN Return = FALSE;
     if (!V) return FALSE;
     
-    printf("Succeeded %c for volume %c\n", Succeeded, V->Letter);
+    printf("Succeeded %i for volume %c\n", Succeeded, V->Letter);
     
     if (!V->FullBackupExists) {
         //Termination of fullbackup
@@ -2243,7 +2243,6 @@ TerminateBackup(volume_backup_inf* V, BOOLEAN Succeeded) {
         }
         
         //Termination of fullbackup
-        
         //neccecary for incremental backup
         V->LastBackupRegionOffset = 0;
         V->ActiveBackupInf.PossibleNewBackupRegionOffsetMark = 0;
@@ -2278,21 +2277,18 @@ TerminateBackup(volume_backup_inf* V, BOOLEAN Succeeded) {
             printf("Backup failed for inc-diff operation\n");
         }
         
-        
     }
     
-    
     CLEANHANDLE(V->Stream.Handle);
-    
-    printf("%c\n", V->Stream.Records.Data);
+    printf("stream records data (%p)", V->Stream.Records.Data);
     CLEANMEMORY(V->Stream.Records.Data);
     V->Stream.Records.Count = 0;
     V->Stream.RecIndex = 0;
     V->Stream.ClusterIndex = 0;
     V->VSSPTR.Release();
     
+    printf("mftlcn data(%p)", V->MFTLCN.Data);
     FreeDataArray(&V->MFTLCN);
-    
     
     return Return;
 }
@@ -2939,18 +2935,6 @@ SetupStreamHandle(volume_backup_inf* VolInf) {
             printf("Couldnt lock file write mutex @ setupstreamhandle, returning false\n");
             return FALSE;
         }
-        
-#if 0
-        if (!DetachVolume(VolInf)) {
-            printf("Detach volume failed\n");
-            return FALSE;
-        }
-        else{
-            
-            
-            
-        }
-#endif
         
         printf("Volume %c detached!\n", VolInf->Letter);
         
@@ -4898,6 +4882,7 @@ SaveMetadata(char Letter, int Version, int ClusterSize, BackupType BT,
              data_array<nar_record> BackupRegions, HANDLE VSSHandle, data_array<nar_record> MFTLCN) {
     // TODO(Batuhan): convert letter to uppercase
     
+    BOOLEAN IsMFTLCNInternal = FALSE;
     if (ClusterSize <= 0 || ClusterSize % 512 != 0) {
         return FALSE;
     }
@@ -4973,6 +4958,7 @@ SaveMetadata(char Letter, int Version, int ClusterSize, BackupType BT,
     
     if(MFTLCN.Data == NULL){
         MFTLCN = GetMFTLCN(Letter, VSSHandle);
+        IsMFTLCNInternal = TRUE;
     }
     
     
@@ -5190,7 +5176,10 @@ recovery
     
     Exit:
     CloseHandle(MetadataFile);
-    FreeDataArray(&MFTLCN);
+    if(IsMFTLCNInternal){
+        FreeDataArray(&MFTLCN);
+    }
+    
     
     printf("SaveMetadata returns %i\n", Result);
     
@@ -7735,6 +7724,9 @@ main(
      CHAR* argv[]
      ) {
     
+    LOG_CONTEXT CTX* = NarLoadBootState();
+    
+    return 0;
     
     nar_backup_file_explorer_context ctx;
     

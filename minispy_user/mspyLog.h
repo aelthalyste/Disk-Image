@@ -128,7 +128,7 @@ inline void Append(data_array<T> *Destination, data_array<T> App) {
 
 template<typename T> inline void
 FreeDataArray(data_array<T>* V) {
-    if (V) {
+    if (V != NULL) {
         free(V->Data);
         V->Data = 0;
         V->Count = 0;

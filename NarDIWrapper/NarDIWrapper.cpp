@@ -62,17 +62,17 @@ void SystemStringToWCharPtr(System::String ^SystemStr, wchar_t *Destination) {
     size_t ConvertedChars = 0;
     size_t SizeInBytes = (SystemStr->Length + 1) * 2;
     memcpy(Destination, wch, SizeInBytes);
-
+    
 }
 
 
 namespace NarDIWrapper {
-
-
+    
+    
     CSNarFileExplorer::CSNarFileExplorer(){
         ctx = 0;
     }
-
+    
     CSNarFileExplorer::~CSNarFileExplorer() {
         this->CW_Free();
     }
@@ -83,21 +83,21 @@ namespace NarDIWrapper {
         wchar_t wptr[512];
         memset(wptr, 0, 1024);
         SystemStringToWCharPtr(RootDir, wptr);
-
+        
         return NarInitFileExplorerContext(ctx, NAR_FE_HAND_OPT_READ_MOUNTED_VOLUME, VolLetter, Version, wptr);
-
+        
     }
-
+    
     List<CSNarFileEntry^>^ CSNarFileExplorer::CW_GetFilesInCurrentDirectory(){
-
+        
         List<CSNarFileEntry^>^ Result = gcnew List<CSNarFileEntry^>;     
         
         ULARGE_INTEGER templargeinteger = { 0 };
         FILETIME ft;
         SYSTEMTIME st;
-
+        
         for(int i = 0; i<ctx->EList.EntryCount; i++){
-
+            
             CSNarFileEntry^ Entry = gcnew CSNarFileEntry;
             Entry->Size = ctx->EList.Entries[i].Size;
             Entry->ID = i;
@@ -105,7 +105,7 @@ namespace NarDIWrapper {
             
             Entry->LastModifiedTime = gcnew CSNarFileTime;
             Entry->CreationTime = gcnew CSNarFileTime;
-
+            
             templargeinteger.QuadPart = ctx->EList.Entries[i].CreationTime;
             ft.dwHighDateTime = templargeinteger.HighPart;
             ft.dwLowDateTime =  templargeinteger.LowPart;
@@ -118,49 +118,49 @@ namespace NarDIWrapper {
             Entry->CreationTime->Minute = st.wMinute;
             Entry->CreationTime->Second = st.wSecond;
             
-
+            
             templargeinteger.QuadPart = ctx->EList.Entries[i].LastModifiedTime;
             ft.dwHighDateTime = templargeinteger.HighPart;
             ft.dwLowDateTime = templargeinteger.LowPart;
             FileTimeToSystemTime(&ft, &st);
-
+            
             Entry->LastModifiedTime->Year = st.wYear;
             Entry->LastModifiedTime->Month = st.wMonth;
             Entry->LastModifiedTime->Day = st.wDay;
             Entry->LastModifiedTime->Hour = st.wHour;
             Entry->LastModifiedTime->Minute = st.wMinute;
             Entry->LastModifiedTime->Second = st.wSecond;
-
+            
             Entry->IsDirectory = ctx->EList.Entries[i].IsDirectory;
             Result->Add(Entry);
-
+            
         }
-
+        
         return Result;
-
-
+        
+        
     }
     
     bool CSNarFileExplorer::CW_SelectDirectory(UINT64 ID){
-
+        
         NarFileExplorerPushDirectory(ctx, ID);
         return true;
     }
-
+    
     void CSNarFileExplorer::CW_PopDirectory(){
         NarFileExplorerPopDirectory(ctx);
     }
-
+    
     void CSNarFileExplorer::CW_Free(){
-
+        
         if (ctx) {
             NarReleaseFileExplorerContext(ctx);
             free(ctx);
             ctx = 0;
         }
-
+        
     }
-
+    
     void CSNarFileExplorer::CW_RestoreFile(INT64 ID, System::String^ BackupDirectory, System::String^ TargetDir) {
         
     }
@@ -169,12 +169,12 @@ namespace NarDIWrapper {
         System::String^ result = gcnew System::String(ctx->CurrentDirectory);
         return result;
     }
-
-
-
-
+    
+    
+    
+    
     DiskTracker::DiskTracker() {
-
+        
         C = NarLoadBootState();
         // when loading, always check for old states, if one is not presented, create new one from scratch
         if (C == NULL) {
@@ -187,13 +187,11 @@ namespace NarDIWrapper {
             // found old state
             printf("Succ loaded boot state from file\n");
         }
-
+        
         C->Port = INVALID_HANDLE_VALUE;
         C->ShutDown = NULL;
         C->Thread = NULL;
         C->CleaningUp = FALSE;
-        C->Volumes = { 0,0 };
-
         
         
     }
@@ -210,7 +208,7 @@ namespace NarDIWrapper {
         delete C;
     }
     
-   
+    
     
     bool DiskTracker::CW_InitTracker() {
         return ConnectDriver(C) && SetupVSS();
@@ -234,7 +232,7 @@ namespace NarDIWrapper {
         else{
             printf("Failed to remove volume %c from track list\n", Letter);
         }
-
+        
         return Result;
     }
     
@@ -247,8 +245,8 @@ namespace NarDIWrapper {
             StrInf->ClusterSize = SI.ClusterSize;
             StrInf->FileName = gcnew String(SI.FileName.c_str());
             StrInf->MetadataFileName = gcnew String(SI.MetadataFileName.c_str());
-            StrInf->CopySize = StrInf->ClusterSize * StrInf->ClusterCount;
-
+            StrInf->CopySize = (UINT64)StrInf->ClusterSize * (UINT64)StrInf->ClusterCount;
+            
             return true;
         }
         
@@ -265,13 +263,13 @@ namespace NarDIWrapper {
                                          bool ShouldFormat,
                                          System::String^ RootDir
                                          ) {
-    
+        
         restore_inf R;
-
+        
         R.TargetLetter = TargetLetter;
         R.SrcLetter = SrcLetter;
         R.Version = Version;
-
+        
         if (Version < 0) {
             R.Version = NAR_FULLBACKUP_VERSION;
         }
@@ -286,7 +284,7 @@ namespace NarDIWrapper {
     bool DiskTracker::CW_SaveBootState() {
         return NarSaveBootState(C);
     }
-
+    
     bool DiskTracker::CW_RestoreToFreshDisk(wchar_t TargetLetter, wchar_t SrcLetter, INT Version, int DiskID, System::String^ RootDir) {
         
         restore_inf R;
@@ -294,14 +292,14 @@ namespace NarDIWrapper {
         R.SrcLetter = SrcLetter;
         R.Version = Version;
         R.RootDir = msclr::interop::marshal_as<std::wstring>(RootDir);
-
+        
         if (Version < 0) {
             R.Version = NAR_FULLBACKUP_VERSION;
         }
-            
+        
         return OfflineRestoreCleanDisk(&R, DiskID);
     }
-
+    
     // returns 0 if one is not present
     wchar_t DiskTracker::CW_GetFirstAvailableVolumeLetter()
     {
@@ -329,7 +327,7 @@ namespace NarDIWrapper {
         }
         
         return FALSE;   
-
+        
     }
     
     
@@ -351,7 +349,7 @@ namespace NarDIWrapper {
             if (BI->VolumeName->Length == 0) {
                 BI->VolumeName = L"Local Disk";
             }
-
+            
             Result->Add(BI);
         }
         
@@ -365,15 +363,15 @@ namespace NarDIWrapper {
         if (CResult.Data == NULL || CResult.Count == 0) {
             if (CResult.Count == 0) printf("Found 0 disks on the system\n");
             if (CResult.Data == 0) printf("GetDisksOnSystem returned NULL\n");
-
+            
             return nullptr;
         }
         
         List<DiskInfo^>^ Result = gcnew List<DiskInfo^>;
         printf("Found %i disks on the system\n", CResult.Count);
-
-        for (int i = 0; i < CResult.Count; i++) {
         
+        for (int i = 0; i < CResult.Count; i++) {
+            
             DiskInfo^ temp = gcnew DiskInfo;
             temp->ID = CResult.Data[i].ID;
             temp->Size = CResult.Data[i].Size;
@@ -381,19 +379,19 @@ namespace NarDIWrapper {
             
             Result->Add(temp);
         }
-
+        
         FreeDataArray(&CResult);
-
+        
         return Result;
         
         
     }
-
+    
     List<BackupMetadata^>^ DiskTracker::CW_GetBackupsInDirectory(System::String^ SystemStrRootDir) {
         
         wchar_t RootDir[256];
         SystemStringToWCharPtr(SystemStrRootDir, RootDir);
-
+        
         List<BackupMetadata^>^ ResultList = gcnew List<BackupMetadata^>;
         int MaxMetadataCount = 128;
         int Found = 0;
@@ -403,7 +401,7 @@ namespace NarDIWrapper {
         if (bResult && Found <= MaxMetadataCount) {
             
             printf("FOUND %i", Found);
-
+            
             for (int i = 0; i < Found; i++) {
                 
                 BackupMetadata^ BMet = gcnew BackupMetadata;
@@ -413,27 +411,27 @@ namespace NarDIWrapper {
                 BMet->OSVolume = BMList[i].IsOSVolume;
                 BMet->Version = BMList[i].Version;
                 BMet->WindowsName = gcnew System::String(BMList[i].ProductName);
-
+                
                 ResultList->Add(BMet);
-
+                
             }
-
+            
             
         }
         else {
-
+            
             if (bResult == FALSE) {
                 printf("NarGetBackupsInDirectory returned FALSE\n");
             }
             if (Found > MaxMetadataCount) {
                 printf("Found metadata count exceeds maxmetdatacount\n");
             }
-
+            
         }
-
-
+        
+        
         free(BMList);
-
+        
         return ResultList;
     }
     
