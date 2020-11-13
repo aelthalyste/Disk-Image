@@ -39,49 +39,6 @@ _Analysis_mode_(_Analysis_code_type_user_code_)
 #include "mspyLog.h"
 #include "mspyLog.cpp"
 
-#define TIMED_BLOCK__(Number, ...) timed_block timed_##Number(__COUNTER__, __LINE__, __FUNCTION__);
-#define TIMED_BLOCK_(Number, ...)  TIMED_BLOCK__(Number,  ## __VA__ARGS__)
-#define TIMED_BLOCK(...)           TIMED_BLOCK_(__LINE__, ## __VA__ARGS__)
-
-
-struct debug_record {
-    char* FunctionName;
-    uint64_t Clocks;
-    
-    uint32_t ThreadIndex;
-    uint32_t LineNumber;
-    uint32_t HitCount;
-};
-
-debug_record GlobalDebugRecordArray[];
-
-#define TIMER_END_TRANSLATION_UNIT() debug_record GlobalDebugRecordArray[__COUNTER__];
-
-
-struct timed_block {
-    
-    debug_record* mRecord;
-    
-    timed_block(int Counter, int LineNumber, char* FunctionName) {
-        
-        mRecord = GlobalDebugRecordArray + Counter;
-        mRecord->FunctionName   = FunctionName;
-        mRecord->LineNumber     = LineNumber;
-        mRecord->ThreadIndex    = 0;
-        mRecord->Clocks        -= __rdtsc();
-        mRecord->HitCount++;
-        
-    }
-    
-    ~timed_block() {
-        mRecord->Clocks += __rdtsc();
-    }
-    
-};
-
-inline void
-PrintDebugRecords();
-
 
 /*
     ASSUMES RECORDS ARE SORTED
@@ -5841,7 +5798,7 @@ NarPopDirectoryStack(nar_backup_file_explorer_context* Ctx) {
 inline BOOLEAN
 NarParseIndexAllocationAttribute(void *IndexAttribute, nar_record *OutRegions, INT32 MaxRegionLen, INT32 *OutRegionsFound){
     
-    TIMED_BLOCK();
+    TIMED_NAMED_BLOCK("Index stuff");
     
     if(IndexAttribute == NULL || OutRegions == NULL || OutRegionsFound == NULL) return FALSE;
     
@@ -5955,9 +5912,10 @@ NarParseIndexAllocationAttribute(void *IndexAttribute, nar_record *OutRegions, I
 }
 
 
+#include <vector>
+
 inline void
 NarGetFileListFromMFTID(nar_file_entries_list* EList, UINT64 TargetMFTID, nar_record* MFTRegions, UINT32 MFTRegionCount, UINT32 ClusterSize, nar_fe_volume_handle FEHandle) {
-    
     
     if (!EList) return;
     
@@ -6110,13 +6068,12 @@ NarGetFileListFromMFTID(nar_file_entries_list* EList, UINT64 TargetMFTID, nar_re
                         
                         if (NarFileExplorerReadVolume(FEHandle, IndxBuffer, (DWORD)IndxBufferSize, &BytesRead) && BytesRead == IndxBufferSize) {
                             
-                            //_mm_prefetch((const char*)IndxBuffer, _MM_HINT_T0);
                             
                             // inspect each clusters in region
                             
                             for (UINT32 IndxRegionClusterIndex = 0; IndxRegionClusterIndex < (IndxBufferSize / 4096); IndxRegionClusterIndex++) {
                                 
-                                TIMED_BLOCK();
+                                TIMED_NAMED_BLOCK("Index parsing hot region");
                                 
                                 void* IndxCluster = (char*)IndxBuffer + (UINT64)IndxRegionClusterIndex * 4096;
                                 
@@ -6132,13 +6089,16 @@ NarGetFileListFromMFTID(nar_file_entries_list* EList, UINT64 TargetMFTID, nar_re
                                 INT EntryParseResult = NAR_FEXP_END_MARK;
                                 do {
                                     
-                                    memset(&EList->Entries[EList->EntryCount], 0, sizeof(EList->Entries[EList->EntryCount]));
+                                    TIMED_NAMED_BLOCK("do while loop");
+                                    
                                     EntryParseResult = NarFileExplorerGetFileEntryFromData(IndxCluster, &EList->Entries[EList->EntryCount]);
                                     
                                     if (EntryParseResult == NAR_FEXP_SUCCEEDED || EntryParseResult == NAR_FEXP_POSIX) {
                                         
                                         // do not accept posix files as FILE_ENTRY at all
                                         if (EntryParseResult == NAR_FEXP_SUCCEEDED) {
+                                            TIMED_NAMED_BLOCK("if branch checking");
+                                            
                                             EList->EntryCount++;
                                             if(EList->EntryCount == EList->MaxEntryCount){
                                                 NarExtentFileEntryList(EList, EList->MaxEntryCount * 2);
@@ -7100,7 +7060,7 @@ NarInitFileExplorerContext(nar_backup_file_explorer_context* Ctx, INT32 HandleOp
     Ctx->HandleOption = HandleOptions;
     memset(Ctx, 0, sizeof(*Ctx));
     
-    if (NarInitFileEntryList(&Ctx->EList, 50)) {
+    if (NarInitFileEntryList(&Ctx->EList, 10000)) {
         
         memset(Ctx->CurrentDirectory, 0, sizeof(Ctx->CurrentDirectory));
         memset(Ctx->RootDir, 0, sizeof(Ctx->RootDir));
@@ -7165,7 +7125,7 @@ NarInitFileExplorerContext(nar_backup_file_explorer_context* Ctx, INT32 HandleOp
             vb[0] = (wchar_t)Letter;
             wcscat(Ctx->CurrentDirectory, vb);
             
-#if 0 // performance test
+#if 1 // performance test
             
             Ctx->EList.EntryCount = 0;
             NarGetFileListFromMFTID(&Ctx->EList, 44571, Ctx->MFTRecords, Ctx->MFTRecordsCount, Ctx->ClusterSize, Ctx->FEHandle);
@@ -7645,12 +7605,11 @@ main(
     UNREFERENCED_PARAMETER(argv);
     
     
-    return 0;
-    
     nar_backup_file_explorer_context ctx;
     
     NarInitFileExplorerContext(&ctx, NAR_FE_HAND_OPT_READ_MOUNTED_VOLUME, 'C', 0, NULL);
     
+#if 0    
     NarFileExplorerPrint(&ctx);
     
     int ListID = 0;
@@ -7672,9 +7631,10 @@ main(
         
         Sleep(16);
     }
+#endif
     
-    NarReleaseFileExplorerContext(&ctx);
     PrintDebugRecords();
+    NarReleaseFileExplorerContext(&ctx);
     
     return 0;
 }
@@ -7766,15 +7726,20 @@ DisplayError(DWORD Code) {
     printf("    %ws\n", buffer);
 }
 
-
-TIMER_END_TRANSLATION_UNIT();
+debug_record GlobalDebugRecordArray[__COUNTER__];
 
 inline void
 PrintDebugRecords() {
     
     int len = sizeof(GlobalDebugRecordArray) / sizeof(debug_record);
     for (int i = 0; i < len; i++) {
-        printf("%s avclocks: %.3fat line %i, hit count %i\n", GlobalDebugRecordArray[i].FunctionName, (double)GlobalDebugRecordArray[i].Clocks / GlobalDebugRecordArray[i].HitCount, GlobalDebugRecordArray[i].LineNumber, GlobalDebugRecordArray[i].HitCount);
+        
+        if(GlobalDebugRecordArray[i].FunctionName == NULL){
+            continue;
+        }
+        
+        printf("FunctionName: %s\tdescription: %s\tavclocks: %.3f\tat line %i\thit count %i\n", GlobalDebugRecordArray[i].FunctionName, GlobalDebugRecordArray[i].Description, (double)GlobalDebugRecordArray[i].Clocks / GlobalDebugRecordArray[i].HitCount, GlobalDebugRecordArray[i].LineNumber, GlobalDebugRecordArray[i].HitCount);
+        
     }
     
 }

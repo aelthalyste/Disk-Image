@@ -1,21 +1,3 @@
-/*++
-
-Copyright (c) 1989-2002  Microsoft Corporation
-
-Module Name:
-
-    mspyLog.h
-
-Abstract:
-
-    This module contains the structures and prototypes used by the user
-    program to retrieve and see the log records recorded by MiniSpy.sys.
-
-Environment:
-
-    User mode
-
---*/
 #ifndef __MSPYLOG_H__
 #define __MSPYLOG_H__
 
@@ -36,10 +18,57 @@ Environment:
 
 #include <stdio.h>
 
+
+
+#define TIMED_BLOCK__(NAME, Number, ...) timed_block timed_##Number(__COUNTER__, __LINE__, __FUNCTION__, NAME);
+#define TIMED_BLOCK_(NAME, Number, ...)  TIMED_BLOCK__(NAME, Number,  ## __VA__ARGS__)
+#define TIMED_BLOCK(...)                 TIMED_BLOCK_("UNNAMED", __LINE__, ## __VA__ARGS__)
+#define TIMED_NAMED_BLOCK(NAME, ...)     TIMED_BLOCK_(NAME, __LINE__, ## __VA__ARGS__)
+
+struct debug_record {
+    char* FunctionName;
+    char* Description;
+    uint64_t Clocks;
+    
+    uint32_t ThreadIndex;
+    uint32_t LineNumber;
+    uint32_t HitCount;
+};
+
+debug_record GlobalDebugRecordArray[];
+
+struct timed_block {
+    
+    debug_record* mRecord;
+    
+    timed_block(int Counter, int LineNumber, char* FunctionName, char* Description) {
+        
+        mRecord = GlobalDebugRecordArray + Counter;
+        mRecord->FunctionName   = FunctionName;
+        mRecord->Description = Description;
+        mRecord->LineNumber     = LineNumber;
+        mRecord->ThreadIndex    = 0;
+        mRecord->Clocks        -= __rdtsc();
+        mRecord->HitCount++;
+        
+    }
+    
+    ~timed_block() {
+        mRecord->Clocks += __rdtsc();
+    }
+    
+};
+
+
+inline void
+PrintDebugRecords();
+
+
 static void
 NarLog(const char *str, ...){
     
     
+#if 0    
     const static HANDLE File = CreateFileA("NAR_APP_LOG_FILE.txt", GENERIC_WRITE|GENERIC_READ, FILE_SHARE_READ|FILE_SHARE_WRITE, 0, CREATE_ALWAYS, 0, 0);
     static SYSTEMTIME Time = {};
     
@@ -69,8 +98,9 @@ NarLog(const char *str, ...){
     OutputDebugStringA(buf);
     
     FlushFileBuffers(File);
+#endif
     
-#if 0    
+#if 1
     char szBuff[1024];
     va_list arg;
     va_start(arg, str);
@@ -832,7 +862,6 @@ NarExtentFileEntryList(nar_file_entries_list *EList, unsigned int NewCapacity){
         EList->MaxEntryCount = NewCapacity;
         VirtualAlloc(EList->Entries, NewCapacity*sizeof(nar_file_entry), MEM_COMMIT, PAGE_READWRITE);
         //EList->Entries = (nar_file_entry*)realloc(EList->Entries, NewCapacity*sizeof(nar_file_entry));
-        
     }
 }
 
