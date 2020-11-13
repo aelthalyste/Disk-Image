@@ -785,7 +785,6 @@ struct nar_fe_volume_handle{
     backup_metadata_ex *BMEX;
 };
 
-
 // could be either file or dir
 struct nar_file_entry {
     
@@ -809,29 +808,39 @@ struct nar_file_entries_list {
 };
 
 inline BOOLEAN
-NarFileExplorerInitFileEntryList(nar_file_entries_list *EList, unsigned int  MaxEntryCount){
+NarInitFileEntryList(nar_file_entries_list *EList, unsigned int  MaxEntryCount){
     if(EList == NULL) FALSE;
     EList->MFTIndex = 0;
     EList->EntryCount = 0;
     EList->MaxEntryCount = MaxEntryCount;
-    EList->Entries = (nar_file_entry*)malloc(MaxEntryCount*sizeof(nar_file_entry));
+    
+    UINT64 ReserveSize = (0x7FFFFFFF) * sizeof(nar_file_entry);
+    
+    // EList->Entries = (nar_file_entry*)malloc(MaxEntryCount*sizeof(nar_file_entry));
+    
+    EList->Entries = (nar_file_entry*)VirtualAlloc(0, ReserveSize, MEM_RESERVE, PAGE_READWRITE);
+    VirtualAlloc(EList->Entries, MaxEntryCount*sizeof(nar_file_entry), MEM_COMMIT, PAGE_READWRITE);
+    
     return (EList->Entries != NULL);
 }
 
 inline void
-NarFileExplorerExtentEntryList(nar_file_entries_list *EList, unsigned int NewCapacity){
+NarExtentFileEntryList(nar_file_entries_list *EList, unsigned int NewCapacity){
     if(EList){
         EList->MaxEntryCount = NewCapacity;
-        EList->Entries = (nar_file_entry*)realloc(EList->Entries, NewCapacity*sizeof(nar_file_entry));
+        VirtualAlloc(EList->Entries, NewCapacity*sizeof(nar_file_entry), MEM_COMMIT, PAGE_READWRITE);
+        //EList->Entries = (nar_file_entry*)realloc(EList->Entries, NewCapacity*sizeof(nar_file_entry));
+        
     }
 }
 
 inline void
-NarFileExplorerFreeEntryList(nar_file_entries_list *EList){
+NarFreeFileEntryList(nar_file_entries_list *EList){
     if(EList == NULL) return;
-    free(EList->Entries);
+    VirtualFree(EList->Entries, 0, MEM_RELEASE);
     memset(EList, 0, sizeof(*EList));
 }
+
 
 struct nar_backup_file_explorer_context {
     
@@ -840,6 +849,8 @@ struct nar_backup_file_explorer_context {
     INT32 ClusterSize;
     wchar_t RootDir[256];
     
+    BYTE HandleOption;
+
     UINT32 LastIndx;
     
     int MFTRecordsCount;

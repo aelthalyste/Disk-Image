@@ -3067,8 +3067,8 @@ SetupVSS() {
 #endif
 #endif
     
-    
 }
+
 
 BOOLEAN
 ConnectDriver(PLOG_CONTEXT Ctx) {
@@ -3198,7 +3198,7 @@ OfflineRestoreCleanDisk(restore_inf* R, int DiskID) {
     }
     
     // TODO (Batuhan): wait 2 second prior to bcdboot to ensure volume is usable after diskpart operations 
-    Sleep(1500); 
+    Sleep(1000); 
     
     if (Result) {
         
@@ -3243,7 +3243,6 @@ BOOLEAN
 OfflineRestoreToVolume(restore_inf* R, BOOLEAN ShouldFormat) {
     
     BOOLEAN Result = FALSE;
-    //HANDLE VolumeToRestore = INVALID_HANDLE_VALUE;
     
     int Version = -10;
     ULONGLONG VolumeSize = 0;
@@ -6054,6 +6053,9 @@ NarGetFileListFromMFTID(nar_file_entries_list* EList, UINT64 TargetMFTID, nar_re
                                     // do not accept POSIX files as FILE_ENTRY at all
                                     if (EntryParseResult == NAR_FEXP_SUCCEEDED) {
                                         EList->EntryCount++;
+                                        if(EList->EntryCount == EList->MaxEntryCount){
+                                            NarExtentFileEntryList(EList, EList->MaxEntryCount * 2);
+                                        }
                                     }
                                     
                                     UINT16 EntrySize = NAR_FEXP_INDX_ENTRY_SIZE(Entry);
@@ -6144,6 +6146,9 @@ NarGetFileListFromMFTID(nar_file_entries_list* EList, UINT64 TargetMFTID, nar_re
                                         // do not accept posix files as FILE_ENTRY at all
                                         if (EntryParseResult == NAR_FEXP_SUCCEEDED) {
                                             EList->EntryCount++;
+                                            if(EList->EntryCount == EList->MaxEntryCount){
+                                                NarExtentFileEntryList(EList, EList->MaxEntryCount * 2);
+                                            }
                                         }
                                         
                                         UINT16 EntrySize = NAR_FEXP_INDX_ENTRY_SIZE(IndxCluster);
@@ -7008,19 +7013,17 @@ NarReleaseFileExplorerContext(nar_backup_file_explorer_context* Ctx) {
     
     if (!Ctx) return; 
     
-    if (Ctx->EList.Entries != 0) {
-        free(Ctx->EList.Entries);
-    }
-    if (Ctx->MFTRecords != 0) {
+    
+    if(Ctx->HandleOption == NAR_FE_HAND_OPT_READ_BACKUP_VOLUME){
         free(Ctx->MFTRecords);
     }
-    
+    else{
+        NarFreeMFTRegionsByCommandLine(Ctx->MFTRecords);
+    }
     
     NarFreeFEVolumeHandle(Ctx->FEHandle);
-    NarFileExplorerFreeEntryList(&Ctx->EList);
-    NarFreeMFTRegionsByCommandLine(Ctx->MFTRecords);
+    NarFreeFileEntryList(&Ctx->EList);
     
-    memset(Ctx, 0, sizeof(*Ctx));
     
 }
 
@@ -7100,12 +7103,10 @@ NarInitFileExplorerContext(nar_backup_file_explorer_context* Ctx, INT32 HandleOp
         goto NAR_FAIL_TERMINATE;
     }
     
-    
+    Ctx->HandleOption = HandleOptions;
     memset(Ctx, 0, sizeof(*Ctx));
     
-    if (NarFileExplorerInitFileEntryList(&Ctx->EList, 100000)) {
-        
-        memset(Ctx->EList.Entries, 0, 100000 * sizeof(nar_file_entry));
+    if (NarInitFileEntryList(&Ctx->EList, 50)) {
         
         memset(Ctx->CurrentDirectory, 0, sizeof(Ctx->CurrentDirectory));
         memset(Ctx->RootDir, 0, sizeof(Ctx->RootDir));
@@ -7729,9 +7730,6 @@ main(
      CHAR* argv[]
      ) {
     
-    EnesTest();
-    
-    return 0;
     
     nar_backup_file_explorer_context ctx;
     
@@ -7759,11 +7757,10 @@ main(
         Sleep(16);
     }
     
+    NarReleaseFileExplorerContext(&ctx);
     PrintDebugRecords();
     
     return 0;
-    
-    NarReleaseFileExplorerContext(&ctx);
     
     
     NarInitFileExplorerContext(&ctx, NAR_FE_HAND_OPT_READ_MOUNTED_VOLUME, 'C', 0, NULL);
