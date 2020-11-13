@@ -3029,7 +3029,9 @@ SetupVSS() {
         NOTE(Batuhan): in managed code we dont need to initialize these stuff. since i am shipping code as textual to wrapper, i can detect clr compilation and switch to correct way to initialize
         vss stuff
      */
+    return TRUE;
     
+#if 0    
 #if (_MANAGED == 1) || (_M_CEE == 1)
     return TRUE;
 #else
@@ -3062,6 +3064,7 @@ SetupVSS() {
         Return = FALSE;
     }
     return Return;
+#endif
 #endif
     
     
