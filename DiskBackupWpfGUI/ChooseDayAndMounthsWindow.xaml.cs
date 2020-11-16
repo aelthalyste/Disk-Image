@@ -61,19 +61,19 @@ namespace DiskBackupWpfGUI
                 string[] words = daysOrMounths.Split(',');
                 foreach (var word in words)
                 {
-                    if (Convert.ToInt32(word) == 3)
-                        chbMonday.IsChecked = true;
-                    if (Convert.ToInt32(word) == 4)
-                        chbTuesday.IsChecked = true;
-                    if (Convert.ToInt32(word) == 5)
-                        chbWednesday.IsChecked = true;
-                    if (Convert.ToInt32(word) == 6)
-                        chbThursday.IsChecked = true;
-                    if (Convert.ToInt32(word) == 7)
-                        chbFriday.IsChecked = true;
-                    if (Convert.ToInt32(word) == 1)
-                        chbSaturday.IsChecked = true;
                     if (Convert.ToInt32(word) == 2)
+                        chbMonday.IsChecked = true;
+                    if (Convert.ToInt32(word) == 3)
+                        chbTuesday.IsChecked = true;
+                    if (Convert.ToInt32(word) == 4)
+                        chbWednesday.IsChecked = true;
+                    if (Convert.ToInt32(word) == 5)
+                        chbThursday.IsChecked = true;
+                    if (Convert.ToInt32(word) == 6)
+                        chbFriday.IsChecked = true;
+                    if (Convert.ToInt32(word) == 7)
+                        chbSaturday.IsChecked = true;
+                    if (Convert.ToInt32(word) == 1)
                         chbSunday.IsChecked = true;
                 }
             }

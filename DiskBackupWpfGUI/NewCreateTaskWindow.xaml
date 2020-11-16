@@ -282,13 +282,13 @@
                                         <ComboBoxItem Content="{DynamicResource fourth}"></ComboBoxItem>
                                     </ComboBox>
                                     <ComboBox Name="cbWeeklyTimeDays" Width="150" Margin="0,0,20,0" SelectedIndex="0">
+                                        <ComboBoxItem Content="{DynamicResource sunday}"></ComboBoxItem>
                                         <ComboBoxItem Content="{DynamicResource monday}"></ComboBoxItem>
                                         <ComboBoxItem Content="{DynamicResource tuesday}"></ComboBoxItem>
                                         <ComboBoxItem Content="{DynamicResource wednesday}"></ComboBoxItem>
                                         <ComboBoxItem Content="{DynamicResource thursday}"></ComboBoxItem>
                                         <ComboBoxItem Content="{DynamicResource friday}"></ComboBoxItem>
                                         <ComboBoxItem Content="{DynamicResource saturday}"></ComboBoxItem>
-                                        <ComboBoxItem Content="{DynamicResource sunday}"></ComboBoxItem>
                                     </ComboBox>
                                     <Button Name="btnWeeklyTimeWeek" Content="{DynamicResource mounths}" Style="{StaticResource WhiteButton}" Click="btnWeeklyTimeWeek_Click" Width="60"></Button>
                                 </StackPanel>

@@ -50,40 +50,39 @@ namespace DiskBackup.TaskScheduler.Jobs
             JobExecutionException exception = null;
             bool result = true;
 
-            ActivityLog activityLog = new ActivityLog {
+            ActivityLog activityLog = new ActivityLog
+            {
                 TaskInfoName = task.Name,
                 BackupStoragePath = task.BackupStorageInfo.Path,
                 StartDate = DateTime.Now,
                 Type = (DetailedMissionType)task.BackupTaskInfo.Type,
-                
+
             };
 
             try
             {
                 //Örneğin 2 tane 'c' görevi aynı anda service'e yollanamaz burada kontrol edilip gönderilmeli... Sonradan gelen görev başarısız sayılıp 
                 //Refire kısmına gönderilmeli... ActivityLog'da bilgilendirilmeli
-                var taskList = _taskInfoDal.GetList();
+                var taskList = _taskInfoDal.GetList(x => x.Status == "Çalışıyor");
                 foreach (var item in taskList)
                 {
-                    if (item.Status.Equals("Çalışıyor"))
+                    foreach (var itemObje in task.StrObje)
                     {
-                        foreach (var itemObje in task.StrObje)
+                        if (item.StrObje.Contains(itemObje))
                         {
-                            if (item.StrObje.Contains(itemObje))
-                            {
-                                // Okuma yapılan diskte işlem yapılamaz
-                                exception = new JobExecutionException();
-                            }
+                            // Okuma yapılan diskte işlem yapılamaz
+                            exception = new JobExecutionException();
+                            Console.WriteLine("bu volumede çalışan bir görev var");
                         }
                     }
                 }
 
                 if (exception == null)
-                    result = _backupService.CreateIncDiffBackup(task);
-                //for (int i = 0; i < 10; i++)
-                //{
-                //    Console.WriteLine(i);
-                //}
+                //result = _backupService.CreateIncDiffBackup(task);
+                for (int i = 0; i < 10; i++)
+                {
+                    Console.WriteLine(i);
+                }
             }
             catch (Exception e)
             {

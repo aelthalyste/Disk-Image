@@ -157,7 +157,7 @@ namespace DiskBackupWpfGUI
                             _taskInfo.BackupTaskInfo.WeeklyTime = WeeklyType.Fourth;
                         }
                         //günler
-                        _taskInfo.BackupTaskInfo.Days = cbWeeklyTimeDays.SelectedIndex.ToString();
+                        _taskInfo.BackupTaskInfo.Days = (cbWeeklyTimeDays.SelectedIndex+1).ToString();
                     }
                     else if (rbPeriodic.IsChecked.Value)
                     {
