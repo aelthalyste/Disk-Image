@@ -62,8 +62,28 @@ namespace DiskBackup.TaskScheduler.Jobs
             {
                 //Örneğin 2 tane 'c' görevi aynı anda service'e yollanamaz burada kontrol edilip gönderilmeli... Sonradan gelen görev başarısız sayılıp 
                 //Refire kısmına gönderilmeli... ActivityLog'da bilgilendirilmeli
-                result = _backupService.CreateIncDiffBackup(task);
-                // activity log burada basılacak
+                var taskList = _taskInfoDal.GetList();
+                foreach (var item in taskList)
+                {
+                    if (item.Status.Equals("Çalışıyor"))
+                    {
+                        foreach (var itemObje in task.StrObje)
+                        {
+                            if (item.StrObje.Contains(itemObje))
+                            {
+                                // Okuma yapılan diskte işlem yapılamaz
+                                exception = new JobExecutionException();
+                            }
+                        }
+                    }
+                }
+
+                if (exception == null)
+                    result = _backupService.CreateIncDiffBackup(task);
+                //for (int i = 0; i < 10; i++)
+                //{
+                //    Console.WriteLine(i);
+                //}
             }
             catch (Exception e)
             {
@@ -85,6 +105,7 @@ namespace DiskBackup.TaskScheduler.Jobs
 
             if (exception != null)
             {
+                //now görevi sona erdi sil
                 activityLog.EndDate = DateTime.Now;
                 activityLog.Status = StatusType.Fail;
                 activityLog.StrStatus = StatusType.Fail.ToString();
@@ -95,7 +116,14 @@ namespace DiskBackup.TaskScheduler.Jobs
                 Console.WriteLine(exception.ToString());
                 task.Status = "Hata"; // Resource eklenecek 
                 if (!context.JobDetail.Key.Name.Contains("Now"))
+                {
                     task.NextDate = (context.Trigger.GetNextFireTimeUtc()).Value.LocalDateTime; // next date tekrar dene kısmında hatalı olmaması için test et / hatalıysa + fromMinutes
+                    if (!task.BackupTaskInfo.FailTryAgain || (context.RefireCount > task.BackupTaskInfo.FailNumberTryAgain)) // now silme
+                    {
+                        var res = task.ScheduleId.Split('*');
+                        task.ScheduleId = res[0];
+                    }
+                }
                 _taskInfoDal.Update(task);
                 await Task.Delay(TimeSpan.FromMinutes(task.BackupTaskInfo.WaitNumberTryAgain));
                 throw exception;
@@ -111,7 +139,12 @@ namespace DiskBackup.TaskScheduler.Jobs
             task.Status = "Hazır"; // Resource eklenecek 
             Console.WriteLine(context.JobDetail.Key.Name);
             if (!context.JobDetail.Key.Name.Contains("Now"))
+            {
                 task.NextDate = (context.Trigger.GetNextFireTimeUtc()).Value.LocalDateTime;
+                // now görevi sona erdi sil
+                var res = task.ScheduleId.Split('*');
+                task.ScheduleId = res[0];
+            }
             _taskInfoDal.Update(task);
         }
     }
