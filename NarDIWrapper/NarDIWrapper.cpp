@@ -43,9 +43,8 @@ mesaj loopunda, threadinde, bir sorun yaşanırsa nasıl ana uygulamaya bildiril
 #include <msclr\marshal.h>
 #include <msclr\marshal_cppstd.h>
 
-#include "mspyLog.h"
+
 #include "mspyUser.cpp"
-#include "mspyLog.cpp"
 
 #include <msclr/marshal.h>
 #include <Windows.h>
