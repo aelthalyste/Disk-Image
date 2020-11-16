@@ -16,17 +16,17 @@ namespace DiskBackup.TaskScheduler.Jobs
     public class BackupIncDiffJob : IJob
     {
         private readonly IBackupService _backupService;
-        private readonly ITaskInfoDal _taskInfoRepository;
-        private readonly IBackupStorageDal _backupStorageRepository;
+        private readonly ITaskInfoDal _taskInfoDal;
+        private readonly IBackupStorageDal _backupStorageDal;
         private readonly IStatusInfoDal _statusInfoDal;
         private readonly IActivityLogDal _activityLogDal;
         private readonly IBackupTaskDal _backupTaskDal;
 
-        public BackupIncDiffJob(ITaskInfoDal taskInfoRepository, IBackupStorageDal backupStorageRepository, IStatusInfoDal statusInfoRepository, IBackupService backupService, IActivityLogDal activityLogDal, IBackupTaskDal backupTaskDal)
+        public BackupIncDiffJob(ITaskInfoDal taskInfoDal, IBackupStorageDal backupStorageDal, IStatusInfoDal statusInfoDal, IBackupService backupService, IActivityLogDal activityLogDal, IBackupTaskDal backupTaskDal)
         {
-            _taskInfoRepository = taskInfoRepository;
-            _backupStorageRepository = backupStorageRepository;
-            _statusInfoDal = statusInfoRepository;
+            _taskInfoDal = taskInfoDal;
+            _backupStorageDal = backupStorageDal;
+            _statusInfoDal = statusInfoDal;
             _backupService = backupService;
             _activityLogDal = activityLogDal;
             _backupTaskDal = backupTaskDal;
@@ -34,11 +34,15 @@ namespace DiskBackup.TaskScheduler.Jobs
 
         public async Task Execute(IJobExecutionContext context)
         {
-            Console.WriteLine("Job'a girdim");
+            Console.WriteLine("Job'a başlandı");
             var taskId = int.Parse(context.JobDetail.JobDataMap["taskId"].ToString());
 
-            var task = _taskInfoRepository.Get(x => x.Id == taskId);
-            task.BackupStorageInfo = _backupStorageRepository.Get(x => x.Id == task.BackupStorageInfoId);
+            var task = _taskInfoDal.Get(x => x.Id == taskId);
+            task.LastWorkingDate = DateTime.Now;
+            task.Status = "Çalışıyor"; // Resource eklenecek 
+            _taskInfoDal.Update(task);
+
+            task.BackupStorageInfo = _backupStorageDal.Get(x => x.Id == task.BackupStorageInfoId);
 
             task.StatusInfo = _statusInfoDal.Get(x => x.Id == task.StatusInfoId);
             task.BackupTaskInfo = _backupTaskDal.Get(x => x.Id == task.BackupTaskId);
@@ -63,7 +67,7 @@ namespace DiskBackup.TaskScheduler.Jobs
             }
             catch (Exception e)
             {
-                Console.WriteLine("Catch'e düştüm");
+                Console.WriteLine("Catch'e düştü");
                 if (task.BackupTaskInfo.FailTryAgain)
                 {
                     exception = new JobExecutionException(e, context.RefireCount <= task.BackupTaskInfo.FailNumberTryAgain);
@@ -72,7 +76,7 @@ namespace DiskBackup.TaskScheduler.Jobs
 
             if (!result)
             {
-                Console.WriteLine("false oldu batudan geldi");
+                Console.WriteLine("Batuhan'dan false değer geldi");
                 if (task.BackupTaskInfo.FailTryAgain)
                 {
                     exception = new JobExecutionException(context.RefireCount <= task.BackupTaskInfo.FailNumberTryAgain);
@@ -89,6 +93,10 @@ namespace DiskBackup.TaskScheduler.Jobs
                 activityLog.StatusInfoId = resultStatusInfo.Id;
                 _activityLogDal.Add(activityLog);
                 Console.WriteLine(exception.ToString());
+                task.Status = "Hata"; // Resource eklenecek 
+                if (!context.JobDetail.Key.Name.Contains("Now"))
+                    task.NextDate = (context.Trigger.GetNextFireTimeUtc()).Value.LocalDateTime; // next date tekrar dene kısmında hatalı olmaması için test et / hatalıysa + fromMinutes
+                _taskInfoDal.Update(task);
                 await Task.Delay(TimeSpan.FromMinutes(task.BackupTaskInfo.WaitNumberTryAgain));
                 throw exception;
             }
@@ -100,6 +108,11 @@ namespace DiskBackup.TaskScheduler.Jobs
             var resultStatusInfo2 = _statusInfoDal.Add(activityLog.StatusInfo);
             activityLog.StatusInfoId = resultStatusInfo2.Id;
             _activityLogDal.Add(activityLog);
+            task.Status = "Hazır"; // Resource eklenecek 
+            Console.WriteLine(context.JobDetail.Key.Name);
+            if (!context.JobDetail.Key.Name.Contains("Now"))
+                task.NextDate = (context.Trigger.GetNextFireTimeUtc()).Value.LocalDateTime;
+            _taskInfoDal.Update(task);
         }
     }
 }

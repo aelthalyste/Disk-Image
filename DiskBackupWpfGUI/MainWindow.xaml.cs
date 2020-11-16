@@ -136,56 +136,8 @@ namespace DiskBackupWpfGUI
 
             #region ActivityLog
 
-            // real
             ShowActivityLog();
 
-            /*BackupStorageInfo backupAreaInfo1 = new BackupStorageInfo()
-            {
-                StorageName = "Narbulut"
-            };
-            BackupStorageInfo backupAreaInfo2 = new BackupStorageInfo()
-            {
-                StorageName = "Disk 2"
-            };
-
-            List<ActivityLog> activityLogItems = new List<ActivityLog>();
-
-            activityLogItems.Add(new ActivityLog()
-            {
-                Id = 0,
-                StartDate = DateTime.Now - TimeSpan.FromDays(10),
-                EndDate = DateTime.Now - TimeSpan.FromHours(10),
-                Type = DetailedMissionType.Diff,
-                TaskInfoName = "Sistem Yedekleme",
-                BackupStorageInfo = backupAreaInfo2,
-                Status = StatusType.Success,
-                StrStatus = Resources[StatusType.Success.ToString()].ToString()
-            });
-            activityLogItems.Add(new ActivityLog()
-            {
-                Id = 0,
-                StartDate = DateTime.Now - TimeSpan.FromDays(9),
-                EndDate = DateTime.Now - TimeSpan.FromHours(8),
-                Type = DetailedMissionType.Diff,
-                TaskInfoName = "Sistem Yedekleme",
-                BackupStorageInfo = backupAreaInfo1,
-                Status = StatusType.Fail,
-                StrStatus = Resources[StatusType.Fail.ToString()].ToString()
-            });
-            activityLogItems.Add(new ActivityLog()
-            {
-                Id = 0,
-                StartDate = DateTime.Now - TimeSpan.FromDays(5),
-                EndDate = DateTime.Now - TimeSpan.FromHours(5),
-                Type = DetailedMissionType.Restore,
-                TaskInfoName = "Geri Yükleme",
-                BackupStorageInfo = backupAreaInfo2,
-                Status = StatusType.Success,
-                StrStatus = Resources[StatusType.Success.ToString()].ToString()
-            });
-
-            listViewLog.ItemsSource = activityLogItems;*/
-            //buraya kadar uyarlandı loader'da falan da düzen gerekecek
             #endregion
 
             List<BackupInfo> backupsItems = new List<BackupInfo>();
@@ -497,14 +449,16 @@ namespace DiskBackupWpfGUI
         private void btnTaskStart_Click(object sender, RoutedEventArgs e)
         {
             TaskInfo taskInfo = (TaskInfo)listViewTasks.SelectedItem;
-            taskInfo.NextDate = DateTime.Now + TimeSpan.FromSeconds(20);
+            taskInfo.LastWorkingDate = DateTime.Now + TimeSpan.FromSeconds(20);
             taskInfo.BackupStorageInfo = _backupStorageDal.Get(x => x.Id == taskInfo.BackupStorageInfoId);
-            Console.WriteLine("Backup Başlatılıyor");
+            Console.WriteLine("Hemen çalıştırılıyor");
             if (taskInfo.Type == TaskType.Backup)
             {
+                Console.WriteLine("Backup başlatılıyor");
                 taskInfo.BackupTaskInfo = _backupTaskDal.Get(x => x.Id == taskInfo.BackupTaskId);
                 if (taskInfo.BackupTaskInfo.Type == BackupTypes.Diff || taskInfo.BackupTaskInfo.Type == BackupTypes.Inc)
                 {
+                    Console.WriteLine("Backup Inc-Diff başlatılıyor");
                     _taskSchedulerManager.BackupIncDiffNowJob(taskInfo).Wait();
                 }
                 else

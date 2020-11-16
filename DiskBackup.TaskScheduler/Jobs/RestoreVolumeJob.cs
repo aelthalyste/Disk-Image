@@ -15,11 +15,11 @@ namespace DiskBackup.TaskScheduler.Jobs
     public class RestoreVolumeJob : IJob
     {
         private readonly IBackupService _backupService;
-        private readonly IBackupInfoDal _backupInfoRepository;
+        private readonly IBackupInfoDal _backupInfoDal;
 
-        public RestoreVolumeJob(IBackupInfoDal backupInfoRepository, IBackupService backupService)
+        public RestoreVolumeJob(IBackupInfoDal backupInfoDal, IBackupService backupService)
         {
-            _backupInfoRepository = backupInfoRepository;
+            _backupInfoDal = backupInfoDal;
             _backupService = backupService;
         }
 
@@ -28,7 +28,7 @@ namespace DiskBackup.TaskScheduler.Jobs
             var volumeLetter = (char)context.JobDetail.JobDataMap["volumeLetter"];
             var backupInfoId = int.Parse(context.JobDetail.JobDataMap["backupInfoId"].ToString());
 
-            var backupInfo = _backupInfoRepository.Get(x => x.Id == backupInfoId);
+            var backupInfo = _backupInfoDal.Get(x => x.Id == backupInfoId);
 
             var result = _backupService.RestoreBackupVolume(backupInfo, volumeLetter);
 
