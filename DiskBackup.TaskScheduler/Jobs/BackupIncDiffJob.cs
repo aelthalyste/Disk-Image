@@ -111,14 +111,9 @@ namespace DiskBackup.TaskScheduler.Jobs
                 _activityLogDal.Add(activityLog);
                 Console.WriteLine(exception.ToString());
                 task.Status = "Hata"; // Resource eklenecek 
-                if (!context.JobDetail.Key.Name.Contains("Now"))
+                if (context.Trigger.GetNextFireTimeUtc() != null)
                 {
-                    task.NextDate = (context.Trigger.GetNextFireTimeUtc()).Value.LocalDateTime; // next date tekrar dene kısmında hatalı olmaması için test et / hatalıysa + fromMinutes
-                    if (!task.BackupTaskInfo.FailTryAgain || (context.RefireCount > task.BackupTaskInfo.FailNumberTryAgain)) // now silme
-                    {
-                        var res = task.ScheduleId.Split('*');
-                        task.ScheduleId = res[0];
-                    }
+                    task.NextDate = (context.Trigger.GetNextFireTimeUtc()).Value.LocalDateTime;
                 }
                 _taskInfoDal.Update(task);
                 await Task.Delay(TimeSpan.FromMinutes(task.BackupTaskInfo.WaitNumberTryAgain));
@@ -134,12 +129,9 @@ namespace DiskBackup.TaskScheduler.Jobs
             _activityLogDal.Add(activityLog);
             task.Status = "Hazır"; // Resource eklenecek 
             Console.WriteLine(context.JobDetail.Key.Name);
-            if (!context.JobDetail.Key.Name.Contains("Now"))
+            if (context.Trigger.GetNextFireTimeUtc() != null)
             {
                 task.NextDate = (context.Trigger.GetNextFireTimeUtc()).Value.LocalDateTime;
-                // now görevi sona erdi sil
-                var res = task.ScheduleId.Split('*');
-                task.ScheduleId = res[0];
             }
             _taskInfoDal.Update(task);
         }

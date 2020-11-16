@@ -459,7 +459,15 @@ namespace DiskBackupWpfGUI
                 if (taskInfo.BackupTaskInfo.Type == BackupTypes.Diff || taskInfo.BackupTaskInfo.Type == BackupTypes.Inc)
                 {
                     Console.WriteLine("Backup Inc-Diff başlatılıyor");
-                    _taskSchedulerManager.BackupIncDiffNowJob(taskInfo).Wait();
+                    if (taskInfo.ScheduleId != null && !taskInfo.ScheduleId.Contains("Now"))
+                    {
+                        _taskSchedulerManager.RunNowTrigger(taskInfo).Wait();
+                    }
+                    else
+                    {
+                        // now görevini çağır
+                        _taskSchedulerManager.BackupIncDiffNowJob(taskInfo).Wait();
+                    }
                 }
                 else
                 {

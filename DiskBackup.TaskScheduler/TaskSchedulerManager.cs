@@ -36,6 +36,12 @@ namespace DiskBackup.TaskScheduler
             await _scheduler.Start();
         }
 
+        public async Task RunNowTrigger(TaskInfo taskInfo)
+        {
+            var result = taskInfo.ScheduleId.Split('/');
+            await _scheduler.TriggerJob(new JobKey(result[0], result[1]));
+        }
+
         #region Backup Inc-Diff
 
         #region Daily
@@ -57,6 +63,7 @@ namespace DiskBackup.TaskScheduler
             taskInfo.ScheduleId = $"backupIncDiffEverydayJob_{taskInfo.Id}/Backup";
             taskInfo.NextDate = trigger.GetNextFireTimeUtc().Value.LocalDateTime;
             _taskInfoDal.Update(taskInfo);
+            
         }
 
         public async Task BackupIncDiffWeekDaysJob(TaskInfo taskInfo)
