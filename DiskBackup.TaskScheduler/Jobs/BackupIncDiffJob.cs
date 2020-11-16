@@ -38,12 +38,8 @@ namespace DiskBackup.TaskScheduler.Jobs
             var taskId = int.Parse(context.JobDetail.JobDataMap["taskId"].ToString());
 
             var task = _taskInfoDal.Get(x => x.Id == taskId);
-            task.LastWorkingDate = DateTime.Now;
-            task.Status = "Çalışıyor"; // Resource eklenecek 
-            _taskInfoDal.Update(task);
 
             task.BackupStorageInfo = _backupStorageDal.Get(x => x.Id == task.BackupStorageInfoId);
-
             task.StatusInfo = _statusInfoDal.Get(x => x.Id == task.StatusInfoId);
             task.BackupTaskInfo = _backupTaskDal.Get(x => x.Id == task.BackupTaskId);
 
@@ -56,13 +52,10 @@ namespace DiskBackup.TaskScheduler.Jobs
                 BackupStoragePath = task.BackupStorageInfo.Path,
                 StartDate = DateTime.Now,
                 Type = (DetailedMissionType)task.BackupTaskInfo.Type,
-
             };
 
             try
             {
-                //Örneğin 2 tane 'c' görevi aynı anda service'e yollanamaz burada kontrol edilip gönderilmeli... Sonradan gelen görev başarısız sayılıp 
-                //Refire kısmına gönderilmeli... ActivityLog'da bilgilendirilmeli
                 var taskList = _taskInfoDal.GetList(x => x.Status == "Çalışıyor");
                 foreach (var item in taskList)
                 {
@@ -77,12 +70,16 @@ namespace DiskBackup.TaskScheduler.Jobs
                     }
                 }
 
+                task.LastWorkingDate = DateTime.Now;
+                task.Status = "Çalışıyor"; // Resource eklenecek 
+                _taskInfoDal.Update(task);
+
                 if (exception == null)
-                //result = _backupService.CreateIncDiffBackup(task);
-                for (int i = 0; i < 10; i++)
-                {
-                    Console.WriteLine(i);
-                }
+                    result = _backupService.CreateIncDiffBackup(task);
+                //for (int i = 0; i < 10; i++)
+                //{
+                //    Console.WriteLine(i);
+                //}
             }
             catch (Exception e)
             {
