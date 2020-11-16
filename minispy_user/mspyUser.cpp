@@ -42,9 +42,11 @@ _Analysis_mode_(_Analysis_code_type_user_code_)
 
 /*
     ASSUMES RECORDS ARE SORTED
+THIS FUNCTION REALLOCATES MEMORY VIA realloc(), DO NOT PUT MEMORY OTHER THAN ALLOCATED BY MALLOC, OTHERWISE IT WILL CRASH THE PROGRAM
 */
 void
 MergeRegions(data_array<nar_record>* R) {
+    
     UINT32 MergedRecordsIndex = 0;
     UINT32 CurrentIter = 0;
     
@@ -610,6 +612,7 @@ CopyData(HANDLE S, HANDLE D, ULONGLONG Len) {
     ULONGLONG TotalCopied = 0;
     
     void* Buffer = malloc(BufSize);
+    
     if (Buffer != NULL) {
         ULONGLONG BytesRemaining = Len;
         DWORD BytesOperated = 0;
@@ -1242,7 +1245,6 @@ NarGetMFTRegionsByCommandLine(char Letter, int* OutRecordCount){
                 size_t LCNHexStrLen = (size_t)(p3 - p2) + 1;
                 memcpy(LCNHexStr, p2, LCNHexStrLen);
                 LCNHexStr[LCNHexStrLen] = 0;
-                
                 
                 p3 += sizeof("LCN:");
                 size_t ClustersHexStrLen = strlen(p3);
@@ -4046,7 +4048,6 @@ NarGetVolumeDiskType(char Letter) {
             }
             else {
                 printf("Can't open disk as file\n");
-                //TODO(Batuhan): Ccan't open disk as file
             }
             
         }
@@ -4054,7 +4055,6 @@ NarGetVolumeDiskType(char Letter) {
         
     }
     else {
-        //TODO(Batuhan): can't open drive as file
         printf("Cant open drive %c as file\n", Letter);
     }
     
@@ -5912,8 +5912,6 @@ NarParseIndexAllocationAttribute(void *IndexAttribute, nar_record *OutRegions, I
 }
 
 
-#include <vector>
-
 inline void
 NarGetFileListFromMFTID(nar_file_entries_list* EList, UINT64 TargetMFTID, nar_record* MFTRegions, UINT32 MFTRegionCount, UINT32 ClusterSize, nar_fe_volume_handle FEHandle) {
     
@@ -5953,7 +5951,6 @@ NarGetFileListFromMFTID(nar_file_entries_list* EList, UINT64 TargetMFTID, nar_re
         UINT32 IndexRegionsFound = 0;
         
         nar_record INDX_ALL_REGIONS[64];
-        
         DWORD BytesRead = 0;
         
         if (NarFileExplorerReadVolume(FEHandle, Buffer, 1024, &BytesRead) && BytesRead == 1024) {
@@ -5996,7 +5993,6 @@ NarGetFileListFromMFTID(nar_file_entries_list* EList, UINT64 TargetMFTID, nar_re
                             INT EntryParseResult = NAR_FEXP_END_MARK;
                             
                             do {
-                                
                                 memset(&EList->Entries[EList->EntryCount], 0, sizeof(EList->Entries[EList->EntryCount]));
                                 EntryParseResult = NarFileExplorerGetFileEntryFromData(Entry, &EList->Entries[EList->EntryCount]);
                                 
@@ -6024,9 +6020,22 @@ NarGetFileListFromMFTID(nar_file_entries_list* EList, UINT64 TargetMFTID, nar_re
                         
                     }
                     
+                    // NOTE(Batuhan): ntfs madness : if file has too many information, it cant fit into the single 1KB entry.
+                    /*
+so some smart ass decided it would be wise to split some attributes into different disk locations, so i have to check if any file attribute is non-resident, if so, should check if that one is INDEX_ALLOCATION attribute, and again if so, should go read that disk offset and parse it. pretty trivial but also boring
+*/
+#if 0
+                    if(*(INT32*)FileAttribute & NAR_EXT_ATTR_FLAG) == NAR_EXT_ATTR_FLAG){
+                        
+                        static_assert(false);
+                        
+                        // TODO(Batuhan): 
+                        
+                    }
+#endif               
+                    
+                    // NOTE(Batuhan): found resident INDEX_ALLOCATION attribute
                     if ((*(INT32*)FileAttribute & NAR_INDEX_ALLOCATION_FLAG) == NAR_INDEX_ALLOCATION_FLAG) {
-                        
-                        
                         INT32 OutLen;
                         if(NarParseIndexAllocationAttribute(FileAttribute, &INDX_ALL_REGIONS[IndexRegionsFound], 64 - IndexRegionsFound, &OutLen)){
                             IndexRegionsFound += OutLen;
@@ -6034,8 +6043,6 @@ NarGetFileListFromMFTID(nar_file_entries_list* EList, UINT64 TargetMFTID, nar_re
                         else{
                             printf("Failed to parse index allocation info\n");
                         }
-                        
-                        
                         // found INDEX_ALLOCATION attribute
                         break;
                     }
@@ -6153,7 +6160,7 @@ NarGetFileListFromMFTID(nar_file_entries_list* EList, UINT64 TargetMFTID, nar_re
 #define NAR_FE_DIRECTORY_FLAG 0x01
 
 inline void
-RestoreFolder(nar_backup_file_explorer_context *ctx, UINT32 SelectedListID, const wchar_t *RootDir){
+NarFileExplorerRestoreFolder(nar_backup_file_explorer_context *ctx, UINT32 SelectedListID, const wchar_t *RootDir){
     
     NarFileExplorerPushDirectory(ctx, SelectedListID);
     
@@ -6177,7 +6184,8 @@ RestoreFolder(nar_backup_file_explorer_context *ctx, UINT32 SelectedListID, cons
 inline void
 NarFreeFileVersionStack(nar_file_version_stack Stack){
     
-    if(Stack.FilePath != NULL) free(Stack.FilePath);
+    if(Stack.FilePath != NULL)              free(Stack.FilePath);
+    if(Stack.RootDir != NULL)               free(Stack.RootDir);
     if(Stack.FileAbsoluteMFTOffset != NULL) free(Stack.FileAbsoluteMFTOffset);
     
     //if(Stack->LCNRecords != NULL){
@@ -6189,8 +6197,6 @@ NarFreeFileVersionStack(nar_file_version_stack Stack){
     //
     //}
     
-    
-    if(Stack.RootDir != NULL) free(Stack.RootDir);
     
 }
 
@@ -6259,16 +6265,19 @@ NarRestoreFileFromBackups(wchar_t *RootDir, wchar_t *FileName, wchar_t *RestoreT
     
     void* MemoryBuffer = malloc(1024);
     
+    // NOTE(Batuhan): search file in versions from InVersion to FULL
     nar_file_version_stack FileStack = NarSearchFileInVersions(RootDir, VolumeLetter, InVersion, FileName);
     if(FileStack.VersionsFound < 0){
         printf("Failed to create file history stack for file %S for volume %c based on version %i\n", FileName, VolumeLetter, InVersion);
         goto ABORT;
     }
     
-    INT32 VersionUpTo = FileStack.StartingVersion + FileStack.VersionsFound;
     
+    INT32 VersionUpTo = FileStack.StartingVersion + FileStack.VersionsFound;
     nar_fe_volume_handle FEHandle = {0};
     
+    // NOTE(Batuhan): for each version, restore a part of the file that exists in that particular backup, skip version if none of the regions 
+    // exists in the region. Be careful regions that are not existing in backup doesnt mean error, rather means file hasnt changed in that backup.
     for (
          int VersionID = FileStack.StartingVersion;
          VersionID < VersionUpTo;  
@@ -6302,6 +6311,7 @@ NarRestoreFileFromBackups(wchar_t *RootDir, wchar_t *FileName, wchar_t *RestoreT
                 // IMPORTANT TODO(Batuhan): special code for data in 
                 // copy intersections
                 
+                // NOTE(Batuhan): copy intersections of backup regions and file regions
                 for (INT32 RegIndex = 0; RegIndex < ISectionCount; RegIndex++) {
                     
                     UINT64 CopyLen   = (UINT64)IntersectionRegions[RegIndex].Len      * FEHandle.BMEX->M.ClusterSize;
@@ -6395,7 +6405,7 @@ NarGetRegionIntersection(nar_record* r1, nar_record* r2, nar_record** intersecti
         /*
       r1          -----------------
       r2 -----
-      not touching, iterate r1
+      not touching, iterate r2
        */
         
         if (r2end < r1[i1].StartPos) {
@@ -6453,7 +6463,6 @@ NarFreeRegionIntersection(nar_record* intersections) {
 inline lcn_from_mft_query_result
 ReadLCNFromMFTRecord(void* RecordStart) {
     
-    // if file can fit in MFT, 
     
     lcn_from_mft_query_result Result = { 0 };
     
@@ -6462,8 +6471,7 @@ ReadLCNFromMFTRecord(void* RecordStart) {
         return Result;
     }
     
-    //if (Records == NULL || RecordStart == NULL || RecordsFound == NULL) return Result;
-    
+    // NOTE(Batuhan): mft file entries must begin with `FILE` data, but endianness make this `ELIF` 
     if (*(INT32*)RecordStart != 'ELIF') {
         Result.Flags = Result.FAIL;
         return Result;
@@ -6472,7 +6480,6 @@ ReadLCNFromMFTRecord(void* RecordStart) {
     void* FileRecord = RecordStart;
     INT16 FirstAttributeOffset = *(INT16*)((BYTE*)FileRecord + 20);
     void* FileAttribute = (BYTE*)FileRecord + FirstAttributeOffset;
-    
     
     INT32 RemainingLen = *(INT32*)((BYTE*)FileRecord + 24); // Real size of the file record
     RemainingLen -= (FirstAttributeOffset + 8); //8 byte for end of record mark, remaining len includes it too.
@@ -6486,7 +6493,6 @@ ReadLCNFromMFTRecord(void* RecordStart) {
         // 0x80 == $DATA
         if ((*(INT32*)FileAttribute & 0x80) == 0x80){
             
-            
             // skip if data attribute is smt like Zone.Identifier or another alternate stream.
             UINT8 AttributeNameLen = *((UINT8*)FileAttribute + 9);
             if (AttributeNameLen != 0) {
@@ -6494,7 +6500,7 @@ ReadLCNFromMFTRecord(void* RecordStart) {
             }
             
             // skip if attribute represents resident data. this means file has some data in it's record itself. 
-            UINT8 AttributeResident = *(UINT8*)FileAttribute + 8;
+            UINT8 AttributeResident = *((UINT8*)FileAttribute + 8);
             if(AttributeResident){
                 // IMPORTANT TODO(Batuhan): Find and append these data points to result structure, restore operation depends on it
                 Result.Flags |= Result.HAS_DATA_IN_MFT;
@@ -6532,6 +6538,8 @@ ReadLCNFromMFTRecord(void* RecordStart) {
             //same operation
             INT64 FirstCluster = *(INT64*)((char*)DataRuns + 1 + ClusterCountSize);
             FirstCluster = FirstCluster & ~(0xFFFFFFFFFFFFFFFFULL << (FirstClusterSize * 8));
+            
+            // i being dumb here probably, but code is ok
             // 2s complement to support negative values
             if ((FirstCluster >> ((FirstClusterSize - 1) * 8 + 7)) & 1U) {
                 FirstCluster = FirstCluster | ((0xFFFFFFFFFFFFFFFULL << (FirstClusterSize * 8)));
@@ -6566,6 +6574,7 @@ ReadLCNFromMFTRecord(void* RecordStart) {
                 ClusterCount = *(INT64*)((BYTE*)D + 1);
                 ClusterCount = ClusterCount & ~(0xFFFFFFFFFFFFFFFFULL << (ClusterCountSize * 8));
                 
+                // same dumbness
                 //same operation
                 FirstCluster = *(INT64*)((BYTE*)D + 1 + ClusterCountSize);
                 FirstCluster = FirstCluster & ~(0xFFFFFFFFFFFFFFFFULL << (FirstClusterSize * 8));
@@ -6692,8 +6701,9 @@ NarSearchFileInVersions(wchar_t *RootDir, wchar_t VolumeLetter, INT32 CeilVersio
         
         nar_fe_search_result SearchResult = NarSearchFileInVolume(RootDir, FileName, VolumeLetter, i);
         if(SearchResult.Found == TRUE){
-            Result.FileAbsoluteMFTOffset[Result.VersionsFound++] = SearchResult.AbsoluteMFTRecordOffset;
+            Result.FileAbsoluteMFTOffset[Result.VersionsFound] = SearchResult.AbsoluteMFTRecordOffset;
             Result.StartingVersion = i;
+            Result.VersionsFound++;
         }
         
     }
@@ -6710,10 +6720,17 @@ NarSearchFileInVersions(wchar_t *RootDir, wchar_t VolumeLetter, INT32 CeilVersio
 inline nar_fe_search_result
 NarSearchFileInVolume(wchar_t* RootDir, wchar_t *FileName, wchar_t VolumeLetter, INT32 Version){
     
+    TIMED_BLOCK();
+    
     nar_fe_search_result Result = {0};    
     nar_backup_file_explorer_context Ctx = {0};
     
+    // TODO(Batuhan): check if that actually equals to error state
+    if(FileName == NULL) return Result;;
+    
     if(NarInitFileExplorerContext(&Ctx, NAR_FE_HAND_OPT_READ_BACKUP_VOLUME, VolumeLetter, Version, RootDir)){
+        
+        TIMED_NAMED_BLOCK("File search by name(wcstok)");
         
         wchar_t *Token = 0;        
         wchar_t *TokenStatus = 0;
@@ -6733,6 +6750,8 @@ NarSearchFileInVolume(wchar_t* RootDir, wchar_t *FileName, wchar_t VolumeLetter,
             
             // TODO(Batuhan) prefetch entry list
             for(int i =0; i< EntryCount; i++){
+                
+                TIMED_NAMED_BLOCK("File entry iteration");
                 
                 // TODO(Batuhan): Im not sure about if files name are in alphabetical order, if so we can early terminate searching
                 // but since N < 10000 for most cases, that shouldnt be bottleneck. Most bottleneck will come from cache misses probably
@@ -6755,9 +6774,9 @@ NarSearchFileInVolume(wchar_t* RootDir, wchar_t *FileName, wchar_t VolumeLetter,
         }
         
         
+        // NOTE(Batuhan): Found the file
         if(FoundFileListID > 0){
             
-            // success
             Result.Found = TRUE;
             UINT64 FileMFTID = Ctx.EList.Entries[FoundFileListID].MFTFileIndex;
             
@@ -6781,8 +6800,11 @@ NarSearchFileInVolume(wchar_t* RootDir, wchar_t *FileName, wchar_t VolumeLetter,
                     
                 }
                 else{
+                    AdvancedFileCountSoFar += FileCountInRegion;
                     // continue iterating
                 }
+                
+                
                 
             }
             
@@ -6824,10 +6846,8 @@ NarSearchFileInVolume(wchar_t* RootDir, wchar_t *FileName, wchar_t VolumeLetter,
 
 
 
-
-
 /*
-    Be careful about return value, its not a fail-pass thing
+Be careful about return value, its not a fail-pass thing
     Parses INDEX_ALLOCATION data, not actual MFT file data
 */
 inline INT
@@ -6877,7 +6897,7 @@ NarFileExplorerGetFileEntryFromData(void *IndxCluster, nar_file_entry *OutFileEn
     
     OutFileEntry->IsDirectory = FALSE;
     
-    
+    // from pure observation in hex editor. hope we wont miss anything
     if (Attributes > 10000000) {
         OutFileEntry->IsDirectory = TRUE;
     }
@@ -7125,7 +7145,7 @@ NarInitFileExplorerContext(nar_backup_file_explorer_context* Ctx, INT32 HandleOp
             vb[0] = (wchar_t)Letter;
             wcscat(Ctx->CurrentDirectory, vb);
             
-#if 1 // performance test
+#if 0 // performance test
             
             Ctx->EList.EntryCount = 0;
             NarGetFileListFromMFTID(&Ctx->EList, 44571, Ctx->MFTRecords, Ctx->MFTRecordsCount, Ctx->ClusterSize, Ctx->FEHandle);
@@ -7225,12 +7245,12 @@ NarInitFileExplorerContext(nar_backup_file_explorer_context* Ctx, INT32 HandleOp
 
 
 /*
-    Args: FEV = file explorer handle that has initialized via NarInitFEVolumeHandle
-        NewFilePointer = Target file pointer to be set in volume, not in actual binary file. So if handle has been initialized as READ_BACKUP_DATA,
-        function figures out how to set a file pointer in a way that if caller requests readfile, it acts like if it were actually reading from that offset.
-        what caller has to be careful is, there is no guarentee that reading N bytes from that position will give caller sequential data. It is guarenteed there
-        are at least one cluster sized data resides at that file offset, but due to nature of the backup system, next clusters may not exist in that particular 
-        file.
+    *Args: FEV = file explorer handle that has initialized via NarInitFEVolumeHandle
+         *NewFilePointer = Target file pointer to be set in volume, not in actual binary file. So if handle has been initialized as *READ_BACKUP_DATA,
+        *function figures out how to set a file pointer in a way that if caller requests readfile, it acts like if it were actually reading from *that offset.
+        *what caller has to be careful is, there is no guarentee that reading N bytes from that position will give caller sequential data. It is * guarenteed there
+        * are at least one cluster sized data resides at that file offset, but due to nature of the backup system, next clusters may not exist in * that particular 
+        * file.
 */
 inline BOOLEAN
 NarFileExplorerSetFilePointer(nar_fe_volume_handle FEV, UINT64 NewFilePointer){
@@ -7604,7 +7624,6 @@ main(
     UNREFERENCED_PARAMETER(argc);
     UNREFERENCED_PARAMETER(argv);
     
-    
     nar_backup_file_explorer_context ctx;
     
     NarInitFileExplorerContext(&ctx, NAR_FE_HAND_OPT_READ_MOUNTED_VOLUME, 'C', 0, NULL);
@@ -7629,7 +7648,7 @@ main(
         
         NarFileExplorerPrint(&ctx);
         
-        Sleep(16);
+        Sleep(10);
     }
 #endif
     

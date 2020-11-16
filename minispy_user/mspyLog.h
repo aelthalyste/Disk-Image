@@ -192,7 +192,7 @@ RecordEqual(nar_record* N1, nar_record* N2) {
 #ifdef _DEBUG
 #define Assert(expression) if(!(expression)) do{*(int*)0 = 0;}while(0);
 #else
-#define Assert(expression) do{ (expression); }while(0);
+#define Assert(expression) (expression)
 #endif
 
 #define NAR_INVALID_VOLUME_TRACK_ID -1
@@ -841,6 +841,7 @@ struct nar_file_entries_list {
 
 inline BOOLEAN
 NarInitFileEntryList(nar_file_entries_list *EList, unsigned int  MaxEntryCount){
+    
     if(EList == NULL) FALSE;
     EList->MFTIndex = 0;
     EList->EntryCount = 0;

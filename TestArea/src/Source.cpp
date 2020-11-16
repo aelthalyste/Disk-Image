@@ -7,21 +7,76 @@
 #include <iostream>
 
 
-class test {
-public:
-    int pa;
+#define unsigned char BYTE;
+#define NAR_LOG_TYPE_ERROR      0x01
+#define NAR_LOG_TYPE_CRITICAL   0x02 
+#define NAR_LOG_TYPE_INFO       0x03
 
-    void print() {
-        std::cout << pa << "\n" << pv << "\n";
-    }
-    
-    void set(int x) {
-        pv = x;
-    }
+#define LogError(fmt, ...)     NarLog(__LINE__, __FUNCTION__, NAR_LOG_TYPE_ERROR, fmt, __VA_ARGS__);
+#define LogInfo(fmt, ...)      NarLog(__LINE__, __FUNCTION__, NAR_LOG_TYPE_INFO, fmt, __VA_ARGS__);
+#define LogCritical(fmt, ...)  NarLog(__LINE__, __FUNCTION__, NAR_LOG_TYPE_CRITICAL, fmt, __VA_ARGS__);
+#define Log(fmt, ...)          NarLog(__LINE__, __FUNCTION__, NAR_LOG_TYPE_INFO, fmt, __VA_ARGS__);
 
-private:
-    int pv;
+struct nar_log_time{
+    BYTE YEAR; // 2000 + YEAR is the actual value
+    BYTE MONTH;
+    BYTE DAY;
+    BYTE HOUR;
+    BYTE MIN;
+    BYTE SEC;
+    // 6 bytes
 };
+
+struct nar_log{
+    char         *FunctionName;
+    char         *LogString;
+    unsigned int LineNumber;
+    nar_log_time Time;
+    BYTE         TYPE;
+};
+
+struct cs_nar_logs{
+    nar_log *logs;
+    unsigned int ID; // usually equals to volume letter
+};
+
+nar_log_stack *GlobalNarLogs;
+struct nar_log_stack_counter{ int i; } NarLogStackCounter;
+
+void
+NarLog(int LineNumber, char *FunctionName, int LogType, const char* std, ...){
+    
+    if(GlobalLogArray == NULL) return;
+    cs_nar_logs *Target = GlobalNarLogs + NarLogStackCounter.i;
+    
+    
+}
+
+#if 0
+nar_log *GlobalErrorLogs;
+nar_log *GlobalInfoLogs;
+nar_log *GlobalCriticalLogs;
+#endif
+
+void 
+NarGetThreadID(){
+    winapi things to retrieve thread id
+}
+
+void 
+NarPushLogStack(){
+    
+}
+
+void
+NarPopLogStack(){
+    
+}
+
+void
+NarDeleteLogChain(){
+    
+}
 
 
 void increment(void* ptr) {
@@ -31,12 +86,12 @@ void increment(void* ptr) {
 
 
 int foo(test *obj) {
-
-
+    
+    
     BOOLEAN Result = FALSE;
     
-
-
+    
+    
     
     return 0;
 }
@@ -44,45 +99,45 @@ int foo(test *obj) {
 
 
 static void nlog(const char* str, ...) {  
-
+    
     const static HANDLE File = CreateFileA("NAR_APP_LOG_FILE.txt", GENERIC_WRITE|GENERIC_READ, FILE_SHARE_READ, 0, CREATE_ALWAYS, 0, 0);
     static SYSTEMTIME Time = {};
     
     va_list ap;
     static char buf[1024];
     static char TimeStrBuf[128];
-
+    
     memset(&Time, 0, sizeof(Time));
     memset(buf, 0, sizeof(buf));
     memset(TimeStrBuf, 0, sizeof(TimeStrBuf));
     
     GetLocalTime(&Time);
     sprintf(TimeStrBuf, "[%i:%i:%i]: ", Time.wHour, Time.wMinute, Time.wSecond);
-
+    
     va_start(ap,str);
     vsprintf(buf, str, ap);
     va_end(ap);
-
+    
     int Len = strlen(buf);
     DWORD H;
-
+    
     WriteFile(File, TimeStrBuf, strlen(TimeStrBuf), &H, 0);
     WriteFile(File, buf, Len, &H, 0);
     
     FlushFileBuffers(File);
-
+    
 }
 
 //#define printf(fmt, ...)  nlog(fmt, __VA_ARGS__)
 
 struct nar_record{
-  UINT32 Start;
-  UINT32 Len;
+    UINT32 Start;
+    UINT32 Len;
 };
 
 struct file_read{
-  void *Data;
-  DWORD Len;
+    void *Data;
+    DWORD Len;
 };
 
 file_read
@@ -119,23 +174,23 @@ HANDLE
 NarOpenVolume(char Letter) {
     char VolumePath[512];
     sprintf(VolumePath, "\\\\.\\%c:", Letter);
-
+    
     HANDLE Volume = CreateFileA(VolumePath, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_WRITE | FILE_SHARE_READ | FILE_SHARE_DELETE, 0, OPEN_EXISTING, 0, 0);
     if (Volume != INVALID_HANDLE_VALUE) {
-
+        
         if (DeviceIoControl(Volume, FSCTL_LOCK_VOLUME, 0, 0, 0, 0, 0, 0)) {
-
+            
         }
         else {
             // NOTE(Batuhan): this isnt an error, tho prohibiting volume access for other processes would be great.
             printf("Couldn't lock volume %c, returning INVALID_HANDLE_VALUE\n", Letter);
         }
-
+        
     }
     else {
         printf("Couldn't open volume %c\n", Letter);
     }
-
+    
     return Volume;
 }
 
@@ -149,14 +204,14 @@ NarOpenVolume(char Letter) {
 */
 nar_record*
 GetVolumeRegionsFromBitmap(HANDLE VolumeHandle, UINT32* OutRecordCount) {
-
+    
     if(OutRetCount == NULL) return NULL;
-
+    
     nar_record* Record = NULL;
-
+    
     
     UINT* ClusterIndices = 0;
-
+    
     STARTING_LCN_INPUT_BUFFER StartingLCN;
     StartingLCN.StartingLcn.QuadPart = 0;
     ULONGLONG MaxClusterCount = 0;
@@ -165,7 +220,7 @@ GetVolumeRegionsFromBitmap(HANDLE VolumeHandle, UINT32* OutRecordCount) {
     VOLUME_BITMAP_BUFFER* Bitmap = (VOLUME_BITMAP_BUFFER*)malloc(BufferSize);
     
     if (Bitmap != NULL) {
-    
+        
         HRESULT R = DeviceIoControl(VolumeHandle, FSCTL_GET_VOLUME_BITMAP, &StartingLCN, sizeof(StartingLCN), Bitmap, BufferSize, 0, 0);
         if (SUCCEEDED(R)) {
             
@@ -179,28 +234,28 @@ GetVolumeRegionsFromBitmap(HANDLE VolumeHandle, UINT32* OutRecordCount) {
             UINT32 RecordBufferSize = 128 * 1024 * 1024;
             Records = (nar_record*)malloc(RecordBufferSize);
             UINT32 RecordCount = 0;
-
+            
             memset(Records, 0, RecordBufferSize);
-
+            
             Records[0] = { 0,1 };
             RecordCount++; 
-
+            
             ClustersRead++;
             BitmapMask <<= 1;
-
+            
             while (ClustersRead < MaxClusterCount) {
-           
+                
                 if ((*BitmapIndex & BitmapMask) == BitmapMask) {
-
+                    
                     if (LastActiveCluster == ClustersRead - 1) {
                         Records[RecordCount].Len++;
                     }
                     else {
                         Records[++RecordCount] = { ClustersRead, 1 };
                     }
-
+                    
                     LastActiveCluster = ClustersRead;
-
+                    
                 }
                 BitmapMask <<= 1;
                 if (BitmapMask == 0) {
@@ -209,33 +264,33 @@ GetVolumeRegionsFromBitmap(HANDLE VolumeHandle, UINT32* OutRecordCount) {
                 }
                 ClustersRead++;
             }
-
+            
             printf("Successfully set fullbackup records\n");
-
-
+            
+            
         }
         else {
             // NOTE(Batuhan): DeviceIOControl failed
             printf("Get volume bitmap failed [DeviceIoControl].\n");
             printf("Result was -> %d\n", R);
         }
-
+        
     }
     else {
         printf("Couldn't allocate memory for bitmap buffer, tried to allocate %u bytes!\n", BufferSize);
     }
-
-
+    
+    
     free(Bitmap);
     
     if(Records != NULL){
-      Records = (nar_record*)realloc(Records, RecordCount*sizeof(nar_record));
-      (*OutRecordCount) = RecordCount;
+        Records = (nar_record*)realloc(Records, RecordCount*sizeof(nar_record));
+        (*OutRecordCount) = RecordCount;
     }
     else{
-      (*OutRecordCount) = 0;
+        (*OutRecordCount) = 0;
     }
-
+    
     return Records;
 }
 
@@ -250,7 +305,7 @@ GetVolumeRegionsFromBitmap(HANDLE VolumeHandle, UINT32* OutRecordCount) {
 */
 BOOLEAN
 GetFileListFromIndexAllocationTable(void *Buffer, int BufferSize){
-
+    
     Buffer = (BYTE*)Buffer + 64;
     
     return FALSE;
@@ -262,16 +317,16 @@ GetFileListFromIndexAllocationTable(void *Buffer, int BufferSize){
 
 inline BOOLEAN 
 IsPrime(unsigned int n){
-
+    
     if(n % 2 == 0) return FALSE;
-
+    
     unsigned int floor = (unsigned int)sqrt(n);
     for(unsigned int i = 3; i < floor; i+=2){
         if(n % i == 0){
             return FALSE;
         }
     }
-
+    
     return TRUE;
 }
 
@@ -296,7 +351,7 @@ NarGetProductName(char *OutName) {
         RegGetValueA(Key, 0, "ProductName", RRF_RT_ANY, 0, OutName, &H);
         RegCloseKey(Key);
     }
-
+    
 }
 
 int
@@ -310,7 +365,7 @@ foobar(int a, int b) {
 int main() {
     
     return 0;
-
+    
     wchar_t str[] = L"C:\\program files\\randomprogram\\subfolder\\executable.exe";
     wchar_t* pwc = 0;
     wchar_t* State = 0;
@@ -319,146 +374,146 @@ int main() {
         printf("%S\n", pwc);
         pwc = wcstok(0, L"\\", &State);
     }
-
+    
     return 0;
-
     
     
-
+    
+    
     HANDLE FileHandle = CreateFileA("testfile.txt", GENERIC_WRITE | GENERIC_READ, FILE_SHARE_READ, 0, CREATE_ALWAYS, 0, 0);
     
     SetFilePointer(FileHandle, 8192, 0, FILE_BEGIN);
-
+    
     unsigned int Semirp[6854];
     memset(Semirp, DH_UNINITIALIZED, sizeof(Semirp));
-
+    
     DWORD H = 0;
     WriteFile(FileHandle, Semirp, sizeof(Semirp), &H, 0);
-
+    
     CloseHandle(FileHandle);
-
+    
     int Primes[1000];
     memset(Primes, DH_UNINITIALIZED, sizeof(Primes));
-
+    
     unsigned int SemirpIndex = 0;
-
+    
     for(unsigned int n = 11; n < 1000; n+=2){
-
+        
         if (Primes[n] != DH_UNINITIALIZED) {
             continue;
         }
-
+        
         if(IsPrime(n)){
             
             Primes[n] = DH_PRIME;
-
+            
             unsigned int R = ReverseNumber(n);
-
+            
             Primes[R] = IsPrime(R) ? DH_PRIME : DH_NOT_PRIME;
-
+            
             if (R > n && Primes[R] == DH_PRIME) {
                 Semirp[SemirpIndex++] = n;
                 Semirp[SemirpIndex++] = R;
             }
-
+            
         }
         else{
             Primes[n] = DH_NOT_PRIME;
         }
-
+        
     }
-
+    
     for(int i = 0; i< SemirpIndex; i+=2){
         printf("%i\t%i\n", Semirp[i], Semirp[i+1]);
     }
     
     return 0;
-  
-  file_read F = NarReadFile("MFTLCN_REGIONS_DATA");
-  nar_record Records[1024 * 52 / sizeof(nar_record)];
-
-  memset(Records, 0, sizeof(Records));
-  memcpy(Records, F.Data, F.Len);
-
-  DWORD SectorsPerCluster   = 0;
-  DWORD BytesPerSector      = 0;
-  DWORD ClusterCount        = 0;
-
-  if (GetDiskFreeSpaceA("N:\\", &SectorsPerCluster, &BytesPerSector, 0, &ClusterCount)) {
-    printf("SectorsPerCluster : %lu\n", SectorsPerCluster);
-    printf("BytesPerSector : %lu\n", BytesPerSector);
-    printf("ClusterCount : %lu\n", ClusterCount);
-  }
-
-  return 0;
-  
+    
+    file_read F = NarReadFile("MFTLCN_REGIONS_DATA");
+    nar_record Records[1024 * 52 / sizeof(nar_record)];
+    
+    memset(Records, 0, sizeof(Records));
+    memcpy(Records, F.Data, F.Len);
+    
+    DWORD SectorsPerCluster   = 0;
+    DWORD BytesPerSector      = 0;
+    DWORD ClusterCount        = 0;
+    
+    if (GetDiskFreeSpaceA("N:\\", &SectorsPerCluster, &BytesPerSector, 0, &ClusterCount)) {
+        printf("SectorsPerCluster : %lu\n", SectorsPerCluster);
+        printf("BytesPerSector : %lu\n", BytesPerSector);
+        printf("ClusterCount : %lu\n", ClusterCount);
+    }
+    
+    return 0;
+    
     DWORD BufferSize = 1024 * 2; // 64KB
-
+    
     DRIVE_LAYOUT_INFORMATION_EX* DL = (DRIVE_LAYOUT_INFORMATION_EX*)malloc(BufferSize);
     HANDLE Disk = INVALID_HANDLE_VALUE;
     int DiskID = 0;
-
+    
     {
         char DiskPath[512];
         sprintf(DiskPath, "\\\\?\\PhysicalDrive%i", DiskID);
-
+        
         Disk = CreateFileA(DiskPath, GENERIC_READ, FILE_SHARE_WRITE | FILE_SHARE_READ | FILE_SHARE_DELETE, 0, OPEN_EXISTING, 0, 0);
         if (Disk != INVALID_HANDLE_VALUE) {
-
+            
             DWORD Hell = 0;
             if (DeviceIoControl(Disk, IOCTL_DISK_GET_DRIVE_LAYOUT_EX, 0, 0, DL, BufferSize, &Hell, 0)) {
-
+                
                 if (DL->PartitionStyle == PARTITION_STYLE_MBR) {
                     // TODO
-
+                    
                     
                     for (unsigned int PartitionIndex = 0; PartitionIndex < DL->PartitionCount; ++PartitionIndex) {
-
+                        
                         PARTITION_INFORMATION_EX* PI = &DL->PartitionEntry[PartitionIndex];
                         
                         printf("Partition ID %X\tPartitionType %X\tRecognizedPartition %u\tBootIndicator %u\tPartitionSize %I64d\t\tServicePartition %i\n", PI->Mbr.PartitionId, PI->Mbr.PartitionType, PI->Mbr.RecognizedPartition, PI->Mbr.BootIndicator, PI->PartitionLength.QuadPart, PI->IsServicePartition);
-
+                        
                     }
-
+                    
                 }
-
-
+                
+                
             }
             else {
                 printf("Couldnt get drive layout ex\n");
             }
-
+            
         }
         else {
             printf("Couldnt open disk %s as file, cant append recovery file to backup metadata\n", DiskPath);
         }
-
-
+        
+        
     }
-
+    
     printf("what t");
     return 0;
-
+    
     printf("deneme %i\n, %s", 32, "teststr");
     printf("deneme %i", 32);
-
+    
     test *obj = new test;
     obj->pa = 5;
     obj->set(5);
     obj->print();
     foo(obj);
     obj->print();
-
     
-
-  return 0;
-
-  //std::vector<int> V;
-  ////V.reserve(ELEMENT_COUNT);
-  //for (int i = 0; i < ELEMENT_COUNT; i++) {
-  //  V.push_back(i * 2);
-  //}
-  
-
-  return 0;
+    
+    
+    return 0;
+    
+    //std::vector<int> V;
+    ////V.reserve(ELEMENT_COUNT);
+    //for (int i = 0; i < ELEMENT_COUNT; i++) {
+    //  V.push_back(i * 2);
+    //}
+    
+    
+    return 0;
 }

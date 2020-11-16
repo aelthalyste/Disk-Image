@@ -20,7 +20,8 @@ lp = {
 {".",.recursive=false},
 {"/inc"},
 {"/minispy_user/",.recursive=false},
-{"/NarDIWrapper/",.recursive=false}
+{"/NarDIWrapper/",.recursive=false},
+{"/TestArea/src/",.recursive=false}
 };
 
 load_paths = {
