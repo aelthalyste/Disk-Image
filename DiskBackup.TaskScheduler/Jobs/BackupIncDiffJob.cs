@@ -93,6 +93,11 @@ namespace DiskBackup.TaskScheduler.Jobs
                 {
                     exception = new JobExecutionException(e, context.RefireCount <= task.BackupTaskInfo.FailNumberTryAgain);
                 }
+                else
+                {
+                    Console.WriteLine(e.Message);
+                    exception = new JobExecutionException();
+                }
             }
 
             if (!result)
@@ -115,7 +120,7 @@ namespace DiskBackup.TaskScheduler.Jobs
                 activityLog.StatusInfoId = resultStatusInfo.Id;
                 _activityLogDal.Add(activityLog);
                 Console.WriteLine(exception.ToString());
-                //task.Status = "Hata"; // Resource eklenecek 
+                task.Status = "Hazır"; // Resource eklenecek 
                 if (context.Trigger.GetNextFireTimeUtc() != null)
                 {
                     task.NextDate = (context.Trigger.GetNextFireTimeUtc()).Value.LocalDateTime;
