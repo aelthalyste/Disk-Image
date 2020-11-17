@@ -72,6 +72,8 @@ namespace DiskBackupWpfGUI
         {
             InitializeComponent();
             RefreshTasks(_cancellationTokenSource.Token);
+            this.Closing += (sender, e) => _cancellationTokenSource.Cancel();
+
             _backupService = backupService;
             _backupStorageService = backupStorageService;
             _taskInfoDal = taskInfoDal;
@@ -475,7 +477,7 @@ namespace DiskBackupWpfGUI
                         btnTaskEdit.IsEnabled = false; // çalışan görev düzenlenemez
                         btnTaskPauseButton.IsEnabled = true;
                         btnTaskStop.IsEnabled = true;
-                        btnTaskDelete.IsEnabled = true;
+                        btnTaskDelete.IsEnabled = false;
                     }
                 }
 
@@ -552,7 +554,7 @@ namespace DiskBackupWpfGUI
                         btnTaskEdit.IsEnabled = false; // çalışan görev düzenlenemez
                         btnTaskPauseButton.IsEnabled = true;
                         btnTaskStop.IsEnabled = true;
-                        btnTaskDelete.IsEnabled = true;
+                        btnTaskDelete.IsEnabled = false;
                     }
                 }
             }
@@ -598,7 +600,7 @@ namespace DiskBackupWpfGUI
                         btnTaskEdit.IsEnabled = false; // çalışan görev düzenlenemez
                         btnTaskPauseButton.IsEnabled = true;
                         btnTaskStop.IsEnabled = true;
-                        btnTaskDelete.IsEnabled = true;
+                        btnTaskDelete.IsEnabled = false;
                     }
                 }
             }
@@ -641,7 +643,7 @@ namespace DiskBackupWpfGUI
                         btnTaskEdit.IsEnabled = false; // çalışan görev düzenlenemez
                         btnTaskPauseButton.IsEnabled = true;
                         btnTaskStop.IsEnabled = true;
-                        btnTaskDelete.IsEnabled = true;
+                        btnTaskDelete.IsEnabled = false;
                     }
                 }
             }
@@ -675,7 +677,7 @@ namespace DiskBackupWpfGUI
                         btnTaskEdit.IsEnabled = false; // çalışan görev düzenlenemez
                         btnTaskPauseButton.IsEnabled = true;
                         btnTaskStop.IsEnabled = true;
-                        btnTaskDelete.IsEnabled = true;
+                        btnTaskDelete.IsEnabled = false;
                     }
                 }
             }
