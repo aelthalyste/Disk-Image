@@ -22,6 +22,9 @@ namespace DiskBackup.TaskScheduler.Jobs
         private readonly IActivityLogDal _activityLogDal;
         private readonly IBackupTaskDal _backupTaskDal;
 
+        public static bool _refreshIncDiffTaskFlag { get; set; } = false;
+        public static bool _refreshIncDiffLogFlag { get; set; } = false;
+
         public BackupIncDiffJob(ITaskInfoDal taskInfoDal, IBackupStorageDal backupStorageDal, IStatusInfoDal statusInfoDal, IBackupService backupService, IActivityLogDal activityLogDal, IBackupTaskDal backupTaskDal)
         {
             _taskInfoDal = taskInfoDal;
@@ -73,13 +76,15 @@ namespace DiskBackup.TaskScheduler.Jobs
                 task.LastWorkingDate = DateTime.Now;
                 task.Status = "Çalışıyor"; // Resource eklenecek 
                 _taskInfoDal.Update(task);
-
+                _refreshIncDiffTaskFlag = true;
                 if (exception == null)
                     result = _backupService.CreateIncDiffBackup(task);
-                //for (int i = 0; i < 10; i++)
+
+                //for (int i = 0; i < 10000; i++)
                 //{
                 //    Console.WriteLine(i);
                 //}
+                Console.WriteLine("Done");
             }
             catch (Exception e)
             {
@@ -110,12 +115,13 @@ namespace DiskBackup.TaskScheduler.Jobs
                 activityLog.StatusInfoId = resultStatusInfo.Id;
                 _activityLogDal.Add(activityLog);
                 Console.WriteLine(exception.ToString());
-                task.Status = "Hata"; // Resource eklenecek 
+                //task.Status = "Hata"; // Resource eklenecek 
                 if (context.Trigger.GetNextFireTimeUtc() != null)
                 {
                     task.NextDate = (context.Trigger.GetNextFireTimeUtc()).Value.LocalDateTime;
                 }
                 _taskInfoDal.Update(task);
+                _refreshIncDiffLogFlag = true;
                 await Task.Delay(TimeSpan.FromMinutes(task.BackupTaskInfo.WaitNumberTryAgain));
                 throw exception;
             }
@@ -134,6 +140,8 @@ namespace DiskBackup.TaskScheduler.Jobs
                 task.NextDate = (context.Trigger.GetNextFireTimeUtc()).Value.LocalDateTime;
             }
             _taskInfoDal.Update(task);
+            _refreshIncDiffTaskFlag = true;
+            _refreshIncDiffLogFlag = true;
         }
     }
 }

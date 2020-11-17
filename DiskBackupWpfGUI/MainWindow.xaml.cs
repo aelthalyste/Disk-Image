@@ -5,6 +5,7 @@ using DiskBackup.Business.Concrete;
 using DiskBackup.DataAccess.Abstract;
 using DiskBackup.Entities.Concrete;
 using DiskBackup.TaskScheduler;
+using DiskBackup.TaskScheduler.Jobs;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -12,6 +13,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -52,6 +54,8 @@ namespace DiskBackupWpfGUI
         private List<TaskInfo> _taskInfoList = new List<TaskInfo>();
         private List<ActivityLog> _activityLogList = new List<ActivityLog>();
 
+        private CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+
         private readonly IBackupService _backupService;
         private readonly IBackupStorageService _backupStorageService;
         private readonly ITaskInfoDal _taskInfoDal;
@@ -67,7 +71,7 @@ namespace DiskBackupWpfGUI
             IBackupStorageDal backupStorageDal, ITaskSchedulerManager taskSchedulerManager, IBackupTaskDal backupTaskDal, IStatusInfoDal statusInfoDal, IActivityLogDal activityLogDal)
         {
             InitializeComponent();
-
+            RefreshTasks(_cancellationTokenSource.Token);
             _backupService = backupService;
             _backupStorageService = backupStorageService;
             _taskInfoDal = taskInfoDal;
@@ -140,6 +144,7 @@ namespace DiskBackupWpfGUI
 
             #endregion
 
+            #region dummyBackupList
             List<BackupInfo> backupsItems = new List<BackupInfo>();
 
             backupsItems.Add(new BackupInfo()
@@ -215,10 +220,11 @@ namespace DiskBackupWpfGUI
                 StrFileSize = "4 GB",
                 Description = "Yedek açıklaması"
             });
-
             listViewBackups.ItemsSource = backupsItems;
 
             listViewRestore.ItemsSource = backupsItems;
+            #endregion
+
         }
 
         private void GetTasks()
@@ -422,6 +428,40 @@ namespace DiskBackupWpfGUI
 
 
         #region Tasks Tab
+
+        public async void RefreshTasks(CancellationToken cancellationToken)
+        {
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                await Task.Delay(500);
+                if (BackupIncDiffJob._refreshIncDiffTaskFlag)
+                {
+                    int taskSelectedIndex = -1;
+
+                    if (listViewTasks.SelectedIndex != -1)
+                    {
+                        taskSelectedIndex = listViewTasks.SelectedIndex;
+                    }
+
+                    GetTasks();
+                    listViewTasks.SelectedIndex = taskSelectedIndex;
+                    BackupIncDiffJob._refreshIncDiffTaskFlag = false;
+                }
+
+                if (BackupIncDiffJob._refreshIncDiffLogFlag)
+                {
+                    int logSelectedIndex = -1;
+
+                    if (listViewLog.SelectedIndex != -1)
+                    {
+                        logSelectedIndex = listViewLog.SelectedIndex;
+                    }
+                    ShowActivityLog();
+                    listViewLog.SelectedIndex = logSelectedIndex + 1;
+                    BackupIncDiffJob._refreshIncDiffLogFlag = false;
+                }
+            }
+        }
 
         private void listViewTasks_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
@@ -1091,11 +1131,6 @@ namespace DiskBackupWpfGUI
                 StatusesWindow backupStatus = _scope.Resolve<StatusesWindow>(new NamedParameter("chooseFlag", 0), new NamedParameter("statusInfo", activityLog.StatusInfo));
                 backupStatus.Show();
             }
-        }
-
-        private void btnRefreshActivity_Click(object sender, RoutedEventArgs e)
-        {
-            ShowActivityLog();
         }
 
         private void ShowActivityLog()
