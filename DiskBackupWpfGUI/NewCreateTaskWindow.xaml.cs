@@ -1,4 +1,5 @@
-﻿using DiskBackup.Business.Abstract;
+﻿using Autofac;
+using DiskBackup.Business.Abstract;
 using DiskBackup.Business.Concrete;
 using DiskBackup.DataAccess.Abstract;
 using DiskBackup.Entities.Concrete;
@@ -33,6 +34,8 @@ namespace DiskBackupWpfGUI
         private ITaskInfoDal _taskInfoDal;
         private ITaskSchedulerManager _schedulerManager;
 
+        private readonly ILifetimeScope _scope;
+
         private List<BackupStorageInfo> _backupStorageInfoList = new List<BackupStorageInfo>();
         private List<VolumeInfo> _volumeInfoList = new List<VolumeInfo>();
 
@@ -41,7 +44,8 @@ namespace DiskBackupWpfGUI
         private readonly Func<AddBackupAreaWindow> _createAddBackupWindow;
 
         public NewCreateTaskWindow(List<BackupStorageInfo> backupStorageInfoList, IBackupService backupService, IBackupStorageService backupStorageService,
-            Func<AddBackupAreaWindow> createAddBackupWindow, List<VolumeInfo> volumeInfoList, IBackupTaskDal backupTaskDal, IStatusInfoDal statusInfoDal, ITaskInfoDal taskInfoDal, ITaskSchedulerManager schedulerManager)
+            Func<AddBackupAreaWindow> createAddBackupWindow, List<VolumeInfo> volumeInfoList, IBackupTaskDal backupTaskDal, IStatusInfoDal statusInfoDal, 
+            ITaskInfoDal taskInfoDal, ITaskSchedulerManager schedulerManager, ILifetimeScope scope)
         {
             InitializeComponent();
 
@@ -57,7 +61,10 @@ namespace DiskBackupWpfGUI
             _taskInfo.BackupTaskInfo = new BackupTask();
             _taskInfo.StatusInfo = new StatusInfo();
             _schedulerManager = schedulerManager;
+            _scope = scope;
             _schedulerManager.InitShedulerAsync();
+
+            txtTaskName.Focus();
 
             _taskInfo.Obje = _volumeInfoList.Count();
 
@@ -234,6 +241,12 @@ namespace DiskBackupWpfGUI
                     //full gelince buraya alıcaz paşayı
                 }
                 Close();
+
+                // task status açılması
+                resultTaskInfo.StatusInfo = _statusInfoDal.Get(x => x.Id == resultTaskInfo.StatusInfoId);
+                resultTaskInfo.BackupTaskInfo = _backupTaskDal.Get(x => x.Id == resultTaskInfo.BackupTaskId);
+                StatusesWindow backupStatus = _scope.Resolve<StatusesWindow>(new NamedParameter("chooseFlag", 0), new NamedParameter("statusInfo", resultTaskInfo.StatusInfo));
+                backupStatus.Show();
             }
 
         }
@@ -684,11 +697,13 @@ namespace DiskBackupWpfGUI
             {
                 lblTabHeader.Text = Resources["name"].ToString();
                 lblTabContent.Text = Resources["NCTNameContent"].ToString();
+                btnCreateTaskBack.IsEnabled = false;
             }
             else if (NCTTabControl.SelectedIndex == 1)
             {
                 lblTabHeader.Text = Resources["BackupType"].ToString();
                 lblTabContent.Text = Resources["NCTBackupTypeContent"].ToString();
+                btnCreateTaskBack.IsEnabled = true;
             }
             else if (NCTTabControl.SelectedIndex == 2)
             {
@@ -704,11 +719,13 @@ namespace DiskBackupWpfGUI
             {
                 lblTabHeader.Text = Resources["settings"].ToString();
                 lblTabContent.Text = Resources["NCTSettingsContent"].ToString();
+                btnCreateTaskNext.IsEnabled = true;
             }
-            else
+            else if (NCTTabControl.SelectedIndex == 5)
             {
                 lblTabHeader.Text = Resources["summary"].ToString();
                 lblTabContent.Text = Resources["NCTSummaryContent"].ToString();
+                btnCreateTaskNext.IsEnabled = false;
             }
         }
 
@@ -810,5 +827,22 @@ namespace DiskBackupWpfGUI
             return resultTaskInfo;
         }
 
+        #region Focus Event
+        private void txtTaskName_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter)
+            {
+                txtTaskDescription.Focus();
+            }
+        }
+
+        private void cbTargetBackupArea_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter)
+            {
+                btnCreateTaskNext.Focus();
+            }
+        }
+        #endregion
     }
 }

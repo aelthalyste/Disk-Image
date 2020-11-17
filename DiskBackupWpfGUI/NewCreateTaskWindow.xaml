@@ -89,7 +89,7 @@
                 <Grid Background="White">
                     <StackPanel Margin="10,10,20,10">
                         <TextBlock Text="{DynamicResource taskName}" Margin="0,0,0,5"/>
-                        <TextBox Name="txtTaskName" Height="25" VerticalContentAlignment="Center"/>
+                        <TextBox Name="txtTaskName" Height="25" VerticalContentAlignment="Center" KeyDown="txtTaskName_KeyDown"/>
                         <TextBlock Text="{DynamicResource description}" Margin="0,10,0,5"/>
                         <TextBox Name="txtTaskDescription" ScrollViewer.VerticalScrollBarVisibility="Auto" VerticalContentAlignment="Top" TextWrapping="Wrap" AcceptsReturn="True" Height="200" />
                     </StackPanel>
@@ -126,7 +126,7 @@
                     <StackPanel Margin="10,10,20,10">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="{DynamicResource space2Backup}" VerticalAlignment="Center" />
-                            <ComboBox Name="cbTargetBackupArea" Width="350"  Height="26" Margin="25,0,0,0" SelectionChanged="cbTargetBackupArea_SelectionChanged">
+                            <ComboBox Name="cbTargetBackupArea" Width="350"  Height="26" Margin="25,0,0,0" SelectionChanged="cbTargetBackupArea_SelectionChanged" KeyDown="cbTargetBackupArea_KeyDown">
                                 <ComboBox.ItemTemplate>
                                     <DataTemplate>
                                         <TextBlock Text="{Binding StorageName}" />
@@ -419,8 +419,8 @@
         <Rectangle Fill="White" Grid.Row="2" Height="60" VerticalAlignment="Bottom"/>
         <Rectangle Height="1" Fill="#AAAAAA" Grid.Row="2" VerticalAlignment="Bottom" Margin="0,0,0,60" />
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Grid.Row="2" >
-            <Button Name="btnCreateTaskBack" Content="{DynamicResource back}" Click="btnCreateTaskBack_Click" Style="{StaticResource WhiteButton}" Width="70" Height="20" VerticalAlignment="Bottom" Margin="0,0,0,20"></Button>
-            <Button Name="btnCreateTaskNext" Content="{DynamicResource next}" Click="btnCreateTaskNext_Click" Style="{StaticResource WhiteButton}" Width="70" Height="20" VerticalAlignment="Bottom" Margin="10,0,0,20"></Button>
+            <Button Name="btnCreateTaskBack" Content="{DynamicResource back}" Click="btnCreateTaskBack_Click" Style="{StaticResource WhiteButton}" Width="70" Height="20" VerticalAlignment="Bottom" Margin="0,0,0,20" IsEnabled="False"></Button>
+            <Button Name="btnCreateTaskNext" Content="{DynamicResource next}" Click="btnCreateTaskNext_Click" Style="{StaticResource WhiteButton}" Width="70" Height="20" VerticalAlignment="Bottom" Margin="10,0,0,20" IsEnabled="True"></Button>
             <Button Name="btnCreateTaskOk" Content="{DynamicResource okay}" Click="btnCreateTaskOk_Click" Style="{StaticResource WhiteButton}" Width="70" Height="20" VerticalAlignment="Bottom" Margin="10,0,0,20"></Button>
             <Button Name="btnCreateTaskCancel" Content="{DynamicResource cancel}" Click="btnCreateTaskCancel_Click" Style="{StaticResource WhiteButton}" Width="70" Height="20" VerticalAlignment="Bottom" Margin="10,0,30,20"></Button>
         </StackPanel>

@@ -80,7 +80,7 @@ namespace DiskBackup.TaskScheduler.Jobs
                 if (exception == null)
                     result = _backupService.CreateIncDiffBackup(task);
 
-                //for (int i = 0; i < 10000; i++)
+                //for (int i = 0; i < 100000; i++)
                 //{
                 //    Console.WriteLine(i);
                 //}

@@ -421,9 +421,6 @@ namespace DiskBackupWpfGUI
         #endregion
 
 
-
-
-
         #endregion
 
 
@@ -437,12 +434,10 @@ namespace DiskBackupWpfGUI
                 if (BackupIncDiffJob._refreshIncDiffTaskFlag)
                 {
                     int taskSelectedIndex = -1;
-
                     if (listViewTasks.SelectedIndex != -1)
                     {
                         taskSelectedIndex = listViewTasks.SelectedIndex;
                     }
-
                     GetTasks();
                     listViewTasks.SelectedIndex = taskSelectedIndex;
                     BackupIncDiffJob._refreshIncDiffTaskFlag = false;
@@ -451,7 +446,6 @@ namespace DiskBackupWpfGUI
                 if (BackupIncDiffJob._refreshIncDiffLogFlag)
                 {
                     int logSelectedIndex = -1;
-
                     if (listViewLog.SelectedIndex != -1)
                     {
                         logSelectedIndex = listViewLog.SelectedIndex;
@@ -471,6 +465,20 @@ namespace DiskBackupWpfGUI
                 btnTaskEdit.IsEnabled = true;
                 btnTaskStart.IsEnabled = true;
                 //butonlar eklenmeye devam edecek burayada da checkboxlara da
+
+                // çalışan görevi start etme engellendi
+                foreach (TaskInfo item in listViewTasks.SelectedItems)
+                {
+                    if (item.Status.Equals("Çalışıyor"))
+                    {
+                        btnTaskStart.IsEnabled = false;
+                        btnTaskEdit.IsEnabled = false; // çalışan görev düzenlenemez
+                        btnTaskPauseButton.IsEnabled = true;
+                        btnTaskStop.IsEnabled = true;
+                        btnTaskDelete.IsEnabled = true;
+                    }
+                }
+
             }
         }
 
@@ -519,15 +527,6 @@ namespace DiskBackupWpfGUI
                 //restore
             }
             Console.WriteLine("Backup bitti");
-
-            /*            
-            TaskInfo taskInfo = (TaskInfo)listViewTasks.SelectedItem;
-            taskInfo.NextDate = DateTime.Now;
-            //taskInfo.BackupStorageInfo = _backupStorageDal.Get(x => x.Id == taskInfo.BackupStorageInfoId);
-            //taskInfo.BackupTaskInfo = _backupTaskDal.Get(x => x.Id == taskInfo.BackupTaskId);
-            //MessageBox.Show(taskInfo.Name + " başlatılıyor");
-            //var result = _backupService.CreateIncDiffBackup(taskInfo);
-            //MessageBox.Show(taskInfo.Name + " bitti");*/
         }
 
         #region Checkbox Operations
@@ -544,6 +543,18 @@ namespace DiskBackupWpfGUI
             {
                 btnTaskEdit.IsEnabled = true;
                 btnTaskStart.IsEnabled = true;
+                // çalışan görevi start etme engellendi
+                foreach (TaskInfo item in listViewTasks.SelectedItems)
+                {
+                    if (item.Status.Equals("Çalışıyor"))
+                    {
+                        btnTaskStart.IsEnabled = false;
+                        btnTaskEdit.IsEnabled = false; // çalışan görev düzenlenemez
+                        btnTaskPauseButton.IsEnabled = true;
+                        btnTaskStop.IsEnabled = true;
+                        btnTaskDelete.IsEnabled = true;
+                    }
+                }
             }
             else
             {
@@ -578,6 +589,18 @@ namespace DiskBackupWpfGUI
             {
                 btnTaskEdit.IsEnabled = true;
                 btnTaskStart.IsEnabled = true;
+                // çalışan görevi start etme engellendi
+                foreach (TaskInfo item in listViewTasks.SelectedItems)
+                {
+                    if (item.Status.Equals("Çalışıyor"))
+                    {
+                        btnTaskStart.IsEnabled = false;
+                        btnTaskEdit.IsEnabled = false; // çalışan görev düzenlenemez
+                        btnTaskPauseButton.IsEnabled = true;
+                        btnTaskStop.IsEnabled = true;
+                        btnTaskDelete.IsEnabled = true;
+                    }
+                }
             }
             else
             {
@@ -609,6 +632,18 @@ namespace DiskBackupWpfGUI
             {
                 btnTaskEdit.IsEnabled = true;
                 btnTaskStart.IsEnabled = true;
+                // çalışan görevi start etme engellendi
+                foreach (TaskInfo item in listViewTasks.SelectedItems)
+                {
+                    if (item.Status.Equals("Çalışıyor"))
+                    {
+                        btnTaskStart.IsEnabled = false;
+                        btnTaskEdit.IsEnabled = false; // çalışan görev düzenlenemez
+                        btnTaskPauseButton.IsEnabled = true;
+                        btnTaskStop.IsEnabled = true;
+                        btnTaskDelete.IsEnabled = true;
+                    }
+                }
             }
             else
             {
@@ -631,6 +666,18 @@ namespace DiskBackupWpfGUI
             {
                 btnTaskEdit.IsEnabled = true;
                 btnTaskStart.IsEnabled = true;
+                // çalışan görevi start etme engellendi
+                foreach (TaskInfo item in listViewTasks.SelectedItems)
+                {
+                    if (item.Status.Equals("Çalışıyor"))
+                    {
+                        btnTaskStart.IsEnabled = false;
+                        btnTaskEdit.IsEnabled = false; // çalışan görev düzenlenemez
+                        btnTaskPauseButton.IsEnabled = true;
+                        btnTaskStop.IsEnabled = true;
+                        btnTaskDelete.IsEnabled = true;
+                    }
+                }
             }
             else
             {
