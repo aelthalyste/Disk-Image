@@ -1,8 +1,10 @@
-﻿using DiskBackup.Entities.Concrete;
+﻿using DiskBackup.DataAccess.Abstract;
+using DiskBackup.Entities.Concrete;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -20,9 +22,16 @@ namespace DiskBackupWpfGUI
     /// </summary>
     public partial class StatusesWindow : Window
     {
-        public StatusesWindow(int chooseFlag)
+        private CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+
+        private StatusInfo _statusInfo = new StatusInfo();
+
+        private readonly IStatusInfoDal _statusInfoDal;
+
+        public StatusesWindow(int chooseFlag, IStatusInfoDal statusInfoDal)
         {
             InitializeComponent();
+            _statusInfoDal = statusInfoDal;
             // 0 yedekleme durumu, 1 geri yükleme
             if (chooseFlag == 0)
             {
@@ -46,9 +55,14 @@ namespace DiskBackupWpfGUI
             }
         }
 
-        public StatusesWindow(int chooseFlag, StatusInfo statusInfo)
+        public StatusesWindow(int chooseFlag, StatusInfo statusInfo, IStatusInfoDal statusInfoDal)
         {
             InitializeComponent();
+            _statusInfoDal = statusInfoDal;
+            _statusInfo = statusInfo;
+            RefreshStatus(_cancellationTokenSource.Token);
+            this.Closing += (sender, e) => _cancellationTokenSource.Cancel();
+
             // 0 yedekleme durumu, 1 geri yükleme
             if (chooseFlag == 0)
             {
@@ -81,6 +95,23 @@ namespace DiskBackupWpfGUI
                 stackCloudZip.Visibility = Visibility.Collapsed;
                 txtCloudZip.Visibility = Visibility.Collapsed;
                 txtTitleBar.Text = Resources["restoreStatus"].ToString();
+            }
+        }
+
+        public async void RefreshStatus(CancellationToken cancellationToken)
+        {
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                await Task.Delay(500);
+                _statusInfo = _statusInfoDal.Get(x => x.Id == _statusInfo.Id);
+                pbTotalDataProcessed.Maximum = _statusInfo.TotalDataProcessed;
+                pbTotalDataProcessed.Value = _statusInfo.DataProcessed;
+                txtLocalPercentage.Text = Math.Round((_statusInfo.DataProcessed * 100.0) / (_statusInfo.TotalDataProcessed),2).ToString() + "%";
+                txtLocalFileName.Text = _statusInfo.FileName.Substring(0, _statusInfo.FileName.Length - 2);
+                txtLocalTime.Text = _statusInfo.TimeElapsed.ToString() + " ms"; // milisaniye
+                txtLocalAverageDataRate.Text = Math.Round(_statusInfo.AverageDataRate, 2).ToString() + " MB/s";
+                txtLocalDataProcessed.Text = _statusInfo.DataProcessed.ToString() + " byte"; //dönüş değerine bakılmalı byte, kb, mb, gb...
+                txtLocalInstantDataRate.Text = Math.Round(_statusInfo.InstantDataRate, 2).ToString() + " MB/s"; //dönüş değerine bakılmalı byte, kb, mb, gb...
             }
         }
 

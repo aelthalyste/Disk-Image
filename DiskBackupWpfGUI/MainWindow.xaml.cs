@@ -501,6 +501,7 @@ namespace DiskBackupWpfGUI
             TaskInfo taskInfo = (TaskInfo)listViewTasks.SelectedItem;
             taskInfo.LastWorkingDate = DateTime.Now + TimeSpan.FromSeconds(20);
             taskInfo.BackupStorageInfo = _backupStorageDal.Get(x => x.Id == taskInfo.BackupStorageInfoId);
+            taskInfo.StatusInfo = _statusInfoDal.Get(x=>x.Id == taskInfo.StatusInfoId);
             Console.WriteLine("Hemen çalıştırılıyor");
             if (taskInfo.Type == TaskType.Backup)
             {
@@ -517,7 +518,10 @@ namespace DiskBackupWpfGUI
                     {
                         // now görevini çağır
                         _taskSchedulerManager.BackupIncDiffNowJob(taskInfo).Wait();
+                        
                     }
+                    StatusesWindow backupStatus = _scope.Resolve<StatusesWindow>(new NamedParameter("chooseFlag", 0), new NamedParameter("statusInfo", taskInfo.StatusInfo));
+                    backupStatus.Show();
                 }
                 else
                 {

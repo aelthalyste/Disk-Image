@@ -78,12 +78,12 @@ namespace DiskBackup.TaskScheduler.Jobs
                 _taskInfoDal.Update(task);
                 _refreshIncDiffTaskFlag = true;
                 if (exception == null)
-                    //result = _backupService.CreateIncDiffBackup(task);
+                    result = _backupService.CreateIncDiffBackup(task);
 
-                for (int i = 0; i < 100000; i++)
-                {
-                    Console.WriteLine(i);
-                }
+                //for (int i = 0; i < 100000; i++)
+                //{
+                //    Console.WriteLine(i);
+                //}
                 Console.WriteLine("Done");
             }
             catch (Exception e)

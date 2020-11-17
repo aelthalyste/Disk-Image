@@ -242,8 +242,10 @@ namespace DiskBackup.Business.Concrete
 
                                 statusInfo.DataProcessed = BytesReadSoFar;
                                 statusInfo.TotalDataProcessed = (long)str.CopySize;
-                                statusInfo.AverageDataRate = ((statusInfo.TotalDataProcessed / 1024.0) / 1024.0) / (timeElapsed.ElapsedMilliseconds / 1000); // MB/s
-                                statusInfo.InstantDataRate = ((BytesReadSoFar / 1024.0) / 1024.0) / (timeElapsed.ElapsedMilliseconds / 1000); // MB/s
+                                statusInfo.AverageDataRate = ((statusInfo.TotalDataProcessed / 1024.0) / 1024.0) / (timeElapsed.ElapsedMilliseconds / 1000.0); // MB/s
+                                statusInfo.InstantDataRate = ((BytesReadSoFar / 1024.0) / 1024.0) / (timeElapsed.ElapsedMilliseconds / 1000.0); // MB/s
+                                statusInfo.TimeElapsed = timeElapsed.ElapsedMilliseconds;
+                                _statusInfoDal.Update(statusInfo);
 
                                 if (Read != bufferSize)
                                     break;

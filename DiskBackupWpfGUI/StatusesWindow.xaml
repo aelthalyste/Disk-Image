@@ -266,7 +266,7 @@
                     </LinearGradientBrush>
                 </ProgressBar.Foreground>
             </ProgressBar>
-            <TextBlock Text="50%" FontSize="20" Margin="0,-30,0,0" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="White" FontWeight="Bold"/>
+            <TextBlock Name="txtLocalPercentage" Text="50%" FontSize="20" Margin="0,-30,0,0" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="White" FontWeight="Bold"/>
             <StackPanel Orientation="Horizontal">
                 <TextBlock Text="{DynamicResource processedTotal}" Margin="30,8,8,0"/>
                 <TextBlock Text="C:" Margin="5,8"/>
