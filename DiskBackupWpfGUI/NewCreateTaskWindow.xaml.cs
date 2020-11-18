@@ -199,7 +199,7 @@ namespace DiskBackupWpfGUI
                     _taskInfo.BackupTaskInfo.WaitNumberTryAgain = Convert.ToInt32(txtTimeWait.Text);
                 }
 
-                //veritabanı işlemleri gelecek
+                //veritabanı işlemleri
                 TaskInfo resultTaskInfo = SaveToDatabase();
 
                 if (resultTaskInfo != null)
@@ -249,10 +249,10 @@ namespace DiskBackupWpfGUI
                 Close();
 
                 // task status açılması
-                resultTaskInfo.StatusInfo = _statusInfoDal.Get(x => x.Id == resultTaskInfo.StatusInfoId);
-                resultTaskInfo.BackupTaskInfo = _backupTaskDal.Get(x => x.Id == resultTaskInfo.BackupTaskId);
-                StatusesWindow backupStatus = _scope.Resolve<StatusesWindow>(new NamedParameter("chooseFlag", 0), new NamedParameter("statusInfo", resultTaskInfo.StatusInfo));
-                backupStatus.Show();
+                //resultTaskInfo.StatusInfo = _statusInfoDal.Get(x => x.Id == resultTaskInfo.StatusInfoId);
+                //resultTaskInfo.BackupTaskInfo = _backupTaskDal.Get(x => x.Id == resultTaskInfo.BackupTaskId);
+                //StatusesWindow backupStatus = _scope.Resolve<StatusesWindow>(new NamedParameter("chooseFlag", 0), new NamedParameter("statusInfo", resultTaskInfo.StatusInfo));
+                //backupStatus.Show();
             }
 
         }

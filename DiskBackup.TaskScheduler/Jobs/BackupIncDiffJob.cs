@@ -47,7 +47,7 @@ namespace DiskBackup.TaskScheduler.Jobs
             task.BackupTaskInfo = _backupTaskDal.Get(x => x.Id == task.BackupTaskId);
 
             JobExecutionException exception = null;
-            bool result = true;
+            byte result = 1;
 
             ActivityLog activityLog = new ActivityLog
             {
@@ -59,7 +59,7 @@ namespace DiskBackup.TaskScheduler.Jobs
 
             try
             {
-                var taskList = _taskInfoDal.GetList(x => x.Status == "Çalışıyor");
+                var taskList = _taskInfoDal.GetList(x => x.Status != "Hazır");
                 foreach (var item in taskList)
                 {
                     foreach (var itemObje in task.StrObje)
@@ -72,17 +72,19 @@ namespace DiskBackup.TaskScheduler.Jobs
                         }
                     }
                 }
-
                 task.LastWorkingDate = DateTime.Now;
-                task.Status = "Çalışıyor"; // Resource eklenecek 
-                if (context.Trigger.GetNextFireTimeUtc() != null)
-                {
-                    task.NextDate = (context.Trigger.GetNextFireTimeUtc()).Value.LocalDateTime;
-                }
-                _taskInfoDal.Update(task);
-                _refreshIncDiffTaskFlag = true;
+
                 if (exception == null)
+                {
+                    task.Status = "Çalışıyor"; // Resource eklenecek 
+                    if (context.Trigger.GetNextFireTimeUtc() != null)
+                    {
+                        task.NextDate = (context.Trigger.GetNextFireTimeUtc()).Value.LocalDateTime;
+                    }
+                    _taskInfoDal.Update(task);
+                    _refreshIncDiffTaskFlag = true;
                     result = _backupService.CreateIncDiffBackup(task);
+                }
 
                 //for (int i = 0; i < 100000; i++)
                 //{
@@ -104,7 +106,7 @@ namespace DiskBackup.TaskScheduler.Jobs
                 }
             }
 
-            if (!result)
+            if (result == 0)
             {
                 Console.WriteLine("Batuhan'dan false değer geldi");
                 if (task.BackupTaskInfo.FailTryAgain)
@@ -139,22 +141,35 @@ namespace DiskBackup.TaskScheduler.Jobs
                 throw exception;
             }
 
-            activityLog.EndDate = DateTime.Now;
-            activityLog.Status = StatusType.Success;
-            activityLog.StrStatus = StatusType.Success.ToString();
-            activityLog.StatusInfo = _statusInfoDal.Get(x => x.Id == task.StatusInfoId);
-            var resultStatusInfo2 = _statusInfoDal.Add(activityLog.StatusInfo);
-            activityLog.StatusInfoId = resultStatusInfo2.Id;
-            _activityLogDal.Add(activityLog);
-            task.Status = "Hazır"; // Resource eklenecek 
-            Console.WriteLine(context.JobDetail.Key.Name);
-            //if (context.Trigger.GetNextFireTimeUtc() != null)
-            //{
-            //    task.NextDate = (context.Trigger.GetNextFireTimeUtc()).Value.LocalDateTime;
-            //}
-            _taskInfoDal.Update(task);
-            _refreshIncDiffTaskFlag = true;
-            _refreshIncDiffLogFlag = true;
+            if (result == 1)
+            {
+                activityLog.EndDate = DateTime.Now;
+                activityLog.Status = StatusType.Success;
+                activityLog.StrStatus = StatusType.Success.ToString();
+                activityLog.StatusInfo = _statusInfoDal.Get(x => x.Id == task.StatusInfoId);
+                var resultStatusInfo2 = _statusInfoDal.Add(activityLog.StatusInfo);
+                activityLog.StatusInfoId = resultStatusInfo2.Id;
+                _activityLogDal.Add(activityLog);
+                task.Status = "Hazır"; // Resource eklenecek 
+                _taskInfoDal.Update(task);
+                _refreshIncDiffTaskFlag = true;
+                _refreshIncDiffLogFlag = true;
+            }
+            else if (result == 2) // durduruldu
+            {
+                //now görevi sona erdi sil
+                activityLog.EndDate = DateTime.Now;
+                activityLog.Status = StatusType.Cancel;
+                activityLog.StrStatus = StatusType.Cancel.ToString();
+                activityLog.StatusInfo = _statusInfoDal.Get(x => x.Id == task.StatusInfoId);
+                var resultStatusInfo = _statusInfoDal.Add(activityLog.StatusInfo);
+                activityLog.StatusInfoId = resultStatusInfo.Id;
+                _activityLogDal.Add(activityLog);
+                task.Status = "Hazır"; // Resource eklenecek 
+                _taskInfoDal.Update(task);
+                _refreshIncDiffLogFlag = true;
+            }
+
         }
     }
 }

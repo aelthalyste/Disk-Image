@@ -177,7 +177,7 @@ namespace DiskBackup.Business.Concrete
             throw new NotImplementedException();
         }
 
-        public bool CreateIncDiffBackup(TaskInfo taskInfo) // 0 başarısız, 1 başarılı, 2 kullanıcı durdurdu
+        public byte CreateIncDiffBackup(TaskInfo taskInfo) // 0 başarısız, 1 başarılı, 2 kullanıcı durdurdu
         {
             Console.WriteLine("Batu Method girildi");
             if (_statusInfoDal == null)
@@ -217,6 +217,7 @@ namespace DiskBackup.Business.Concrete
             {
                 if (_diskTracker.CW_SetupStream(letter, (int)taskInfo.BackupTaskInfo.Type, str)) // 0 diff, 1 inc, full (2) ucu gelmediğinden ayrılabilir veya aynı devam edebilir
                 {
+                    statusInfo.SourceObje = statusInfo.SourceObje + "-" + letter;
                     unsafe
                     {
                         fixed (byte* BAddr = &buffer[0])
@@ -232,7 +233,7 @@ namespace DiskBackup.Business.Concrete
                                     manualResetEvent.Dispose();
                                     _cancellationTokenSource[taskInfo.Id].Dispose();
                                     _cancellationTokenSource.Remove(taskInfo.Id);
-                                    return false;
+                                    return 2;
                                 }
                                 manualResetEvent.WaitOne();
 
@@ -255,6 +256,7 @@ namespace DiskBackup.Business.Concrete
                             result = (long)str.CopySize == BytesReadSoFar;
                             _diskTracker.CW_TerminateBackup(result, letter); //işlemi başarılı olup olmadığı cancel gelmeden
                             Console.WriteLine($"{BytesReadSoFar} okundu --- {str.CopySize} okunması gereken");
+                            BytesReadSoFar = 0;
 
                             try
                             {
@@ -269,6 +271,7 @@ namespace DiskBackup.Business.Concrete
                         }
                     }
                 }
+                statusInfo.SourceObje = statusInfo.SourceObje.Substring(0, statusInfo.SourceObje.Length-2);
                 statusInfo.TimeElapsed = timeElapsed.ElapsedMilliseconds;
                 _statusInfoDal.Update(statusInfo);
             }
@@ -280,7 +283,9 @@ namespace DiskBackup.Business.Concrete
             _cancellationTokenSource[taskInfo.Id].Dispose();
             _cancellationTokenSource.Remove(taskInfo.Id);
             Console.WriteLine("Batu Method çıktı");
-            return result;
+            if (result)
+                return 1;
+            return 0;
         }
 
         public bool CreateFullBackup(TaskInfo taskInfo) //bu method daha gelmedi 

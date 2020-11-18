@@ -430,9 +430,7 @@ namespace DiskBackupWpfGUI
                         }
                         else
                         {
-                            // now görevini çağır
                             _taskSchedulerManager.BackupIncDiffNowJob(taskInfo).Wait();
-
                         }
                         StatusesWindow backupStatus = _scope.Resolve<StatusesWindow>(new NamedParameter("chooseFlag", 0), new NamedParameter("statusInfo", taskInfo.StatusInfo));
                         backupStatus.Show();
@@ -479,18 +477,39 @@ namespace DiskBackupWpfGUI
             DisableTaskButtons();
         }
 
-        private void DisableTaskButtons()
+        public async void RefreshTasks(CancellationToken cancellationToken)
         {
-            btnTaskClose.IsEnabled = false;
-            btnTaskCopy.IsEnabled = false;
-            btnTaskDelete.IsEnabled = false;
-            btnTaskEdit.IsEnabled = false;
-            btnTaskOpen.IsEnabled = false;
-            btnTaskPaste.IsEnabled = false;
-            btnTaskPause.IsEnabled = false;
-            btnTaskStart.IsEnabled = false;
-            btnTaskStop.IsEnabled = false;
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                await Task.Delay(500);
+                if (BackupIncDiffJob._refreshIncDiffTaskFlag)
+                {
+                    int taskSelectedIndex = -1;
+                    if (listViewTasks.SelectedIndex != -1)
+                    {
+                        taskSelectedIndex = listViewTasks.SelectedIndex;
+                    }
+                    GetTasks();
+                    listViewTasks.SelectedIndex = taskSelectedIndex;
+                    BackupIncDiffJob._refreshIncDiffTaskFlag = false;
+                }
+
+                if (BackupIncDiffJob._refreshIncDiffLogFlag)
+                {
+                    int logSelectedIndex = -1;
+                    if (listViewLog.SelectedIndex != -1)
+                    {
+                        logSelectedIndex = listViewLog.SelectedIndex;
+                    }
+                    ShowActivityLog();
+                    listViewLog.SelectedIndex = logSelectedIndex + 1;
+                    BackupIncDiffJob._refreshIncDiffLogFlag = false;
+                }
+            }
         }
+
+        #region Task Buttons
+
 
         private void ToggleTaskButtons()
         {
@@ -526,6 +545,18 @@ namespace DiskBackupWpfGUI
                 PausedTaskButtons();
             }
         }
+        private void DisableTaskButtons()
+        {
+            btnTaskClose.IsEnabled = false;
+            btnTaskCopy.IsEnabled = false;
+            btnTaskDelete.IsEnabled = false;
+            btnTaskEdit.IsEnabled = false;
+            btnTaskOpen.IsEnabled = false;
+            btnTaskPaste.IsEnabled = false;
+            btnTaskPause.IsEnabled = false;
+            btnTaskStart.IsEnabled = false;
+            btnTaskStop.IsEnabled = false;
+        }
 
         private void PausedTaskButtons()
         {
@@ -545,37 +576,7 @@ namespace DiskBackupWpfGUI
             btnTaskStop.IsEnabled = true;
             btnTaskDelete.IsEnabled = false;
         }
-
-        public async void RefreshTasks(CancellationToken cancellationToken)
-        {
-            while (!cancellationToken.IsCancellationRequested)
-            {
-                await Task.Delay(500);
-                if (BackupIncDiffJob._refreshIncDiffTaskFlag)
-                {
-                    int taskSelectedIndex = -1;
-                    if (listViewTasks.SelectedIndex != -1)
-                    {
-                        taskSelectedIndex = listViewTasks.SelectedIndex;
-                    }
-                    GetTasks();
-                    listViewTasks.SelectedIndex = taskSelectedIndex;
-                    BackupIncDiffJob._refreshIncDiffTaskFlag = false;
-                }
-
-                if (BackupIncDiffJob._refreshIncDiffLogFlag)
-                {
-                    int logSelectedIndex = -1;
-                    if (listViewLog.SelectedIndex != -1)
-                    {
-                        logSelectedIndex = listViewLog.SelectedIndex;
-                    }
-                    ShowActivityLog();
-                    listViewLog.SelectedIndex = logSelectedIndex + 1;
-                    BackupIncDiffJob._refreshIncDiffLogFlag = false;
-                }
-            }
-        }
+        #endregion
 
         #region Checkbox Operations
         private void chbAllTasksChechbox_Checked(object sender, RoutedEventArgs e)

@@ -21,7 +21,7 @@ namespace DiskBackup.Business.Abstract
         void ResumeTask(TaskInfo taskInfo);
 
         //INC ve DIFF TaskInfo'dan strObjeyi alarak çoklu seçim yapabilir
-        bool CreateIncDiffBackup(TaskInfo taskInfo); // Kod tekrarı olmasın diye diff ile ınc birleştirildi
+        byte CreateIncDiffBackup(TaskInfo taskInfo);
         bool CreateFullBackup(TaskInfo taskInfo); //Bu daha hazır değil        
 
         //Parametreler bu methodun içinde RestoreTask oluşturacak

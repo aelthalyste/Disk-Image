@@ -47,15 +47,24 @@ namespace DiskBackupWpfGUI
 
                 txtLocalTaskName.Text = statusInfo.TaskName;
                 txtLocalFileName.Text = statusInfo.FileName;
-                txtLocalTime.Text = statusInfo.TimeElapsed.ToString() + " ms"; // milisaniye
+                txtLocalTime.Text = FormatMilliseconds(TimeSpan.FromMilliseconds(statusInfo.TimeElapsed)); // milisaniye
                 txtLocalAverageDataRate.Text = statusInfo.AverageDataRate.ToString() + " MB/s";
-                txtLocalDataProcessed.Text = statusInfo.DataProcessed.ToString(); //dönüş değerine bakılmalı byte, kb, mb, gb...
+                txtLocalDataProcessed.Text = FormatBytes(statusInfo.DataProcessed).ToString(); //dönüş değerine bakılmalı byte, kb, mb, gb...
                 txtLocalInstantDataRate.Text = statusInfo.InstantDataRate.ToString(); //dönüş değerine bakılmalı byte, kb, mb, gb...
-                txtLocalSourceObje.Text = statusInfo.SourceObje;
+                if (statusInfo.SourceObje.Contains("-"))
+                {
+                    var source = statusInfo.SourceObje.Split('-');
+                    txtLocalSourceObje.Text = source[0];
+                    txtSourceSingle.Text = source[1];
+                }
+                else
+                {
+                    txtLocalSourceObje.Text = statusInfo.SourceObje;
+                    txtSourceSingle.Text = statusInfo.SourceObje;
+                }
 
                 pbTotalDataProcessed.Maximum = statusInfo.TotalDataProcessed;
                 pbTotalDataProcessed.Value = statusInfo.DataProcessed;
-                MessageBox.Show($"İşlenmesi gereken veri: {statusInfo.TotalDataProcessed} - İşlenen veri: {statusInfo.DataProcessed}");
             }
             else
             {
@@ -79,12 +88,23 @@ namespace DiskBackupWpfGUI
                 _statusInfo = _statusInfoDal.Get(x => x.Id == _statusInfo.Id);
                 pbTotalDataProcessed.Maximum = _statusInfo.TotalDataProcessed;
                 pbTotalDataProcessed.Value = _statusInfo.DataProcessed;
-                txtLocalPercentage.Text = Math.Round((_statusInfo.DataProcessed * 100.0) / (_statusInfo.TotalDataProcessed),2).ToString() + "%";
+                txtLocalPercentage.Text = Math.Round((_statusInfo.DataProcessed * 100.0) / (_statusInfo.TotalDataProcessed), 2).ToString() + "%";
                 txtLocalFileName.Text = _statusInfo.FileName;
-                txtLocalTime.Text = _statusInfo.TimeElapsed.ToString() + " ms"; // milisaniye
+                txtLocalTime.Text = FormatMilliseconds(TimeSpan.FromMilliseconds(_statusInfo.TimeElapsed)); // milisaniye
                 txtLocalAverageDataRate.Text = Math.Round(_statusInfo.AverageDataRate, 2).ToString() + " MB/s";
-                txtLocalDataProcessed.Text = _statusInfo.DataProcessed.ToString() + " byte"; //dönüş değerine bakılmalı byte, kb, mb, gb...
+                txtLocalDataProcessed.Text = FormatBytes(_statusInfo.DataProcessed).ToString(); //dönüş değerine bakılmalı byte, kb, mb, gb...
                 txtLocalInstantDataRate.Text = Math.Round(_statusInfo.InstantDataRate, 2).ToString() + " MB/s"; //dönüş değerine bakılmalı byte, kb, mb, gb...
+                if (_statusInfo.SourceObje.Contains("-"))
+                {
+                    var source = _statusInfo.SourceObje.Split('-');
+                    txtLocalSourceObje.Text = source[0];
+                    txtSourceSingle.Text = source[1];
+                }
+                else
+                {
+                    txtLocalSourceObje.Text = _statusInfo.SourceObje;
+                    txtSourceSingle.Text = _statusInfo.SourceObje;
+                }
             }
         }
 
@@ -108,5 +128,59 @@ namespace DiskBackupWpfGUI
             Close();
         }
         #endregion
+
+        private static string FormatBytes(long bytes)
+        {
+            string[] Suffix = { "B", "KB", "MB", "GB", "TB" };
+            int i;
+            double dblSByte = bytes;
+            for (i = 0; i < Suffix.Length && bytes >= 1024; i++, bytes /= 1024)
+            {
+                dblSByte = bytes / 1024.0;
+            }
+
+            return ($"{dblSByte:0.##} {Suffix[i]}");
+        }
+
+        public static string FormatMilliseconds(TimeSpan obj)
+        {
+            StringBuilder sb = new StringBuilder();
+            if (obj.Hours != 0)
+            {
+                sb.Append(obj.Hours);
+                sb.Append(" ");
+                sb.Append("s");
+                sb.Append(" ");
+            }
+            if (obj.Minutes != 0 || sb.Length != 0)
+            {
+                sb.Append(obj.Minutes);
+                sb.Append(" ");
+                sb.Append("dk");
+                sb.Append(" ");
+            }
+            if (obj.Seconds != 0 || sb.Length != 0)
+            {
+                sb.Append(obj.Seconds);
+                sb.Append(" ");
+                sb.Append("sn");
+                sb.Append(" ");
+            }
+            if (obj.Milliseconds != 0 || sb.Length != 0)
+            {
+                sb.Append(obj.Milliseconds);
+                sb.Append(" ");
+                sb.Append("ms");
+                sb.Append(" ");
+            }
+            if (sb.Length == 0)
+            {
+                sb.Append(0);
+                sb.Append(" ");
+                sb.Append("ms");
+            }
+            return sb.ToString();
+        }
+
     }
 }

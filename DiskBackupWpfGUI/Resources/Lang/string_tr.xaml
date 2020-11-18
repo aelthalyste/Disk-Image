@@ -237,6 +237,8 @@
     <system:String x:Key="Canceled">İptal edildi</system:String>
     <system:String x:Key="Working">Çalışıyor</system:String>
     <system:String x:Key="Not">Yok</system:String>
+    <system:String x:Key="Cancel">İptal edildi</system:String>
+
 
 
 </ResourceDictionary>
