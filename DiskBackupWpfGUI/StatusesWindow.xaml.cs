@@ -28,33 +28,6 @@ namespace DiskBackupWpfGUI
 
         private readonly IStatusInfoDal _statusInfoDal;
 
-        public StatusesWindow(int chooseFlag, IStatusInfoDal statusInfoDal)
-        {
-            InitializeComponent();
-            _statusInfoDal = statusInfoDal;
-            // 0 yedekleme durumu, 1 geri yükleme
-            if (chooseFlag == 0)
-            {
-                stackLocalTaskName.Visibility = Visibility.Visible;
-                txtLocalTaskName.Visibility = Visibility.Visible;
-                stackCloudTaskName.Visibility = Visibility.Visible;
-                txtCloudTaskName.Visibility = Visibility.Visible;
-                txtTitleBar.Text = Resources["backupStatus"].ToString();
-            }
-            else
-            {
-                stackLocalTaskName.Visibility = Visibility.Visible;
-                txtLocalTaskName.Visibility = Visibility.Visible;
-                stackCloudTaskName.Visibility = Visibility.Visible;
-                txtCloudTaskName.Visibility = Visibility.Visible;
-                stackLocalZip.Visibility = Visibility.Collapsed;
-                txtLocalZip.Visibility = Visibility.Collapsed;
-                stackCloudZip.Visibility = Visibility.Collapsed;
-                txtCloudZip.Visibility = Visibility.Collapsed;
-                txtTitleBar.Text = Resources["restoreStatus"].ToString();
-            }
-        }
-
         public StatusesWindow(int chooseFlag, StatusInfo statusInfo, IStatusInfoDal statusInfoDal)
         {
             InitializeComponent();

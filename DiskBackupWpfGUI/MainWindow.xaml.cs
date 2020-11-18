@@ -151,9 +151,10 @@ namespace DiskBackupWpfGUI
 
             #region dummyBackupList
 
-            List<BackupInfo> backupsItems = new List<BackupInfo>();
+            List<BackupInfo> backupsItems = _backupService.GetBackupFileList(_backupStorageDal.GetList());
+            //List<BackupInfo> backupsItems = new List<BackupInfo>();
 
-            backupsItems.Add(new BackupInfo()
+            /*backupsItems.Add(new BackupInfo()
             {
                 Type = BackupTypes.Full,
                 FileName = "Volume_C_Full_001",
@@ -226,6 +227,149 @@ namespace DiskBackupWpfGUI
                 StrFileSize = "4 GB",
                 Description = "Yedek açıklaması"
             });
+            backupsItems.Add(new BackupInfo()
+            {
+                Type = BackupTypes.Inc,
+                FileName = "Volume_D_Inc_002",
+                IsCloud = true,
+                CreatedDate = DateTime.Now - TimeSpan.FromHours(5),
+                BackupTaskName = "D Inc",
+                StrVolumeSize = "510 GB",
+                StrFileSize = "4 GB",
+                Description = "Yedek açıklaması"
+            });
+            backupsItems.Add(new BackupInfo()
+            {
+                Type = BackupTypes.Inc,
+                FileName = "Volume_D_Inc_002",
+                IsCloud = true,
+                CreatedDate = DateTime.Now - TimeSpan.FromHours(5),
+                BackupTaskName = "D Inc",
+                StrVolumeSize = "510 GB",
+                StrFileSize = "4 GB",
+                Description = "Yedek açıklaması"
+            });
+            backupsItems.Add(new BackupInfo()
+            {
+                Type = BackupTypes.Inc,
+                FileName = "Volume_D_Inc_002",
+                IsCloud = true,
+                CreatedDate = DateTime.Now - TimeSpan.FromHours(5),
+                BackupTaskName = "D Inc",
+                StrVolumeSize = "510 GB",
+                StrFileSize = "4 GB",
+                Description = "Yedek açıklaması"
+            });
+            backupsItems.Add(new BackupInfo()
+            {
+                Type = BackupTypes.Inc,
+                FileName = "Volume_D_Inc_002",
+                IsCloud = true,
+                CreatedDate = DateTime.Now - TimeSpan.FromHours(5),
+                BackupTaskName = "D Inc",
+                StrVolumeSize = "510 GB",
+                StrFileSize = "4 GB",
+                Description = "Yedek açıklaması"
+            });
+            backupsItems.Add(new BackupInfo()
+            {
+                Type = BackupTypes.Inc,
+                FileName = "Volume_D_Inc_002",
+                IsCloud = true,
+                CreatedDate = DateTime.Now - TimeSpan.FromHours(5),
+                BackupTaskName = "D Inc",
+                StrVolumeSize = "510 GB",
+                StrFileSize = "4 GB",
+                Description = "Yedek açıklaması"
+            });
+            backupsItems.Add(new BackupInfo()
+            {
+                Type = BackupTypes.Inc,
+                FileName = "Volume_D_Inc_002",
+                IsCloud = true,
+                CreatedDate = DateTime.Now - TimeSpan.FromHours(5),
+                BackupTaskName = "D Inc",
+                StrVolumeSize = "510 GB",
+                StrFileSize = "4 GB",
+                Description = "Yedek açıklaması"
+            });
+            backupsItems.Add(new BackupInfo()
+            {
+                Type = BackupTypes.Inc,
+                FileName = "Volume_D_Inc_002",
+                IsCloud = true,
+                CreatedDate = DateTime.Now - TimeSpan.FromHours(5),
+                BackupTaskName = "D Inc",
+                StrVolumeSize = "510 GB",
+                StrFileSize = "4 GB",
+                Description = "Yedek açıklaması"
+            });
+            backupsItems.Add(new BackupInfo()
+            {
+                Type = BackupTypes.Inc,
+                FileName = "Volume_D_Inc_002",
+                IsCloud = true,
+                CreatedDate = DateTime.Now - TimeSpan.FromHours(5),
+                BackupTaskName = "D Inc",
+                StrVolumeSize = "510 GB",
+                StrFileSize = "4 GB",
+                Description = "Yedek açıklaması"
+            });
+            backupsItems.Add(new BackupInfo()
+            {
+                Type = BackupTypes.Inc,
+                FileName = "Volume_D_Inc_002",
+                IsCloud = true,
+                CreatedDate = DateTime.Now - TimeSpan.FromHours(5),
+                BackupTaskName = "D Inc",
+                StrVolumeSize = "510 GB",
+                StrFileSize = "4 GB",
+                Description = "Yedek açıklaması"
+            });
+            backupsItems.Add(new BackupInfo()
+            {
+                Type = BackupTypes.Inc,
+                FileName = "Volume_D_Inc_002",
+                IsCloud = true,
+                CreatedDate = DateTime.Now - TimeSpan.FromHours(5),
+                BackupTaskName = "D Inc",
+                StrVolumeSize = "510 GB",
+                StrFileSize = "4 GB",
+                Description = "Yedek açıklaması"
+            });
+            backupsItems.Add(new BackupInfo()
+            {
+                Type = BackupTypes.Inc,
+                FileName = "Volume_D_Inc_002",
+                IsCloud = true,
+                CreatedDate = DateTime.Now - TimeSpan.FromHours(5),
+                BackupTaskName = "D Inc",
+                StrVolumeSize = "510 GB",
+                StrFileSize = "4 GB",
+                Description = "Yedek açıklaması"
+            });
+            backupsItems.Add(new BackupInfo()
+            {
+                Type = BackupTypes.Inc,
+                FileName = "Volume_D_Inc_002",
+                IsCloud = true,
+                CreatedDate = DateTime.Now - TimeSpan.FromHours(5),
+                BackupTaskName = "D Inc",
+                StrVolumeSize = "510 GB",
+                StrFileSize = "4 GB",
+                Description = "Yedek açıklaması"
+            });
+            backupsItems.Add(new BackupInfo()
+            {
+                Type = BackupTypes.Inc,
+                FileName = "Volume_D_Inc_002",
+                IsCloud = true,
+                CreatedDate = DateTime.Now - TimeSpan.FromHours(5),
+                BackupTaskName = "D Inc",
+                StrVolumeSize = "510 GB",
+                StrFileSize = "4 GB",
+                Description = "Yedek açıklaması"
+            });*/
             listViewBackups.ItemsSource = backupsItems;
 
             listViewRestore.ItemsSource = backupsItems;
@@ -1348,17 +1492,6 @@ namespace DiskBackupWpfGUI
         #endregion
 
 
-        private void btnTaskOpen_Click(object sender, RoutedEventArgs e)
-        {
-
-        }
-
-        private void btnTaskPaste_Click(object sender, RoutedEventArgs e)
-        {
-            StatusesWindow backupStatus = _scope.Resolve<StatusesWindow>(new NamedParameter("chooseFlag", 0));
-            backupStatus.Show();
-        }
-
         private void btnFilesBrowse_Click(object sender, RoutedEventArgs e)
         {
             using (var scope = _scope.BeginLifetimeScope())
@@ -1366,12 +1499,6 @@ namespace DiskBackupWpfGUI
                 FileExplorerWindow fileExplorer = scope.Resolve<FileExplorerWindow>();
                 fileExplorer.ShowDialog();
             }
-        }
-
-        private void btnTaskCopy_Click(object sender, RoutedEventArgs e)
-        {
-            StatusesWindow restoreStatus = _scope.Resolve<StatusesWindow>(new NamedParameter("chooseFlag", 1));
-            restoreStatus.Show();
         }
 
         private void btnRestore_Click(object sender, RoutedEventArgs e)
