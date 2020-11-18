@@ -209,7 +209,6 @@ namespace DiskBackup.Business.Concrete
             bool result = false;
 
             statusInfo.TaskName = taskInfo.Name;
-            statusInfo.FileName = taskInfo.BackupStorageInfo.Path + "/" + str.MetadataFileName;
             statusInfo.SourceObje = taskInfo.StrObje;
 
             foreach (var letter in letters) // C D E F
@@ -239,6 +238,7 @@ namespace DiskBackup.Business.Concrete
                                 file.Write(buffer, 0, Read);
                                 BytesReadSoFar += Read;
 
+                                statusInfo.FileName = taskInfo.BackupStorageInfo.Path + str.MetadataFileName;
 
                                 statusInfo.DataProcessed = BytesReadSoFar;
                                 statusInfo.TotalDataProcessed = (long)str.CopySize;
@@ -252,7 +252,7 @@ namespace DiskBackup.Business.Concrete
                             }
                             result = (long)str.CopySize == BytesReadSoFar;
                             _diskTracker.CW_TerminateBackup(result, letter); //işlemi başarılı olup olmadığı cancel gelmeden
-                            Console.WriteLine(BytesReadSoFar + " --- ");
+                            Console.WriteLine($"{BytesReadSoFar} okundu --- {str.CopySize} okunması gereken");
 
                             try
                             {
@@ -401,7 +401,7 @@ namespace DiskBackup.Business.Concrete
             //void CW_RestoreFile(INT64 ID);
             //_cSNarFileExplorer.CW_Free FileExplorer kapatıldığında Free çağırmakta fayda var bellek yönetimi için tutulan alanları geri veriyor sisteme
             /*Geri yükle fileExplorerdan istenen dosyayı geri yüklemek için
-_           cSNarFileExplorer.CW_RestoreFile(dosyaid, Backupdirectory (ilgil backup hariç), kaydedilecekyol)*/
+            cSNarFileExplorer.CW_RestoreFile(dosyaid, Backupdirectory (ilgil backup hariç), kaydedilecekyol)*/
             _cSNarFileExplorer.CW_RestoreFile(fileId, backupDirectory, targetDirectory);
         }
 

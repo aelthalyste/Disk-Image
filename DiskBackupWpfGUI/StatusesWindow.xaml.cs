@@ -107,7 +107,7 @@ namespace DiskBackupWpfGUI
                 pbTotalDataProcessed.Maximum = _statusInfo.TotalDataProcessed;
                 pbTotalDataProcessed.Value = _statusInfo.DataProcessed;
                 txtLocalPercentage.Text = Math.Round((_statusInfo.DataProcessed * 100.0) / (_statusInfo.TotalDataProcessed),2).ToString() + "%";
-                txtLocalFileName.Text = _statusInfo.FileName.Substring(0, _statusInfo.FileName.Length - 2);
+                txtLocalFileName.Text = _statusInfo.FileName;
                 txtLocalTime.Text = _statusInfo.TimeElapsed.ToString() + " ms"; // milisaniye
                 txtLocalAverageDataRate.Text = Math.Round(_statusInfo.AverageDataRate, 2).ToString() + " MB/s";
                 txtLocalDataProcessed.Text = _statusInfo.DataProcessed.ToString() + " byte"; //dönüş değerine bakılmalı byte, kb, mb, gb...

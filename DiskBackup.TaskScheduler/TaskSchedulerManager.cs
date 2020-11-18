@@ -36,10 +36,16 @@ namespace DiskBackup.TaskScheduler
             await _scheduler.Start();
         }
 
-        public async Task RunNowTrigger(TaskInfo taskInfo)
+        public async Task RunNowTrigger(string schedulerId)
         {
-            var result = taskInfo.ScheduleId.Split('/');
+            var result = schedulerId.Split('/');
             await _scheduler.TriggerJob(new JobKey(result[0], result[1]));
+        }
+
+        public async Task DeleteJob(string schedulerId)
+        {
+            var result = schedulerId.Split('/');
+            await _scheduler.DeleteJob(new JobKey(result[0], result[1]));
         }
 
         #region Backup Inc-Diff

@@ -371,7 +371,7 @@
                                     <GridViewColumn Header="{DynamicResource nextStudy}" Width="125" >
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
-                                                <TextBlock Text="{Binding NextDate, StringFormat='dd.MM.yyyy HH:mm'}" TextAlignment="Center"/>
+                                                <TextBlock Text="{Binding NextDate, StringFormat='dd.MM.yyyy HH:mm'}" Style="{StaticResource MTBListViewNextDate}" TextAlignment="Center"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
@@ -434,8 +434,8 @@
                                     </Image>
                                 </Button.Content>
                             </Button>
-                            <Button Name="btnTaskPauseButton" ToolTip="{DynamicResource pause}" HorizontalAlignment="Center" Margin="0,5" 
-                                    Style="{StaticResource ImageButton}" Width="32" Height="32" Grid.Column="1">
+                            <Button Name="btnTaskPause" ToolTip="{DynamicResource pause}" HorizontalAlignment="Center" Margin="0,5" 
+                                    Style="{StaticResource ImageButton}" Width="32" Height="32" Grid.Column="1" IsEnabled="False">
                                 <Button.Content>
                                     <Image>
                                         <Image.Style>
@@ -457,7 +457,7 @@
                             </Button>
 
                             <Button Name="btnTaskStop" ToolTip="{DynamicResource stop}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5" 
-                                    Style="{StaticResource ImageButton}" Grid.Column="1" >
+                                    Style="{StaticResource ImageButton}" Grid.Column="1" IsEnabled="False">
                                 <Button.Content>
                                     <Image HorizontalAlignment="Center" VerticalAlignment="Center">
                                         <Image.Style>
@@ -478,7 +478,7 @@
                                 </Button.Content>
                             </Button>
                             <Button Name="btnTaskOpen" ToolTip="{DynamicResource open}" Click="btnTaskOpen_Click" Width="32" Height="32" HorizontalAlignment="Center" 
-                                    Margin="0,5" Style="{StaticResource ImageButton}" Grid.Column="1" >
+                                    Margin="0,5" Style="{StaticResource ImageButton}" Grid.Column="1" IsEnabled="False">
                                 <Button.Content>
                                     <Image Height="28" Width="28" HorizontalAlignment="Center" VerticalAlignment="Center">
                                         <Image.Style>
@@ -495,7 +495,7 @@
                                 </Button.Content>
                             </Button>
                             <Button Name="btnTaskClose" ToolTip="{DynamicResource close}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5" 
-                                    Style="{StaticResource ImageButton}" Grid.Column="1">
+                                    Style="{StaticResource ImageButton}" Grid.Column="1" IsEnabled="False">
                                 <Button.Content>
                                     <Image HorizontalAlignment="Center" VerticalAlignment="Center">
                                         <Image.Style>
@@ -516,7 +516,7 @@
                                 </Button.Content>
                             </Button>
                             <Button Name="btnTaskCopy" ToolTip="{DynamicResource copy}" Click="btnTaskCopy_Click" Width="32" Height="32" HorizontalAlignment="Center" 
-                                    Margin="0,5" Style="{StaticResource ImageButton}" Grid.Column="1">
+                                    Margin="0,5" Style="{StaticResource ImageButton}" Grid.Column="1" IsEnabled="False">
                                 <Button.Content>
                                     <Image Height="25" Width="25" HorizontalAlignment="Center" VerticalAlignment="Center">
                                         <Image.Style>
@@ -533,7 +533,7 @@
                                 </Button.Content>
                             </Button>
                             <Button Name="btnTaskPaste" ToolTip="{DynamicResource paste}" Click="btnTaskPaste_Click" Width="32" Height="32" HorizontalAlignment="Center" 
-                                    Margin="0,5" Style="{StaticResource ImageButton}" Grid.Column="1" >
+                                    Margin="0,5" Style="{StaticResource ImageButton}" Grid.Column="1" IsEnabled="False">
                                 <Button.Content>
                                     <Image Height="25" Width="25" HorizontalAlignment="Center" VerticalAlignment="Center">
                                         <Image.Style>
@@ -550,7 +550,7 @@
                                 </Button.Content>
                             </Button>
                             <Button Name="btnTaskDelete" ToolTip="{DynamicResource delete}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5" 
-                                    Style="{StaticResource ImageButton}" Grid.Column="1" IsEnabled="False">
+                                    Style="{StaticResource ImageButton}" Grid.Column="1" IsEnabled="False" Click="btnTaskDelete_Click">
                                 <Button.Content>
                                     <Image HorizontalAlignment="Center" VerticalAlignment="Center">
                                         <Image.Style>

@@ -94,7 +94,6 @@ namespace DiskBackupWpfGUI
 
             #region Disk Bilgileri
 
-
             _diskList = _backupService.GetDiskList();
 
             foreach (var diskItem in _diskList)
@@ -128,11 +127,13 @@ namespace DiskBackupWpfGUI
 
             #endregion
 
+
             #region Yedekleme alanları
 
             listViewBackupStorage.ItemsSource = GetBackupStorages(_volumeList, _backupStorageService.BackupStorageInfoList());
 
             #endregion
+
 
             #region Görevler
 
@@ -140,13 +141,16 @@ namespace DiskBackupWpfGUI
 
             #endregion
 
+
             #region ActivityLog
 
             ShowActivityLog();
 
             #endregion
 
+
             #region dummyBackupList
+
             List<BackupInfo> backupsItems = new List<BackupInfo>();
 
             backupsItems.Add(new BackupInfo()
@@ -227,17 +231,7 @@ namespace DiskBackupWpfGUI
             listViewRestore.ItemsSource = backupsItems;
             #endregion
 
-        }
 
-        private void GetTasks()
-        {
-            _taskInfoList = _taskInfoDal.GetList();
-
-            foreach (var item in _taskInfoList)
-            {
-                item.BackupStorageInfo = _backupStorageDal.Get(x => x.Id == item.BackupStorageInfoId);
-            }
-            listViewTasks.ItemsSource = _taskInfoList;
         }
 
 
@@ -428,6 +422,139 @@ namespace DiskBackupWpfGUI
 
         #region Tasks Tab
 
+        private void btnTaskDelete_Click(object sender, RoutedEventArgs e)
+        {
+            MessageBoxResult result = MessageBox.Show($"{listViewTasks.SelectedItems.Count} adet veri silinecek. Onaylıyor musunuz?", "Narbulut diyor ki; ", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
+            if (result == MessageBoxResult.Yes)
+            {
+                foreach (TaskInfo item in listViewTasks.SelectedItems)
+                {
+                    // ilgili triggerı sil
+                    if (item.ScheduleId != null && !item.ScheduleId.Contains("Now"))
+                    {
+                        _taskSchedulerManager.DeleteJob(item.ScheduleId);
+                    }
+
+                    // task tipine göre ilgili task tablosundan bilgisini sil
+                    if (item.Type == TaskType.Backup)
+                    {
+                        _backupTaskDal.Delete(_backupTaskDal.Get(x => x.Id == item.BackupTaskId));
+                    }
+                    else
+                    {
+                        //restore silme
+                    }
+
+                    // ilgili status infosunu sil
+                    _statusInfoDal.Delete(_statusInfoDal.Get(x => x.Id == item.StatusInfoId));
+
+                    // kendisini sil
+                    _taskInfoDal.Delete(item);
+                }
+                GetTasks();
+            }
+        }
+
+        private void listViewTasks_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (listViewTasks.SelectedIndex != -1)
+            {
+                btnTaskDelete.IsEnabled = true;
+                btnTaskEdit.IsEnabled = true;
+                btnTaskStart.IsEnabled = true;
+                //butonlar eklenmeye devam edecek burayada da checkboxlara da
+
+                // çalışan görevi start etme engellendi
+                foreach (TaskInfo item in listViewTasks.SelectedItems)
+                {
+                    if (item.Status.Equals("Çalışıyor"))
+                    {
+                        btnTaskStart.IsEnabled = false;
+                        btnTaskEdit.IsEnabled = false; // çalışan görev düzenlenemez
+                        btnTaskPause.IsEnabled = true;
+                        btnTaskStop.IsEnabled = true;
+                        btnTaskDelete.IsEnabled = false;
+                    }
+                }
+            }
+        }
+
+        private void listViewTasks_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            if (listViewTasks.SelectedIndex != -1)
+            {
+                TaskInfo taskInfo = (TaskInfo)listViewTasks.SelectedItem;
+                taskInfo.StatusInfo = _statusInfoDal.Get(x => x.Id == taskInfo.StatusInfoId);
+                taskInfo.BackupTaskInfo = _backupTaskDal.Get(x => x.Id == taskInfo.BackupTaskId);
+                StatusesWindow backupStatus = _scope.Resolve<StatusesWindow>(new NamedParameter("chooseFlag", 0), new NamedParameter("statusInfo", taskInfo.StatusInfo));
+                backupStatus.Show();
+            }
+        }
+
+        private void btnTaskStart_Click(object sender, RoutedEventArgs e)
+        {
+            TaskInfo taskInfo = (TaskInfo)listViewTasks.SelectedItem;
+            taskInfo.LastWorkingDate = DateTime.Now;
+            taskInfo.BackupStorageInfo = _backupStorageDal.Get(x => x.Id == taskInfo.BackupStorageInfoId);
+            taskInfo.StatusInfo = _statusInfoDal.Get(x=>x.Id == taskInfo.StatusInfoId);
+            Console.WriteLine("Hemen çalıştırılıyor");
+            if (taskInfo.Type == TaskType.Backup)
+            {
+                Console.WriteLine("Backup başlatılıyor");
+                taskInfo.BackupTaskInfo = _backupTaskDal.Get(x => x.Id == taskInfo.BackupTaskId);
+                if (taskInfo.BackupTaskInfo.Type == BackupTypes.Diff || taskInfo.BackupTaskInfo.Type == BackupTypes.Inc)
+                {
+                    Console.WriteLine("Backup Inc-Diff başlatılıyor");
+                    if (taskInfo.ScheduleId != null && !taskInfo.ScheduleId.Contains("Now"))
+                    {
+                        _taskSchedulerManager.RunNowTrigger(taskInfo.ScheduleId).Wait();
+                    }
+                    else
+                    {
+                        // now görevini çağır
+                        _taskSchedulerManager.BackupIncDiffNowJob(taskInfo).Wait();
+                        
+                    }
+                    StatusesWindow backupStatus = _scope.Resolve<StatusesWindow>(new NamedParameter("chooseFlag", 0), new NamedParameter("statusInfo", taskInfo.StatusInfo));
+                    backupStatus.Show();
+                }
+                else
+                {
+                    //full
+                }
+            }
+            else
+            {
+                //restore
+            }
+            Console.WriteLine("Backup bitti");
+        }
+
+        private void GetTasks()
+        {
+            _taskInfoList = _taskInfoDal.GetList();
+
+            foreach (var item in _taskInfoList)
+            {
+                item.BackupStorageInfo = _backupStorageDal.Get(x => x.Id == item.BackupStorageInfoId);
+            }
+            listViewTasks.ItemsSource = _taskInfoList;
+            DisableEaskButtons();
+        }
+
+        private void DisableEaskButtons()
+        {
+            btnTaskClose.IsEnabled = false;
+            btnTaskCopy.IsEnabled = false;
+            btnTaskDelete.IsEnabled = false;
+            btnTaskEdit.IsEnabled = false;
+            btnTaskOpen.IsEnabled = false;
+            btnTaskPaste.IsEnabled = false;
+            btnTaskPause.IsEnabled = false;
+            btnTaskStart.IsEnabled = false;
+            btnTaskStop.IsEnabled = false;
+        }
+
         public async void RefreshTasks(CancellationToken cancellationToken)
         {
             while (!cancellationToken.IsCancellationRequested)
@@ -459,82 +586,6 @@ namespace DiskBackupWpfGUI
             }
         }
 
-        private void listViewTasks_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            if (listViewTasks.SelectedIndex != -1)
-            {
-                btnTaskDelete.IsEnabled = true;
-                btnTaskEdit.IsEnabled = true;
-                btnTaskStart.IsEnabled = true;
-                //butonlar eklenmeye devam edecek burayada da checkboxlara da
-
-                // çalışan görevi start etme engellendi
-                foreach (TaskInfo item in listViewTasks.SelectedItems)
-                {
-                    if (item.Status.Equals("Çalışıyor"))
-                    {
-                        btnTaskStart.IsEnabled = false;
-                        btnTaskEdit.IsEnabled = false; // çalışan görev düzenlenemez
-                        btnTaskPauseButton.IsEnabled = true;
-                        btnTaskStop.IsEnabled = true;
-                        btnTaskDelete.IsEnabled = false;
-                    }
-                }
-
-            }
-        }
-
-        private void listViewTasks_MouseDoubleClick(object sender, MouseButtonEventArgs e)
-        {
-            if (listViewTasks.SelectedIndex != -1)
-            {
-                TaskInfo taskInfo = (TaskInfo)listViewTasks.SelectedItem;
-                taskInfo.StatusInfo = _statusInfoDal.Get(x => x.Id == taskInfo.StatusInfoId);
-                taskInfo.BackupTaskInfo = _backupTaskDal.Get(x => x.Id == taskInfo.BackupTaskId);
-                StatusesWindow backupStatus = _scope.Resolve<StatusesWindow>(new NamedParameter("chooseFlag", 0), new NamedParameter("statusInfo", taskInfo.StatusInfo));
-                backupStatus.Show();
-            }
-        }
-
-        private void btnTaskStart_Click(object sender, RoutedEventArgs e)
-        {
-            TaskInfo taskInfo = (TaskInfo)listViewTasks.SelectedItem;
-            taskInfo.LastWorkingDate = DateTime.Now + TimeSpan.FromSeconds(20);
-            taskInfo.BackupStorageInfo = _backupStorageDal.Get(x => x.Id == taskInfo.BackupStorageInfoId);
-            taskInfo.StatusInfo = _statusInfoDal.Get(x=>x.Id == taskInfo.StatusInfoId);
-            Console.WriteLine("Hemen çalıştırılıyor");
-            if (taskInfo.Type == TaskType.Backup)
-            {
-                Console.WriteLine("Backup başlatılıyor");
-                taskInfo.BackupTaskInfo = _backupTaskDal.Get(x => x.Id == taskInfo.BackupTaskId);
-                if (taskInfo.BackupTaskInfo.Type == BackupTypes.Diff || taskInfo.BackupTaskInfo.Type == BackupTypes.Inc)
-                {
-                    Console.WriteLine("Backup Inc-Diff başlatılıyor");
-                    if (taskInfo.ScheduleId != null && !taskInfo.ScheduleId.Contains("Now"))
-                    {
-                        _taskSchedulerManager.RunNowTrigger(taskInfo).Wait();
-                    }
-                    else
-                    {
-                        // now görevini çağır
-                        _taskSchedulerManager.BackupIncDiffNowJob(taskInfo).Wait();
-                        
-                    }
-                    StatusesWindow backupStatus = _scope.Resolve<StatusesWindow>(new NamedParameter("chooseFlag", 0), new NamedParameter("statusInfo", taskInfo.StatusInfo));
-                    backupStatus.Show();
-                }
-                else
-                {
-                    //full
-                }
-            }
-            else
-            {
-                //restore
-            }
-            Console.WriteLine("Backup bitti");
-        }
-
         #region Checkbox Operations
         private void chbAllTasksChechbox_Checked(object sender, RoutedEventArgs e)
         {
@@ -556,7 +607,7 @@ namespace DiskBackupWpfGUI
                     {
                         btnTaskStart.IsEnabled = false;
                         btnTaskEdit.IsEnabled = false; // çalışan görev düzenlenemez
-                        btnTaskPauseButton.IsEnabled = true;
+                        btnTaskPause.IsEnabled = true;
                         btnTaskStop.IsEnabled = true;
                         btnTaskDelete.IsEnabled = false;
                     }
@@ -602,7 +653,7 @@ namespace DiskBackupWpfGUI
                     {
                         btnTaskStart.IsEnabled = false;
                         btnTaskEdit.IsEnabled = false; // çalışan görev düzenlenemez
-                        btnTaskPauseButton.IsEnabled = true;
+                        btnTaskPause.IsEnabled = true;
                         btnTaskStop.IsEnabled = true;
                         btnTaskDelete.IsEnabled = false;
                     }
@@ -645,7 +696,7 @@ namespace DiskBackupWpfGUI
                     {
                         btnTaskStart.IsEnabled = false;
                         btnTaskEdit.IsEnabled = false; // çalışan görev düzenlenemez
-                        btnTaskPauseButton.IsEnabled = true;
+                        btnTaskPause.IsEnabled = true;
                         btnTaskStop.IsEnabled = true;
                         btnTaskDelete.IsEnabled = false;
                     }
@@ -679,7 +730,7 @@ namespace DiskBackupWpfGUI
                     {
                         btnTaskStart.IsEnabled = false;
                         btnTaskEdit.IsEnabled = false; // çalışan görev düzenlenemez
-                        btnTaskPauseButton.IsEnabled = true;
+                        btnTaskPause.IsEnabled = true;
                         btnTaskStop.IsEnabled = true;
                         btnTaskDelete.IsEnabled = false;
                     }
@@ -1186,9 +1237,22 @@ namespace DiskBackupWpfGUI
             }
         }
 
+        private void btnLogDelete_Click(object sender, RoutedEventArgs e)
+        {
+            MessageBoxResult result = MessageBox.Show($"{((ActivityLog)listViewLog.SelectedItem).TaskInfoName} ile ilgili veri silinecek. Onaylıyor musunuz?", "Narbulut diyor ki; ", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
+            if (result == MessageBoxResult.Yes)
+            {
+                foreach (ActivityLog item in listViewLog.SelectedItems)
+                {
+                    _statusInfoDal.Delete(_statusInfoDal.Get(x => x.Id == item.StatusInfoId));
+                    _activityLogDal.Delete(item);
+                }
+                ShowActivityLog();
+            }
+        }
+
         private void ShowActivityLog()
         {
-            //veritabanı ile düzeltme yapılabilir adam yolla alakalı değişiklik vesaire yaparsa bu da değişiyor
             _activityLogList = _activityLogDal.GetList();
             foreach (var item in _activityLogList)
             {
@@ -1342,18 +1406,5 @@ namespace DiskBackupWpfGUI
             return ($"{dblSByte:0.##} {Suffix[i]}");
         }
 
-        private void btnLogDelete_Click(object sender, RoutedEventArgs e)
-        {
-            MessageBoxResult result = MessageBox.Show($"{listViewLog.SelectedItems.Count} adet veri silinecek. Onaylıyor musunuz?", "Narbulut diyor ki; ", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
-            if (result == MessageBoxResult.Yes)
-            {
-                foreach (ActivityLog item in listViewLog.SelectedItems)
-                {
-                    _statusInfoDal.Delete(_statusInfoDal.Get(x => x.Id == item.StatusInfoId));
-                    _activityLogDal.Delete(item);
-                }
-                ShowActivityLog();
-            }
-        }
     }
 }

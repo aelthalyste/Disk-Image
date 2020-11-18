@@ -14,7 +14,8 @@ namespace DiskBackup.TaskScheduler
         string ScheduleBackupTask(TaskInfo taskInfo);
         bool ResumeSchedule(string scheduleId);
         Task ResumeAllScheduleAsync(List<TaskInfo> taskInfoList);
-        Task RunNowTrigger(TaskInfo taskInfo);
+        Task RunNowTrigger(string schedulerId);
+        Task DeleteJob(string schedulerId);
         //async Task ResumeAllScheduleAsync(List<TaskInfo> taskInfoList); olmamasına rağmen sorun çıkarmadı biz de kullandık 
         bool PauseSchedule(string scheduleId);
         Task PauseAllScheduleAsync();

@@ -817,6 +817,7 @@ namespace DiskBackupWpfGUI
             _taskInfo.StatusInfoId = resultStatusInfo.Id;
             _taskInfo.BackupTaskId = resultBackupTask.Id;
             _taskInfo.LastWorkingDate = Convert.ToDateTime("01/01/0002");
+            _taskInfo.NextDate = Convert.ToDateTime("01/01/0002");
             var resultTaskInfo = _taskInfoDal.Add(_taskInfo);
             if (resultTaskInfo == null)
             {
