@@ -638,40 +638,49 @@ namespace DiskBackupWpfGUI
         private void btnTaskStart_Click(object sender, RoutedEventArgs e)
         {
             TaskInfo taskInfo = (TaskInfo)listViewTasks.SelectedItem;
-            taskInfo.LastWorkingDate = DateTime.Now;
-            taskInfo.BackupStorageInfo = _backupStorageDal.Get(x => x.Id == taskInfo.BackupStorageInfoId);
-            taskInfo.StatusInfo = _statusInfoDal.Get(x=>x.Id == taskInfo.StatusInfoId);
-            Console.WriteLine("Hemen çalıştırılıyor");
-            if (taskInfo.Type == TaskType.Backup)
+
+            if (taskInfo.Status.Equals("Hazır"))
             {
-                Console.WriteLine("Backup başlatılıyor");
-                taskInfo.BackupTaskInfo = _backupTaskDal.Get(x => x.Id == taskInfo.BackupTaskId);
-                if (taskInfo.BackupTaskInfo.Type == BackupTypes.Diff || taskInfo.BackupTaskInfo.Type == BackupTypes.Inc)
+                taskInfo.LastWorkingDate = DateTime.Now;
+                taskInfo.BackupStorageInfo = _backupStorageDal.Get(x => x.Id == taskInfo.BackupStorageInfoId);
+                taskInfo.StatusInfo = _statusInfoDal.Get(x => x.Id == taskInfo.StatusInfoId);
+                Console.WriteLine("Hemen çalıştırılıyor");
+                if (taskInfo.Type == TaskType.Backup)
                 {
-                    Console.WriteLine("Backup Inc-Diff başlatılıyor");
-                    if (taskInfo.ScheduleId != null && !taskInfo.ScheduleId.Contains("Now"))
+                    Console.WriteLine("Backup başlatılıyor");
+                    taskInfo.BackupTaskInfo = _backupTaskDal.Get(x => x.Id == taskInfo.BackupTaskId);
+                    if (taskInfo.BackupTaskInfo.Type == BackupTypes.Diff || taskInfo.BackupTaskInfo.Type == BackupTypes.Inc)
                     {
-                        _taskSchedulerManager.RunNowTrigger(taskInfo.ScheduleId).Wait();
+                        Console.WriteLine("Backup Inc-Diff başlatılıyor");
+                        if (taskInfo.ScheduleId != null && !taskInfo.ScheduleId.Contains("Now"))
+                        {
+                            _taskSchedulerManager.RunNowTrigger(taskInfo.ScheduleId).Wait();
+                        }
+                        else
+                        {
+                            // now görevini çağır
+                            _taskSchedulerManager.BackupIncDiffNowJob(taskInfo).Wait();
+
+                        }
+                        StatusesWindow backupStatus = _scope.Resolve<StatusesWindow>(new NamedParameter("chooseFlag", 0), new NamedParameter("statusInfo", taskInfo.StatusInfo));
+                        backupStatus.Show();
                     }
                     else
                     {
-                        // now görevini çağır
-                        _taskSchedulerManager.BackupIncDiffNowJob(taskInfo).Wait();
-                        
+                        //full
                     }
-                    StatusesWindow backupStatus = _scope.Resolve<StatusesWindow>(new NamedParameter("chooseFlag", 0), new NamedParameter("statusInfo", taskInfo.StatusInfo));
-                    backupStatus.Show();
                 }
                 else
                 {
-                    //full
+                    //restore
                 }
+                Console.WriteLine("Backup bitti");
             }
-            else
+
+            else if (taskInfo.Status.Equals("Durduruldu"))
             {
-                //restore
+                _backupService.ResumeTask(taskInfo);
             }
-            Console.WriteLine("Backup bitti");
         }
 
         private void GetTasks()
@@ -1533,5 +1542,14 @@ namespace DiskBackupWpfGUI
             return ($"{dblSByte:0.##} {Suffix[i]}");
         }
 
+        private void btnTaskPause_Click(object sender, RoutedEventArgs e)
+        {
+            _backupService.PauseTask((TaskInfo)listViewTasks.SelectedItem);
+        }
+
+        private void btnTaskStop_Click(object sender, RoutedEventArgs e)
+        {
+            _backupService.CancelTask((TaskInfo)listViewTasks.SelectedItem);
+        }
     }
 }

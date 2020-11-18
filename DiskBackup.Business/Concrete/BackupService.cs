@@ -28,10 +28,12 @@ namespace DiskBackup.Business.Concrete
         private Dictionary<int, Stopwatch> _timeElapsedMap = new Dictionary<int, Stopwatch>();
 
         private readonly IStatusInfoDal _statusInfoDal; // status bilgilerini veritabanına yazabilmek için gerekli
+        private readonly ITaskInfoDal _taskInfoDal; // status bilgilerini veritabanına yazabilmek için gerekli
 
-        public BackupService(IStatusInfoDal statusInfoRepository)
+        public BackupService(IStatusInfoDal statusInfoRepository, ITaskInfoDal taskInfoDal)
         {
             _statusInfoDal = statusInfoRepository;
+            _taskInfoDal = taskInfoDal;
         }
 
         public bool InitTracker()
@@ -122,10 +124,10 @@ namespace DiskBackup.Business.Concrete
                     backupInfo.DiskType = returnItem.DiskType; //mbr gpt
                     backupInfo.OS = returnItem.WindowsName;
 
-                    if (returnItem.Version == -1)
+                    if (returnItem.BackupType == -1)
                         backupInfo.Type = BackupTypes.Full;
                     else
-                        backupInfo.Type = (BackupTypes)returnItem.BackupType; // 2 full - 1 inc - 0 diff - BATU' inc 1 - diff 0
+                        backupInfo.Type = (BackupTypes)returnItem.BackupType; // BackupTypes enum = 2 full - 1 inc - 0 diff / BATU' inc 1 - diff 0
 
                     backupInfoList.Add(backupInfo);
                 }
@@ -148,8 +150,9 @@ namespace DiskBackup.Business.Concrete
                     backupInfo.OSVolume = resultItem.OSVolume;
                     backupInfo.DiskType = resultItem.DiskType; //mbr gpt
                     backupInfo.OS = resultItem.WindowsName;
+                    resultItem.
 
-                    if (resultItem.Version == -1)
+                    if (resultItem.BackupType == -1)
                         backupInfo.Type = BackupTypes.Full;
                     else
                         backupInfo.Type = (BackupTypes)resultItem.BackupType; // 2 full - 1 inc - 0 diff - BATU' inc 1 - diff 0
@@ -300,6 +303,8 @@ namespace DiskBackup.Business.Concrete
             {
                 _taskEventMap[taskInfo.Id].Reset();
             }
+            taskInfo.Status = "Durduruldu";
+            _taskInfoDal.Update(taskInfo);
         }
 
         public void CancelTask(TaskInfo taskInfo)
@@ -319,6 +324,8 @@ namespace DiskBackup.Business.Concrete
             {
                 _taskEventMap[taskInfo.Id].Set();
             }
+            taskInfo.Status = "Hazır"; 
+            _taskInfoDal.Update(taskInfo);
         }
 
         public void ResumeTask(TaskInfo taskInfo)
@@ -336,6 +343,8 @@ namespace DiskBackup.Business.Concrete
             {
                 _taskEventMap[taskInfo.Id].Set();
             }
+            taskInfo.Status = "Çalışıyor";
+            _taskInfoDal.Update(taskInfo);
         }
 
         public List<FilesInBackup> GetFileInfoList()

@@ -434,7 +434,7 @@
                                     </Image>
                                 </Button.Content>
                             </Button>
-                            <Button Name="btnTaskPause" ToolTip="{DynamicResource pause}" HorizontalAlignment="Center" Margin="0,5" 
+                            <Button Name="btnTaskPause" Click="btnTaskPause_Click" ToolTip="{DynamicResource pause}" HorizontalAlignment="Center" Margin="0,5" 
                                     Style="{StaticResource ImageButton}" Width="32" Height="32" Grid.Column="1" IsEnabled="False">
                                 <Button.Content>
                                     <Image>
@@ -457,7 +457,7 @@
                             </Button>
 
                             <Button Name="btnTaskStop" ToolTip="{DynamicResource stop}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5" 
-                                    Style="{StaticResource ImageButton}" Grid.Column="1" IsEnabled="False">
+                                    Style="{StaticResource ImageButton}" Grid.Column="1" IsEnabled="False" Click="btnTaskStop_Click">
                                 <Button.Content>
                                     <Image HorizontalAlignment="Center" VerticalAlignment="Center">
                                         <Image.Style>
