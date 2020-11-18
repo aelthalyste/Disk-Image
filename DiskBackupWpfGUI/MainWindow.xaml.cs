@@ -152,227 +152,10 @@ namespace DiskBackupWpfGUI
             #region dummyBackupList
 
             List<BackupInfo> backupsItems = _backupService.GetBackupFileList(_backupStorageDal.GetList());
-            //List<BackupInfo> backupsItems = new List<BackupInfo>();
 
-            /*backupsItems.Add(new BackupInfo()
-            {
-                Type = BackupTypes.Full,
-                FileName = "Volume_C_Full_001",
-                CreatedDate = DateTime.Now - TimeSpan.FromDays(5),
-                BackupTaskName = "C Full",
-                StrVolumeSize = "250 GB",
-                StrFileSize = "12 GB",
-                Description = "Yedek açıklaması"
-            });
-            backupsItems.Add(new BackupInfo()
-            {
-                Type = BackupTypes.Inc,
-                FileName = "Volume_D_Inc_001",
-                CreatedDate = DateTime.Now - TimeSpan.FromHours(5),
-                BackupTaskName = "D Inc",
-                StrVolumeSize = "510 GB",
-                StrFileSize = "8 GB",
-                Description = "Yedek açıklaması"
-            });
-            backupsItems.Add(new BackupInfo()
-            {
-                Type = BackupTypes.Diff,
-                FileName = "Volume_D_Diff_001",
-                IsCloud = true,
-                CreatedDate = DateTime.Now - TimeSpan.FromHours(30),
-                BackupTaskName = "D Diff",
-                StrVolumeSize = "250 GB",
-                StrFileSize = "18 GB",
-                Description = "Yedek açıklaması"
-            });
-            backupsItems.Add(new BackupInfo()
-            {
-                Type = BackupTypes.Diff,
-                FileName = "Volume_D_Diff_002",
-                CreatedDate = DateTime.Now - TimeSpan.FromDays(15),
-                BackupTaskName = "D Diff",
-                StrVolumeSize = "120 GB",
-                StrFileSize = "8 GB",
-                Description = "Yedek açıklaması"
-            });
-            backupsItems.Add(new BackupInfo()
-            {
-                Type = BackupTypes.Full,
-                FileName = "Volume_C_Full_002",
-                IsCloud = true,
-                CreatedDate = DateTime.Now - TimeSpan.FromDays(7),
-                BackupTaskName = "C Full",
-                StrVolumeSize = "120 GB",
-                StrFileSize = "28 GB",
-                Description = "Yedek açıklaması"
-            });
-            backupsItems.Add(new BackupInfo()
-            {
-                Type = BackupTypes.Full,
-                FileName = "Volume_C_Full_003",
-                CreatedDate = DateTime.Now - TimeSpan.FromDays(7),
-                BackupTaskName = "C Full",
-                StrVolumeSize = "120 GB",
-                StrFileSize = "28 GB",
-                Description = "Yedek açıklaması"
-            });
-            backupsItems.Add(new BackupInfo()
-            {
-                Type = BackupTypes.Inc,
-                FileName = "Volume_D_Inc_002",
-                IsCloud = true,
-                CreatedDate = DateTime.Now - TimeSpan.FromHours(5),
-                BackupTaskName = "D Inc",
-                StrVolumeSize = "510 GB",
-                StrFileSize = "4 GB",
-                Description = "Yedek açıklaması"
-            });
-            backupsItems.Add(new BackupInfo()
-            {
-                Type = BackupTypes.Inc,
-                FileName = "Volume_D_Inc_002",
-                IsCloud = true,
-                CreatedDate = DateTime.Now - TimeSpan.FromHours(5),
-                BackupTaskName = "D Inc",
-                StrVolumeSize = "510 GB",
-                StrFileSize = "4 GB",
-                Description = "Yedek açıklaması"
-            });
-            backupsItems.Add(new BackupInfo()
-            {
-                Type = BackupTypes.Inc,
-                FileName = "Volume_D_Inc_002",
-                IsCloud = true,
-                CreatedDate = DateTime.Now - TimeSpan.FromHours(5),
-                BackupTaskName = "D Inc",
-                StrVolumeSize = "510 GB",
-                StrFileSize = "4 GB",
-                Description = "Yedek açıklaması"
-            });
-            backupsItems.Add(new BackupInfo()
-            {
-                Type = BackupTypes.Inc,
-                FileName = "Volume_D_Inc_002",
-                IsCloud = true,
-                CreatedDate = DateTime.Now - TimeSpan.FromHours(5),
-                BackupTaskName = "D Inc",
-                StrVolumeSize = "510 GB",
-                StrFileSize = "4 GB",
-                Description = "Yedek açıklaması"
-            });
-            backupsItems.Add(new BackupInfo()
-            {
-                Type = BackupTypes.Inc,
-                FileName = "Volume_D_Inc_002",
-                IsCloud = true,
-                CreatedDate = DateTime.Now - TimeSpan.FromHours(5),
-                BackupTaskName = "D Inc",
-                StrVolumeSize = "510 GB",
-                StrFileSize = "4 GB",
-                Description = "Yedek açıklaması"
-            });
-            backupsItems.Add(new BackupInfo()
-            {
-                Type = BackupTypes.Inc,
-                FileName = "Volume_D_Inc_002",
-                IsCloud = true,
-                CreatedDate = DateTime.Now - TimeSpan.FromHours(5),
-                BackupTaskName = "D Inc",
-                StrVolumeSize = "510 GB",
-                StrFileSize = "4 GB",
-                Description = "Yedek açıklaması"
-            });
-            backupsItems.Add(new BackupInfo()
-            {
-                Type = BackupTypes.Inc,
-                FileName = "Volume_D_Inc_002",
-                IsCloud = true,
-                CreatedDate = DateTime.Now - TimeSpan.FromHours(5),
-                BackupTaskName = "D Inc",
-                StrVolumeSize = "510 GB",
-                StrFileSize = "4 GB",
-                Description = "Yedek açıklaması"
-            });
-            backupsItems.Add(new BackupInfo()
-            {
-                Type = BackupTypes.Inc,
-                FileName = "Volume_D_Inc_002",
-                IsCloud = true,
-                CreatedDate = DateTime.Now - TimeSpan.FromHours(5),
-                BackupTaskName = "D Inc",
-                StrVolumeSize = "510 GB",
-                StrFileSize = "4 GB",
-                Description = "Yedek açıklaması"
-            });
-            backupsItems.Add(new BackupInfo()
-            {
-                Type = BackupTypes.Inc,
-                FileName = "Volume_D_Inc_002",
-                IsCloud = true,
-                CreatedDate = DateTime.Now - TimeSpan.FromHours(5),
-                BackupTaskName = "D Inc",
-                StrVolumeSize = "510 GB",
-                StrFileSize = "4 GB",
-                Description = "Yedek açıklaması"
-            });
-            backupsItems.Add(new BackupInfo()
-            {
-                Type = BackupTypes.Inc,
-                FileName = "Volume_D_Inc_002",
-                IsCloud = true,
-                CreatedDate = DateTime.Now - TimeSpan.FromHours(5),
-                BackupTaskName = "D Inc",
-                StrVolumeSize = "510 GB",
-                StrFileSize = "4 GB",
-                Description = "Yedek açıklaması"
-            });
-            backupsItems.Add(new BackupInfo()
-            {
-                Type = BackupTypes.Inc,
-                FileName = "Volume_D_Inc_002",
-                IsCloud = true,
-                CreatedDate = DateTime.Now - TimeSpan.FromHours(5),
-                BackupTaskName = "D Inc",
-                StrVolumeSize = "510 GB",
-                StrFileSize = "4 GB",
-                Description = "Yedek açıklaması"
-            });
-            backupsItems.Add(new BackupInfo()
-            {
-                Type = BackupTypes.Inc,
-                FileName = "Volume_D_Inc_002",
-                IsCloud = true,
-                CreatedDate = DateTime.Now - TimeSpan.FromHours(5),
-                BackupTaskName = "D Inc",
-                StrVolumeSize = "510 GB",
-                StrFileSize = "4 GB",
-                Description = "Yedek açıklaması"
-            });
-            backupsItems.Add(new BackupInfo()
-            {
-                Type = BackupTypes.Inc,
-                FileName = "Volume_D_Inc_002",
-                IsCloud = true,
-                CreatedDate = DateTime.Now - TimeSpan.FromHours(5),
-                BackupTaskName = "D Inc",
-                StrVolumeSize = "510 GB",
-                StrFileSize = "4 GB",
-                Description = "Yedek açıklaması"
-            });
-            backupsItems.Add(new BackupInfo()
-            {
-                Type = BackupTypes.Inc,
-                FileName = "Volume_D_Inc_002",
-                IsCloud = true,
-                CreatedDate = DateTime.Now - TimeSpan.FromHours(5),
-                BackupTaskName = "D Inc",
-                StrVolumeSize = "510 GB",
-                StrFileSize = "4 GB",
-                Description = "Yedek açıklaması"
-            });*/
             listViewBackups.ItemsSource = backupsItems;
-
             listViewRestore.ItemsSource = backupsItems;
+
             #endregion
 
 
@@ -605,21 +388,10 @@ namespace DiskBackupWpfGUI
             {
                 btnTaskDelete.IsEnabled = true;
                 btnTaskEdit.IsEnabled = true;
-                btnTaskStart.IsEnabled = true;
                 //butonlar eklenmeye devam edecek burayada da checkboxlara da
 
                 // çalışan görevi start etme engellendi
-                foreach (TaskInfo item in listViewTasks.SelectedItems)
-                {
-                    if (item.Status.Equals("Çalışıyor"))
-                    {
-                        btnTaskStart.IsEnabled = false;
-                        btnTaskEdit.IsEnabled = false; // çalışan görev düzenlenemez
-                        btnTaskPause.IsEnabled = true;
-                        btnTaskStop.IsEnabled = true;
-                        btnTaskDelete.IsEnabled = false;
-                    }
-                }
+                ToggleTaskButtons();
             }
         }
 
@@ -676,11 +448,23 @@ namespace DiskBackupWpfGUI
                 }
                 Console.WriteLine("Backup bitti");
             }
-
             else if (taskInfo.Status.Equals("Durduruldu"))
             {
                 _backupService.ResumeTask(taskInfo);
             }
+            BackupIncDiffJob._refreshIncDiffTaskFlag = true;
+        }
+
+        private void btnTaskPause_Click(object sender, RoutedEventArgs e)
+        {
+            _backupService.PauseTask((TaskInfo)listViewTasks.SelectedItem);
+            BackupIncDiffJob._refreshIncDiffTaskFlag = true;
+        }
+
+        private void btnTaskStop_Click(object sender, RoutedEventArgs e)
+        {
+            _backupService.CancelTask((TaskInfo)listViewTasks.SelectedItem);
+            BackupIncDiffJob._refreshIncDiffTaskFlag = true;
         }
 
         private void GetTasks()
@@ -692,10 +476,10 @@ namespace DiskBackupWpfGUI
                 item.BackupStorageInfo = _backupStorageDal.Get(x => x.Id == item.BackupStorageInfoId);
             }
             listViewTasks.ItemsSource = _taskInfoList;
-            DisableEaskButtons();
+            DisableTaskButtons();
         }
 
-        private void DisableEaskButtons()
+        private void DisableTaskButtons()
         {
             btnTaskClose.IsEnabled = false;
             btnTaskCopy.IsEnabled = false;
@@ -706,6 +490,60 @@ namespace DiskBackupWpfGUI
             btnTaskPause.IsEnabled = false;
             btnTaskStart.IsEnabled = false;
             btnTaskStop.IsEnabled = false;
+        }
+
+        private void ToggleTaskButtons()
+        {
+            bool runningFlag = false;
+            bool pauseFlag = false;
+            foreach (TaskInfo item in listViewTasks.SelectedItems)
+            {
+                if (item.Status.Equals("Çalışıyor"))
+                {
+                    runningFlag = true;
+                }
+                else if (item.Status.Equals("Durduruldu"))
+                {
+                    pauseFlag = true;
+                }
+                else if (item.Status.Equals("Hazır"))
+                {
+                    btnTaskPause.IsEnabled = false;
+                    btnTaskStop.IsEnabled = false;
+                }
+            }
+
+            if (runningFlag && pauseFlag)
+            {
+                DisableTaskButtons();
+            }
+            else if (runningFlag)
+            {
+                RunningTaskButtons();
+            }
+            else if (pauseFlag)
+            {
+                PausedTaskButtons();
+            }
+        }
+
+        private void PausedTaskButtons()
+        {
+            btnTaskStart.IsEnabled = true;
+            btnTaskEdit.IsEnabled = false;
+            btnTaskPause.IsEnabled = false;
+            btnTaskStop.IsEnabled = true;
+            //diğer butonlar gelecek
+            btnTaskDelete.IsEnabled = false;
+        }
+
+        private void RunningTaskButtons()
+        {
+            btnTaskStart.IsEnabled = false;
+            btnTaskEdit.IsEnabled = false; // çalışan görev düzenlenemez
+            btnTaskPause.IsEnabled = true;
+            btnTaskStop.IsEnabled = true;
+            btnTaskDelete.IsEnabled = false;
         }
 
         public async void RefreshTasks(CancellationToken cancellationToken)
@@ -754,17 +592,8 @@ namespace DiskBackupWpfGUI
                 btnTaskEdit.IsEnabled = true;
                 btnTaskStart.IsEnabled = true;
                 // çalışan görevi start etme engellendi
-                foreach (TaskInfo item in listViewTasks.SelectedItems)
-                {
-                    if (item.Status.Equals("Çalışıyor"))
-                    {
-                        btnTaskStart.IsEnabled = false;
-                        btnTaskEdit.IsEnabled = false; // çalışan görev düzenlenemez
-                        btnTaskPause.IsEnabled = true;
-                        btnTaskStop.IsEnabled = true;
-                        btnTaskDelete.IsEnabled = false;
-                    }
-                }
+
+                ToggleTaskButtons();
             }
             else
             {
@@ -800,17 +629,7 @@ namespace DiskBackupWpfGUI
                 btnTaskEdit.IsEnabled = true;
                 btnTaskStart.IsEnabled = true;
                 // çalışan görevi start etme engellendi
-                foreach (TaskInfo item in listViewTasks.SelectedItems)
-                {
-                    if (item.Status.Equals("Çalışıyor"))
-                    {
-                        btnTaskStart.IsEnabled = false;
-                        btnTaskEdit.IsEnabled = false; // çalışan görev düzenlenemez
-                        btnTaskPause.IsEnabled = true;
-                        btnTaskStop.IsEnabled = true;
-                        btnTaskDelete.IsEnabled = false;
-                    }
-                }
+                ToggleTaskButtons();
             }
             else
             {
@@ -843,17 +662,7 @@ namespace DiskBackupWpfGUI
                 btnTaskEdit.IsEnabled = true;
                 btnTaskStart.IsEnabled = true;
                 // çalışan görevi start etme engellendi
-                foreach (TaskInfo item in listViewTasks.SelectedItems)
-                {
-                    if (item.Status.Equals("Çalışıyor"))
-                    {
-                        btnTaskStart.IsEnabled = false;
-                        btnTaskEdit.IsEnabled = false; // çalışan görev düzenlenemez
-                        btnTaskPause.IsEnabled = true;
-                        btnTaskStop.IsEnabled = true;
-                        btnTaskDelete.IsEnabled = false;
-                    }
-                }
+                ToggleTaskButtons();
             }
             else
             {
@@ -877,17 +686,7 @@ namespace DiskBackupWpfGUI
                 btnTaskEdit.IsEnabled = true;
                 btnTaskStart.IsEnabled = true;
                 // çalışan görevi start etme engellendi
-                foreach (TaskInfo item in listViewTasks.SelectedItems)
-                {
-                    if (item.Status.Equals("Çalışıyor"))
-                    {
-                        btnTaskStart.IsEnabled = false;
-                        btnTaskEdit.IsEnabled = false; // çalışan görev düzenlenemez
-                        btnTaskPause.IsEnabled = true;
-                        btnTaskStop.IsEnabled = true;
-                        btnTaskDelete.IsEnabled = false;
-                    }
-                }
+                ToggleTaskButtons();
             }
             else
             {
@@ -1540,16 +1339,6 @@ namespace DiskBackupWpfGUI
             }
 
             return ($"{dblSByte:0.##} {Suffix[i]}");
-        }
-
-        private void btnTaskPause_Click(object sender, RoutedEventArgs e)
-        {
-            _backupService.PauseTask((TaskInfo)listViewTasks.SelectedItem);
-        }
-
-        private void btnTaskStop_Click(object sender, RoutedEventArgs e)
-        {
-            _backupService.CancelTask((TaskInfo)listViewTasks.SelectedItem);
         }
     }
 }

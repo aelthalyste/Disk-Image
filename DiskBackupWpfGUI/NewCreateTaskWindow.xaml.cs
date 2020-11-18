@@ -132,6 +132,8 @@ namespace DiskBackupWpfGUI
                     {
                         _taskInfo.BackupTaskInfo.AutoType = AutoRunType.DaysTime;
                         _taskInfo.NextDate = (DateTime)tpDaysTime.Value;
+                        Console.WriteLine("Window: " + _taskInfo.NextDate.Hour + " saat" + _taskInfo.NextDate.Minute + " dakika");
+
                         if (cbDaysTime.SelectedIndex == 2) // belirli günler seçilmeli
                         {
                             _taskInfo.BackupTaskInfo.Days = ChooseDayAndMounthsWindow._days;
@@ -183,6 +185,10 @@ namespace DiskBackupWpfGUI
                     {
                         _taskInfo.BackupTaskInfo.Months = null;
                     }
+                }
+                else
+                {
+                    _taskInfo.NextDate = Convert.ToDateTime("01/01/0002");
                 }
 
                 //başarısız tekrar dene
@@ -817,7 +823,6 @@ namespace DiskBackupWpfGUI
             _taskInfo.StatusInfoId = resultStatusInfo.Id;
             _taskInfo.BackupTaskId = resultBackupTask.Id;
             _taskInfo.LastWorkingDate = Convert.ToDateTime("01/01/0002");
-            _taskInfo.NextDate = Convert.ToDateTime("01/01/0002");
             var resultTaskInfo = _taskInfoDal.Add(_taskInfo);
             if (resultTaskInfo == null)
             {

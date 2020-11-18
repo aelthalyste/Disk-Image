@@ -65,7 +65,7 @@ namespace DiskBackup.TaskScheduler
                 .Build();
 
             await _scheduler.ScheduleJob(job, trigger);
-
+            Console.WriteLine("Task: "+taskInfo.NextDate.Hour + " saat" + taskInfo.NextDate.Minute + " dakika" + taskInfo.NextDate);
             taskInfo.ScheduleId = $"backupIncDiffEverydayJob_{taskInfo.Id}/Backup";
             taskInfo.NextDate = trigger.GetNextFireTimeUtc().Value.LocalDateTime;
             _taskInfoDal.Update(taskInfo);

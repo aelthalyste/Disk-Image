@@ -150,7 +150,6 @@ namespace DiskBackup.Business.Concrete
                     backupInfo.OSVolume = resultItem.OSVolume;
                     backupInfo.DiskType = resultItem.DiskType; //mbr gpt
                     backupInfo.OS = resultItem.WindowsName;
-                    resultItem.
 
                     if (resultItem.BackupType == -1)
                         backupInfo.Type = BackupTypes.Full;
@@ -178,7 +177,7 @@ namespace DiskBackup.Business.Concrete
             throw new NotImplementedException();
         }
 
-        public bool CreateIncDiffBackup(TaskInfo taskInfo)
+        public bool CreateIncDiffBackup(TaskInfo taskInfo) // 0 başarısız, 1 başarılı, 2 kullanıcı durdurdu
         {
             Console.WriteLine("Batu Method girildi");
             if (_statusInfoDal == null)

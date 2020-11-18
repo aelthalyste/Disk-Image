@@ -75,6 +75,10 @@ namespace DiskBackup.TaskScheduler.Jobs
 
                 task.LastWorkingDate = DateTime.Now;
                 task.Status = "Çalışıyor"; // Resource eklenecek 
+                if (context.Trigger.GetNextFireTimeUtc() != null)
+                {
+                    task.NextDate = (context.Trigger.GetNextFireTimeUtc()).Value.LocalDateTime;
+                }
                 _taskInfoDal.Update(task);
                 _refreshIncDiffTaskFlag = true;
                 if (exception == null)
@@ -107,6 +111,10 @@ namespace DiskBackup.TaskScheduler.Jobs
                 {
                     exception = new JobExecutionException(context.RefireCount <= task.BackupTaskInfo.FailNumberTryAgain);
                 }
+                else
+                {
+                    exception = new JobExecutionException();
+                }
             }
 
             if (exception != null)
@@ -121,10 +129,10 @@ namespace DiskBackup.TaskScheduler.Jobs
                 _activityLogDal.Add(activityLog);
                 Console.WriteLine(exception.ToString());
                 task.Status = "Hazır"; // Resource eklenecek 
-                if (context.Trigger.GetNextFireTimeUtc() != null)
-                {
-                    task.NextDate = (context.Trigger.GetNextFireTimeUtc()).Value.LocalDateTime;
-                }
+                //if (context.Trigger.GetNextFireTimeUtc() != null)
+                //{
+                //    task.NextDate = (context.Trigger.GetNextFireTimeUtc()).Value.LocalDateTime;
+                //}
                 _taskInfoDal.Update(task);
                 _refreshIncDiffLogFlag = true;
                 await Task.Delay(TimeSpan.FromMinutes(task.BackupTaskInfo.WaitNumberTryAgain));
@@ -140,10 +148,10 @@ namespace DiskBackup.TaskScheduler.Jobs
             _activityLogDal.Add(activityLog);
             task.Status = "Hazır"; // Resource eklenecek 
             Console.WriteLine(context.JobDetail.Key.Name);
-            if (context.Trigger.GetNextFireTimeUtc() != null)
-            {
-                task.NextDate = (context.Trigger.GetNextFireTimeUtc()).Value.LocalDateTime;
-            }
+            //if (context.Trigger.GetNextFireTimeUtc() != null)
+            //{
+            //    task.NextDate = (context.Trigger.GetNextFireTimeUtc()).Value.LocalDateTime;
+            //}
             _taskInfoDal.Update(task);
             _refreshIncDiffTaskFlag = true;
             _refreshIncDiffLogFlag = true;
