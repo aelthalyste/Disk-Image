@@ -229,6 +229,7 @@
     <system:String x:Key="restoreDiskContent1">Bu alan yedeklediğiniz bölüme göre otomatik olarak seçilmiştir.</system:String>
     <system:String x:Key="restoreDiskContent2">Farklı bir boot'a ihtiyaç duymadığınız sürece değiştirmeyiniz.</system:String>
     <system:String x:Key="createBootPartition">Boot Partition Oluştur</system:String>
+    <system:String x:Key="bootPartition">Boot Partition</system:String>
     <system:String x:Key="fileInfo">Dosya Bilgileri</system:String>
     <system:String x:Key="files">Dosyalar</system:String>
     <system:String x:Key="Success">Başarılı</system:String>

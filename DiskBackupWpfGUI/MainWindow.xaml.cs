@@ -71,8 +71,7 @@ namespace DiskBackupWpfGUI
             IBackupStorageDal backupStorageDal, ITaskSchedulerManager taskSchedulerManager, IBackupTaskDal backupTaskDal, IStatusInfoDal statusInfoDal, IActivityLogDal activityLogDal)
         {
             InitializeComponent();
-            RefreshTasks(_cancellationTokenSource.Token);
-            this.Closing += (sender, e) => _cancellationTokenSource.Cancel();
+
 
             _backupService = backupService;
             _backupStorageService = backupStorageService;
@@ -158,6 +157,8 @@ namespace DiskBackupWpfGUI
 
             #endregion
 
+            RefreshTasks(_cancellationTokenSource.Token);
+            this.Closing += (sender, e) => _cancellationTokenSource.Cancel();
 
         }
 
@@ -483,26 +484,33 @@ namespace DiskBackupWpfGUI
             {
                 await Task.Delay(500);
 
-                //var runningTaskList = _taskInfoDal.Get(x => x.Status == "Çalışıyor");
-                //runningTaskList.StatusInfo = _statusInfoDal.Get(x => x.Id == runningTaskList.Id);
-                //var pausedTaskList = _taskInfoDal.Get(x => x.Status == "Durduruldu");
-                //pausedTaskList.StatusInfo = _statusInfoDal.Get(x => x.Id == pausedTaskList.Id);
+                // son yedekleme bilgisi
+                ActivityLog lastLog = ((ActivityLog)listViewLog.Items[0]);
+                txtRunningStateBlock.Text = lastLog.EndDate.ToString();
+                if (lastLog.Status == StatusType.Success)
+                    txtRunningStateBlock.Foreground = Brushes.Green;
 
-                ////if (runningTaskList != null)
-                ////{
-                ////    // çalışanı yazdır
-                ////    txtMakeABackup.Text = Resources["makeABackup"].ToString() + ", ";
-                ////    //+ FormatBytesNonStatic(runningTaskList.StatusInfo.TotalDataProcessed)
-                ////    //    + ", %" + Math.Round((runningTaskList.StatusInfo.DataProcessed * 100.0) / (runningTaskList.StatusInfo.TotalDataProcessed), 2).ToString();
-
-                ////}
-                ////else if (pausedTaskList != null)
-                ////{
-                ////    // durdurulanı yazdır
-                ////    txtMakeABackup.Text = Resources["backupStopped"].ToString() + ", ";
-                ////    //+ FormatBytesNonStatic(runningTaskList.StatusInfo.TotalDataProcessed)
-                ////        //+ ", %" + Math.Round((runningTaskList.StatusInfo.DataProcessed * 100.0) / (runningTaskList.StatusInfo.TotalDataProcessed), 2).ToString();
-                ////}
+                // Ortadaki statu
+                TaskInfo runningTask = _taskInfoDal.Get(x => x.Status == "Çalışıyor");
+                TaskInfo pausedTask = _taskInfoDal.Get(x => x.Status == "Durduruldu");
+                if (runningTask != null)
+                {
+                    // çalışanı yazdır
+                    runningTask.StatusInfo = _statusInfoDal.Get(x => x.Id == runningTask.StatusInfoId);
+                    txtMakeABackup.Text = Resources["makeABackup"].ToString() + ", "
+                        + FormatBytesNonStatic(runningTask.StatusInfo.DataProcessed)
+                        + ", %" + Math.Round((runningTask.StatusInfo.DataProcessed * 100.0) / (runningTask.StatusInfo.TotalDataProcessed), 2).ToString();
+                }
+                else if (pausedTask != null)
+                {
+                    // durdurulanı yazdır
+                    pausedTask.StatusInfo = _statusInfoDal.Get(x => x.Id == pausedTask.StatusInfoId);
+                    txtMakeABackup.Text = Resources["backupStopped"].ToString() + ", "
+                        + FormatBytesNonStatic(pausedTask.StatusInfo.DataProcessed)
+                        + ", %" + Math.Round((pausedTask.StatusInfo.DataProcessed * 100.0) / (pausedTask.StatusInfo.TotalDataProcessed), 2).ToString();
+                }
+                else
+                    txtMakeABackup.Text = "";
 
                 if (BackupIncDiffJob._refreshIncDiffTaskFlag)
                 {
@@ -738,6 +746,16 @@ namespace DiskBackupWpfGUI
             {
                 if (listViewRestoreDisk.SelectedIndex != -1)
                     btnRestore.IsEnabled = true;
+                /*
+                 * BAKILACAK
+                 * BackupInfo backupInfo = (BackupInfo)listViewRestoreDisk.SelectedItem;
+
+                txtRDriveLetter.Text = backupInfo.Letter.ToString();
+                txtROS.Text = backupInfo.OS;
+                if (backupInfo.DiskType.Equals("M"))
+                    txtRBootPartition.Text = "MBR";
+                else
+                    txtRBootPartition.Text = "GPT";*/
             }
             else
             {
@@ -751,7 +769,6 @@ namespace DiskBackupWpfGUI
             {
                 if (listViewRestore.SelectedIndex != -1)
                     btnRestore.IsEnabled = true;
-
             }
             else
             {

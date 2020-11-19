@@ -138,6 +138,7 @@ namespace DiskBackup.TaskScheduler.Jobs
                 //    task.NextDate = (context.Trigger.GetNextFireTimeUtc()).Value.LocalDateTime;
                 //}
                 _taskInfoDal.Update(task);
+                _refreshIncDiffTaskFlag = true;
                 _refreshIncDiffLogFlag = true;
                 await Task.Delay(TimeSpan.FromMinutes(task.BackupTaskInfo.WaitNumberTryAgain));
                 throw exception;
@@ -169,6 +170,7 @@ namespace DiskBackup.TaskScheduler.Jobs
                 _activityLogDal.Add(activityLog);
                 task.Status = "Hazır"; // Resource eklenecek 
                 _taskInfoDal.Update(task);
+                _refreshIncDiffTaskFlag = true;
                 _refreshIncDiffLogFlag = true;
             }
 
