@@ -72,8 +72,8 @@ namespace DiskBackupWpfGUI
                 txtLocalTaskName.Visibility = Visibility.Visible;
                 stackCloudTaskName.Visibility = Visibility.Visible;
                 txtCloudTaskName.Visibility = Visibility.Visible;
-                stackLocalZip.Visibility = Visibility.Collapsed;
-                txtLocalZip.Visibility = Visibility.Collapsed;
+                //stackLocalZip.Visibility = Visibility.Collapsed;
+                //txtLocalZip.Visibility = Visibility.Collapsed;
                 stackCloudZip.Visibility = Visibility.Collapsed;
                 txtCloudZip.Visibility = Visibility.Collapsed;
                 txtTitleBar.Text = Resources["restoreStatus"].ToString();

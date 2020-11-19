@@ -112,7 +112,7 @@
                             </Image>
                             <TextBlock Text="{DynamicResource instantDataTransfer}" VerticalAlignment="Center"></TextBlock>
                         </StackPanel>
-                        <StackPanel Name="stackLocalZip" Orientation="Horizontal" Margin="0,0,0,4">
+                        <!--<StackPanel Name="stackLocalZip" Orientation="Horizontal" Margin="0,0,0,4">
                             <Image Height="20" Margin="10,0">
                                 <Image.Style>
                                     <Style TargetType="Image">
@@ -121,7 +121,7 @@
                                 </Image.Style>
                             </Image>
                             <TextBlock Text="{DynamicResource zip}" VerticalAlignment="Center"></TextBlock>
-                        </StackPanel>
+                        </StackPanel>-->
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
                             <Image Height="22" Margin="9,0">
                                 <Image.Style>
@@ -140,7 +140,7 @@
                         <TextBlock Name="txtLocalAverageDataRate" Height="20" Margin="0,0,0,4">74 MB/s</TextBlock>
                         <TextBlock Name="txtLocalDataProcessed" Height="20" Margin="0,0,0,4">12 GB</TextBlock>
                         <TextBlock Name="txtLocalInstantDataRate" Height="22" Margin="0,0,0,4">74 MB/s</TextBlock>
-                        <TextBlock Name="txtLocalZip" Height="20" Margin="0,0,0,4">Standart</TextBlock>
+                        <!--<TextBlock Name="txtLocalZip" Height="20" Margin="0,0,0,4">Standart</TextBlock>-->
                         <TextBlock Name="txtLocalSourceObje" Height="22" Margin="0,0,0,4">C:</TextBlock>
                     </StackPanel>
                 </Grid>

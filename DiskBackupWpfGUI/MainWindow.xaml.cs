@@ -149,7 +149,7 @@ namespace DiskBackupWpfGUI
             #endregion
 
 
-            #region dummyBackupList
+            #region Backup dosya bilgileri
 
             List<BackupInfo> backupsItems = _backupService.GetBackupFileList(_backupStorageDal.GetList());
 
@@ -482,6 +482,28 @@ namespace DiskBackupWpfGUI
             while (!cancellationToken.IsCancellationRequested)
             {
                 await Task.Delay(500);
+
+                //var runningTaskList = _taskInfoDal.Get(x => x.Status == "Çalışıyor");
+                //runningTaskList.StatusInfo = _statusInfoDal.Get(x => x.Id == runningTaskList.Id);
+                //var pausedTaskList = _taskInfoDal.Get(x => x.Status == "Durduruldu");
+                //pausedTaskList.StatusInfo = _statusInfoDal.Get(x => x.Id == pausedTaskList.Id);
+
+                ////if (runningTaskList != null)
+                ////{
+                ////    // çalışanı yazdır
+                ////    txtMakeABackup.Text = Resources["makeABackup"].ToString() + ", ";
+                ////    //+ FormatBytesNonStatic(runningTaskList.StatusInfo.TotalDataProcessed)
+                ////    //    + ", %" + Math.Round((runningTaskList.StatusInfo.DataProcessed * 100.0) / (runningTaskList.StatusInfo.TotalDataProcessed), 2).ToString();
+
+                ////}
+                ////else if (pausedTaskList != null)
+                ////{
+                ////    // durdurulanı yazdır
+                ////    txtMakeABackup.Text = Resources["backupStopped"].ToString() + ", ";
+                ////    //+ FormatBytesNonStatic(runningTaskList.StatusInfo.TotalDataProcessed)
+                ////        //+ ", %" + Math.Round((runningTaskList.StatusInfo.DataProcessed * 100.0) / (runningTaskList.StatusInfo.TotalDataProcessed), 2).ToString();
+                ////}
+
                 if (BackupIncDiffJob._refreshIncDiffTaskFlag)
                 {
                     int taskSelectedIndex = -1;
@@ -729,7 +751,7 @@ namespace DiskBackupWpfGUI
             {
                 if (listViewRestore.SelectedIndex != -1)
                     btnRestore.IsEnabled = true;
-                
+
             }
             else
             {
@@ -861,17 +883,17 @@ namespace DiskBackupWpfGUI
 
         #endregion
 
-        private void checkBootPartition_Checked(object sender, RoutedEventArgs e)
-        {
-            stackBootCheck.IsEnabled = true;
-        }
+        //private void checkBootPartition_Checked(object sender, RoutedEventArgs e)
+        //{
+        //    stackBootCheck.IsEnabled = true;
+        //}
 
-        private void checkBootPartition_Unchecked(object sender, RoutedEventArgs e)
-        {
-            stackBootCheck.IsEnabled = false;
-            rbBootGPT.IsChecked = true;
-            rbBootGPT.IsChecked = false;
-        }
+        //private void checkBootPartition_Unchecked(object sender, RoutedEventArgs e)
+        //{
+        //    stackBootCheck.IsEnabled = false;
+        //    rbBootGPT.IsChecked = true;
+        //    rbBootGPT.IsChecked = false;
+        //}
 
 
         #endregion
@@ -1012,7 +1034,7 @@ namespace DiskBackupWpfGUI
 
         private void btnBackupStorageAdd_Click(object sender, RoutedEventArgs e)
         {
-            using(var scope = _scope.BeginLifetimeScope())
+            using (var scope = _scope.BeginLifetimeScope())
             {
                 AddBackupAreaWindow addBackupArea = scope.Resolve<AddBackupAreaWindow>();
                 addBackupArea.ShowDialog();
@@ -1037,7 +1059,7 @@ namespace DiskBackupWpfGUI
 
         private void btnBackupStorageDelete_Click(object sender, RoutedEventArgs e)
         {
-            MessageBoxResult result = MessageBox.Show($"{listViewBackupStorage.SelectedItems.Count} adet veri silinecek. Onaylıyor musunuz?", "Narbulut diyor ki; " , MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
+            MessageBoxResult result = MessageBox.Show($"{listViewBackupStorage.SelectedItems.Count} adet veri silinecek. Onaylıyor musunuz?", "Narbulut diyor ki; ", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
             if (result == MessageBoxResult.Yes)
             {
                 foreach (BackupStorageInfo item in listViewBackupStorage.SelectedItems)
@@ -1330,6 +1352,19 @@ namespace DiskBackupWpfGUI
         }
 
         private static string FormatBytes(long bytes)
+        {
+            string[] Suffix = { "B", "KB", "MB", "GB", "TB" };
+            int i;
+            double dblSByte = bytes;
+            for (i = 0; i < Suffix.Length && bytes >= 1024; i++, bytes /= 1024)
+            {
+                dblSByte = bytes / 1024.0;
+            }
+
+            return ($"{dblSByte:0.##} {Suffix[i]}");
+        }
+
+        private string FormatBytesNonStatic(long bytes)
         {
             string[] Suffix = { "B", "KB", "MB", "GB", "TB" };
             int i;

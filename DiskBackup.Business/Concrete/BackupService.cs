@@ -111,23 +111,25 @@ namespace DiskBackup.Business.Concrete
         {
             //usedSize, bootable, sıkıştırma, pc name, ip address
             List<BackupInfo> backupInfoList = new List<BackupInfo>();
-            BackupInfo backupInfo = new BackupInfo();
             //bootable = osVolume (true)
             foreach (var backupStorageItem in backupStorageList)
             {
                 var returnList = DiskTracker.CW_GetBackupsInDirectory(backupStorageItem.Path);
                 foreach (var returnItem in returnList)
                 {
+                    BackupInfo backupInfo = new BackupInfo();
+
                     backupInfo.Letter = returnItem.Letter;
                     backupInfo.Version = returnItem.Version;
                     backupInfo.OSVolume = returnItem.OSVolume;
                     backupInfo.DiskType = returnItem.DiskType; //mbr gpt
                     backupInfo.OS = returnItem.WindowsName;
 
-                    if (returnItem.BackupType == -1)
+                    if (returnItem.Version == -1)
                         backupInfo.Type = BackupTypes.Full;
                     else
-                        backupInfo.Type = (BackupTypes)returnItem.BackupType; // BackupTypes enum = 2 full - 1 inc - 0 diff / BATU' inc 1 - diff 0
+                        backupInfo.Type = (BackupTypes)returnItem.BackupType; // 2 full - 1 inc - 0 diff - BATU' inc 1 - diff 0
+
 
                     backupInfoList.Add(backupInfo);
                 }
@@ -151,7 +153,7 @@ namespace DiskBackup.Business.Concrete
                     backupInfo.DiskType = resultItem.DiskType; //mbr gpt
                     backupInfo.OS = resultItem.WindowsName;
 
-                    if (resultItem.BackupType == -1)
+                    if (resultItem.Version == -1)
                         backupInfo.Type = BackupTypes.Full;
                     else
                         backupInfo.Type = (BackupTypes)resultItem.BackupType; // 2 full - 1 inc - 0 diff - BATU' inc 1 - diff 0

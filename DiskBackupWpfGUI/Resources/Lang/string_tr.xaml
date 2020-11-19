@@ -6,7 +6,8 @@
     <system:String x:Key="createTask">Görev Oluştur</system:String>
     <system:String x:Key="createNewTask">Yeni Görev Oluştur</system:String>
     <system:String x:Key="disks">Diskler</system:String>
-    <system:String x:Key="makeABackup">Yedek Alnıyor, C, 270 MB, %80</system:String>
+    <system:String x:Key="makeABackup">Yedek Alnıyor</system:String>
+    <system:String x:Key="backupStopped">Yedekleme Durduruldu</system:String>
     <system:String x:Key="volume">Volume</system:String>
     <system:String x:Key="letter">Harf</system:String>
     <system:String x:Key="area">Alan</system:String>
