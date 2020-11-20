@@ -6,6 +6,19 @@
 
 #include <DriverSpecs.h>
 _Analysis_mode_(_Analysis_code_type_user_code_)
+#define _CRT_SECURE_NO_WARNINGS
+
+
+#if 0
+#ifndef UNICODE
+#define UNICODE
+#endif
+
+#ifndef _UNICODE
+#define _UNICODE
+#endif
+#endif
+
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -1788,7 +1801,6 @@ GetMFTLCN(char VolumeLetter, HANDLE VolumeHandle) {
 
 
 
-
 /*
 This operation just adds volume to list, does not starts to filter it,
 until it's fullbackup is requested. After fullbackup, call AttachVolume to start filtering
@@ -1851,7 +1863,6 @@ AddVolumeToTrack(PLOG_CONTEXT Context, wchar_t Letter, BackupType Type) {
 
 BOOLEAN
 GetVolumesOnTrack(PLOG_CONTEXT C, volume_information* Out, unsigned int BufferSize, int* OutCount) {
-    
     
     if (!Out || !C || !C->Volumes.Data) {
         return FALSE;
@@ -1947,7 +1958,6 @@ NarRemoveVolumeFromKernelList(wchar_t Letter, HANDLE CommPort) {
     
     if(NarGetVolumeGUIDKernelCompatible(Letter, Command.VolumeGUIDStr)){
         DWORD BR = 0;
-        
         HRESULT hResult = FilterSendMessage(CommPort, &Command, sizeof(NAR_COMMAND), 0,0, &BR);
         if(SUCCEEDED(hResult)){
             Result = TRUE;
@@ -1956,7 +1966,6 @@ NarRemoveVolumeFromKernelList(wchar_t Letter, HANDLE CommPort) {
             printf("FilterSendMessage failed, couldnt remove volume from kernel side, err %i\n", hResult);
             DisplayError(GetLastError());
         }
-        
     }
     else{
         printf("Couldnt get kernel compatible guid\n");
@@ -1981,7 +1990,10 @@ RemoveVolumeFromTrack(LOG_CONTEXT *C, wchar_t L) {
         
         // Since searching volume in context done via checking letters, if I assign 0 to letter, it cant be detected, since its not any character at all, just null termination.
         V->Letter = 0;
-        NarRemoveVolumeFromKernelList(L, C->Port);
+        
+        if(NarRemoveVolumeFromKernelList(L, C->Port)){
+            
+        }
         
         V->FullBackupExists = FALSE;
         V->FilterFlags.IsActive = FALSE;
@@ -5384,9 +5396,7 @@ NarGetBackupsInDirectory(const wchar_t* Directory, backup_metadata* B, int Buffe
                             //NOTE(Batuhan): File name indicated from metadata and actual file name matches
                             //Even though metadatas match, actual binary data may not exist at all or even, metadata itself might be corrupted too, or missing. Check it
                             
-                            
-                            BackupFound++;
-                            printf("Backup found %S\n", FDATA.cFileName);
+                            printf("Backup found %S, ver %i\n", FDATA.cFileName, B[BackupFound].Version);
                             
 #if 0
                             //NOTE(Batuhan): check if actual binary data exists in path and valid in size
@@ -5398,6 +5408,7 @@ NarGetBackupsInDirectory(const wchar_t* Directory, backup_metadata* B, int Buffe
                                 }
                             }
 #endif
+                            BackupFound++;
                             
                         }
                         else {
@@ -6020,14 +6031,24 @@ NarGetFileListFromMFTID(nar_file_entries_list* EList, UINT64 TargetMFTID, nar_re
                         
                     }
                     
+                    
+#define NAR_ATTRIBUTE_LIST
+                    
                     // NOTE(Batuhan): ntfs madness : if file has too many information, it cant fit into the single 1KB entry.
                     /*
 so some smart ass decided it would be wise to split some attributes into different disk locations, so i have to check if any file attribute is non-resident, if so, should check if that one is INDEX_ALLOCATION attribute, and again if so, should go read that disk offset and parse it. pretty trivial but also boring
 */
 #if 0
-                    if(*(INT32*)FileAttribute & NAR_EXT_ATTR_FLAG) == NAR_EXT_ATTR_FLAG){
+                    if(*(INT32*)FileAttribute & NAR_ATTRIBUTE_LIST) == NAR_ATTRIBUTE_LIST){
                         
-                        static_assert(false);
+                        // each record is aligned on 8 byte boundary
+#define NAR_OFFSET(m, o) ((char*)(m) + (o))
+                        
+                        UINT16 RecordLength = *(UINT16*)NAR_OFFSET(FileAttribute, 0x04);
+                        // NOTE(Batuhan): zero if resident
+                        UINT64 StartingVCN  = *(UINT64*)NAR_OFFSET(FileAttribute, 0x08);
+                        UINT16 AttributeID  = *(UINT16*)NAR_OFFSET(FileAttribute, 0x18);
+                        
                         
                         // TODO(Batuhan): 
                         
@@ -6069,6 +6090,7 @@ so some smart ass decided it would be wise to split some attributes into differe
                     
                     size_t IndxBufferSize = (UINT64)INDX_ALL_REGIONS[IndexRegionIndex].Len * (UINT64)ClusterSize;
                     
+                    // TODO(Batuhan): small optimization idea, malloc OUTSIDE of the loop, please
                     void* IndxBuffer = malloc(IndxBufferSize);
                     
                     if (IndxBuffer) {
@@ -6188,16 +6210,6 @@ NarFreeFileVersionStack(nar_file_version_stack Stack){
     if(Stack.RootDir != NULL)               free(Stack.RootDir);
     if(Stack.FileAbsoluteMFTOffset != NULL) free(Stack.FileAbsoluteMFTOffset);
     
-    //if(Stack->LCNRecords != NULL){
-    //    
-    //    for(int i = 0; i<VersionsFound; i++){
-    //        FreeDataArray(Stack->LCNRecords);
-    //    }
-    //    free(Stack->LCNRecords);
-    //
-    //}
-    
-    
 }
 
 // Path: any path name that contains trailing backslash
@@ -6260,7 +6272,6 @@ NarRestoreFileFromBackups(wchar_t *RootDir, wchar_t *FileName, wchar_t *RestoreT
             printf("Coulnd't create target restore path %S\n", fn);
             return FALSE;
         }
-        
     }
     
     void* MemoryBuffer = malloc(1024);
@@ -7476,11 +7487,66 @@ FindPointOffsetInRecords(nar_record *Records, INT32 Len, INT64 Offset){
     return (Found ? Result : NAR_POINT_OFFSET_FAILED);
 }
 
+#if 0
+
+inline BOOLEAN
+NarEditTaskNameAndDescription(const wchar_t* FileName, const wchar_t* TaskName, const wchar_t* TaskDescription){
+    
+    if(FileName == NULL) return FALSE;
+    
+    size_t TaskNameLen = wcslen(TaskName);
+    size_t TaskDescriptionLen = wcslen(TaskDescription);
+    
+    if(TaskNameLen > MAX_TASK_NAME_LEN/sizeof(wchar_t)){
+        printf("Input Task name can't fit metadata, len was %I64u\n", TaskNameLen);
+        return FALSE;
+    }
+    if(TaskDescriptionLen > MAX_TASK_DESCRIPTION_LEN/sizeof(wchar_t)){
+        printf("Input Task description can't fit metadata, len was %I64u\n", TaskDescriptionLen);
+        return FALSE;
+    }
+    if(wcslen(FileName) == 0){
+        return FALSE;
+    }
+    
+    BOOLEAN Result = 0;
+    
+    HANDLE FileHandle = CreateFileW(FileHandle, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ, 0, OPEN_EXISTING, 0, 0);
+    if(FileHandle != INVALID_HANDLE_VALUE){
+        // TODO(Batuhan): validate if it is really metadata file
+        DWORD BytesOperated = 0;
+        backup_metadata Metadata;
+        if(ReadFile(FileHandle, &Metadata, sizeof(Metadata), &BytesOperated, 0) && BytesOperated == sizeof(Metadata)){
+            wcscpy(Metadata.TaskName, TaskName);
+            wcscpy(Metadata.TaskDescription, TaskDescription);
+            if(WriteFile(FileHandle, &Metadata, sizeof(Metadata), &BytesOperated, 0) && BytesOperated == sizeof(Metadata)){
+                printf("Successfully updated metadata task name and task description info\n");
+                Result = TRUE;
+            }
+            else{
+                printf("Couldnt update metadata task name and task description(%S)\n", FileName);
+                DisplayError(GetLastError());
+            }
+        }
+        else{
+            printf("Couldn't read %i bytes from file %S, task was NarEditTaskNameAndDescription\n", &BytesRead, FileName);
+            DisplayError(GetLastError());
+        }
+    }
+    else{
+        printf("Couldnt open file %S to edit TaskName and Description\n", FileName);
+    }
+    
+    CloseHandle(FileHandle);
+    
+    return Result;
+}
+
+#endif
 
 
 void
 TestFindPointOffsetInRecords(){
-    
     
     nar_record* Recs = new nar_record[100];
     memset(Recs, 0, sizeof(nar_record) * 100);
@@ -7623,6 +7689,11 @@ main(
     
     UNREFERENCED_PARAMETER(argc);
     UNREFERENCED_PARAMETER(argv);
+    
+    void *Mem = malloc(sizeof(backup_metadata)*100);
+    int asdfasfd;
+    NarGetBackupsInDirectory(L"C:\\Users\\Batuhan\\Desktop\\yedeklertest", (backup_metadata*)Mem, 100, &asdfasfd);
+    
     
     nar_backup_file_explorer_context ctx;
     

@@ -1,7 +1,6 @@
 #pragma once
 
 #include <msclr/marshal.h>
-#include "mspyLog.h"
 
 using namespace System;
 using namespace System::Text;
@@ -18,7 +17,6 @@ namespace NarDIWrapper {
         System::UInt64 CopySize;
     };
     
-    
     public ref class DiskInfo {
         public:
         UINT64 Size;
@@ -32,15 +30,23 @@ namespace NarDIWrapper {
         wchar_t Letter;
         int BackupType;
         int Version;
-        int OSVolume; // boolean actually
+        int OSVolume;
+        
+        // TODO(Batuhan): 
+        // UINT64 VolumedSize;
+        
         wchar_t DiskType;
+        System::String^ Fullpath; // fullpath of the backup
         System::String^ WindowsName;
+        System::String^ TaskName;
+        System::String^ TaskDescription;
+        
         /*
-            ComputerName
-            IpAdress
-            UsedSize
-            VolumeSize
-        */
+                            ComputerName
+                            IpAdress
+                            UsedSize
+                            VolumeSize
+                        */
     };
     
     public ref class VolumeInformation {
@@ -83,7 +89,6 @@ namespace NarDIWrapper {
         WORD Hour;
         WORD Minute;
         WORD Second;
-        
     };
     
     public ref class CSNarFileEntry {
@@ -183,7 +188,7 @@ namespace NarDIWrapper {
         static wchar_t CW_GetFirstAvailableVolumeLetter();
         static List<BackupMetadata^>^ CW_GetBackupsInDirectory(System::String^ RootDir);
         static List<DiskInfo^>^ CW_GetDisksOnSystem();
-        
+        static BOOLEAN CW_MetadataEditTaskandDescriptionField(System::String^ MetadataFileName, System::String^ TaskName, System::String^ TaskDescription);
         
         private:
         

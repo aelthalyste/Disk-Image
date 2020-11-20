@@ -6,7 +6,7 @@
 #include <rpcdce.h>
 #include <iostream>
 
-
+#if 0
 #define unsigned char BYTE;
 #define NAR_LOG_TYPE_ERROR      0x01
 #define NAR_LOG_TYPE_CRITICAL   0x02 
@@ -77,24 +77,7 @@ void
 NarDeleteLogChain(){
     
 }
-
-
-void increment(void* ptr) {
-    int* iptr = (int*)ptr;
-    *iptr = 250;
-}
-
-
-int foo(test *obj) {
-    
-    
-    BOOLEAN Result = FALSE;
-    
-    
-    
-    
-    return 0;
-}
+#endif
 
 
 
@@ -490,19 +473,6 @@ int main() {
         
         
     }
-    
-    printf("what t");
-    return 0;
-    
-    printf("deneme %i\n, %s", 32, "teststr");
-    printf("deneme %i", 32);
-    
-    test *obj = new test;
-    obj->pa = 5;
-    obj->set(5);
-    obj->print();
-    foo(obj);
-    obj->print();
     
     
     

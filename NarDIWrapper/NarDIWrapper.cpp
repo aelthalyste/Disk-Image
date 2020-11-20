@@ -39,23 +39,25 @@ mesaj loopunda, threadinde, bir sorun yaşanırsa nasıl ana uygulamaya bildiril
 
 #include "pch.h"
 
-#include "NarDIWrapper.h"
+
 #include <msclr\marshal.h>
 #include <msclr\marshal_cppstd.h>
-
-
-#include "mspyUser.cpp"
 
 #include <msclr/marshal.h>
 #include <Windows.h>
 #include <stdio.h>
 
 
+#include "mspyUser.cpp"
+#include "NarDIWrapper.h"
+
+
 using namespace System;
 
 #define CONVERT_TYPES(_in,_out) _out = msclr::interop::marshal_as<decltype(_out)>(_in);
 
-void SystemStringToWCharPtr(System::String ^SystemStr, wchar_t *Destination) {
+void 
+SystemStringToWCharPtr(System::String ^SystemStr, wchar_t *Destination) {
     
     pin_ptr<const wchar_t> wch = PtrToStringChars(SystemStr);
     size_t ConvertedChars = 0;
@@ -173,7 +175,6 @@ namespace NarDIWrapper {
     
     
     DiskTracker::DiskTracker() {
-        
         C = NarLoadBootState();
         // when loading, always check for old states, if one is not presented, create new one from scratch
         if (C == NULL) {
@@ -191,8 +192,6 @@ namespace NarDIWrapper {
         C->ShutDown = NULL;
         C->Thread = NULL;
         C->CleaningUp = FALSE;
-        
-        
     }
     
     DiskTracker::~DiskTracker() {
@@ -218,7 +217,6 @@ namespace NarDIWrapper {
     }
     
     bool DiskTracker::CW_RemoveFromTrack(wchar_t Letter) {
-        
         BOOLEAN Result = FALSE;
         if(RemoveVolumeFromTrack(C, Letter)){
             if(NarSaveBootState(C)){
@@ -231,7 +229,6 @@ namespace NarDIWrapper {
         else{
             printf("Failed to remove volume %c from track list\n", Letter);
         }
-        
         return Result;
     }
     
@@ -255,13 +252,7 @@ namespace NarDIWrapper {
     /*
   Version: -1 to restore full backup otherwise version number to restore(version number=0 first inc-diff backup)
   */
-    bool DiskTracker::CW_RestoreToVolume(
-                                         wchar_t TargetLetter,
-                                         wchar_t SrcLetter,
-                                         INT Version,
-                                         bool ShouldFormat,
-                                         System::String^ RootDir
-                                         ) {
+    bool DiskTracker::CW_RestoreToVolume(wchar_t TargetLetter, wchar_t SrcLetter, INT Version, bool ShouldFormat, System::String^ RootDir) {
         
         restore_inf R;
         
@@ -285,7 +276,6 @@ namespace NarDIWrapper {
     }
     
     bool DiskTracker::CW_RestoreToFreshDisk(wchar_t TargetLetter, wchar_t SrcLetter, INT Version, int DiskID, System::String^ RootDir) {
-        
         restore_inf R;
         R.TargetLetter = TargetLetter;
         R.SrcLetter = SrcLetter;
@@ -300,13 +290,11 @@ namespace NarDIWrapper {
     }
     
     // returns 0 if one is not present
-    wchar_t DiskTracker::CW_GetFirstAvailableVolumeLetter()
-    {
+    wchar_t DiskTracker::CW_GetFirstAvailableVolumeLetter(){
         return NarGetAvailableVolumeLetter();
     }
     
     INT32 DiskTracker::CW_ReadStream(void* Data, wchar_t VolumeLetter, int Size) {
-        
         int VolID = GetVolumeID(C, VolumeLetter);
         if(VolID != NAR_INVALID_VOLUME_TRACK_ID){
             return ReadStream(&C->Volumes.Data[VolID], Data, Size);
@@ -316,7 +304,6 @@ namespace NarDIWrapper {
     }
     
     bool DiskTracker::CW_TerminateBackup(bool Succeeded, wchar_t VolumeLetter) {
-        
         INT32 VolID = GetVolumeID(C, VolumeLetter);
         
         if(VolID != NAR_INVALID_VOLUME_TRACK_ID){
@@ -326,12 +313,10 @@ namespace NarDIWrapper {
         }
         
         return FALSE;   
-        
     }
     
     
     List<VolumeInformation^>^ DiskTracker::CW_GetVolumes() {
-        
         data_array<volume_information> V = NarGetVolumes();
         
         List<VolumeInformation^>^ Result = gcnew  List<VolumeInformation^>;
@@ -357,7 +342,6 @@ namespace NarDIWrapper {
     }
     
     List<DiskInfo^>^ DiskTracker::CW_GetDisksOnSystem() {
-        
         data_array<disk_information> CResult = NarGetDisks();
         if (CResult.Data == NULL || CResult.Count == 0) {
             if (CResult.Count == 0) printf("Found 0 disks on the system\n");
@@ -368,26 +352,19 @@ namespace NarDIWrapper {
         
         List<DiskInfo^>^ Result = gcnew List<DiskInfo^>;
         printf("Found %i disks on the system\n", CResult.Count);
-        
         for (int i = 0; i < CResult.Count; i++) {
-            
             DiskInfo^ temp = gcnew DiskInfo;
             temp->ID = CResult.Data[i].ID;
             temp->Size = CResult.Data[i].Size;
             temp->Type = CResult.Data[i].Type;
-            
             Result->Add(temp);
         }
-        
         FreeDataArray(&CResult);
         
         return Result;
-        
-        
     }
     
     List<BackupMetadata^>^ DiskTracker::CW_GetBackupsInDirectory(System::String^ SystemStrRootDir) {
-        
         wchar_t RootDir[256];
         SystemStringToWCharPtr(SystemStrRootDir, RootDir);
         
@@ -398,41 +375,49 @@ namespace NarDIWrapper {
         
         BOOLEAN bResult = NarGetBackupsInDirectory(RootDir, BMList, MaxMetadataCount, &Found);
         if (bResult && Found <= MaxMetadataCount) {
-            
-            printf("FOUND %i", Found);
-            
+            std::wstring pth;
             for (int i = 0; i < Found; i++) {
-                
                 BackupMetadata^ BMet = gcnew BackupMetadata;
                 BMet->Letter = (wchar_t)BMList[i].Letter;
                 BMet->BackupType = (int)BMList[i].BT;
                 BMet->DiskType = BMList[i].DiskType;
                 BMet->OSVolume = BMList[i].IsOSVolume;
                 BMet->Version = BMList[i].Version;
+                
                 BMet->WindowsName = gcnew System::String(BMList[i].ProductName);
+                BMet->TaskName  = gcnew System::String(BMList[i].TaskName);
+                BMet->TaskDescription  = gcnew System::String(BMList[i].TaskDescription);
+                
+                pth = std::wstring(RootDir);
+                pth += GenerateBinaryFileName(BMet->Letter, BMet->Version);
+                BMet->Fullpath = gcnew System::String(pth.c_str());
                 
                 ResultList->Add(BMet);
-                
             }
-            
-            
         }
         else {
-            
             if (bResult == FALSE) {
                 printf("NarGetBackupsInDirectory returned FALSE\n");
             }
             if (Found > MaxMetadataCount) {
                 printf("Found metadata count exceeds maxmetdatacount\n");
             }
-            
         }
-        
         
         free(BMList);
         
         return ResultList;
     }
     
+    
+    BOOLEAN DiskTracker::CW_MetadataEditTaskandDescriptionField(System::String^ MetadataFileName, System::String^ TaskName, System::String^ TaskDescription){
+        wchar_t wcTaskName[128];
+        wchar_t wcTaskDescription[512];
+        wchar_t wcMetadataFileName[MAX_PATH];
+        
+        //return NarEditTaskNameAndDescription(wcMetadataFileName, wcTaskName, wcTaskDescription);
+        return FALSE;
+    }
     // TODO(Batuhan): helper functions, like which volume we are streaming etc.
+    
 }

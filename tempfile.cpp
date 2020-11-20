@@ -1,161 +1,658 @@
-struct int_list{
-    int *arr;
-    int len;
-    int capacity;
+#define _CRT_SECURE_NO_WARNINGS
+
+#include "glad\glad.h"
+#include "GLFW\glfw3.h"
+
+#include "glad.c"
+#include <vector>
+
+#include "imgui.h"
+#include "imgui_impl_glfw.h"
+#include "imgui_impl_opengl3.h"
+#include "imstb_textedit.h"
+#include "imstb_truetype.h"
+
+
+#include <stdio.h>
+#include <ShlObj.h>
+#include <Windows.h>
+
+struct window_help{
+    int val = 0;
 };
 
-
-void 
-initialize_int_list(int_list *List, int Capacity){
-    
-    // NULL
-    if(List == NULL){
-        return;
-    }
-    
-    List->capacity = Capacity;
-    List->len = 0;
-    List->arr = new int[Capacity]; // adress doner
-    memset(List->arr, 0, sizeof(int)*Capacity);
-    
-    // your stuff, initialize List accordingly, list ptr MUST have at least Capacity*sizeof(int) memory allocated to itself
+window_help init_window(int val){
+    window_help Result = {val};
+    return Result;
 }
 
-/*
- new          = delete
-malloc       = free
-VirtualAlloc = VirtualFree
-*/
-
-void 
-insert_to_list(int_list *list, int NewElement){
-    
-    if(list == NULL) return;
-    
-    if(list->len == list->capacity){
-        
-        list->capacity = list->capacity * 2;
-        
-        int *temp_memory = new int[list->capacity];
-        memcpy(temp_memory, list->arr, sizeof(int) * (list->capacity));
-        
-        delete list->arr;
-        list->arr = temp_memory;
-        
-    }
-    
-    list->arr[list->len] = NewElement;
-    list->len++;
-    
-    // insert element NewElement to list, if list is full, increase its size by reallocating memory
-    // careful, after each insertion, len must increase accordingly
-}
-
-void 
-delete_list(int_list *List){
-    
-    if(List->arr == NULL) return;
-    
-    delete List;
-    List->len = 0;
-    List->capacity =0;
-    
-    // delete memory allocated to List->ptr COMPLETELY
-    // free list that you allocated @initialize_int_list
+void destroy_window(window_help *w){
+    printf("window %p destroyed\n",w);
 }
 
 
-void
-UsageTest(int *OutNewLen){
-    
-    int_list  new int_list; // = {0};
-    initialize_int_list(&list, 5);
-    
-    for(){
-        
-        // ekleme
-    }
-    
-    insert_to_list(&list, 0);
-    insert_to_list(&list, 1);
-    insert_to_list(&list, 2);
-    insert_to_list(&list, 3);
-    insert_to_list(&list, 4);
-    insert_to_list(&list, 5);
-    insert_to_list(&list, 6);
-    insert_to_list(&list, 7);
-    insert_to_list(&list, 8);
-    
-    std::cout<<list.capacity<<"\t"<<list.size<<"\n";
-    for(int i = 0; list.len; i++){
-        std::cout<<list.ptr[i]<<"\n";
-    }
-    delete_list(&list);
-    
-    list.arr;
-    
-    *OutNewLen = 5;
-    
-}
+#define UI_WINDOW(var)  for(int i##__LINE__ = 0, window_help wind##__LINE__ = init_window(val); i != 0; i++, destroy_window(&(wind##__LINE__)))
 
 void foo(){
     
-}
-
-
-
-/*
-    ASSUMES RECORDS ARE SORTED
-THIS FUNCTION REALLOCATES MEMORY VIA realloc(), DO NOT PUT MEMORY OTHER THAN ALLOCATED BY MALLOC, OTHERWISE IT WILL CRASH THE PROGRAM
-*/
-void
-MergeRegions(data_array<nar_record>* R) {
-    
-    UINT32 MergedRecordsIndex = 0;
-    UINT32 CurrentIter = 0;
-    
-    for (;;) {
-        if (CurrentIter >= R->Count) {
-            break;
-        }
-        
-        UINT32 EndPointTemp = R->Data[CurrentIter].StartPos + R->Data[CurrentIter].Len;
-        
-        if (IsRegionsCollide(R->Data[MergedRecordsIndex], R->Data[CurrentIter])) {
-            UINT32 EP1 = R->Data[CurrentIter].StartPos + R->Data[CurrentIter].Len;
-            UINT32 EP2 = R->Data[MergedRecordsIndex].StartPos + R->Data[MergedRecordsIndex].Len;
-            
-            EndPointTemp = MAX(EP1, EP2);
-            R->Data[MergedRecordsIndex].Len = EndPointTemp - R->Data[MergedRecordsIndex].StartPos;
-            
-            CurrentIter++;
-        }
-        else {
-            MergedRecordsIndex++;
-            R->Data[MergedRecordsIndex] = R->Data[CurrentIter];
-        }
-        
+    UI_WINDOW(){
         
     }
     
-    R->Count = MergedRecordsIndex + 1;
-    R->Data = (nar_record*)realloc(R->Data, sizeof(nar_record) * R->Count);
-    
 }
 
 
+static ULONGLONG GlobalPerfCountFreq;
 
-int main(){
+inline LARGE_INTEGER
+GetClock() {
+    LARGE_INTEGER Result;
+    QueryPerformanceCounter(&Result);
+    return Result;
+}
+
+inline float
+GetSecondsElapsed(LARGE_INTEGER Start, LARGE_INTEGER End) {
+    float Result = (float)(End.QuadPart - Start.QuadPart) / (float)(GlobalPerfCountFreq);
+    return Result;
+}
+
+void
+NarGlfwErrorCallback(int error_code, const char* description) {
+    printf("Err occured with code %i and description", error_code, description);
+    printf(description);
+    printf("\n");
+}
+
+int
+main() {
     
-    // NOTE(Batuhan): bunun uzunlugunun 1 oldugunun dikkatini cekerim xD
-    int arr[1];
+    NarGlfwErrorCallback(0, 0);
     
-    int len;
-    std::cin>>len;
+    //HINSTANCE h1, HINSTANCE h2, LPSTR h3, INT h4
+    LARGE_INTEGER PerfCountFreqResult;
+    QueryPerformanceFrequency(&PerfCountFreqResult);
+    GlobalPerfCountFreq = PerfCountFreqResult.QuadPart;
     
-    for(int i =0; i<len; i++){
-        arr[i] = factorial[i];
-    } 
+    glfwSetErrorCallback(NarGlfwErrorCallback);
     
+    int R = glfwInit();
+    if (R != GLFW_TRUE) {
+        printf("Couldnt init glfw, code = %i\n", R);
+        return 0;
+    }
+    
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    
+    GLFWwindow* winHandle = glfwCreateWindow(1280, 720, "demotitle", NULL, NULL);
+    
+    
+    glfwMakeContextCurrent(winHandle);
+    //glfwSwapInterval(1);
+    
+    if (winHandle == nullptr) {
+        R = glfwGetError(0);
+        printf("Couldnt create window, code = %i", R);
+        return -1;
+    }
+    
+    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
+        printf("Failed to initialize GLAD\n");
+        return -2;
+    }
+    
+    
+    glViewport(0, 0, 800, 600);
+    
+    
+    ImGui::CreateContext();
+    ImGui_ImplGlfw_InitForOpenGL(winHandle, true);
+    ImGui_ImplOpenGL3_Init("#version 140");
+    
+    glClearColor(1.f, 1.0f, 1.0f, 1.f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    
+    static char CharBuffer[64];
+    
+    LARGE_INTEGER LastCounter = GetClock();
+    
+    while (!glfwWindowShouldClose(winHandle)) {
+        
+        
+        Sleep(1);
+        
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+        
+        ImGui::ShowTestWindow();
+        
+#if 0
+        
+#pragma region Render available volumes list
+        
+        {//Render available volumes list
+            ImGui::Begin("Available volumes", (bool*)0, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove);
+            
+            if (ImGui::Button("Refresh list")) {
+                
+            }
+            static BackupPopupState BPS = BackupPopup_Type;
+            
+            if (ImGui::Button("Backup"))
+            {
+                ImGui::OpenPopup("Backup type selector");
+                BPS = BackupPopup_Type;
+            }
+            else {
+                ImGui::CloseCurrentPopup();
+            }
+            
+            // NOTE(Batuhan): Draw popup
+            if (ImGui::BeginPopupModal("Backup type selector", 0, ImGuiWindowFlags_NoResize)) {
+                
+                if (BPS == BackupPopup_Type) {
+                    
+                    static ImVec2 WindowSize = { 280, 130 };
+                    ImGui::SetWindowSize(WindowSize);
+                    
+                    ImGui::TextWrapped("Select backup type for selected volume(s)");
+                    ImGui::Separator();
+                    DiffSelected = ImGui::Button("Diff", { WindowSize.x / 4.f, WindowSize.y / 5.f });
+                    ImGui::SameLine();
+                    IncSelected = ImGui::Button("Inc", { WindowSize.x / 4.f, WindowSize.y / 5.f });
+                    ImGui::SameLine();
+                    Cancel = ImGui::Button("CANCEL", { WindowSize.x / 4.f, WindowSize.y / 5.f });
+                    
+                    if (DiffSelected || IncSelected || Cancel) {
+                        BPS = BackupPopup_Task;
+                    }
+                    if (Cancel) {
+                        ImGui::CloseCurrentPopup();
+                    }
+                    
+                }
+                
+                if (BPS == BackupPopup_Task) {
+                    static INT32 Time = 0;
+                    static bool RightNow = false;
+                    static int HourSet = 0; // 0-24
+                    static int MinuteSet = 0; // 0-60
+                    static SYSTEMTIME ST = { 0 };
+                    GetLocalTime(&ST);
+                    
+                    ImGui::SetWindowSize({ 350,200 });
+                    
+                    ImGui::Text("These settings will effect all selected volumes");
+                    ImGui::Text("Specify minutes between backups");
+                    ImGui::Checkbox("Right now", &RightNow);
+                    if (!RightNow) {
+                        
+                        HourSet = MIN(MAX(HourSet, ST.wHour), 23);
+                        if (ST.wHour == HourSet) {
+                            MinuteSet = MIN(MAX(MinuteSet, ST.wMinute), 59);
+                        }
+                        else {
+                            MinuteSet = MIN(MAX(MinuteSet, 0), 59);
+                        }
+                        
+                        ImGui::InputScalar(":", ImGuiDataType_U32, &HourSet);
+                        ImGui::SameLine();
+                        ImGui::InputScalar("Minute", ImGuiDataType_U32, &MinuteSet);
+                    }
+                    
+                    ImGui::InputInt("Task timer(min)", &Time);
+                    Time = MAX(Time, 0);
+                    
+                    if (ImGui::Button("Start task")) {
+                        double AheadTime = 0.0;
+                        if (!RightNow) {
+                            
+                            AheadTime = ((double)HourSet - ST.wHour) * (60.0 * 1000.0);
+                            if (HourSet != ST.wHour) {
+                                
+                                if (ST.wMinute > MinuteSet) {
+                                    AheadTime -= ((double)ST.wMinute - (double)MinuteSet) * 1000.0;
+                                }
+                                else {
+                                    AheadTime += ((double)MinuteSet + (double)ST.wMinute) * 1000.0;
+                                }
+                                
+                            }
+                            else {
+                                AheadTime += ((double)MinuteSet + (double)ST.wMinute) * 1000.0;
+                            }
+                            
+                        }
+                        
+                        BackupType BT = DiffSelected ? BackupType::Diff : BackupType::Inc;
+                        if (Time > 0) {
+                            for (int i = 0; i < NonTrackedVolumes.Count; i++) {
+                                if (BackupSelection[i]) {
+                                    BackupScheduler BS = InitBackupScheduler(NonTrackedVolumes.Data[i].Letter, BT, Time);
+                                    if (!RightNow) {
+                                        BS.TimeRemaining = AheadTime;
+                                    }
+                                    else {
+                                        StartBackup(&BS);
+                                    }
+                                    BSVector.emplace_back(BS);
+                                }
+                            }
+                        }
+                        ImGui::CloseCurrentPopup();
+                    }
+                    if (ImGui::Button("Cancel")) {
+                        BPS = BackupPopup_Type;
+                        ImGui::CloseCurrentPopup();
+                    }
+                    
+                }
+                
+                
+                ImGui::EndPopup();
+            }
+            
+            if (DiffSelected || IncSelected) {
+                // NOTE(Batuhan): For all selected element
+            }
+            
+            
+            ImGui::Columns(5);
+            {
+                // Entry values for table
+                ImGui::Text("Selected");
+                ImGui::NextColumn();
+                
+                ImGui::Text("Volume Letter");
+                ImGui::NextColumn();
+                
+                ImGui::Text("Size");
+                ImGui::NextColumn();
+                
+                ImGui::Text("DiskType");
+                ImGui::NextColumn();
+                
+                ImGui::Text("DiskID");
+                ImGui::NextColumn();
+                
+                ImGui::Separator();
+                
+                //Render table
+                
+                for (int i = 0; i < NonTrackedVolumes.Count; i++) {
+                    sprintf(CharBuffer, "##%i", i);
+                    
+                    ImGui::Checkbox(CharBuffer, &BackupSelection[i]);
+                    ImGui::NextColumn();
+                    
+                    ImGui::Text("%c", NonTrackedVolumes.Data[i].Letter);
+                    ImGui::NextColumn();
+                    
+                    ImGui::Text("%I64d", NonTrackedVolumes.Data[i].Size);
+                    ImGui::NextColumn();
+                    
+                    if (NonTrackedVolumes.Data[i].DiskType == NAR_DISKTYPE_GPT) {
+                        ImGui::Text("GPT");
+                        ImGui::NextColumn();
+                    }
+                    if (NonTrackedVolumes.Data[i].DiskType == NAR_DISKTYPE_MBR) {
+                        ImGui::Text("MBR");
+                        ImGui::NextColumn();
+                    }
+                    if (NonTrackedVolumes.Data[i].DiskType == NAR_DISKTYPE_RAW) {
+                        ImGui::Text("RAW");
+                        ImGui::NextColumn();
+                    }
+                    
+                    ImGui::Text("%i", NonTrackedVolumes.Data[i].DiskID);
+                    ImGui::NextColumn();
+                    ImGui::Separator();
+                    
+                }
+                
+            }
+            // Render available volumes list
+            
+        }
+        
+        ImGui::End();
+#pragma endregion
+        
+#pragma region Render backups in directory and restore option
+        
+        {
+            ImGui::Begin("Restore panel", (bool*)0, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
+            ImGui::SetWindowSize({ 750,220 });
+            
+            ImGui::Text("Current dir : %S", CurrentDirectory);
+            if (ImGui::Button("Set directory to store and lookup backups")) {
+                
+                if (NarSelectDirectoryFromWindow(CurrentDirectory)) {
+                    if (NarGetBackupsInDirectory(CurrentDirectory, BackupsInDir, NAR_MAX_BACKUP_COUNT * sizeof(backup_metadata), &BackupCountInDir)) {
+                        
+                    }
+                    else {
+                        //NOTE(Batuhan): Error occured while fetching backup metadatas, log this via imgui
+                    }
+                }
+                else {
+                    //NOTE(Batuhan): Error occured while selecting new directory, log this via imgui
+                }
+                
+            }
+            
+            ImGui::SameLine();
+            if (ImGui::Button("Restore selected version")) {
+                ImGui::OpenPopup("Restore popup");
+            }
+            else {
+                ImGui::CloseCurrentPopup();
+            }
+            
+            if (ImGui::BeginPopupModal("Restore popup", 0, ImGuiWindowFlags_NoResize)) {
+                
+                static RestoreWindow RW = RestoreWindow_BehaviourSelect;
+                static ImVec2 WindowSize = { 420, 160 };
+                
+                ImGui::SetWindowSize(WindowSize);
+                
+                if (RW == RestoreWindow_BehaviourSelect) {
+                    if (ImGui::Button("Select disk, wipe and restore it", { WindowSize.x , WindowSize.y / 4.f })) {
+                        FreeDataArray(&Disks);
+                        Disks = NarGetDisks();
+                        RW = RestoreWindow_WipeDisk;
+                    }
+                    if (ImGui::Button("Select partition, wipe and restore it", { WindowSize.x, WindowSize.y / 4.f })) {
+                        // NOTE exclude currently tracking volumes from wipe list, or make checkbox to include them.
+                        
+                        FreeDataArray(&NonTrackedVolumes);
+                        NonTrackedVolumes = GetVolumesNotOnTrack();
+                        
+                        RW = RestoreWindow_WipePartition;
+                    }
+                }
+                if (RW == RestoreWindow_WipeDisk) {
+                    if (ImGui::Button("Restore to selected")) {
+                        
+                    }
+                    
+                    ImGui::Columns(3);
+                    {
+                        ImGui::Text("Selected");
+                        ImGui::NextColumn();
+                        
+                        ImGui::Text("DiskID");
+                        ImGui::NextColumn();
+                        
+                        ImGui::Text("DiskSize");
+                        ImGui::NextColumn();
+                    }
+                    
+                    for (int i = 0; i < Disks.Count; i++) {
+                        
+                        sprintf(CharBuffer, "##%i", i);
+                        ImGui::RadioButton(CharBuffer, &WipeIndex, i);
+                        ImGui::NextColumn();
+                        
+                        ImGui::Text("%i", Disks.Data[i].ID);
+                        ImGui::NextColumn();
+                        
+                        ImGui::Text("%I64d", Disks.Data[i].Size);
+                        ImGui::NextColumn();
+                        
+                    }
+                    
+                    
+                }
+                if (RW == RestoreWindow_WipePartition) {
+                    ImGui::Columns(5);
+                    {
+                        // Entry values for table
+                        ImGui::Text("Selected");
+                        ImGui::NextColumn();
+                        
+                        ImGui::Text("Volume Letter");
+                        ImGui::NextColumn();
+                        
+                        ImGui::Text("Size");
+                        ImGui::NextColumn();
+                        
+                        ImGui::Text("DiskType");
+                        ImGui::NextColumn();
+                        
+                        ImGui::Text("DiskID");
+                        ImGui::NextColumn();
+                        
+                        ImGui::Separator();
+                        
+                        //Render table
+                        
+                        for (int i = 0; i < NonTrackedVolumes.Count; i++) {
+                            sprintf(CharBuffer, "##%i", i);
+                            
+                            ImGui::RadioButton(CharBuffer, &WipeIndex, i);
+                            ImGui::NextColumn();
+                            
+                            ImGui::Text("%c", NonTrackedVolumes.Data[i].Letter);
+                            ImGui::NextColumn();
+                            
+                            ImGui::Text("%I64d", NonTrackedVolumes.Data[i].Size);
+                            ImGui::NextColumn();
+                            
+                            if (NonTrackedVolumes.Data[i].DiskType == NAR_DISKTYPE_GPT) {
+                                ImGui::Text("GPT");
+                                ImGui::NextColumn();
+                            }
+                            if (NonTrackedVolumes.Data[i].DiskType == NAR_DISKTYPE_MBR) {
+                                ImGui::Text("MBR");
+                                ImGui::NextColumn();
+                            }
+                            if (NonTrackedVolumes.Data[i].DiskType == NAR_DISKTYPE_RAW) {
+                                ImGui::Text("RAW");
+                                ImGui::NextColumn();
+                            }
+                            
+                            ImGui::Text("%i", NonTrackedVolumes.Data[i].DiskID);
+                            ImGui::NextColumn();
+                            ImGui::Separator();
+                            
+                        }
+                    }
+                }
+                
+                
+                if (ImGui::Button("CANCEL")) {
+                    RESTOREPOPUPCANCELPOINT:
+                    
+                    ImGui::CloseCurrentPopup();
+                    RW = RestoreWindow_BehaviourSelect;
+                }
+                
+                
+                ImGui::EndPopup();
+                
+            }
+            
+            ImGui::Separator();
+            
+#pragma region render property table header
+            
+            ImGui::Columns(6);
+            ImGui::Text("Selected");
+            ImGui::NextColumn();
+            
+            ImGui::Text("Volume");
+            ImGui::NextColumn();
+            
+            ImGui::Text("Size");
+            ImGui::NextColumn();
+            
+            ImGui::Text("Version");
+            ImGui::NextColumn();
+            
+            ImGui::Text("Backup Type");
+            ImGui::NextColumn();
+            
+            ImGui::Text("Botable");
+            ImGui::NextColumn();
+            
+            ImGui::Separator();
+            
+#pragma endregion
+            
+            
+            for (int i = 0; i < BackupCountInDir; i++) {
+                sprintf(CharBuffer, "  ##%i", i);
+                ImGui::RadioButton("##0", &RestoreVersionIndex, 0);
+                ImGui::NextColumn();
+                
+                ImGui::Text("%c", BackupsInDir[i].Letter);
+                ImGui::NextColumn();
+                
+                ImGui::Text("%I64d", BackupsInDir[i].Size);
+                ImGui::NextColumn();
+                
+                ImGui::Text("Version", BackupsInDir[i].Version);
+                ImGui::NextColumn();
+                
+                if (BackupsInDir[i].BT == BackupType::Diff) {
+                    ImGui::Text("Differential");
+                }
+                if (BackupsInDir[i].BT == BackupType::Inc) {
+                    ImGui::Text("Incremental");
+                }
+                if (BackupsInDir[i].BT != BackupType::Inc || BackupsInDir[i].BT != BackupType::Diff) {
+                    ImGui::Text("Error!!");
+                }
+                ImGui::NextColumn();
+                
+                
+                if (BackupsInDir[i].IsOSVolume) {
+                    ImGui::Text("Yes");
+                }
+                else {
+                    ImGui::Text("No");
+                }
+                ImGui::NextColumn();
+                
+                
+                ImGui::Text("TestText1");
+                ImGui::NextColumn();
+                
+            }
+            
+            
+            ImGui::End();
+        }
+        
+#pragma endregion
+        
+        
+#pragma region Render progress bar for backups and tasks
+        
+        
+        ImGui::Begin("Active operations", 0, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoCollapse);
+        if (ImGui::Button("Delete task(s)")) {
+            for (int i = 0; i < BSVector.size(); i++) {
+                if (TaskSelected[i]) {
+                    BSVector[i].BTP.CloseFlag = TRUE;
+                    while (BSVector[i].BTP.IsThreadActive);
+                    RemoveVolumeFromTrack(&GlobalCtx, BSVector[i].BTP.Letter);
+                }
+            }
+        }
+        
+        ImGui::Columns(4);
+        {
+            ImGui::Text("Selected");
+            ImGui::NextColumn();
+            
+            ImGui::Text("Volume");
+            ImGui::NextColumn();
+            
+            ImGui::Text("Progress");
+            ImGui::NextColumn();
+            
+            //To inform user if task is counting down or operation started
+            //float Percentage = 0.3f;
+            //float ColumnWidth = ImGui::GetColumnWidth();
+            //
+            //sprintf(CharBuffer, "%i", (int)(Percentage * 100.f));
+            //ImGui::ProgressBar(Percentage, { ColumnWidth,0 }, CharBuffer);
+            
+            ImGui::Text("Description");
+            ImGui::NextColumn();
+            
+            ImGui::Separator();
+        }
+        
+        
+        for (int i = 0; i < BSVector.size(); i++) {
+            
+            static float Percentage = 0.f;
+            sprintf(CharBuffer, "##%c", BSVector[i].BTP.Letter);
+            
+            ImGui::Checkbox(CharBuffer, &TaskSelected[i]);
+            
+            ImGui::Text("%c", BSVector[i].BTP.Letter);
+            ImGui::NextColumn();
+            
+            float ColumnWidth = ImGui::GetColumnWidth();
+            if ((BSVector[i].BTP.IsThreadActive)) {
+                // Render backup done in percentage, based on how many bytes transferred so far
+                Percentage = (float)((double)1.0 - BSVector[i].TimeRemaining / BSVector[i].TimeBase);
+                sprintf(CharBuffer, "%i", (int)(Percentage * 100.f));
+                
+                ImGui::ProgressBar(Percentage, { ColumnWidth,0 }, "test overlay");
+                ImGui::NextColumn();
+                
+                ImGui::Text("Backup in progress");
+                ImGui::NextColumn();
+            }
+            else {
+                // Render remaining time for next backup
+                Percentage = (float)((double)1.0 - BSVector[i].TimeRemaining / BSVector[i].TimeBase);
+                sprintf(CharBuffer, "%i", (int)(Percentage * 100.f));
+                ImGui::ProgressBar(Percentage, { ColumnWidth,0 }, CharBuffer);
+                ImGui::NextColumn();
+                
+                ImGui::Text("Waiting next scheduled time");
+                ImGui::NextColumn();
+            }
+            
+        }
+        
+        
+        
+        ImGui::End();
+#pragma endregion
+        
+#endif
+        
+        
+        LARGE_INTEGER WorkCounter = GetClock();
+        float SecondsElapsed = GetSecondsElapsed(LastCounter, WorkCounter);
+        LastCounter.QuadPart = WorkCounter.QuadPart;
+        
+        ImGui::Begin("testw");
+        ImGui::Text("Seconds elapsed %f", SecondsElapsed);
+        ImGui::Text("FPS: %f", 1.f / SecondsElapsed);
+        ImGui::End();
+        
+        glClearColor(.2f, .2f, .2f, 1.f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        
+        ImGui::Render();
+        glfwMakeContextCurrent(winHandle);
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+        
+        glfwSwapBuffers(winHandle);
+        glfwPollEvents();
+        
+        
+    }
     return 0;
 }

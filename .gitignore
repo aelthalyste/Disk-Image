@@ -12,6 +12,10 @@
 *.userosscache
 *.sln.docstates
 
+*.exe
+*.pdb
+/build
+
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
 
@@ -376,3 +380,4 @@ healthchecksdb
 /minispy_user/NAR_M_E0
 /DotNetTest/NAR_M_C0.7z
 /DotNetTest/NAR_M_C0
+/build/minispy_user/mspyUser.exe

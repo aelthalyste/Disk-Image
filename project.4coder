@@ -21,7 +21,8 @@ lp = {
 {"/inc"},
 {"/minispy_user/",.recursive=false},
 {"/NarDIWrapper/",.recursive=false},
-{"/TestArea/src/",.recursive=false}
+{"/TestArea/src/",.recursive=false},
+{"/OfflineTestGUI/",.recursive=false}
 };
 
 load_paths = {
@@ -33,7 +34,7 @@ command_list = {
 .name="build",
 .out="compilation", 
 .footer_panel = true,
-.save_dirty_files = false,
+.save_dirty_files = true,
 .cursor_at_end = true,
 .cmd = {{"build.bat",.os = "win"}}
 },
@@ -49,13 +50,13 @@ command_list = {
 .name="build_large",
 .out="compilation_large", 
 .footer_panel = false,
-.save_dirty_files = false,
+.save_dirty_files = true,
 .cursor_at_end = false,
 .cmd = {{"build.bat",.os = "win"}}
 }
 };
 
-fkey_command[3] = "build";
+fkey_command[1] = "build";
 fkey_command[2] = "run";
-fkey_command[1] = "build_large";
+fkey_command[3] = "build_large";
 

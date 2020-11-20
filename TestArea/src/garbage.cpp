@@ -1,6 +1,4 @@
-
 #include <stdio.h>
-
 #define STACK_SIZE 256
 
 struct stack{
@@ -81,4 +79,5 @@ int main(){
         PrintNumbers(Stack.Data[i]);
     }
     printf("\nSmallest number = %i\n",SmallestID);
+    
 }

@@ -19,7 +19,6 @@
 #include <stdio.h>
 
 
-
 #define TIMED_BLOCK__(NAME, Number, ...) timed_block timed_##Number(__COUNTER__, __LINE__, __FUNCTION__, NAME);
 #define TIMED_BLOCK_(NAME, Number, ...)  TIMED_BLOCK__(NAME, Number,  ## __VA__ARGS__)
 #define TIMED_BLOCK(...)                 TIMED_BLOCK_("UNNAMED", __LINE__, ## __VA__ARGS__)
@@ -68,7 +67,7 @@ static void
 NarLog(const char *str, ...){
     
     
-#if 0    
+#if 1    
     const static HANDLE File = CreateFileA("NAR_APP_LOG_FILE.txt", GENERIC_WRITE|GENERIC_READ, FILE_SHARE_READ|FILE_SHARE_WRITE, 0, CREATE_ALWAYS, 0, 0);
     static SYSTEMTIME Time = {};
     
@@ -100,7 +99,7 @@ NarLog(const char *str, ...){
     FlushFileBuffers(File);
 #endif
     
-#if 1
+#if 0
     char szBuff[1024];
     va_list arg;
     va_start(arg, str);
@@ -384,13 +383,20 @@ struct backup_metadata {
         BOOLEAN Recovery;
     }Errors;
     
+    
+#define MAX_TASK_NAME_LEN        128
+#define MAX_TASK_DESCRIPTION_LEN 512
+#define MAX_PRODUCT_NAME         50
+    
     union {
-        CHAR Reserved[128]; // Reserved for future usage
+        CHAR Reserved[2048]; // Reserved for future usage
         struct {
             //FOR MBR things
             INT64 GPT_EFIPartitionSize;
             INT64 MBR_SystemPartitionSize;
-            char ProductName[50];
+            char ProductName[MAX_PRODUCT_NAME];
+            wchar_t TaskName[MAX_TASK_NAME_LEN];
+            wchar_t TaskDescription[MAX_TASK_DESCRIPTION_LEN];
         };
     };
     
@@ -407,7 +413,6 @@ struct backup_metadata {
         BOOLEAN Recovery; // true if contains restore partition
     }; // 4byte
     BackupType BT; // diff or inc
-    
     
 };
 
