@@ -6,7 +6,8 @@
     <system:String x:Key="createTask">Görev Oluştur</system:String>
     <system:String x:Key="createNewTask">Yeni Görev Oluştur</system:String>
     <system:String x:Key="disks">Diskler</system:String>
-    <system:String x:Key="makeABackup">Yedek Alnıyor, C, 270 MB, %80</system:String>
+    <system:String x:Key="makeABackup">Yedek Alnıyor</system:String>
+    <system:String x:Key="backupStopped">Yedekleme Durduruldu</system:String>
     <system:String x:Key="volume">Volume</system:String>
     <system:String x:Key="letter">Harf</system:String>
     <system:String x:Key="area">Alan</system:String>
@@ -228,6 +229,7 @@
     <system:String x:Key="restoreDiskContent1">Bu alan yedeklediğiniz bölüme göre otomatik olarak seçilmiştir.</system:String>
     <system:String x:Key="restoreDiskContent2">Farklı bir boot'a ihtiyaç duymadığınız sürece değiştirmeyiniz.</system:String>
     <system:String x:Key="createBootPartition">Boot Partition Oluştur</system:String>
+    <system:String x:Key="bootPartition">Boot Partition</system:String>
     <system:String x:Key="fileInfo">Dosya Bilgileri</system:String>
     <system:String x:Key="files">Dosyalar</system:String>
     <system:String x:Key="Success">Başarılı</system:String>
@@ -237,6 +239,9 @@
     <system:String x:Key="Canceled">İptal edildi</system:String>
     <system:String x:Key="Working">Çalışıyor</system:String>
     <system:String x:Key="Not">Yok</system:String>
+    <system:String x:Key="Cancel">İptal Edildi</system:String>
+    <system:String x:Key="advancedOptions">Gelişmiş Ayarlar</system:String>
+
 
 
 </ResourceDictionary>

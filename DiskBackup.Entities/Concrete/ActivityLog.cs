@@ -25,7 +25,8 @@ namespace DiskBackup.Entities.Concrete
     public enum StatusType
     {
         Success = 0,
-        Fail = 1
+        Fail = 1,
+        Cancel = 2
     }
 
     public enum DetailedMissionType

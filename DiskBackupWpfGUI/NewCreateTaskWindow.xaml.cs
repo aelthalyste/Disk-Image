@@ -1,4 +1,5 @@
-﻿using DiskBackup.Business.Abstract;
+﻿using Autofac;
+using DiskBackup.Business.Abstract;
 using DiskBackup.Business.Concrete;
 using DiskBackup.DataAccess.Abstract;
 using DiskBackup.Entities.Concrete;
@@ -33,6 +34,8 @@ namespace DiskBackupWpfGUI
         private ITaskInfoDal _taskInfoDal;
         private ITaskSchedulerManager _schedulerManager;
 
+        private readonly ILifetimeScope _scope;
+
         private List<BackupStorageInfo> _backupStorageInfoList = new List<BackupStorageInfo>();
         private List<VolumeInfo> _volumeInfoList = new List<VolumeInfo>();
 
@@ -41,7 +44,8 @@ namespace DiskBackupWpfGUI
         private readonly Func<AddBackupAreaWindow> _createAddBackupWindow;
 
         public NewCreateTaskWindow(List<BackupStorageInfo> backupStorageInfoList, IBackupService backupService, IBackupStorageService backupStorageService,
-            Func<AddBackupAreaWindow> createAddBackupWindow, List<VolumeInfo> volumeInfoList, IBackupTaskDal backupTaskDal, IStatusInfoDal statusInfoDal, ITaskInfoDal taskInfoDal, ITaskSchedulerManager schedulerManager)
+            Func<AddBackupAreaWindow> createAddBackupWindow, List<VolumeInfo> volumeInfoList, IBackupTaskDal backupTaskDal, IStatusInfoDal statusInfoDal, 
+            ITaskInfoDal taskInfoDal, ITaskSchedulerManager schedulerManager, ILifetimeScope scope)
         {
             InitializeComponent();
 
@@ -57,7 +61,10 @@ namespace DiskBackupWpfGUI
             _taskInfo.BackupTaskInfo = new BackupTask();
             _taskInfo.StatusInfo = new StatusInfo();
             _schedulerManager = schedulerManager;
+            _scope = scope;
             _schedulerManager.InitShedulerAsync();
+
+            txtTaskName.Focus();
 
             _taskInfo.Obje = _volumeInfoList.Count();
 
@@ -125,6 +132,8 @@ namespace DiskBackupWpfGUI
                     {
                         _taskInfo.BackupTaskInfo.AutoType = AutoRunType.DaysTime;
                         _taskInfo.NextDate = (DateTime)tpDaysTime.Value;
+                        Console.WriteLine("Window: " + _taskInfo.NextDate.Hour + " saat" + _taskInfo.NextDate.Minute + " dakika");
+
                         if (cbDaysTime.SelectedIndex == 2) // belirli günler seçilmeli
                         {
                             _taskInfo.BackupTaskInfo.Days = ChooseDayAndMounthsWindow._days;
@@ -157,7 +166,7 @@ namespace DiskBackupWpfGUI
                             _taskInfo.BackupTaskInfo.WeeklyTime = WeeklyType.Fourth;
                         }
                         //günler
-                        _taskInfo.BackupTaskInfo.Days = cbWeeklyTimeDays.SelectedIndex.ToString();
+                        _taskInfo.BackupTaskInfo.Days = (cbWeeklyTimeDays.SelectedIndex+1).ToString();
                     }
                     else if (rbPeriodic.IsChecked.Value)
                     {
@@ -177,6 +186,10 @@ namespace DiskBackupWpfGUI
                         _taskInfo.BackupTaskInfo.Months = null;
                     }
                 }
+                else
+                {
+                    _taskInfo.NextDate = Convert.ToDateTime("01/01/0002");
+                }
 
                 //başarısız tekrar dene
                 _taskInfo.BackupTaskInfo.FailTryAgain = checkTimeFailDesc.IsChecked.Value;
@@ -186,7 +199,7 @@ namespace DiskBackupWpfGUI
                     _taskInfo.BackupTaskInfo.WaitNumberTryAgain = Convert.ToInt32(txtTimeWait.Text);
                 }
 
-                //veritabanı işlemleri gelecek
+                //veritabanı işlemleri
                 TaskInfo resultTaskInfo = SaveToDatabase();
 
                 if (resultTaskInfo != null)
@@ -234,6 +247,12 @@ namespace DiskBackupWpfGUI
                     //full gelince buraya alıcaz paşayı
                 }
                 Close();
+
+                // task status açılması
+                //resultTaskInfo.StatusInfo = _statusInfoDal.Get(x => x.Id == resultTaskInfo.StatusInfoId);
+                //resultTaskInfo.BackupTaskInfo = _backupTaskDal.Get(x => x.Id == resultTaskInfo.BackupTaskId);
+                //StatusesWindow backupStatus = _scope.Resolve<StatusesWindow>(new NamedParameter("chooseFlag", 0), new NamedParameter("statusInfo", resultTaskInfo.StatusInfo));
+                //backupStatus.Show();
             }
 
         }
@@ -684,11 +703,13 @@ namespace DiskBackupWpfGUI
             {
                 lblTabHeader.Text = Resources["name"].ToString();
                 lblTabContent.Text = Resources["NCTNameContent"].ToString();
+                btnCreateTaskBack.IsEnabled = false;
             }
             else if (NCTTabControl.SelectedIndex == 1)
             {
                 lblTabHeader.Text = Resources["BackupType"].ToString();
                 lblTabContent.Text = Resources["NCTBackupTypeContent"].ToString();
+                btnCreateTaskBack.IsEnabled = true;
             }
             else if (NCTTabControl.SelectedIndex == 2)
             {
@@ -704,11 +725,13 @@ namespace DiskBackupWpfGUI
             {
                 lblTabHeader.Text = Resources["settings"].ToString();
                 lblTabContent.Text = Resources["NCTSettingsContent"].ToString();
+                btnCreateTaskNext.IsEnabled = true;
             }
-            else
+            else if (NCTTabControl.SelectedIndex == 5)
             {
                 lblTabHeader.Text = Resources["summary"].ToString();
                 lblTabContent.Text = Resources["NCTSummaryContent"].ToString();
+                btnCreateTaskNext.IsEnabled = false;
             }
         }
 
@@ -810,5 +833,22 @@ namespace DiskBackupWpfGUI
             return resultTaskInfo;
         }
 
+        #region Focus Event
+        private void txtTaskName_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter)
+            {
+                txtTaskDescription.Focus();
+            }
+        }
+
+        private void cbTargetBackupArea_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter)
+            {
+                btnCreateTaskNext.Focus();
+            }
+        }
+        #endregion
     }
 }

@@ -39,15 +39,15 @@
         <Rectangle Grid.Row="1" Fill="#F2F2F2" Grid.ColumnSpan="2"/>
         <StackPanel Grid.Row="1" Orientation="Horizontal" Grid.ColumnSpan="2">
             <TextBlock Text="{DynamicResource lastBackup}" FontSize="14" FontWeight="Bold" VerticalAlignment="Center" Margin="15,0,0,0"/>
-            <TextBlock Name="txtRunningStateBlock" FontWeight="Bold" FontSize="14" VerticalAlignment="Center" Margin="10,0,0,0" />
+            <TextBlock Name="txtRunningStateBlock" FontWeight="Bold" FontSize="14" VerticalAlignment="Center" Margin="10,0,0,0" Foreground="Red" />
         </StackPanel>
         <StackPanel Orientation="Vertical" Grid.Row="1" Grid.ColumnSpan="2">
-            <TextBlock Name="makeABackup" Text="{DynamicResource makeABackup}" FontWeight="Bold" Foreground="#3A80BB" FontSize="14" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="0,10,0,0" />
+            <TextBlock Name="txtMakeABackup" FontWeight="Bold" Foreground="#3A80BB" FontSize="14" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="0,10,0,0" />
         </StackPanel>
         <Rectangle Height="1" Fill="#428BCA" VerticalAlignment="Bottom" Grid.Row="1" Grid.ColumnSpan="2" />
         <StackPanel Orientation="Horizontal" Grid.Row="1" HorizontalAlignment="Right" Grid.Column="1">
-            <TextBlock Name="txtLicenseNotActive" Text="{DynamicResource licenseNotActive}" Foreground="#FF0000" FontSize="14" FontWeight="Bold" VerticalAlignment="Center" Margin="0,0,10,0"/>
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+            <TextBlock Name="txtLicenseNotActive" Text="{DynamicResource licenseNotActive}" Foreground="#FF0000" FontSize="14" FontWeight="Bold" VerticalAlignment="Center" Margin="0,0,15,0"/>
+            <!--<StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                 <Button Name="btnPlayButton" ToolTip="{DynamicResource start}" HorizontalAlignment="Right" Margin="5,4,0,4" Style="{StaticResource ImageButton}" Width="32" Height="32" Grid.Column="1">
                     <Button.Content>
                         <Image Height="22">
@@ -116,7 +116,7 @@
                         </Image>
                     </Button.Content>
                 </Button>
-            </StackPanel>
+            </StackPanel>-->
         </StackPanel>
 
         <TabControl Name="mainTabControl" TabStripPlacement="Left" BorderThickness="1,0,0,0" Grid.Row="2" BorderBrush="#428BCA" Grid.ColumnSpan="2">
@@ -185,18 +185,18 @@
                             <ListView Name="listViewDisk" MinHeight="370" Margin="5" SelectionChanged="listViewDisk_SelectionChanged">
                                 <ListView.View>
                                     <GridView>
-                                        <GridViewColumn Width="40">
+                                        <GridViewColumn Width="70">
                                             <GridViewColumn.Header>
-                                                <CheckBox Name="chbDiskSelectDiskAll" Checked="chbDiskSelectDiskAll_Checked" Unchecked="chbDiskSelectDiskAll_Unchecked" Cursor="Hand"/>
+                                                <CheckBox Name="chbDiskSelectDiskAll" Checked="chbDiskSelectDiskAll_Checked" Unchecked="chbDiskSelectDiskAll_Unchecked" Cursor="Hand" Margin="12,0,0,0"/>
                                             </GridViewColumn.Header>
                                             <GridViewColumn.CellTemplate>
                                                 <DataTemplate>
                                                     <CheckBox IsChecked="{Binding Path=IsSelected, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ListViewItem}}}"
-                                                              Checked="chbDisk_Checked" Unchecked="chbDisk_Unchecked" Cursor="Hand"/>
+                                                              Checked="chbDisk_Checked" Unchecked="chbDisk_Unchecked" Cursor="Hand" Margin="40,0,0,0"/>
                                                 </DataTemplate>
                                             </GridViewColumn.CellTemplate>
                                         </GridViewColumn>
-                                        <GridViewColumn Header="{DynamicResource volume}" Width="250">
+                                        <GridViewColumn Header="{DynamicResource volume}" Width="220">
                                             <GridViewColumn.CellTemplate>
                                                 <DataTemplate>
                                                     <StackPanel Orientation="Horizontal">
@@ -241,7 +241,7 @@
                                                 </DataTemplate>
                                             </GridViewColumn.CellTemplate>
                                         </GridViewColumn>
-                                        <GridViewColumn Header="{DynamicResource statu}" Width="200" >
+                                        <GridViewColumn Header="{DynamicResource statu}" Width="190" >
                                             <GridViewColumn.CellTemplate>
                                                 <DataTemplate>
                                                     <TextBlock Text="{Binding Status}" TextAlignment="Center"/>
@@ -258,15 +258,15 @@
                                                 <Setter Property="Template">
                                                     <Setter.Value>
                                                         <ControlTemplate>
-                                                            <Expander Tag="{Binding Name}" IsExpanded="True" Margin="5,10,0,0" Loaded="Expander_Loaded">
+                                                            <Expander Tag="{Binding Name}" IsExpanded="True" Margin="5,0,0,0" Loaded="Expander_Loaded">
                                                                 <Expander.Header>
                                                                     <WrapPanel Orientation="Horizontal" >
-                                                                        <CheckBox Name="HeaderCheckBox" Checked="HeaderCheckBox_Checked" Unchecked="HeaderCheckBox_Unchecked" Tag="{Binding Name}" Margin="5,5,5,0" Cursor="Hand"/>
-                                                                        <TextBlock Name="txtGroupName" Text="{Binding Name}" FontWeight="Bold" FontSize="18" VerticalAlignment="Center"/>
-                                                                        <TextBlock Name="txtTotalSize" FontWeight="Bold" FontSize="14" Margin="10,0,0,0" VerticalAlignment="Center"/>
-                                                                        <TextBlock Name="txtNumberOfItems" Text="{Binding ItemCount}" FontSize="14" Foreground="Silver" Margin="10,0,0,0" VerticalAlignment="Center" />
-                                                                        <TextBlock Text="{DynamicResource items}" FontSize="14" Foreground="Silver" Margin="5,0,0,0" VerticalAlignment="Center" />
-                                                                        <Rectangle Margin="10,2,0,0" Width="820" Stroke="Silver" StrokeThickness="1" VerticalAlignment="Center"/>
+                                                                        <CheckBox Name="HeaderCheckBox" Checked="HeaderCheckBox_Checked" Unchecked="HeaderCheckBox_Unchecked" Tag="{Binding Name}" Margin="5,3,5,0" Cursor="Hand"/>
+                                                                        <TextBlock Name="txtGroupName" Text="{Binding Name}" FontWeight="Bold" FontSize="15" VerticalAlignment="Center" Margin="20,0,0,0"/>
+                                                                        <TextBlock Name="txtTotalSize" FontWeight="Bold" FontSize="12" Margin="10,0,0,0" VerticalAlignment="Center"/>
+                                                                        <TextBlock Name="txtNumberOfItems" Text="{Binding ItemCount}" FontSize="12" Foreground="Silver" Margin="10,0,0,0" VerticalAlignment="Center" />
+                                                                        <TextBlock Text="{DynamicResource items}" FontSize="12" Foreground="Silver" Margin="5,0,0,0" VerticalAlignment="Center" />
+                                                                        <Rectangle Margin="10,0,0,0" Width="820" Stroke="Silver" StrokeThickness="1" VerticalAlignment="Center"/>
                                                                     </WrapPanel>
                                                                 </Expander.Header>
                                                                 <ItemsPresenter/>
@@ -371,7 +371,7 @@
                                     <GridViewColumn Header="{DynamicResource nextStudy}" Width="125" >
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
-                                                <TextBlock Text="{Binding NextDate, StringFormat='dd.MM.yyyy HH:mm'}" TextAlignment="Center"/>
+                                                <TextBlock Text="{Binding NextDate, StringFormat='dd.MM.yyyy HH:mm'}" Style="{StaticResource MTBListViewNextDate}" TextAlignment="Center"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
@@ -382,7 +382,7 @@
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
-                                    <GridViewColumn Header="{DynamicResource description}" Width="175" >
+                                    <GridViewColumn Header="{DynamicResource description}" Width="160" >
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
                                                 <TextBlock Text="{Binding Descripiton}" TextWrapping="Wrap" TextAlignment="Center"/>
@@ -434,8 +434,8 @@
                                     </Image>
                                 </Button.Content>
                             </Button>
-                            <Button Name="btnTaskPauseButton" ToolTip="{DynamicResource pause}" HorizontalAlignment="Center" Margin="0,5" 
-                                    Style="{StaticResource ImageButton}" Width="32" Height="32" Grid.Column="1">
+                            <Button Name="btnTaskPause" Click="btnTaskPause_Click" ToolTip="{DynamicResource pause}" HorizontalAlignment="Center" Margin="0,5" 
+                                    Style="{StaticResource ImageButton}" Width="32" Height="32" Grid.Column="1" IsEnabled="False">
                                 <Button.Content>
                                     <Image>
                                         <Image.Style>
@@ -457,7 +457,7 @@
                             </Button>
 
                             <Button Name="btnTaskStop" ToolTip="{DynamicResource stop}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5" 
-                                    Style="{StaticResource ImageButton}" Grid.Column="1" >
+                                    Style="{StaticResource ImageButton}" Grid.Column="1" IsEnabled="False" Click="btnTaskStop_Click">
                                 <Button.Content>
                                     <Image HorizontalAlignment="Center" VerticalAlignment="Center">
                                         <Image.Style>
@@ -477,8 +477,8 @@
                                     </Image>
                                 </Button.Content>
                             </Button>
-                            <Button Name="btnTaskOpen" ToolTip="{DynamicResource open}" Click="btnTaskOpen_Click" Width="32" Height="32" HorizontalAlignment="Center" 
-                                    Margin="0,5" Style="{StaticResource ImageButton}" Grid.Column="1" >
+                            <Button Name="btnTaskOpen" ToolTip="{DynamicResource open}" Width="32" Height="32" HorizontalAlignment="Center" 
+                                    Margin="0,5" Style="{StaticResource ImageButton}" Grid.Column="1" IsEnabled="False">
                                 <Button.Content>
                                     <Image Height="28" Width="28" HorizontalAlignment="Center" VerticalAlignment="Center">
                                         <Image.Style>
@@ -495,7 +495,7 @@
                                 </Button.Content>
                             </Button>
                             <Button Name="btnTaskClose" ToolTip="{DynamicResource close}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5" 
-                                    Style="{StaticResource ImageButton}" Grid.Column="1">
+                                    Style="{StaticResource ImageButton}" Grid.Column="1" IsEnabled="False">
                                 <Button.Content>
                                     <Image HorizontalAlignment="Center" VerticalAlignment="Center">
                                         <Image.Style>
@@ -515,8 +515,8 @@
                                     </Image>
                                 </Button.Content>
                             </Button>
-                            <Button Name="btnTaskCopy" ToolTip="{DynamicResource copy}" Click="btnTaskCopy_Click" Width="32" Height="32" HorizontalAlignment="Center" 
-                                    Margin="0,5" Style="{StaticResource ImageButton}" Grid.Column="1">
+                            <Button Name="btnTaskCopy" ToolTip="{DynamicResource copy}" Width="32" Height="32" HorizontalAlignment="Center" 
+                                    Margin="0,5" Style="{StaticResource ImageButton}" Grid.Column="1" IsEnabled="False">
                                 <Button.Content>
                                     <Image Height="25" Width="25" HorizontalAlignment="Center" VerticalAlignment="Center">
                                         <Image.Style>
@@ -532,8 +532,8 @@
                                     </Image>
                                 </Button.Content>
                             </Button>
-                            <Button Name="btnTaskPaste" ToolTip="{DynamicResource paste}" Click="btnTaskPaste_Click" Width="32" Height="32" HorizontalAlignment="Center" 
-                                    Margin="0,5" Style="{StaticResource ImageButton}" Grid.Column="1" >
+                            <Button Name="btnTaskPaste" ToolTip="{DynamicResource paste}" Width="32" Height="32" HorizontalAlignment="Center" 
+                                    Margin="0,5" Style="{StaticResource ImageButton}" Grid.Column="1" IsEnabled="False">
                                 <Button.Content>
                                     <Image Height="25" Width="25" HorizontalAlignment="Center" VerticalAlignment="Center">
                                         <Image.Style>
@@ -550,7 +550,7 @@
                                 </Button.Content>
                             </Button>
                             <Button Name="btnTaskDelete" ToolTip="{DynamicResource delete}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5" 
-                                    Style="{StaticResource ImageButton}" Grid.Column="1" IsEnabled="False">
+                                    Style="{StaticResource ImageButton}" Grid.Column="1" IsEnabled="False" Click="btnTaskDelete_Click">
                                 <Button.Content>
                                     <Image HorizontalAlignment="Center" VerticalAlignment="Center">
                                         <Image.Style>
@@ -602,7 +602,7 @@
                     </Grid.RowDefinitions>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition/>
-                        <ColumnDefinition Width="350"/>
+                        <ColumnDefinition Width="300"/>
                     </Grid.ColumnDefinitions>
                     <Rectangle VerticalAlignment="Center" Stroke="#D7D7D7" StrokeThickness="1" HorizontalAlignment="Right" Height="420"/>
                     <DockPanel>
@@ -626,7 +626,7 @@
                                 <TextBlock Name="lblRestoreWarning" Text="{DynamicResource restoreContent}" VerticalAlignment="Center" />
                             </StackPanel>
 
-                            <ListView Name="listViewRestore" MinHeight="370" Margin="5" SelectionChanged="listViewRestore_SelectionChanged">
+                            <ListView Name="listViewRestore" Height="370" Margin="5" SelectionChanged="listViewRestore_SelectionChanged" Grid.Row="0">
                                 <ListView.View>
                                     <GridView>
                                         <GridViewColumn Width="60">
@@ -636,28 +636,28 @@
                                                 </DataTemplate>
                                             </GridViewColumn.CellTemplate>
                                         </GridViewColumn>
-                                        <GridViewColumn Header="{DynamicResource fileName}" Width="200">
+                                        <GridViewColumn Header="{DynamicResource fileName}" Width="210">
                                             <GridViewColumn.CellTemplate>
                                                 <DataTemplate>
                                                     <TextBlock Text="{Binding FileName}" TextAlignment="Left"/>
                                                 </DataTemplate>
                                             </GridViewColumn.CellTemplate>
                                         </GridViewColumn>
-                                        <GridViewColumn Header="{DynamicResource createdDate}" Width="160" >
+                                        <GridViewColumn Header="{DynamicResource createdDate}" Width="170" >
                                             <GridViewColumn.CellTemplate>
                                                 <DataTemplate>
                                                     <TextBlock Text="{Binding CreatedDate, StringFormat='dd.MM.yyyy HH:mm'}" TextAlignment="Center"/>
                                                 </DataTemplate>
                                             </GridViewColumn.CellTemplate>
                                         </GridViewColumn>
-                                        <GridViewColumn Header="{DynamicResource volumeSize}" Width="150" >
+                                        <GridViewColumn Header="{DynamicResource volumeSize}" Width="145" >
                                             <GridViewColumn.CellTemplate>
                                                 <DataTemplate>
                                                     <TextBlock Text="{Binding StrVolumeSize}" TextAlignment="Center"/>
                                                 </DataTemplate>
                                             </GridViewColumn.CellTemplate>
                                         </GridViewColumn >
-                                        <GridViewColumn Header="{DynamicResource folderSize}" Width="150" >
+                                        <GridViewColumn Header="{DynamicResource folderSize}" Width="145" >
                                             <GridViewColumn.CellTemplate>
                                                 <DataTemplate>
                                                     <TextBlock Text="{Binding StrFileSize}" TextAlignment="Center"/>
@@ -677,18 +677,18 @@
                     <ListView Name="listViewRestoreDisk" Grid.Row="1" Grid.ColumnSpan="2" MinHeight="150" Margin="5" SelectionChanged="listViewRestoreDisk_SelectionChanged">
                         <ListView.View>
                             <GridView>
-                                <GridViewColumn Width="40">
+                                <GridViewColumn Width="70">
                                     <GridViewColumn.Header>
-                                        <CheckBox Name="chbRestoreDiskSelectAll" Checked="chbRestoreDiskSelectAll_Checked" Unchecked="chbRestoreDiskSelectAll_Unchecked" Cursor="Hand"/>
+                                        <CheckBox Name="chbRestoreDiskSelectAll" Checked="chbRestoreDiskSelectAll_Checked" Unchecked="chbRestoreDiskSelectAll_Unchecked" Cursor="Hand" Margin="12,0,0,0"/>
                                     </GridViewColumn.Header>
                                     <GridViewColumn.CellTemplate>
                                         <DataTemplate>
                                             <CheckBox IsChecked="{Binding Path=IsSelected, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ListViewItem}}}"
-                                                              Checked="chbRestoreDisk_Checked" Unchecked="chbRestoreDisk_Unchecked" Cursor="Hand"/>
+                                                      Checked="chbRestoreDisk_Checked" Unchecked="chbRestoreDisk_Unchecked" Cursor="Hand" Margin="40,0,0,0"/>
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>
                                 </GridViewColumn>
-                                <GridViewColumn Header="{DynamicResource volume}" Width="250">
+                                <GridViewColumn Header="{DynamicResource volume}" Width="220">
                                     <GridViewColumn.CellTemplate>
                                         <DataTemplate>
                                             <StackPanel Orientation="Horizontal">
@@ -750,14 +750,14 @@
                                         <Setter Property="Template">
                                             <Setter.Value>
                                                 <ControlTemplate>
-                                                    <Expander Tag="{Binding Name}" IsExpanded="True" Margin="5,10,0,0" Loaded="Expander_Loaded_1">
+                                                    <Expander Tag="{Binding Name}" IsExpanded="True" Margin="5,0,0,0" Loaded="Expander_Loaded_1">
                                                         <Expander.Header>
                                                             <WrapPanel Orientation="Horizontal">
-                                                                <CheckBox Name="cbRestoreHeader" Checked="cbRestoreHeader_Checked" Unchecked="cbRestoreHeader_Unchecked" Tag="{Binding Name}" Margin="5,5,5,0" Cursor="Hand"/>
-                                                                <TextBlock Name="txtRestoreGroupName" Text="{Binding Name}" FontWeight="Bold" FontSize="18" VerticalAlignment="Center" />
-                                                                <TextBlock Name="txtRestoreTotalSize" FontWeight="Bold" FontSize="14" Margin="10,0,0,0" VerticalAlignment="Center"/>
-                                                                <TextBlock Name="txtRestoreNumberOfItems" Text="{Binding ItemCount}" FontSize="14" Foreground="Silver" Margin="10,0,0,0" VerticalAlignment="Center" />
-                                                                <TextBlock Text="{DynamicResource items}" FontSize="14" Foreground="Silver" Margin="5,0,0,0" VerticalAlignment="Center" />
+                                                                <CheckBox Name="cbRestoreHeader" Checked="cbRestoreHeader_Checked" Unchecked="cbRestoreHeader_Unchecked" Tag="{Binding Name}" Margin="5,3,5,0" Cursor="Hand"/>
+                                                                <TextBlock Name="txtRestoreGroupName" Text="{Binding Name}" FontWeight="Bold" FontSize="15" VerticalAlignment="Center" Margin="20,0,0,0"/>
+                                                                <TextBlock Name="txtRestoreTotalSize" FontWeight="Bold" FontSize="12" Margin="10,0,0,0" VerticalAlignment="Center"/>
+                                                                <TextBlock Name="txtRestoreNumberOfItems" Text="{Binding ItemCount}" FontSize="12" Foreground="Silver" Margin="10,0,0,0" VerticalAlignment="Center" />
+                                                                <TextBlock Text="{DynamicResource items}" FontSize="12" Foreground="Silver" Margin="5,0,0,0" VerticalAlignment="Center" />
                                                                 <Rectangle Margin="10,0,0,0" Width="820" Stroke="Silver" StrokeThickness="1" VerticalAlignment="Center"/>
                                                             </WrapPanel>
                                                         </Expander.Header>
@@ -777,8 +777,8 @@
                         </ListView.ItemContainerStyle>
                     </ListView>
 
-                    <StackPanel Grid.Column="1">
-                        <TextBlock Margin="0,0,0,10" Text="{DynamicResource fileInfo}" FontSize="18" HorizontalAlignment="Center" FontWeight="Bold"/>
+                    <StackPanel Grid.Column="1" Margin="5,50,5,0">
+                        <TextBlock Margin="0,0,0,15" Text="{DynamicResource fileInfo}" FontSize="18" HorizontalAlignment="Center" FontWeight="Bold"/>
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="150"/>
@@ -788,7 +788,7 @@
                             <Grid.RowDefinitions>
                                 <RowDefinition/>
                             </Grid.RowDefinitions>
-                            <Rectangle VerticalAlignment="Bottom" Stroke="#D7D7D7" StrokeThickness="1" Grid.ColumnSpan="3" HorizontalAlignment="Left" Width="400"/>
+                            <!--<Rectangle VerticalAlignment="Bottom" Stroke="#D7D7D7" StrokeThickness="1" Grid.ColumnSpan="3" HorizontalAlignment="Left" Width="400"/>-->
                             <StackPanel Margin="10,0,0,0">
                                 <TextBlock Text="{DynamicResource volumeSize}" Margin="0,0,0,5" />
                                 <TextBlock Text="{DynamicResource usedSize}" Margin="0,0,0,5" />
@@ -799,7 +799,8 @@
                                 <TextBlock Text="{DynamicResource OS}" Margin="0,0,0,5" />
                                 <TextBlock Text="{DynamicResource pcName}" Margin="0,0,0,5" />
                                 <TextBlock Text="{DynamicResource ipAddress}" Margin="0,0,0,5" />
-                                <TextBlock Text="{DynamicResource driverLetter}" Margin="0,0,0,30" />
+                                <TextBlock Text="{DynamicResource driverLetter}" Margin="0,0,0,5" />
+                                <TextBlock Text="{DynamicResource bootPartition}" Margin="0,0,0,5" />
                             </StackPanel>
                             <StackPanel Grid.Column="1">
                                 <TextBlock Text=":" Margin="0,0,0,5" />
@@ -812,21 +813,23 @@
                                 <TextBlock Text=":" Margin="0,0,0,5" />
                                 <TextBlock Text=":" Margin="0,0,0,5" />
                                 <TextBlock Text=":" Margin="0,0,0,5" />
+                                <TextBlock Text=":" Margin="0,0,0,5" />
                             </StackPanel>
                             <StackPanel Grid.Column="2">
-                                <TextBlock Name="txtRVolumeSize" Text="128 GB" Margin="0,0,0,5" />
-                                <TextBlock Name="txtRUsedSize" Text="90 GB" Margin="0,0,0,5" />
-                                <TextBlock Name="txtRFolderSize" Text="12 GB" Margin="0,0,0,5" />
-                                <TextBlock Name="txtRCreatedDate" Text="28.10.2020" Margin="0,0,0,5" />
-                                <TextBlock Name="txtRBootablePartition" Text="Evet" Margin="0,0,0,5" />
-                                <TextBlock Name="txtRzip" Text="Evet (Standart)" Margin="0,0,0,5" />
-                                <TextBlock Name="txtROS" Text="Windows 10 64 bit" Margin="0,0,0,5" />
-                                <TextBlock Name="txtRPcName" Text="BenimPc" Margin="0,0,0,5" />
-                                <TextBlock Name="txtRIpAddress" Text="172.25.1.10" Margin="0,0,0,5" />
-                                <TextBlock Name="txtRDriveLetter" Text="C:" Margin="0,0,0,5" />
+                                <TextBlock Name="txtRVolumeSize" Text="--128 GB" Margin="0,0,0,5" />
+                                <TextBlock Name="txtRUsedSize" Text="--90 GB" Margin="0,0,0,5" />
+                                <TextBlock Name="txtRFolderSize" Text="--12 GB" Margin="0,0,0,5" />
+                                <TextBlock Name="txtRCreatedDate" Text="--28.10.2020" Margin="0,0,0,5" />
+                                <TextBlock Name="txtRBootablePartition" Text="--Evet" Margin="0,0,0,5" />
+                                <TextBlock Name="txtRzip" Text="--Evet (Standart)" Margin="0,0,0,5" />
+                                <TextBlock Name="txtROS" Margin="0,0,0,5" />
+                                <TextBlock Name="txtRPcName" Text="--BenimPc" Margin="0,0,0,5" />
+                                <TextBlock Name="txtRIpAddress" Text="--172.25.1.10" Margin="0,0,0,5" />
+                                <TextBlock Name="txtRDriveLetter" Margin="0,0,0,5" />
+                                <TextBlock Name="txtRBootPartition" Margin="0,0,0,5" />
                             </StackPanel>
                         </Grid>
-                        <StackPanel Margin="10,10,5,0">
+                        <!--<StackPanel Margin="10,10,5,0">
                             <TextBlock Text="{DynamicResource restoreDiskContent1}" TextWrapping="Wrap"/>
                             <TextBlock Text="{DynamicResource restoreDiskContent2}" TextWrapping="Wrap"/>
 
@@ -836,7 +839,7 @@
                                 <RadioButton Name="rbBootGPT" GroupName="BootPartion" Content="GPT"/>
                             </StackPanel>
 
-                        </StackPanel>
+                        </StackPanel>-->
                     </StackPanel>
                 </Grid>
             </TabItem>
@@ -860,7 +863,7 @@
                         <ColumnDefinition Width="45"/>
                     </Grid.ColumnDefinitions>
                     <DockPanel>
-                        <ListView Name="listViewBackups" Height="415" Margin="5,0,0,5" VerticalAlignment="Top" SelectionChanged="listViewBackups_SelectionChanged">
+                        <ListView Name="listViewBackups" Height="415" Margin="5,0,0,5" VerticalAlignment="Top" SelectionChanged="listViewBackups_SelectionChanged" MouseDoubleClick="listViewBackups_MouseDoubleClick">
                             <ListView.View>
                                 <GridView>
                                     <GridViewColumn Width="40">
@@ -917,7 +920,7 @@
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
-                                    <GridViewColumn Header="{DynamicResource description}" Width="150" >
+                                    <GridViewColumn Header="{DynamicResource description}" Width="135" >
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
                                                 <TextBlock Text="{Binding Description}" TextWrapping="Wrap" TextAlignment="Center"/>
@@ -1074,7 +1077,7 @@
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
-                                    <GridViewColumn Header="{DynamicResource description}" Width="185" >
+                                    <GridViewColumn Header="{DynamicResource description}" Width="170" >
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
                                                 <TextBlock Text="{Binding Description}" TextWrapping="Wrap" TextAlignment="Center"/>
@@ -1214,7 +1217,7 @@
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
-                                    <GridViewColumn Header="{DynamicResource statu}" Width="180" >
+                                    <GridViewColumn Header="{DynamicResource statu}" Width="165" >
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
                                                 <TextBlock Text="{Binding StrStatus}" TextAlignment="Center"/>
@@ -1246,24 +1249,6 @@
                                                         <Setter Property="Source" Value="Resources/Icon/icons8_unavailable.ico"/>
                                                         <Setter Property="Height" Value="25"/>
                                                         <Setter Property="Width" Value="25"/>
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </Image.Style>
-                                    </Image>
-                                </Button.Content>
-                            </Button>
-                            <!---->
-                            <Button Name="btnRefreshActivity" ToolTip="{DynamicResource refresh}" Width="32" Height="32" HorizontalAlignment="Right" Margin="0,0,0,5" 
-                                    Style="{StaticResource ImageButton}" Grid.Column="1" Click="btnRefreshActivity_Click">
-                                <Button.Content>
-                                    <Image Height="28">
-                                        <Image.Style>
-                                            <Style TargetType="Image">
-                                                <Setter Property="Source" Value="Resources/Icon/icons8_refresh.ico" />
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding IsEnabled, RelativeSource={RelativeSource AncestorType=Button}}" Value="False">
-                                                        <Setter Property="Source" Value="Resources/Icon/icons8_synchronize_disable.ico"/>
                                                     </DataTrigger>
                                                 </Style.Triggers>
                                             </Style>

@@ -12,6 +12,15 @@
                 </DataTrigger>
             </Style.Triggers>
         </Style>
+        
+        <Style x:Key="MTBListViewNextDate" TargetType="{x:Type TextBlock}">
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding NextDate}" Value="01.01.0002 00:00">
+                    <Setter Property="Visibility" Value="Collapsed" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+        
 
         <Style x:Key="MTBListViewType" TargetType="{x:Type TextBlock}">
             <Style.Triggers>
@@ -62,6 +71,9 @@
                     <Setter Property="Source" Value="Resources\Icon\icons8_ok_3.ico" />
                 </DataTrigger>
                 <DataTrigger Binding="{Binding Status}" Value="1">
+                    <Setter Property="Source" Value="Resources\Icon\icons8_cancel.ico" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Status}" Value="2">
                     <Setter Property="Source" Value="Resources\Icon\icons8_cancel.ico" />
                 </DataTrigger>
             </Style.Triggers>
@@ -299,7 +311,7 @@
                         <Border Name="Border" BorderThickness="1" BorderBrush="#194771" CornerRadius="5" Background="Transparent">
                             <ContentPresenter x:Name="ContentSite"
                                                         VerticalAlignment="Center"
-                                                        HorizontalAlignment="Center"
+                                                        HorizontalAlignment="Left"
                                                         ContentSource="Content"          
                                                         Margin="0,0"/>
 

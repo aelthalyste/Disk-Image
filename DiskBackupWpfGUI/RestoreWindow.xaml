@@ -16,7 +16,7 @@
         Height="450" 
         Width="800" 
         Icon="Resources/Icon/NarBulut_PNG_Icon_White_V3.png" >
-    
+
     <Window.Resources>
         <ResourceDictionary Source="Resources\Lang\string_tr.xaml"/>
     </Window.Resources>
@@ -121,6 +121,26 @@
                 </Grid>
             </TabItem>
 
+            <TabItem Name="advancedOptionsTab" IsEnabled="False">
+                <TabItem.Header>
+                    <StackPanel Height="35" Width="130" Orientation="Horizontal">
+                        <TextBlock Text="{DynamicResource advancedOptions}" Margin="5,0" VerticalAlignment="Center" HorizontalAlignment="Center" Style="{StaticResource NCTTabItemText}"/>
+                    </StackPanel>
+                </TabItem.Header>
+                <Grid Background="White">
+                    <StackPanel Margin="10,10,5,0">
+                        <TextBlock Text="{DynamicResource restoreDiskContent2}" TextWrapping="Wrap"/>
+                        <StackPanel Margin="15">
+                            <CheckBox Name="checkBootPartition" Checked="checkBootPartition_Checked" Unchecked="checkBootPartition_Unchecked" Margin="0,0,0,5" Content="{DynamicResource createBootPartition}"/>
+                            <StackPanel Name="stackBootCheck" Margin="20,0,0,5" IsEnabled="False">
+                                <RadioButton Name="rbBootMBR" GroupName="BootPartion" Content="MBR" Margin="0,0,0,5"/>
+                                <RadioButton Name="rbBootGPT" GroupName="BootPartion" Content="GPT"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </StackPanel>
+                </Grid>
+            </TabItem>
+
             <TabItem Name="summaryTab" IsEnabled="False">
                 <TabItem.Header>
                     <StackPanel Height="35" Width="130" Orientation="Horizontal">
@@ -175,8 +195,13 @@
         </TabControl>
         <Rectangle Fill="White" Grid.Row="2" Height="60" VerticalAlignment="Bottom"/>
         <Rectangle Height="1" Fill="#AAAAAA" Grid.Row="2" VerticalAlignment="Bottom" Margin="0,0,0,60" />
-        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Grid.Row="2" >
-            <Button Name="btnRestoreBack" Content="{DynamicResource back}" Click="btnRestoreBack_Click" Style="{StaticResource WhiteButton}" Width="70" Height="20" VerticalAlignment="Bottom" Margin="0,0,0,20"></Button>
+        <!--<TextBlock Grid.Row="2" VerticalAlignment="Bottom" Margin="20">
+            <Hyperlink Name="btnAdvancedOptions" Click="btnAdvancedOptions_Click">
+                <TextBlock Text="{DynamicResource advancedOptions}"/>
+            </Hyperlink>
+        </TextBlock>-->
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Grid.Row="2">
+            <Button Name="btnRestoreBack" Content="{DynamicResource back}" Click="btnRestoreBack_Click" Style="{StaticResource WhiteButton}" Width="70" Height="20" VerticalAlignment="Bottom" Margin="0,0,0,20" IsEnabled="False"></Button>
             <Button Name="btnRestoreNext" Content="{DynamicResource next}" Click="btnRestoreNext_Click" Style="{StaticResource WhiteButton}" Width="70" Height="20" VerticalAlignment="Bottom" Margin="10,0,0,20"></Button>
             <Button Name="btnRestoreOk" Content="{DynamicResource okay}" Click="btnRestoreOk_Click" Style="{StaticResource WhiteButton}" Width="70" Height="20" VerticalAlignment="Bottom" Margin="10,0,0,20"></Button>
             <Button Name="btnRestoreCancel" Content="{DynamicResource cancel}" Click="btnRestoreCancel_Click" Style="{StaticResource WhiteButton}" Width="70" Height="20" VerticalAlignment="Bottom" Margin="10,0,30,20"></Button>

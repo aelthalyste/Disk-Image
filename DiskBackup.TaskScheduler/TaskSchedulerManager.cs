@@ -36,6 +36,18 @@ namespace DiskBackup.TaskScheduler
             await _scheduler.Start();
         }
 
+        public async Task RunNowTrigger(string schedulerId)
+        {
+            var result = schedulerId.Split('/');
+            await _scheduler.TriggerJob(new JobKey(result[0], result[1]));
+        }
+
+        public async Task DeleteJob(string schedulerId)
+        {
+            var result = schedulerId.Split('/');
+            await _scheduler.DeleteJob(new JobKey(result[0], result[1]));
+        }
+
         #region Backup Inc-Diff
 
         #region Daily
@@ -52,10 +64,12 @@ namespace DiskBackup.TaskScheduler
                 .WithSchedule(CronScheduleBuilder.DailyAtHourAndMinute(taskInfo.NextDate.Hour, taskInfo.NextDate.Minute)) // execute job daily at 22:00
                 .Build();
 
-            taskInfo.ScheduleId = $"backupIncDiffEverydayJob_{taskInfo.Id}/Backup";
-            _taskInfoDal.Update(taskInfo);
-
             await _scheduler.ScheduleJob(job, trigger);
+            Console.WriteLine("Task: "+taskInfo.NextDate.Hour + " saat" + taskInfo.NextDate.Minute + " dakika" + taskInfo.NextDate);
+            taskInfo.ScheduleId = $"backupIncDiffEverydayJob_{taskInfo.Id}/Backup";
+            taskInfo.NextDate = trigger.GetNextFireTimeUtc().Value.LocalDateTime;
+            _taskInfoDal.Update(taskInfo);
+            
         }
 
         public async Task BackupIncDiffWeekDaysJob(TaskInfo taskInfo)
@@ -71,10 +85,11 @@ namespace DiskBackup.TaskScheduler
                 .ForJob($"backupIncDiffWeekDaysJob_{taskInfo.Id}", "Backup")
                 .Build();
 
-            taskInfo.ScheduleId = $"backupIncDiffWeekDaysJob_{taskInfo.Id}/Backup";
-            _taskInfoDal.Update(taskInfo);
-
             await _scheduler.ScheduleJob(job, trigger);
+
+            taskInfo.ScheduleId = $"backupIncDiffWeekDaysJob_{taskInfo.Id}/Backup";
+            taskInfo.NextDate = trigger.GetNextFireTimeUtc().Value.LocalDateTime;
+            _taskInfoDal.Update(taskInfo);
         }
 
         //string çözümü düşünüldü
@@ -91,10 +106,11 @@ namespace DiskBackup.TaskScheduler
                 .ForJob($"backupIncDiffCertainDaysJob_{taskInfo.Id}", "Backup")
                 .Build();
 
-            taskInfo.ScheduleId = $"backupIncDiffCertainDaysJob_{taskInfo.Id}/Backup";
-            _taskInfoDal.Update(taskInfo);
-
             await _scheduler.ScheduleJob(job, trigger);
+
+            taskInfo.ScheduleId = $"backupIncDiffCertainDaysJob_{taskInfo.Id}/Backup";
+            taskInfo.NextDate = trigger.GetNextFireTimeUtc().Value.LocalDateTime;
+            _taskInfoDal.Update(taskInfo);
         }
 
         #endregion
@@ -113,11 +129,11 @@ namespace DiskBackup.TaskScheduler
                 .ForJob($"backupIncDiffWeeklyJob_{taskInfo.Id}", "Backup")
                 .Build();
 
-            taskInfo.ScheduleId = $"backupIncDiffWeeklyJob_{taskInfo.Id}/Backup";
-            _taskInfoDal.Update(taskInfo);
-
             await _scheduler.ScheduleJob(job, trigger);
 
+            taskInfo.ScheduleId = $"backupIncDiffWeeklyJob_{taskInfo.Id}/Backup";
+            taskInfo.NextDate = trigger.GetNextFireTimeUtc().Value.LocalDateTime;
+            _taskInfoDal.Update(taskInfo);
         }
 
         #endregion
@@ -137,10 +153,11 @@ namespace DiskBackup.TaskScheduler
                    .RepeatForever())
                .Build();
 
-            taskInfo.ScheduleId = $"backupIncDiffPeriodicHoursJob_{taskInfo.Id}/Backup";
-            _taskInfoDal.Update(taskInfo);
-
             await _scheduler.ScheduleJob(job, trigger);
+
+            taskInfo.ScheduleId = $"backupIncDiffPeriodicHoursJob_{taskInfo.Id}/Backup";
+            taskInfo.NextDate = trigger.GetNextFireTimeUtc().Value.LocalDateTime;
+            _taskInfoDal.Update(taskInfo);
         }
 
         public async Task BackupIncDiffPeriodicMinutesJob(TaskInfo taskInfo)
@@ -157,10 +174,11 @@ namespace DiskBackup.TaskScheduler
                    .RepeatForever())
                .Build();
 
-            taskInfo.ScheduleId = $"backupIncDiffPeriodicHoursJob_{taskInfo.Id}/Backup";
-            _taskInfoDal.Update(taskInfo);
-
             await _scheduler.ScheduleJob(job, trigger);
+
+            taskInfo.ScheduleId = $"backupIncDiffPeriodicHoursJob_{taskInfo.Id}/Backup";
+            taskInfo.NextDate = trigger.GetNextFireTimeUtc().Value.LocalDateTime;
+            _taskInfoDal.Update(taskInfo);
         }
 
         #endregion
@@ -178,7 +196,7 @@ namespace DiskBackup.TaskScheduler
                 .WithSimpleSchedule(x => x.WithIntervalInSeconds(20).WithRepeatCount(0))
                 .Build();
 
-            taskInfo.ScheduleId = $"backupIncDiffNowJob_{taskInfo.Id}/Backup";
+            taskInfo.ScheduleId = taskInfo.ScheduleId + $"*backupIncDiffNowJob_{taskInfo.Id}-Backup";
             _taskInfoDal.Update(taskInfo);
 
             await _scheduler.ScheduleJob(job, trigger);
@@ -202,10 +220,11 @@ namespace DiskBackup.TaskScheduler
                 .WithSchedule(CronScheduleBuilder.DailyAtHourAndMinute(taskInfo.NextDate.Hour, taskInfo.NextDate.Minute)) // execute job daily at 22:00
                 .Build();
 
-            taskInfo.ScheduleId = $"backupFullEverydayJob_{taskInfo.Id}/Backup";
-            _taskInfoDal.Update(taskInfo);
-
             await _scheduler.ScheduleJob(job, trigger);
+
+            taskInfo.ScheduleId = $"backupFullEverydayJob_{taskInfo.Id}/Backup";
+            taskInfo.NextDate = trigger.GetNextFireTimeUtc().Value.LocalDateTime;
+            _taskInfoDal.Update(taskInfo);
         }
 
         public async Task BackupFullWeekDaysJob(TaskInfo taskInfo)
@@ -221,11 +240,11 @@ namespace DiskBackup.TaskScheduler
                 .ForJob($"backupFullWeekDaysJob_{taskInfo.Id}", "Backup")
                 .Build();
 
-            taskInfo.ScheduleId = $"backupFullWeekDaysJob_{taskInfo.Id}/Backup";
-            _taskInfoDal.Update(taskInfo);
-
             await _scheduler.ScheduleJob(job, trigger);
 
+            taskInfo.ScheduleId = $"backupFullWeekDaysJob_{taskInfo.Id}/Backup";
+            taskInfo.NextDate = trigger.GetNextFireTimeUtc().Value.LocalDateTime;
+            _taskInfoDal.Update(taskInfo);
         }
 
         //string çözümü düşünüldü
@@ -242,10 +261,11 @@ namespace DiskBackup.TaskScheduler
                 .ForJob($"backupFullCertainDaysJob_{taskInfo.Id}", "Backup")
                 .Build();
 
-            taskInfo.ScheduleId = $"backupFullCertainDaysJob_{taskInfo.Id}/Backup";
-            _taskInfoDal.Update(taskInfo);
+            await _scheduler.ScheduleJob(job, trigger);
 
-            await _scheduler.ScheduleJob(job, trigger);           
+            taskInfo.ScheduleId = $"backupFullCertainDaysJob_{taskInfo.Id}/Backup";
+            taskInfo.NextDate = trigger.GetNextFireTimeUtc().Value.LocalDateTime;
+            _taskInfoDal.Update(taskInfo);
         }
 
         #endregion
@@ -264,10 +284,11 @@ namespace DiskBackup.TaskScheduler
                 .ForJob($"backupFullWeeklyJob_{taskInfo.Id}", "Backup")
                 .Build();
 
-            taskInfo.ScheduleId = $"backupFullWeeklyJob_{taskInfo.Id}/Backup";
-            _taskInfoDal.Update(taskInfo);
-
             await _scheduler.ScheduleJob(job, trigger);
+
+            taskInfo.ScheduleId = $"backupFullWeeklyJob_{taskInfo.Id}/Backup";
+            taskInfo.NextDate = trigger.GetNextFireTimeUtc().Value.LocalDateTime;
+            _taskInfoDal.Update(taskInfo);
         }
 
         #endregion
@@ -287,10 +308,11 @@ namespace DiskBackup.TaskScheduler
                    .RepeatForever())
                .Build();
 
-            taskInfo.ScheduleId = $"backupFullPeriodicHoursJob_{taskInfo.Id}/Backup";
-            _taskInfoDal.Update(taskInfo);
-
             await _scheduler.ScheduleJob(job, trigger);
+
+            taskInfo.ScheduleId = $"backupFullPeriodicHoursJob_{taskInfo.Id}/Backup";
+            taskInfo.NextDate = trigger.GetNextFireTimeUtc().Value.LocalDateTime;
+            _taskInfoDal.Update(taskInfo);
         }
 
         public async Task BackupFullPeriodicMinutesJob(TaskInfo taskInfo)
@@ -307,10 +329,11 @@ namespace DiskBackup.TaskScheduler
                    .RepeatForever())
                .Build();
 
-            taskInfo.ScheduleId = $"backupFullPeriodicMinutesJob_{taskInfo.Id}/Backup";
-            _taskInfoDal.Update(taskInfo);
-
             await _scheduler.ScheduleJob(job, trigger);
+
+            taskInfo.ScheduleId = $"backupFullPeriodicMinutesJob_{taskInfo.Id}/Backup";
+            taskInfo.NextDate = trigger.GetNextFireTimeUtc().Value.LocalDateTime;
+            _taskInfoDal.Update(taskInfo);
         }
 
         #endregion
@@ -328,7 +351,7 @@ namespace DiskBackup.TaskScheduler
                 .StartAt(taskInfo.NextDate) // now yollandığında hemen çalıştıracak
                 .Build();
 
-            taskInfo.ScheduleId = $"backupFullNowJob_{taskInfo.Id}/Backup";
+            taskInfo.ScheduleId = taskInfo.ScheduleId + $"*backupFullNowJob_{taskInfo.Id}-Backup";
             _taskInfoDal.Update(taskInfo);
 
             await _scheduler.ScheduleJob(job, trigger);

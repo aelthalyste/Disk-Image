@@ -15,34 +15,49 @@ namespace DiskBackup.TaskScheduler.Jobs
     public class BackupFullJob : IJob
     {
         private readonly IBackupService _backupService;
-        private readonly ITaskInfoDal _taskInfoRepository;
-        private readonly IBackupStorageDal _backupStorageRepository;
-        private readonly IStatusInfoDal _statusInfoRepository;
+        private readonly ITaskInfoDal _taskInfoDal;
+        private readonly IBackupStorageDal _backupStorageDal;
+        private readonly IStatusInfoDal _statusInfoDal;
+        private readonly IActivityLogDal _activityLogDal;
 
-        public BackupFullJob(ITaskInfoDal taskInfoRepository, IBackupStorageDal backupStorageRepository, IStatusInfoDal statusInfoRepository, IBackupService backupService)
+        public BackupFullJob(ITaskInfoDal taskInfoDal, IBackupStorageDal backupStorageDal, IStatusInfoDal statusInfoDal, IBackupService backupService, IActivityLogDal activityLogDal)
         {
             _backupService = backupService;
-            _taskInfoRepository = taskInfoRepository;
-            _backupStorageRepository = backupStorageRepository;
-            _statusInfoRepository = statusInfoRepository;
+            _taskInfoDal = taskInfoDal;
+            _backupStorageDal = backupStorageDal;
+            _statusInfoDal = statusInfoDal;
+            _activityLogDal = activityLogDal;
         }
 
         public async Task Execute(IJobExecutionContext context)
         {
             var taskId = int.Parse(context.JobDetail.JobDataMap["taskId"].ToString());
 
-            var task = _taskInfoRepository.Get(x => x.Id == taskId);
-            task.BackupStorageInfo = _backupStorageRepository.Get(x => x.Id == task.BackupStorageInfoId);
+            var task = _taskInfoDal.Get(x => x.Id == taskId);
+            task.LastWorkingDate = DateTime.Now; 
+            task.Status = "Çalışıyor"; // Resource eklenecek 
+            _taskInfoDal.Update(task);
 
-            task.StatusInfo = _statusInfoRepository.Get(x => x.Id == task.StatusInfoId);
+            task.BackupStorageInfo = _backupStorageDal.Get(x => x.Id == task.BackupStorageInfoId);
+
+            task.StatusInfo = _statusInfoDal.Get(x => x.Id == task.StatusInfoId);
 
             JobExecutionException exception = null;
             bool result = true;
 
+            ActivityLog activityLog = new ActivityLog
+            {
+                TaskInfoName = task.Name,
+                BackupStoragePath = task.BackupStorageInfo.Path,
+                StartDate = DateTime.Now,
+                Type = (DetailedMissionType)task.BackupTaskInfo.Type,
+            };
+
             try
             {
+                //Örneğin 2 tane 'c' görevi aynı anda service'e yollanamaz burada kontrol edilip gönderilmeli... Sonradan gelen görev başarısız sayılıp 
+                //Refire kısmına gönderilmeli... ActivityLog'da bilgilendirilmeli
                 result = _backupService.CreateFullBackup(task);
-                // activity log burada basılacak
             }
             catch (Exception e)
             {
@@ -59,9 +74,46 @@ namespace DiskBackup.TaskScheduler.Jobs
 
             if (exception != null)
             {
+                activityLog.EndDate = DateTime.Now;
+                activityLog.Status = StatusType.Fail;
+                activityLog.StrStatus = StatusType.Fail.ToString();
+                activityLog.StatusInfo = _statusInfoDal.Get(x => x.Id == task.StatusInfoId);
+                var resultStatusInfo = _statusInfoDal.Add(activityLog.StatusInfo);
+                activityLog.StatusInfoId = resultStatusInfo.Id;
+                _activityLogDal.Add(activityLog);
+                Console.WriteLine(exception.ToString());
+                task.Status = "Hata"; // Resource eklenecek 
+                if (!context.JobDetail.Key.Name.Contains("Now"))
+                {
+                    task.NextDate = (context.Trigger.GetNextFireTimeUtc()).Value.LocalDateTime; // next date tekrar dene kısmında hatalı olmaması için test et / hatalıysa + fromMinutes
+                    if (!task.BackupTaskInfo.FailTryAgain || (context.RefireCount > task.BackupTaskInfo.FailNumberTryAgain)) // now silme
+                    {
+                        var res = task.ScheduleId.Split('*');
+                        task.ScheduleId = res[0];
+                    }
+                }
+                _taskInfoDal.Update(task);
                 await Task.Delay(TimeSpan.FromMinutes(task.BackupTaskInfo.WaitNumberTryAgain));
                 throw exception;
             }
+
+            activityLog.EndDate = DateTime.Now;
+            activityLog.Status = StatusType.Success;
+            activityLog.StrStatus = StatusType.Success.ToString();
+            activityLog.StatusInfo = _statusInfoDal.Get(x => x.Id == task.StatusInfoId);
+            var resultStatusInfo2 = _statusInfoDal.Add(activityLog.StatusInfo);
+            activityLog.StatusInfoId = resultStatusInfo2.Id;
+            _activityLogDal.Add(activityLog);
+            task.Status = "Hazır"; // Resource eklenecek 
+            Console.WriteLine(context.JobDetail.Key.Name);
+            if (!context.JobDetail.Key.Name.Contains("Now"))
+            {
+                task.NextDate = (context.Trigger.GetNextFireTimeUtc()).Value.LocalDateTime;
+                // now görevi sona erdi sil
+                var res = task.ScheduleId.Split('*');
+                task.ScheduleId = res[0];
+            }
+            _taskInfoDal.Update(task);
         }
     }
 }
