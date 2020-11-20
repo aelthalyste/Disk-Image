@@ -747,15 +747,15 @@ namespace DiskBackupWpfGUI
                 if (listViewRestoreDisk.SelectedIndex != -1)
                     btnRestore.IsEnabled = true;
                 /*
-                 * BAKILACAK
-                 * BackupInfo backupInfo = (BackupInfo)listViewRestoreDisk.SelectedItem;
+                 * BAKILACAK*/
+                BackupInfo backupInfo = (BackupInfo)listViewRestore.SelectedItem;
 
                 txtRDriveLetter.Text = backupInfo.Letter.ToString();
                 txtROS.Text = backupInfo.OS;
                 if (backupInfo.DiskType.Equals("M"))
                     txtRBootPartition.Text = "MBR";
                 else
-                    txtRBootPartition.Text = "GPT";*/
+                    txtRBootPartition.Text = "GPT";
             }
             else
             {
@@ -900,24 +900,29 @@ namespace DiskBackupWpfGUI
 
         #endregion
 
-        //private void checkBootPartition_Checked(object sender, RoutedEventArgs e)
-        //{
-        //    stackBootCheck.IsEnabled = true;
-        //}
-
-        //private void checkBootPartition_Unchecked(object sender, RoutedEventArgs e)
-        //{
-        //    stackBootCheck.IsEnabled = false;
-        //    rbBootGPT.IsChecked = true;
-        //    rbBootGPT.IsChecked = false;
-        //}
-
 
         #endregion
 
 
         #region View Backups Tab
 
+        private void btnFilesBrowse_Click(object sender, RoutedEventArgs e)
+        {
+            using (var scope = _scope.BeginLifetimeScope())
+            {
+                FileExplorerWindow fileExplorer = scope.Resolve<FileExplorerWindow>();
+                fileExplorer.ShowDialog();
+            }
+        }
+
+        private void listViewBackups_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            using (var scope = _scope.BeginLifetimeScope())
+            {
+                FileExplorerWindow fileExplorer = scope.Resolve<FileExplorerWindow>();
+                fileExplorer.ShowDialog();
+            }
+        }
 
         private void listViewBackups_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
@@ -1339,15 +1344,6 @@ namespace DiskBackupWpfGUI
 
         #endregion
 
-
-        private void btnFilesBrowse_Click(object sender, RoutedEventArgs e)
-        {
-            using (var scope = _scope.BeginLifetimeScope())
-            {
-                FileExplorerWindow fileExplorer = scope.Resolve<FileExplorerWindow>();
-                fileExplorer.ShowDialog();
-            }
-        }
 
         private void btnRestore_Click(object sender, RoutedEventArgs e)
         {

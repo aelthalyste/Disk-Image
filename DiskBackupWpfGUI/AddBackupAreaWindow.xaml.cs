@@ -270,11 +270,13 @@ namespace DiskBackupWpfGUI
             {
                 lblTabHeader.Text = Resources["name"].ToString();
                 lblTabContent.Text = Resources["ABANameContent"].ToString();
+                btnBackupAreaBack.IsEnabled = false;
             }
             else if (ABATabControl.SelectedIndex == 1)
             {
                 lblTabHeader.Text = Resources["target"].ToString();
                 lblTabContent.Text = Resources["ABATargetContent"].ToString();
+                btnBackupAreaBack.IsEnabled = true;
             }
             else if (ABATabControl.SelectedIndex == 2)
             {
@@ -290,11 +292,13 @@ namespace DiskBackupWpfGUI
                     stackNAS.Visibility = Visibility.Visible;
                     stackLocalDisc.Visibility = Visibility.Hidden;
                 }
+                btnBackupAreaNext.IsEnabled = true;
             }
-            else
+            else if (ABATabControl.SelectedIndex == 3)
             {
                 lblTabHeader.Text = Resources["summary"].ToString();
                 lblTabContent.Text = Resources["ABASummaryContent"].ToString();
+                btnBackupAreaNext.IsEnabled = false;
             }
         }
 

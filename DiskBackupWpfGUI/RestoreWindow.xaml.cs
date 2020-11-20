@@ -118,16 +118,25 @@ namespace DiskBackupWpfGUI
             {
                 lblTabHeader.Text = Resources["name"].ToString();
                 lblTabContent.Text = Resources["RNameContent"].ToString();
+                btnRestoreBack.IsEnabled = false;
             }
             else if (RTabControl.SelectedIndex == 1)
             {
                 lblTabHeader.Text = Resources["scheduler"].ToString();
                 lblTabContent.Text = Resources["RSchedulerContent"].ToString();
+                btnRestoreBack.IsEnabled = true;
             }
-            else
+            else if (RTabControl.SelectedIndex == 2)
+            {
+                lblTabHeader.Text = Resources["advancedOptions"].ToString();
+                lblTabContent.Text = Resources["restoreDiskContent1"].ToString();
+                btnRestoreNext.IsEnabled = true;
+            }
+            else if (RTabControl.SelectedIndex == 3)
             {
                 lblTabHeader.Text = Resources["summary"].ToString();
                 lblTabContent.Text = Resources["RSummaryContent"].ToString();
+                btnRestoreNext.IsEnabled = false;
             }
         }
 
@@ -139,6 +148,23 @@ namespace DiskBackupWpfGUI
         private void rbSetTime_Unchecked(object sender, RoutedEventArgs e)
         {
             stackSetTime.IsEnabled = false;
+        }
+
+        private void btnAdvancedOptions_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void checkBootPartition_Checked(object sender, RoutedEventArgs e)
+        {
+            stackBootCheck.IsEnabled = true;
+        }
+
+        private void checkBootPartition_Unchecked(object sender, RoutedEventArgs e)
+        {
+            stackBootCheck.IsEnabled = false;
+            rbBootGPT.IsChecked = true;
+            rbBootGPT.IsChecked = false;
         }
     }
 }

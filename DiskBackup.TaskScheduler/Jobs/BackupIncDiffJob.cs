@@ -121,59 +121,40 @@ namespace DiskBackup.TaskScheduler.Jobs
                 }
             }
 
-            if (exception != null)
+            if (exception != null) // başarısız
             {
                 //now görevi sona erdi sil
-                activityLog.EndDate = DateTime.Now;
                 activityLog.Status = StatusType.Fail;
-                activityLog.StrStatus = StatusType.Fail.ToString();
-                activityLog.StatusInfo = _statusInfoDal.Get(x => x.Id == task.StatusInfoId);
-                var resultStatusInfo = _statusInfoDal.Add(activityLog.StatusInfo);
-                activityLog.StatusInfoId = resultStatusInfo.Id;
-                _activityLogDal.Add(activityLog);
-                Console.WriteLine(exception.ToString());
-                task.Status = "Hazır"; // Resource eklenecek 
-                //if (context.Trigger.GetNextFireTimeUtc() != null)
-                //{
-                //    task.NextDate = (context.Trigger.GetNextFireTimeUtc()).Value.LocalDateTime;
-                //}
-                _taskInfoDal.Update(task);
-                _refreshIncDiffTaskFlag = true;
-                _refreshIncDiffLogFlag = true;
+                UpdateActivityAndTask(activityLog, task);
                 await Task.Delay(TimeSpan.FromMinutes(task.BackupTaskInfo.WaitNumberTryAgain));
                 throw exception;
             }
 
-            if (result == 1)
+            if (result == 1) // başarılı
             {
-                activityLog.EndDate = DateTime.Now;
                 activityLog.Status = StatusType.Success;
-                activityLog.StrStatus = StatusType.Success.ToString();
-                activityLog.StatusInfo = _statusInfoDal.Get(x => x.Id == task.StatusInfoId);
-                var resultStatusInfo2 = _statusInfoDal.Add(activityLog.StatusInfo);
-                activityLog.StatusInfoId = resultStatusInfo2.Id;
-                _activityLogDal.Add(activityLog);
-                task.Status = "Hazır"; // Resource eklenecek 
-                _taskInfoDal.Update(task);
-                _refreshIncDiffTaskFlag = true;
-                _refreshIncDiffLogFlag = true;
+                UpdateActivityAndTask(activityLog, task);
             }
             else if (result == 2) // durduruldu
             {
-                //now görevi sona erdi sil
-                activityLog.EndDate = DateTime.Now;
                 activityLog.Status = StatusType.Cancel;
-                activityLog.StrStatus = StatusType.Cancel.ToString();
-                activityLog.StatusInfo = _statusInfoDal.Get(x => x.Id == task.StatusInfoId);
-                var resultStatusInfo = _statusInfoDal.Add(activityLog.StatusInfo);
-                activityLog.StatusInfoId = resultStatusInfo.Id;
-                _activityLogDal.Add(activityLog);
-                task.Status = "Hazır"; // Resource eklenecek 
-                _taskInfoDal.Update(task);
-                _refreshIncDiffTaskFlag = true;
-                _refreshIncDiffLogFlag = true;
+                UpdateActivityAndTask(activityLog, task);
             }
 
+        }
+
+        private void UpdateActivityAndTask(ActivityLog activityLog, TaskInfo taskInfo)
+        {
+            activityLog.EndDate = DateTime.Now;
+            activityLog.StrStatus = activityLog.Status.ToString();
+            activityLog.StatusInfo = _statusInfoDal.Get(x => x.Id == taskInfo.StatusInfoId);
+            var resultStatusInfo = _statusInfoDal.Add(activityLog.StatusInfo);
+            activityLog.StatusInfoId = resultStatusInfo.Id;
+            _activityLogDal.Add(activityLog);
+            taskInfo.Status = "Hazır"; // Resource eklenecek 
+            _taskInfoDal.Update(taskInfo);
+            _refreshIncDiffTaskFlag = true;
+            _refreshIncDiffLogFlag = true;
         }
     }
 }

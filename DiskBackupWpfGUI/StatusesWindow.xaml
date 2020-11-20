@@ -254,12 +254,12 @@
                 </StackPanel>
             </StackPanel>
         </StackPanel>
-        <StackPanel Grid.Row="2" Grid.ColumnSpan="2" Grid.Column="0">
+        <StackPanel Grid.Row="2" Grid.ColumnSpan="2" Grid.Column="0" VerticalAlignment="Center">
             <StackPanel Orientation="Horizontal">
                 <TextBlock Text="{DynamicResource processedTotal}" Margin="30,8"/>
                 <TextBlock Name="txtSourceSingle" Text="C:" Margin="-15,8"/>
             </StackPanel>
-            <ProgressBar Name="pbTotalDataProcessed" Minimum="0" Maximum="100" Value="50" Height="30" Margin="30,0">
+            <ProgressBar Name="pbTotalDataProcessed" Minimum="0" Maximum="100" Value="0" Height="30" Margin="30,0">
                 <ProgressBar.Foreground>
                     <LinearGradientBrush EndPoint="0,1" StartPoint="1,0">
                         <GradientStop Color="#093C59" Offset="0.2"/>
@@ -267,20 +267,8 @@
                     </LinearGradientBrush>
                 </ProgressBar.Foreground>
             </ProgressBar>
-            <TextBlock Name="txtLocalPercentage" Text="50%" FontSize="20" Margin="0,-30,0,0" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="White" FontWeight="Bold"/>
-            <!--<StackPanel Orientation="Horizontal">
-                <TextBlock Text="{DynamicResource processedTotal}" Margin="30,8,8,0"/>    
-            </StackPanel>
-            <ProgressBar Minimum="0" Maximum="100" Value="60" Height="30" Margin="30,0">
-                <ProgressBar.Foreground>
-                    <LinearGradientBrush EndPoint="0,1" StartPoint="1,0">
-                        <GradientStop Color="#093C59" Offset="0.2"/>
-                        <GradientStop Color="#B9DEF0" Offset="1"/>
-                    </LinearGradientBrush>
-                </ProgressBar.Foreground>
-            </ProgressBar>
-            <TextBlock Text="60%" FontSize="20" Margin="0,-30,0,0" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="White" FontWeight="Bold"/>-->
-            <TextBlock Text="{DynamicResource narTransfer}" Margin="30,8"/>
+            <TextBlock Name="txtLocalPercentage" Text="0%" FontSize="20" Margin="0,-30,0,0" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="White" FontWeight="Bold"/>
+            <!--<TextBlock Text="{DynamicResource narTransfer}" Margin="30,8"/>
             <ProgressBar Minimum="0" Maximum="100" Value="70" Height="30" Margin="30,0">
                 <ProgressBar.Foreground>
                     <LinearGradientBrush EndPoint="0,1" StartPoint="1,0">
@@ -289,7 +277,7 @@
                     </LinearGradientBrush>
                 </ProgressBar.Foreground>
             </ProgressBar>
-            <TextBlock Text="70%" FontSize="20" Margin="0,-30,0,0" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="White" FontWeight="Bold"/>
+            <TextBlock Text="70%" FontSize="20" Margin="0,-30,0,0" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="White" FontWeight="Bold"/>-->
         </StackPanel>
 
     </Grid>
