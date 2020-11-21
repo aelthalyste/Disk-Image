@@ -35,6 +35,7 @@ _Analysis_mode_(_Analysis_code_type_user_code_)
 #include <vsmgmt.h>
 #include <wchar.h>
 
+#include "iphlpapi.h"
 
 // VDS includes
 #include <vds.h>
@@ -7487,7 +7488,7 @@ FindPointOffsetInRecords(nar_record *Records, INT32 Len, INT64 Offset){
     return (Found ? Result : NAR_POINT_OFFSET_FAILED);
 }
 
-#if 0
+#if 1
 
 inline BOOLEAN
 NarEditTaskNameAndDescription(const wchar_t* FileName, const wchar_t* TaskName, const wchar_t* TaskDescription){
@@ -7511,7 +7512,7 @@ NarEditTaskNameAndDescription(const wchar_t* FileName, const wchar_t* TaskName, 
     
     BOOLEAN Result = 0;
     
-    HANDLE FileHandle = CreateFileW(FileHandle, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ, 0, OPEN_EXISTING, 0, 0);
+    HANDLE FileHandle = CreateFileW(FileName, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ, 0, OPEN_EXISTING, 0, 0);
     if(FileHandle != INVALID_HANDLE_VALUE){
         // TODO(Batuhan): validate if it is really metadata file
         DWORD BytesOperated = 0;
@@ -7529,7 +7530,7 @@ NarEditTaskNameAndDescription(const wchar_t* FileName, const wchar_t* TaskName, 
             }
         }
         else{
-            printf("Couldn't read %i bytes from file %S, task was NarEditTaskNameAndDescription\n", &BytesRead, FileName);
+            printf("Couldn't read %i bytes from file %S, task was NarEditTaskNameAndDescription\n", &BytesOperated, FileName);
             DisplayError(GetLastError());
         }
     }
@@ -7681,11 +7682,89 @@ NarGetProductName(char* OutName) {
 }
 
 
+
+struct nar_pool_entry{
+    nar_pool_entry *Next;
+};
+
+struct nar_memory_pool{
+    void *Memory;
+    nar_pool_entry *Entries;
+    int PoolSize;
+    int EntryCount;
+};
+
+
+nar_memory_pool
+NarInitPool(void *Memory, int MemorySize, int PoolSize){
+    
+    if(Memory == NULL) return { 0 };
+    
+    nar_memory_pool Result = {0};
+    Result.Memory = Memory;
+    Result.PoolSize = PoolSize;
+    Result.EntryCount = MemorySize / PoolSize;
+    
+    for(size_t i = 0; i < Result.EntryCount - 1; i++){
+        nar_pool_entry *entry = (nar_pool_entry*)((char*)Memory + (PoolSize * i));
+        entry->Next = (nar_pool_entry*)((char*)entry + PoolSize);
+    }
+    
+    nar_pool_entry *entry = (nar_pool_entry*)((char*)Memory + (PoolSize * (Result.EntryCount - 1)));
+    entry->Next = 0;
+    Result.Entries = (nar_pool_entry*)Memory;
+    
+    for(nar_pool_entry *e = Result.Entries; e != NULL; e = e->Next){
+        printf("%X\n", e);
+    }
+    
+    return Result;
+}
+
+
+void 
+NarTestPool(){
+    
+    size_t MemorySize = 1024 * 1024;
+    size_t PoolSize   = 1024 * 128;
+    
+    void *Mem = VirtualAlloc(0, MemorySize, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+    if(Mem != NULL){
+        nar_memory_pool p = NarInitPool(Mem, MemorySize, PoolSize);
+    }
+    
+}
+
+void 
+NarTestScratch(){
+    
+    void *a = NarScratchAllocate(1024*1024*500);
+    memset(a, 25, 1024*1024*500);
+    
+    NarScratchAllocate(1024);
+    NarScratchAllocate(1500);
+    NarScratchAllocate(2500);
+    NarScratchReset();
+    NarScratchFree();
+    
+}
+
+
+
 int
 main(
      int argc,
      CHAR* argv[]
      ) {
+    
+    
+    printf("asdfasdf");
+    printf("asdfasdf");
+    printf("asdfasdf");
+    
+    NarTestPool();
+    NarTestScratch();
+    return 0;
     
     UNREFERENCED_PARAMETER(argc);
     UNREFERENCED_PARAMETER(argv);

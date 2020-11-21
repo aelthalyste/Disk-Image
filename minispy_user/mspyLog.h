@@ -63,41 +63,169 @@ inline void
 PrintDebugRecords();
 
 
+
+#define NAR_OP_ALLOCATE 1
+#define NAR_OP_FREE     2
+#define NAR_OP_ZERO     3
+#define NAR_OP_RESET    4
+
+static inline void*
+_NarInternalMemoryOp(int OpCode, size_t Size) {
+    
+    struct {
+        void* Memory;
+        size_t Reserve;
+        size_t Used;
+    }static MemArena = { 0 };
+    
+    void* Result = 0;
+    
+    if (!MemArena.Memory) {
+        MemArena.Reserve = 1024LL * 1024LL * 1024LL * 64LL; // Reserve 64GB
+        MemArena.Used = 0;
+        MemArena.Memory = VirtualAlloc(0, MemArena.Reserve, MEM_RESERVE, PAGE_READWRITE);
+    }
+    if (OpCode == NAR_OP_ALLOCATE) {
+        VirtualAlloc(MemArena.Memory, Size + MemArena.Used, MEM_COMMIT, PAGE_READWRITE);
+        Result = (void*)((char*)MemArena.Memory + MemArena.Used);
+        MemArena.Used += Size;
+    }
+    if (OpCode == NAR_OP_RESET) {
+        memset(MemArena.Memory, 0, MemArena.Used);
+        if (VirtualFree(MemArena.Memory, MemArena.Used, MEM_DECOMMIT) == 0) {
+            printf("Cant decommit scratch memory\n");
+        }
+        MemArena.Used = 0;
+    }
+    if(OpCode == NAR_OP_FREE){
+        VirtualFree(MemArena.Memory, 0, MEM_RELEASE);
+        MemArena.Reserve = 0;
+        MemArena.Used    = 0;
+        MemArena.Memory  = 0;
+    }
+    
+    return Result;
+}
+
+static inline void*
+NarScratchAllocate(size_t Size) {
+    return _NarInternalMemoryOp(NAR_OP_ALLOCATE, Size);
+}
+
+static inline void
+NarScratchReset(){
+    _NarInternalMemoryOp(NAR_OP_RESET, 0);
+}
+
+static inline void
+NarScratchFree() {
+    _NarInternalMemoryOp(NAR_OP_FREE, 0);
+}
+
+
+
+struct nar_log_time{
+    BYTE YEAR; // 2000 + YEAR is the actual value
+    BYTE MONTH;
+    BYTE DAY;
+    BYTE HOUR;
+    BYTE MIN;
+    BYTE SEC;
+    // 6 bytes
+};
+
+struct nar_log{
+    //char         *FunctionName;
+    //unsigned int LineNumber;
+    nar_log_time Time;
+    char *LogString;
+}GlobalLogs[512];
+int GlobalLogCount = 0;
+HANDLE GlobalLogMutex = 0;
+
+void
+NarGetLogs(nar_log *Logs, int Max, int *Count){
+    
+    if(WaitForSingleObject(GlobalLogMutex, 100) == WAIT_OBJECT_0){
+        if(GlobalLogCount > Max){
+            
+        }
+        else{
+            
+        }
+    }
+    else{
+        printf("Couldnt lock for the log mutex\n");
+    }
+    
+}
+
+/*
+CAUTION, THIS IS NOT THREAD SAFE, DO NOT USE IN MULTIPLE THREDS
+*/
 static void
 NarLog(const char *str, ...){
     
+    static BOOLEAN Init = FALSE;
+    if (Init == FALSE) {
+        GlobalLogMutex = CreateMutexA(NULL, FALSE, NULL);
+        Init = TRUE;
+    }
     
-#if 1    
-    const static HANDLE File = CreateFileA("NAR_APP_LOG_FILE.txt", GENERIC_WRITE|GENERIC_READ, FILE_SHARE_READ|FILE_SHARE_WRITE, 0, CREATE_ALWAYS, 0, 0);
-    static SYSTEMTIME Time = {};
-    
-    SetFilePointer(File, 0, 0, FILE_END);
-    //
     va_list ap;
-    static char buf[1024];
-    static char TimeStrBuf[128];
     
-    memset(&Time, 0, sizeof(Time));
+    //
+    
+#define MAX_LEN 1024*2
+    
+    static char buf[MAX_LEN];
+    static SYSTEMTIME Time = { 0 };
+    static nar_log_time NarTime = {0};
+    
+    
     memset(buf, 0, sizeof(buf));
-    memset(TimeStrBuf, 0, sizeof(TimeStrBuf));
-    
     GetLocalTime(&Time);
-    sprintf(TimeStrBuf, "[%i:%i:%i]: ", Time.wHour, Time.wMinute, Time.wSecond);
     
-    va_start(ap,str);
+    NarTime.YEAR = Time.wYear % 100;
+    NarTime.MONTH = Time.wMonth;
+    NarTime.DAY = Time.wDay;
+    NarTime.HOUR = Time.wHour;
+    NarTime.MIN = Time.wMinute;
+    NarTime.SEC = Time.wSecond;
+    
+    
+    
+#if 1
+    va_start(ap, str);
     vsprintf(buf, str, ap);
     va_end(ap);
+#endif
     
     // safe cast
     DWORD Len = (DWORD)strlen(buf);
     DWORD H = 0;
     
-    WriteFile(File, TimeStrBuf, (DWORD)strlen(TimeStrBuf), &H, 0);
-    WriteFile(File, buf, Len, &H, 0);
-    OutputDebugStringA(buf);
+    if(WaitForSingleObject(GlobalLogMutex, 100) == WAIT_OBJECT_0){
+        GlobalLogs[GlobalLogCount].LogString = (char*)NarScratchAllocate((Len + 1));
+        memcpy(GlobalLogs[GlobalLogCount].LogString, &buf[0], (Len + 1));
+        memcpy(&GlobalLogs[GlobalLogCount].Time, &NarTime, sizeof(NarTime));
+        GlobalLogCount++;
+        ReleaseMutex(GlobalLogMutex);
+    }
     
+#if 0    
+    const static HANDLE File = CreateFileA("NAR_APP_LOG_FILE.txt", GENERIC_WRITE|GENERIC_READ, FILE_SHARE_READ|FILE_SHARE_WRITE, 0, CREATE_ALWAYS, 0, 0);
+    
+    SetFilePointer(File, 0, 0, FILE_END);
+    WriteFile(File, buf, Len, &H, 0);
     FlushFileBuffers(File);
+    
 #endif
+    
+    if (GlobalLogCount > 0) {
+        OutputDebugStringA(GlobalLogs[GlobalLogCount - 1].LogString);
+    }
+    
     
 #if 0
     char szBuff[1024];
@@ -107,6 +235,8 @@ NarLog(const char *str, ...){
     va_end(arg);
     OutputDebugStringA(szBuff);
 #endif
+    
+#undef MAX_LEN
     
 }
 

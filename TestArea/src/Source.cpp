@@ -35,48 +35,120 @@ struct nar_log{
     BYTE         TYPE;
 };
 
-struct cs_nar_logs{
-    nar_log *logs;
-    unsigned int ID; // usually equals to volume letter
+struct nar_pool_entry{
+    nar_pool_entry *Next;
 };
 
-nar_log_stack *GlobalNarLogs;
-struct nar_log_stack_counter{ int i; } NarLogStackCounter;
+struct nar_memory_pool{
+    void *Memory;
+    nar_pool_entry *Entries;
+    int PoolSize;
+    int EntryCount;
+};
+
+
+#define NAR_OP_ALLOCATE 1
+#define NAR_OP_FREE 2
+#define NAR_OP_ZERO 3
+
+static inline void*
+_InternalNarMemoryOp(int OpCode, size_t Size) {
+    struct {
+        void* Memory;
+        size_t ReserveSize;
+        size_t Used;
+    }static MemArena = { 0 };
+    
+    if (!MemArena.P) {
+        MemArena.ReserveSize = 1024LL * 1024LL * 1024LL * 64LL; // Reserve 64GB
+        MemArena.Used = 0;
+        MemArena.P = VirtualAlloc(0, MemArena.ReserveSize, MEM_RESERVE, PAGE_READWRITE);
+    }
+    
+    void* Result = 0;
+    
+    if (OpCode == NAR_OP_ALLOCATE) {
+        VirtualAlloc(MemArena.P, Size + MemArena.Used, MEM_COMMIT, PAGE_READWRITE);
+        Result = (char*)MemArena.P + MemArena.Used;
+        MemArena.Used += Size;
+    }
+    if (OpCode == NAR_OP_FREE) {
+        
+        if (VirtualFree(MemArena.P, MemArena.Used, MEM_DECOMMIT) == 0) {
+            printf("Cant free scratch memory\n");
+        }
+        MemArena.Used = 0;
+        
+    }
+    if (OpCode == NAR_OP_ZERO) {
+        memset(MemArena.P, 0, MemArena.Used);
+    }
+    
+    return Result;
+}
+
+static inline void*
+NarScratchAllocate(size_t Size) {
+    return _InternalNarMemoryOp(NAR_OP_ALLOCATE, Size);
+}
+
+static inline void
+NarScratchClear() {
+    _InternalNarMemoryOp(NAR_OP_FREE, 0);
+}
+
+
+nar_memory_pool
+NarInitPool(void *memory, int MemorySize, int PoolSize){
+    
+    if(memory == NULL) return {0};
+    
+    nar_memory_pool Result = {0};
+    Result.Memory = memory;
+    Result.PoolSize = PoolSize;
+    Result.EntryCount = MemorySize / PoolSize;
+    
+    for(size_t i = 0; i < Result.EntryCount - 1; i++){
+        nar_pool_entry *entry = (void*)((char*)memory + (PoolSize * i));
+        entry->Next = entry + PoolSize;
+    }
+    
+    nar_pool_entry *entry = (void*)((char*)memory + (PoolSize * (Result.EntryCount - 1)));
+    entry->Next = 0;
+    Result.Entries = Memory;
+    
+    for(nar_pool_entry *e = Result.Entries; e != NULL; e = e->Next){
+        printf("%X\n", e);
+    }
+    
+    return Result;
+}
+
+void 
+NarTestPool(){
+    
+    size_t MemorySize = 1024 * 1024;
+    size_t PoolSize   = 1024 * 128;
+    
+    void *Mem = VirtualAlloc(0, MemorySize, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+    if(Mem != NULL){
+        
+        nar_memory_pool p = NarInitPool(Mem, MemorySize, PoolSize);
+        
+    }
+    
+}
+
 
 void
 NarLog(int LineNumber, char *FunctionName, int LogType, const char* std, ...){
     
     if(GlobalLogArray == NULL) return;
-    cs_nar_logs *Target = GlobalNarLogs + NarLogStackCounter.i;
     
     
 }
 
-#if 0
-nar_log *GlobalErrorLogs;
-nar_log *GlobalInfoLogs;
-nar_log *GlobalCriticalLogs;
-#endif
 
-void 
-NarGetThreadID(){
-    winapi things to retrieve thread id
-}
-
-void 
-NarPushLogStack(){
-    
-}
-
-void
-NarPopLogStack(){
-    
-}
-
-void
-NarDeleteLogChain(){
-    
-}
 #endif
 
 

@@ -415,9 +415,67 @@ namespace NarDIWrapper {
         wchar_t wcTaskDescription[512];
         wchar_t wcMetadataFileName[MAX_PATH];
         
-        //return NarEditTaskNameAndDescription(wcMetadataFileName, wcTaskName, wcTaskDescription);
-        return FALSE;
+        return NarEditTaskNameAndDescription(wcMetadataFileName, wcTaskName, wcTaskDescription);
     }
+    
+    List<CSLog^>^ DiskTracker::CW_GetLogs(){
+        
+        List<CSLog^> ^Result = gcnew List<CSLog^>;
+        
+        if(WaitForSingleObject(GlobalLogMutex, 100) == WAIT_OBJECT_0){
+            
+            for(int i = 0; i<GlobalLogCount; i++){
+                CSLog^ Log = gcnew CSLog;
+                Log->LogStr = gcnew System::String(GlobalLogs[i].LogString);
+                Log->Time = gcnew CSNarFileTime(
+                                                GlobalLogs[i].Time.YEAR + 2000, 
+                                                GlobalLogs[i].Time.MONTH, 
+                                                GlobalLogs[i].Time.DAY,
+                                                GlobalLogs[i].Time.HOUR,
+                                                GlobalLogs[i].Time.MIN,
+                                                GlobalLogs[i].Time.SEC
+                                                );
+                Result->Add(Log);
+            }
+            
+            NarScratchReset();
+            GlobalLogCount = 0;
+            
+            ReleaseMutex(GlobalLogMutex);
+            
+        }
+        else{
+            printf("Couldnt lock log mutex\n");
+        }
+        
+        return Result;
+    }
+    
+    void DiskTracker::CW_GenerateLogs(){
+        
+        printf("laksfdjlasdkfjsdfşüğşqwüerüasdf şiasdf üğadfsşüğş");
+        printf("ALSJHDFKJAHSDFAS");
+        printf("asdfas");
+        printf("asldfkjas");
+        printf("9108273123");
+        printf("3poisr");
+        
+        printf("ALSJHDFKJAHSDFAS");
+        printf("asdfas");
+        printf("asldfkjas");
+        printf("9108273123");
+        printf("laksfdjlasdkfjsdf");
+        printf("3poisr");
+        
+        printf("ALSJHDFKJAHSDFAS");
+        printf("asdfas");
+        printf("asldfkjas");
+        printf("9108273123");
+        printf("laksfdjlasdkfjsdf");
+        printf("3poisr");
+        
+    }
+    
     // TODO(Batuhan): helper functions, like which volume we are streaming etc.
     
 }

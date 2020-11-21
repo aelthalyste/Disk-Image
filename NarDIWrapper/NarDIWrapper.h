@@ -82,6 +82,14 @@ namespace NarDIWrapper {
         CSNarFileTime(){
             
         }
+        CSNarFileTime(WORD pYear, WORD pMonth, WORD pDay, WORD pHour, WORD pMinute, WORD pSecond){
+            Year = pYear;
+            Month = pMonth;
+            Day = pDay;
+            Hour = pHour;
+            Minute = pMinute;
+            Second = pSecond;
+        }
         
         WORD Year;
         WORD Month;
@@ -106,6 +114,13 @@ namespace NarDIWrapper {
     };
     
     
+    
+    
+    public ref class CSLog{
+    public:
+        System::String^ LogStr;
+        CSNarFileTime^ Time;
+    };
     
     
     public ref class CSNarFileExplorer {
@@ -189,6 +204,9 @@ namespace NarDIWrapper {
         static List<BackupMetadata^>^ CW_GetBackupsInDirectory(System::String^ RootDir);
         static List<DiskInfo^>^ CW_GetDisksOnSystem();
         static BOOLEAN CW_MetadataEditTaskandDescriptionField(System::String^ MetadataFileName, System::String^ TaskName, System::String^ TaskDescription);
+        
+        static List<CSLog^>^ CW_GetLogs();
+        static void CW_GenerateLogs();
         
         private:
         

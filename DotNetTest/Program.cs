@@ -44,8 +44,11 @@ namespace DotNetTest
             unsafe
             {
                 Console.WriteLine("Narbulut volume yedekleme servisi v0.1\n");
-                
-                
+
+                DiskTracker.CW_GenerateLogs();
+                var logs = DiskTracker.CW_GetLogs();
+                logs = DiskTracker.CW_GetLogs();
+
                 var list = DiskTracker.CW_GetBackupsInDirectory("C:\\Users\\Batuhan\\Desktop\\yedeklertest");
                 foreach (var l in list)
                 {
