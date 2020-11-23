@@ -118,12 +118,18 @@ namespace DiskBackup.Business.Concrete
                 foreach (var returnItem in returnList)
                 {
                     BackupInfo backupInfo = new BackupInfo();
-
+                    Console.WriteLine("returnItem.TaskName: " + returnItem.TaskName);
+                    Console.WriteLine("returnItem.TaskDescription: " + returnItem.TaskDescription);
                     backupInfo.Letter = returnItem.Letter;
                     backupInfo.Version = returnItem.Version;
                     backupInfo.OSVolume = returnItem.OSVolume;
                     backupInfo.DiskType = returnItem.DiskType; //mbr gpt
                     backupInfo.OS = returnItem.WindowsName;
+                    backupInfo.BackupTaskName = returnItem.TaskName;
+                    backupInfo.Description = returnItem.TaskDescription;
+                    Console.WriteLine("backupInfo.Description: " + backupInfo.Description);
+                    Console.WriteLine("backupInfo.BackupTaskName: " + backupInfo.BackupTaskName);
+
 
                     if (returnItem.Version == -1)
                         backupInfo.Type = BackupTypes.Full;
@@ -152,6 +158,8 @@ namespace DiskBackup.Business.Concrete
                     backupInfo.OSVolume = resultItem.OSVolume;
                     backupInfo.DiskType = resultItem.DiskType; //mbr gpt
                     backupInfo.OS = resultItem.WindowsName;
+                    backupInfo.BackupTaskName = resultItem.TaskName;
+                    backupInfo.Description = resultItem.TaskDescription;
 
                     if (resultItem.Version == -1)
                         backupInfo.Type = BackupTypes.Full;
@@ -270,10 +278,15 @@ namespace DiskBackup.Business.Concrete
                                 //MessageBox.Show(iox.Message);
                             }
                             file.Close();
+
+                            if (Convert.ToBoolean(DiskTracker.CW_MetadataEditTaskandDescriptionField(taskInfo.BackupStorageInfo.Path + str.MetadataFileName, taskInfo.Name, taskInfo.Descripiton)))
+                                Console.WriteLine("Task name yazma başarılı");
+                            else
+                                Console.WriteLine("Task name yazma başarısız");
                         }
                     }
+                    statusInfo.SourceObje = statusInfo.SourceObje.Substring(0, statusInfo.SourceObje.Length - 2);
                 }
-                statusInfo.SourceObje = statusInfo.SourceObje.Substring(0, statusInfo.SourceObje.Length-2);
                 statusInfo.TimeElapsed = timeElapsed.ElapsedMilliseconds;
                 _statusInfoDal.Update(statusInfo);
             }
