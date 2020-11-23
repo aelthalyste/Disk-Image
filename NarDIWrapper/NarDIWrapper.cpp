@@ -416,9 +416,9 @@ namespace NarDIWrapper {
         wchar_t wcTaskDescription[512];
         wchar_t wcMetadataFileName[MAX_PATH];
         
-        SystemStringToWCharPtr(wcTaskName, TaskName);
-        SystemStringToWCharPtr(wcMetadataFileName, MetadataFileName);
-        SystemStringToWCharPtr(wcTaskDescription, TaskDescription);
+        SystemStringToWCharPtr(TaskName, wcTaskName);
+        SystemStringToWCharPtr(MetadataFileName, wcMetadataFileName);
+        SystemStringToWCharPtr(TaskDescription, wcTaskDescription);
         
         return NarEditTaskNameAndDescription(wcMetadataFileName, wcTaskName, wcTaskDescription);
     }
