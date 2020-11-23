@@ -5364,7 +5364,7 @@ NarGetBackupsInDirectory(const wchar_t* Directory, backup_metadata* B, int Buffe
         while (FindNextFileW(FileIterator, &FDATA) != 0) {
             memset(wstrbuffer, 0, 512 * sizeof(wchar_t));
             
-            //NOTE(Batuhan): Do not search for sub-directories, just skip folders.
+            //NOTE(Batuhan): Do not search for sub-directories, skip folders.
             if (FDATA.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
                 continue;
             }
@@ -5406,6 +5406,7 @@ NarGetBackupsInDirectory(const wchar_t* Directory, backup_metadata* B, int Buffe
                                 }
                             }
 #endif
+                            
                             BackupFound++;
                             
                         }
@@ -7515,8 +7516,8 @@ NarEditTaskNameAndDescription(const wchar_t* FileName, const wchar_t* TaskName, 
         DWORD BytesOperated = 0;
         backup_metadata Metadata;
         if(ReadFile(FileHandle, &Metadata, sizeof(Metadata), &BytesOperated, 0) && BytesOperated == sizeof(Metadata)){
-            wcscpy(Metadata.TaskName, TaskName);
-            wcscpy(Metadata.TaskDescription, TaskDescription);
+            wcsncpy(Metadata.TaskName, TaskName, MAX_TASK_NAME_LEN);
+            wcsncpy(Metadata.TaskDescription, TaskDescription. MAX_TASK_DESCRIPTION_LEN);
             if(WriteFile(FileHandle, &Metadata, sizeof(Metadata), &BytesOperated, 0) && BytesOperated == sizeof(Metadata)){
                 printf("Successfully updated metadata task name and task description info\n");
                 Result = TRUE;

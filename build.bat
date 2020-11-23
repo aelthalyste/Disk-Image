@@ -3,17 +3,16 @@
 call :StartTimer
 
 set build_options= -DUNICODE -D_UNICODE -D_CRT_SECURE_NO_WARNINGS
-set compile_flags=   /Debug:FULL /Zi /FC /W0 /Od /INCREMENTAL:NO /EHsc
+set compile_flags=   /EHsc /Debug:FULL /Zi /FC /W4 /Od /INCREMENTAL:NO 
 set linker_flags=  "fltLib.lib" "vssapi.lib"
 
 if not exist build\minispy_user mkdir build\minispy_user
 pushd build\minispy_user\
 cl "../../minispy_user/mspyUser.cpp" %build_options% %compile_flags% /I "../../inc" %linker_flags%
 popd
-
+rem 
 call :StopTimer
 call :DisplayTimerResult
-
 
 
 REM TIMING THINGS BELOW

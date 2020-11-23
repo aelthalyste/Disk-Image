@@ -176,9 +176,9 @@ NarLog(const char *str, ...){
     
     //
     
-#define MAX_LEN 1024*2
+#define MAX_BUF_LEN 1024*2
     
-    static char buf[MAX_LEN];
+    static char buf[MAX_BUF_LEN];
     static SYSTEMTIME Time = { 0 };
     static nar_log_time NarTime = {0};
     
@@ -194,7 +194,6 @@ NarLog(const char *str, ...){
     NarTime.SEC = Time.wSecond;
     
     
-    
 #if 1
     va_start(ap, str);
     vsprintf(buf, str, ap);
@@ -206,8 +205,8 @@ NarLog(const char *str, ...){
     DWORD H = 0;
     
     if(WaitForSingleObject(GlobalLogMutex, 100) == WAIT_OBJECT_0){
-        GlobalLogs[GlobalLogCount].LogString = (char*)NarScratchAllocate((Len + 1));
-        memcpy(GlobalLogs[GlobalLogCount].LogString, &buf[0], (Len + 1));
+        GlobalLogs[GlobalLogCount].LogString = (char*)NarScratchAllocate((Len + 1)*sizeof(buf[0]));
+        memcpy(GlobalLogs[GlobalLogCount].LogString, &buf[0], (Len + 1)*sizeof(buf[0]));
         memcpy(&GlobalLogs[GlobalLogCount].Time, &NarTime, sizeof(NarTime));
         GlobalLogCount++;
         ReleaseMutex(GlobalLogMutex);
@@ -226,6 +225,7 @@ NarLog(const char *str, ...){
         OutputDebugStringA(GlobalLogs[GlobalLogCount - 1].LogString);
     }
     
+    OutputDebugStringA(szBuff);
     
 #if 0
     char szBuff[1024];
@@ -236,7 +236,7 @@ NarLog(const char *str, ...){
     OutputDebugStringA(szBuff);
 #endif
     
-#undef MAX_LEN
+#undef MAX_BUF_LEN
     
 }
 

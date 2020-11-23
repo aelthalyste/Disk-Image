@@ -384,8 +384,8 @@ namespace NarDIWrapper {
                 BMet->OSVolume = BMList[i].IsOSVolume;
                 BMet->Version = BMList[i].Version;
                 
-                BMet->WindowsName = gcnew System::String(BMList[i].ProductName);
-                BMet->TaskName  = gcnew System::String(BMList[i].TaskName);
+                BMet->WindowsName      = gcnew System::String(BMList[i].ProductName);
+                BMet->TaskName         = gcnew System::String(BMList[i].TaskName);
                 BMet->TaskDescription  = gcnew System::String(BMList[i].TaskDescription);
                 
                 pth = std::wstring(RootDir);
