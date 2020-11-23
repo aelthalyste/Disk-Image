@@ -53,6 +53,7 @@ namespace DiskBackupWpfGUI
         private List<VolumeInfo> _volumeList = new List<VolumeInfo>();
         private List<TaskInfo> _taskInfoList = new List<TaskInfo>();
         private List<ActivityLog> _activityLogList = new List<ActivityLog>();
+        private List<BackupInfo> _backupsItems = new List<BackupInfo>();
 
         private CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
 
@@ -150,10 +151,10 @@ namespace DiskBackupWpfGUI
 
             #region Backup dosya bilgileri
 
-            List<BackupInfo> backupsItems = _backupService.GetBackupFileList(_backupStorageDal.GetList());
+            _backupsItems = _backupService.GetBackupFileList(_backupStorageDal.GetList());
 
-            listViewBackups.ItemsSource = backupsItems;
-            listViewRestore.ItemsSource = backupsItems;
+            listViewBackups.ItemsSource = _backupsItems;
+            listViewRestore.ItemsSource = _backupsItems;
 
             #endregion
 
@@ -482,59 +483,77 @@ namespace DiskBackupWpfGUI
         {
             while (!cancellationToken.IsCancellationRequested)
             {
-                await Task.Delay(500);
-
-                // son yedekleme bilgisi
-                ActivityLog lastLog = ((ActivityLog)listViewLog.Items[0]);
-                txtRunningStateBlock.Text = lastLog.EndDate.ToString();
-                if (lastLog.Status == StatusType.Success)
-                    txtRunningStateBlock.Foreground = Brushes.Green;
-
-                // Ortadaki statu
-                TaskInfo runningTask = _taskInfoDal.Get(x => x.Status == "Çalışıyor");
-                TaskInfo pausedTask = _taskInfoDal.Get(x => x.Status == "Durduruldu");
-                if (runningTask != null)
+                try
                 {
-                    // çalışanı yazdır
-                    runningTask.StatusInfo = _statusInfoDal.Get(x => x.Id == runningTask.StatusInfoId);
-                    txtMakeABackup.Text = Resources["makeABackup"].ToString() + ", "
-                        + FormatBytesNonStatic(runningTask.StatusInfo.DataProcessed)
-                        + ", %" + Math.Round((runningTask.StatusInfo.DataProcessed * 100.0) / (runningTask.StatusInfo.TotalDataProcessed), 2).ToString();
-                }
-                else if (pausedTask != null)
-                {
-                    // durdurulanı yazdır
-                    pausedTask.StatusInfo = _statusInfoDal.Get(x => x.Id == pausedTask.StatusInfoId);
-                    txtMakeABackup.Text = Resources["backupStopped"].ToString() + ", "
-                        + FormatBytesNonStatic(pausedTask.StatusInfo.DataProcessed)
-                        + ", %" + Math.Round((pausedTask.StatusInfo.DataProcessed * 100.0) / (pausedTask.StatusInfo.TotalDataProcessed), 2).ToString();
-                }
-                else
-                    txtMakeABackup.Text = "";
+                    await Task.Delay(500);
 
-                if (BackupIncDiffJob._refreshIncDiffTaskFlag)
-                {
-                    int taskSelectedIndex = -1;
-                    if (listViewTasks.SelectedIndex != -1)
+                    // son yedekleme bilgisi
+                    if (listViewLog.Items.Count > 0)
                     {
-                        taskSelectedIndex = listViewTasks.SelectedIndex;
+                        ActivityLog lastLog = ((ActivityLog)listViewLog.Items[0]);
+                        txtRunningStateBlock.Text = lastLog.EndDate.ToString();
+                        if (lastLog.Status == StatusType.Success)
+                            txtRunningStateBlock.Foreground = Brushes.Green;
+                        else
+                            txtRunningStateBlock.Foreground = Brushes.Red;
                     }
-                    GetTasks();
-                    listViewTasks.SelectedIndex = taskSelectedIndex;
-                    BackupIncDiffJob._refreshIncDiffTaskFlag = false;
-                }
 
-                if (BackupIncDiffJob._refreshIncDiffLogFlag)
-                {
-                    int logSelectedIndex = -1;
-                    if (listViewLog.SelectedIndex != -1)
+                    // Ortadaki statu
+                    TaskInfo runningTask = _taskInfoDal.GetList(x => x.Status == "Çalışıyor").FirstOrDefault();
+                    TaskInfo pausedTask = _taskInfoDal.GetList(x => x.Status == "Durduruldu").FirstOrDefault();
+                    if (runningTask != null)
                     {
-                        logSelectedIndex = listViewLog.SelectedIndex;
+                        // çalışanı yazdır
+                        runningTask.StatusInfo = _statusInfoDal.Get(x => x.Id == runningTask.StatusInfoId);
+                        txtMakeABackup.Text = Resources["makeABackup"].ToString() + ", "
+                            + FormatBytesNonStatic(runningTask.StatusInfo.DataProcessed)
+                            + ", %" + Math.Round((runningTask.StatusInfo.DataProcessed * 100.0) / (runningTask.StatusInfo.TotalDataProcessed), 2).ToString();
                     }
-                    ShowActivityLog();
-                    listViewLog.SelectedIndex = logSelectedIndex + 1;
-                    BackupIncDiffJob._refreshIncDiffLogFlag = false;
+                    else if (pausedTask != null)
+                    {
+                        // durdurulanı yazdır
+                        pausedTask.StatusInfo = _statusInfoDal.Get(x => x.Id == pausedTask.StatusInfoId);
+                        txtMakeABackup.Text = Resources["backupStopped"].ToString() + ", "
+                            + FormatBytesNonStatic(pausedTask.StatusInfo.DataProcessed)
+                            + ", %" + Math.Round((pausedTask.StatusInfo.DataProcessed * 100.0) / (pausedTask.StatusInfo.TotalDataProcessed), 2).ToString();
+                    }
+                    else
+                        txtMakeABackup.Text = "";
+
+                    if (BackupIncDiffJob._refreshIncDiffTaskFlag)
+                    {
+                        int taskSelectedIndex = -1;
+                        if (listViewTasks.SelectedIndex != -1)
+                        {
+                            taskSelectedIndex = listViewTasks.SelectedIndex;
+                        }
+                        GetTasks();
+                        listViewTasks.SelectedIndex = taskSelectedIndex;
+
+                        _backupsItems = _backupService.GetBackupFileList(_backupStorageDal.GetList());
+                        listViewBackups.ItemsSource = _backupsItems;
+                        listViewRestore.ItemsSource = _backupsItems;
+
+                        BackupIncDiffJob._refreshIncDiffTaskFlag = false;
+                    }
+
+                    if (BackupIncDiffJob._refreshIncDiffLogFlag)
+                    {
+                        int logSelectedIndex = -1;
+                        if (listViewLog.SelectedIndex != -1)
+                        {
+                            logSelectedIndex = listViewLog.SelectedIndex;
+                        }
+                        ShowActivityLog();
+                        listViewLog.SelectedIndex = logSelectedIndex + 1;
+                        BackupIncDiffJob._refreshIncDiffLogFlag = false;
+                    }
                 }
+                catch (Exception e)
+                {
+                    MessageBox.Show(e.Message);
+                }
+               
             }
         }
 
