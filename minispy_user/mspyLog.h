@@ -225,7 +225,7 @@ NarLog(const char *str, ...){
         OutputDebugStringA(GlobalLogs[GlobalLogCount - 1].LogString);
     }
     
-    OutputDebugStringA(szBuff);
+    OutputDebugStringA(buf);
     
 #if 0
     char szBuff[1024];
