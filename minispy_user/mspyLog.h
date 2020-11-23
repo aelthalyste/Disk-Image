@@ -212,13 +212,12 @@ NarLog(const char *str, ...){
         ReleaseMutex(GlobalLogMutex);
     }
     
-#if 0    
+#if 1    
     const static HANDLE File = CreateFileA("NAR_APP_LOG_FILE.txt", GENERIC_WRITE|GENERIC_READ, FILE_SHARE_READ|FILE_SHARE_WRITE, 0, CREATE_ALWAYS, 0, 0);
     
     SetFilePointer(File, 0, 0, FILE_END);
     WriteFile(File, buf, Len, &H, 0);
     FlushFileBuffers(File);
-    
 #endif
     
     if (GlobalLogCount > 0) {

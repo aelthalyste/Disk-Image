@@ -2333,7 +2333,6 @@ SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, DotNetStreamInf* SI) {
         // NOTE(Batuhan): Experimental feature, from now on (06.10.2020), every binary data MUST contain MFTLCN with extended INDEX_ALLOCATION data.
         // that helps file explorer to search that volume 
         
-        
         printf("Setup stream handle successfully\n");
         if (!VolInf->FullBackupExists) {
             printf("Fullbackup stream is preparing\n");
@@ -2348,7 +2347,6 @@ SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, DotNetStreamInf* SI) {
             }
             
             if (SI && Return) {
-                
                 SI->ClusterCount = 0;
                 SI->ClusterSize = (INT32)VolInf->ClusterSize;
                 SI->MetadataFileName = GenerateMetadataName(VolInf->Letter, NAR_FULLBACKUP_VERSION);
@@ -2356,7 +2354,6 @@ SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, DotNetStreamInf* SI) {
                 for (unsigned int i = 0; i < VolInf->Stream.Records.Count; i++) {
                     SI->ClusterCount += VolInf->Stream.Records.Data[i].Len;
                 }
-                
             }
             
         }
@@ -2405,18 +2402,14 @@ SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, DotNetStreamInf* SI) {
     
     {
         volume_backup_inf* V = VolInf;
-        
         SetupMFTLCNandAppendStream();
-        
         unsigned int TruncateIndex = 0;
         
         for(unsigned int RecordIndex = 0; RecordIndex < V->Stream.Records.Count; RecordIndex++){
-            
             if((INT64)V->Stream.Records.Data[RecordIndex].StartPos + (INT64)V->Stream.Records.Data[RecordIndex].Len > (INT64)V->VolumeTotalClusterCount){
                 TruncateIndex = RecordIndex;
                 break;
             }
-            
         }
         
         if(TruncateIndex > 0){
@@ -3197,9 +3190,11 @@ OfflineRestoreCleanDisk(restore_inf* R, int DiskID) {
     return Result;
 }
 
+
 BOOLEAN
 OfflineRestoreToVolume(restore_inf* R, BOOLEAN ShouldFormat) {
     
+    // TODO(Batuhan): CHECK IF TARGET VOLUME EXISTS, IF NOT CREATE ONE 
     BOOLEAN Result = FALSE;
     
     int Version = -10;
