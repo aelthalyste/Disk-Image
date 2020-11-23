@@ -411,9 +411,14 @@ namespace NarDIWrapper {
     
     
     BOOLEAN DiskTracker::CW_MetadataEditTaskandDescriptionField(System::String^ MetadataFileName, System::String^ TaskName, System::String^ TaskDescription){
+        
         wchar_t wcTaskName[128];
         wchar_t wcTaskDescription[512];
         wchar_t wcMetadataFileName[MAX_PATH];
+        
+        SystemStringToWCharPtr(wcTaskName, TaskName);
+        SystemStringToWCharPtr(wcMetadataFileName, MetadataFileName);
+        SystemStringToWCharPtr(wcTaskDescription, TaskDescription);
         
         return NarEditTaskNameAndDescription(wcMetadataFileName, wcTaskName, wcTaskDescription);
     }

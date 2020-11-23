@@ -2297,8 +2297,6 @@ SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, DotNetStreamInf* SI) {
     }
     
     
-    
-    
     volume_backup_inf* VolInf = &C->Volumes.Data[ID];
     printf("Entered setup stream for volume %c, version %i\n", (char)L, VolInf->Version);
     
@@ -2436,7 +2434,6 @@ SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, DotNetStreamInf* SI) {
     }
     
     printf("Totalbytes should be backed up %I64u\n", (UINT64)SI->ClusterCount*(UINT64)SI->ClusterSize);
-    
     
     return Return;
 }
