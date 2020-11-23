@@ -7518,13 +7518,15 @@ NarEditTaskNameAndDescription(const wchar_t* FileName, const wchar_t* TaskName, 
         if(ReadFile(FileHandle, &Metadata, sizeof(Metadata), &BytesOperated, 0) && BytesOperated == sizeof(Metadata)){
             wcsncpy(Metadata.TaskName, TaskName, MAX_TASK_NAME_LEN);
             wcsncpy(Metadata.TaskDescription, TaskDescription, MAX_TASK_DESCRIPTION_LEN);
-            if(WriteFile(FileHandle, &Metadata, sizeof(Metadata), &BytesOperated, 0) && BytesOperated == sizeof(Metadata)){
-                printf("Successfully updated metadata task name and task description info\n");
-                Result = TRUE;
-            }
-            else{
-                printf("Couldnt update metadata task name and task description(%S)\n", FileName);
-                DisplayError(GetLastError());
+            if(NarSetFilePointer(FileHandle, FILE_BEGIN)){
+                if(WriteFile(FileHandle, &Metadata, sizeof(Metadata), &BytesOperated, 0) && BytesOperated == sizeof(Metadata)){
+                    printf("Successfully updated metadata task name and task description info\n");
+                    Result = TRUE;
+                }
+                else{
+                    printf("Couldnt update metadata task name and task description(%S)\n", FileName);
+                    DisplayError(GetLastError());
+                }
             }
         }
         else{
