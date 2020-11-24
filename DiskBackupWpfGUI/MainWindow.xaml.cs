@@ -158,6 +158,7 @@ namespace DiskBackupWpfGUI
 
             #endregion
 
+
             RefreshTasks(_cancellationTokenSource.Token);
             this.Closing += (sender, e) => _cancellationTokenSource.Cancel();
 
@@ -813,6 +814,148 @@ namespace DiskBackupWpfGUI
 
 
         #region Checkbox Operations
+        /*Header çalışıyor normal checkboxlarda tıkandım*/
+        //private void chbRestoreDiskSelectAll_Checked(object sender, RoutedEventArgs e)
+        //{
+        //    //if (!_restoreDiskAllControl)
+        //    //{
+        //    //    if (_restoreExpanderCheckBoxes.Count == 1) //bir disk varsa çalış yoksa çalışma
+        //    //    {
+        //    //        foreach (VolumeInfo item in listViewRestoreDisk.ItemsSource)
+        //    //        {
+        //    //            listViewRestoreDisk.SelectedItems.Add(item);
+        //    //        }
+        //    //        _restoreDiskAllControl = true;
+        //    //        _restoreExpanderCheckBoxes.ForEach(cb => cb.IsChecked = true);
+        //    //        _restoreDiskAllHeaderControl = true;
+        //    //    }
+        //    //    else
+        //    //        chbRestoreDiskSelectAll.IsChecked = false;
+        //    //}
+        //}
+
+        //private void chbRestoreDiskSelectAll_Unchecked(object sender, RoutedEventArgs e)
+        //{
+        //    //if (_restoreDiskAllControl)
+        //    //{
+        //    //    if (_restoreExpanderCheckBoxes.Count == 1) //bir disk varsa çalış yoksa çalışma
+        //    //    {
+        //    //        _restoreExpanderCheckBoxes.ForEach(cb => cb.IsChecked = false);
+        //    //        listViewRestoreDisk.SelectedItems.Clear();
+        //    //        _restoreDiskAllHeaderControl = false;
+        //    //    }
+        //    //}
+        //}
+
+        //private void chbRestoreDisk_Checked(object sender, RoutedEventArgs e)
+        //{
+        //    if (listViewRestoreDisk.SelectedItems.Count == 1)
+        //    {
+        //        if (chbRestoreDiskSelectAll.IsChecked == false)
+        //        {
+        //            _restoreDiskAllControl = listViewRestoreDisk.SelectedItems.Count == listViewRestoreDisk.Items.Count;
+        //            chbRestoreDiskSelectAll.IsChecked = _restoreDiskAllControl;
+        //        }
+
+        //        var dataItem = FindParent<ListViewItem>(sender as DependencyObject);
+        //        var data = dataItem.DataContext as VolumeInfo; //data seçilen değer
+
+        //        for (int i = 0; i < _restoreGroupName.Count; i++)
+        //        {
+        //            if (data.DiskName.Equals(_restoreGroupName[i]))
+        //            {
+        //                int totalSelected = 0;
+        //                //i kaçıncı sıradaki adete eşit olacağı
+        //                foreach (VolumeInfo item in listViewRestoreDisk.SelectedItems)
+        //                {
+        //                    if (item.DiskName.Equals(data.DiskName))
+        //                    {
+        //                        totalSelected++;
+        //                    }
+        //                }
+        //                if (_restoreNumberOfItems[i] == totalSelected)
+        //                {
+        //                    _restoreExpanderCheckBoxes[i].IsChecked = true;
+        //                }
+        //            }
+        //        }
+        //        _restoreDiskAllHeaderControl = true;
+        //        // diğerlerini disable et
+        //        foreach (VolumeInfo item in listViewRestoreDisk.ItemsSource)
+        //        {
+        //            bool controlFlag = true;
+        //            foreach (VolumeInfo selectedItem in listViewRestoreDisk.SelectedItems)
+        //            {
+        //                if (item.Letter == selectedItem.Letter)
+        //                {
+        //                    controlFlag = false;
+        //                    break;
+        //                }
+        //            }
+        //            //if (controlFlag)
+        //                //item. False işlemi yapılmalı
+
+        //        }
+        //    }
+        //}
+
+        //private void chbRestoreDisk_Unchecked(object sender, RoutedEventArgs e)
+        //{
+        //    //_restoreDiskAllControl = false;
+        //    //chbRestoreDiskSelectAll.IsChecked = false;
+        //    //_restoreDiskAllHeaderControl = false;
+
+        //    //var dataItem = FindParent<ListViewItem>(sender as DependencyObject);
+        //    //var data = dataItem.DataContext as VolumeInfo; //data seçilen değer
+
+        //    //for (int i = 0; i < _restoreGroupName.Count; i++)
+        //    //{
+        //    //    if (_restoreGroupName[i].Equals(data.DiskName))
+        //    //    {
+        //    //        _restoreExpanderCheckBoxes[i].IsChecked = false;
+        //    //    }
+        //    //}
+        //}
+
+        //private void cbRestoreHeader_Checked(object sender, RoutedEventArgs e)
+        //{
+        //    if (!_restoreDiskAllHeaderControl)
+        //    {
+        //        var headerCheckBox = sender as CheckBox;
+        //        _restoreDiskAllHeaderControl = true;
+
+        //        foreach (VolumeInfo item in listViewRestoreDisk.Items)
+        //        {
+        //            if (item.DiskName.Equals(headerCheckBox.Tag.ToString()))
+        //            {
+        //                listViewRestoreDisk.SelectedItems.Add(item);
+        //            }
+        //        }
+        //        foreach (var item in _restoreExpanderCheckBoxes)
+        //        {
+        //            if (item.IsChecked == false)
+        //                item.IsEnabled = false;
+        //        }
+        //    }
+        //}
+
+        //private void cbRestoreHeader_Unchecked(object sender, RoutedEventArgs e)
+        //{
+        //    if (_restoreDiskAllHeaderControl)
+        //    {
+        //        var headerCheckBox = sender as CheckBox;
+        //        foreach (VolumeInfo item in listViewRestoreDisk.Items)
+        //        {
+        //            if (item.DiskName.Equals(headerCheckBox.Tag.ToString()))
+        //            {
+        //                listViewRestoreDisk.SelectedItems.Remove(item);
+        //            }
+        //        }
+        //        _restoreDiskAllHeaderControl = false;
+        //        _restoreExpanderCheckBoxes.ForEach(cb => cb.IsEnabled = true);
+        //    }
+        //}
+        /*Normal checkboxlar*/
         private void chbRestoreDiskSelectAll_Checked(object sender, RoutedEventArgs e)
         {
             if (!_restoreDiskAllControl)

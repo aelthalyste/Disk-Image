@@ -384,18 +384,17 @@ namespace DiskBackup.TaskScheduler
         //return _diskTracker.CW_RestoreToVolume(volumeInfo.Letter, backupInfo.Letter, backupInfo.Version, true, backupInfo.BackupStorageInfo.Path);
         //public bool RestoreBackupVolume(BackupInfo backupInfo, char volumeLetter)
 
-        public async Task RestoreVolumeJob(char volumeLetter, BackupInfo backupInfo, TaskInfo taskInfo)
+        public async Task RestoreVolumeJob(TaskInfo taskInfo)
         {
             IJobDetail job = JobBuilder.Create<RestoreVolumeJob>()
                 .WithIdentity($"restoreVolumeJob_{taskInfo.Id}", "Restore")
-                .UsingJobData("volumeLetter", volumeLetter)
-                .UsingJobData("backupInfoId", backupInfo.Id.ToString())
+                .UsingJobData("taskId", taskInfo.Id.ToString())
                 .Build();
 
             ITrigger trigger = TriggerBuilder.Create()
                 .WithIdentity($"restoreVolumeTrigger_{taskInfo.Id}", "Restore")
                 .ForJob($"restoreVolumeJob_{taskInfo.Id}", "Restore")
-                .StartAt(taskInfo.NextDate) // now yollandığında hemen çalıştıracak
+                .StartAt(taskInfo.NextDate) // now yollandığında hemen çalıştıracak // Sorun çıkması durumunda startAt değişecek
                 .Build();
 
             taskInfo.ScheduleId = $"restoreVolumeJob_{taskInfo.Id}/Restore";

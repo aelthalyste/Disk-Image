@@ -14,28 +14,69 @@ namespace DiskBackup.TaskScheduler.Jobs
 {
     public class RestoreVolumeJob : IJob
     {
+        private readonly IBackupStorageDal _backupStorageDal;
+        private readonly IRestoreTaskDal _restoreTaskDal;
         private readonly IBackupService _backupService;
-        private readonly IBackupInfoDal _backupInfoDal;
+        private readonly ITaskInfoDal _taskInfoDal;
+        private readonly IStatusInfoDal _statusInfoDal;
+        private readonly IActivityLogDal _activityLogDal;
 
-        public RestoreVolumeJob(IBackupInfoDal backupInfoDal, IBackupService backupService)
+        public RestoreVolumeJob(IBackupService backupService, ITaskInfoDal taskInfoDal, IBackupStorageDal backupStorageDal, IRestoreTaskDal restoreTaskDal, IStatusInfoDal statusInfoDal, IActivityLogDal activityLogDal)
         {
-            _backupInfoDal = backupInfoDal;
             _backupService = backupService;
+            _taskInfoDal = taskInfoDal;
+            _backupStorageDal = backupStorageDal;
+            _restoreTaskDal = restoreTaskDal;
+            _statusInfoDal = statusInfoDal;
+            _activityLogDal = activityLogDal;
         }
 
-        public Task Execute(IJobExecutionContext context)
+        public Task Execute(IJobExecutionContext context) // async ekleyeceğiz
         {
-            var volumeLetter = (char)context.JobDetail.JobDataMap["volumeLetter"];
-            var backupInfoId = int.Parse(context.JobDetail.JobDataMap["backupInfoId"].ToString());
+            Console.WriteLine("Restore Job'a başlandı");
+            var taskId = int.Parse(context.JobDetail.JobDataMap["taskId"].ToString());
+            var task = _taskInfoDal.Get(x => x.Id == taskId);
+            task.BackupStorageInfo = _backupStorageDal.Get(x => x.Id == task.BackupStorageInfoId);
+            task.RestoreTaskInfo = _restoreTaskDal.Get(x => x.Id == task.RestoreTaskId);
 
-            var backupInfo = _backupInfoDal.Get(x => x.Id == backupInfoId);
+            ActivityLog activityLog = new ActivityLog
+            {
+                TaskInfoName = task.Name,
+                BackupStoragePath = task.BackupStorageInfo.Path,
+                StartDate = DateTime.Now,
+                Type = DetailedMissionType.Restore
+            };
 
-            var result = _backupService.RestoreBackupVolume(backupInfo, volumeLetter);
+            var result = _backupService.RestoreBackupVolume(task);
+            // başarısızsa tekrar dene restore da başarısızsa tekrar dene yok
 
-            // başarısızsa tekrar dene
-            // activity log burada basılacak
+            if (result)
+            {
+                activityLog.Status = StatusType.Success;
+                UpdateActivityAndTask(activityLog, task);
+            }
+            else
+            {
+                activityLog.Status = StatusType.Fail;
+                UpdateActivityAndTask(activityLog, task);
+            }
+                        
+            Console.WriteLine("Restore Job done");
+            return Task.CompletedTask; // return değeri kaldırılacak ve async'e çevirilecek burası
+        }
 
-            return Task.CompletedTask;
+        private void UpdateActivityAndTask(ActivityLog activityLog, TaskInfo taskInfo)
+        {
+            activityLog.EndDate = DateTime.Now;
+            activityLog.StrStatus = activityLog.Status.ToString();
+            activityLog.StatusInfo = _statusInfoDal.Get(x => x.Id == taskInfo.StatusInfoId);
+            var resultStatusInfo = _statusInfoDal.Add(activityLog.StatusInfo);
+            activityLog.StatusInfoId = resultStatusInfo.Id;
+            _activityLogDal.Add(activityLog);
+            taskInfo.Status = "Hazır"; // Resource eklenecek 
+            _taskInfoDal.Update(taskInfo);
+            BackupIncDiffJob._refreshIncDiffTaskFlag = true;
+            BackupIncDiffJob._refreshIncDiffLogFlag = true;
         }
     }
 }

@@ -23,7 +23,7 @@ namespace DiskBackup.TaskScheduler
         bool DisableSchedule(string scheduleId);
         bool CancelSchedule(string scheduleId);
         bool CancelAllSchedule(List<TaskInfo> taskInfoList);
-        Task RestoreVolumeJob(char volumeLetter, BackupInfo backupInfo, TaskInfo taskInfo);
+        Task RestoreVolumeJob(TaskInfo taskInfo);
         Task RestoreDiskJob(TaskInfo taskInfo, BackupStorageInfo backupStorageInfo);
         Task BackupFullNowJob(TaskInfo taskInfo);
         Task BackupFullPeriodicHoursJob(TaskInfo taskInfo);

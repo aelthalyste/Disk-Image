@@ -172,9 +172,9 @@ namespace DiskBackup.Business.Concrete
             return null;
         }
 
-        public bool RestoreBackupVolume(BackupInfo backupInfo, char volumeLetter)
+        public bool RestoreBackupVolume(TaskInfo taskInfo)
         {
-            return DiskTracker.CW_RestoreToVolume(volumeLetter, backupInfo.Letter, backupInfo.Version, true, backupInfo.BackupStorageInfo.Path); //true gidecek
+            return DiskTracker.CW_RestoreToVolume(taskInfo.StrObje[0], taskInfo.RestoreTaskInfo.DiskLetter[0], taskInfo.RestoreTaskInfo.BackupVersion, true, taskInfo.BackupStorageInfo.Path); //true gidecek
         }
 
         public bool RestoreBackupDisk(BackupInfo backupInfo, DiskInformation diskInformation)
@@ -184,6 +184,10 @@ namespace DiskBackup.Business.Concrete
             //DiskTracker.CW_RestoreToFreshDisk(DiskTracker.CW_GetFirstAvailableVolumeLetter(), "backup harfi", "version bilgisi", "diskId", "backup'ın bulunduğu yol *\*");
             //pathde sadece path varmış dosya adı yokmuş
             //CW_GetFirstAvailableVolumeLetter ile boş olan volume'ü alıp batuhan'a dönerek o volume restore gerçekleştirilecek
+
+            //DiskTracker.CW_GetFirstAvailableVolumeLetter(); ilk olarak E müsaitti ama bir şeyler yapıldı ve artık ilk olarak D müsait oldu Batu bize D dönecek
+            //ama E hala müsait yani restore da yapılabilir, bu durum için daha sağlıklı bir fonksiyon gerekiyor.
+
             throw new NotImplementedException();
         }
 
@@ -275,6 +279,7 @@ namespace DiskBackup.Business.Concrete
                             }
                             catch (IOException iox)
                             {
+                                Console.WriteLine($"Yazma işlemi başarısız. Error: {iox}");
                                 //MessageBox.Show(iox.Message);
                             }
                             file.Close();

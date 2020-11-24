@@ -35,7 +35,6 @@ namespace DiskBackupWpfGUI
             var builder= new ContainerBuilder();
             builder.RegisterType<EfRestoreTaskDal>().As<IRestoreTaskDal>();
             builder.RegisterType<EfActivityLogDal>().As<IActivityLogDal>();
-            builder.RegisterType<EfBackupInfoDal>().As<IBackupInfoDal>();
             builder.RegisterType<EfBackupStorageDal>().As<IBackupStorageDal>();
             builder.RegisterType<EfBackupTaskDal>().As<IBackupTaskDal>();
             builder.RegisterType<EfStatusInfoDal>().As<IStatusInfoDal>();
