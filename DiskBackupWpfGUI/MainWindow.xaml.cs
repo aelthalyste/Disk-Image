@@ -391,6 +391,7 @@ namespace DiskBackupWpfGUI
             {
                 btnTaskDelete.IsEnabled = true;
                 btnTaskEdit.IsEnabled = true;
+
                 //butonlar eklenmeye devam edecek burayada da checkboxlara da
 
                 // çalışan görevi start etme engellendi
@@ -579,6 +580,7 @@ namespace DiskBackupWpfGUI
                 {
                     btnTaskPause.IsEnabled = false;
                     btnTaskStop.IsEnabled = false;
+                    btnTaskStart.IsEnabled = true;
                 }
             }
 

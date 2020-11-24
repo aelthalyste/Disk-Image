@@ -420,7 +420,7 @@
                             <Button Name="btnTaskStart" ToolTip="{DynamicResource start}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5"  
                                     Style="{StaticResource ImageButton}" Grid.Column="1" Click="btnTaskStart_Click" IsEnabled="False">
                                 <Button.Content>
-                                    <Image Height="27" Width="27" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <Image Height="28" Width="28" HorizontalAlignment="Center" VerticalAlignment="Center">
                                         <Image.Style>
                                             <Style TargetType="Image">
                                                 <Setter Property="Source" Value="Resources/Icon/icons8_play.ico" />
