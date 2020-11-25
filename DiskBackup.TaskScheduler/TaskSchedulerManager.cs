@@ -11,11 +11,13 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
+using System.ServiceModel;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace DiskBackup.TaskScheduler
 {
+    [ServiceBehavior(InstanceContextMode = InstanceContextMode.Single)]
     public class TaskSchedulerManager : ITaskSchedulerManager
     {
         public IScheduler _scheduler;

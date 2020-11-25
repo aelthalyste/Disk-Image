@@ -3,11 +3,13 @@ using DiskBackup.Entities.Concrete;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.ServiceModel;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace DiskBackup.Business.Concrete
 {
+    [ServiceBehavior(InstanceContextMode = InstanceContextMode.Single)]
     public class LogService : ILogService
     {
         public bool AddActivityLog(TaskInfo taskInfo)

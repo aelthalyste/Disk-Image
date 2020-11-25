@@ -10,12 +10,14 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Security.AccessControl;
+using System.ServiceModel;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace DiskBackup.Business.Concrete
 {
+    [ServiceBehavior(InstanceContextMode = InstanceContextMode.Single)]
     public class BackupService : IBackupService
     {
         private DiskTracker _diskTracker = new DiskTracker();

@@ -6,11 +6,13 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.ServiceModel;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace DiskBackup.Business.Concrete
 {
+    [ServiceBehavior(InstanceContextMode = InstanceContextMode.Single)]
     public class BackupStorageService : IBackupStorageService
     {
         private IBackupStorageDal _backupStorageDal;
