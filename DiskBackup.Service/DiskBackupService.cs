@@ -76,7 +76,7 @@ namespace DiskBackup.Service
             Uri baseAddress = new Uri("net.pipe://localhost/nardiskbackup");
             _backupServiceHost = new ServiceHost(backupService, baseAddress);
             _backupServiceHost.AddServiceEndpoint(typeof(IBackupService), new NetNamedPipeBinding(), "backupservice");
-            _backupStorageServiceHost = new ServiceHost(backupService, baseAddress);
+            _backupStorageServiceHost = new ServiceHost(backupStorageService, baseAddress);
             _backupStorageServiceHost.AddServiceEndpoint(typeof(IBackupStorageService), new NetNamedPipeBinding(), "backupstorageservice");
             _logServiceHost = new ServiceHost(logService, baseAddress);
             _logServiceHost.AddServiceEndpoint(typeof(ILogService), new NetNamedPipeBinding(), "logservice");
