@@ -191,7 +191,7 @@
                                 <Setter Property="Foreground" Value="Black" />
                             </Trigger>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Border" Property="Background" Value="#3367D6"/>
+                                <Setter TargetName="Border" Property="Background" Value="#3b7ebb"/>
                                 <Setter Property="Foreground" Value="White" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">

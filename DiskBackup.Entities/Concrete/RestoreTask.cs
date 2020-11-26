@@ -13,10 +13,10 @@ namespace DiskBackup.Entities.Concrete
         // Geri Yükleme oluşturuda karşıladık
         public int Id { get; set; }
         public int BackupInfoId { get; set; }
-        public BackupInfo BackupInfo { get; set; }
         public DiskInformation DiskInfo { get; set; } //Selected Disk Letter lazım
         public int DiskId { get; set; }
         public string DiskLetter { get; set; }
+        public int BackupVersion { get; set; }
     }
 
 }

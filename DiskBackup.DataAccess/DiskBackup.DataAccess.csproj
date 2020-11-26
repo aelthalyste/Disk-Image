@@ -64,14 +64,12 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Abstract\IActivityLogDal.cs" />
-    <Compile Include="Abstract\IBackupInfoDal.cs" />
     <Compile Include="Abstract\IBackupStorageDal.cs" />
     <Compile Include="Abstract\IBackupTaskDal.cs" />
     <Compile Include="Abstract\IRestoreTaskDal.cs" />
     <Compile Include="Abstract\IStatusInfoDal.cs" />
     <Compile Include="Abstract\ITaskInfoDal.cs" />
     <Compile Include="Concrete\EntityFramework\EfActivityLogDal.cs" />
-    <Compile Include="Concrete\EntityFramework\EfBackupInfoDal.cs" />
     <Compile Include="Concrete\EntityFramework\EfBackupStorageDal.cs" />
     <Compile Include="Concrete\EntityFramework\EfBackupTaskDal.cs" />
     <Compile Include="Concrete\EntityFramework\EfRestoreTaskDal.cs" />
@@ -79,7 +77,6 @@
     <Compile Include="Concrete\EntityFramework\EfTaskInfoDal.cs" />
     <Compile Include="Concrete\EntityFramework\ImageDiskContext.cs" />
     <Compile Include="Concrete\EntityFramework\Mappings\ActivitiyLogMap.cs" />
-    <Compile Include="Concrete\EntityFramework\Mappings\BackupInfoMap.cs" />
     <Compile Include="Concrete\EntityFramework\Mappings\BackupStorageInfoMap.cs" />
     <Compile Include="Concrete\EntityFramework\Mappings\BackupTaskMap.cs" />
     <Compile Include="Concrete\EntityFramework\Mappings\RestoreTaskMap.cs" />

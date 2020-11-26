@@ -1,4 +1,5 @@
-﻿using System;
+﻿using DiskBackup.Entities.Concrete;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -19,10 +20,33 @@ namespace DiskBackupWpfGUI
     /// </summary>
     public partial class RestoreWindow : Window
     {
-        public RestoreWindow()
+        private BackupInfo _backupInfo;
+        private List<VolumeInfo> _volumeInfoList = new List<VolumeInfo>();
+        private bool _volumeOrFreshDisk = false; //volume ise true, disk ise false
+
+        public RestoreWindow(BackupInfo backupInfo, List<VolumeInfo> volumeInfoList)
         {
             InitializeComponent();
 
+            _backupInfo = backupInfo;
+            _volumeInfoList = volumeInfoList;
+            
+            if (volumeInfoList.Count == 1)
+            {
+                if (volumeInfoList[0].Bootable) // bootable true ise işletim sistemi var
+                    _volumeOrFreshDisk = false;
+                else
+                    _volumeOrFreshDisk = true;
+            }
+            else
+            {
+                _volumeOrFreshDisk = false;
+            }
+
+            foreach (var item in volumeInfoList)
+            {
+                MessageBox.Show(item.DiskName + " " + item.Letter + " " + item.Name);
+            }
             dtpSetTime.Value = DateTime.Now + TimeSpan.FromMinutes(5);
         }
 

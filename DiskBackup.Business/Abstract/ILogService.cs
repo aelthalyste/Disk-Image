@@ -1,18 +1,22 @@
 ﻿using DiskBackup.Entities.Concrete;
-using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.ServiceModel;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace DiskBackup.Business.Abstract
 {
+    [ServiceContract]
     public interface ILogService
     {
+        [OperationContract]
         List<ActivityLog> GetActivityLogList();
+        [OperationContract]
         List<Log> GetLogList();
 
+        [OperationContract]
         bool DeleteActivityLog(ActivityLog activityLog);
+        [OperationContract]
         bool AddActivityLog(TaskInfo taskInfo);
 
         //Log'u yazdıracağımız txt dosyası için okuma ve yazma metodları eklenebilir.... 

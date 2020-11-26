@@ -36,8 +36,6 @@ namespace DiskBackupWpfGUI
 
         private bool _diskAllControl = false;
         private bool _diskAllHeaderControl = false;
-        private bool _restoreDiskAllControl = false;
-        private bool _restoreDiskAllHeaderControl = false;
 
         private bool _storegeAllControl = false;
         private bool _viewBackupsAllControl = false;
@@ -49,6 +47,7 @@ namespace DiskBackupWpfGUI
         private List<CheckBox> _restoreExpanderCheckBoxes = new List<CheckBox>();
         private List<int> _restoreNumberOfItems = new List<int>();
         private List<string> _restoreGroupName = new List<string>();
+        private List<Expander> _expanderRestoreDiskList = new List<Expander>();
         private List<DiskInformation> _diskList = new List<DiskInformation>();
         private List<VolumeInfo> _volumeList = new List<VolumeInfo>();
         private List<TaskInfo> _taskInfoList = new List<TaskInfo>();
@@ -57,44 +56,44 @@ namespace DiskBackupWpfGUI
 
         private CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
 
-        private readonly IBackupService _backupService;
-        private readonly IBackupStorageService _backupStorageService;
+        //private readonly IBackupService _backupService;
+        //private readonly IBackupStorageService _backupStorageService;
         private readonly ITaskInfoDal _taskInfoDal;
         private readonly IBackupStorageDal _backupStorageDal;
-        private readonly ITaskSchedulerManager _taskSchedulerManager;
+        //private readonly ITaskSchedulerManager _taskSchedulerManager;
         private readonly IBackupTaskDal _backupTaskDal;
         private readonly IStatusInfoDal _statusInfoDal;
         private readonly IActivityLogDal _activityLogDal;
 
         private readonly ILifetimeScope _scope;
 
-        public MainWindow(IBackupService backupService, IBackupStorageService backupStorageService, ILifetimeScope scope, ITaskInfoDal taskInfoDal,
-            IBackupStorageDal backupStorageDal, ITaskSchedulerManager taskSchedulerManager, IBackupTaskDal backupTaskDal, IStatusInfoDal statusInfoDal, IActivityLogDal activityLogDal)
+        public MainWindow(/*IBackupService backupService, IBackupStorageService backupStorageService,*/ ILifetimeScope scope, ITaskInfoDal taskInfoDal,
+            IBackupStorageDal backupStorageDal, /*ITaskSchedulerManager taskSchedulerManager,*/ IBackupTaskDal backupTaskDal, IStatusInfoDal statusInfoDal, IActivityLogDal activityLogDal)
         {
             InitializeComponent();
 
 
-            _backupService = backupService;
-            _backupStorageService = backupStorageService;
+            //_backupService = backupService;
+            //_backupStorageService = backupStorageService;
             _taskInfoDal = taskInfoDal;
             _backupStorageDal = backupStorageDal;
             _backupTaskDal = backupTaskDal;
             _statusInfoDal = statusInfoDal;
-            _taskSchedulerManager = taskSchedulerManager;
+            //_taskSchedulerManager = taskSchedulerManager;
             _activityLogDal = activityLogDal;
 
             _scope = scope;
-
-            _taskSchedulerManager.InitShedulerAsync();
-
-            if (!_backupService.InitTracker())
+            var backupService = _scope.Resolve<IBackupService>();
+            var backupStorageService = _scope.Resolve<IBackupStorageService>();
+            if (!backupService.InitTracker())
             {
                 MessageBox.Show("Driver intialize edilemedi!", "NARBULUT DİYOR Kİ;", MessageBoxButton.OK, MessageBoxImage.Error);
             }
 
+
             #region Disk Bilgileri
 
-            _diskList = _backupService.GetDiskList();
+            _diskList = backupService.GetDiskList();
 
             foreach (var diskItem in _diskList)
             {
@@ -130,7 +129,7 @@ namespace DiskBackupWpfGUI
 
             #region Yedekleme alanları
 
-            listViewBackupStorage.ItemsSource = GetBackupStorages(_volumeList, _backupStorageService.BackupStorageInfoList());
+            listViewBackupStorage.ItemsSource = GetBackupStorages(_volumeList, backupStorageService.BackupStorageInfoList());
 
             #endregion
 
@@ -151,12 +150,13 @@ namespace DiskBackupWpfGUI
 
             #region Backup dosya bilgileri
 
-            _backupsItems = _backupService.GetBackupFileList(_backupStorageDal.GetList());
+            _backupsItems = backupService.GetBackupFileList(_backupStorageDal.GetList());
 
             listViewBackups.ItemsSource = _backupsItems;
             listViewRestore.ItemsSource = _backupsItems;
 
             #endregion
+
 
             RefreshTasks(_cancellationTokenSource.Token);
             this.Closing += (sender, e) => _cancellationTokenSource.Cancel();
@@ -208,6 +208,7 @@ namespace DiskBackupWpfGUI
                 newCreateTask.ShowDialog();
             }
             GetTasks();
+            var _backupStorageService = _scope.Resolve<IBackupStorageService>();
             listViewBackupStorage.ItemsSource = GetBackupStorages(_volumeList, _backupStorageService.BackupStorageInfoList());
         }
 
@@ -361,7 +362,8 @@ namespace DiskBackupWpfGUI
                     // ilgili triggerı sil
                     if (item.ScheduleId != null && !item.ScheduleId.Contains("Now"))
                     {
-                        _taskSchedulerManager.DeleteJob(item.ScheduleId);
+                        var taskSchedulerManager = _scope.Resolve<ITaskSchedulerManager>();
+                        taskSchedulerManager.DeleteJob(item.ScheduleId);
                     }
 
                     // task tipine göre ilgili task tablosundan bilgisini sil
@@ -390,6 +392,7 @@ namespace DiskBackupWpfGUI
             {
                 btnTaskDelete.IsEnabled = true;
                 btnTaskEdit.IsEnabled = true;
+
                 //butonlar eklenmeye devam edecek burayada da checkboxlara da
 
                 // çalışan görevi start etme engellendi
@@ -426,13 +429,14 @@ namespace DiskBackupWpfGUI
                     if (taskInfo.BackupTaskInfo.Type == BackupTypes.Diff || taskInfo.BackupTaskInfo.Type == BackupTypes.Inc)
                     {
                         Console.WriteLine("Backup Inc-Diff başlatılıyor");
+                        var taskSchedulerManager = _scope.Resolve<ITaskSchedulerManager>();
                         if (taskInfo.ScheduleId != null && !taskInfo.ScheduleId.Contains("Now"))
                         {
-                            _taskSchedulerManager.RunNowTrigger(taskInfo.ScheduleId).Wait();
+                            taskSchedulerManager.RunNowTrigger(taskInfo.ScheduleId).Wait();
                         }
                         else
                         {
-                            _taskSchedulerManager.BackupIncDiffNowJob(taskInfo).Wait();
+                            taskSchedulerManager.BackupIncDiffNowJob(taskInfo).Wait();
                         }
                         StatusesWindow backupStatus = _scope.Resolve<StatusesWindow>(new NamedParameter("chooseFlag", 0), new NamedParameter("statusInfo", taskInfo.StatusInfo));
                         backupStatus.Show();
@@ -450,20 +454,23 @@ namespace DiskBackupWpfGUI
             }
             else if (taskInfo.Status.Equals("Durduruldu"))
             {
-                _backupService.ResumeTask(taskInfo);
+                var backupService = _scope.Resolve<IBackupService>();
+                backupService.ResumeTask(taskInfo);
             }
             BackupIncDiffJob._refreshIncDiffTaskFlag = true;
         }
 
         private void btnTaskPause_Click(object sender, RoutedEventArgs e)
         {
-            _backupService.PauseTask((TaskInfo)listViewTasks.SelectedItem);
+            var backupService = _scope.Resolve<IBackupService>();
+            backupService.PauseTask((TaskInfo)listViewTasks.SelectedItem);
             BackupIncDiffJob._refreshIncDiffTaskFlag = true;
         }
 
         private void btnTaskStop_Click(object sender, RoutedEventArgs e)
         {
-            _backupService.CancelTask((TaskInfo)listViewTasks.SelectedItem);
+            var backupService = _scope.Resolve<IBackupService>();
+            backupService.CancelTask((TaskInfo)listViewTasks.SelectedItem);
             BackupIncDiffJob._refreshIncDiffTaskFlag = true;
         }
 
@@ -529,8 +536,9 @@ namespace DiskBackupWpfGUI
                         }
                         GetTasks();
                         listViewTasks.SelectedIndex = taskSelectedIndex;
+                        var backupService = _scope.Resolve<IBackupService>();
 
-                        _backupsItems = _backupService.GetBackupFileList(_backupStorageDal.GetList());
+                        _backupsItems = backupService.GetBackupFileList(_backupStorageDal.GetList());
                         listViewBackups.ItemsSource = _backupsItems;
                         listViewRestore.ItemsSource = _backupsItems;
 
@@ -553,7 +561,7 @@ namespace DiskBackupWpfGUI
                 {
                     MessageBox.Show(e.Message);
                 }
-               
+
             }
         }
 
@@ -578,6 +586,7 @@ namespace DiskBackupWpfGUI
                 {
                     btnTaskPause.IsEnabled = false;
                     btnTaskStop.IsEnabled = false;
+                    btnTaskStart.IsEnabled = true;
                 }
             }
 
@@ -758,6 +767,25 @@ namespace DiskBackupWpfGUI
 
         #region Restore Tab
 
+        private void btnRestore_Click(object sender, RoutedEventArgs e)
+        {
+            MessageBox.Show(listViewRestoreDisk.SelectedItems.Count.ToString());
+            List<VolumeInfo> volumeInfoList = new List<VolumeInfo>();
+            foreach (VolumeInfo item in listViewRestoreDisk.SelectedItems)
+            {
+                volumeInfoList.Add(item);
+            }
+
+            BackupInfo backupInfo = new BackupInfo(){ FileName = "Deneme yedek 1"};
+            //BackupInfo backupInfo = (BackupInfo)listViewRestore.SelectedItem;
+
+            using (var scope = _scope.BeginLifetimeScope())
+            {
+                RestoreWindow restore = scope.Resolve<RestoreWindow>(new TypedParameter(backupInfo.GetType(), backupInfo), 
+                    new TypedParameter(volumeInfoList.GetType(), volumeInfoList));
+                restore.ShowDialog();
+            }
+        }
 
         private void listViewRestore_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
@@ -798,7 +826,7 @@ namespace DiskBackupWpfGUI
         private void Expander_Loaded_1(object sender, RoutedEventArgs e)
         {
             var expander = sender as Expander;
-
+            _expanderRestoreDiskList.Add(expander);
             var size = expander.FindName("txtRestoreTotalSize") as TextBlock;
             var expanderCheck = expander.FindName("cbRestoreHeader") as CheckBox;
             _restoreExpanderCheckBoxes.Add(expanderCheck);
@@ -813,37 +841,9 @@ namespace DiskBackupWpfGUI
 
 
         #region Checkbox Operations
-        private void chbRestoreDiskSelectAll_Checked(object sender, RoutedEventArgs e)
-        {
-            if (!_restoreDiskAllControl)
-            {
-                foreach (VolumeInfo item in listViewRestoreDisk.ItemsSource)
-                {
-                    listViewRestoreDisk.SelectedItems.Add(item);
-                }
-                _restoreDiskAllControl = true;
-                _restoreExpanderCheckBoxes.ForEach(cb => cb.IsChecked = true);
-            }
-        }
-
-        private void chbRestoreDiskSelectAll_Unchecked(object sender, RoutedEventArgs e)
-        {
-            if (_restoreDiskAllControl)
-            {
-                _restoreExpanderCheckBoxes.ForEach(cb => cb.IsChecked = false);
-                listViewRestoreDisk.SelectedItems.Clear();
-                _restoreDiskAllHeaderControl = false;
-            }
-        }
 
         private void chbRestoreDisk_Checked(object sender, RoutedEventArgs e)
         {
-            if (chbRestoreDiskSelectAll.IsChecked == false)
-            {
-                _restoreDiskAllControl = listViewRestoreDisk.SelectedItems.Count == listViewRestoreDisk.Items.Count;
-                chbRestoreDiskSelectAll.IsChecked = _restoreDiskAllControl;
-            }
-
             var dataItem = FindParent<ListViewItem>(sender as DependencyObject);
             var data = dataItem.DataContext as VolumeInfo; //data seçilen değer
 
@@ -870,10 +870,6 @@ namespace DiskBackupWpfGUI
 
         private void chbRestoreDisk_Unchecked(object sender, RoutedEventArgs e)
         {
-            _restoreDiskAllControl = false;
-            chbRestoreDiskSelectAll.IsChecked = false;
-            _restoreDiskAllHeaderControl = false;
-
             var dataItem = FindParent<ListViewItem>(sender as DependencyObject);
             var data = dataItem.DataContext as VolumeInfo; //data seçilen değer
 
@@ -882,7 +878,6 @@ namespace DiskBackupWpfGUI
                 if (_restoreGroupName[i].Equals(data.DiskName))
                 {
                     _restoreExpanderCheckBoxes[i].IsChecked = false;
-                    _restoreDiskAllHeaderControl = true;
                 }
             }
         }
@@ -890,7 +885,8 @@ namespace DiskBackupWpfGUI
         private void cbRestoreHeader_Checked(object sender, RoutedEventArgs e)
         {
             var headerCheckBox = sender as CheckBox;
-            _restoreDiskAllHeaderControl = true;
+
+            listViewRestoreDisk.SelectionMode = SelectionMode.Multiple;
 
             foreach (VolumeInfo item in listViewRestoreDisk.Items)
             {
@@ -898,23 +894,41 @@ namespace DiskBackupWpfGUI
                 {
                     listViewRestoreDisk.SelectedItems.Add(item);
                 }
+                else
+                {
+                    listViewRestoreDisk.SelectedItems.Remove(item);
+                }
+            }
+            for (int i = 0; i < _expanderRestoreDiskList.Count; i++)
+            {
+                if ((bool)!(_restoreExpanderCheckBoxes[i].IsChecked))
+                {
+                    _expanderRestoreDiskList[i].IsExpanded = false;
+                    _expanderRestoreDiskList[i].IsEnabled = false;
+                }
             }
         }
 
         private void cbRestoreHeader_Unchecked(object sender, RoutedEventArgs e)
         {
-            if (_restoreDiskAllHeaderControl)
+            var headerCheckBox = sender as CheckBox;
+
+            foreach (VolumeInfo item in listViewRestoreDisk.Items)
             {
-                var headerCheckBox = sender as CheckBox;
-                foreach (VolumeInfo item in listViewRestoreDisk.Items)
+                if (item.DiskName.Equals(headerCheckBox.Tag.ToString()))
                 {
-                    if (item.DiskName.Equals(headerCheckBox.Tag.ToString()))
-                    {
-                        listViewRestoreDisk.SelectedItems.Remove(item);
-                    }
+                    listViewRestoreDisk.SelectedItems.Remove(item);
                 }
-                _restoreDiskAllHeaderControl = true;
             }
+
+            _restoreExpanderCheckBoxes.ForEach(cb => cb.IsEnabled = true);
+            foreach (var item in _expanderRestoreDiskList)
+            {
+                item.IsExpanded = true;
+                item.IsEnabled = true;
+            }
+
+            listViewRestoreDisk.SelectionMode = SelectionMode.Single;
         }
 
         #endregion
@@ -1079,7 +1093,8 @@ namespace DiskBackupWpfGUI
             {
                 AddBackupAreaWindow addBackupArea = scope.Resolve<AddBackupAreaWindow>();
                 addBackupArea.ShowDialog();
-                listViewBackupStorage.ItemsSource = GetBackupStorages(_volumeList, _backupStorageService.BackupStorageInfoList());
+                var backupStorageService = _scope.Resolve<IBackupStorageService>();
+                listViewBackupStorage.ItemsSource = GetBackupStorages(_volumeList, backupStorageService.BackupStorageInfoList());
                 chbAllBackupStorage.IsChecked = true;
                 chbAllBackupStorage.IsChecked = false;
             }
@@ -1092,7 +1107,8 @@ namespace DiskBackupWpfGUI
                 BackupStorageInfo backupStorageInfo = (BackupStorageInfo)listViewBackupStorage.SelectedItem;
                 AddBackupAreaWindow addBackupArea = scope.Resolve<AddBackupAreaWindow>(new TypedParameter(backupStorageInfo.GetType(), backupStorageInfo));
                 addBackupArea.ShowDialog();
-                listViewBackupStorage.ItemsSource = GetBackupStorages(_volumeList, _backupStorageService.BackupStorageInfoList());
+                var backupStorageService = _scope.Resolve<IBackupStorageService>();
+                listViewBackupStorage.ItemsSource = GetBackupStorages(_volumeList, backupStorageService.BackupStorageInfoList());
                 chbAllBackupStorage.IsChecked = true;
                 chbAllBackupStorage.IsChecked = false;
             }
@@ -1103,11 +1119,12 @@ namespace DiskBackupWpfGUI
             MessageBoxResult result = MessageBox.Show($"{listViewBackupStorage.SelectedItems.Count} adet veri silinecek. Onaylıyor musunuz?", "Narbulut diyor ki; ", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
             if (result == MessageBoxResult.Yes)
             {
+                var backupStorageService = _scope.Resolve<IBackupStorageService>();
                 foreach (BackupStorageInfo item in listViewBackupStorage.SelectedItems)
                 {
-                    _backupStorageService.DeleteBackupStorage(item);
+                    backupStorageService.DeleteBackupStorage(item);
                 }
-                listViewBackupStorage.ItemsSource = GetBackupStorages(_volumeList, _backupStorageService.BackupStorageInfoList());
+                listViewBackupStorage.ItemsSource = GetBackupStorages(_volumeList, backupStorageService.BackupStorageInfoList());
             }
         }
 
@@ -1363,15 +1380,6 @@ namespace DiskBackupWpfGUI
 
         #endregion
 
-
-        private void btnRestore_Click(object sender, RoutedEventArgs e)
-        {
-            using (var scope = _scope.BeginLifetimeScope())
-            {
-                RestoreWindow restore = scope.Resolve<RestoreWindow>();
-                restore.ShowDialog();
-            }
-        }
 
         private static T FindParent<T>(DependencyObject dependencyObject) where T : DependencyObject
         {

@@ -182,7 +182,7 @@
                                     </StackPanel>
                                 </Button.Content>
                             </Button>
-                            <ListView Name="listViewDisk" MinHeight="370" Margin="5" SelectionChanged="listViewDisk_SelectionChanged">
+                            <ListView Name="listViewDisk" Height="370" Margin="5" SelectionChanged="listViewDisk_SelectionChanged">
                                 <ListView.View>
                                     <GridView>
                                         <GridViewColumn Width="70">
@@ -241,7 +241,7 @@
                                                 </DataTemplate>
                                             </GridViewColumn.CellTemplate>
                                         </GridViewColumn>
-                                        <GridViewColumn Header="{DynamicResource statu}" Width="190" >
+                                        <GridViewColumn Header="{DynamicResource statu}" Width="185" >
                                             <GridViewColumn.CellTemplate>
                                                 <DataTemplate>
                                                     <TextBlock Text="{Binding Status}" TextAlignment="Center"/>
@@ -420,7 +420,7 @@
                             <Button Name="btnTaskStart" ToolTip="{DynamicResource start}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5"  
                                     Style="{StaticResource ImageButton}" Grid.Column="1" Click="btnTaskStart_Click" IsEnabled="False">
                                 <Button.Content>
-                                    <Image Height="27" Width="27" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <Image Height="28" Width="28" HorizontalAlignment="Center" VerticalAlignment="Center">
                                         <Image.Style>
                                             <Style TargetType="Image">
                                                 <Setter Property="Source" Value="Resources/Icon/icons8_play.ico" />
@@ -602,7 +602,7 @@
                     </Grid.RowDefinitions>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition/>
-                        <ColumnDefinition Width="300"/>
+                        <ColumnDefinition Width="275"/>
                     </Grid.ColumnDefinitions>
                     <Rectangle VerticalAlignment="Center" Stroke="#D7D7D7" StrokeThickness="1" HorizontalAlignment="Right" Height="420"/>
                     <DockPanel>
@@ -636,28 +636,28 @@
                                                 </DataTemplate>
                                             </GridViewColumn.CellTemplate>
                                         </GridViewColumn>
-                                        <GridViewColumn Header="{DynamicResource fileName}" Width="210">
+                                        <GridViewColumn Header="{DynamicResource fileName}" Width="220">
                                             <GridViewColumn.CellTemplate>
                                                 <DataTemplate>
                                                     <TextBlock Text="{Binding FileName}" TextAlignment="Left"/>
                                                 </DataTemplate>
                                             </GridViewColumn.CellTemplate>
                                         </GridViewColumn>
-                                        <GridViewColumn Header="{DynamicResource createdDate}" Width="170" >
+                                        <GridViewColumn Header="{DynamicResource createdDate}" Width="175" >
                                             <GridViewColumn.CellTemplate>
                                                 <DataTemplate>
                                                     <TextBlock Text="{Binding CreatedDate, StringFormat='dd.MM.yyyy HH:mm'}" TextAlignment="Center"/>
                                                 </DataTemplate>
                                             </GridViewColumn.CellTemplate>
                                         </GridViewColumn>
-                                        <GridViewColumn Header="{DynamicResource volumeSize}" Width="145" >
+                                        <GridViewColumn Header="{DynamicResource volumeSize}" Width="150" >
                                             <GridViewColumn.CellTemplate>
                                                 <DataTemplate>
                                                     <TextBlock Text="{Binding StrVolumeSize}" TextAlignment="Center"/>
                                                 </DataTemplate>
                                             </GridViewColumn.CellTemplate>
                                         </GridViewColumn >
-                                        <GridViewColumn Header="{DynamicResource folderSize}" Width="145" >
+                                        <GridViewColumn Header="{DynamicResource folderSize}" Width="150" >
                                             <GridViewColumn.CellTemplate>
                                                 <DataTemplate>
                                                     <TextBlock Text="{Binding StrFileSize}" TextAlignment="Center"/>
@@ -674,13 +674,10 @@
                             </ListView>
                         </StackPanel>
                     </DockPanel>
-                    <ListView Name="listViewRestoreDisk" Grid.Row="1" Grid.ColumnSpan="2" MinHeight="150" Margin="5" SelectionChanged="listViewRestoreDisk_SelectionChanged">
+                    <ListView Name="listViewRestoreDisk" Grid.Row="1" Grid.ColumnSpan="2" MinHeight="150" Margin="5" SelectionChanged="listViewRestoreDisk_SelectionChanged" SelectionMode="Single">
                         <ListView.View>
                             <GridView>
                                 <GridViewColumn Width="70">
-                                    <GridViewColumn.Header>
-                                        <CheckBox Name="chbRestoreDiskSelectAll" Checked="chbRestoreDiskSelectAll_Checked" Unchecked="chbRestoreDiskSelectAll_Unchecked" Cursor="Hand" Margin="12,0,0,0"/>
-                                    </GridViewColumn.Header>
                                     <GridViewColumn.CellTemplate>
                                         <DataTemplate>
                                             <CheckBox IsChecked="{Binding Path=IsSelected, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ListViewItem}}}"
@@ -773,6 +770,12 @@
                         <ListView.ItemContainerStyle>
                             <Style TargetType="ListViewItem">
                                 <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                <Style.Triggers>
+                                    <Trigger Property="IsSelected" Value="true" >
+                                        <Setter Property="Background" Value="LightGray" />
+                                        <Setter Property="BorderBrush" Value="LightSlateGray"/>
+                                    </Trigger>
+                                </Style.Triggers>
                             </Style>
                         </ListView.ItemContainerStyle>
                     </ListView>
