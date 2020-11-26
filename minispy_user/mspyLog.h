@@ -143,6 +143,7 @@ struct nar_log{
 int GlobalLogCount = 0;
 HANDLE GlobalLogMutex = 0;
 
+#if 0
 void
 NarGetLogs(nar_log *Logs, int Max, int *Count){
     
@@ -159,6 +160,8 @@ NarGetLogs(nar_log *Logs, int Max, int *Count){
     }
     
 }
+#endif
+
 
 /*
 CAUTION, THIS IS NOT THREAD SAFE, DO NOT USE IN MULTIPLE THREDS
@@ -186,12 +189,12 @@ NarLog(const char *str, ...){
     memset(buf, 0, sizeof(buf));
     GetLocalTime(&Time);
     
-    NarTime.YEAR = Time.wYear % 100;
-    NarTime.MONTH = Time.wMonth;
-    NarTime.DAY = Time.wDay;
-    NarTime.HOUR = Time.wHour;
-    NarTime.MIN = Time.wMinute;
-    NarTime.SEC = Time.wSecond;
+    NarTime.YEAR  = (BYTE)(Time.wYear % 100);
+    NarTime.MONTH = (BYTE)Time.wMonth;
+    NarTime.DAY   = (BYTE)Time.wDay;
+    NarTime.HOUR  = (BYTE)Time.wHour;
+    NarTime.MIN   = (BYTE)Time.wMinute;
+    NarTime.SEC   = (BYTE)Time.wSecond;
     
     
 #if 1
@@ -536,7 +539,7 @@ struct backup_metadata {
     int ClusterSize; // 4096 default
     
     char Letter;
-    BOOLEAN DiskType;
+    unsigned char DiskType;
     union {
         BOOLEAN IsOSVolume;
         BOOLEAN Recovery; // true if contains restore partition
