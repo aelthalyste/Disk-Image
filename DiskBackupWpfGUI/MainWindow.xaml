@@ -182,7 +182,7 @@
                                     </StackPanel>
                                 </Button.Content>
                             </Button>
-                            <ListView Name="listViewDisk" MinHeight="370" Margin="5" SelectionChanged="listViewDisk_SelectionChanged">
+                            <ListView Name="listViewDisk" Height="370" Margin="5" SelectionChanged="listViewDisk_SelectionChanged">
                                 <ListView.View>
                                     <GridView>
                                         <GridViewColumn Width="70">
@@ -241,7 +241,7 @@
                                                 </DataTemplate>
                                             </GridViewColumn.CellTemplate>
                                         </GridViewColumn>
-                                        <GridViewColumn Header="{DynamicResource statu}" Width="190" >
+                                        <GridViewColumn Header="{DynamicResource statu}" Width="185" >
                                             <GridViewColumn.CellTemplate>
                                                 <DataTemplate>
                                                     <TextBlock Text="{Binding Status}" TextAlignment="Center"/>
@@ -674,7 +674,7 @@
                             </ListView>
                         </StackPanel>
                     </DockPanel>
-                    <ListView Name="listViewRestoreDisk" Grid.Row="1" Grid.ColumnSpan="2" MinHeight="150" Margin="5" SelectionChanged="listViewRestoreDisk_SelectionChanged">
+                    <ListView Name="listViewRestoreDisk" Grid.Row="1" Grid.ColumnSpan="2" MinHeight="150" Margin="5" SelectionChanged="listViewRestoreDisk_SelectionChanged" SelectionMode="Single">
                         <ListView.View>
                             <GridView>
                                 <GridViewColumn Width="70">
