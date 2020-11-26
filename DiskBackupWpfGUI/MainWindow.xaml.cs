@@ -37,7 +37,6 @@ namespace DiskBackupWpfGUI
         private bool _diskAllControl = false;
         private bool _diskAllHeaderControl = false;
         private bool _restoreDiskAllControl = false;
-        private bool _restoreDiskAllHeaderControl = false;
 
         private bool _storegeAllControl = false;
         private bool _viewBackupsAllControl = false;
@@ -564,7 +563,7 @@ namespace DiskBackupWpfGUI
                 {
                     MessageBox.Show(e.Message);
                 }
-               
+
             }
         }
 
@@ -806,7 +805,7 @@ namespace DiskBackupWpfGUI
                 btnRestore.IsEnabled = false;
             }
         }
-        
+
         private void Expander_Loaded_1(object sender, RoutedEventArgs e)
         {
             var expander = sender as Expander;
@@ -838,7 +837,6 @@ namespace DiskBackupWpfGUI
                     }
                     _restoreDiskAllControl = true;
                     _restoreExpanderCheckBoxes.ForEach(cb => cb.IsChecked = true);
-                    _restoreDiskAllHeaderControl = true;
                 }
                 else
                     chbRestoreDiskSelectAll.IsChecked = false;
@@ -853,7 +851,6 @@ namespace DiskBackupWpfGUI
                 {
                     _restoreExpanderCheckBoxes.ForEach(cb => cb.IsChecked = false);
                     listViewRestoreDisk.SelectedItems.Clear();
-                    _restoreDiskAllHeaderControl = false;
                 }
             }
         }
@@ -894,7 +891,6 @@ namespace DiskBackupWpfGUI
         {
             _restoreDiskAllControl = false;
             chbRestoreDiskSelectAll.IsChecked = false;
-            _restoreDiskAllHeaderControl = false;
 
             var dataItem = FindParent<ListViewItem>(sender as DependencyObject);
             var data = dataItem.DataContext as VolumeInfo; //data seçilen değer
@@ -912,51 +908,48 @@ namespace DiskBackupWpfGUI
         private void cbRestoreHeader_Checked(object sender, RoutedEventArgs e)
         {
             listViewRestoreDisk.SelectionMode = SelectionMode.Multiple;
-            if (!_restoreDiskAllHeaderControl)
-            {
-                var headerCheckBox = sender as CheckBox;
-                _restoreDiskAllHeaderControl = true;
 
-                foreach (VolumeInfo item in listViewRestoreDisk.Items)
+            var headerCheckBox = sender as CheckBox;
+
+            foreach (VolumeInfo item in listViewRestoreDisk.Items)
+            {
+                if (item.DiskName.Equals(headerCheckBox.Tag.ToString()))
                 {
-                    if (item.DiskName.Equals(headerCheckBox.Tag.ToString()))
-                    {
-                        listViewRestoreDisk.SelectedItems.Add(item);
-                    }
-                }
-                foreach (var item in _restoreExpanderCheckBoxes)
-                {
-                    if (item.IsChecked == false)
-                        item.IsEnabled = false;
-                }
-                foreach (var item in _expanderRestoreDiskList)
-                {
-                    item.IsExpanded = false;
-                    //tıklanma olayını kaldır expanderın altına
+                    listViewRestoreDisk.SelectedItems.Add(item);
                 }
             }
+            for (int i = 0; i < _expanderRestoreDiskList.Count; i++)
+            {
+                if ((bool)!(_restoreExpanderCheckBoxes[i].IsChecked))
+                {
+                    _expanderRestoreDiskList[i].IsExpanded = false;
+                    _expanderRestoreDiskList[i].IsEnabled = false;
+                }
+            }
+
         }
 
         private void cbRestoreHeader_Unchecked(object sender, RoutedEventArgs e)
         {
-            if (_restoreDiskAllHeaderControl)
+
+            var headerCheckBox = sender as CheckBox;
+            foreach (VolumeInfo item in listViewRestoreDisk.Items)
             {
-                var headerCheckBox = sender as CheckBox;
-                foreach (VolumeInfo item in listViewRestoreDisk.Items)
+                if (item.DiskName.Equals(headerCheckBox.Tag.ToString()))
                 {
-                    if (item.DiskName.Equals(headerCheckBox.Tag.ToString()))
-                    {
-                        listViewRestoreDisk.SelectedItems.Remove(item);
-                    }
-                }
-                _restoreDiskAllHeaderControl = false;
-                _restoreExpanderCheckBoxes.ForEach(cb => cb.IsEnabled = true);
-                foreach (var item in _expanderRestoreDiskList)
-                {
-                    item.IsExpanded = true;
-                    //tıklanma olayını ekle expanderın altına
+                    listViewRestoreDisk.SelectedItems.Remove(item);
                 }
             }
+
+            _restoreExpanderCheckBoxes.ForEach(cb => cb.IsEnabled = true);
+            foreach (var item in _expanderRestoreDiskList)
+            {
+                item.IsExpanded = true;
+                item.IsEnabled = true;
+                //tıklanma olayını ekle expanderın altına
+                //item.IsEnabled = true;
+            }
+
             listViewRestoreDisk.SelectionMode = SelectionMode.Single;
         }
 
