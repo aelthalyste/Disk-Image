@@ -36,7 +36,6 @@ namespace DiskBackupWpfGUI
 
         private bool _diskAllControl = false;
         private bool _diskAllHeaderControl = false;
-        private bool _restoreDiskAllControl = false;
 
         private bool _storegeAllControl = false;
         private bool _viewBackupsAllControl = false;
@@ -84,7 +83,6 @@ namespace DiskBackupWpfGUI
             _activityLogDal = activityLogDal;
 
             _scope = scope;
-
             var backupService = _scope.Resolve<IBackupService>();
             var backupStorageService = _scope.Resolve<IBackupStorageService>();
             if (!backupService.InitTracker())
@@ -769,6 +767,25 @@ namespace DiskBackupWpfGUI
 
         #region Restore Tab
 
+        private void btnRestore_Click(object sender, RoutedEventArgs e)
+        {
+            MessageBox.Show(listViewRestoreDisk.SelectedItems.Count.ToString());
+            List<VolumeInfo> volumeInfoList = new List<VolumeInfo>();
+            foreach (VolumeInfo item in listViewRestoreDisk.SelectedItems)
+            {
+                volumeInfoList.Add(item);
+            }
+
+            BackupInfo backupInfo = new BackupInfo(){ FileName = "Deneme yedek 1"};
+            //BackupInfo backupInfo = (BackupInfo)listViewRestore.SelectedItem;
+
+            using (var scope = _scope.BeginLifetimeScope())
+            {
+                RestoreWindow restore = scope.Resolve<RestoreWindow>(new TypedParameter(backupInfo.GetType(), backupInfo), 
+                    new TypedParameter(volumeInfoList.GetType(), volumeInfoList));
+                restore.ShowDialog();
+            }
+        }
 
         private void listViewRestore_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
@@ -825,44 +842,8 @@ namespace DiskBackupWpfGUI
 
         #region Checkbox Operations
 
-        private void chbRestoreDiskSelectAll_Checked(object sender, RoutedEventArgs e)
-        {
-            if (!_restoreDiskAllControl)
-            {
-                if (_restoreExpanderCheckBoxes.Count == 1) //bir disk varsa çalış yoksa çalışma
-                {
-                    foreach (VolumeInfo item in listViewRestoreDisk.ItemsSource)
-                    {
-                        listViewRestoreDisk.SelectedItems.Add(item);
-                    }
-                    _restoreDiskAllControl = true;
-                    _restoreExpanderCheckBoxes.ForEach(cb => cb.IsChecked = true);
-                }
-                else
-                    chbRestoreDiskSelectAll.IsChecked = false;
-            }
-        }
-
-        private void chbRestoreDiskSelectAll_Unchecked(object sender, RoutedEventArgs e)
-        {
-            if (_restoreDiskAllControl)
-            {
-                if (_restoreExpanderCheckBoxes.Count == 1) //bir disk varsa çalış yoksa çalışma
-                {
-                    _restoreExpanderCheckBoxes.ForEach(cb => cb.IsChecked = false);
-                    listViewRestoreDisk.SelectedItems.Clear();
-                }
-            }
-        }
-
         private void chbRestoreDisk_Checked(object sender, RoutedEventArgs e)
         {
-            if (chbRestoreDiskSelectAll.IsChecked == false)
-            {
-                _restoreDiskAllControl = listViewRestoreDisk.SelectedItems.Count == listViewRestoreDisk.Items.Count;
-                chbRestoreDiskSelectAll.IsChecked = _restoreDiskAllControl;
-            }
-
             var dataItem = FindParent<ListViewItem>(sender as DependencyObject);
             var data = dataItem.DataContext as VolumeInfo; //data seçilen değer
 
@@ -889,9 +870,6 @@ namespace DiskBackupWpfGUI
 
         private void chbRestoreDisk_Unchecked(object sender, RoutedEventArgs e)
         {
-            _restoreDiskAllControl = false;
-            chbRestoreDiskSelectAll.IsChecked = false;
-
             var dataItem = FindParent<ListViewItem>(sender as DependencyObject);
             var data = dataItem.DataContext as VolumeInfo; //data seçilen değer
 
@@ -900,22 +878,25 @@ namespace DiskBackupWpfGUI
                 if (_restoreGroupName[i].Equals(data.DiskName))
                 {
                     _restoreExpanderCheckBoxes[i].IsChecked = false;
-                    //_restoreDiskAllHeaderControl = true;
                 }
             }
         }
 
         private void cbRestoreHeader_Checked(object sender, RoutedEventArgs e)
         {
-            listViewRestoreDisk.SelectionMode = SelectionMode.Multiple;
-
             var headerCheckBox = sender as CheckBox;
+
+            listViewRestoreDisk.SelectionMode = SelectionMode.Multiple;
 
             foreach (VolumeInfo item in listViewRestoreDisk.Items)
             {
                 if (item.DiskName.Equals(headerCheckBox.Tag.ToString()))
                 {
                     listViewRestoreDisk.SelectedItems.Add(item);
+                }
+                else
+                {
+                    listViewRestoreDisk.SelectedItems.Remove(item);
                 }
             }
             for (int i = 0; i < _expanderRestoreDiskList.Count; i++)
@@ -926,13 +907,12 @@ namespace DiskBackupWpfGUI
                     _expanderRestoreDiskList[i].IsEnabled = false;
                 }
             }
-
         }
 
         private void cbRestoreHeader_Unchecked(object sender, RoutedEventArgs e)
         {
-
             var headerCheckBox = sender as CheckBox;
+
             foreach (VolumeInfo item in listViewRestoreDisk.Items)
             {
                 if (item.DiskName.Equals(headerCheckBox.Tag.ToString()))
@@ -946,8 +926,6 @@ namespace DiskBackupWpfGUI
             {
                 item.IsExpanded = true;
                 item.IsEnabled = true;
-                //tıklanma olayını ekle expanderın altına
-                //item.IsEnabled = true;
             }
 
             listViewRestoreDisk.SelectionMode = SelectionMode.Single;
@@ -1402,15 +1380,6 @@ namespace DiskBackupWpfGUI
 
         #endregion
 
-
-        private void btnRestore_Click(object sender, RoutedEventArgs e)
-        {
-            using (var scope = _scope.BeginLifetimeScope())
-            {
-                RestoreWindow restore = scope.Resolve<RestoreWindow>();
-                restore.ShowDialog();
-            }
-        }
 
         private static T FindParent<T>(DependencyObject dependencyObject) where T : DependencyObject
         {

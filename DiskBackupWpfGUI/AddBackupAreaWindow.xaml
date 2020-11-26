@@ -65,7 +65,7 @@
                                 </Grid>
                                 <ControlTemplate.Triggers>
                                     <Trigger Property="IsSelected" Value="True">
-                                        <Setter TargetName="Panel" Property="Background" Value="#3367D6" />
+                                        <Setter TargetName="Panel" Property="Background" Value="#3b7ebb" />
                                     </Trigger>
                                     <Trigger Property="IsSelected" Value="False">
                                         <Setter TargetName="Panel" Property="Background" Value="#FFFFFF"/>
