@@ -2916,7 +2916,9 @@ SetupStreamHandle(volume_backup_inf* VolInf) {
     wchar_t* ShadowPathPtr = GetShadowPath(Temp, VolInf->VSSPTR);
     wchar_t ShadowPath[512];
     StrCpyW(ShadowPath, ShadowPathPtr);
-    free(ShadowPathPtr);
+    
+    // TODO(Batuhan): undo it
+    // free(ShadowPathPtr);
     
     if (ShadowPath == NULL) {
         printf("Can't get shadowpath from VSS\n");
@@ -2983,15 +2985,12 @@ SetupStreamHandle(volume_backup_inf* VolInf) {
 
 BOOLEAN
 SetupVSS() {
-    
-    
     /* 
         NOTE(Batuhan): in managed code we dont need to initialize these stuff. since i am shipping code as textual to wrapper, i can detect clr compilation and switch to correct way to initialize
         vss stuff
      */
-    return TRUE;
     
-#if 0    
+#if 1
 #if (_MANAGED == 1) || (_M_CEE == 1)
     return TRUE;
 #else
@@ -7787,7 +7786,7 @@ main(int argc, char* argv[]) {
         int Type = 0;
         while(1){
             memset(&inf, 0, sizeof(inf));
-            scanf("%c %i", Volume, Type);
+            scanf("%c %i", &Volume, &Type);
             BackupType bt = (BackupType)Type;
             
             if(SetupStream(&C, (wchar_t)Volume, bt, &inf)){
@@ -7798,7 +7797,7 @@ main(int argc, char* argv[]) {
                 size_t TotalWritten = 0;
                 size_t TargetWrite = (size_t)inf.ClusterSize * (size_t)inf.ClusterCount;
                 
-                HANDLE file = CreateFileW(inf.FileName.c_str(), GENERIC_WRITE | GENERIC_READ, FILE_SHARE_READ, 0, 0, CREATE_ALWAYS, 0);
+                HANDLE file = CreateFileW(inf.FileName.c_str(), GENERIC_WRITE | GENERIC_READ, FILE_SHARE_READ, 0, CREATE_ALWAYS, 0, 0);
                 if(file != INVALID_HANDLE_VALUE){
                     
                     loop{

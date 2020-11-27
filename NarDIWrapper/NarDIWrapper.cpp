@@ -209,7 +209,7 @@ namespace NarDIWrapper {
     
     
     bool DiskTracker::CW_InitTracker() {
-        return ConnectDriver(C) && SetupVSS();
+        return ConnectDriver(C);
     }
     
     bool DiskTracker::CW_AddToTrack(wchar_t L, int Type) {
