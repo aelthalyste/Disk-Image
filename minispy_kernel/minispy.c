@@ -590,7 +590,7 @@ Return Value:
             ExAcquireFastMutex(&NarData.VolumeRegionBuffer[i].FastMutex);
             
             // invalidate volume name so no thread gains access to invalid memory adress
-            memset(&NarData.VolumeRegionBuffer[i].Reserved[0], 0, sizeof(NarData.VolumeRegionBuffer[i].Reserved));
+            // memset(&NarData.VolumeRegionBuffer[i].Reserved[0], 0, sizeof(NarData.VolumeRegionBuffer[i].Reserved));
             // checking with NULL is dumb at kernel level
             if (NarData.VolumeRegionBuffer[i].MemoryBuffer != NULL) {
                 DbgPrint("Freeing volume memory buffer %i\n", i);
@@ -802,7 +802,7 @@ Return Value:
                     }
                     else {
                         *ReturnOutputBufferLength = (ULONG)NAR_MEMORYBUFFER_SIZE;
-                        DbgPrint("Succ copied data to output buffer, size %i\n", DEBUG_COPIED_DATA);
+                        //DbgPrint("Succ copied data to output buffer, size %i\n", DEBUG_COPIED_DATA);
                     }
                     
                     
@@ -1408,6 +1408,7 @@ Return Value:
                             else {
                                 
                                 DbgPrint("not enought memory, will flush contents to file\n");
+#if 0
                                 UNICODE_STRING FileName = { 0 };
                                 
 #if 0
@@ -1463,6 +1464,7 @@ Return Value:
                                 
                                 
                                 //NAR_MB_MARK_NOT_ENOUGH_SPACE(NarData.VolumeRegionBuffer[i].MemoryBuffer);
+#endif
                             }
                             
                             ExReleaseFastMutex(&NarData.VolumeRegionBuffer[i].FastMutex);

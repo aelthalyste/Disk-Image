@@ -7807,9 +7807,9 @@ main(int argc, char* argv[]) {
                             break;
                         }
                         else{
-                            TotalRead += Read;
                             DWORD BytesWritten = 0;
                             if(WriteFile(file, MemBuf, Read, &BytesWritten, 0) && BytesWritten == Read){
+                                TotalWritten += BytesWritten;
                                 // NOTE(Batuhan): copied successfully
                             }
                             else{
