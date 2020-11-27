@@ -1,4 +1,6 @@
-﻿using DiskBackup.Entities.Concrete;
+﻿using DiskBackup.DataAccess.Abstract;
+using DiskBackup.Entities.Concrete;
+using DiskBackup.TaskScheduler;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -23,15 +25,28 @@ namespace DiskBackupWpfGUI
         private BackupInfo _backupInfo;
         private List<VolumeInfo> _volumeInfoList = new List<VolumeInfo>();
         private bool _volumeOrFreshDisk = false; //volume ise true, disk ise false
+        private TaskInfo _taskInfo = new TaskInfo();
 
-        public RestoreWindow(BackupInfo backupInfo, List<VolumeInfo> volumeInfoList)
+        private ITaskInfoDal _taskInfoDal;
+        private IRestoreTaskDal _restoreTaskDal;
+        private IStatusInfoDal _statusInfoDal;
+        private ITaskSchedulerManager _schedulerManager;
+
+        public RestoreWindow(BackupInfo backupInfo, List<VolumeInfo> volumeInfoList, IRestoreTaskDal restoreTaskDal, IStatusInfoDal statusInfoDal, ITaskInfoDal taskInfoDal, ITaskSchedulerManager schedulerManager)
         {
             InitializeComponent();
 
             _backupInfo = backupInfo;
             _volumeInfoList = volumeInfoList;
-            
-            if (volumeInfoList.Count == 1)
+            _restoreTaskDal = restoreTaskDal;
+            _statusInfoDal = statusInfoDal;
+            _taskInfoDal = taskInfoDal;
+            _schedulerManager = schedulerManager;
+            _taskInfo.RestoreTaskInfo = new RestoreTask();
+            _taskInfo.BackupStorageInfo = new BackupStorageInfo();
+            _taskInfo.StatusInfo = new StatusInfo();
+
+            if (_volumeInfoList.Count == 1)
             {
                 if (volumeInfoList[0].Bootable) // bootable true ise işletim sistemi var
                     _volumeOrFreshDisk = false;
@@ -43,11 +58,12 @@ namespace DiskBackupWpfGUI
                 _volumeOrFreshDisk = false;
             }
 
-            foreach (var item in volumeInfoList)
-            {
-                MessageBox.Show(item.DiskName + " " + item.Letter + " " + item.Name);
-            }
+            //foreach (var item in _volumeInfoList)
+            //{
+            //    MessageBox.Show(item.DiskName + " " + item.Letter + " " + item.Name);
+            //}
             dtpSetTime.Value = DateTime.Now + TimeSpan.FromMinutes(5);
+            //MessageBox.Show(backupInfo.BackupStorageInfo.StorageName + " " + backupInfo.BackupStorageInfoId);
         }
 
         #region Title Bar
@@ -93,11 +109,20 @@ namespace DiskBackupWpfGUI
 
                 if (rbStartNow.IsChecked.Value) // hemen çalıştır
                 {
-                    lblSchedulerTasks.Text = "Hemen Çalıştır";
+                    lblSchedulerTasks.Text = Resources["startNow"].ToString();
                 }
                 else if (rbSetTime.IsChecked.Value) // şu saatte çalıştır
                 {
                     lblSchedulerTasks.Text = dtpSetTime.Text;
+                }
+                lblArea2Restore.Text = _backupInfo.Letter.ToString();
+                if (_volumeOrFreshDisk)
+                {
+                    lblDisk2Restore.Text = _volumeInfoList[0].Letter.ToString();
+                }
+                else
+                {
+                    lblDisk2Restore.Text = _volumeInfoList[0].DiskName;
                 }
             }
         }
@@ -112,11 +137,13 @@ namespace DiskBackupWpfGUI
             }
             else
             {
+                bool nullControlFlag = true;
                 if (rbStartNow.IsChecked.Value) // hemen çalıştır
                 {
                     if (txtTaskName.Text.Equals("") || txtTaskDescription.Text.Equals(""))
                     {
                         MessageBox.Show("İlgili alanları lütfen boş geçmeyiniz. Hemen çalıştır", "NARBULUT DİYOR Kİ;", MessageBoxButton.OK, MessageBoxImage.Error);
+                        nullControlFlag = false;
                     }
                 }
                 else if (rbSetTime.IsChecked.Value) // zaman belirle
@@ -124,10 +151,91 @@ namespace DiskBackupWpfGUI
                     if (txtTaskName.Text.Equals("") || txtTaskDescription.Text.Equals("") || dtpSetTime.Value.Equals(""))
                     {
                         MessageBox.Show("İlgili alanları lütfen boş geçmeyiniz. Zaman belirle", "NARBULUT DİYOR Kİ;", MessageBoxButton.OK, MessageBoxImage.Error);
+                        nullControlFlag = false;
                     }
                 }
+                if (nullControlFlag) // kayıt et
+                {
+                    // ortak alan başladı
+                    _taskInfo.Type = TaskType.Restore;
+                    _taskInfo.Name = txtTaskName.Text;
+                    _taskInfo.Descripiton = txtTaskDescription.Text;
+                    if (rbStartNow.IsChecked.Value)
+                        _taskInfo.NextDate = DateTime.Now + TimeSpan.FromSeconds(10);
+                    else
+                        _taskInfo.NextDate = (DateTime)dtpSetTime.Value;
+                    _taskInfo.RestoreTaskInfo.BackupVersion = _backupInfo.Version;
+                    _taskInfo.BackupStorageInfo = _backupInfo.BackupStorageInfo;  // gelen backup'ın storageInfosu mevcut
+                    _taskInfo.BackupStorageInfoId = _backupInfo.BackupStorageInfoId;
+                    _taskInfo.Obje = _volumeInfoList.Count;
+                    // ortak alan bitti
+
+                    if (_volumeOrFreshDisk) // volume
+                    {
+                        _taskInfo.StrObje = _volumeInfoList[0].Letter.ToString();
+                        _taskInfo.RestoreTaskInfo.DiskLetter = _volumeInfoList[0].Letter.ToString();
+
+                        TaskInfo resultTaskInfo = SaveToDatabase();
+
+                        if (resultTaskInfo != null)
+                            MessageBox.Show("Ekleme işlemi başarılı");
+
+                        //_schedulerManager.RestoreVolumeJob(resultTaskInfo).Wait();
+                    }
+                    else // disk
+                    {
+                        foreach (var item in _volumeInfoList)
+                        {
+                            _taskInfo.StrObje += item.Letter.ToString();
+                        }
+                        var result = _volumeInfoList[0].DiskName.Split(' ');
+                        _taskInfo.RestoreTaskInfo.DiskId = Convert.ToInt32(result[1]);
+
+                        TaskInfo resultTaskInfo = SaveToDatabase();
+
+                        if (resultTaskInfo != null)
+                            MessageBox.Show("Ekleme işlemi başarılı");
+
+                        //scheduler
+                    }
+                    Close();
+                }
+            }
+        }
+
+        private TaskInfo SaveToDatabase()
+        {
+            //backupTask kaydetme
+            var resultRestoreTask = _restoreTaskDal.Add(_taskInfo.RestoreTaskInfo);
+            if (resultRestoreTask == null)
+            {
+                MessageBox.Show("Ekleme başarısız.", "NARBULUT DİYOR Kİ;", MessageBoxButton.OK, MessageBoxImage.Error);
+                return null;
             }
 
+            //backupTask kaydetme
+            _taskInfo.StatusInfo.TaskName = _taskInfo.Name;
+            _taskInfo.StatusInfo.SourceObje = _taskInfo.StrObje;
+            var resultStatusInfo = _statusInfoDal.Add(_taskInfo.StatusInfo);
+            if (resultStatusInfo == null)
+            {
+                MessageBox.Show("Ekleme başarısız.", "NARBULUT DİYOR Kİ;", MessageBoxButton.OK, MessageBoxImage.Error);
+                return null;
+            }
+
+            // task kayıdı
+            _taskInfo.Status = Resources["Ready"].ToString();
+            _taskInfo.StatusInfoId = resultStatusInfo.Id;
+            _taskInfo.RestoreTaskId = resultRestoreTask.Id;
+            _taskInfo.LastWorkingDate = Convert.ToDateTime("01/01/0002");
+            var resultTaskInfo = _taskInfoDal.Add(_taskInfo);
+            if (resultTaskInfo == null)
+            {
+                MessageBox.Show("Ekleme başarısız.", "NARBULUT DİYOR Kİ;", MessageBoxButton.OK, MessageBoxImage.Error);
+                return null;
+            }
+
+            return resultTaskInfo;
         }
 
         private void btnRestoreCancel_Click(object sender, RoutedEventArgs e)

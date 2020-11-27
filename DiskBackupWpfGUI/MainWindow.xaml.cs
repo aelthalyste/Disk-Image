@@ -155,6 +155,11 @@ namespace DiskBackupWpfGUI
             listViewBackups.ItemsSource = _backupsItems;
             listViewRestore.ItemsSource = _backupsItems;
 
+            //foreach (BackupInfo item in _backupsItems)
+            //{
+            //    MessageBox.Show(item.BackupStorageInfo.StorageName + " -- " + item.BackupStorageInfo.Id);
+            //}
+
             #endregion
 
 
@@ -769,15 +774,14 @@ namespace DiskBackupWpfGUI
 
         private void btnRestore_Click(object sender, RoutedEventArgs e)
         {
-            MessageBox.Show(listViewRestoreDisk.SelectedItems.Count.ToString());
             List<VolumeInfo> volumeInfoList = new List<VolumeInfo>();
             foreach (VolumeInfo item in listViewRestoreDisk.SelectedItems)
             {
                 volumeInfoList.Add(item);
             }
 
-            BackupInfo backupInfo = new BackupInfo(){ FileName = "Deneme yedek 1"};
-            //BackupInfo backupInfo = (BackupInfo)listViewRestore.SelectedItem;
+            //BackupInfo backupInfo = new BackupInfo(){ FileName = "Deneme yedek 1"};
+            BackupInfo backupInfo = (BackupInfo)listViewRestore.SelectedItem;
 
             using (var scope = _scope.BeginLifetimeScope())
             {
@@ -785,6 +789,7 @@ namespace DiskBackupWpfGUI
                     new TypedParameter(volumeInfoList.GetType(), volumeInfoList));
                 restore.ShowDialog();
             }
+            GetTasks();
         }
 
         private void listViewRestore_SelectionChanged(object sender, SelectionChangedEventArgs e)

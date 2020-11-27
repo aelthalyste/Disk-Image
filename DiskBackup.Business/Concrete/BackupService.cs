@@ -114,7 +114,7 @@ namespace DiskBackup.Business.Concrete
             //usedSize, bootable, sıkıştırma, pc name, ip address
             List<BackupInfo> backupInfoList = new List<BackupInfo>();
             //bootable = osVolume (true)
-            foreach (var backupStorageItem in backupStorageList)
+            foreach (BackupStorageInfo backupStorageItem in backupStorageList)
             {
                 var returnList = DiskTracker.CW_GetBackupsInDirectory(backupStorageItem.Path);
                 foreach (var returnItem in returnList)
@@ -129,6 +129,8 @@ namespace DiskBackup.Business.Concrete
                     backupInfo.OS = returnItem.WindowsName;
                     backupInfo.BackupTaskName = returnItem.TaskName;
                     backupInfo.Description = returnItem.TaskDescription;
+                    backupInfo.BackupStorageInfo = backupStorageItem;
+                    backupInfo.BackupStorageInfoId = backupStorageItem.Id;
                     Console.WriteLine("backupInfo.Description: " + backupInfo.Description);
                     Console.WriteLine("backupInfo.BackupTaskName: " + backupInfo.BackupTaskName);
 
