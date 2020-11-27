@@ -2,12 +2,22 @@
   I do unity builds, so I dont check if declared functions in .h file, I just write it in cpp file and if any build gives me error then
   I add it to .h file.
 */
-
+/*
+*  // TODO(Batuhan): URGENT, ZEROING OUT MFT REGIONS THAT EXCEEDS 4GB IS IMPOSSIBLE NOW, GO TO  RestoreVersionWithoutLoop and fix it 
+*
+*
+*
+*
+*
+*
+*/
 
 #include <DriverSpecs.h>
 _Analysis_mode_(_Analysis_code_type_user_code_)
-#define _CRT_SECURE_NO_WARNINGS
 
+#ifndef _CRT_SECURE_NO_WARNINGS
+#define _CRT_SECURE_NO_WARNINGS
+#endif
 
 #if 0
 #ifndef UNICODE
@@ -114,7 +124,7 @@ TestMergeRegions(){
     r.Data = &testArray[0];
     MergeRegions(&r);
     
-    for(int i = 0; i<r.Count; i++){
+    for(size_t i = 0; i<r.Count; i++){
         printf("%u\t%u\n", r.Data[i].StartPos, r.Data[i].Len);
     }
     
@@ -2282,7 +2292,6 @@ SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, DotNetStreamInf* SI) {
     
     
     BOOLEAN Return = FALSE;
-    
     int ID = GetVolumeID(C, L);
     
     if (ID < 0) {
@@ -3741,7 +3750,8 @@ NarCreateCleanGPTBootablePartition(int DiskID, int VolumeSizeMB, int EFISizeMB, 
             "exit\n", DiskID, RecoverySizeMB, EFISizeMB, VolumeSizeMB, Letter);
     
     char InputFN[] = "NARDPINPUT";
-    if (NarDumpToFile(InputFN, Buffer, strlen(Buffer))) {
+    // NOTE(Batuhan): safe conversion
+    if (NarDumpToFile(InputFN, Buffer, (INT32)strlen(Buffer))) {
         sprintf(Buffer, "diskpart /s %s", InputFN);
         printf(Buffer);
         system(Buffer);
@@ -3819,6 +3829,10 @@ NarCreateCleanMBRPartition(int DiskID, char VolumeLetter, int VolumeSize) {
 
 inline BOOLEAN
 NarCreateCleanMBRBootPartition(int DiskID, char VolumeLetter, int VolumeSizeMB, int SystemPartitionSizeMB, int RecoveryPartitionSizeMB) {
+    
+    // TODO(Batuhan): break the code 
+    // NOTE(Batuhan): break the code
+    *(int*)0 = 0;
     
     char Buffer[2048];
     memset(Buffer, 0, 2048);
@@ -4077,7 +4091,7 @@ NarGetVolumeDiskID(char Letter) {
     wchar_t Vol[] = L"!:\\";
     Vol[0] = Letter;
     
-    int Result = NAR_INVALID_DISK_ID;
+    unsigned char Result = (unsigned char)NAR_INVALID_DISK_ID;
     DWORD BS = 1024 * 2; //1 KB
     DWORD T = 0;
     
@@ -4092,7 +4106,7 @@ NarGetVolumeDiskID(char Letter) {
             if (DeviceIoControl(Drive, IOCTL_VOLUME_GET_VOLUME_DISK_EXTENTS, 0, 0, Ext, BS, &T, 0)) {
                 //wchar_t DiskPath[512];
                 // L"\\\\?\\PhysicalDrive%i";
-                Result = Ext->Extents[0].DiskNumber;
+                Result = (unsigned char)Ext->Extents[0].DiskNumber;
             }
             else {
                 printf("DeviceIoControl failed with argument VOLUME_GET_VOLUME_DISK_EXTENTS for volume %c\n", Letter);
@@ -4317,7 +4331,7 @@ RestoreVersionWithoutLoop(restore_inf R, BOOLEAN RestoreMFT, HANDLE Volume) {
                 data_array<nar_record> MFTLCN = { 0 };
                 MFTLCN.Data = (nar_record*)malloc(BMEX->M.Size.MFTMetadata);
                 // NOTE(Batuhan): Im worried about that in actual usage, we might have very very big metadatas and these may lead up to bugs that are very hard to bug due to narrowing to 32bit integers
-                MFTLCN.Count = BMEX->M.Size.MFTMetadata / (unsigned int)sizeof(nar_record);
+                MFTLCN.Count = (UINT32)(BMEX->M.Size.MFTMetadata / (unsigned int)sizeof(nar_record));
                 
                 if (MFTLCN.Data) {
                     DWORD BytesRead = 0;
@@ -4326,12 +4340,13 @@ RestoreVersionWithoutLoop(restore_inf R, BOOLEAN RestoreMFT, HANDLE Volume) {
                         printf("Warning, experimental feature, may cause severe usage of memory\n");
                         
                         for (UINT i = 0; i < MFTLCN.Count; i++) {
+                            
                             ULONGLONG LEN = (ULONGLONG)MFTLCN.Data[i].Len * (ULONGLONG)BMEX->M.ClusterSize;
                             void* Buffer = malloc(LEN);
                             memset(Buffer, 0, LEN);
-                            
+                            // TODO(Batuhan): WE CANT ZERO OUT MORE THAN 4GB AT ONCE, 
+                            //FIX IT(WHICH IS UNLIKELY FOR MFT, BUT MIGHT HAPPEN!)
                             NarSetFilePointer(Volume, (ULONGLONG)MFTLCN.Data[i].StartPos * (ULONGLONG)BMEX->M.ClusterSize);
-                            
                             if (WriteFile(Volume, Buffer, LEN, &BytesRead, 0) && BytesRead == LEN) {
                                 //printf("Starting clusternumber %i\t", MFTLCN.Data[i].StartPos);
                                 //printf("Zeroed from %I64d, with lenght %I64d\n", (ULONGLONG)MFTLCN.Data[i].StartPos * (ULONGLONG)BMEX->M.ClusterSize, LEN);
@@ -4539,7 +4554,7 @@ RestoreDiffVersion(restore_inf R, HANDLE Volume) {
     
     if (IsVolumeLocal) {
         printf("Passed volume argument was invalid, creating new handle for %c\n", R.TargetLetter);
-        Volume = NarOpenVolume(R.TargetLetter);
+        Volume = NarOpenVolume((char)R.TargetLetter);
         if (Volume == INVALID_HANDLE_VALUE) {
             printf("Couldnt create local volume handle, terminating now\n");
             Result = FALSE;
@@ -4581,7 +4596,7 @@ RestoreIncVersion(restore_inf R, HANDLE Volume) {
     
     if (IsVolumeLocal) {
         printf("Passed volume argument was invalid, creating new handle for %c\n", R.TargetLetter);
-        Volume = NarOpenVolume(R.TargetLetter);
+        Volume = NarOpenVolume((char)R.TargetLetter);
         if (Volume == INVALID_HANDLE_VALUE) {
             printf("Couldnt create local volume handle, terminating now\n");
             Result = FALSE;
@@ -4646,7 +4661,7 @@ NarRestoreMFT(backup_metadata_ex* BMEX, HANDLE Volume) {
         
         NarSetFilePointer(MFTFile, BMEX->M.Offset.MFT);
         
-        for (int i = 0; i < MFTLCN.Count; i++) {
+        for (size_t i = 0; i < MFTLCN.Count; i++) {
             if (NarSetFilePointer(Volume, (ULONGLONG)MFTLCN.Data[i].StartPos * (ULONGLONG)BMEX->M.ClusterSize)) {
                 if (!CopyData(MFTFile, Volume, (ULONGLONG)MFTLCN.Data[i].Len * (ULONGLONG)BMEX->M.ClusterSize)) {
                     CopyErrorsOccured++;
@@ -4744,10 +4759,13 @@ InitBackupMetadataEx(wchar_t Letter, int Version, std::wstring RootDir) {
                 if (BMEX->RegionsMetadata.Data != NULL) {
                     BMEX->RegionsMetadata.Count = 0;
                     BytesOperated = 0;
-                    
-                    if (ReadFile(File, BMEX->RegionsMetadata.Data, BMEX->M.Size.RegionsMetadata, &BytesOperated, 0) && BytesOperated == BMEX->M.Size.RegionsMetadata) {
+                    // TODO(Batuhan): its not safe to assume regions metadata is lower than 4gb, might exceed in very long period
+                    // build safe wrapper around read-write file methods to ensure that it is possible to read data more than 4gb
+                    // at once
+                    if (ReadFile(File, BMEX->RegionsMetadata.Data, (DWORD)BMEX->M.Size.RegionsMetadata, &BytesOperated, 0) && BytesOperated == BMEX->M.Size.RegionsMetadata) {
                         ErrorOccured = FALSE;
-                        BMEX->RegionsMetadata.Count = BMEX->M.Size.RegionsMetadata / sizeof(nar_record);
+                        // NOTE(Batuhan): probably safe to assume that we wont have more than 2^32 regions, its really big
+                        BMEX->RegionsMetadata.Count = (UINT)BMEX->M.Size.RegionsMetadata / sizeof(nar_record);
                     }
                     else {
                         printf("Couldn't read regions metadata\n");
@@ -4792,9 +4810,10 @@ ReadMFTLCN(backup_metadata_ex* BMEX) {
     if (File != INVALID_HANDLE_VALUE) {
         if (NarSetFilePointer(File, BMEX->M.Offset.MFTMetadata)) {
             DWORD BytesRead = 0;
-            Result.Count = BMEX->M.Size.MFTMetadata / sizeof(nar_record);
+            Result.Count = (UINT32)BMEX->M.Size.MFTMetadata / sizeof(nar_record);
             Result.Data = (nar_record*)malloc(BMEX->M.Size.MFTMetadata);
             if (Result.Data) {
+                // TODO(Batuhan): same 4gb problem here, should implement safe method to read more than 4gb at once
                 ReadFile(File, Result.Data, BMEX->M.Size.MFTMetadata, &BytesRead, 0);
                 if (BytesRead == BMEX->M.Size.MFTMetadata) {
                     // NOTE(Batuhan): Success!
@@ -4881,7 +4900,7 @@ SaveMetadata(char Letter, int Version, int ClusterSize, BackupType BT,
     BM.ClusterSize = ClusterSize;
     BM.BT = BT;
     BM.Letter = Letter;
-    BM.DiskType = NarGetVolumeDiskType(BM.Letter);
+    BM.DiskType = (unsigned char)NarGetVolumeDiskType(BM.Letter);
     
     BM.IsOSVolume = NarIsOSVolume(Letter);
     
@@ -4899,7 +4918,7 @@ SaveMetadata(char Letter, int Version, int ClusterSize, BackupType BT,
     // NOTE(Batuhan): Backup regions and it's metadata sizes
     if (BackupRegions.Count > 0) {
         BM.Size.RegionsMetadata = BackupRegions.Count * sizeof(nar_record);
-        for (int i = 0; i < BackupRegions.Count; i++) {
+        for (size_t i = 0; i < BackupRegions.Count; i++) {
             BM.Size.Regions += (ULONGLONG)BackupRegions.Data[i].Len * BM.ClusterSize;
         }
     }
@@ -4927,7 +4946,7 @@ SaveMetadata(char Letter, int Version, int ClusterSize, BackupType BT,
     
     if (MFTLCN.Count > 0) {
         BM.Size.MFTMetadata = MFTLCN.Count * sizeof(nar_record);
-        for (int i = 0; i < MFTLCN.Count; i++) {
+        for (size_t i = 0; i < MFTLCN.Count; i++) {
             BM.Size.MFT += (ULONGLONG)MFTLCN.Data[i].Len * (ULONGLONG)BM.ClusterSize;
         }
     }
@@ -4942,6 +4961,7 @@ SaveMetadata(char Letter, int Version, int ClusterSize, BackupType BT,
     
     
     {
+        // TODO(Batuhan): same problem mentioned in the codebase, we have to figure out reading more than 4gb at once(easy, but gotta replace lots of code probably)
         WriteFile(MetadataFile, BackupRegions.Data, BM.Size.RegionsMetadata, &BytesWritten, 0);
         if (BytesWritten != BM.Size.RegionsMetadata) {
             printf("Couldn't save regionsmetata to file\n");
@@ -5158,7 +5178,7 @@ NarTruncateFile(HANDLE F, ULONGLONG TargetSize) {
     LARGE_INTEGER NewFilePointer = { 0 };
     SetFilePointerEx(F, MoveTo, &NewFilePointer, FILE_BEGIN);
     if (MoveTo.QuadPart == NewFilePointer.QuadPart) {
-        return SetEndOfFile(F);
+        return (SetEndOfFile(F) != 0);
     }
     else {
         printf("Couldn't truncate file to %I64d, instead set it's end to %I64d\n", TargetSize, NewFilePointer.QuadPart);
@@ -5218,7 +5238,7 @@ RestoreRecoveryFile(restore_inf R) {
     HANDLE RecoveryPartitionHandle = NarOpenVolume(NAR_RECOVERY_PARTITION_LETTER);
     if (RecoveryPartitionHandle == INVALID_HANDLE_VALUE) {
         
-        HANDLE MetadataFile = CreateFileW(MFN.c_str(), GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, 0, 0);
+        MetadataFile = CreateFileW(MFN.c_str(), GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, 0, 0);
         if (MetadataFile != INVALID_HANDLE_VALUE) {
             
             if (NarSetFilePointer(MetadataFile, B.Offset.Recovery)) {
@@ -5305,8 +5325,7 @@ AppendRecoveryToFile(HANDLE File, char Letter) {
                     
                     for (unsigned int PartitionIndex = 0; PartitionIndex < DL->PartitionCount; ++PartitionIndex){
                         
-                        PARTITION_INFORMATION_EX* PI = &DL->PartitionEntry[PartitionIndex];
-                        
+                        // PARTITION_INFORMATION_EX* PI = &DL->PartitionEntry[PartitionIndex];
                         //
                         
                     }
@@ -5756,7 +5775,7 @@ void foo(){
         
         if (VolumeHandle != INVALID_HANDLE_VALUE) {
             
-            for (int i = 0; i < RecordCount; i++) {
+            for (size_t i = 0; i < RecordCount; i++) {
                 
                 TargetFilePointer = (ULONGLONG)VolumeRecords[i].StartPos * (ULONGLONG)4096;
                 if (NarSetFilePointer(VolumeHandle, TargetFilePointer)) {
@@ -6180,7 +6199,7 @@ NarFileExplorerRestoreFolder(nar_backup_file_explorer_context *ctx, UINT32 Selec
     
     NarFileExplorerPushDirectory(ctx, SelectedListID);
     
-    for(int i = 0; i < ctx->EList.EntryCount; i++){
+    for(size_t i = 0; i < ctx->EList.EntryCount; i++){
         
         // check if directory
         if(ctx->EList.Entries[i].IsDirectory){
@@ -6221,7 +6240,7 @@ NarGetFileNameFromPath(const wchar_t* Path, wchar_t *OutName, INT32 OutMaxLen) {
     
     if (PathLen > OutMaxLen) return;
     
-    INT TrimPoint = PathLen - 1;
+    size_t TrimPoint = PathLen - 1;
     {
         while (Path[TrimPoint] != L'\\' && --TrimPoint != 0);
     }
@@ -6290,7 +6309,7 @@ NarRestoreFileFromBackups(wchar_t *RootDir, wchar_t *FileName, wchar_t *RestoreT
         
         memset(&FEHandle, 0, sizeof(FEHandle));
         
-        if (NarInitFEVolumeHandle(&FEHandle, NAR_FE_HAND_OPT_READ_BACKUP_VOLUME, VolumeLetter, VersionID, RootDir)) {
+        if (NarInitFEVolumeHandle(&FEHandle, NAR_FE_HAND_OPT_READ_BACKUP_VOLUME, (char)VolumeLetter, VersionID, RootDir)) {
             
             NarFileExplorerSetFilePointer(FEHandle, FileStack.FileAbsoluteMFTOffset[VersionID - FileStack.StartingVersion]);
             memset(MemoryBuffer, 0, 1024);
@@ -7744,18 +7763,95 @@ NarTestScratch(){
     
 }
 
-
+#define NAR_FAILED 0
+#define NAR_SUCC   1
+#define BREAK_CODE __debugbreak();
+#define loop for(;;)
 
 int
-main(
-     int argc,
-     CHAR* argv[]
-     ) {
+main(int argc, char* argv[]) {
     
+    size_t bsize = 64*1024*1024;
+    void *MemBuf = malloc(bsize);
     
-    printf("asdfasdf");
-    printf("asdfasdf");
-    printf("asdfasdf");
+    LOG_CONTEXT C = {0};
+    C.Port = INVALID_HANDLE_VALUE;
+    C.ShutDown = NULL;
+    C.Thread = NULL;
+    C.CleaningUp = FALSE;
+    
+    if(SetupVSS() && ConnectDriver(&C)){
+        
+        DotNetStreamInf inf = {0};
+        char Volume = 0;
+        int Type = 0;
+        while(1){
+            memset(&inf, 0, sizeof(inf));
+            scanf("%c %i", Volume, Type);
+            BackupType bt = (BackupType)Type;
+            
+            if(SetupStream(&C, (wchar_t)Volume, bt, &inf)){
+                
+                int id = GetVolumeID(&C, (wchar_t)Volume);
+                volume_backup_inf *v = &C.Volumes.Data[id];
+                size_t TotalRead = 0;
+                size_t TotalWritten = 0;
+                size_t TargetWrite = (size_t)inf.ClusterSize * (size_t)inf.ClusterCount;
+                
+                HANDLE file = CreateFileW(inf.FileName.c_str(), GENERIC_WRITE | GENERIC_READ, FILE_SHARE_READ, 0, 0, CREATE_ALWAYS, 0);
+                if(file != INVALID_HANDLE_VALUE){
+                    
+                    loop{
+                        int Read = ReadStream(v, MemBuf, bsize);
+                        TotalRead += Read;
+                        if(Read == 0){
+                            break;
+                        }
+                        else{
+                            TotalRead += Read;
+                            DWORD BytesWritten = 0;
+                            if(WriteFile(file, MemBuf, Read, &BytesWritten, 0) && BytesWritten == Read){
+                                // NOTE(Batuhan): copied successfully
+                            }
+                            else{
+                                BREAK_CODE;
+                                printf("Couldnt write to file\n");
+                                DisplayError(GetLastError());
+                            }
+                        }
+                    }
+                    
+                    if(TotalRead != TargetWrite || TotalWritten != TargetWrite){
+                        BREAK_CODE;
+                        TerminateBackup(v, NAR_FAILED);
+                    }
+                    else{
+                        TerminateBackup(v, NAR_SUCC);
+                    }
+                    
+                }
+                else{
+                    // NOTE(Batuhan): couldnt create file to save backup
+                    BREAK_CODE;
+                    int ret = TerminateBackup(v, NAR_FAILED);
+                    ret++;// to inspect ret in debugging
+                }
+                
+                CloseHandle(file);
+                
+            }
+            else{
+                BREAK_CODE;
+                printf("couldnt setup stream\n");
+            }
+        }
+    }
+    else{
+        BREAK_CODE;
+    }
+    
+    return 0;
+    
     
     NarTestPool();
     NarTestScratch();
