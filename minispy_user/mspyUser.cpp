@@ -7784,9 +7784,9 @@ main(int argc, char* argv[]) {
         DotNetStreamInf inf = {0};
         char Volume = 0;
         int Type = 0;
-        while(1){
+        loop{
             memset(&inf, 0, sizeof(inf));
-            scanf("%c %i", &Volume, &Type);
+            Volume = getchar();
             BackupType bt = (BackupType)Type;
             
             if(SetupStream(&C, (wchar_t)Volume, bt, &inf)){
