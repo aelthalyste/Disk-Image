@@ -2356,13 +2356,8 @@ SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, DotNetStreamInf* SI) {
             }
             
             if (SI && Return) {
-                SI->ClusterCount = 0;
-                SI->ClusterSize = (INT32)VolInf->ClusterSize;
                 SI->MetadataFileName = GenerateMetadataName(VolInf->Letter, NAR_FULLBACKUP_VERSION);
                 SI->FileName = GenerateBinaryFileName(VolInf->Letter, NAR_FULLBACKUP_VERSION);
-                for (unsigned int i = 0; i < VolInf->Stream.Records.Count; i++) {
-                    SI->ClusterCount += VolInf->Stream.Records.Data[i].Len;
-                }
             }
             
         }
@@ -2391,15 +2386,8 @@ SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, DotNetStreamInf* SI) {
             }
             
             if (SI && Return) {
-                
-                SI->ClusterCount = 0;
-                SI->ClusterSize = (INT32)VolInf->ClusterSize;
                 SI->FileName = GenerateBinaryFileName(VolInf->Letter, VolInf->Version);
                 SI->MetadataFileName = GenerateMetadataName(VolInf->Letter, VolInf->Version);
-                for (unsigned int i = 0; i < VolInf->Stream.Records.Count; i++) {
-                    SI->ClusterCount += VolInf->Stream.Records.Data[i].Len;
-                }
-                
             }
         }
         
@@ -2423,16 +2411,19 @@ SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, DotNetStreamInf* SI) {
         
         if(TruncateIndex > 0){
             printf("Found regions that exceeds volume size, truncating stream record array from %i to %i\n", V->Stream.Records.Count, TruncateIndex);
-            V->Stream.Records.Data = (nar_record*)realloc(V->Stream.Records.Data, TruncateIndex*sizeof(nar_record));            
+            V->Stream.Records.Data = 
+                (nar_record*)realloc(V->Stream.Records.Data, TruncateIndex*sizeof(nar_record));            
             V->Stream.Records.Count = TruncateIndex;
-            
-            SI->ClusterCount = 0;
-            for (unsigned int i = 0; i < VolInf->Stream.Records.Count; i++) {
-                SI->ClusterCount += VolInf->Stream.Records.Data[i].Len;
-            }
-            
         }
         
+    }
+    
+    if(Return){
+        SI->ClusterCount = 0;
+        SI->ClusterSize = (INT32)VolInf->ClusterSize;
+        for (unsigned int i = 0; i < VolInf->Stream.Records.Count; i++) {
+            SI->ClusterCount += VolInf->Stream.Records.Data[i].Len;
+        }
     }
     
     printf("Totalbytes should be backed up %I64u\n", (UINT64)SI->ClusterCount*(UINT64)SI->ClusterSize);
@@ -2582,11 +2573,7 @@ SetIncRecords(volume_backup_inf* VolInf) {
                 VolInf->Stream.Records.Count = TargetReadSize/sizeof(nar_record);
                 
                 if(ReadFile(VolInf->LogHandle, VolInf->Stream.Records.Data, TargetReadSize, &BytesRead, 0) && BytesRead == TargetReadSize){
-                    
-                    qsort(VolInf->Stream.Records.Data, VolInf->Stream.Records.Count, sizeof(nar_record), CompareNarRecords);
-                    MergeRegions(&VolInf->Stream.Records);
                     Result = TRUE;
-                    
                 }
                 else{
                     
@@ -2630,6 +2617,10 @@ SetIncRecords(volume_backup_inf* VolInf) {
         
     }
     
+    if(Result == TRUE){
+        qsort(VolInf->Stream.Records.Data, VolInf->Stream.Records.Count, sizeof(nar_record), CompareNarRecords);
+        MergeRegions(&VolInf->Stream.Records);
+    }
     
     return Result;
 }
@@ -2750,6 +2741,8 @@ WriteStream(restore_inf* RestoreInf, void* Data, int Size) {
 BOOLEAN
 SetDiffRecords(volume_backup_inf* V) {
     
+    TIMED_BLOCK();
+    
     printf("Entered SetDiffRecords\n");
     BOOLEAN Result = FALSE;
     
@@ -2791,8 +2784,6 @@ SetDiffRecords(volume_backup_inf* V) {
                 if(ReadFile(V->LogHandle, V->Stream.Records.Data, TargetReadSize, &BytesRead,0) && BytesRead == TargetReadSize){
                     
                     printf("Succ read diff records, will sort and merge regions to save in space\n");
-                    qsort(V->Stream.Records.Data, V->Stream.Records.Count, sizeof(nar_record), CompareNarRecords);
-                    MergeRegions(&V->Stream.Records);
                     Result = TRUE;
                     
                 }
@@ -2838,7 +2829,10 @@ SetDiffRecords(volume_backup_inf* V) {
         
     }
     
-    
+    if(Result == TRUE){
+        qsort(V->Stream.Records.Data, V->Stream.Records.Count, sizeof(nar_record), CompareNarRecords);
+        MergeRegions(&V->Stream.Records);
+    }
     
 #if 0
     if (V->ActiveBackupInf.PossibleNewBackupRegionOffsetMark > 0xFFFFFFFFll) {
@@ -4855,13 +4849,12 @@ BackupRegions: Must have, this data determines how i must map binary data to the
 -- MFTMetadata: (optional)
 -- MFT: (optional)
 -- Recovery: (optional)
-
 */
 BOOLEAN
 SaveMetadata(char Letter, int Version, int ClusterSize, BackupType BT,
              data_array<nar_record> BackupRegions, HANDLE VSSHandle, data_array<nar_record> MFTLCN) {
-    // TODO(Batuhan): convert letter to uppercase
     
+    // TODO(Batuhan): convert letter to uppercase
     BOOLEAN IsMFTLCNInternal = FALSE;
     if (ClusterSize <= 0 || ClusterSize % 512 != 0) {
         return FALSE;
@@ -4873,7 +4866,6 @@ SaveMetadata(char Letter, int Version, int ClusterSize, BackupType BT,
     DWORD BytesWritten = 0;
     backup_metadata BM = { 0 };
     ULONGLONG BaseOffset = sizeof(BM);
-    
     
     BOOLEAN Result = FALSE;
     char StringBuffer[1024];
@@ -4891,7 +4883,6 @@ SaveMetadata(char Letter, int Version, int ClusterSize, BackupType BT,
         goto Exit;
     }
     
-    
     BM.MetadataInf.Size = sizeof(BM);
     BM.MetadataInf.Version = GlobalBackupMetadataVersion;
     
@@ -4902,7 +4893,6 @@ SaveMetadata(char Letter, int Version, int ClusterSize, BackupType BT,
     BM.DiskType = (unsigned char)NarGetVolumeDiskType(BM.Letter);
     
     BM.IsOSVolume = NarIsOSVolume(Letter);
-    
     BM.VolumeSize = NarGetVolumeSize(BM.Letter);
     
     NarGetProductName(BM.ProductName);
@@ -4911,23 +4901,15 @@ SaveMetadata(char Letter, int Version, int ClusterSize, BackupType BT,
     memset(&BM.Offset, 0, sizeof(BM.Offset));
     memset(&BM.Errors, 0, sizeof(BM.Errors));
     
-    
     // NOTE(Batuhan): fill BM.Size struct
-    
     // NOTE(Batuhan): Backup regions and it's metadata sizes
-    if (BackupRegions.Count > 0) {
+    {
         BM.Size.RegionsMetadata = BackupRegions.Count * sizeof(nar_record);
         for (size_t i = 0; i < BackupRegions.Count; i++) {
             BM.Size.Regions += (ULONGLONG)BackupRegions.Data[i].Len * BM.ClusterSize;
         }
+        BM. VersionMaxWriteOffset = ((ULONGLONG)BackupRegions.Data[BackupRegions.Count - 1].StartPos + BackupRegions.Data[BackupRegions.Count - 1].Len)*BM.ClusterSize;
     }
-    else {
-        // NOTE(Batuhan): BackupRegions shouldnt have 0 entry
-        BM.Errors.RegionsMetadata = TRUE;
-        BM.Errors.Regions = TRUE;
-        printf("BackupRegions shouldn't have 0 entry\n");
-    }
-    
     
     /*
     // NOTE(Batuhan): MFT metadata and it's binary sizes, checks if non-fullbackup, otherwise skips it
@@ -7785,8 +7767,12 @@ main(int argc, char* argv[]) {
         char Volume = 0;
         int Type = 0;
         loop{
+            
             memset(&inf, 0, sizeof(inf));
-            Volume = getchar();
+            while(getchar() != 'E');
+            
+            Volume = 'E';
+            
             BackupType bt = (BackupType)Type;
             
             if(SetupStream(&C, (wchar_t)Volume, bt, &inf)){
@@ -7820,7 +7806,7 @@ main(int argc, char* argv[]) {
                         }
                     }
                     
-                    if(TotalRead != TargetWrite || TotalWritten != TargetWrite){
+                    if((TotalRead != TargetWrite || TotalWritten != TargetWrite)){
                         BREAK_CODE;
                         TerminateBackup(v, NAR_FAILED);
                     }

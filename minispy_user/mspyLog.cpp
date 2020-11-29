@@ -6,7 +6,7 @@ _Analysis_mode_(_Analysis_code_type_user_code_)
 #define TIME_BUFFER_LENGTH 20
 #define TIME_ERROR         "time error"
 
-#define POLL_INTERVAL   (10) // ms
+#define POLL_INTERVAL   (15) // ms
 
 #ifndef min
 #define min(a,b)            (((a) < (b)) ? (a) : (b))
@@ -110,6 +110,7 @@ Return Value:
                             MSDNRetVAL = WaitForSingleObject(V->FileWriteMutex, 250);
                             if(MSDNRetVAL != WAIT_OBJECT_0){
                                 printf("Couldnt lock mutex to write records to file\n");
+                                free(Recs);
                                 continue;
                             }
                             
@@ -121,10 +122,10 @@ Return Value:
                                 if (Recs[TempIndex].StartPos + Recs[TempIndex].Len < V->VolumeTotalClusterCount) {
                                     FileDump(&Recs[TempIndex], sizeof(nar_record), V->LogHandle);        
                                 }
-                                
                             }
                             
                             ReleaseMutex(V->FileWriteMutex);
+                            free(Recs);
                             
                         }
                         else {

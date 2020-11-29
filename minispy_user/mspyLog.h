@@ -531,7 +531,8 @@ struct backup_metadata {
     };
     
     ULONGLONG VolumeSize;
-    ULONGLONG LastUsedByteOffset; //DO NOT USE IT, NOT IMPLEMENTED
+    // NOTE(Batuhan): Last volume offset must be written to disk that if this specific version were to be restored, version itself can be 5 gb big, but last offset it indicates that changes were made can be 100gb'th offset.
+    ULONGLONG VersionMaxWriteOffset; 
     
     int Version; // -1 for full backup
     int ClusterSize; // 4096 default

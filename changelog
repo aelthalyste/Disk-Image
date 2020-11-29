@@ -1,0 +1,10 @@
+Changelog 30.11.2020 
+-Before this update, SetIncRecords and SetDiffRecords was sorting and merging regions in mutex locked region, that was causing msg thread to stall and unable to 
+fetch updates on time, causing it to skip significant amount of regions. That was pretty dumb, no idea how I did end up writing code like that, now in locked region, I
+just fetch data, release mutex, then process it.
+-This one is sneaky bug, in setupstreams, there is a special, but temporary, code block that adds mft regions to stream of records collected. Now that might not seem like a problem,
+but if you end up adding lots of files since last backup, you will end up having completely different number of MFT records(generally speaking, it increases), but argument passed
+on SetupStream, StreamInfo struct doesnt update accordingly! So you end up copying less bytes than needed, since extra addition of regions didnt updated in the StreamInfo struct. Causing
+SetupStream to return false
+-Looks like I was leaking almost all memory I allocted on the msg loop... Fixed
+-SaveMetadata was interpreting non-changed volumes as errors but looks like volume might not change between versions. Now it accepts it
