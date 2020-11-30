@@ -19,8 +19,8 @@ namespace DiskBackup.Business.Abstract
         BackupInfo GetBackupFile(BackupInfo backupInfo); // istediğimiz backup bilgilerini almak için
         [OperationContract]
         List<FilesInBackup> GetFileInfoList();
-        [OperationContract]
-        List<Log> GetLogList(); //Böyle bir uç yapılacağı konuşuldu
+        /*[OperationContract]
+        List<Log> GetLogList(); //Böyle bir uç yapılacağı konuşuldu*/
         [OperationContract]
         bool GetSelectedFileInfo(FilesInBackup filesInBackup);
 
@@ -58,5 +58,7 @@ namespace DiskBackup.Business.Abstract
         [OperationContract]
         void FreeFileExplorer();
 
+        [OperationContract]
+        bool GetInitTracker();
     }
 }

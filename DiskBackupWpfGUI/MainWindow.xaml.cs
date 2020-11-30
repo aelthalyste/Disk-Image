@@ -6,6 +6,7 @@ using DiskBackup.DataAccess.Abstract;
 using DiskBackup.Entities.Concrete;
 using DiskBackup.TaskScheduler;
 using DiskBackup.TaskScheduler.Jobs;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -56,72 +57,75 @@ namespace DiskBackupWpfGUI
 
         private CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
 
-        //private readonly IBackupService _backupService;
-        //private readonly IBackupStorageService _backupStorageService;
         private readonly ITaskInfoDal _taskInfoDal;
         private readonly IBackupStorageDal _backupStorageDal;
-        //private readonly ITaskSchedulerManager _taskSchedulerManager;
         private readonly IBackupTaskDal _backupTaskDal;
         private readonly IStatusInfoDal _statusInfoDal;
         private readonly IActivityLogDal _activityLogDal;
 
         private readonly ILifetimeScope _scope;
+        private readonly ILogger _logger;
 
-        public MainWindow(/*IBackupService backupService, IBackupStorageService backupStorageService,*/ ILifetimeScope scope, ITaskInfoDal taskInfoDal,
-            IBackupStorageDal backupStorageDal, /*ITaskSchedulerManager taskSchedulerManager,*/ IBackupTaskDal backupTaskDal, IStatusInfoDal statusInfoDal, IActivityLogDal activityLogDal)
+        public MainWindow(ILifetimeScope scope, ITaskInfoDal taskInfoDal, IBackupStorageDal backupStorageDal, IBackupTaskDal backupTaskDal, IStatusInfoDal statusInfoDal, 
+            IActivityLogDal activityLogDal, ILogger logger)
         {
             InitializeComponent();
 
+            _logger = logger.ForContext<MainWindow>();
 
-            //_backupService = backupService;
-            //_backupStorageService = backupStorageService;
-            _taskInfoDal = taskInfoDal;
             _backupStorageDal = backupStorageDal;
+            _activityLogDal = activityLogDal;
             _backupTaskDal = backupTaskDal;
             _statusInfoDal = statusInfoDal;
-            //_taskSchedulerManager = taskSchedulerManager;
-            _activityLogDal = activityLogDal;
+            _taskInfoDal = taskInfoDal;
 
             _scope = scope;
             var backupService = _scope.Resolve<IBackupService>();
             var backupStorageService = _scope.Resolve<IBackupStorageService>();
-            /*if (!backupService.InitTracker())
-            {
+            if (!backupService.GetInitTracker())
                 MessageBox.Show("Driver intialize edilemedi!", "NARBULUT DİYOR Kİ;", MessageBoxButton.OK, MessageBoxImage.Error);
-            }*/
+            else
+                MessageBox.Show("Driver intialize edildi!", "NARBULUT DİYOR Kİ;", MessageBoxButton.OK, MessageBoxImage.Information);
 
 
             #region Disk Bilgileri
 
-            _diskList = backupService.GetDiskList();
-
-            foreach (var diskItem in _diskList)
+            try
             {
-                foreach (var volumeItem in diskItem.VolumeInfos)
+                _diskList = backupService.GetDiskList();
+
+                foreach (var diskItem in _diskList)
                 {
-                    _volumeList.Add(volumeItem);
+                    foreach (var volumeItem in diskItem.VolumeInfos)
+                    {
+                        _volumeList.Add(volumeItem);
+                    }
+                }
+
+                listViewDisk.ItemsSource = _volumeList;
+                listViewRestoreDisk.ItemsSource = _volumeList;
+
+                CollectionView view = (CollectionView)CollectionViewSource.GetDefaultView(listViewDisk.ItemsSource);
+                PropertyGroupDescription groupDescription = new PropertyGroupDescription("DiskName");
+                view.GroupDescriptions.Add(groupDescription);
+
+                foreach (var item in _diskList)
+                {
+                    DiskInfoPage page = new DiskInfoPage(item);
+                    Frame frame = new Frame();
+                    frame.Content = page;
+                    frame.VerticalAlignment = VerticalAlignment.Top;
+                    diskInfoStackPanel.Children.Add(frame);
+                    page = new DiskInfoPage(item);
+                    frame = new Frame();
+                    frame.Content = page;
+                    frame.VerticalAlignment = VerticalAlignment.Top;
+                    stackTasksDiskInfo.Children.Add(frame);
                 }
             }
-
-            listViewDisk.ItemsSource = _volumeList;
-            listViewRestoreDisk.ItemsSource = _volumeList;
-
-            CollectionView view = (CollectionView)CollectionViewSource.GetDefaultView(listViewDisk.ItemsSource);
-            PropertyGroupDescription groupDescription = new PropertyGroupDescription("DiskName");
-            view.GroupDescriptions.Add(groupDescription);
-
-            foreach (var item in _diskList)
+            catch(Exception e)
             {
-                DiskInfoPage page = new DiskInfoPage(item);
-                Frame frame = new Frame();
-                frame.Content = page;
-                frame.VerticalAlignment = VerticalAlignment.Top;
-                diskInfoStackPanel.Children.Add(frame);
-                page = new DiskInfoPage(item);
-                frame = new Frame();
-                frame.Content = page;
-                frame.VerticalAlignment = VerticalAlignment.Top;
-                stackTasksDiskInfo.Children.Add(frame);
+                _logger.Error(e, "Disk bilgileri getirilemedi!");
             }
 
             #endregion
@@ -150,22 +154,24 @@ namespace DiskBackupWpfGUI
 
             #region Backup dosya bilgileri
 
-            _backupsItems = backupService.GetBackupFileList(_backupStorageDal.GetList());
+            try
+            {
+                _backupsItems = backupService.GetBackupFileList(_backupStorageDal.GetList());
 
-            listViewBackups.ItemsSource = _backupsItems;
-            listViewRestore.ItemsSource = _backupsItems;
-
-            //foreach (BackupInfo item in _backupsItems)
-            //{
-            //    MessageBox.Show(item.BackupStorageInfo.StorageName + " -- " + item.BackupStorageInfo.Id);
-            //}
+                listViewBackups.ItemsSource = _backupsItems;
+                listViewRestore.ItemsSource = _backupsItems;
+            }
+            catch(Exception e)
+            {
+                _logger.Error(e, "Backup dosyaları getirilemedi!");
+            }
 
             #endregion
 
 
             RefreshTasks(_cancellationTokenSource.Token);
             this.Closing += (sender, e) => _cancellationTokenSource.Cancel();
-
+            _logger = logger;
         }
 
 
