@@ -1,5 +1,6 @@
 ﻿using MyProduct.Entities.Model;
 using MyProduct.Entities.Repositories;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -15,9 +16,11 @@ namespace MyProduct.Business
     {
         private readonly ICustomerRepository _customerRepository;
         private int _idCounter = 0;
-        public CustomerService(ICustomerRepository customerRepository)
+        private readonly ILogger _logger;
+        public CustomerService(ICustomerRepository customerRepository, ILogger logger)
         {
             _customerRepository = customerRepository;
+            _logger = logger.ForContext<CustomerService>();
         }
 
         public void AddCustomer(string name, string address)
@@ -27,6 +30,14 @@ namespace MyProduct.Business
 
         public IEnumerable<Customer> GetCustomers()
         {
+            try
+            {
+                throw new Exception("Can sıkıntısı.");
+            }
+            catch (Exception e)
+            {
+                _logger.Error(e, "Bir hata oluştu.{@Customer}", new Customer { Id = 123, Name = "sadfa", Address = " asdasd"});
+            }
             return _customerRepository.GetCustomers();
         }
 
