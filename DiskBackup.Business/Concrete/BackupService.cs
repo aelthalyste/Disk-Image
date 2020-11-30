@@ -26,6 +26,7 @@ namespace DiskBackup.Business.Concrete
         private Dictionary<int, ManualResetEvent> _taskEventMap = new Dictionary<int, ManualResetEvent>(); // aynı işlem Stopwatch ve cancellationtoken source için de yapılacak ancak Quartz'ın pause, resume ve cancel işlemleri düzgün çalışıyorsa kullanılmayacak
         private Dictionary<int, CancellationTokenSource> _cancellationTokenSource = new Dictionary<int, CancellationTokenSource>();
         private bool _isStarted = false;
+        private bool _initTrackerResult = false;
 
         private Dictionary<int, Stopwatch> _timeElapsedMap = new Dictionary<int, Stopwatch>();
 
@@ -42,7 +43,12 @@ namespace DiskBackup.Business.Concrete
         {
             // programla başlat 1 kere çalışması yeter
             // false değeri dönüyor ise eğer backup işlemlerini disable et
-            return _diskTracker.CW_InitTracker();
+            if (!_isStarted)
+            {
+                _initTrackerResult = _diskTracker.CW_InitTracker();
+                _isStarted = true;
+            }
+            return _initTrackerResult;
         }
 
         public void InitFileExplorer(BackupInfo backupInfo) //initTracker'la aynı mantıkla çalışır mı? (Explorer ctor'da 1 kere çağrılma)

@@ -85,10 +85,10 @@ namespace DiskBackupWpfGUI
             _scope = scope;
             var backupService = _scope.Resolve<IBackupService>();
             var backupStorageService = _scope.Resolve<IBackupStorageService>();
-            if (!backupService.InitTracker())
+            /*if (!backupService.InitTracker())
             {
                 MessageBox.Show("Driver intialize edilemedi!", "NARBULUT DİYOR Kİ;", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
+            }*/
 
 
             #region Disk Bilgileri
