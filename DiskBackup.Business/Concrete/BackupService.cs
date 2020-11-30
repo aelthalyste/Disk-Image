@@ -4,6 +4,7 @@ using DiskBackup.DataAccess.Concrete.EntityFramework;
 using DiskBackup.DataAccess.Core;
 using DiskBackup.Entities.Concrete;
 using NarDIWrapper;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -27,16 +28,17 @@ namespace DiskBackup.Business.Concrete
         private Dictionary<int, CancellationTokenSource> _cancellationTokenSource = new Dictionary<int, CancellationTokenSource>();
         private bool _isStarted = false;
         private bool _initTrackerResult = false;
-
+        private readonly ILogger _logger;
         private Dictionary<int, Stopwatch> _timeElapsedMap = new Dictionary<int, Stopwatch>();
 
         private readonly IStatusInfoDal _statusInfoDal; // status bilgilerini veritabanına yazabilmek için gerekli
         private readonly ITaskInfoDal _taskInfoDal; // status bilgilerini veritabanına yazabilmek için gerekli
 
-        public BackupService(IStatusInfoDal statusInfoRepository, ITaskInfoDal taskInfoDal)
+        public BackupService(IStatusInfoDal statusInfoRepository, ITaskInfoDal taskInfoDal, ILogger logger)
         {
             _statusInfoDal = statusInfoRepository;
             _taskInfoDal = taskInfoDal;
+            _logger = logger.ForContext<BackupService>());
         }
 
         public bool InitTracker()
@@ -60,6 +62,7 @@ namespace DiskBackup.Business.Concrete
 
         public List<DiskInformation> GetDiskList()
         {
+            _logger.Verbose("Get disk list called");
             //PrioritySection 
             List<DiskInfo> disks = DiskTracker.CW_GetDisksOnSystem();
             List<VolumeInformation> volumes = DiskTracker.CW_GetVolumes();
@@ -157,6 +160,7 @@ namespace DiskBackup.Business.Concrete
         public BackupInfo GetBackupFile(BackupInfo backupInfo)
         {
             // seçilen dosyanın bilgilerini sağ tarafta kullanabilmek için
+            _logger.Verbose("Get backup info called. Parameter BackupInfo:{@BackupInfo}", backupInfo);
             var result = DiskTracker.CW_GetBackupsInDirectory(backupInfo.BackupStorageInfo.Path);
 
             foreach (var resultItem in result)

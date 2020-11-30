@@ -6,11 +6,13 @@ using DiskBackup.DataAccess.Concrete.EntityFramework;
 using DiskBackup.TaskScheduler;
 using DiskBackup.TaskScheduler.Factory;
 using DiskBackup.TaskScheduler.Jobs;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Data;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using System.Windows;
 
@@ -32,7 +34,13 @@ namespace DiskBackupWpfGUI
 
         private void CreateContainer()
         {
+            var logger = new LoggerConfiguration()
+                .MinimumLevel.Verbose()
+                .WriteTo.File(Assembly.GetExecutingAssembly().Location + ".logs.txt", flushToDiskInterval: TimeSpan.FromMilliseconds(300),
+                    outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss} [{Level:u}] {Properties:l} {Message:l}{NewLine}{Exception}")
+                .CreateLogger();
             var builder= new ContainerBuilder();
+            builder.RegisterInstance(logger).As<ILogger>().SingleInstance();
             builder.RegisterType<EfRestoreTaskDal>().As<IRestoreTaskDal>();
             builder.RegisterType<EfActivityLogDal>().As<IActivityLogDal>();
             builder.RegisterType<EfBackupStorageDal>().As<IBackupStorageDal>();

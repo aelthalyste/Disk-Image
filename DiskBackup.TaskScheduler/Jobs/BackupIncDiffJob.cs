@@ -4,6 +4,7 @@ using DiskBackup.DataAccess.Abstract;
 using DiskBackup.DataAccess.Core;
 using DiskBackup.Entities.Concrete;
 using Quartz;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -21,11 +22,11 @@ namespace DiskBackup.TaskScheduler.Jobs
         private readonly IStatusInfoDal _statusInfoDal;
         private readonly IActivityLogDal _activityLogDal;
         private readonly IBackupTaskDal _backupTaskDal;
-
+        private readonly ILogger _logger;
         public static bool _refreshIncDiffTaskFlag { get; set; } = false;
         public static bool _refreshIncDiffLogFlag { get; set; } = false;
 
-        public BackupIncDiffJob(ITaskInfoDal taskInfoDal, IBackupStorageDal backupStorageDal, IStatusInfoDal statusInfoDal, IBackupService backupService, IActivityLogDal activityLogDal, IBackupTaskDal backupTaskDal)
+        public BackupIncDiffJob(ITaskInfoDal taskInfoDal, IBackupStorageDal backupStorageDal, IStatusInfoDal statusInfoDal, IBackupService backupService, IActivityLogDal activityLogDal, IBackupTaskDal backupTaskDal, ILogger logger)
         {
             _taskInfoDal = taskInfoDal;
             _backupStorageDal = backupStorageDal;
@@ -33,6 +34,7 @@ namespace DiskBackup.TaskScheduler.Jobs
             _backupService = backupService;
             _activityLogDal = activityLogDal;
             _backupTaskDal = backupTaskDal;
+            _logger = logger.ForContext<BackupIncDiffJob>();
         }
 
         public async Task Execute(IJobExecutionContext context)
@@ -96,6 +98,7 @@ namespace DiskBackup.TaskScheduler.Jobs
             }
             catch (Exception e)
             {
+                _logger.Error(e, "Incremental backup görevinde hata oluştu. Task: {@Task}. Refirecount: {Count}", task, context.RefireCount);
                 Console.WriteLine("Catch'e düştü");
                 if (task.BackupTaskInfo.FailTryAgain)
                 {
