@@ -470,7 +470,7 @@ namespace DiskBackupWpfGUI
                     Console.WriteLine($"Patlamadım Id: {taskInfo.RestoreTaskInfo.Id} SchedulerId: {taskInfo.ScheduleId}");
                     // restore disk ve volume ayrıntısı burada kontrol edilip çağırılacak
                     var taskSchedulerManager = _scope.Resolve<ITaskSchedulerManager>();
-                    taskSchedulerManager.RunNowTrigger(taskInfo.ScheduleId).Wait();
+                    taskSchedulerManager.RestoreVolumeNowJob(taskInfo).Wait();
                 }
             }
             else if (taskInfo.Status.Equals("Durduruldu"))
@@ -633,7 +633,6 @@ namespace DiskBackupWpfGUI
             btnTaskDelete.IsEnabled = false;
             btnTaskEdit.IsEnabled = false;
             btnTaskOpen.IsEnabled = false;
-            btnTaskPaste.IsEnabled = false;
             btnTaskPause.IsEnabled = false;
             btnTaskStart.IsEnabled = false;
             btnTaskStop.IsEnabled = false;

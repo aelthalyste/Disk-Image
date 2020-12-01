@@ -390,13 +390,11 @@ namespace DiskBackup.TaskScheduler
 
         public async Task RestoreVolumeJob(TaskInfo taskInfo)
         {
-            _logger.Verbose("TaskSchedulerManager Restore volume job");
             IJobDetail job = JobBuilder.Create<RestoreVolumeJob>()
                 .WithIdentity($"restoreVolumeJob_{taskInfo.Id}", "Restore")
                 .UsingJobData("taskId", taskInfo.Id.ToString())
                 .Build();
 
-            _logger.Verbose("TaskSchedulerManager Restore volume trigger");
             ITrigger trigger = TriggerBuilder.Create()
                 .WithIdentity($"restoreVolumeTrigger_{taskInfo.Id}", "Restore")
                 .ForJob($"restoreVolumeJob_{taskInfo.Id}", "Restore")
@@ -405,7 +403,26 @@ namespace DiskBackup.TaskScheduler
 
             taskInfo.ScheduleId = $"restoreVolumeJob_{taskInfo.Id}/Restore";
             _taskInfoDal.Update(taskInfo);
-            _logger.Verbose("TaskSchedulerManager Restore volume update bitti");
+
+            await _scheduler.ScheduleJob(job, trigger);
+
+        }
+
+        public async Task RestoreVolumeNowJob(TaskInfo taskInfo)
+        {
+            IJobDetail job = JobBuilder.Create<RestoreVolumeJob>()
+                .WithIdentity($"restoreVolumeNowJob_{taskInfo.Id}", "Restore")
+                .UsingJobData("taskId", taskInfo.Id.ToString())
+                .Build();
+
+            ITrigger trigger = TriggerBuilder.Create()
+                .WithIdentity($"restoreVolumeNowTrigger_{taskInfo.Id}", "Restore")
+                .ForJob($"restoreVolumeNowJob_{taskInfo.Id}", "Restore")
+                .StartNow()
+                .Build();
+
+            taskInfo.ScheduleId = $"restoreVolumeNowJob_{taskInfo.Id}/Restore";
+            _taskInfoDal.Update(taskInfo);
 
             await _scheduler.ScheduleJob(job, trigger);
 

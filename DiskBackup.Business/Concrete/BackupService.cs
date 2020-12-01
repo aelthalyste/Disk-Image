@@ -168,9 +168,6 @@ namespace DiskBackup.Business.Concrete
                     backupInfo.Description = returnItem.TaskDescription;
                     backupInfo.BackupStorageInfo = backupStorageItem;
                     backupInfo.BackupStorageInfoId = backupStorageItem.Id;
-                    Console.WriteLine("backupInfo.Description: " + backupInfo.Description);
-                    Console.WriteLine("backupInfo.BackupTaskName: " + backupInfo.BackupTaskName);
-
 
                     if (returnItem.Version == -1)
                         backupInfo.Type = BackupTypes.Full;

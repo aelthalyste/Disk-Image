@@ -3,6 +3,7 @@ using DiskBackup.Business.Abstract;
 using DiskBackup.Business.Concrete;
 using DiskBackup.DataAccess.Abstract;
 using DiskBackup.DataAccess.Concrete.EntityFramework;
+using DiskBackup.Entities.Concrete;
 using DiskBackup.TaskScheduler;
 using DiskBackup.TaskScheduler.Factory;
 using DiskBackup.TaskScheduler.Jobs;
@@ -36,6 +37,7 @@ namespace DiskBackup.Service
         public void CreateContainer()
         {
             var logger = new LoggerConfiguration()
+                .Destructure.ByTransforming<TaskInfo>(t => "|" + t.Id + "_" + t.Name + "|")
                 .MinimumLevel.Verbose()
                 .WriteTo.File(Assembly.GetExecutingAssembly().Location + ".logs.txt", flushToDiskInterval: TimeSpan.FromMilliseconds(300),
                     outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss} [{Level:u}] {Properties:l} {Message:l}{NewLine}{Exception}")

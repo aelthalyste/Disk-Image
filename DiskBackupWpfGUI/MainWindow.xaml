@@ -518,30 +518,13 @@
                             <Button Name="btnTaskCopy" ToolTip="{DynamicResource copy}" Width="32" Height="32" HorizontalAlignment="Center" 
                                     Margin="0,5" Style="{StaticResource ImageButton}" Grid.Column="1" IsEnabled="False">
                                 <Button.Content>
-                                    <Image Height="25" Width="25" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <Image Height="27" Width="27" HorizontalAlignment="Center" VerticalAlignment="Center">
                                         <Image.Style>
                                             <Style TargetType="Image">
                                                 <Setter Property="Source" Value="Resources/Icon/icons8_copy_2.ico" />
                                                 <Style.Triggers>
                                                     <DataTrigger Binding="{Binding IsEnabled, RelativeSource={RelativeSource AncestorType=Button}}" Value="False">
                                                         <Setter Property="Source" Value="Resources/Icon/icons8_copy_disable.ico"/>
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </Image.Style>
-                                    </Image>
-                                </Button.Content>
-                            </Button>
-                            <Button Name="btnTaskPaste" ToolTip="{DynamicResource paste}" Width="32" Height="32" HorizontalAlignment="Center" 
-                                    Margin="0,5" Style="{StaticResource ImageButton}" Grid.Column="1" IsEnabled="False">
-                                <Button.Content>
-                                    <Image Height="25" Width="25" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                        <Image.Style>
-                                            <Style TargetType="Image">
-                                                <Setter Property="Source" Value="Resources/Icon/icons8_paste.ico" />
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding IsEnabled, RelativeSource={RelativeSource AncestorType=Button}}" Value="False">
-                                                        <Setter Property="Source" Value="Resources/Icon/icons8_paste_disable.ico"/>
                                                     </DataTrigger>
                                                 </Style.Triggers>
                                             </Style>
