@@ -33,7 +33,8 @@ namespace NarDIWrapper {
         int OSVolume;
         
         // TODO(Batuhan): 
-        // UINT64 VolumedSize;
+        UINT64 VolumeSize;
+        UINT64 BytesNeedToCopy; // just for this version, not cumilative
         
         wchar_t DiskType;
         System::String^ Fullpath; // fullpath of the backup
@@ -117,7 +118,7 @@ namespace NarDIWrapper {
     
     
     public ref class CSLog{
-    public:
+        public:
         System::String^ LogStr;
         CSNarFileTime^ Time;
     };
