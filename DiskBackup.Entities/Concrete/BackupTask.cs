@@ -47,6 +47,7 @@ namespace DiskBackup.Entities.Concrete
 
     public enum WeeklyType
     {
+        Unset = 0,
         First = 1,
         Second = 2,
         Third = 3,

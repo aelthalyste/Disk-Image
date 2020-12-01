@@ -75,8 +75,8 @@ namespace DiskBackup.TaskScheduler.Jobs
             _activityLogDal.Add(activityLog);
             taskInfo.Status = "Hazır"; // Resource eklenecek 
             _taskInfoDal.Update(taskInfo);
-            BackupIncDiffJob._refreshIncDiffTaskFlag = true;
-            BackupIncDiffJob._refreshIncDiffLogFlag = true;
+            //BackupIncDiffJob._refreshIncDiffTaskFlag = true;
+            //BackupIncDiffJob._refreshIncDiffLogFlag = true;
         }
     }
 }

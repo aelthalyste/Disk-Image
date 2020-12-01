@@ -7,11 +7,13 @@ using DiskBackup.TaskScheduler;
 using DiskBackup.TaskScheduler.Factory;
 using DiskBackup.TaskScheduler.Jobs;
 using Quartz.Spi;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Diagnostics;
 using System.Linq;
+using System.Reflection;
 using System.ServiceModel;
 using System.ServiceProcess;
 using System.Text;
@@ -33,7 +35,14 @@ namespace DiskBackup.Service
 
         public void CreateContainer()
         {
+            var logger = new LoggerConfiguration()
+                .MinimumLevel.Verbose()
+                .WriteTo.File(Assembly.GetExecutingAssembly().Location + ".logs.txt", flushToDiskInterval: TimeSpan.FromMilliseconds(300),
+                    outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss} [{Level:u}] {Properties:l} {Message:l}{NewLine}{Exception}")
+                .CreateLogger();
+
             var builder = new ContainerBuilder();
+            builder.RegisterInstance(logger).As<ILogger>().SingleInstance();
             builder.RegisterType<EfRestoreTaskDal>().As<IRestoreTaskDal>();
             builder.RegisterType<EfActivityLogDal>().As<IActivityLogDal>();
             builder.RegisterType<EfBackupStorageDal>().As<IBackupStorageDal>();

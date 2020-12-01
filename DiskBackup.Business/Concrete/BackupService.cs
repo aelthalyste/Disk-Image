@@ -4,6 +4,7 @@ using DiskBackup.DataAccess.Concrete.EntityFramework;
 using DiskBackup.DataAccess.Core;
 using DiskBackup.Entities.Concrete;
 using NarDIWrapper;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -25,24 +26,59 @@ namespace DiskBackup.Business.Concrete
 
         private Dictionary<int, ManualResetEvent> _taskEventMap = new Dictionary<int, ManualResetEvent>(); // aynı işlem Stopwatch ve cancellationtoken source için de yapılacak ancak Quartz'ın pause, resume ve cancel işlemleri düzgün çalışıyorsa kullanılmayacak
         private Dictionary<int, CancellationTokenSource> _cancellationTokenSource = new Dictionary<int, CancellationTokenSource>();
-        private bool _isStarted = false;
-
         private Dictionary<int, Stopwatch> _timeElapsedMap = new Dictionary<int, Stopwatch>();
+
+        private bool _isStarted = false;
+        private bool _initTrackerResult = false;
+        private bool _refreshIncDiffTaskFlag = false;
+        private bool _refreshIncDiffLogFlag = false; // Refreshde yenilememe durumu olması durumunda her task için ayrı flagler oluşturulacak
 
         private readonly IStatusInfoDal _statusInfoDal; // status bilgilerini veritabanına yazabilmek için gerekli
         private readonly ITaskInfoDal _taskInfoDal; // status bilgilerini veritabanına yazabilmek için gerekli
+        private readonly ILogger _logger;
 
-        public BackupService(IStatusInfoDal statusInfoRepository, ITaskInfoDal taskInfoDal)
+        public BackupService(IStatusInfoDal statusInfoRepository, ITaskInfoDal taskInfoDal, ILogger logger)
         {
             _statusInfoDal = statusInfoRepository;
             _taskInfoDal = taskInfoDal;
+            _logger = logger.ForContext<BackupService>();
         }
 
         public bool InitTracker()
         {
             // programla başlat 1 kere çalışması yeter
             // false değeri dönüyor ise eğer backup işlemlerini disable et
-            return _diskTracker.CW_InitTracker();
+            if (!_isStarted)
+            {
+                _initTrackerResult = _diskTracker.CW_InitTracker();
+                _isStarted = true;
+            }
+            return _initTrackerResult;
+        }
+
+        public bool GetInitTracker()
+        {
+            return _initTrackerResult;
+        }
+
+        public bool GetRefreshIncDiffTaskFlag()
+        {
+            return _refreshIncDiffTaskFlag;
+        }
+
+        public void RefreshIncDiffTaskFlag(bool value)
+        {
+            _refreshIncDiffTaskFlag = value;
+        }
+
+        public bool GetRefreshIncDiffLogFlag()
+        {
+            return _refreshIncDiffLogFlag;
+        }
+
+        public void RefreshIncDiffLogFlag(bool value)
+        {
+            _refreshIncDiffLogFlag = value;
         }
 
         public void InitFileExplorer(BackupInfo backupInfo) //initTracker'la aynı mantıkla çalışır mı? (Explorer ctor'da 1 kere çağrılma)
@@ -54,6 +90,7 @@ namespace DiskBackup.Business.Concrete
 
         public List<DiskInformation> GetDiskList()
         {
+            _logger.Verbose("Get disk list called");
             //PrioritySection 
             List<DiskInfo> disks = DiskTracker.CW_GetDisksOnSystem();
             List<VolumeInformation> volumes = DiskTracker.CW_GetVolumes();
@@ -151,6 +188,7 @@ namespace DiskBackup.Business.Concrete
         public BackupInfo GetBackupFile(BackupInfo backupInfo)
         {
             // seçilen dosyanın bilgilerini sağ tarafta kullanabilmek için
+            _logger.Verbose("Get backup info called. Parameter BackupInfo:{@BackupInfo}", backupInfo);
             var result = DiskTracker.CW_GetBackupsInDirectory(backupInfo.BackupStorageInfo.Path);
 
             foreach (var resultItem in result)
@@ -283,6 +321,7 @@ namespace DiskBackup.Business.Concrete
                             }
                             catch (IOException iox)
                             {
+                                _logger.Error(iox, "{@str.MetadataFileName} isimli backup dosyasını yazma işlemi başarısız.", str.MetadataFileName);
                                 Console.WriteLine($"Yazma işlemi başarısız. Error: {iox}");
                                 //MessageBox.Show(iox.Message);
                             }
@@ -427,10 +466,10 @@ namespace DiskBackup.Business.Concrete
             return _cSNarFileExplorer.CW_GetCurrentDirectoryString();
         }
 
-        public List<Log> GetLogList() //bu method daha gelmedi
+        /*public List<Log> GetLogList() //bu method daha gelmedi
         {
             throw new NotImplementedException();
-        }
+        }*/
 
         public void RestoreFilesInBackup(int fileId, string backupDirectory, string targetDirectory) // batuhan hangi backup olduğunu nasıl anlayacak? backup directoryde backup ismi almıyor
         {
