@@ -185,7 +185,6 @@ NarLog(const char *str, ...){
     static SYSTEMTIME Time = { 0 };
     static nar_log_time NarTime = {0};
     
-    
     memset(buf, 0, sizeof(buf));
     GetLocalTime(&Time);
     
@@ -524,13 +523,17 @@ struct backup_metadata {
             //FOR MBR things
             INT64 GPT_EFIPartitionSize;
             INT64 MBR_SystemPartitionSize;
+            SYSTEMTIME BackupDate;
             char ProductName[MAX_PRODUCT_NAME];
+            char ComputerName[MAX_COMPUTERNAME_LENGTH  + 1];
             wchar_t TaskName[MAX_TASK_NAME_LEN];
             wchar_t TaskDescription[MAX_TASK_DESCRIPTION_LEN];
         };
     };
     
-    ULONGLONG VolumeSize;
+    ULONGLONG VolumeTotalSize;
+    ULONGLONG VolumeUsedSize;
+    
     // NOTE(Batuhan): Last volume offset must be written to disk that if this specific version were to be restored, version itself can be 5 gb big, but last offset it indicates that changes were made can be 100gb'th offset.
     ULONGLONG VersionMaxWriteOffset; 
     
@@ -663,7 +666,7 @@ data_array<volume_information>
 NarGetVolumes();
 
 ULONGLONG
-NarGetVolumeSize(char Letter);
+NarGetVolumeTotalSize(char Letter);
 
 inline int
 NarGetVolumeDiskType(char Letter);

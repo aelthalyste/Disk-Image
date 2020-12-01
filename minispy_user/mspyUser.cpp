@@ -1767,7 +1767,7 @@ GetMFTLCN(char VolumeLetter, HANDLE VolumeHandle) {
     
     free(FileBuffer);
     
-    ULONGLONG VolumeSize = NarGetVolumeSize(VolumeLetter);
+    ULONGLONG VolumeSize = NarGetVolumeTotalSize(VolumeLetter);
     UINT32 TruncateIndex = 0;
     for (UINT32 i = 0; i < Result.Count; i++) {
         if ((ULONGLONG)Result.Data[i].StartPos * (ULONGLONG)ClusterSize + (ULONGLONG)Result.Data[i].Len * ClusterSize > VolumeSize) {
@@ -1880,7 +1880,7 @@ GetVolumesOnTrack(PLOG_CONTEXT C, volume_information* Out, unsigned int BufferSi
         Out[VolumesFound].Bootable = V->IsOSVolume;
         Out[VolumesFound].DiskID = NarGetVolumeDiskID((char)V->Letter);
         Out[VolumesFound].DiskType = (char)NarGetVolumeDiskType((char)V->Letter);
-        Out[VolumesFound].TotalSize = NarGetVolumeSize((char)V->Letter);
+        Out[VolumesFound].TotalSize = NarGetVolumeTotalSize((char)V->Letter);
         
         VolumesFound++;
         
@@ -2064,6 +2064,8 @@ GetVolumeID(PLOG_CONTEXT C, wchar_t Letter) {
     if (C->Volumes.Data != NULL) {
         if (C->Volumes.Count != 0) {
             for (unsigned int i = 0; i < C->Volumes.Count; i++) {
+                // TODO(Batuhan): check invalidated entry !
+                
                 if (C->Volumes.Data[i].Letter == Letter) {
                     ID = (int)i; // safe conversion
                     break;
@@ -3079,9 +3081,9 @@ OfflineRestoreCleanDisk(restore_inf* R, int DiskID) {
     if (M.IsOSVolume) {
         if (M.DiskType == NAR_DISKTYPE_GPT) {
             
-            printf("GPT Disk will be formatted as (Volume size %I64d, EFIPartitionSizeMB %u, RecoverySize %u)\n", M.VolumeSize, M.GPT_EFIPartitionSize/ (1024 * 1024), M.Size.Recovery);
+            printf("GPT Disk will be formatted as (Volume size %I64d, EFIPartitionSizeMB %u, RecoverySize %u)\n", M.VolumeTotalSize, M.GPT_EFIPartitionSize/ (1024 * 1024), M.Size.Recovery);
             
-            if (NarCreateCleanGPTBootablePartition(DiskID, (int)(M.VolumeSize / (1024ull * 1024ull)), (int)(M.GPT_EFIPartitionSize / (1024ull * 1024ull)), (int)(M.Size.Recovery / (1024ull * 1024ull)), (char)R->TargetLetter)) {
+            if (NarCreateCleanGPTBootablePartition(DiskID, (int)(M.VolumeTotalSize / (1024ull * 1024ull)), (int)(M.GPT_EFIPartitionSize / (1024ull * 1024ull)), (int)(M.Size.Recovery / (1024ull * 1024ull)), (char)R->TargetLetter)) {
                 Result = TRUE;
                 printf("Successfully created bootable gpt partition\n");
             }
@@ -3092,9 +3094,9 @@ OfflineRestoreCleanDisk(restore_inf* R, int DiskID) {
         }
         if (M.DiskType == NAR_DISKTYPE_MBR) {
             
-            printf("MBR Disk will be formatted as (Volume size %I64d, SystemPartitionMB %u, RecoverySize %u)\n", M.VolumeSize, M.MBR_SystemPartitionSize/ (1024 * 1024), M.Size.Recovery);
+            printf("MBR Disk will be formatted as (Volume size %I64d, SystemPartitionMB %u, RecoverySize %u)\n", M.VolumeTotalSize, M.MBR_SystemPartitionSize/ (1024 * 1024), M.Size.Recovery);
             
-            if (NarCreateCleanMBRBootPartition(DiskID, (char)R->TargetLetter, (int)(M.VolumeSize / (1024ull * 1024ull)), (int)(M.MBR_SystemPartitionSize / (1024ull * 1024ull)), (int)(M.Size.Recovery / (1024ull * 1024ull)))) {
+            if (NarCreateCleanMBRBootPartition(DiskID, (char)R->TargetLetter, (int)(M.VolumeTotalSize / (1024ull * 1024ull)), (int)(M.MBR_SystemPartitionSize / (1024ull * 1024ull)), (int)(M.Size.Recovery / (1024ull * 1024ull)))) {
                 Result = TRUE;
             }
             else {
@@ -3106,7 +3108,7 @@ OfflineRestoreCleanDisk(restore_inf* R, int DiskID) {
     else { //Is not OS volume
         if (M.DiskType == NAR_DISKTYPE_GPT) {
             
-            if (NarCreateCleanGPTPartition(DiskID, (int)(M.VolumeSize / (1024ull * 1024ull)), (char)R->TargetLetter)) {
+            if (NarCreateCleanGPTPartition(DiskID, (int)(M.VolumeTotalSize / (1024ull * 1024ull)), (char)R->TargetLetter)) {
                 Result = TRUE;
             }
             else {
@@ -3178,7 +3180,7 @@ OfflineRestoreToVolume(restore_inf* R, BOOLEAN ShouldFormat) {
     BOOLEAN Result = FALSE;
     
     int Version = -10;
-    ULONGLONG VolumeSize = 0;
+    ULONGLONG VolumeTotalSize = 0;
     BackupType BT = BackupType::Diff;
     
     {
@@ -3186,7 +3188,7 @@ OfflineRestoreToVolume(restore_inf* R, BOOLEAN ShouldFormat) {
         if (BM.Errors.RegionsMetadata == 0) {
             Version = BM.Version;
             BT = BM.BT;
-            VolumeSize = BM.VolumeSize;
+            VolumeTotalSize= BM.VolumeTotalSize;
         }
         else {
             printf("Couldnt read backup metadata\n");
@@ -3201,13 +3203,13 @@ OfflineRestoreToVolume(restore_inf* R, BOOLEAN ShouldFormat) {
         }
     }
     
-    
-    if (VolumeSize != 0) {
+    // TODO(Batuhan): This is dumb check, fix that urgently!
+    if (VolumeTotalSize != 0) {
         
         if (ShouldFormat) {
             
             if (NarFormatVolume((char)R->TargetLetter)) {
-                if (NarSetVolumeSize((char)R->TargetLetter, (int)(VolumeSize / (1024ull * 1024ull)))) {
+                if (NarSetVolumeSize((char)R->TargetLetter, (int)(VolumeTotalSize / (1024ull * 1024ull)))) {
                     //Success
                 }
                 else {
@@ -4809,12 +4811,22 @@ ReadMFTLCN(backup_metadata_ex* BMEX) {
 }
 
 ULONGLONG
-NarGetVolumeSize(char Letter) {
+NarGetVolumeTotalSize(char Letter) {
     char Temp[] = "!:\\";
     Temp[0] = Letter;
     ULARGE_INTEGER L = { 0 };
     GetDiskFreeSpaceExA(Temp, 0, &L, 0);
     return L.QuadPart;
+}
+
+ULONGLONG
+NarGetVolumeUsedSize(char Letter){
+    char Temp[] = "!:\\";
+    Temp[0] = Letter;
+    ULARGE_INTEGER total = { 0 };
+    ULARGE_INTEGER free = { 0 };
+    GetDiskFreeSpaceExA(Temp, 0, &total, &free);
+    return (total.QuadPart - free.QuadPart);
 }
 
 /*
@@ -4871,10 +4883,17 @@ SaveMetadata(char Letter, int Version, int ClusterSize, BackupType BT,
     BM.DiskType = (unsigned char)NarGetVolumeDiskType(BM.Letter);
     
     BM.IsOSVolume = NarIsOSVolume(Letter);
-    BM.VolumeSize = NarGetVolumeSize(BM.Letter);
+    BM.VolumeTotalSize = NarGetVolumeTotalSize(BM.Letter);
+    BM.VolumeUsedSize = NarGetVolumeUsedSize(BM.Letter);
     
     NarGetProductName(BM.ProductName);
+    DWORD Len = sizeof(BM.ComputerName);
+    if(GetComputerNameA(&BM.ComputerName[0], &Len) == FALSE){
+        printf("Unable to query computer name\n");
+    }
     
+    
+    GetLocalTime(&BM.BackupDate);
     memset(&BM.Size, 0, sizeof(BM.Size));
     memset(&BM.Offset, 0, sizeof(BM.Offset));
     memset(&BM.Errors, 0, sizeof(BM.Errors));
@@ -7357,6 +7376,17 @@ NarGetAvailableVolumeLetter() {
     return 0;
 }
 
+
+/*
+Expects Letter to be uppercase
+*/
+inline BOOLEAN
+NarIsVolumeAvailable(char Letter){
+    DWORD Drives = GetLogicalDrives();
+    return !(Drives & (1 << (Letter - 'A')));
+}
+
+
 /*
     args:
     FEV = output, simple
@@ -7767,8 +7797,18 @@ NarTestScratch(){
 int
 main(int argc, char* argv[]) {
     
-    printf("afaajalkdsfjglaksfdj");
-    printf("asdlkfas;dlfkjas;ldfkjas;dlfkjas;fdlkj");
+    char ComputerName[500];
+    DWORD Len = sizeof(ComputerName);
+    if(GetComputerNameA(&ComputerName[0], &Len) == FALSE){
+        printf("Unable to query computer name\n");
+    }
+    
+    ULONGLONG Size = NarGetVolumeUsedSize('D');
+    
+    printf("%s\n", ComputerName);
+    int f = NarIsVolumeAvailable('K');
+    int d = NarIsVolumeAvailable('C');
+    int h = NarIsVolumeAvailable('D');
     
     return 0;
     

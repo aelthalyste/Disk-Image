@@ -266,7 +266,6 @@ namespace NarDIWrapper {
         
         R.RootDir = msclr::interop::marshal_as<std::wstring>(RootDir);
         
-        
         return OfflineRestoreToVolume(&R, ShouldFormat);
         
     }
@@ -292,6 +291,10 @@ namespace NarDIWrapper {
     // returns 0 if one is not present
     wchar_t DiskTracker::CW_GetFirstAvailableVolumeLetter(){
         return NarGetAvailableVolumeLetter();
+    }
+    
+    bool DiskTracker::CW_IsVolumeAvailable(wchar_t Letter){
+        return NarIsVolumeAvailable(Letter);
     }
     
     INT32 DiskTracker::CW_ReadStream(void* Data, wchar_t VolumeLetter, int Size) {
@@ -388,9 +391,15 @@ namespace NarDIWrapper {
                 BMet->WindowsName      = gcnew System::String(BMList[i].ProductName);
                 BMet->TaskName         = gcnew System::String(BMList[i].TaskName);
                 BMet->TaskDescription  = gcnew System::String(BMList[i].TaskDescription);
+                BMet->ComputerName     = gcnew System::String(BMList[i].ComputerName);
+                BMet->IpAdress         = gcnew System::String("NOT IMPLEMENTED");
                 
-                BMet->VolumeSize = BMList[i].VolumeSize;
-                BMet->BytesNeedToCopy = BMList[i].VersionMaxWriteOffset;
+                BMet->VolumeTotalSize = BMList[i].VolumeTotalSize;
+                BMet->VolumeUsedSize = BMList[i].VolumeUsedSize;
+                BMet->BytesNeedToCopy = BMList[i].Size.Regions;
+                BMet->MaxWriteOffset =  BMList[i].VersionMaxWriteOffset;
+                
+                BMet->BackupDate = gcnew CSNarFileTime(BMList[i].BackupDate.wYear, BMList[i].BackupDate.wMonth, BMList[i].BackupDate.wDay, BMList[i].BackupDate.wHour, BMList[i].BackupDate.wMinute, BMList[i].BackupDate.wSecond);
                 
                 pth = std::wstring(RootDir);
                 pth += GenerateBinaryFileName(BMet->Letter, BMet->Version);

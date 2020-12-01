@@ -24,6 +24,29 @@ namespace NarDIWrapper {
         int ID;
     };
     
+    public ref class CSNarFileTime {
+        public:
+        
+        CSNarFileTime(){
+            
+        }
+        CSNarFileTime(WORD pYear, WORD pMonth, WORD pDay, WORD pHour, WORD pMinute, WORD pSecond){
+            Year = pYear;
+            Month = pMonth;
+            Day = pDay;
+            Hour = pHour;
+            Minute = pMinute;
+            Second = pSecond;
+        }
+        
+        WORD Year;
+        WORD Month;
+        WORD Day;
+        WORD Hour;
+        WORD Minute;
+        WORD Second;
+    };
+    
     public ref class BackupMetadata {
         public:
         
@@ -32,15 +55,21 @@ namespace NarDIWrapper {
         int Version;
         int OSVolume;
         
+        CSNarFileTime^ BackupDate;
+        
         // TODO(Batuhan): 
-        UINT64 VolumeSize;
+        UINT64 VolumeTotalSize;
+        UINT64 VolumeUsedSize;
         UINT64 BytesNeedToCopy; // just for this version, not cumilative
+        UINT64 MaxWriteOffset;  // last write offset that is going to be made
         
         wchar_t DiskType;
         System::String^ Fullpath; // fullpath of the backup
         System::String^ WindowsName;
         System::String^ TaskName;
         System::String^ TaskDescription;
+        System::String^ ComputerName;
+        System::String^ IpAdress;
         
         /*
                             ComputerName
@@ -76,29 +105,6 @@ namespace NarDIWrapper {
         wchar_t Name[MAX_PATH + 1]; // max path + 1 for null termination
     };
     
-    
-    public ref class CSNarFileTime {
-        public:
-        
-        CSNarFileTime(){
-            
-        }
-        CSNarFileTime(WORD pYear, WORD pMonth, WORD pDay, WORD pHour, WORD pMinute, WORD pSecond){
-            Year = pYear;
-            Month = pMonth;
-            Day = pDay;
-            Hour = pHour;
-            Minute = pMinute;
-            Second = pSecond;
-        }
-        
-        WORD Year;
-        WORD Month;
-        WORD Day;
-        WORD Hour;
-        WORD Minute;
-        WORD Second;
-    };
     
     public ref class CSNarFileEntry {
         public:
@@ -205,6 +211,7 @@ namespace NarDIWrapper {
         static List<BackupMetadata^>^ CW_GetBackupsInDirectory(System::String^ RootDir);
         static List<DiskInfo^>^ CW_GetDisksOnSystem();
         static BOOLEAN CW_MetadataEditTaskandDescriptionField(System::String^ MetadataFileName, System::String^ TaskName, System::String^ TaskDescription);
+        static bool CW_IsVolumeAvailable(wchar_t Letter);
         
         static List<CSLog^>^ CW_GetLogs();
         static void CW_GenerateLogs();
