@@ -180,7 +180,7 @@ namespace DiskBackupWpfGUI
                         if (resultTaskInfo != null)
                             MessageBox.Show("Ekleme işlemi başarılı");
 
-                        //_schedulerManager.RestoreVolumeJob(resultTaskInfo).Wait();
+                        _schedulerManager.RestoreVolumeJob(resultTaskInfo).Wait();
                     }
                     else // disk
                     {

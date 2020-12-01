@@ -168,9 +168,6 @@ namespace DiskBackup.Business.Concrete
                     backupInfo.Description = returnItem.TaskDescription;
                     backupInfo.BackupStorageInfo = backupStorageItem;
                     backupInfo.BackupStorageInfoId = backupStorageItem.Id;
-                    Console.WriteLine("backupInfo.Description: " + backupInfo.Description);
-                    Console.WriteLine("backupInfo.BackupTaskName: " + backupInfo.BackupTaskName);
-
 
                     if (returnItem.Version == -1)
                         backupInfo.Type = BackupTypes.Full;
@@ -202,7 +199,8 @@ namespace DiskBackup.Business.Concrete
                     backupInfo.OS = resultItem.WindowsName;
                     backupInfo.BackupTaskName = resultItem.TaskName;
                     backupInfo.Description = resultItem.TaskDescription;
-
+                    //resultItem.Fullpath ismini full pathden çek al
+                   
                     if (resultItem.Version == -1)
                         backupInfo.Type = BackupTypes.Full;
                     else
@@ -223,6 +221,7 @@ namespace DiskBackup.Business.Concrete
         {
             //batudan fonksiyon gelecek o fonksiyon hangi harfle restore edeceğini dönecek ve batu o harfle restore edecek
             //DiskTracker.CW_GetFirstAvailableVolumeLetter(); Batuhandan müsait letter alınması
+            // diskI disk 5 olur
             //DiskTracker.CW_RestoreToFreshDisk(DiskTracker.CW_GetFirstAvailableVolumeLetter(), "backup harfi", "version bilgisi", "diskId", "backup'ın bulunduğu yol *\*");
             //pathde sadece path varmış dosya adı yokmuş
             //CW_GetFirstAvailableVolumeLetter ile boş olan volume'ü alıp batuhan'a dönerek o volume restore gerçekleştirilecek
@@ -230,7 +229,18 @@ namespace DiskBackup.Business.Concrete
             //DiskTracker.CW_GetFirstAvailableVolumeLetter(); ilk olarak E müsaitti ama bir şeyler yapıldı ve artık ilk olarak D müsait oldu Batu bize D dönecek
             //ama E hala müsait yani restore da yapılabilir, bu durum için daha sağlıklı bir fonksiyon gerekiyor.
 
+            //return DiskTracker.CW_RestoreToFreshDisk(,)
             throw new NotImplementedException();
+        }
+
+        public bool CleanChain(char letter)
+        {
+            return _diskTracker.CW_RemoveFromTrack(letter);
+        }
+
+        public char AvailableVolumeLetter()
+        {
+            return DiskTracker.CW_GetFirstAvailableVolumeLetter();
         }
 
         public byte CreateIncDiffBackup(TaskInfo taskInfo) // 0 başarısız, 1 başarılı, 2 kullanıcı durdurdu

@@ -4,6 +4,7 @@ using DiskBackup.DataAccess.Abstract;
 using DiskBackup.DataAccess.Core;
 using DiskBackup.Entities.Concrete;
 using Quartz;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,8 +21,9 @@ namespace DiskBackup.TaskScheduler.Jobs
         private readonly ITaskInfoDal _taskInfoDal;
         private readonly IStatusInfoDal _statusInfoDal;
         private readonly IActivityLogDal _activityLogDal;
+        private readonly ILogger _logger;
 
-        public RestoreVolumeJob(IBackupService backupService, ITaskInfoDal taskInfoDal, IBackupStorageDal backupStorageDal, IRestoreTaskDal restoreTaskDal, IStatusInfoDal statusInfoDal, IActivityLogDal activityLogDal)
+        public RestoreVolumeJob(IBackupService backupService, ITaskInfoDal taskInfoDal, IBackupStorageDal backupStorageDal, IRestoreTaskDal restoreTaskDal, IStatusInfoDal statusInfoDal, IActivityLogDal activityLogDal, ILogger logger)
         {
             _backupService = backupService;
             _taskInfoDal = taskInfoDal;
@@ -29,13 +31,15 @@ namespace DiskBackup.TaskScheduler.Jobs
             _restoreTaskDal = restoreTaskDal;
             _statusInfoDal = statusInfoDal;
             _activityLogDal = activityLogDal;
+            _logger = logger.ForContext<RestoreVolumeJob>();
         }
 
         public Task Execute(IJobExecutionContext context) // async ekleyeceğiz
         {
-            Console.WriteLine("Restore Job'a başlandı");
+            bool result = false;
             var taskId = int.Parse(context.JobDetail.JobDataMap["taskId"].ToString());
             var task = _taskInfoDal.Get(x => x.Id == taskId);
+            _logger.Information("{@task} için restore volume görevi başlatıldı.", task);
             task.BackupStorageInfo = _backupStorageDal.Get(x => x.Id == task.BackupStorageInfoId);
             task.RestoreTaskInfo = _restoreTaskDal.Get(x => x.Id == task.RestoreTaskId);
 
@@ -47,21 +51,33 @@ namespace DiskBackup.TaskScheduler.Jobs
                 Type = DetailedMissionType.Restore
             };
 
-            var result = _backupService.RestoreBackupVolume(task);
-            // başarısızsa tekrar dene restore da başarısızsa tekrar dene yok
+            try
+            {
+                result = _backupService.RestoreBackupVolume(task);
+                var cleanChainResult = _backupService.CleanChain(task.StrObje[0]);
+                _logger.Information("{@task} {@value} zinciri temizlendi. Sonuç: {@cleanResult}", task, task.StrObje[0], cleanChainResult);
+                // başarısızsa tekrar dene restore da başarısızsa tekrar dene yok
+            }
+            catch (Exception e)
+            {
+                _logger.Error(e, "{@Task} restore volume görevinde hata oluştu.", task);
+                result = false;
+            }
 
             if (result)
             {
+                _logger.Verbose("{@task} volume job'ın result true ifindeyim", task);
                 activityLog.Status = StatusType.Success;
                 UpdateActivityAndTask(activityLog, task);
             }
             else
             {
+                _logger.Verbose("{@task} volume job'ın result false ifindeyim", task);
                 activityLog.Status = StatusType.Fail;
                 UpdateActivityAndTask(activityLog, task);
             }
                         
-            Console.WriteLine("Restore Job done");
+            _logger.Information("{@task} restore volume görevi bitirildi. Sonuç: {@result}.", task, result);           
             return Task.CompletedTask; // return değeri kaldırılacak ve async'e çevirilecek burası
         }
 
@@ -75,8 +91,8 @@ namespace DiskBackup.TaskScheduler.Jobs
             _activityLogDal.Add(activityLog);
             taskInfo.Status = "Hazır"; // Resource eklenecek 
             _taskInfoDal.Update(taskInfo);
-            //BackupIncDiffJob._refreshIncDiffTaskFlag = true;
-            //BackupIncDiffJob._refreshIncDiffLogFlag = true;
+            _backupService.RefreshIncDiffTaskFlag(true);
+            _backupService.RefreshIncDiffLogFlag(true);
         }
     }
 }

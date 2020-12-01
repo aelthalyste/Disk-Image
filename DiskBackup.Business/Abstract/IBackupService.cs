@@ -43,7 +43,11 @@ namespace DiskBackup.Business.Abstract
         [OperationContract]
         bool RestoreBackupDisk(BackupInfo backupInfo, DiskInformation diskInformation);
         //Restore işleminde disk seçilirse CW_RestoreToFreshDisk, volume seçilirse CW_RestoreToVolume
-
+        [OperationContract]
+        bool CleanChain(char letter);
+        [OperationContract]
+        char AvailableVolumeLetter();
+        
         [OperationContract]
         void RestoreFilesInBackup(int fileId, string backupDirectory, string targetDirectory);
         [OperationContract]

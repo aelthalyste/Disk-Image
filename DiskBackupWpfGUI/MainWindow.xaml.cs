@@ -62,13 +62,14 @@ namespace DiskBackupWpfGUI
         private readonly IBackupTaskDal _backupTaskDal;
         private readonly IStatusInfoDal _statusInfoDal;
         private readonly IActivityLogDal _activityLogDal;
+        private readonly IRestoreTaskDal _restoreTaskDal;
         private IBackupService _backupService;
 
         private readonly ILifetimeScope _scope;
         private readonly ILogger _logger;
 
-        public MainWindow(ILifetimeScope scope, ITaskInfoDal taskInfoDal, IBackupStorageDal backupStorageDal, IBackupTaskDal backupTaskDal, IStatusInfoDal statusInfoDal, 
-            IActivityLogDal activityLogDal, ILogger logger)
+        public MainWindow(ILifetimeScope scope, ITaskInfoDal taskInfoDal, IBackupStorageDal backupStorageDal, IBackupTaskDal backupTaskDal, IStatusInfoDal statusInfoDal,
+            IActivityLogDal activityLogDal, ILogger logger, IRestoreTaskDal restoreTaskDal)
         {
             InitializeComponent();
 
@@ -79,6 +80,7 @@ namespace DiskBackupWpfGUI
             _backupTaskDal = backupTaskDal;
             _statusInfoDal = statusInfoDal;
             _taskInfoDal = taskInfoDal;
+            _restoreTaskDal = restoreTaskDal;
 
             _scope = scope;
             var backupService = _scope.Resolve<IBackupService>();
@@ -125,7 +127,7 @@ namespace DiskBackupWpfGUI
                     stackTasksDiskInfo.Children.Add(frame);
                 }
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 _logger.Error(e, "Disk bilgileri getirilemedi!");
             }
@@ -163,7 +165,7 @@ namespace DiskBackupWpfGUI
                 listViewBackups.ItemsSource = _backupsItems;
                 listViewRestore.ItemsSource = _backupsItems;
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 _logger.Error(e, "Backup dosyaları getirilemedi!");
             }
@@ -173,7 +175,6 @@ namespace DiskBackupWpfGUI
 
             RefreshTasks(_cancellationTokenSource.Token);
             this.Closing += (sender, e) => _cancellationTokenSource.Cancel();
-            _logger = logger;
         }
 
 
@@ -443,12 +444,13 @@ namespace DiskBackupWpfGUI
                     {
                         Console.WriteLine("Backup Inc-Diff başlatılıyor");
                         var taskSchedulerManager = _scope.Resolve<ITaskSchedulerManager>();
-                        if (taskInfo.ScheduleId != null && !taskInfo.ScheduleId.Contains("Now"))
+                        if (taskInfo.ScheduleId != null && !taskInfo.ScheduleId.Contains("Now") && taskInfo.ScheduleId != "")
                         {
                             taskSchedulerManager.RunNowTrigger(taskInfo.ScheduleId).Wait();
                         }
                         else
                         {
+                            Console.WriteLine("Boşum: " + taskInfo.ScheduleId);
                             taskSchedulerManager.BackupIncDiffNowJob(taskInfo).Wait();
                         }
                         StatusesWindow backupStatus = _scope.Resolve<StatusesWindow>(new NamedParameter("chooseFlag", 0), new NamedParameter("statusInfo", taskInfo.StatusInfo));
@@ -458,12 +460,18 @@ namespace DiskBackupWpfGUI
                     {
                         //full
                     }
+                    Console.WriteLine("Backup bitti");
                 }
                 else
                 {
                     //restore
+                    Console.WriteLine("Restore başlatılıyor");
+                    taskInfo.RestoreTaskInfo = _restoreTaskDal.Get(x => x.Id == taskInfo.RestoreTaskId);
+                    Console.WriteLine($"Patlamadım Id: {taskInfo.RestoreTaskInfo.Id} SchedulerId: {taskInfo.ScheduleId}");
+                    // restore disk ve volume ayrıntısı burada kontrol edilip çağırılacak
+                    var taskSchedulerManager = _scope.Resolve<ITaskSchedulerManager>();
+                    taskSchedulerManager.RestoreVolumeNowJob(taskInfo).Wait();
                 }
-                Console.WriteLine("Backup bitti");
             }
             else if (taskInfo.Status.Equals("Durduruldu"))
             {
@@ -625,7 +633,6 @@ namespace DiskBackupWpfGUI
             btnTaskDelete.IsEnabled = false;
             btnTaskEdit.IsEnabled = false;
             btnTaskOpen.IsEnabled = false;
-            btnTaskPaste.IsEnabled = false;
             btnTaskPause.IsEnabled = false;
             btnTaskStart.IsEnabled = false;
             btnTaskStop.IsEnabled = false;
@@ -795,7 +802,7 @@ namespace DiskBackupWpfGUI
 
             using (var scope = _scope.BeginLifetimeScope())
             {
-                RestoreWindow restore = scope.Resolve<RestoreWindow>(new TypedParameter(backupInfo.GetType(), backupInfo), 
+                RestoreWindow restore = scope.Resolve<RestoreWindow>(new TypedParameter(backupInfo.GetType(), backupInfo),
                     new TypedParameter(volumeInfoList.GetType(), volumeInfoList));
                 restore.ShowDialog();
             }

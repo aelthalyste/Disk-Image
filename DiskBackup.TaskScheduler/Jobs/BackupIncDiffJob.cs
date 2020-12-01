@@ -41,6 +41,7 @@ namespace DiskBackup.TaskScheduler.Jobs
             var taskId = int.Parse(context.JobDetail.JobDataMap["taskId"].ToString());
 
             var task = _taskInfoDal.Get(x => x.Id == taskId);
+            _logger.Information("{@task} için Incremental-Differantial görevine başlandı.", task.Id + " " + task.Name);
 
             task.BackupStorageInfo = _backupStorageDal.Get(x => x.Id == task.BackupStorageInfoId);
             task.StatusInfo = _statusInfoDal.Get(x => x.Id == task.StatusInfoId);
@@ -96,7 +97,7 @@ namespace DiskBackup.TaskScheduler.Jobs
             }
             catch (Exception e)
             {
-                _logger.Error(e, "Incremental backup görevinde hata oluştu. Task: {@Task}. Refirecount: {Count}", task, context.RefireCount);
+                _logger.Error(e, "Incremental-Differantial backup görevinde hata oluştu. Task: {@Task}. Refirecount: {Count}", task, context.RefireCount);
                 Console.WriteLine("Catch'e düştü");
                 if (task.BackupTaskInfo.FailTryAgain)
                 {
@@ -112,6 +113,7 @@ namespace DiskBackup.TaskScheduler.Jobs
             if (result == 0)
             {
                 Console.WriteLine("Batuhan'dan false değer geldi");
+                _logger.Information("{@task} için Incremental-Differantial görevi bitirildi. Sonuç: NarDIWrapper'dan false geldi.", task.Id + " " + task.Name);
                 if (task.BackupTaskInfo.FailTryAgain)
                 {
                     exception = new JobExecutionException(context.RefireCount <= task.BackupTaskInfo.FailNumberTryAgain);
@@ -133,11 +135,13 @@ namespace DiskBackup.TaskScheduler.Jobs
 
             if (result == 1) // başarılı
             {
+                _logger.Information("{@task} için Incremental-Differantial görevi bitirildi. Sonuç: Başarılı.", task.Id + " " + task.Name);
                 activityLog.Status = StatusType.Success;
                 UpdateActivityAndTask(activityLog, task);
             }
             else if (result == 2) // durduruldu
             {
+                _logger.Information("{@task} için Incremental-Differantial görevi durduruldu.", task.Id + " " + task.Name);
                 activityLog.Status = StatusType.Cancel;
                 UpdateActivityAndTask(activityLog, task);
             }
@@ -153,6 +157,9 @@ namespace DiskBackup.TaskScheduler.Jobs
             activityLog.StatusInfoId = resultStatusInfo.Id;
             _activityLogDal.Add(activityLog);
             taskInfo.Status = "Hazır"; // Resource eklenecek 
+            _logger.Verbose("SchedulerId: {@schedulerId}.", taskInfo.ScheduleId);
+            taskInfo.ScheduleId = taskInfo.ScheduleId.Split('*')[0];
+            _logger.Verbose("Yeni SchedulerId: {@newscheduler}", taskInfo.ScheduleId);
             _taskInfoDal.Update(taskInfo);
             _backupService.RefreshIncDiffTaskFlag(true);
             _backupService.RefreshIncDiffLogFlag(true);

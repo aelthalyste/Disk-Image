@@ -70,5 +70,7 @@ namespace DiskBackup.TaskScheduler
         Task BackupIncDiffWeekDaysJob(TaskInfo taskInfo);
         [OperationContract]
         Task BackupIncDiffCertainDaysJob(TaskInfo taskInfo);
+        [OperationContract]
+        Task RestoreVolumeNowJob(TaskInfo taskInfo);
     }
 }

@@ -6,6 +6,7 @@ using Quartz;
 using Quartz.Impl;
 using Quartz.Impl.Calendar;
 using Quartz.Spi;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
@@ -23,11 +24,13 @@ namespace DiskBackup.TaskScheduler
         public IScheduler _scheduler;
         public IJobFactory _jobFactory;
         private readonly ITaskInfoDal _taskInfoDal;
+        private readonly ILogger _logger;
 
-        public TaskSchedulerManager(IJobFactory jobFactory, ITaskInfoDal taskInfoDal)
+        public TaskSchedulerManager(IJobFactory jobFactory, ITaskInfoDal taskInfoDal, ILogger logger)
         {
             _jobFactory = jobFactory;
             _taskInfoDal = taskInfoDal;
+            _logger = logger.ForContext<TaskSchedulerManager>();
         }
 
         public async Task InitShedulerAsync()
@@ -368,7 +371,6 @@ namespace DiskBackup.TaskScheduler
             IJobDetail job = JobBuilder.Create<RestoreDiskJob>()
                 .WithIdentity($"restoreDiskJob_{taskInfo.Id}", "Restore")
                 .UsingJobData("taskId", taskInfo.Id.ToString())
-                .UsingJobData("backupStorageId", backupStorageInfo.Id.ToString())
                 .Build();
 
             ITrigger trigger = TriggerBuilder.Create()
@@ -400,6 +402,26 @@ namespace DiskBackup.TaskScheduler
                 .Build();
 
             taskInfo.ScheduleId = $"restoreVolumeJob_{taskInfo.Id}/Restore";
+            _taskInfoDal.Update(taskInfo);
+
+            await _scheduler.ScheduleJob(job, trigger);
+
+        }
+
+        public async Task RestoreVolumeNowJob(TaskInfo taskInfo)
+        {
+            IJobDetail job = JobBuilder.Create<RestoreVolumeJob>()
+                .WithIdentity($"restoreVolumeNowJob_{taskInfo.Id}", "Restore")
+                .UsingJobData("taskId", taskInfo.Id.ToString())
+                .Build();
+
+            ITrigger trigger = TriggerBuilder.Create()
+                .WithIdentity($"restoreVolumeNowTrigger_{taskInfo.Id}", "Restore")
+                .ForJob($"restoreVolumeNowJob_{taskInfo.Id}", "Restore")
+                .StartNow()
+                .Build();
+
+            taskInfo.ScheduleId = $"restoreVolumeNowJob_{taskInfo.Id}/Restore";
             _taskInfoDal.Update(taskInfo);
 
             await _scheduler.ScheduleJob(job, trigger);
