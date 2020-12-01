@@ -4,7 +4,7 @@
 */
 /*
 *  // TODO(Batuhan): URGENT, ZEROING OUT MFT REGIONS THAT EXCEEDS 4GB IS IMPOSSIBLE NOW, GO TO  RestoreVersionWithoutLoop and fix it 
-*
+*  // NOTE(Batuhan): asfdaf
 *
 *
 *
@@ -1054,9 +1054,7 @@ GetShadowPath(std::wstring Drive, CComPtr<IVssBackupComponents>& ptr) {
     if (!Error) {
         VSS_SNAPSHOT_PROP SnapshotProp;
         ptr->GetSnapshotProperties(sid, &SnapshotProp);
-        
-        Result = (wchar_t*)malloc(sizeof(wchar_t) * lstrlenW(SnapshotProp.m_pwszSnapshotDeviceObject));
-        
+        Result = (wchar_t*)malloc(sizeof(wchar_t) * lstrlenW(SnapshotProp.m_pwszSnapshotDeviceObject) + 1);
         Result = lstrcpyW(Result, SnapshotProp.m_pwszSnapshotDeviceObject);
     }
     
@@ -1111,7 +1109,6 @@ NarCreateThreadCom(
     }
     
     BOOL Result = FALSE;
-    //TODO  REMOVE THIS IF0
     Context->CleaningUp = FALSE;
     
     Context->ShutDown = CreateSemaphoreW(NULL,
@@ -1143,24 +1140,6 @@ NarCreateThreadCom(
     }
     
     return Result;
-}
-
-
-std::string
-NarExecuteCommand(const char* cmd, std::string FileName) {
-    //TODO return char* instead of std::string
-    // TODO: make FileName optional, if it is not given, do not try to open file,
-    //return empty string
-    std::string result = "";
-    
-    system(cmd);
-    
-    std::ifstream t(FileName);
-    std::stringstream buffer;
-    buffer << t.rdbuf();
-    result = buffer.str();
-    
-    return result;
 }
 
 /*
@@ -2963,7 +2942,6 @@ SetupStreamHandle(volume_backup_inf* VolInf) {
     }
     
     VolInf->Stream.Handle = CreateFileW(ShadowPath, GENERIC_READ, 0, NULL, OPEN_EXISTING, NULL, NULL);
-    
     
     if (VolInf->Stream.Handle == INVALID_HANDLE_VALUE) {
         printf("Can not open shadow path %S..\n", ShadowPath);
@@ -5092,7 +5070,6 @@ recovery
                             break;
                         }
                         
-                        
                     }
                     
                 }
@@ -6026,7 +6003,7 @@ NarGetFileListFromMFTID(nar_file_entries_list* EList, UINT64 TargetMFTID, nar_re
                     }
                     
                     
-#define NAR_ATTRIBUTE_LIST
+#define NAR_ATTRIBUTE_LIST 0x20
                     
                     // NOTE(Batuhan): ntfs madness : if file has too many information, it cant fit into the single 1KB entry.
                     /*
@@ -6035,8 +6012,46 @@ so some smart ass decided it would be wise to split some attributes into differe
 #if 0
                     if(*(INT32*)FileAttribute & NAR_ATTRIBUTE_LIST) == NAR_ATTRIBUTE_LIST){
                         
+                        
                         // each record is aligned on 8 byte boundary
 #define NAR_OFFSET(m, o) ((char*)(m) + (o))
+                        
+                        struct{
+                            /*
+4
+4
+1
+1
+2
+2
+2
+*/
+                            UINT32  AttributeType;
+                            UINT32  Length;
+                            UINT8   NonResidentFlag;
+                            UINT8   NameLen;
+                            UINT16  NameOffset;
+                            UINT16  Flags;
+                            UINT16  AttributeID;
+                            
+                            union{
+                                struct{
+                                    UINT32  AttributeLen;
+                                    UINT16  AttributeOffset;
+                                    
+                                };
+                                struct{
+                                    
+                                };
+                            };
+                        };
+                        
+                        UINT32  Length       = *(UINT32*)NAR_OFFSET(FileAttribute, 0x04);
+                        BOOLEAN IsResident   = !(*(BOOLEAN*)NAR_OFFSET(FileAttribute, 0x08));
+                        UINT16  AttributeID  = *(UINT16*)NAR_OFFSET(FileAttribute, 0x0E);
+                        UINT32  AttributeLen = *(UINT32*)NAR_OFFSET(FileAttribute, 0x10);
+                        
+                        
                         
                         UINT16 RecordLength = *(UINT16*)NAR_OFFSET(FileAttribute, 0x04);
                         // NOTE(Batuhan): zero if resident
@@ -7751,6 +7766,11 @@ NarTestScratch(){
 
 int
 main(int argc, char* argv[]) {
+    
+    printf("afaajalkdsfjglaksfdj");
+    printf("asdlkfas;dlfkjas;ldfkjas;dlfkjas;fdlkj");
+    
+    return 0;
     
     size_t bsize = 64*1024*1024;
     void *MemBuf = malloc(bsize);

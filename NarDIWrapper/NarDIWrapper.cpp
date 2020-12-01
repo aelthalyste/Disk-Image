@@ -376,6 +376,7 @@ namespace NarDIWrapper {
         BOOLEAN bResult = NarGetBackupsInDirectory(RootDir, BMList, MaxMetadataCount, &Found);
         if (bResult && Found <= MaxMetadataCount) {
             std::wstring pth;
+            
             for (int i = 0; i < Found; i++) {
                 BackupMetadata^ BMet = gcnew BackupMetadata;
                 BMet->Letter = (wchar_t)BMList[i].Letter;
@@ -387,6 +388,9 @@ namespace NarDIWrapper {
                 BMet->WindowsName      = gcnew System::String(BMList[i].ProductName);
                 BMet->TaskName         = gcnew System::String(BMList[i].TaskName);
                 BMet->TaskDescription  = gcnew System::String(BMList[i].TaskDescription);
+                
+                BMet->VolumeSize = BMList[i].VolumeSize;
+                BMet->BytesNeedToCopy = BMList[i].VersionMaxWriteOffset;
                 
                 pth = std::wstring(RootDir);
                 pth += GenerateBinaryFileName(BMet->Letter, BMet->Version);
