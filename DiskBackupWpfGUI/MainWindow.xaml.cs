@@ -62,6 +62,7 @@ namespace DiskBackupWpfGUI
         private readonly IBackupTaskDal _backupTaskDal;
         private readonly IStatusInfoDal _statusInfoDal;
         private readonly IActivityLogDal _activityLogDal;
+        private IBackupService _backupService;
 
         private readonly ILifetimeScope _scope;
         private readonly ILogger _logger;
@@ -81,6 +82,7 @@ namespace DiskBackupWpfGUI
 
             _scope = scope;
             var backupService = _scope.Resolve<IBackupService>();
+            _backupService = backupService;
             var backupStorageService = _scope.Resolve<IBackupStorageService>();
             if (!backupService.GetInitTracker())
                 MessageBox.Show("Driver intialize edilemedi!", "NARBULUT DİYOR Kİ;", MessageBoxButton.OK, MessageBoxImage.Error);
@@ -468,21 +470,22 @@ namespace DiskBackupWpfGUI
                 var backupService = _scope.Resolve<IBackupService>();
                 backupService.ResumeTask(taskInfo);
             }
-            BackupIncDiffJob._refreshIncDiffTaskFlag = true;
+            _backupService.RefreshIncDiffTaskFlag(true);
         }
 
         private void btnTaskPause_Click(object sender, RoutedEventArgs e)
         {
             var backupService = _scope.Resolve<IBackupService>();
             backupService.PauseTask((TaskInfo)listViewTasks.SelectedItem);
-            BackupIncDiffJob._refreshIncDiffTaskFlag = true;
+            _backupService.RefreshIncDiffTaskFlag(true);
         }
 
         private void btnTaskStop_Click(object sender, RoutedEventArgs e)
         {
             var backupService = _scope.Resolve<IBackupService>();
             backupService.CancelTask((TaskInfo)listViewTasks.SelectedItem);
-            BackupIncDiffJob._refreshIncDiffTaskFlag = true;
+            _backupService.RefreshIncDiffTaskFlag(true);
+
         }
 
         private void GetTasks()
@@ -538,7 +541,7 @@ namespace DiskBackupWpfGUI
                     else
                         txtMakeABackup.Text = "";
 
-                    if (BackupIncDiffJob._refreshIncDiffTaskFlag)
+                    if (_backupService.GetRefreshIncDiffTaskFlag())
                     {
                         int taskSelectedIndex = -1;
                         if (listViewTasks.SelectedIndex != -1)
@@ -553,10 +556,11 @@ namespace DiskBackupWpfGUI
                         listViewBackups.ItemsSource = _backupsItems;
                         listViewRestore.ItemsSource = _backupsItems;
 
-                        BackupIncDiffJob._refreshIncDiffTaskFlag = false;
+                        _backupService.RefreshIncDiffTaskFlag(false);
+
                     }
 
-                    if (BackupIncDiffJob._refreshIncDiffLogFlag)
+                    if (_backupService.GetRefreshIncDiffLogFlag())
                     {
                         int logSelectedIndex = -1;
                         if (listViewLog.SelectedIndex != -1)
@@ -565,7 +569,7 @@ namespace DiskBackupWpfGUI
                         }
                         ShowActivityLog();
                         listViewLog.SelectedIndex = logSelectedIndex + 1;
-                        BackupIncDiffJob._refreshIncDiffLogFlag = false;
+                        _backupService.RefreshIncDiffLogFlag(false);
                     }
                 }
                 catch (Exception e)

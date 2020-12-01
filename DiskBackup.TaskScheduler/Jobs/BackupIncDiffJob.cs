@@ -23,8 +23,6 @@ namespace DiskBackup.TaskScheduler.Jobs
         private readonly IActivityLogDal _activityLogDal;
         private readonly IBackupTaskDal _backupTaskDal;
         private readonly ILogger _logger;
-        public static bool _refreshIncDiffTaskFlag { get; set; } = false;
-        public static bool _refreshIncDiffLogFlag { get; set; } = false;
 
         public BackupIncDiffJob(ITaskInfoDal taskInfoDal, IBackupStorageDal backupStorageDal, IStatusInfoDal statusInfoDal, IBackupService backupService, IActivityLogDal activityLogDal, IBackupTaskDal backupTaskDal, ILogger logger)
         {
@@ -84,7 +82,7 @@ namespace DiskBackup.TaskScheduler.Jobs
                         task.NextDate = (context.Trigger.GetNextFireTimeUtc()).Value.LocalDateTime;
                     }
                     _taskInfoDal.Update(task);
-                    _refreshIncDiffTaskFlag = true;
+                    _backupService.RefreshIncDiffTaskFlag(true);
                     result = _backupService.CreateIncDiffBackup(task);
 
                     //for (int i = 0; i < 100000; i++)
@@ -156,8 +154,8 @@ namespace DiskBackup.TaskScheduler.Jobs
             _activityLogDal.Add(activityLog);
             taskInfo.Status = "Hazır"; // Resource eklenecek 
             _taskInfoDal.Update(taskInfo);
-            _refreshIncDiffTaskFlag = true;
-            _refreshIncDiffLogFlag = true;
+            _backupService.RefreshIncDiffTaskFlag(true);
+            _backupService.RefreshIncDiffLogFlag(true);
         }
     }
 }

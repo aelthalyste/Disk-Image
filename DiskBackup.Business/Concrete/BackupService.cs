@@ -29,7 +29,9 @@ namespace DiskBackup.Business.Concrete
         private Dictionary<int, Stopwatch> _timeElapsedMap = new Dictionary<int, Stopwatch>();
 
         private bool _isStarted = false;
-        private bool _initTrackerResult = false;   
+        private bool _initTrackerResult = false;
+        private bool _refreshIncDiffTaskFlag = false;
+        private bool _refreshIncDiffLogFlag = false; // Refreshde yenilememe durumu olması durumunda her task için ayrı flagler oluşturulacak
 
         private readonly IStatusInfoDal _statusInfoDal; // status bilgilerini veritabanına yazabilmek için gerekli
         private readonly ITaskInfoDal _taskInfoDal; // status bilgilerini veritabanına yazabilmek için gerekli
@@ -57,6 +59,26 @@ namespace DiskBackup.Business.Concrete
         public bool GetInitTracker()
         {
             return _initTrackerResult;
+        }
+
+        public bool GetRefreshIncDiffTaskFlag()
+        {
+            return _refreshIncDiffTaskFlag;
+        }
+
+        public void RefreshIncDiffTaskFlag(bool value)
+        {
+            _refreshIncDiffTaskFlag = value;
+        }
+
+        public bool GetRefreshIncDiffLogFlag()
+        {
+            return _refreshIncDiffLogFlag;
+        }
+
+        public void RefreshIncDiffLogFlag(bool value)
+        {
+            _refreshIncDiffLogFlag = value;
         }
 
         public void InitFileExplorer(BackupInfo backupInfo) //initTracker'la aynı mantıkla çalışır mı? (Explorer ctor'da 1 kere çağrılma)

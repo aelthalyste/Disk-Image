@@ -60,5 +60,14 @@ namespace DiskBackup.Business.Abstract
 
         [OperationContract]
         bool GetInitTracker();
+        [OperationContract]
+        bool GetRefreshIncDiffTaskFlag();
+        [OperationContract]
+        void RefreshIncDiffTaskFlag(bool value);
+        [OperationContract]
+        bool GetRefreshIncDiffLogFlag();
+        [OperationContract]
+        void RefreshIncDiffLogFlag(bool value);
+
     }
 }
