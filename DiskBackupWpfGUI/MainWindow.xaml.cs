@@ -825,6 +825,16 @@ namespace DiskBackupWpfGUI
                     txtRBootPartition.Text = "MBR";
                 else
                     txtRBootPartition.Text = "GPT";
+
+                txtRVolumeSize.Text = backupInfo.StrVolumeSize;
+                txtRUsedSize.Text = backupInfo.StrUsedSize;
+
+                txtRDriveLetter.Text = backupInfo.Letter.ToString();
+                txtRCreatedDate.Text = backupInfo.CreatedDate;
+                txtRPcName.Text = backupInfo.PCName;
+                txtRIpAddress.Text = backupInfo.IpAddress;
+                txtRFolderSize.Text = backupInfo.StrFileSize;
+                //Console.WriteLine("dosya adı : " + backupInfo.FileName);
             }
             else
             {

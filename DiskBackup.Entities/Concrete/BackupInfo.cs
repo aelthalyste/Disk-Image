@@ -15,7 +15,7 @@ namespace DiskBackup.Entities.Concrete
         public int BackupStorageInfoId { get; set; } //foreignKey
         public BackupTypes Type { get; set; }
         public string FileName { get; set; }
-        public DateTime CreatedDate { get; set; }
+        public string CreatedDate { get; set; }
         public string BackupTaskName { get; set; }
         public long VolumeSize { get; set; }
         public string StrVolumeSize { get; set; }
@@ -30,6 +30,7 @@ namespace DiskBackup.Entities.Concrete
         public int OSVolume { get; set; } //sor batuya
         public char Letter { get; set; } //sürücü harfi
         public long UsedSize { get; set; }
+        public string StrUsedSize { get; set; }
         public bool Bootable { get; set; }
         public string Zip { get; set; }
         public string OS { get; set; }

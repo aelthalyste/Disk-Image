@@ -47,7 +47,9 @@ namespace DiskBackup.Business.Abstract
         bool CleanChain(char letter);
         [OperationContract]
         char AvailableVolumeLetter();
-        
+        [OperationContract]
+        bool IsVolumeAvailable(char letter);
+
         [OperationContract]
         void RestoreFilesInBackup(int fileId, string backupDirectory, string targetDirectory);
         [OperationContract]
