@@ -76,8 +76,8 @@ namespace DiskBackup.TaskScheduler.Jobs
                 activityLog.Status = StatusType.Fail;
                 UpdateActivityAndTask(activityLog, task);
             }
-                        
-            _logger.Information("{@task} restore volume görevi bitirildi. Sonuç: {@result}.", task, result);           
+
+            _logger.Information("{@task} restore volume görevi bitirildi. Sonuç: {@result}.", task, result);
             return Task.CompletedTask; // return değeri kaldırılacak ve async'e çevirilecek burası
         }
 
@@ -90,6 +90,11 @@ namespace DiskBackup.TaskScheduler.Jobs
             activityLog.StatusInfoId = resultStatusInfo.Id;
             _activityLogDal.Add(activityLog);
             taskInfo.Status = "Hazır"; // Resource eklenecek 
+            _logger.Verbose("SchedulerId: {@schedulerId}.", taskInfo.ScheduleId);
+            taskInfo.ScheduleId = taskInfo.ScheduleId.Split('*')[0];
+            if (taskInfo.NextDate < DateTime.Now)
+                taskInfo.ScheduleId = "";
+            _logger.Verbose("Yeni SchedulerId: {@newscheduler}", taskInfo.ScheduleId);
             _taskInfoDal.Update(taskInfo);
             _backupService.RefreshIncDiffTaskFlag(true);
             _backupService.RefreshIncDiffLogFlag(true);

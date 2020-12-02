@@ -421,7 +421,7 @@ namespace DiskBackup.TaskScheduler
                 .StartNow()
                 .Build();
 
-            taskInfo.ScheduleId = $"restoreVolumeNowJob_{taskInfo.Id}/Restore";
+            taskInfo.ScheduleId = taskInfo.ScheduleId + $"*restoreVolumeNowJob_{taskInfo.Id}/Restore";
             _taskInfoDal.Update(taskInfo);
 
             await _scheduler.ScheduleJob(job, trigger);

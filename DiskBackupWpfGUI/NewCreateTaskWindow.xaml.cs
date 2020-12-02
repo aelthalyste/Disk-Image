@@ -819,7 +819,7 @@ namespace DiskBackupWpfGUI
             }
 
             // task kayıdı
-            _taskInfo.Status = Resources["Ready"].ToString();
+            _taskInfo.Status = Resources["FirstMissionExpected"].ToString();
             _taskInfo.StatusInfoId = resultStatusInfo.Id;
             _taskInfo.BackupTaskId = resultBackupTask.Id;
             _taskInfo.LastWorkingDate = Convert.ToDateTime("01/01/0002");

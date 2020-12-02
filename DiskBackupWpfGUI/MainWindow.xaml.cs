@@ -374,7 +374,7 @@ namespace DiskBackupWpfGUI
                 foreach (TaskInfo item in listViewTasks.SelectedItems)
                 {
                     // ilgili triggerı sil
-                    if (item.ScheduleId != null && !item.ScheduleId.Contains("Now"))
+                    if (item.ScheduleId != null && !item.ScheduleId.Contains("Now") && item.ScheduleId != "")
                     {
                         var taskSchedulerManager = _scope.Resolve<ITaskSchedulerManager>();
                         taskSchedulerManager.DeleteJob(item.ScheduleId);
@@ -388,6 +388,7 @@ namespace DiskBackupWpfGUI
                     else
                     {
                         //restore silme
+                        _restoreTaskDal.Delete(_restoreTaskDal.Get(x => x.Id == item.RestoreTaskId));
                     }
 
                     // ilgili status infosunu sil
@@ -430,7 +431,7 @@ namespace DiskBackupWpfGUI
         {
             TaskInfo taskInfo = (TaskInfo)listViewTasks.SelectedItem;
 
-            if (taskInfo.Status.Equals("Hazır"))
+            if (taskInfo.Status.Equals("Hazır") || taskInfo.Status.Equals("İlk Görev Bekleniyor"))
             {
                 taskInfo.LastWorkingDate = DateTime.Now;
                 taskInfo.BackupStorageInfo = _backupStorageDal.Get(x => x.Id == taskInfo.BackupStorageInfoId);
@@ -605,7 +606,7 @@ namespace DiskBackupWpfGUI
                 {
                     pauseFlag = true;
                 }
-                else if (item.Status.Equals("Hazır"))
+                else if (item.Status.Equals("Hazır") || item.Status.Equals(Resources["FirstMissionExpected"].ToString()))
                 {
                     btnTaskPause.IsEnabled = false;
                     btnTaskStop.IsEnabled = false;

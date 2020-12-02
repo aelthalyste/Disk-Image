@@ -60,7 +60,7 @@ namespace DiskBackup.TaskScheduler.Jobs
 
             try
             {
-                var taskList = _taskInfoDal.GetList(x => x.Status != "Hazır");
+                var taskList = _taskInfoDal.GetList(x => x.Status != "Hazır" && x.Status != "İlk Görev Bekleniyor");
                 foreach (var item in taskList)
                 {
                     foreach (var itemObje in task.StrObje)
