@@ -1,6 +1,8 @@
-﻿using DiskBackup.DataAccess.Abstract;
+﻿using DiskBackup.Business.Abstract;
+using DiskBackup.DataAccess.Abstract;
 using DiskBackup.Entities.Concrete;
 using DiskBackup.TaskScheduler;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -27,12 +29,14 @@ namespace DiskBackupWpfGUI
         private bool _volumeOrFreshDisk = false; //volume ise true, disk ise false
         private TaskInfo _taskInfo = new TaskInfo();
 
-        private ITaskInfoDal _taskInfoDal;
-        private IRestoreTaskDal _restoreTaskDal;
-        private IStatusInfoDal _statusInfoDal;
+        private readonly ITaskInfoDal _taskInfoDal;
+        private readonly IRestoreTaskDal _restoreTaskDal;
+        private readonly IStatusInfoDal _statusInfoDal;
         private ITaskSchedulerManager _schedulerManager;
+        private IBackupService _backupService;
+        private ILogger _logger;
 
-        public RestoreWindow(BackupInfo backupInfo, List<VolumeInfo> volumeInfoList, IRestoreTaskDal restoreTaskDal, IStatusInfoDal statusInfoDal, ITaskInfoDal taskInfoDal, ITaskSchedulerManager schedulerManager)
+        public RestoreWindow(BackupInfo backupInfo, List<VolumeInfo> volumeInfoList, IRestoreTaskDal restoreTaskDal, IStatusInfoDal statusInfoDal, ITaskInfoDal taskInfoDal, ITaskSchedulerManager schedulerManager, IBackupService backupService, ILogger logger)
         {
             InitializeComponent();
 
@@ -42,6 +46,9 @@ namespace DiskBackupWpfGUI
             _statusInfoDal = statusInfoDal;
             _taskInfoDal = taskInfoDal;
             _schedulerManager = schedulerManager;
+            _backupService = backupService;
+            _logger = logger.ForContext<RestoreWindow>();
+
             _taskInfo.RestoreTaskInfo = new RestoreTask();
             _taskInfo.BackupStorageInfo = new BackupStorageInfo();
             _taskInfo.StatusInfo = new StatusInfo();
@@ -184,19 +191,28 @@ namespace DiskBackupWpfGUI
                     }
                     else // disk
                     {
-                        foreach (var item in _volumeInfoList)
-                        {
-                            _taskInfo.StrObje += item.Letter.ToString();
-                        }
+                        _taskInfo.StrObje = _backupInfo.Letter.ToString();
+
                         var result = _volumeInfoList[0].DiskName.Split(' ');
                         _taskInfo.RestoreTaskInfo.DiskId = Convert.ToInt32(result[1]);
+
+                        try
+                        {
+                            _taskInfo.RestoreTaskInfo.DiskLetter = _backupService.AvailableVolumeLetter().ToString();
+                            Console.WriteLine("NarDIWrapper'dan alınan harf: ", _taskInfo.RestoreTaskInfo.DiskLetter);
+                        }
+                        catch(Exception ex)
+                        {
+                            _logger.Error(ex, "NarDIWrapper'dan uygun disk için harf alınamadı.");
+                            Console.WriteLine("NarDIWrapper'dan uygun disk için harf alınamadı.");
+                        }
 
                         TaskInfo resultTaskInfo = SaveToDatabase();
 
                         if (resultTaskInfo != null)
                             MessageBox.Show("Ekleme işlemi başarılı");
 
-                        //scheduler
+                        _schedulerManager.RestoreDiskJob(resultTaskInfo).Wait();
                     }
                     Close();
                 }

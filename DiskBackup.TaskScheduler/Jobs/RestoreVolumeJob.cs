@@ -61,6 +61,7 @@ namespace DiskBackup.TaskScheduler.Jobs
             catch (Exception e)
             {
                 _logger.Error(e, "{@Task} restore volume görevinde hata oluştu.", task);
+                /**/
                 result = false;
             }
 

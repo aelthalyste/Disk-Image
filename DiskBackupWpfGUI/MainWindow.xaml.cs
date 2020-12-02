@@ -798,16 +798,44 @@ namespace DiskBackupWpfGUI
                 volumeInfoList.Add(item);
             }
 
-            //BackupInfo backupInfo = new BackupInfo(){ FileName = "Deneme yedek 1"};
             BackupInfo backupInfo = (BackupInfo)listViewRestore.SelectedItem;
-
-            using (var scope = _scope.BeginLifetimeScope())
+            bool controlFlag = false;
+            if (volumeInfoList.Count > 1)
             {
-                RestoreWindow restore = scope.Resolve<RestoreWindow>(new TypedParameter(backupInfo.GetType(), backupInfo),
-                    new TypedParameter(volumeInfoList.GetType(), volumeInfoList));
-                restore.ShowDialog();
+                //disk kontrol et
+                foreach (var item in _diskList)
+                {
+                    if (item.VolumeInfos[0].DiskName.Equals(volumeInfoList[0].DiskName))
+                    {
+                        if (backupInfo.UsedSize > item.Size)
+                        {
+                            controlFlag = true;
+                            MessageBox.Show("Bu restore boyutlardan dolayı gerçekleştirilemez.", "Narbulut diyor ki; ", MessageBoxButton.OK, MessageBoxImage.Error);
+                        }
+                    }
+                }
+            }
+            else
+            {
+                if (backupInfo.UsedSize > volumeInfoList[0].Size)
+                {
+                    controlFlag = true;
+                    MessageBox.Show("Bu restore boyutlardan dolayı gerçekleştirilemez.", "Narbulut diyor ki; ", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+
+            }
+
+            if (!controlFlag)
+            {
+                using (var scope = _scope.BeginLifetimeScope())
+                {
+                    RestoreWindow restore = scope.Resolve<RestoreWindow>(new TypedParameter(backupInfo.GetType(), backupInfo),
+                        new TypedParameter(volumeInfoList.GetType(), volumeInfoList));
+                    restore.ShowDialog();
+                }
             }
             GetTasks();
+
         }
 
         private void listViewRestore_SelectionChanged(object sender, SelectionChangedEventArgs e)

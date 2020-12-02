@@ -247,20 +247,9 @@ namespace DiskBackup.Business.Concrete
             return DiskTracker.CW_RestoreToVolume(taskInfo.StrObje[0], taskInfo.RestoreTaskInfo.DiskLetter[0], taskInfo.RestoreTaskInfo.BackupVersion, true, taskInfo.BackupStorageInfo.Path); //true gidecek
         }
 
-        public bool RestoreBackupDisk(BackupInfo backupInfo, DiskInformation diskInformation)
+        public bool RestoreBackupDisk(TaskInfo taskInfo)
         {
-            //batudan fonksiyon gelecek o fonksiyon hangi harfle restore edeceğini dönecek ve batu o harfle restore edecek
-            //DiskTracker.CW_GetFirstAvailableVolumeLetter(); Batuhandan müsait letter alınması
-            // diskI disk 5 olur
-            //DiskTracker.CW_RestoreToFreshDisk(DiskTracker.CW_GetFirstAvailableVolumeLetter(), "backup harfi", "version bilgisi", "diskId", "backup'ın bulunduğu yol *\*");
-            //pathde sadece path varmış dosya adı yokmuş
-            //CW_GetFirstAvailableVolumeLetter ile boş olan volume'ü alıp batuhan'a dönerek o volume restore gerçekleştirilecek
-
-            //DiskTracker.CW_GetFirstAvailableVolumeLetter(); ilk olarak E müsaitti ama bir şeyler yapıldı ve artık ilk olarak D müsait oldu Batu bize D dönecek
-            //ama E hala müsait yani restore da yapılabilir, bu durum için daha sağlıklı bir fonksiyon gerekiyor.
-
-            //return DiskTracker.CW_RestoreToFreshDisk(,)
-            throw new NotImplementedException();
+            return DiskTracker.CW_RestoreToFreshDisk(taskInfo.RestoreTaskInfo.DiskLetter[0], taskInfo.StrObje[0], taskInfo.RestoreTaskInfo.BackupVersion, taskInfo.RestoreTaskInfo.DiskId, taskInfo.BackupStorageInfo.Path);
         }
 
         public bool CleanChain(char letter)

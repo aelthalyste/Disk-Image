@@ -41,7 +41,7 @@ namespace DiskBackup.TaskScheduler
         [OperationContract]
         Task RestoreVolumeJob(TaskInfo taskInfo);
         [OperationContract]
-        Task RestoreDiskJob(TaskInfo taskInfo, BackupStorageInfo backupStorageInfo);
+        Task RestoreDiskJob(TaskInfo taskInfo);
         [OperationContract]
         Task BackupFullNowJob(TaskInfo taskInfo);
         [OperationContract]

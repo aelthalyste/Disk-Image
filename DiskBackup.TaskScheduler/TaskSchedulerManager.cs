@@ -366,7 +366,7 @@ namespace DiskBackup.TaskScheduler
 
         #region Restore
 
-        public async Task RestoreDiskJob(TaskInfo taskInfo, BackupStorageInfo backupStorageInfo)
+        public async Task RestoreDiskJob(TaskInfo taskInfo)
         {
             IJobDetail job = JobBuilder.Create<RestoreDiskJob>()
                 .WithIdentity($"restoreDiskJob_{taskInfo.Id}", "Restore")
@@ -376,7 +376,7 @@ namespace DiskBackup.TaskScheduler
             ITrigger trigger = TriggerBuilder.Create()
                 .WithIdentity($"restoreDiskTrigger_{taskInfo.Id}", "Restore")
                 .ForJob($"restoreDiskJob_{taskInfo.Id}", "Restore")
-                .StartAt(taskInfo.NextDate) // now yollandığında hemen çalıştıracak
+                .StartAt(taskInfo.NextDate)
                 .Build();
 
             taskInfo.ScheduleId = $"restoreDiskJob_{taskInfo.Id}/Restore";
@@ -384,6 +384,26 @@ namespace DiskBackup.TaskScheduler
 
             await _scheduler.ScheduleJob(job, trigger);
         }
+
+        public async Task RestoreDiskNowJob(TaskInfo taskInfo)
+        {
+            IJobDetail job = JobBuilder.Create<RestoreDiskJob>()
+                .WithIdentity($"restoreDiskNowJob_{taskInfo.Id}", "Restore")
+                .UsingJobData("taskId", taskInfo.Id.ToString())
+                .Build();
+
+            ITrigger trigger = TriggerBuilder.Create()
+                .WithIdentity($"restoreDiskNowTrigger_{taskInfo.Id}", "Restore")
+                .ForJob($"restoreDiskNowJob_{taskInfo.Id}", "Restore")
+                .StartNow() 
+                .Build();
+
+            taskInfo.ScheduleId = taskInfo.ScheduleId + $"*restoreDiskNowJob_{taskInfo.Id}/Restore";
+            _taskInfoDal.Update(taskInfo);
+
+            await _scheduler.ScheduleJob(job, trigger);
+        }
+
 
         //return _diskTracker.CW_RestoreToVolume(volumeInfo.Letter, backupInfo.Letter, backupInfo.Version, true, backupInfo.BackupStorageInfo.Path);
         //public bool RestoreBackupVolume(BackupInfo backupInfo, char volumeLetter)

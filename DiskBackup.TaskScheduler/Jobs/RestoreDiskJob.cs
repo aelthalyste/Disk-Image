@@ -35,9 +35,10 @@ namespace DiskBackup.TaskScheduler.Jobs
         public Task Execute(IJobExecutionContext context)
         {
             bool result = false;
+            bool availableResult = false;
             var taskId = int.Parse(context.JobDetail.JobDataMap["taskId"].ToString());
             var task = _taskInfoDal.Get(x => x.Id == taskId);
-            _logger.Information("{@task} için restore disk görevine başlandı.", task);
+            _logger.Information("{@task} için restore disk görevi başlatıldı.", task);
             task.BackupStorageInfo = _backupStorageDal.Get(x => x.Id == task.BackupStorageInfoId);
             task.RestoreTaskInfo = _restoreTaskDal.Get(x => x.Id == task.RestoreTaskId);
 
@@ -51,29 +52,40 @@ namespace DiskBackup.TaskScheduler.Jobs
 
             try
             {
-                //result = _backupService.RestoreBackupDisk(task);
+                availableResult = _backupService.IsVolumeAvailable(task.StrObje[0]);
+
+                if (availableResult)
+                {
+                    result = _backupService.RestoreBackupVolume(task);
+                    var cleanChainResult = _backupService.CleanChain(task.StrObje[0]);
+                    _logger.Information("{@task} {@value} zinciri temizlendi. Sonuç: {@cleanResult}", task, task.StrObje[0], cleanChainResult);
+                }
+                else
+                    _logger.Information("{@task} {@value} volumu müsait değildi", task, task.StrObje[0]);
+
                 // başarısızsa tekrar dene restore da başarısızsa tekrar dene yok
             }
             catch (Exception e)
             {
-                _logger.Error(e, "Restore volume görevinde hata oluştu. Task: {@Task}.", task);
+                _logger.Error(e, "{@Task} restore volume görevinde hata oluştu.", task);
                 result = false;
+                availableResult = false;
             }
 
-
-            if (result)
+            if (result || availableResult)
             {
+                _logger.Verbose("{@task} volume job'ın result true ifindeyim", task);
                 activityLog.Status = StatusType.Success;
                 UpdateActivityAndTask(activityLog, task);
             }
             else
             {
+                _logger.Verbose("{@task} volume job'ın result false ifindeyim", task);
                 activityLog.Status = StatusType.Fail;
                 UpdateActivityAndTask(activityLog, task);
             }
 
-            Console.WriteLine("Restore Job done");
-            _logger.Information("{@task} için restore disk görevi bitirildi. Sonuç: {@result}.", task, result);
+            _logger.Information("{@task} restore disk görevi bitirildi. Sonuç: {@result}.", task, result);
             return Task.CompletedTask; // return değeri kaldırılacak ve async'e çevirilecek burası
         }
 
@@ -86,6 +98,11 @@ namespace DiskBackup.TaskScheduler.Jobs
             activityLog.StatusInfoId = resultStatusInfo.Id;
             _activityLogDal.Add(activityLog);
             taskInfo.Status = "Hazır"; // Resource eklenecek 
+            _logger.Verbose("SchedulerId: {@schedulerId}.", taskInfo.ScheduleId);
+            taskInfo.ScheduleId = taskInfo.ScheduleId.Split('*')[0];
+            if (taskInfo.NextDate < DateTime.Now)
+                taskInfo.ScheduleId = "";
+            _logger.Verbose("Yeni SchedulerId: {@newscheduler}", taskInfo.ScheduleId);
             _taskInfoDal.Update(taskInfo);
             _backupService.RefreshIncDiffTaskFlag(true);
             _backupService.RefreshIncDiffLogFlag(true);
