@@ -240,7 +240,9 @@
     <system:String x:Key="Canceled">İptal edildi</system:String>
     <system:String x:Key="Working">Çalışıyor</system:String>
     <system:String x:Key="Not">Yok</system:String>
+    <system:String x:Key="Paused">Durduruldu</system:String>
     <system:String x:Key="Cancel">İptal Edildi</system:String>
+    <system:String x:Key="Error">Hata</system:String>
     <system:String x:Key="advancedOptions">Gelişmiş Ayarlar</system:String>
 
 

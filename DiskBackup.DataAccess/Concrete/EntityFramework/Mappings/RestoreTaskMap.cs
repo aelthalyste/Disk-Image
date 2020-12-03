@@ -16,10 +16,13 @@ namespace DiskBackup.DataAccess.Concrete.EntityFramework.Mappings
             HasKey(x => x.Id);
 
             Property(x => x.Id).HasColumnName("restore_task_id");
-            Property(x => x.DiskId).HasColumnName("disk_id");
-            Property(x => x.DiskLetter).HasColumnName("disk_letter");
+            Property(x => x.Type).HasColumnName("type");
             Property(x => x.BackupVersion).HasColumnName("backup_version");
-            Ignore(x => x.DiskInfo);
+            Property(x => x.DiskId).HasColumnName("disk_id");
+            Property(x => x.RootDir).HasColumnName("root_dir");
+            Property(x => x.TargetLetter).HasColumnName("target_letter");
+            Property(x => x.SourceLetter).HasColumnName("source_letter");
+
         }
     }
 }

@@ -33,6 +33,7 @@ namespace DiskBackup.DataAccess.Concrete.EntityFramework.Mappings
             Ignore(x => x.BackupTaskInfo);
             Ignore(x => x.BackupStorageInfo);
             Ignore(x => x.StatusInfo);
+            Ignore(x => x.StrStatus);
 
         }
     }

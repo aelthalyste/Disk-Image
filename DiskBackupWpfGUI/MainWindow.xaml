@@ -357,7 +357,7 @@
                                     <GridViewColumn Header="{DynamicResource statu}" Width="125" >
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
-                                                <TextBlock Text="{Binding Status}" TextAlignment="Center"/>
+                                                <TextBlock Text="{Binding StrStatus}" TextAlignment="Center"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>

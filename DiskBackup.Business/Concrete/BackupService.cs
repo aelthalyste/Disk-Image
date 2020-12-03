@@ -242,14 +242,14 @@ namespace DiskBackup.Business.Concrete
             return null;
         }
 
-        public bool RestoreBackupVolume(TaskInfo taskInfo)
+        public bool RestoreBackupVolume(RestoreTask restoreTask)
         {
-            return DiskTracker.CW_RestoreToVolume(taskInfo.StrObje[0], taskInfo.RestoreTaskInfo.DiskLetter[0], taskInfo.RestoreTaskInfo.BackupVersion, true, taskInfo.BackupStorageInfo.Path); //true gidecek
+            return DiskTracker.CW_RestoreToVolume(restoreTask.TargetLetter[0], restoreTask.SourceLetter[0], restoreTask.BackupVersion, true, restoreTask.RootDir); //true gidecek
         }
 
-        public bool RestoreBackupDisk(TaskInfo taskInfo)
+        public bool RestoreBackupDisk(RestoreTask restoreTask)
         {
-            return DiskTracker.CW_RestoreToFreshDisk(taskInfo.RestoreTaskInfo.DiskLetter[0], taskInfo.StrObje[0], taskInfo.RestoreTaskInfo.BackupVersion, taskInfo.RestoreTaskInfo.DiskId, taskInfo.BackupStorageInfo.Path);
+            return DiskTracker.CW_RestoreToFreshDisk(restoreTask.TargetLetter[0], restoreTask.SourceLetter[0], restoreTask.BackupVersion, restoreTask.DiskId, restoreTask.RootDir);
         }
 
         public bool CleanChain(char letter)
@@ -404,7 +404,7 @@ namespace DiskBackup.Business.Concrete
             {
                 _taskEventMap[taskInfo.Id].Reset();
             }
-            taskInfo.Status = "Durduruldu";
+            taskInfo.Status = TaskStatusType.Paused;
             _taskInfoDal.Update(taskInfo);
         }
 
@@ -425,7 +425,7 @@ namespace DiskBackup.Business.Concrete
             {
                 _taskEventMap[taskInfo.Id].Set();
             }
-            taskInfo.Status = "Hazır"; 
+            taskInfo.Status = TaskStatusType.Ready; 
             _taskInfoDal.Update(taskInfo);
         }
 
@@ -444,7 +444,7 @@ namespace DiskBackup.Business.Concrete
             {
                 _taskEventMap[taskInfo.Id].Set();
             }
-            taskInfo.Status = "Çalışıyor";
+            taskInfo.Status = TaskStatusType.Working;
             _taskInfoDal.Update(taskInfo);
         }
 

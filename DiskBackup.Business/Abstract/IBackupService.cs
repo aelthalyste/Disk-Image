@@ -39,9 +39,9 @@ namespace DiskBackup.Business.Abstract
 
         //Parametreler bu methodun içinde RestoreTask oluşturacak
         [OperationContract]
-        bool RestoreBackupVolume(TaskInfo taskInfo);
+        bool RestoreBackupVolume(RestoreTask restoreTask);
         [OperationContract]
-        bool RestoreBackupDisk(TaskInfo taskInfo);
+        bool RestoreBackupDisk(RestoreTask restoreTask);
         //Restore işleminde disk seçilirse CW_RestoreToFreshDisk, volume seçilirse CW_RestoreToVolume
         [OperationContract]
         bool CleanChain(char letter);

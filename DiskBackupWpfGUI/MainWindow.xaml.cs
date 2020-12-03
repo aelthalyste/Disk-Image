@@ -431,7 +431,7 @@ namespace DiskBackupWpfGUI
         {
             TaskInfo taskInfo = (TaskInfo)listViewTasks.SelectedItem;
 
-            if (taskInfo.Status.Equals("Hazır") || taskInfo.Status.Equals("İlk Görev Bekleniyor"))
+            if (taskInfo.Status.Equals(TaskStatusType.Ready) || taskInfo.Status.Equals(TaskStatusType.FirstMissionExpected))
             {
                 taskInfo.LastWorkingDate = DateTime.Now;
                 taskInfo.BackupStorageInfo = _backupStorageDal.Get(x => x.Id == taskInfo.BackupStorageInfoId);
@@ -469,12 +469,22 @@ namespace DiskBackupWpfGUI
                     Console.WriteLine("Restore başlatılıyor");
                     taskInfo.RestoreTaskInfo = _restoreTaskDal.Get(x => x.Id == taskInfo.RestoreTaskId);
                     Console.WriteLine($"Patlamadım Id: {taskInfo.RestoreTaskInfo.Id} SchedulerId: {taskInfo.ScheduleId}");
-                    // restore disk ve volume ayrıntısı burada kontrol edilip çağırılacak
-                    var taskSchedulerManager = _scope.Resolve<ITaskSchedulerManager>();
-                    taskSchedulerManager.RestoreVolumeNowJob(taskInfo).Wait();
+                    if (taskInfo.RestoreTaskInfo.Type == RestoreType.RestoreVolume)
+                    {
+                        // restore disk ve volume ayrıntısı burada kontrol edilip çağırılacak
+                        var taskSchedulerManager = _scope.Resolve<ITaskSchedulerManager>();
+                        taskSchedulerManager.RestoreVolumeNowJob(taskInfo).Wait();
+                    }
+                    else
+                    {
+                        // restore disk ve volume ayrıntısı burada kontrol edilip çağırılacak
+                        var taskSchedulerManager = _scope.Resolve<ITaskSchedulerManager>();
+                        taskSchedulerManager.RestoreDiskNowJob(taskInfo).Wait();
+                    }
+
                 }
             }
-            else if (taskInfo.Status.Equals("Durduruldu"))
+            else if (taskInfo.Status.Equals(TaskStatusType.Paused))
             {
                 var backupService = _scope.Resolve<IBackupService>();
                 backupService.ResumeTask(taskInfo);
@@ -504,6 +514,9 @@ namespace DiskBackupWpfGUI
             foreach (var item in _taskInfoList)
             {
                 item.BackupStorageInfo = _backupStorageDal.Get(x => x.Id == item.BackupStorageInfoId);
+                item.StrStatus = item.Status.ToString();
+                item.StrStatus = Resources[item.StrStatus].ToString();
+                Console.WriteLine(item.StrStatus);
             }
             listViewTasks.ItemsSource = _taskInfoList;
             DisableTaskButtons();
@@ -529,8 +542,8 @@ namespace DiskBackupWpfGUI
                     }
 
                     // Ortadaki statu
-                    TaskInfo runningTask = _taskInfoDal.GetList(x => x.Status == "Çalışıyor").FirstOrDefault();
-                    TaskInfo pausedTask = _taskInfoDal.GetList(x => x.Status == "Durduruldu").FirstOrDefault();
+                    TaskInfo runningTask = _taskInfoDal.GetList(x => x.Status == TaskStatusType.Working).FirstOrDefault();
+                    TaskInfo pausedTask = _taskInfoDal.GetList(x => x.Status == TaskStatusType.Paused).FirstOrDefault();
                     if (runningTask != null)
                     {
                         // çalışanı yazdır
@@ -598,15 +611,15 @@ namespace DiskBackupWpfGUI
             bool pauseFlag = false;
             foreach (TaskInfo item in listViewTasks.SelectedItems)
             {
-                if (item.Status.Equals("Çalışıyor"))
+                if (item.Status.Equals(TaskStatusType.Working))
                 {
                     runningFlag = true;
                 }
-                else if (item.Status.Equals("Durduruldu"))
+                else if (item.Status.Equals(TaskStatusType.Paused))
                 {
                     pauseFlag = true;
                 }
-                else if (item.Status.Equals("Hazır") || item.Status.Equals(Resources["FirstMissionExpected"].ToString()))
+                else if (item.Status.Equals(TaskStatusType.Ready) || item.Status.Equals(TaskStatusType.FirstMissionExpected))
                 {
                     btnTaskPause.IsEnabled = false;
                     btnTaskStop.IsEnabled = false;

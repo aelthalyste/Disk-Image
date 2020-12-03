@@ -52,17 +52,40 @@ namespace DiskBackup.TaskScheduler.Jobs
 
             try
             {
-                availableResult = _backupService.IsVolumeAvailable(task.StrObje[0]);
-
-                if (availableResult)
+                bool workingTask = false;
+                var taskList = _taskInfoDal.GetList(x => x.Status != TaskStatusType.Ready && x.Status != TaskStatusType.FirstMissionExpected);
+                foreach (var item in taskList)
                 {
-                    result = _backupService.RestoreBackupVolume(task);
-                    var cleanChainResult = _backupService.CleanChain(task.StrObje[0]);
-                    _logger.Information("{@task} {@value} zinciri temizlendi. Sonuç: {@cleanResult}", task, task.StrObje[0], cleanChainResult);
+                    foreach (var itemObje in task.StrObje)
+                    {
+                        if (item.StrObje.Contains(itemObje))
+                        {
+                            // Okuma yapılan diskte işlem yapılamaz
+                            workingTask = true;
+                            Console.WriteLine("bu volumede çalışan bir görev var");
+                            _logger.Information("{@task} için restore volume görevi çalıştırılamadı. {@letter} volumunde başka görev işliyor.", task, item.StrObje);
+                        }
+                    }
                 }
-                else
-                    _logger.Information("{@task} {@value} volumu müsait değildi", task, task.StrObje[0]);
+                task.LastWorkingDate = DateTime.Now;
 
+                if (!workingTask)
+                {
+                    task.Status = TaskStatusType.Working;
+                    _taskInfoDal.Update(task);
+                    _backupService.RefreshIncDiffTaskFlag(true);
+
+                    availableResult = _backupService.IsVolumeAvailable(task.StrObje[0]);
+
+                    if (availableResult)
+                    {
+                        result = _backupService.RestoreBackupVolume(task.RestoreTaskInfo);
+                        var cleanChainResult = _backupService.CleanChain(task.RestoreTaskInfo.TargetLetter[0]);
+                        _logger.Information("{@task} {@value} zinciri temizlendi. Sonuç: {@cleanResult}", task, task.RestoreTaskInfo.TargetLetter[0], cleanChainResult);
+                    }
+                    else
+                        _logger.Information("{@task} {@value} volumu müsait değildi", task, task.RestoreTaskInfo.TargetLetter[0]);
+                }
                 // başarısızsa tekrar dene restore da başarısızsa tekrar dene yok
             }
             catch (Exception e)
@@ -97,11 +120,14 @@ namespace DiskBackup.TaskScheduler.Jobs
             var resultStatusInfo = _statusInfoDal.Add(activityLog.StatusInfo);
             activityLog.StatusInfoId = resultStatusInfo.Id;
             _activityLogDal.Add(activityLog);
-            taskInfo.Status = "Hazır"; // Resource eklenecek 
+            taskInfo.Status = TaskStatusType.Ready; // Resource eklenecek 
             _logger.Verbose("SchedulerId: {@schedulerId}.", taskInfo.ScheduleId);
             taskInfo.ScheduleId = taskInfo.ScheduleId.Split('*')[0];
             if (taskInfo.NextDate < DateTime.Now)
+            {
                 taskInfo.ScheduleId = "";
+                taskInfo.NextDate = Convert.ToDateTime("01/01/0002");
+            }
             _logger.Verbose("Yeni SchedulerId: {@newscheduler}", taskInfo.ScheduleId);
             _taskInfoDal.Update(taskInfo);
             _backupService.RefreshIncDiffTaskFlag(true);

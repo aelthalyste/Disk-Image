@@ -22,7 +22,8 @@ namespace DiskBackup.Entities.Concrete
         public string Name { get; set; }
         public int Obje { get; set; }
         public string StrObje { get; set; } // CDE gibi olması durumunda tutulması
-        public string Status { get; set; } //çalışıyor, hazır, iptal edildi...
+        public TaskStatusType Status { get; set; } //çalışıyor, hazır, iptal edildi...
+        public string StrStatus { get; set; }
         public DateTime LastWorkingDate { get; set; } //backuptask starttime ile aynı değil çünkü o zamanlaştırılması daha ileri bir zaman olabilir
         public DateTime NextDate { get; set; }
         public string Descripiton { get; set; }
@@ -33,5 +34,15 @@ namespace DiskBackup.Entities.Concrete
     {
         Backup = 0, 
         Restore = 1
+    }
+
+    public enum TaskStatusType
+    {
+        FirstMissionExpected = 0,
+        Ready = 1,
+        Cancel = 2,
+        Working = 3,
+        Paused = 4,
+        Error = 5
     }
 }
