@@ -461,14 +461,22 @@ namespace DiskBackup.TaskScheduler
             throw new NotImplementedException();
         }
 
-        public bool DisableSchedule(string scheduleId)
+        public async Task DisableSchedule(TaskInfo task)
         {
-            throw new NotImplementedException();
+            var result = task.ScheduleId.Split('/');
+            await _scheduler.PauseJob(new JobKey(result[0], result[1]));
+            task.EnableDisable = 1;
+            _taskInfoDal.Update(task);
+            //Task.Delay(500).Wait();
         }
 
-        public bool EnableSchedule(string scheduleId)
+        public async Task EnableSchedule(TaskInfo task)
         {
-            throw new NotImplementedException();
+            var result = task.ScheduleId.Split('/');
+            await _scheduler.ResumeJob(new JobKey(result[0], result[1]));
+            task.EnableDisable = 0;
+            _taskInfoDal.Update(task);
+            //Task.Delay(500).Wait();
         }
 
         public async Task PauseAllScheduleAsync()

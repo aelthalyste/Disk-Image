@@ -31,9 +31,9 @@ namespace DiskBackup.TaskScheduler
         [OperationContract]
         Task PauseAllScheduleAsync();
         [OperationContract]
-        bool EnableSchedule(string scheduleId);
+        Task EnableSchedule(TaskInfo task);
         [OperationContract]
-        bool DisableSchedule(string scheduleId);
+        Task DisableSchedule(TaskInfo task);
         [OperationContract]
         bool CancelSchedule(string scheduleId);
         [OperationContract]

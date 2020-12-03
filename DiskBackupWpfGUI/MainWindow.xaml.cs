@@ -507,6 +507,151 @@ namespace DiskBackupWpfGUI
 
         }
 
+        private void btnEnableTask_Click(object sender, RoutedEventArgs e)
+        {
+            var taskSchedulerManager = _scope.Resolve<ITaskSchedulerManager>();
+            foreach (TaskInfo item in listViewTasks.SelectedItems)
+            {
+                taskSchedulerManager.EnableSchedule(item).Wait();
+            }
+            GetTasks();
+        }
+
+        private void btnDisableTask_Click(object sender, RoutedEventArgs e)
+        {
+            var taskSchedulerManager = _scope.Resolve<ITaskSchedulerManager>();
+            foreach (TaskInfo item in listViewTasks.SelectedItems)
+            {
+                taskSchedulerManager.DisableSchedule(item).Wait();
+            }
+            GetTasks();
+        }
+
+        private void btnCopyTask_Click(object sender, RoutedEventArgs e)
+        {
+            var task = (TaskInfo)listViewTasks.SelectedItem;
+            task.Name = "(" + Resources["clone"] + ") " + task.Name;
+            task.EnableDisable = 1;
+            task.LastWorkingDate = Convert.ToDateTime("01/01/0002");
+
+            var backupTask = _backupTaskDal.Get(x => x.Id == task.BackupTaskId);
+            backupTask.TaskName = task.Name;
+            var resultBackupTask = _backupTaskDal.Add(backupTask);
+            if (resultBackupTask == null)
+                MessageBox.Show("Kopyalam işlemi başarısız.", "Narbulut diyor ki;", MessageBoxButton.OK, MessageBoxImage.Error);
+            else
+            {
+                var statusInfo = _statusInfoDal.Get(x => x.Id == task.StatusInfoId);
+                statusInfo.TaskName = task.Name;
+                var resultStatusInfo = _statusInfoDal.Add(statusInfo);
+                if (resultStatusInfo == null)
+                    MessageBox.Show("Kopyalam işlemi başarısız.", "Narbulut diyor ki;", MessageBoxButton.OK, MessageBoxImage.Error);
+                else
+                {
+                    string lastSchedulerId = task.ScheduleId;
+                    task.ScheduleId = "";
+                    task.BackupTaskId = resultBackupTask.Id;
+                    task.BackupTaskInfo = resultBackupTask;
+                    task.StatusInfoId = resultStatusInfo.Id;
+                    task.StatusInfo = resultStatusInfo;
+                    TaskInfo resultTask = _taskInfoDal.Add(task);
+                    if (resultTask == null)
+                        MessageBox.Show("Kopyalam işlemi başarısız.", "Narbulut diyor ki;", MessageBoxButton.OK, MessageBoxImage.Error);
+                    else
+                    {
+                        // scheduler oluştur
+                        Console.WriteLine("resultTask Id:" + resultTask.Id);
+                        CreateBackupTaskScheduler(resultTask, lastSchedulerId);
+                    }
+                }
+            }
+            GetTasks();
+        }
+
+        private void CreateBackupTaskScheduler(TaskInfo resultTask, string lastSchedulerId)
+        {
+            Console.WriteLine("Scope öncesi:" + resultTask.Id);
+
+            var taskSchedulerManager = _scope.Resolve<ITaskSchedulerManager>();
+            Console.WriteLine("sonrası:" + resultTask.Id);
+
+
+            if (resultTask.BackupTaskInfo.Type == BackupTypes.Diff || resultTask.BackupTaskInfo.Type == BackupTypes.Inc)
+            {
+                Console.WriteLine("ilk if:" + resultTask.Id);
+                if (resultTask.BackupTaskInfo.AutoRun)
+                {
+                    Console.WriteLine("ifAutoRun:" + resultTask.Id);
+
+                    if (resultTask.BackupTaskInfo.AutoType == AutoRunType.DaysTime)
+                    {
+                        Console.WriteLine("ifAutoType:" + resultTask.Id);
+
+                        if (lastSchedulerId.Contains("Everyday")) // everyday
+                        {
+                            Console.WriteLine("Everyday");
+                            taskSchedulerManager.BackupIncDiffEverydayJob(resultTask).Wait();
+                            Console.WriteLine("-" + resultTask.ScheduleId);
+                        }
+                        else if (lastSchedulerId.Contains("WeekDays")) //weekdays
+                        {
+                            Console.WriteLine("Weekdays");
+                            taskSchedulerManager.BackupIncDiffWeekDaysJob(resultTask).Wait();
+                        }
+                        else //certain
+                        {
+                            Console.WriteLine("Certain");
+                            taskSchedulerManager.BackupIncDiffCertainDaysJob(resultTask).Wait();
+                        }
+                    }
+                    else if (resultTask.BackupTaskInfo.AutoType == AutoRunType.WeeklyTime)
+                    {
+                        Console.WriteLine("Weekly");
+                        taskSchedulerManager.BackupIncDiffWeeklyJob(resultTask).Wait();
+
+                    }
+                    else if (resultTask.BackupTaskInfo.AutoType == AutoRunType.Periodic)
+                    {
+                        Console.WriteLine("if periodic");
+                        if (lastSchedulerId.Contains("PeriodicHours")) //saat
+                        {
+                            Console.WriteLine("Periodic hours");
+                            taskSchedulerManager.BackupIncDiffPeriodicHoursJob(resultTask).Wait();
+
+                        }
+                        else //dakika
+                        {
+                            Console.WriteLine("Periodic Minute");
+                            taskSchedulerManager.BackupIncDiffPeriodicMinutesJob(resultTask).Wait();
+
+                        }
+                    }
+                    Console.WriteLine("ilk if sonu");
+                }
+            }
+            else
+            {
+                Console.WriteLine("Full:" + resultTask.Id);
+                //full gelince buraya alıcaz paşayı
+            }
+
+            var returnTask = _taskInfoDal.Get(x => x.Id == resultTask.Id);
+            Console.WriteLine(returnTask.ScheduleId + " geldim ehehe");
+
+            // Oluşturulan scheduler'ı pasif et
+            if (returnTask.ScheduleId != "" && returnTask.ScheduleId != null)
+            {
+                Console.WriteLine("Disable:" + returnTask.Id + " SchedulerId: " + returnTask.ScheduleId);
+                taskSchedulerManager.DisableSchedule(returnTask).Wait();
+                Console.WriteLine("Disable:" + returnTask.Id + " SchedulerId: " + returnTask.ScheduleId);
+            }
+            else
+            {
+                returnTask.EnableDisable = 0;
+                _taskInfoDal.Update(returnTask);
+            }
+        }
+
         private void GetTasks()
         {
             _taskInfoList = _taskInfoDal.GetList();
@@ -609,6 +754,9 @@ namespace DiskBackupWpfGUI
         {
             bool runningFlag = false;
             bool pauseFlag = false;
+            bool disableFlag = false;
+            bool enableFlag = false;
+            bool restoreTaskFlag = false;
             foreach (TaskInfo item in listViewTasks.SelectedItems)
             {
                 if (item.Status.Equals(TaskStatusType.Working))
@@ -624,7 +772,20 @@ namespace DiskBackupWpfGUI
                     btnTaskPause.IsEnabled = false;
                     btnTaskStop.IsEnabled = false;
                     btnTaskStart.IsEnabled = true;
+                    if (item.EnableDisable == 0)
+                        enableFlag = true;
+                    else
+                        disableFlag = true;
                 }
+
+                if (item.ScheduleId == null || item.ScheduleId == "") // schedulerId boş ise o görev için bir job oluşturulmamış demektir. Disable/Enable oluşamaz
+                {
+                    enableFlag = true;
+                    disableFlag = true;
+                }
+
+                if (item.Type.Equals(TaskType.Restore)) // restore'da düzenleme olmadığı için restore task klonlanamaz
+                    restoreTaskFlag = true;
             }
 
             if (runningFlag && pauseFlag)
@@ -639,14 +800,45 @@ namespace DiskBackupWpfGUI
             {
                 PausedTaskButtons();
             }
+
+            if (enableFlag && disableFlag)
+            {
+                btnDisableTask.IsEnabled = false;
+                btnEnableTask.IsEnabled = false;
+            }
+            else if (enableFlag)
+            {
+                btnDisableTask.IsEnabled = true;
+                btnTaskStart.IsEnabled = true;
+            }
+            else
+            {
+                btnEnableTask.IsEnabled = true;
+                btnTaskStart.IsEnabled = false;
+            }
+
+            if (restoreTaskFlag || listViewTasks.SelectedItems.Count > 1) // restore task kopyalanamaz ve editlenemez!
+            {
+                btnCopyTask.IsEnabled = false;
+                btnTaskEdit.IsEnabled = false;
+            }
+            else
+                btnCopyTask.IsEnabled = true;
+
+            if ((runningFlag && restoreTaskFlag) || (pauseFlag && restoreTaskFlag)) // restore task cancel veya pause edilemez!
+            {
+                btnTaskPause.IsEnabled = false;
+                btnTaskStop.IsEnabled = false;
+            }
         }
+
         private void DisableTaskButtons()
         {
-            btnTaskClose.IsEnabled = false;
-            btnTaskCopy.IsEnabled = false;
+            btnDisableTask.IsEnabled = false;
+            btnCopyTask.IsEnabled = false;
             btnTaskDelete.IsEnabled = false;
             btnTaskEdit.IsEnabled = false;
-            btnTaskOpen.IsEnabled = false;
+            btnEnableTask.IsEnabled = false;
             btnTaskPause.IsEnabled = false;
             btnTaskStart.IsEnabled = false;
             btnTaskStop.IsEnabled = false;
@@ -660,6 +852,8 @@ namespace DiskBackupWpfGUI
             btnTaskStop.IsEnabled = true;
             //diğer butonlar gelecek
             btnTaskDelete.IsEnabled = false;
+            btnDisableTask.IsEnabled = false;
+            btnEnableTask.IsEnabled = false;
         }
 
         private void RunningTaskButtons()
@@ -669,7 +863,10 @@ namespace DiskBackupWpfGUI
             btnTaskPause.IsEnabled = true;
             btnTaskStop.IsEnabled = true;
             btnTaskDelete.IsEnabled = false;
+            btnDisableTask.IsEnabled = false;
+            btnEnableTask.IsEnabled = false;
         }
+
         #endregion
 
         #region Checkbox Operations
@@ -1490,5 +1687,6 @@ namespace DiskBackupWpfGUI
 
             return ($"{dblSByte:0.##} {Suffix[i]}");
         }
+
     }
 }

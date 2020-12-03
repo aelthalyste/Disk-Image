@@ -244,7 +244,7 @@
     <system:String x:Key="Cancel">İptal Edildi</system:String>
     <system:String x:Key="Error">Hata</system:String>
     <system:String x:Key="advancedOptions">Gelişmiş Ayarlar</system:String>
-
+    <system:String x:Key="clone">Kopya</system:String>
 
 
 </ResourceDictionary>

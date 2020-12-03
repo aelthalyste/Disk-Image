@@ -28,6 +28,7 @@ namespace DiskBackup.Entities.Concrete
         public DateTime NextDate { get; set; }
         public string Descripiton { get; set; }
         public string ScheduleId { get; set; }
+        public int EnableDisable { get; set; } // 0 Enable - 1 Disable
     }
     
     public enum TaskType

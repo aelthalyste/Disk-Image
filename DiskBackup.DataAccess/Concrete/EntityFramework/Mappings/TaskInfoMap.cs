@@ -29,6 +29,7 @@ namespace DiskBackup.DataAccess.Concrete.EntityFramework.Mappings
             Property(x => x.NextDate).HasColumnName("next_date");
             Property(x => x.Descripiton).HasColumnName("description");
             Property(x => x.ScheduleId).HasColumnName("scheduler_id");
+            Property(x => x.EnableDisable).HasColumnName("enable_disable");
             Ignore(x => x.RestoreTaskInfo);
             Ignore(x => x.BackupTaskInfo);
             Ignore(x => x.BackupStorageInfo);
