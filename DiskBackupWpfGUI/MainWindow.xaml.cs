@@ -162,6 +162,11 @@ namespace DiskBackupWpfGUI
             {
                 _backupsItems = backupService.GetBackupFileList(_backupStorageDal.GetList());
 
+                foreach (var item in _backupsItems)
+                {
+                    Console.WriteLine(item.Path);
+                }
+
                 listViewBackups.ItemsSource = _backupsItems;
                 listViewRestore.ItemsSource = _backupsItems;
             }
@@ -1214,7 +1219,8 @@ namespace DiskBackupWpfGUI
         {
             using (var scope = _scope.BeginLifetimeScope())
             {
-                FileExplorerWindow fileExplorer = scope.Resolve<FileExplorerWindow>();
+                var backupInfo = (BackupInfo)listViewBackups.SelectedItem;
+                FileExplorerWindow fileExplorer = scope.Resolve<FileExplorerWindow>(new TypedParameter(backupInfo.GetType(), backupInfo));
                 fileExplorer.ShowDialog();
             }
         }
@@ -1223,7 +1229,8 @@ namespace DiskBackupWpfGUI
         {
             using (var scope = _scope.BeginLifetimeScope())
             {
-                FileExplorerWindow fileExplorer = scope.Resolve<FileExplorerWindow>();
+                var backupInfo = (BackupInfo)listViewBackups.SelectedItem;
+                FileExplorerWindow fileExplorer = scope.Resolve<FileExplorerWindow>(new TypedParameter(backupInfo.GetType(), backupInfo));
                 fileExplorer.ShowDialog();
             }
         }

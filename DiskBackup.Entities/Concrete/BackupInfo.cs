@@ -36,6 +36,7 @@ namespace DiskBackup.Entities.Concrete
         public string OS { get; set; }
         public string PCName { get; set; }
         public string IpAddress { get; set; }
+        public string Path { get; set; }
     }
 
      /*

@@ -217,6 +217,7 @@ namespace DiskBackupWpfGUI
                         {
                             _taskInfo.RestoreTaskInfo.TargetLetter = _backupService.AvailableVolumeLetter().ToString();
                             Console.WriteLine("NarDIWrapper'dan alınan harf: ", _taskInfo.RestoreTaskInfo.TargetLetter);
+                            Console.WriteLine("NarDIWrapper'dan dönen char: ", _backupService.AvailableVolumeLetter());
                         }
                         catch(Exception ex)
                         {

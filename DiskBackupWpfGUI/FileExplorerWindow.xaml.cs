@@ -29,11 +29,10 @@ namespace DiskBackupWpfGUI
         List<FilesInBackup> _filesInBackupList = new List<FilesInBackup>();
         private bool _fileAllControl;
 
-        public FileExplorerWindow(IBackupService backupManager)
+        public FileExplorerWindow(IBackupService backupManager, BackupInfo backupInfo)
         {
             InitializeComponent();
             _backupManager = backupManager;
-            BackupInfo backupInfo = new BackupInfo();
 
             _backupManager.InitFileExplorer(backupInfo);
             _filesInBackupList = _backupManager.GetFileInfoList();

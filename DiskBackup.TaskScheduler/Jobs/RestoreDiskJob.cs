@@ -75,7 +75,7 @@ namespace DiskBackup.TaskScheduler.Jobs
                     _taskInfoDal.Update(task);
                     _backupService.RefreshIncDiffTaskFlag(true);
 
-                    availableResult = _backupService.IsVolumeAvailable(task.StrObje[0]);
+                    availableResult = _backupService.IsVolumeAvailable(task.RestoreTaskInfo.TargetLetter[0]);
 
                     if (availableResult)
                     {
