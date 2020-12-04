@@ -450,8 +450,13 @@ struct volume_backup_inf {
     */
     
     stream Stream;
-    // ONLY VALID DURING BACKUP STAGE, WILL BE CLEARED AFTER TERMINATEBACKUP CALLED.
-    data_array<nar_record> MFTLCN;
+    
+    
+    //data_array<nar_record> MFTandINDXRegions;
+    
+    //
+    nar_record*  MFTLCN;
+    unsigned int MFTLCNCount;
     
     CComPtr<IVssBackupComponents> VSSPTR;
     
@@ -818,7 +823,7 @@ BOOLEAN
 OfflineRestoreToVolume(restore_inf* R, BOOLEAN ShouldFormat);
 
 BOOLEAN
-SaveMetadata(char Letter, int Version, int ClusterSize, BackupType BT, data_array<nar_record> BackupRegions, HANDLE VSSHandle, data_array<nar_record> MFTLCN);
+SaveMetadata(char Letter, int Version, int ClusterSize, BackupType BT, data_array<nar_record> BackupRegions, HANDLE VSSHandle, nar_record* MFTLCN, unsigned int MFTLCNCount);
 
 BOOLEAN
 RestoreIncVersion(restore_inf R, HANDLE Volume); // Volume optional, might pass INVALID_HANDLE_VALUE
@@ -889,7 +894,7 @@ CompareNarRecords(const void* v1, const void* v2);
 wchar_t*
 GetShadowPath(std::wstring Drive, CComPtr<IVssBackupComponents>& ptr);
 
-inline BOOL
+inline BOOLEAN
 IsRegionsCollide(nar_record R1, nar_record R2);
 
 
@@ -1024,7 +1029,7 @@ struct nar_backup_file_explorer_context {
     
     UINT32 LastIndx;
     
-    int MFTRecordsCount;
+    unsigned int MFTRecordsCount;
     
     struct {
         INT16 I;
