@@ -31,9 +31,9 @@ namespace DiskBackup.TaskScheduler
         [OperationContract]
         Task PauseAllScheduleAsync();
         [OperationContract]
-        bool EnableSchedule(string scheduleId);
+        Task EnableSchedule(TaskInfo task);
         [OperationContract]
-        bool DisableSchedule(string scheduleId);
+        Task DisableSchedule(TaskInfo task);
         [OperationContract]
         bool CancelSchedule(string scheduleId);
         [OperationContract]
@@ -41,7 +41,7 @@ namespace DiskBackup.TaskScheduler
         [OperationContract]
         Task RestoreVolumeJob(TaskInfo taskInfo);
         [OperationContract]
-        Task RestoreDiskJob(TaskInfo taskInfo, BackupStorageInfo backupStorageInfo);
+        Task RestoreDiskJob(TaskInfo taskInfo);
         [OperationContract]
         Task BackupFullNowJob(TaskInfo taskInfo);
         [OperationContract]
@@ -72,5 +72,7 @@ namespace DiskBackup.TaskScheduler
         Task BackupIncDiffCertainDaysJob(TaskInfo taskInfo);
         [OperationContract]
         Task RestoreVolumeNowJob(TaskInfo taskInfo);
+        [OperationContract]
+        Task RestoreDiskNowJob(TaskInfo taskInfo);
     }
 }

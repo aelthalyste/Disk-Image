@@ -60,7 +60,7 @@ namespace DiskBackup.TaskScheduler.Jobs
 
             try
             {
-                var taskList = _taskInfoDal.GetList(x => x.Status != "Hazır");
+                var taskList = _taskInfoDal.GetList(x => x.Status != TaskStatusType.Ready && x.Status != TaskStatusType.FirstMissionExpected);
                 foreach (var item in taskList)
                 {
                     foreach (var itemObje in task.StrObje)
@@ -70,6 +70,7 @@ namespace DiskBackup.TaskScheduler.Jobs
                             // Okuma yapılan diskte işlem yapılamaz
                             exception = new JobExecutionException();
                             Console.WriteLine("bu volumede çalışan bir görev var");
+                            _logger.Information("{@task} için Incremental-Differantial görevi çalıştırılamadı. {@letter} volumunde başka görev işliyor.", task, item.StrObje);
                         }
                     }
                 }
@@ -77,7 +78,7 @@ namespace DiskBackup.TaskScheduler.Jobs
 
                 if (exception == null)
                 {
-                    task.Status = "Çalışıyor"; // Resource eklenecek 
+                    task.Status = TaskStatusType.Working; // Resource eklenecek 
                     if (context.Trigger.GetNextFireTimeUtc() != null)
                     {
                         task.NextDate = (context.Trigger.GetNextFireTimeUtc()).Value.LocalDateTime;
@@ -113,7 +114,7 @@ namespace DiskBackup.TaskScheduler.Jobs
             if (result == 0)
             {
                 Console.WriteLine("Batuhan'dan false değer geldi");
-                _logger.Information("{@task} için Incremental-Differantial görevi bitirildi. Sonuç: NarDIWrapper'dan false geldi.", task.Id + " " + task.Name);
+                _logger.Information("{@task} için Incremental-Differantial görevi bitirildi. Sonuç: NarDIWrapper'dan false geldi.", task);
                 if (task.BackupTaskInfo.FailTryAgain)
                 {
                     exception = new JobExecutionException(context.RefireCount <= task.BackupTaskInfo.FailNumberTryAgain);
@@ -135,13 +136,13 @@ namespace DiskBackup.TaskScheduler.Jobs
 
             if (result == 1) // başarılı
             {
-                _logger.Information("{@task} için Incremental-Differantial görevi bitirildi. Sonuç: Başarılı.", task.Id + " " + task.Name);
+                _logger.Information("{@task} için Incremental-Differantial görevi bitirildi. Sonuç: Başarılı.", task);
                 activityLog.Status = StatusType.Success;
                 UpdateActivityAndTask(activityLog, task);
             }
             else if (result == 2) // durduruldu
             {
-                _logger.Information("{@task} için Incremental-Differantial görevi durduruldu.", task.Id + " " + task.Name);
+                _logger.Information("{@task} için Incremental-Differantial görevi durduruldu.", task);
                 activityLog.Status = StatusType.Cancel;
                 UpdateActivityAndTask(activityLog, task);
             }
@@ -156,7 +157,7 @@ namespace DiskBackup.TaskScheduler.Jobs
             var resultStatusInfo = _statusInfoDal.Add(activityLog.StatusInfo);
             activityLog.StatusInfoId = resultStatusInfo.Id;
             _activityLogDal.Add(activityLog);
-            taskInfo.Status = "Hazır"; // Resource eklenecek 
+            taskInfo.Status = TaskStatusType.Ready; // Resource eklenecek 
             _logger.Verbose("SchedulerId: {@schedulerId}.", taskInfo.ScheduleId);
             taskInfo.ScheduleId = taskInfo.ScheduleId.Split('*')[0];
             _logger.Verbose("Yeni SchedulerId: {@newscheduler}", taskInfo.ScheduleId);

@@ -366,7 +366,7 @@ namespace DiskBackup.TaskScheduler
 
         #region Restore
 
-        public async Task RestoreDiskJob(TaskInfo taskInfo, BackupStorageInfo backupStorageInfo)
+        public async Task RestoreDiskJob(TaskInfo taskInfo)
         {
             IJobDetail job = JobBuilder.Create<RestoreDiskJob>()
                 .WithIdentity($"restoreDiskJob_{taskInfo.Id}", "Restore")
@@ -376,7 +376,7 @@ namespace DiskBackup.TaskScheduler
             ITrigger trigger = TriggerBuilder.Create()
                 .WithIdentity($"restoreDiskTrigger_{taskInfo.Id}", "Restore")
                 .ForJob($"restoreDiskJob_{taskInfo.Id}", "Restore")
-                .StartAt(taskInfo.NextDate) // now yollandığında hemen çalıştıracak
+                .StartAt(taskInfo.NextDate)
                 .Build();
 
             taskInfo.ScheduleId = $"restoreDiskJob_{taskInfo.Id}/Restore";
@@ -384,6 +384,26 @@ namespace DiskBackup.TaskScheduler
 
             await _scheduler.ScheduleJob(job, trigger);
         }
+
+        public async Task RestoreDiskNowJob(TaskInfo taskInfo)
+        {
+            IJobDetail job = JobBuilder.Create<RestoreDiskJob>()
+                .WithIdentity($"restoreDiskNowJob_{taskInfo.Id}", "Restore")
+                .UsingJobData("taskId", taskInfo.Id.ToString())
+                .Build();
+
+            ITrigger trigger = TriggerBuilder.Create()
+                .WithIdentity($"restoreDiskNowTrigger_{taskInfo.Id}", "Restore")
+                .ForJob($"restoreDiskNowJob_{taskInfo.Id}", "Restore")
+                .StartNow() 
+                .Build();
+
+            taskInfo.ScheduleId = taskInfo.ScheduleId + $"*restoreDiskNowJob_{taskInfo.Id}/Restore";
+            _taskInfoDal.Update(taskInfo);
+
+            await _scheduler.ScheduleJob(job, trigger);
+        }
+
 
         //return _diskTracker.CW_RestoreToVolume(volumeInfo.Letter, backupInfo.Letter, backupInfo.Version, true, backupInfo.BackupStorageInfo.Path);
         //public bool RestoreBackupVolume(BackupInfo backupInfo, char volumeLetter)
@@ -421,7 +441,7 @@ namespace DiskBackup.TaskScheduler
                 .StartNow()
                 .Build();
 
-            taskInfo.ScheduleId = $"restoreVolumeNowJob_{taskInfo.Id}/Restore";
+            taskInfo.ScheduleId = taskInfo.ScheduleId + $"*restoreVolumeNowJob_{taskInfo.Id}/Restore";
             _taskInfoDal.Update(taskInfo);
 
             await _scheduler.ScheduleJob(job, trigger);
@@ -441,14 +461,22 @@ namespace DiskBackup.TaskScheduler
             throw new NotImplementedException();
         }
 
-        public bool DisableSchedule(string scheduleId)
+        public async Task DisableSchedule(TaskInfo task)
         {
-            throw new NotImplementedException();
+            var result = task.ScheduleId.Split('/');
+            await _scheduler.PauseJob(new JobKey(result[0], result[1]));
+            task.EnableDisable = 1;
+            _taskInfoDal.Update(task);
+            //Task.Delay(500).Wait();
         }
 
-        public bool EnableSchedule(string scheduleId)
+        public async Task EnableSchedule(TaskInfo task)
         {
-            throw new NotImplementedException();
+            var result = task.ScheduleId.Split('/');
+            await _scheduler.ResumeJob(new JobKey(result[0], result[1]));
+            task.EnableDisable = 0;
+            _taskInfoDal.Update(task);
+            //Task.Delay(500).Wait();
         }
 
         public async Task PauseAllScheduleAsync()

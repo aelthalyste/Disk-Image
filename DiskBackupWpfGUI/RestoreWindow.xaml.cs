@@ -1,6 +1,8 @@
-﻿using DiskBackup.DataAccess.Abstract;
+﻿using DiskBackup.Business.Abstract;
+using DiskBackup.DataAccess.Abstract;
 using DiskBackup.Entities.Concrete;
 using DiskBackup.TaskScheduler;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -24,15 +26,17 @@ namespace DiskBackupWpfGUI
     {
         private BackupInfo _backupInfo;
         private List<VolumeInfo> _volumeInfoList = new List<VolumeInfo>();
-        private bool _volumeOrFreshDisk = false; //volume ise true, disk ise false
+        //volume ise true, disk ise false
         private TaskInfo _taskInfo = new TaskInfo();
 
-        private ITaskInfoDal _taskInfoDal;
-        private IRestoreTaskDal _restoreTaskDal;
-        private IStatusInfoDal _statusInfoDal;
+        private readonly ITaskInfoDal _taskInfoDal;
+        private readonly IRestoreTaskDal _restoreTaskDal;
+        private readonly IStatusInfoDal _statusInfoDal;
         private ITaskSchedulerManager _schedulerManager;
+        private IBackupService _backupService;
+        private ILogger _logger;
 
-        public RestoreWindow(BackupInfo backupInfo, List<VolumeInfo> volumeInfoList, IRestoreTaskDal restoreTaskDal, IStatusInfoDal statusInfoDal, ITaskInfoDal taskInfoDal, ITaskSchedulerManager schedulerManager)
+        public RestoreWindow(BackupInfo backupInfo, List<VolumeInfo> volumeInfoList, IRestoreTaskDal restoreTaskDal, IStatusInfoDal statusInfoDal, ITaskInfoDal taskInfoDal, ITaskSchedulerManager schedulerManager, IBackupService backupService, ILogger logger)
         {
             InitializeComponent();
 
@@ -42,6 +46,9 @@ namespace DiskBackupWpfGUI
             _statusInfoDal = statusInfoDal;
             _taskInfoDal = taskInfoDal;
             _schedulerManager = schedulerManager;
+            _backupService = backupService;
+            _logger = logger.ForContext<RestoreWindow>();
+
             _taskInfo.RestoreTaskInfo = new RestoreTask();
             _taskInfo.BackupStorageInfo = new BackupStorageInfo();
             _taskInfo.StatusInfo = new StatusInfo();
@@ -49,13 +56,13 @@ namespace DiskBackupWpfGUI
             if (_volumeInfoList.Count == 1)
             {
                 if (volumeInfoList[0].Bootable) // bootable true ise işletim sistemi var
-                    _volumeOrFreshDisk = false;
+                    _taskInfo.RestoreTaskInfo.Type = RestoreType.RestoreDisk;
                 else
-                    _volumeOrFreshDisk = true;
+                    _taskInfo.RestoreTaskInfo.Type = RestoreType.RestoreVolume;
             }
             else
             {
-                _volumeOrFreshDisk = false;
+                _taskInfo.RestoreTaskInfo.Type = RestoreType.RestoreDisk;
             }
 
             //foreach (var item in _volumeInfoList)
@@ -116,7 +123,7 @@ namespace DiskBackupWpfGUI
                     lblSchedulerTasks.Text = dtpSetTime.Text;
                 }
                 lblArea2Restore.Text = _backupInfo.Letter.ToString();
-                if (_volumeOrFreshDisk)
+                if (_taskInfo.RestoreTaskInfo.Type == RestoreType.RestoreVolume)
                 {
                     lblDisk2Restore.Text = _volumeInfoList[0].Letter.ToString();
                 }
@@ -140,7 +147,7 @@ namespace DiskBackupWpfGUI
                 bool nullControlFlag = true;
                 if (rbStartNow.IsChecked.Value) // hemen çalıştır
                 {
-                    if (txtTaskName.Text.Equals("") || txtTaskDescription.Text.Equals(""))
+                    if (txtTaskName.Text.Equals(""))
                     {
                         MessageBox.Show("İlgili alanları lütfen boş geçmeyiniz. Hemen çalıştır", "NARBULUT DİYOR Kİ;", MessageBoxButton.OK, MessageBoxImage.Error);
                         nullControlFlag = false;
@@ -148,7 +155,7 @@ namespace DiskBackupWpfGUI
                 }
                 else if (rbSetTime.IsChecked.Value) // zaman belirle
                 {
-                    if (txtTaskName.Text.Equals("") || txtTaskDescription.Text.Equals("") || dtpSetTime.Value.Equals(""))
+                    if (txtTaskName.Text.Equals("") || dtpSetTime.Value.Equals(""))
                     {
                         MessageBox.Show("İlgili alanları lütfen boş geçmeyiniz. Zaman belirle", "NARBULUT DİYOR Kİ;", MessageBoxButton.OK, MessageBoxImage.Error);
                         nullControlFlag = false;
@@ -161,42 +168,77 @@ namespace DiskBackupWpfGUI
                     _taskInfo.Name = txtTaskName.Text;
                     _taskInfo.Descripiton = txtTaskDescription.Text;
                     if (rbStartNow.IsChecked.Value)
-                        _taskInfo.NextDate = DateTime.Now + TimeSpan.FromSeconds(10);
+                        _taskInfo.NextDate = Convert.ToDateTime("01/01/0002");
                     else
                         _taskInfo.NextDate = (DateTime)dtpSetTime.Value;
                     _taskInfo.RestoreTaskInfo.BackupVersion = _backupInfo.Version;
-                    _taskInfo.BackupStorageInfo = _backupInfo.BackupStorageInfo;  // gelen backup'ın storageInfosu mevcut
+                    _taskInfo.RestoreTaskInfo.RootDir = _backupInfo.BackupStorageInfo.Path;
+                    _taskInfo.RestoreTaskInfo.SourceLetter = _backupInfo.Letter.ToString();
+
+                    _taskInfo.BackupStorageInfo = _backupInfo.BackupStorageInfo;  // gelen backup'ın storageInfosu mevcut -- DEĞİŞECEK
                     _taskInfo.BackupStorageInfoId = _backupInfo.BackupStorageInfoId;
-                    _taskInfo.Obje = _volumeInfoList.Count;
+                    _taskInfo.Obje = _volumeInfoList.Count; // kaç tane volumede değişiklik olacağı
                     // ortak alan bitti
 
-                    if (_volumeOrFreshDisk) // volume
+                    if (_taskInfo.RestoreTaskInfo.Type == RestoreType.RestoreVolume) // volume
                     {
+                        //görevlerde kontrol için gerekli
                         _taskInfo.StrObje = _volumeInfoList[0].Letter.ToString();
-                        _taskInfo.RestoreTaskInfo.DiskLetter = _volumeInfoList[0].Letter.ToString();
+
+                        _taskInfo.RestoreTaskInfo.TargetLetter = _volumeInfoList[0].Letter.ToString();
 
                         TaskInfo resultTaskInfo = SaveToDatabase();
 
                         if (resultTaskInfo != null)
+                        {
                             MessageBox.Show("Ekleme işlemi başarılı");
-
-                        _schedulerManager.RestoreVolumeJob(resultTaskInfo).Wait();
+                            if (_taskInfo.NextDate == Convert.ToDateTime("01/01/0002")) // hemen çalıştır
+                            {
+                                _taskInfo.LastWorkingDate = DateTime.Now;
+                                _taskInfoDal.Update(resultTaskInfo);
+                                _schedulerManager.RestoreVolumeNowJob(resultTaskInfo).Wait();
+                            }
+                            else
+                                _schedulerManager.RestoreVolumeJob(resultTaskInfo).Wait();
+                        }
+                        
                     }
                     else // disk
                     {
+                        //görevlerde kontrol için gerekli
                         foreach (var item in _volumeInfoList)
                         {
                             _taskInfo.StrObje += item.Letter.ToString();
                         }
-                        var result = _volumeInfoList[0].DiskName.Split(' ');
-                        _taskInfo.RestoreTaskInfo.DiskId = Convert.ToInt32(result[1]);
+
+                        _taskInfo.RestoreTaskInfo.DiskId = Convert.ToInt32(_volumeInfoList[0].DiskName.Split(' ')[1]);
+
+                        try
+                        {
+                            _taskInfo.RestoreTaskInfo.TargetLetter = _backupService.AvailableVolumeLetter().ToString();
+                            Console.WriteLine("NarDIWrapper'dan alınan harf: ", _taskInfo.RestoreTaskInfo.TargetLetter);
+                        }
+                        catch(Exception ex)
+                        {
+                            _logger.Error(ex, "NarDIWrapper'dan uygun disk için harf alınamadı.");
+                            Console.WriteLine("NarDIWrapper'dan uygun disk için harf alınamadı.");
+                        }
 
                         TaskInfo resultTaskInfo = SaveToDatabase();
 
                         if (resultTaskInfo != null)
+                        {
                             MessageBox.Show("Ekleme işlemi başarılı");
-
-                        //scheduler
+                            if (_taskInfo.NextDate == Convert.ToDateTime("01/01/0002")) // hemen çalıştır
+                            {
+                                _taskInfo.LastWorkingDate = DateTime.Now;
+                                _taskInfoDal.Update(resultTaskInfo);
+                                _schedulerManager.RestoreDiskNowJob(resultTaskInfo).Wait();
+                            }
+                            else
+                                _schedulerManager.RestoreDiskJob(resultTaskInfo).Wait();
+                        }
+                        
                     }
                     Close();
                 }
@@ -224,7 +266,7 @@ namespace DiskBackupWpfGUI
             }
 
             // task kayıdı
-            _taskInfo.Status = Resources["Ready"].ToString();
+            _taskInfo.Status = TaskStatusType.FirstMissionExpected;
             _taskInfo.StatusInfoId = resultStatusInfo.Id;
             _taskInfo.RestoreTaskId = resultRestoreTask.Id;
             _taskInfo.LastWorkingDate = Convert.ToDateTime("01/01/0002");

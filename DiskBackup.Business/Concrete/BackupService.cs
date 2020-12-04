@@ -169,6 +169,23 @@ namespace DiskBackup.Business.Concrete
                     backupInfo.BackupStorageInfo = backupStorageItem;
                     backupInfo.BackupStorageInfoId = backupStorageItem.Id;
 
+                    backupInfo.VolumeSize = (long)returnItem.VolumeTotalSize;
+                    backupInfo.StrVolumeSize = FormatBytes((long)returnItem.VolumeTotalSize);
+                    backupInfo.UsedSize = (long)returnItem.VolumeUsedSize;
+                    backupInfo.StrUsedSize = FormatBytes((long)returnItem.VolumeUsedSize);
+                    backupInfo.FileSize = (long)returnItem.BytesNeedToCopy;
+                    backupInfo.StrFileSize = FormatBytes((long)returnItem.BytesNeedToCopy);
+                    backupInfo.FileName = returnItem.Fullpath.Split('\\').Last();
+                    backupInfo.PCName = returnItem.ComputerName;
+                    backupInfo.IpAddress = returnItem.IpAdress;
+                    backupInfo.CreatedDate = (returnItem.BackupDate.Day < 10) ? 0 + returnItem.BackupDate.Day.ToString() : returnItem.BackupDate.Day.ToString();
+                    backupInfo.CreatedDate = backupInfo.CreatedDate + "." + ((returnItem.BackupDate.Month < 10) ? 0 + returnItem.BackupDate.Month.ToString() : returnItem.BackupDate.Month.ToString());
+                    backupInfo.CreatedDate = backupInfo.CreatedDate + "." + returnItem.BackupDate.Year + " ";
+                    backupInfo.CreatedDate = backupInfo.CreatedDate + ((returnItem.BackupDate.Hour < 10) ? 0 + returnItem.BackupDate.Hour.ToString() : returnItem.BackupDate.Hour.ToString());
+                    backupInfo.CreatedDate = backupInfo.CreatedDate + ":" + ((returnItem.BackupDate.Minute < 10) ? 0 + returnItem.BackupDate.Minute.ToString() : returnItem.BackupDate.Minute.ToString());
+
+
+
                     if (returnItem.Version == -1)
                         backupInfo.Type = BackupTypes.Full;
                     else
@@ -199,8 +216,21 @@ namespace DiskBackup.Business.Concrete
                     backupInfo.OS = resultItem.WindowsName;
                     backupInfo.BackupTaskName = resultItem.TaskName;
                     backupInfo.Description = resultItem.TaskDescription;
-                    //resultItem.Fullpath ismini full pathden çek al
-                   
+                    backupInfo.VolumeSize = (long)resultItem.VolumeTotalSize;
+                    backupInfo.StrVolumeSize = FormatBytes((long)resultItem.VolumeTotalSize);
+                    backupInfo.UsedSize = (long)resultItem.VolumeUsedSize;
+                    backupInfo.StrUsedSize = FormatBytes((long)resultItem.VolumeUsedSize);
+                    backupInfo.FileSize = (long)resultItem.BytesNeedToCopy;
+                    backupInfo.StrFileSize = FormatBytes((long)resultItem.BytesNeedToCopy);
+                    backupInfo.FileName = resultItem.Fullpath.Split('\\').Last();
+                    backupInfo.PCName = resultItem.ComputerName;
+                    backupInfo.IpAddress = resultItem.IpAdress;
+                    backupInfo.CreatedDate = (resultItem.BackupDate.Day < 10) ? 0 + resultItem.BackupDate.Day.ToString() : resultItem.BackupDate.Day.ToString();
+                    backupInfo.CreatedDate = backupInfo.CreatedDate + "." + ((resultItem.BackupDate.Month < 10) ? 0 + resultItem.BackupDate.Month.ToString() : resultItem.BackupDate.Month.ToString());
+                    backupInfo.CreatedDate = backupInfo.CreatedDate + "." + resultItem.BackupDate.Year + " ";
+                    backupInfo.CreatedDate = backupInfo.CreatedDate + ((resultItem.BackupDate.Hour < 10) ? 0 + resultItem.BackupDate.Hour.ToString() : resultItem.BackupDate.Hour.ToString());
+                    backupInfo.CreatedDate = backupInfo.CreatedDate + ":" + ((resultItem.BackupDate.Minute < 10) ? 0 + resultItem.BackupDate.Minute.ToString() : resultItem.BackupDate.Minute.ToString());
+
                     if (resultItem.Version == -1)
                         backupInfo.Type = BackupTypes.Full;
                     else
@@ -212,25 +242,14 @@ namespace DiskBackup.Business.Concrete
             return null;
         }
 
-        public bool RestoreBackupVolume(TaskInfo taskInfo)
+        public bool RestoreBackupVolume(RestoreTask restoreTask)
         {
-            return DiskTracker.CW_RestoreToVolume(taskInfo.StrObje[0], taskInfo.RestoreTaskInfo.DiskLetter[0], taskInfo.RestoreTaskInfo.BackupVersion, true, taskInfo.BackupStorageInfo.Path); //true gidecek
+            return DiskTracker.CW_RestoreToVolume(restoreTask.TargetLetter[0], restoreTask.SourceLetter[0], restoreTask.BackupVersion, true, restoreTask.RootDir); //true gidecek
         }
 
-        public bool RestoreBackupDisk(BackupInfo backupInfo, DiskInformation diskInformation)
+        public bool RestoreBackupDisk(RestoreTask restoreTask)
         {
-            //batudan fonksiyon gelecek o fonksiyon hangi harfle restore edeceğini dönecek ve batu o harfle restore edecek
-            //DiskTracker.CW_GetFirstAvailableVolumeLetter(); Batuhandan müsait letter alınması
-            // diskI disk 5 olur
-            //DiskTracker.CW_RestoreToFreshDisk(DiskTracker.CW_GetFirstAvailableVolumeLetter(), "backup harfi", "version bilgisi", "diskId", "backup'ın bulunduğu yol *\*");
-            //pathde sadece path varmış dosya adı yokmuş
-            //CW_GetFirstAvailableVolumeLetter ile boş olan volume'ü alıp batuhan'a dönerek o volume restore gerçekleştirilecek
-
-            //DiskTracker.CW_GetFirstAvailableVolumeLetter(); ilk olarak E müsaitti ama bir şeyler yapıldı ve artık ilk olarak D müsait oldu Batu bize D dönecek
-            //ama E hala müsait yani restore da yapılabilir, bu durum için daha sağlıklı bir fonksiyon gerekiyor.
-
-            //return DiskTracker.CW_RestoreToFreshDisk(,)
-            throw new NotImplementedException();
+            return DiskTracker.CW_RestoreToFreshDisk(restoreTask.TargetLetter[0], restoreTask.SourceLetter[0], restoreTask.BackupVersion, restoreTask.DiskId, restoreTask.RootDir);
         }
 
         public bool CleanChain(char letter)
@@ -241,6 +260,11 @@ namespace DiskBackup.Business.Concrete
         public char AvailableVolumeLetter()
         {
             return DiskTracker.CW_GetFirstAvailableVolumeLetter();
+        }
+
+        public bool IsVolumeAvailable(char letter)
+        {
+            return DiskTracker.CW_IsVolumeAvailable(letter);
         }
 
         public byte CreateIncDiffBackup(TaskInfo taskInfo) // 0 başarısız, 1 başarılı, 2 kullanıcı durdurdu
@@ -380,7 +404,7 @@ namespace DiskBackup.Business.Concrete
             {
                 _taskEventMap[taskInfo.Id].Reset();
             }
-            taskInfo.Status = "Durduruldu";
+            taskInfo.Status = TaskStatusType.Paused;
             _taskInfoDal.Update(taskInfo);
         }
 
@@ -401,7 +425,7 @@ namespace DiskBackup.Business.Concrete
             {
                 _taskEventMap[taskInfo.Id].Set();
             }
-            taskInfo.Status = "Hazır"; 
+            taskInfo.Status = TaskStatusType.Ready; 
             _taskInfoDal.Update(taskInfo);
         }
 
@@ -420,7 +444,7 @@ namespace DiskBackup.Business.Concrete
             {
                 _taskEventMap[taskInfo.Id].Set();
             }
-            taskInfo.Status = "Çalışıyor";
+            taskInfo.Status = TaskStatusType.Working;
             _taskInfoDal.Update(taskInfo);
         }
 

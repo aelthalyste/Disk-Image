@@ -203,49 +203,52 @@ namespace DiskBackupWpfGUI
                 TaskInfo resultTaskInfo = SaveToDatabase();
 
                 if (resultTaskInfo != null)
-                    MessageBox.Show("Ekleme işlemi başarılı");
-
-                if (resultTaskInfo.BackupTaskInfo.Type == BackupTypes.Diff || resultTaskInfo.BackupTaskInfo.Type == BackupTypes.Inc)
                 {
-                    if (resultTaskInfo.BackupTaskInfo.AutoRun)
+                    MessageBox.Show("Ekleme işlemi başarılı");
+                    if (resultTaskInfo.BackupTaskInfo.Type == BackupTypes.Diff || resultTaskInfo.BackupTaskInfo.Type == BackupTypes.Inc)
                     {
-                        if (resultTaskInfo.BackupTaskInfo.AutoType == AutoRunType.DaysTime)
+                        if (resultTaskInfo.BackupTaskInfo.AutoRun)
                         {
-                            if (cbDaysTime.SelectedIndex == 0) // everyday
+                            if (resultTaskInfo.BackupTaskInfo.AutoType == AutoRunType.DaysTime)
                             {
-                                _schedulerManager.BackupIncDiffEverydayJob(resultTaskInfo).Wait();
+                                if (cbDaysTime.SelectedIndex == 0) // everyday
+                                {
+                                    _schedulerManager.BackupIncDiffEverydayJob(resultTaskInfo).Wait();
+                                }
+                                else if (cbDaysTime.SelectedIndex == 1) //weekdays
+                                {
+                                    _schedulerManager.BackupIncDiffWeekDaysJob(resultTaskInfo).Wait();
+                                }
+                                else //certain
+                                {
+                                    _schedulerManager.BackupIncDiffCertainDaysJob(resultTaskInfo).Wait();
+                                }
                             }
-                            else if (cbDaysTime.SelectedIndex == 1) //weekdays
+                            else if (resultTaskInfo.BackupTaskInfo.AutoType == AutoRunType.WeeklyTime)
                             {
-                                _schedulerManager.BackupIncDiffWeekDaysJob(resultTaskInfo).Wait();
-                            }
-                            else //certain
-                            {
-                                _schedulerManager.BackupIncDiffCertainDaysJob(resultTaskInfo).Wait();
-                            }
-                        }
-                        else if (resultTaskInfo.BackupTaskInfo.AutoType == AutoRunType.WeeklyTime)
-                        {
-                            _schedulerManager.BackupIncDiffWeeklyJob(resultTaskInfo).Wait();
+                                _schedulerManager.BackupIncDiffWeeklyJob(resultTaskInfo).Wait();
 
-                        }
-                        else //periodic
-                        {
-                            if (cbPeriodicTime.SelectedIndex == 0) //saat
-                            {
-                                _schedulerManager.BackupIncDiffPeriodicHoursJob(resultTaskInfo).Wait();
                             }
-                            else //dakika
+                            else //periodic
                             {
-                                _schedulerManager.BackupIncDiffPeriodicMinutesJob(resultTaskInfo).Wait();
+                                if (cbPeriodicTime.SelectedIndex == 0) //saat
+                                {
+                                    _schedulerManager.BackupIncDiffPeriodicHoursJob(resultTaskInfo).Wait();
+                                }
+                                else //dakika
+                                {
+                                    _schedulerManager.BackupIncDiffPeriodicMinutesJob(resultTaskInfo).Wait();
+                                }
                             }
                         }
                     }
+                    else
+                    {
+                        //full gelince buraya alıcaz paşayı
+                    }
+
                 }
-                else
-                {
-                    //full gelince buraya alıcaz paşayı
-                }
+
                 Close();
 
                 // task status açılması
@@ -819,7 +822,7 @@ namespace DiskBackupWpfGUI
             }
 
             // task kayıdı
-            _taskInfo.Status = Resources["Ready"].ToString();
+            _taskInfo.Status = TaskStatusType.FirstMissionExpected;
             _taskInfo.StatusInfoId = resultStatusInfo.Id;
             _taskInfo.BackupTaskId = resultBackupTask.Id;
             _taskInfo.LastWorkingDate = Convert.ToDateTime("01/01/0002");

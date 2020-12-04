@@ -12,10 +12,18 @@ namespace DiskBackup.Entities.Concrete
         // Geri yükle ve yedekleri görüntüle tablarında listViewRestore ve listViewBackups tablolarına ortak veri göndericek
         // Geri Yükleme oluşturuda karşıladık
         public int Id { get; set; }
-        public DiskInformation DiskInfo { get; set; } //Selected Disk Letter lazım
-        public int DiskId { get; set; }
-        public string DiskLetter { get; set; }
+        public RestoreType Type { get; set; }
+        public string TargetLetter { get; set; }
+        public string SourceLetter { get; set; }
         public int BackupVersion { get; set; }
+        public int DiskId { get; set; }
+        public string RootDir { get; set; }
+    }
+
+    public enum RestoreType
+    {
+        RestoreVolume = 0,
+        RestoreDisk = 1
     }
 
 }

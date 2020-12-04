@@ -357,7 +357,7 @@
                                     <GridViewColumn Header="{DynamicResource statu}" Width="125" >
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
-                                                <TextBlock Text="{Binding Status}" TextAlignment="Center"/>
+                                                <TextBlock Text="{Binding StrStatus}" TextAlignment="Center"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
@@ -394,6 +394,11 @@
                             <ListView.ItemContainerStyle>
                                 <Style TargetType="ListViewItem">
                                     <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding EnableDisable}" Value="1">
+                                            <Setter Property="Foreground" Value="LightSlateGray"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
                                 </Style>
                             </ListView.ItemContainerStyle>
                         </ListView>
@@ -477,7 +482,7 @@
                                     </Image>
                                 </Button.Content>
                             </Button>
-                            <Button Name="btnTaskOpen" ToolTip="{DynamicResource open}" Width="32" Height="32" HorizontalAlignment="Center" 
+                            <Button Name="btnEnableTask" ToolTip="{DynamicResource open}" Width="32" Height="32" HorizontalAlignment="Center" Click="btnEnableTask_Click"
                                     Margin="0,5" Style="{StaticResource ImageButton}" Grid.Column="1" IsEnabled="False">
                                 <Button.Content>
                                     <Image Height="28" Width="28" HorizontalAlignment="Center" VerticalAlignment="Center">
@@ -494,7 +499,7 @@
                                     </Image>
                                 </Button.Content>
                             </Button>
-                            <Button Name="btnTaskClose" ToolTip="{DynamicResource close}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5" 
+                            <Button Name="btnDisableTask" ToolTip="{DynamicResource close}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5" Click="btnDisableTask_Click"
                                     Style="{StaticResource ImageButton}" Grid.Column="1" IsEnabled="False">
                                 <Button.Content>
                                     <Image HorizontalAlignment="Center" VerticalAlignment="Center">
@@ -515,7 +520,7 @@
                                     </Image>
                                 </Button.Content>
                             </Button>
-                            <Button Name="btnTaskCopy" ToolTip="{DynamicResource copy}" Width="32" Height="32" HorizontalAlignment="Center" 
+                            <Button Name="btnCopyTask" ToolTip="{DynamicResource copy}" Width="32" Height="32" HorizontalAlignment="Center" Click="btnCopyTask_Click"
                                     Margin="0,5" Style="{StaticResource ImageButton}" Grid.Column="1" IsEnabled="False">
                                 <Button.Content>
                                     <Image Height="27" Width="27" HorizontalAlignment="Center" VerticalAlignment="Center">
@@ -629,7 +634,7 @@
                                         <GridViewColumn Header="{DynamicResource createdDate}" Width="175" >
                                             <GridViewColumn.CellTemplate>
                                                 <DataTemplate>
-                                                    <TextBlock Text="{Binding CreatedDate, StringFormat='dd.MM.yyyy HH:mm'}" TextAlignment="Center"/>
+                                                    <TextBlock Text="{Binding CreatedDate}" TextAlignment="Center"/>
                                                 </DataTemplate>
                                             </GridViewColumn.CellTemplate>
                                         </GridViewColumn>
