@@ -519,6 +519,7 @@ namespace DiskBackup.Business.Concrete
                     Detail = item.LogStr,
                     Time = logDate
                 });
+                _logger.Verbose("NarDIWrapper Log: {@tarih} {@datay}", logDate, item.LogStr);
             }
             return logList;
         }

@@ -64,7 +64,7 @@ namespace DiskBackupWpfGUI
         private readonly IStatusInfoDal _statusInfoDal;
         private readonly IActivityLogDal _activityLogDal;
         private readonly IRestoreTaskDal _restoreTaskDal;
-        private IBackupService _backupService;
+        //private IBackupService _backupService;
 
         private readonly ILifetimeScope _scope;
         private readonly ILogger _logger;
@@ -85,7 +85,6 @@ namespace DiskBackupWpfGUI
 
             _scope = scope;
             var backupService = _scope.Resolve<IBackupService>();
-            _backupService = backupService;
             var backupStorageService = _scope.Resolve<IBackupStorageService>();
             if (!backupService.GetInitTracker())
                 MessageBox.Show("Driver intialize edilemedi!", "NARBULUT DİYOR Kİ;", MessageBoxButton.OK, MessageBoxImage.Error);
@@ -154,7 +153,7 @@ namespace DiskBackupWpfGUI
 
             ShowActivityLog();
             Console.WriteLine("Activity logu dolduruyorum şu anda");
-            _logList = _backupService.GetDownLogList();
+            _logList = backupService.GetDownLogList();
             Console.WriteLine("Activity logu doldurdum şu anda");
             listViewLogDown.ItemsSource = _logList;
             Console.WriteLine(_logList.Count() + "----- Count Bilgisis");
@@ -447,6 +446,7 @@ namespace DiskBackupWpfGUI
         private void btnTaskStart_Click(object sender, RoutedEventArgs e)
         {
             TaskInfo taskInfo = (TaskInfo)listViewTasks.SelectedItem;
+            var backupService = _scope.Resolve<IBackupService>();
 
             if (taskInfo.Status.Equals(TaskStatusType.Ready) || taskInfo.Status.Equals(TaskStatusType.FirstMissionExpected))
             {
@@ -503,25 +503,23 @@ namespace DiskBackupWpfGUI
             }
             else if (taskInfo.Status.Equals(TaskStatusType.Paused))
             {
-                var backupService = _scope.Resolve<IBackupService>();
                 backupService.ResumeTask(taskInfo);
             }
-            _backupService.RefreshIncDiffTaskFlag(true);
+            backupService.RefreshIncDiffTaskFlag(true);
         }
 
         private void btnTaskPause_Click(object sender, RoutedEventArgs e)
         {
             var backupService = _scope.Resolve<IBackupService>();
             backupService.PauseTask((TaskInfo)listViewTasks.SelectedItem);
-            _backupService.RefreshIncDiffTaskFlag(true);
+            backupService.RefreshIncDiffTaskFlag(true);
         }
 
         private void btnTaskStop_Click(object sender, RoutedEventArgs e)
         {
             var backupService = _scope.Resolve<IBackupService>();
             backupService.CancelTask((TaskInfo)listViewTasks.SelectedItem);
-            _backupService.RefreshIncDiffTaskFlag(true);
-
+            backupService.RefreshIncDiffTaskFlag(true);
         }
 
         private void btnEnableTask_Click(object sender, RoutedEventArgs e)
@@ -1160,11 +1158,14 @@ namespace DiskBackupWpfGUI
 
         private void listViewBackups_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
-            using (var scope = _scope.BeginLifetimeScope())
+            if (listViewBackups.SelectedIndex != -1)
             {
-                var backupInfo = (BackupInfo)listViewBackups.SelectedItem;
-                FileExplorerWindow fileExplorer = scope.Resolve<FileExplorerWindow>(new TypedParameter(backupInfo.GetType(), backupInfo));
-                fileExplorer.ShowDialog();
+                using (var scope = _scope.BeginLifetimeScope())
+                {
+                    var backupInfo = (BackupInfo)listViewBackups.SelectedItem;
+                    FileExplorerWindow fileExplorer = scope.Resolve<FileExplorerWindow>(new TypedParameter(backupInfo.GetType(), backupInfo));
+                    fileExplorer.ShowDialog();
+                }
             }
         }
 
@@ -1599,6 +1600,7 @@ namespace DiskBackupWpfGUI
                 try
                 {
                     await Task.Delay(500);
+                    var backupService = _scope.Resolve<IBackupService>();
 
                     //log down
                     List<ActivityDownLog> logList = new List<ActivityDownLog>();
@@ -1607,7 +1609,7 @@ namespace DiskBackupWpfGUI
                         Detail = "Ebru",
                         Time = "Eyüp"
                     });*/
-                    logList = _backupService.GetDownLogList();
+                    logList = backupService.GetDownLogList();
                     if (logList != null)
                     {
                         foreach (ActivityDownLog item in logList)
@@ -1652,7 +1654,7 @@ namespace DiskBackupWpfGUI
                     else
                         txtMakeABackup.Text = "";
 
-                    if (_backupService.GetRefreshIncDiffTaskFlag())
+                    if (backupService.GetRefreshIncDiffTaskFlag())
                     {
                         int taskSelectedIndex = -1;
                         if (listViewTasks.SelectedIndex != -1)
@@ -1661,16 +1663,15 @@ namespace DiskBackupWpfGUI
                         }
                         GetTasks();
                         listViewTasks.SelectedIndex = taskSelectedIndex;
-                        var backupService = _scope.Resolve<IBackupService>();
 
                         _backupsItems = backupService.GetBackupFileList(_backupStorageDal.GetList());
                         listViewBackups.ItemsSource = _backupsItems;
                         listViewRestore.ItemsSource = _backupsItems;
 
-                        _backupService.RefreshIncDiffTaskFlag(false);
+                        backupService.RefreshIncDiffTaskFlag(false);
                     }
 
-                    if (_backupService.GetRefreshIncDiffLogFlag())
+                    if (backupService.GetRefreshIncDiffLogFlag())
                     {
                         int logSelectedIndex = -1;
                         if (listViewLog.SelectedIndex != -1)
@@ -1679,7 +1680,7 @@ namespace DiskBackupWpfGUI
                         }
                         ShowActivityLog();
                         listViewLog.SelectedIndex = logSelectedIndex + 1;
-                        _backupService.RefreshIncDiffLogFlag(false);
+                        backupService.RefreshIncDiffLogFlag(false);
                     }
                 }
                 catch (Exception e)
