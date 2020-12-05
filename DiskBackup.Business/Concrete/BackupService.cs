@@ -85,7 +85,9 @@ namespace DiskBackup.Business.Concrete
         {
             //rootDir string biz buraya ne dönücez
             // yedek volumu, versiondan gelecek, "E:\ebru-eyupDeneme"-- ters slaş ekle sonuna
-            _cSNarFileExplorer.CW_Init('C', 0, "");
+            //_cSNarFileExplorer.CW_Init('C', 0, "");
+            _logger.Verbose("İnitFileExplorer(): {@letter}, {@version}, {@path}", backupInfo.Letter, backupInfo.Version, backupInfo.BackupStorageInfo.Path);
+            _cSNarFileExplorer.CW_Init(backupInfo.Letter, backupInfo.Version, backupInfo.BackupStorageInfo.Path);
         }
 
         public List<DiskInformation> GetDiskList()
@@ -183,8 +185,7 @@ namespace DiskBackup.Business.Concrete
                     backupInfo.CreatedDate = backupInfo.CreatedDate + "." + returnItem.BackupDate.Year + " ";
                     backupInfo.CreatedDate = backupInfo.CreatedDate + ((returnItem.BackupDate.Hour < 10) ? 0 + returnItem.BackupDate.Hour.ToString() : returnItem.BackupDate.Hour.ToString());
                     backupInfo.CreatedDate = backupInfo.CreatedDate + ":" + ((returnItem.BackupDate.Minute < 10) ? 0 + returnItem.BackupDate.Minute.ToString() : returnItem.BackupDate.Minute.ToString());
-
-
+                    backupInfo.BackupStorageInfo = backupStorageItem;
 
                     if (returnItem.Version == -1)
                         backupInfo.Type = BackupTypes.Full;
@@ -350,8 +351,9 @@ namespace DiskBackup.Business.Concrete
 
                             try
                             {
-                                File.Copy(str.MetadataFileName, taskInfo.BackupStorageInfo.Path + str.MetadataFileName); //backupStorageInfo path alınıcak
+                                File.Copy(str.MetadataFileName, taskInfo.BackupStorageInfo.Path + str.MetadataFileName, true); //backupStorageInfo path alınıcak
                                                                                                                          //backupStorageInfo.Path ters slaş '\' ile bitmeli
+                                                                                                                         // uniq id geldiğinde false yapılacak
                             }
                             catch (IOException iox)
                             {
@@ -500,10 +502,27 @@ namespace DiskBackup.Business.Concrete
             return _cSNarFileExplorer.CW_GetCurrentDirectoryString();
         }
 
-        /*public List<Log> GetLogList() //bu method daha gelmedi
+        public List<ActivityDownLog> GetDownLogList() //bu method daha gelmedi
         {
-            throw new NotImplementedException();
-        }*/
+            List<ActivityDownLog> logList = new List<ActivityDownLog>();
+            foreach (var item in DiskTracker.CW_GetLogs())
+            {
+                string logDate = (item.Time.Day < 10) ? 0 + item.Time.Day.ToString() : item.Time.Day.ToString();
+                logDate += "." + ((item.Time.Month < 10) ? 0 + item.Time.Month.ToString() : item.Time.Month.ToString());
+                logDate += "." + item.Time.Year + " ";
+                logDate += ((item.Time.Hour < 10) ? 0 + item.Time.Hour.ToString() : item.Time.Hour.ToString());
+                logDate += ":" + ((item.Time.Minute < 10) ? 0 + item.Time.Minute.ToString() : item.Time.Minute.ToString());
+                logDate += ":" + ((item.Time.Second < 10) ? 0 + item.Time.Second.ToString() : item.Time.Second.ToString());
+
+                logList.Add(new ActivityDownLog
+                {
+                    Detail = item.LogStr,
+                    Time = logDate
+                });
+                _logger.Verbose("NarDIWrapper Log: {@tarih} {@datay}", logDate, item.LogStr);
+            }
+            return logList;
+        }
 
         public void RestoreFilesInBackup(int fileId, string backupDirectory, string targetDirectory) // batuhan hangi backup olduğunu nasıl anlayacak? backup directoryde backup ismi almıyor
         {
