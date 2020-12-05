@@ -176,7 +176,7 @@ namespace DiskBackupWpfGUI
 
                 foreach (var item in _backupsItems)
                 {
-                    Console.WriteLine(item.Path);
+                    Console.WriteLine(item.BackupStorageInfo.Path);
                 }
 
                 listViewBackups.ItemsSource = _backupsItems;

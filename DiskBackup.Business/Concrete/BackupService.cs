@@ -86,8 +86,8 @@ namespace DiskBackup.Business.Concrete
             //rootDir string biz buraya ne dönücez
             // yedek volumu, versiondan gelecek, "E:\ebru-eyupDeneme"-- ters slaş ekle sonuna
             //_cSNarFileExplorer.CW_Init('C', 0, "");
-            _logger.Verbose("İnitFileExplorer(): {@letter}, {@version}, {@path}", backupInfo.Letter, backupInfo.Version, backupInfo.Path);
-            _cSNarFileExplorer.CW_Init(backupInfo.Letter, backupInfo.Version, backupInfo.Path);
+            _logger.Verbose("İnitFileExplorer(): {@letter}, {@version}, {@path}", backupInfo.Letter, backupInfo.Version, backupInfo.BackupStorageInfo.Path);
+            _cSNarFileExplorer.CW_Init(backupInfo.Letter, backupInfo.Version, backupInfo.BackupStorageInfo.Path);
         }
 
         public List<DiskInformation> GetDiskList()
@@ -185,8 +185,7 @@ namespace DiskBackup.Business.Concrete
                     backupInfo.CreatedDate = backupInfo.CreatedDate + "." + returnItem.BackupDate.Year + " ";
                     backupInfo.CreatedDate = backupInfo.CreatedDate + ((returnItem.BackupDate.Hour < 10) ? 0 + returnItem.BackupDate.Hour.ToString() : returnItem.BackupDate.Hour.ToString());
                     backupInfo.CreatedDate = backupInfo.CreatedDate + ":" + ((returnItem.BackupDate.Minute < 10) ? 0 + returnItem.BackupDate.Minute.ToString() : returnItem.BackupDate.Minute.ToString());
-                    backupInfo.Path = backupStorageItem.Path;
-
+                    backupInfo.BackupStorageInfo = backupStorageItem;
 
                     if (returnItem.Version == -1)
                         backupInfo.Type = BackupTypes.Full;
@@ -232,7 +231,6 @@ namespace DiskBackup.Business.Concrete
                     backupInfo.CreatedDate = backupInfo.CreatedDate + "." + resultItem.BackupDate.Year + " ";
                     backupInfo.CreatedDate = backupInfo.CreatedDate + ((resultItem.BackupDate.Hour < 10) ? 0 + resultItem.BackupDate.Hour.ToString() : resultItem.BackupDate.Hour.ToString());
                     backupInfo.CreatedDate = backupInfo.CreatedDate + ":" + ((resultItem.BackupDate.Minute < 10) ? 0 + resultItem.BackupDate.Minute.ToString() : resultItem.BackupDate.Minute.ToString());
-                    backupInfo.Path = backupInfo.BackupStorageInfo.Path;
 
                     if (resultItem.Version == -1)
                         backupInfo.Type = BackupTypes.Full;
