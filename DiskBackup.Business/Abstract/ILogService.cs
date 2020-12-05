@@ -12,7 +12,7 @@ namespace DiskBackup.Business.Abstract
         [OperationContract]
         List<ActivityLog> GetActivityLogList();
         [OperationContract]
-        List<Log> GetLogList();
+        List<ActivityDownLog> GetLogList();
 
         [OperationContract]
         bool DeleteActivityLog(ActivityLog activityLog);

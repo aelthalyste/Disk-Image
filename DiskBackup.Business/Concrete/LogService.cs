@@ -27,7 +27,7 @@ namespace DiskBackup.Business.Concrete
             throw new NotImplementedException();
         }
 
-        public List<Log> GetLogList()
+        public List<ActivityDownLog> GetLogList()
         {
             throw new NotImplementedException();
         }

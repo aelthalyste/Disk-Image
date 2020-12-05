@@ -19,8 +19,8 @@ namespace DiskBackup.Business.Abstract
         BackupInfo GetBackupFile(BackupInfo backupInfo); // istediğimiz backup bilgilerini almak için
         [OperationContract]
         List<FilesInBackup> GetFileInfoList();
-        /*[OperationContract]
-        List<Log> GetLogList(); //Böyle bir uç yapılacağı konuşuldu*/
+        [OperationContract]
+        List<ActivityDownLog> GetDownLogList(); //Böyle bir uç yapılacağı konuşuldu
         [OperationContract]
         bool GetSelectedFileInfo(FilesInBackup filesInBackup);
 

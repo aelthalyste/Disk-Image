@@ -54,6 +54,7 @@ namespace DiskBackupWpfGUI
         private List<TaskInfo> _taskInfoList = new List<TaskInfo>();
         private List<ActivityLog> _activityLogList = new List<ActivityLog>();
         private List<BackupInfo> _backupsItems = new List<BackupInfo>();
+        private List<ActivityDownLog> _logList = new List<ActivityDownLog>();
 
         private CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
 
@@ -152,6 +153,17 @@ namespace DiskBackupWpfGUI
             #region ActivityLog
 
             ShowActivityLog();
+            Console.WriteLine("Activity logu dolduruyorum şu anda");
+            _logList = _backupService.GetDownLogList();
+            Console.WriteLine("Activity logu doldurdum şu anda");
+            listViewLogDown.ItemsSource = _logList;
+            Console.WriteLine(_logList.Count() + "----- Count Bilgisis");
+
+            foreach (ActivityDownLog item in _logList)
+            {
+                _logList.Add(item);
+                Console.WriteLine(item.Time + "-" + item.Detail);
+            }
 
             #endregion
 
@@ -672,85 +684,6 @@ namespace DiskBackupWpfGUI
             DisableTaskButtons();
         }
 
-        public async void RefreshTasks(CancellationToken cancellationToken)
-        {
-            while (!cancellationToken.IsCancellationRequested)
-            {
-                try
-                {
-                    await Task.Delay(500);
-
-                    // son yedekleme bilgisi
-                    if (listViewLog.Items.Count > 0)
-                    {
-                        ActivityLog lastLog = ((ActivityLog)listViewLog.Items[0]);
-                        txtRunningStateBlock.Text = lastLog.EndDate.ToString();
-                        if (lastLog.Status == StatusType.Success)
-                            txtRunningStateBlock.Foreground = Brushes.Green;
-                        else
-                            txtRunningStateBlock.Foreground = Brushes.Red;
-                    }
-
-                    // Ortadaki statu
-                    TaskInfo runningTask = _taskInfoDal.GetList(x => x.Status == TaskStatusType.Working).FirstOrDefault();
-                    TaskInfo pausedTask = _taskInfoDal.GetList(x => x.Status == TaskStatusType.Paused).FirstOrDefault();
-                    if (runningTask != null)
-                    {
-                        // çalışanı yazdır
-                        runningTask.StatusInfo = _statusInfoDal.Get(x => x.Id == runningTask.StatusInfoId);
-                        txtMakeABackup.Text = Resources["makeABackup"].ToString() + ", "
-                            + FormatBytesNonStatic(runningTask.StatusInfo.DataProcessed)
-                            + ", %" + Math.Round((runningTask.StatusInfo.DataProcessed * 100.0) / (runningTask.StatusInfo.TotalDataProcessed), 2).ToString();
-                    }
-                    else if (pausedTask != null)
-                    {
-                        // durdurulanı yazdır
-                        pausedTask.StatusInfo = _statusInfoDal.Get(x => x.Id == pausedTask.StatusInfoId);
-                        txtMakeABackup.Text = Resources["backupStopped"].ToString() + ", "
-                            + FormatBytesNonStatic(pausedTask.StatusInfo.DataProcessed)
-                            + ", %" + Math.Round((pausedTask.StatusInfo.DataProcessed * 100.0) / (pausedTask.StatusInfo.TotalDataProcessed), 2).ToString();
-                    }
-                    else
-                        txtMakeABackup.Text = "";
-
-                    if (_backupService.GetRefreshIncDiffTaskFlag())
-                    {
-                        int taskSelectedIndex = -1;
-                        if (listViewTasks.SelectedIndex != -1)
-                        {
-                            taskSelectedIndex = listViewTasks.SelectedIndex;
-                        }
-                        GetTasks();
-                        listViewTasks.SelectedIndex = taskSelectedIndex;
-                        var backupService = _scope.Resolve<IBackupService>();
-
-                        _backupsItems = backupService.GetBackupFileList(_backupStorageDal.GetList());
-                        listViewBackups.ItemsSource = _backupsItems;
-                        listViewRestore.ItemsSource = _backupsItems;
-
-                        _backupService.RefreshIncDiffTaskFlag(false);
-
-                    }
-
-                    if (_backupService.GetRefreshIncDiffLogFlag())
-                    {
-                        int logSelectedIndex = -1;
-                        if (listViewLog.SelectedIndex != -1)
-                        {
-                            logSelectedIndex = listViewLog.SelectedIndex;
-                        }
-                        ShowActivityLog();
-                        listViewLog.SelectedIndex = logSelectedIndex + 1;
-                        _backupService.RefreshIncDiffLogFlag(false);
-                    }
-                }
-                catch (Exception e)
-                {
-                    MessageBox.Show(e.Message);
-                }
-
-            }
-        }
 
         #region Task Buttons
 
@@ -1658,6 +1591,104 @@ namespace DiskBackupWpfGUI
 
         #endregion
 
+
+        public async void RefreshTasks(CancellationToken cancellationToken)
+        {
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                try
+                {
+                    await Task.Delay(500);
+
+                    //log down
+                    List<ActivityDownLog> logList = new List<ActivityDownLog>();
+                    /*logList.Add(new ActivityDownLog
+                    {
+                        Detail = "Ebru",
+                        Time = "Eyüp"
+                    });*/
+                    logList = _backupService.GetDownLogList();
+                    if (logList != null)
+                    {
+                        foreach (ActivityDownLog item in logList)
+                        {
+                            _logList.Add(item);
+                            Console.WriteLine(item.Time + "-" + item.Detail);
+                        }
+
+                        listViewLogDown.Items.Refresh();
+                    }
+
+                    // son yedekleme bilgisi
+                    if (listViewLog.Items.Count > 0)
+                    {
+                        ActivityLog lastLog = ((ActivityLog)listViewLog.Items[0]);
+                        txtRunningStateBlock.Text = lastLog.EndDate.ToString();
+                        if (lastLog.Status == StatusType.Success)
+                            txtRunningStateBlock.Foreground = Brushes.Green;
+                        else
+                            txtRunningStateBlock.Foreground = Brushes.Red;
+                    }
+
+                    // Ortadaki statu
+                    TaskInfo runningTask = _taskInfoDal.GetList(x => x.Status == TaskStatusType.Working).FirstOrDefault();
+                    TaskInfo pausedTask = _taskInfoDal.GetList(x => x.Status == TaskStatusType.Paused).FirstOrDefault();
+                    if (runningTask != null)
+                    {
+                        // çalışanı yazdır
+                        runningTask.StatusInfo = _statusInfoDal.Get(x => x.Id == runningTask.StatusInfoId);
+                        txtMakeABackup.Text = Resources["makeABackup"].ToString() + ", "
+                            + FormatBytesNonStatic(runningTask.StatusInfo.DataProcessed)
+                            + ", %" + Math.Round((runningTask.StatusInfo.DataProcessed * 100.0) / (runningTask.StatusInfo.TotalDataProcessed), 2).ToString();
+                    }
+                    else if (pausedTask != null)
+                    {
+                        // durdurulanı yazdır
+                        pausedTask.StatusInfo = _statusInfoDal.Get(x => x.Id == pausedTask.StatusInfoId);
+                        txtMakeABackup.Text = Resources["backupStopped"].ToString() + ", "
+                            + FormatBytesNonStatic(pausedTask.StatusInfo.DataProcessed)
+                            + ", %" + Math.Round((pausedTask.StatusInfo.DataProcessed * 100.0) / (pausedTask.StatusInfo.TotalDataProcessed), 2).ToString();
+                    }
+                    else
+                        txtMakeABackup.Text = "";
+
+                    if (_backupService.GetRefreshIncDiffTaskFlag())
+                    {
+                        int taskSelectedIndex = -1;
+                        if (listViewTasks.SelectedIndex != -1)
+                        {
+                            taskSelectedIndex = listViewTasks.SelectedIndex;
+                        }
+                        GetTasks();
+                        listViewTasks.SelectedIndex = taskSelectedIndex;
+                        var backupService = _scope.Resolve<IBackupService>();
+
+                        _backupsItems = backupService.GetBackupFileList(_backupStorageDal.GetList());
+                        listViewBackups.ItemsSource = _backupsItems;
+                        listViewRestore.ItemsSource = _backupsItems;
+
+                        _backupService.RefreshIncDiffTaskFlag(false);
+                    }
+
+                    if (_backupService.GetRefreshIncDiffLogFlag())
+                    {
+                        int logSelectedIndex = -1;
+                        if (listViewLog.SelectedIndex != -1)
+                        {
+                            logSelectedIndex = listViewLog.SelectedIndex;
+                        }
+                        ShowActivityLog();
+                        listViewLog.SelectedIndex = logSelectedIndex + 1;
+                        _backupService.RefreshIncDiffLogFlag(false);
+                    }
+                }
+                catch (Exception e)
+                {
+                    MessageBox.Show(e.Message);
+                }
+
+            }
+        }
 
         private static T FindParent<T>(DependencyObject dependencyObject) where T : DependencyObject
         {

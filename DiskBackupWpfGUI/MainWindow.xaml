@@ -382,7 +382,7 @@
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
-                                    <GridViewColumn Header="{DynamicResource description}" Width="160" >
+                                    <GridViewColumn Header="{DynamicResource description}" Width="155" >
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
                                                 <TextBlock Text="{Binding Descripiton}" TextWrapping="Wrap" TextAlignment="Center"/>
@@ -1253,17 +1253,17 @@
                         <ListView Name="listViewLogDown" MinHeight="165" Margin="5,5,10,5" >
                             <ListView.View>
                                 <GridView>
-                                    <GridViewColumn Header="{DynamicResource time}" Width="300">
+                                    <GridViewColumn Header="{DynamicResource time}" Width="290">
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
-                                                <TextBlock Text="{Binding Name}" TextAlignment="Left"/>
+                                                <TextBlock Text="{Binding Time}" TextAlignment="Left"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
                                     <GridViewColumn Header="{DynamicResource detail}" Width="750" >
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
-                                                <TextBlock Text="{Binding VersionLength}" TextWrapping="Wrap" TextAlignment="Center"/>
+                                                <TextBlock Text="{Binding Detail}" TextWrapping="Wrap" TextAlignment="Center"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>

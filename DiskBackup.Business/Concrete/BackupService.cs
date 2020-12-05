@@ -504,10 +504,26 @@ namespace DiskBackup.Business.Concrete
             return _cSNarFileExplorer.CW_GetCurrentDirectoryString();
         }
 
-        /*public List<Log> GetLogList() //bu method daha gelmedi
+        public List<ActivityDownLog> GetDownLogList() //bu method daha gelmedi
         {
-            throw new NotImplementedException();
-        }*/
+            List<ActivityDownLog> logList = new List<ActivityDownLog>();
+            foreach (var item in DiskTracker.CW_GetLogs())
+            {
+                string logDate = (item.Time.Day < 10) ? 0 + item.Time.Day.ToString() : item.Time.Day.ToString();
+                logDate += "." + ((item.Time.Month < 10) ? 0 + item.Time.Month.ToString() : item.Time.Month.ToString());
+                logDate += "." + item.Time.Year + " ";
+                logDate += ((item.Time.Hour < 10) ? 0 + item.Time.Hour.ToString() : item.Time.Hour.ToString());
+                logDate += ":" + ((item.Time.Minute < 10) ? 0 + item.Time.Minute.ToString() : item.Time.Minute.ToString());
+                logDate += ":" + ((item.Time.Second < 10) ? 0 + item.Time.Second.ToString() : item.Time.Second.ToString());
+
+                logList.Add(new ActivityDownLog
+                {
+                    Detail = item.LogStr,
+                    Time = logDate
+                });
+            }
+            return logList;
+        }
 
         public void RestoreFilesInBackup(int fileId, string backupDirectory, string targetDirectory) // batuhan hangi backup olduğunu nasıl anlayacak? backup directoryde backup ismi almıyor
         {
