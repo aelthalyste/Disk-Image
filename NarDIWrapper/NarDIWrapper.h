@@ -49,6 +49,12 @@ namespace NarDIWrapper {
     
     public ref class BackupMetadata {
         public:
+        BackupMetadata(){
+            BackupID = new nar_backup_id;
+        }
+        ~BackupMetadata(){
+            delete BackupID;
+        }
         
         wchar_t Letter;
         int BackupType;
@@ -56,7 +62,6 @@ namespace NarDIWrapper {
         int OSVolume;
         
         CSNarFileTime^ BackupDate;
-        
         // TODO(Batuhan): 
         UINT64 VolumeTotalSize;
         UINT64 VolumeUsedSize;
@@ -70,6 +75,9 @@ namespace NarDIWrapper {
         System::String^ TaskDescription;
         System::String^ ComputerName;
         System::String^ IpAdress;
+        
+        
+        nar_backup_id *BackupID;
         
         /*
                             ComputerName
@@ -145,7 +153,7 @@ namespace NarDIWrapper {
 
         */
         //NOTE im not sure about if RootDir is going to be converted to string for managed code
-        bool CW_Init(wchar_t VolumeLetter, int Version, System::String^ RootDir);
+        bool CW_Init(System::String^ MetadataPath);
         
         
         List<CSNarFileEntry^>^ CW_GetFilesInCurrentDirectory();
@@ -193,19 +201,9 @@ namespace NarDIWrapper {
         
         
         
-        static bool CW_RestoreToVolume(
-                                       wchar_t TargetLetter,
-                                       wchar_t SrcLetter,
-                                       INT Version,
-                                       bool ShouldFormat,
-                                       System::String^ RootDir);
+        static bool CW_RestoreToVolume(wchar_t TargetLetter, BackupMetadata^ BM, bool ShouldFormat, System::String^ RootDir);
         
-        static bool CW_RestoreToFreshDisk(
-                                          wchar_t TargetLetter, 
-                                          wchar_t SrcLetter, 
-                                          INT Version, 
-                                          int DiskID, 
-                                          System::String^ Rootdir);
+        static bool CW_RestoreToFreshDisk(wchar_t TargetLetter, BackupMetadata^ BM, int DiskID,  System::String^ Rootdir);
         
         static wchar_t CW_GetFirstAvailableVolumeLetter();
         static List<BackupMetadata^>^ CW_GetBackupsInDirectory(System::String^ RootDir);

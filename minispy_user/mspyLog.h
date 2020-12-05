@@ -332,12 +332,12 @@ typedef char NARDP;
 #define NAR_DISKTYPE_MBR 'M'
 #define NAR_DISKTYPE_RAW 'R'
 
-#define MetadataFileNameDraft "NAR_M_"
-#define BackupFileNameDraft "NAR_BACKUP_"
 #define NAR_FULLBACKUP_VERSION -1
 
-#define WideMetadataFileNameDraft L"NAR_M_"
-#define WideBackupFileNameDraft L"NAR_BACKUP_"
+#define MetadataFileNameDraft L"NAR_M_"
+#define BackupFileNameDraft L"NAR_BACKUP_"
+#define MetadataExtension L".narmd"
+#define BackupExtension   L".narbd"
 
 #define NAR_EFI_PARTITION_LETTER 'S'
 #define NAR_RECOVERY_PARTITION_LETTER 'R'
@@ -405,6 +405,41 @@ struct stream {
     HANDLE Handle; //Used for streaming data to C#
 };
 
+
+
+
+struct nar_backup_id{
+    union{
+        unsigned long long Q;
+        struct{
+            UINT16 Year;
+            UINT8 Month;
+            UINT8 Day;
+            UINT8 Hour;
+            UINT8 Min;
+            UINT8 Letter;
+        };
+    };
+};
+
+
+/*
+This function silently merges local time with given parameters
+*/
+inline nar_backup_id
+NarGenerateBackupID(char Letter);
+
+inline std::wstring
+GenerateMetadataName(nar_backup_id id, int Version);
+
+inline std::wstring
+GenerateLogFileName(nar_backup_id id);
+
+inline std::wstring
+GenerateBinaryFileName(nar_backup_id id, int Version);
+
+
+
 struct volume_backup_inf {
     wchar_t Letter;
     BOOLEAN FullBackupExists;
@@ -424,6 +459,7 @@ struct volume_backup_inf {
     INT32 Version;
     DWORD ClusterSize;    
     
+    nar_backup_id BackupID;
     
     HANDLE LogHandle; //Handle to file that is logging volume's changes.
     
@@ -533,6 +569,7 @@ struct backup_metadata {
             char ComputerName[MAX_COMPUTERNAME_LENGTH  + 1];
             wchar_t TaskName[MAX_TASK_NAME_LEN];
             wchar_t TaskDescription[MAX_TASK_DESCRIPTION_LEN];
+            nar_backup_id ID;
         };
     };
     
@@ -578,10 +615,9 @@ struct backup_metadata_ex {
 };
 
 
-
 struct restore_inf {
     wchar_t TargetLetter;
-    wchar_t SrcLetter;
+    nar_backup_id BackupID;
     int Version;
     std::wstring RootDir;
 };
@@ -592,7 +628,6 @@ struct DotNetStreamInf {
     std::wstring FileName;
     std::wstring MetadataFileName;
 };
-
 
 
 struct disk_information {
@@ -801,20 +836,13 @@ NarCreatePrimaryPartition(int DiskID, char Letter);
 BOOLEAN
 SetupVSS();
 
-inline std::wstring
-GenerateMetadataName(wchar_t Letter, int Version);
 
-inline std::wstring
-GenerateLogFileName(wchar_t Letter);
-
-inline std::wstring
-GenerateBinaryFileName(wchar_t Letter, int Version);
 
 backup_metadata_ex*
-InitBackupMetadataEx(wchar_t Letter, int Version, std::wstring RootDir);
+InitBackupMetadataEx(nar_backup_id, int Version, std::wstring RootDir);
 
 backup_metadata
-ReadMetadata(wchar_t Letter, int Version, std::wstring RootDir);
+ReadMetadata(nar_backup_id ID, int Version, std::wstring RootDir);
 
 BOOLEAN
 OfflineRestoreCleanDisk(restore_inf* R, int DiskID);
@@ -823,7 +851,7 @@ BOOLEAN
 OfflineRestoreToVolume(restore_inf* R, BOOLEAN ShouldFormat);
 
 BOOLEAN
-SaveMetadata(char Letter, int Version, int ClusterSize, BackupType BT, data_array<nar_record> BackupRegions, HANDLE VSSHandle, nar_record* MFTLCN, unsigned int MFTLCNCount);
+SaveMetadata(char Letter, int Version, int ClusterSize, BackupType BT, data_array<nar_record> BackupRegions, HANDLE VSSHandle, nar_record* MFTLCN, unsigned int MFTLCNCount, nar_backup_id BackupID);
 
 BOOLEAN
 RestoreIncVersion(restore_inf R, HANDLE Volume); // Volume optional, might pass INVALID_HANDLE_VALUE
@@ -933,6 +961,7 @@ NarGetBackupsInDirectory(const wchar_t* Directory, backup_metadata* B, int Buffe
 
 inline void
 FreeFileRead(file_read FR);
+
 
 
 #define NAR_POSIX                2
@@ -1102,6 +1131,7 @@ struct lcn_from_mft_query_result {
 };
 
 
+
 inline lcn_from_mft_query_result
 ReadLCNFromMFTRecord(void* RecordStart);
 
@@ -1146,7 +1176,7 @@ inline void
 NarFileExplorerPopDirectory(nar_backup_file_explorer_context* Ctx);
 
 inline nar_fe_search_result
-NarSearchFileInVolume(wchar_t* RootDir, wchar_t* FileName, wchar_t VolumeLetter, INT32 Version);
+NarSearchFileInVolume(wchar_t* RootDir, wchar_t* FileName, nar_backup_id ID, INT32 Version);
 
 inline BOOLEAN
 NarFileExplorerSetFilePointer(nar_fe_volume_handle FEV, UINT64 NewFilePointer);
@@ -1155,7 +1185,7 @@ inline BOOLEAN
 NarFileExplorerReadVolume(nar_fe_volume_handle FEV, void* Buffer, DWORD ReadSize, DWORD* OutBytesRead);
 
 nar_file_version_stack
-NarSearchFileInVersions(wchar_t* RootDir, wchar_t VolumeLetter, INT32 CeilVersion, wchar_t* FileName);
+NarSearchFileInVersions(wchar_t* RootDir, nar_backup_id ID, INT32 CeilVersion, wchar_t* FileName);
 
 /*
     Ctx = output
@@ -1166,7 +1196,7 @@ NarSearchFileInVersions(wchar_t* RootDir, wchar_t VolumeLetter, INT32 CeilVersio
 
 */
 inline BOOLEAN
-NarInitFileExplorerContext(nar_backup_file_explorer_context* Ctx, INT32 HandleOptions, char Letter, int Version, wchar_t *RootDir);
+NarInitFileExplorerContext(nar_backup_file_explorer_context* Ctx, const wchar_t *MetadataPath);
 
 inline INT32
 NarGetVolumeClusterSize(char Letter);
@@ -1189,10 +1219,15 @@ NarFileExplorerReadVolume(nar_fe_volume_handle FEV, void* Buffer, DWORD ReadSize
         NAR_READ_MOUNTED_VOLUME = Reads mounted local disk VolumeLetter and ignores rest of the parameters, and makes FEV->BMEX NULL to. this will lead FEV to become normal volume handle
         NAR_READ_BACKUP_VOLUME 2 = Tries to find backup files in RootDir, if one not given, searches current running directory.
                                     Then according to backup region information, handles read-seak operations in wrapped function
-
 */
+#if 1
 inline BOOLEAN 
-NarInitFEVolumeHandle(nar_fe_volume_handle *FEV, INT32 HandleOptions, char VolumeLetter, INT32 Version, wchar_t *RootDir);
+NarInitFEVolumeHandle(nar_fe_volume_handle *FEV, INT32 HandleOptions, char VolumeLetter, const wchar_t *BackupMetadataPath);
+#endif
+
+inline BOOLEAN NarInitFEVolumeHandleFromBackup(nar_fe_volume_handle *FEV, const wchar_t* MetadataFilePath);
+inline BOOLEAN NarInitFEVolumeHandleFromVolume(nar_fe_volume_handle *FEV, char VolumeLetter, INT32 Version, nar_backup_id ID, wchar_t *RootDir);
+
 
 inline void 
 NarFreeFEVolumeHandle(nar_fe_volume_handle FEV);
