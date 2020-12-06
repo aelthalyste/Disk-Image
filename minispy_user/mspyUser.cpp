@@ -4976,6 +4976,7 @@ SaveMetadata(char Letter, int Version, int ClusterSize, BackupType BT,
     BM.IsOSVolume = NarIsOSVolume(Letter);
     BM.VolumeTotalSize = NarGetVolumeTotalSize(BM.Letter);
     BM.VolumeUsedSize = NarGetVolumeUsedSize(BM.Letter);
+    BM.ID = ID;
     
     NarGetProductName(BM.ProductName);
     DWORD Len = sizeof(BM.ComputerName);
@@ -7914,6 +7915,15 @@ NarTestScratch(){
 int
 main(int argc, char* argv[]) {
     
+#if 1    
+	backup_metadata *m = new backup_metadata[120];
+	int bs = 120*sizeof(*m);
+	int out = 0;
+    
+	NarGetBackupsInDirectory(L"F:\\", m, bs, &out);
+	printf("herllo\n");
+	return 0;
+#endif
     
 #if 0
     nar_backup_file_explorer_context ctx = {0};
