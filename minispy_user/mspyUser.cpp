@@ -952,6 +952,7 @@ InitVolumeInf(volume_backup_inf* VolInf, wchar_t Letter, BackupType Type) {
     wchar_t DN[] = L"C:";
     DN[0] = Letter;
     
+    VolInf->BackupID = NarGenerateBackupID(Letter);
     
     wchar_t V[] = L"!:\\";
     V[0] = Letter;
@@ -2189,7 +2190,7 @@ TerminateBackup(volume_backup_inf* V, BOOLEAN Succeeded) {
         printf("Fullbackup operation will be terminated\n");
         if (Succeeded) {
             
-            if (SaveMetadata((char)V->Letter, NAR_FULLBACKUP_VERSION, V->ClusterSize, V->BT, V->Stream.Records, V->Stream.Handle, V->MFTLCN, V->MFTLCNCount)) {
+            if (SaveMetadata((char)V->Letter, NAR_FULLBACKUP_VERSION, V->ClusterSize, V->BT, V->Stream.Records, V->Stream.Handle, V->MFTLCN, V->MFTLCNCount, V->BackupID)) {
                 Return = TRUE;
                 V->FullBackupExists = TRUE;
             }
@@ -2225,7 +2226,7 @@ TerminateBackup(volume_backup_inf* V, BOOLEAN Succeeded) {
             
             // NOTE(Batuhan):
             printf("Will save metadata to working directory, Version : %i\n", V->Version);
-            SaveMetadata((char)V->Letter, V->Version, V->ClusterSize, V->BT, V->Stream.Records, V->Stream.Handle, V->MFTLCN, V->MFTLCNCount);
+            SaveMetadata((char)V->Letter, V->Version, V->ClusterSize, V->BT, V->Stream.Records, V->Stream.Handle, V->MFTLCN, V->MFTLCNCount, V->BackupID);
             
             /*
          Since merge algorithm may have change size of the record buffer,
@@ -2333,10 +2334,9 @@ SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, DotNetStreamInf* SI) {
             }
             
             if (SI && Return) {
-                SI->MetadataFileName = GenerateMetadataName(VolInf->Letter, NAR_FULLBACKUP_VERSION);
-                SI->FileName = GenerateBinaryFileName(VolInf->Letter, NAR_FULLBACKUP_VERSION);
+                SI->MetadataFileName = GenerateMetadataName(VolInf->BackupID, NAR_FULLBACKUP_VERSION);
+                SI->FileName = GenerateBinaryFileName(VolInf->BackupID, NAR_FULLBACKUP_VERSION);
             }
-            
         }
         else {
             //Incremental or diff stream
@@ -2363,8 +2363,8 @@ SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, DotNetStreamInf* SI) {
             }
             
             if (SI && Return) {
-                SI->FileName = GenerateBinaryFileName(VolInf->Letter, VolInf->Version);
-                SI->MetadataFileName = GenerateMetadataName(VolInf->Letter, VolInf->Version);
+                SI->FileName = GenerateBinaryFileName(VolInf->BackupID, VolInf->Version);
+                SI->MetadataFileName = GenerateMetadataName(VolInf->BackupID, VolInf->Version);
             }
         }
         
@@ -2904,7 +2904,8 @@ SetupStreamHandle(volume_backup_inf* VolInf) {
     
     if (!VolInf->FullBackupExists) {
         printf("!FullBackupExists ");
-        std::wstring LogFileName = GenerateLogFileName(VolInf->Letter);
+        std::wstring LogFileName = GenerateLogFileName(VolInf->BackupID);
+        
         VolInf->LogHandle = CreateFileW(LogFileName.c_str(), GENERIC_WRITE | GENERIC_READ, 0, 0, CREATE_ALWAYS, 0, 0);
         if(VolInf->LogHandle != INVALID_HANDLE_VALUE){
             
@@ -3078,7 +3079,7 @@ OfflineRestoreCleanDisk(restore_inf* R, int DiskID) {
     }
     BOOLEAN Result = FALSE;
     
-    backup_metadata M = ReadMetadata(R->SrcLetter, R->Version, R->RootDir);
+    backup_metadata M = ReadMetadata(R->BackupID, R->Version, R->RootDir);
     
     if (M.IsOSVolume) {
         if (M.DiskType == NAR_DISKTYPE_GPT) {
@@ -3186,7 +3187,7 @@ OfflineRestoreToVolume(restore_inf* R, BOOLEAN ShouldFormat) {
     BackupType BT = BackupType::Diff;
     
     {
-        backup_metadata BM = ReadMetadata(R->SrcLetter, R->Version, R->RootDir);
+        backup_metadata BM = ReadMetadata(R->BackupID, R->Version, R->RootDir);
         if (BM.Errors.RegionsMetadata == 0) {
             Version = BM.Version;
             BT = BM.BT;
@@ -4110,21 +4111,6 @@ NarIsFullBackup(int Version) {
     return Version < 0;
 }
 
-inline std::wstring
-GenerateMetadataName(wchar_t Letter, int Version) {
-    
-    std::wstring Result = WideMetadataFileNameDraft;
-    Result += Letter;
-    if (Version == NAR_FULLBACKUP_VERSION) {
-        Result += L"FULL";
-    }
-    else {
-        Result += std::to_wstring(Version);
-    }
-    
-    return Result;
-}
-
 
 
 inline BOOLEAN
@@ -4178,39 +4164,80 @@ NarCloseVolume(HANDLE V) {
     CloseHandle(V);
 }
 
+
+inline nar_backup_id
+NarGenerateBackupID(char Letter){
+    
+    nar_backup_id Result = {0};
+    
+    SYSTEMTIME T;
+    GetLocalTime(&T);
+    Result.Year = T.wYear;
+    Result.Month = T.wMonth;
+    Result.Day = T.wDay;
+    Result.Hour = T.wHour;
+    Result.Min = T.wMinute;
+    Result.Letter = Letter;
+    
+    
+    return Result;
+}
+
 inline std::wstring
-GenerateBinaryFileName(wchar_t Letter, int Version) {
-    std::wstring Result = WideBackupFileNameDraft;
-    Result += (Letter);
+NarBackupIDToWStr(nar_backup_id ID){
+    wchar_t B[64];
+    memset(B, 0, sizeof(B));
+    swprintf(B, L"%I64u",ID.Q);
+    
+    std::wstring Result = std::wstring(B);
+    return Result;
+}
+
+inline std::wstring
+GenerateMetadataName(nar_backup_id ID, int Version) {
+    
+    std::wstring Result = MetadataFileNameDraft;
+    
     if (Version == NAR_FULLBACKUP_VERSION) {
         Result += L"FULL";
     }
     else {
         Result += std::to_wstring(Version);
     }
-    //printf("Generated binary file name %S\n", Result.c_str());
+    
+    Result += L"-";
+    Result += NarBackupIDToWStr(ID);
+    Result += MetadataExtension;
+    
     return Result;
 }
 
-inline std::string
-GenerateMetadataName(char Letter, int Version) {
-    std::string Result = MetadataFileNameDraft;
-    Result += (Letter);
+
+inline std::wstring
+GenerateBinaryFileName(nar_backup_id ID, int Version) {
+    
+    std::wstring Result = BackupFileNameDraft;
+    
     if (Version == NAR_FULLBACKUP_VERSION) {
-        Result += "FULL";
+        Result += L"FULL";
     }
     else {
-        Result += std::to_string(Version);
+        Result += std::to_wstring(Version);
     }
+    
+    Result += L"-";
+    Result += NarBackupIDToWStr(ID);
+    
+    Result += BackupExtension;
+    //printf("Generated binary file name %S\n", Result.c_str());
     return Result;
+    
 }
 
-
-#define GENERATE_LOG_FILE_NAME(letter) L"LOGFILE_##letter"
 inline std::wstring
-GenerateLogFileName(wchar_t Letter) {
+GenerateLogFileName(nar_backup_id ID) {
     std::wstring Result = L"LOGFILE_";
-    Result += (Letter);
+    Result += NarBackupIDToWStr(ID);
     return Result;
 }
 
@@ -4231,18 +4258,17 @@ RestoreVersionWithoutLoop(restore_inf R, BOOLEAN RestoreMFT, HANDLE Volume) {
         Volume = NarOpenVolume((char)R.TargetLetter);
     }
     
-    backup_metadata_ex* BMEX = InitBackupMetadataEx(R.SrcLetter, R.Version, R.RootDir);
+    backup_metadata_ex* BMEX = InitBackupMetadataEx(R.BackupID, R.Version, R.RootDir);
     if (BMEX == NULL) {
         printf("Couldn't init backupmetadata\n");
         return FALSE;
     }
     printf("Initialized backup metadata for version %i\n", BMEX->M.Version);
     
-    
     int CopyErrorsOccured = 0;
     
     std::wstring BinaryFileName = R.RootDir;
-    BinaryFileName += GenerateBinaryFileName(R.SrcLetter, R.Version);
+    BinaryFileName += GenerateBinaryFileName(R.BackupID, R.Version);
     
     
     HANDLE RegionsFile = CreateFile(BinaryFileName.c_str(), GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
@@ -4586,7 +4612,7 @@ RestoreIncVersion(restore_inf R, HANDLE Volume) {
     
     restore_inf SubVersionR;
     SubVersionR.RootDir = R.RootDir;
-    SubVersionR.SrcLetter = R.SrcLetter;
+    SubVersionR.BackupID = R.BackupID;
     SubVersionR.TargetLetter = R.TargetLetter;
     SubVersionR.Version = NAR_FULLBACKUP_VERSION;
     // NOTE(Batuhan): restore to fullbackup first
@@ -4668,7 +4694,8 @@ NarRestoreMFT(backup_metadata_ex* BMEX, HANDLE Volume) {
 }
 
 backup_metadata
-ReadMetadata(wchar_t Letter, int Version, std::wstring RootDir) {
+ReadMetadata(nar_backup_id ID, int Version, std::wstring RootDir) {
+    
     if (RootDir.length() > 0) {
         if (RootDir[RootDir.length() - 1] != L'\\') {
             RootDir += L"\\";
@@ -4677,7 +4704,7 @@ ReadMetadata(wchar_t Letter, int Version, std::wstring RootDir) {
     
     BOOLEAN ErrorOccured = 0;
     DWORD BytesOperated = 0;
-    std::wstring FileName = RootDir + GenerateMetadataName(Letter, Version);
+    std::wstring FileName = RootDir + GenerateMetadataName(ID, Version);
     
     backup_metadata BM = { 0 };
     
@@ -4704,8 +4731,67 @@ ReadMetadata(wchar_t Letter, int Version, std::wstring RootDir) {
 }
 
 backup_metadata_ex*
-InitBackupMetadataEx(wchar_t Letter, int Version, std::wstring RootDir) {
+InitBackupMetadataEx(const wchar_t *MetadataPath){
     
+    BOOLEAN ErrorOccured = TRUE;
+    DWORD BytesOperated = 0;
+    
+    backup_metadata_ex* BMEX = new backup_metadata_ex;
+    
+    HANDLE File = CreateFile(MetadataPath, GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
+    if (File != INVALID_HANDLE_VALUE) {
+        ReadFile(File, &BMEX->M, sizeof(BMEX->M), &BytesOperated, 0);
+        
+        if (BytesOperated == sizeof(BMEX->M)) {
+            
+            if (NarSetFilePointer(File, BMEX->M.Offset.RegionsMetadata)) {
+                
+                BMEX->RegionsMetadata.Data = (nar_record*)malloc(BMEX->M.Size.RegionsMetadata);
+                
+                if (BMEX->RegionsMetadata.Data != NULL) {
+                    BMEX->RegionsMetadata.Count = 0;
+                    BytesOperated = 0;
+                    // TODO(Batuhan): its not safe to assume regions metadata is lower than 4gb, might exceed in very long period
+                    // build safe wrapper around read-write file methods to ensure that it is possible to read data more than 4gb
+                    // at once
+                    if (ReadFile(File, BMEX->RegionsMetadata.Data, (DWORD)BMEX->M.Size.RegionsMetadata, &BytesOperated, 0) && BytesOperated == BMEX->M.Size.RegionsMetadata) {
+                        ErrorOccured = FALSE;
+                        // NOTE(Batuhan): probably safe to assume that we wont have more than 2^32 regions, its really big
+                        BMEX->RegionsMetadata.Count = (UINT)BMEX->M.Size.RegionsMetadata / sizeof(nar_record);
+                    }
+                    else {
+                        printf("Couldn't read regions metadata\n");
+                        // NOTE(Batuhan): Couldn't read enough bytes for regions
+                    }
+                }
+                
+            }
+            else {
+                printf("Couldn't set file pointer to regions metadata offset\n");
+                // NOTE(Batuhan): Couldn't set file pointer to regions metadata offset
+            }
+            
+        }
+        else {
+            printf("Couldn't read backup metadata\n");
+        }
+    }
+    else {
+        printf("Couldn't open file %S\n", MetadataPath);
+    }
+    
+    if (ErrorOccured) {
+        printf("Error occured while initializing metadata extended structure, freeing regions metadata memory\n");
+        free(BMEX);
+    }
+    
+    CloseHandle(File);
+    return BMEX;
+    
+}
+
+backup_metadata_ex*
+InitBackupMetadataEx(nar_backup_id ID, int Version, std::wstring RootDir) {
     
     if (RootDir.length() > 0) {
         if (RootDir[RootDir.length() - 1] != L'\\') {
@@ -4720,7 +4806,7 @@ InitBackupMetadataEx(wchar_t Letter, int Version, std::wstring RootDir) {
     backup_metadata_ex* BMEX = new backup_metadata_ex;
     
     std::wstring FileName = RootDir;
-    FileName += GenerateMetadataName(Letter, Version);
+    FileName += GenerateMetadataName(ID, Version);
     BMEX->FilePath = FileName;
     
     DWORD BytesOperated = 0;
@@ -4847,7 +4933,7 @@ BackupRegions: Must have, this data determines how i must map binary data to the
 */
 BOOLEAN
 SaveMetadata(char Letter, int Version, int ClusterSize, BackupType BT,
-             data_array<nar_record> BackupRegions, HANDLE VSSHandle, nar_record* MFTLCN, unsigned int MFTLCNCount) {
+             data_array<nar_record> BackupRegions, HANDLE VSSHandle, nar_record* MFTLCN, unsigned int MFTLCNCount, nar_backup_id ID) {
     
     // TODO(Batuhan): convert letter to uppercase
     BOOLEAN IsMFTLCNInternal = FALSE;
@@ -4864,8 +4950,8 @@ SaveMetadata(char Letter, int Version, int ClusterSize, BackupType BT,
     
     BOOLEAN Result = FALSE;
     char StringBuffer[1024];
-    std::string MetadataFilePath = GenerateMetadataName(Letter, Version);
-    HANDLE MetadataFile = CreateFileA(MetadataFilePath.c_str(), GENERIC_WRITE | GENERIC_READ, 0, 0, CREATE_ALWAYS, 0, 0);
+    std::wstring MetadataFilePath = GenerateMetadataName(ID, Version);
+    HANDLE MetadataFile = CreateFileW(MetadataFilePath.c_str(), GENERIC_WRITE | GENERIC_READ, 0, 0, CREATE_ALWAYS, 0, 0);
     if (MetadataFile == INVALID_HANDLE_VALUE) {
         printf("Couldn't create metadata file : %s\n", MetadataFilePath.c_str());
         goto Exit;
@@ -4890,6 +4976,7 @@ SaveMetadata(char Letter, int Version, int ClusterSize, BackupType BT,
     BM.IsOSVolume = NarIsOSVolume(Letter);
     BM.VolumeTotalSize = NarGetVolumeTotalSize(BM.Letter);
     BM.VolumeUsedSize = NarGetVolumeUsedSize(BM.Letter);
+    BM.ID = ID;
     
     NarGetProductName(BM.ProductName);
     DWORD Len = sizeof(BM.ComputerName);
@@ -5212,10 +5299,10 @@ RestoreRecoveryFile(restore_inf R) {
     BOOLEAN Result = FALSE;
     HANDLE MetadataFile = INVALID_HANDLE_VALUE;
     
-    backup_metadata B = ReadMetadata(R.SrcLetter, NAR_FULLBACKUP_VERSION, R.RootDir);
+    backup_metadata B = ReadMetadata(R.BackupID, NAR_FULLBACKUP_VERSION, R.RootDir);
     //TODO(Batuhan) check integrity of B
     std::wstring MFN = R.RootDir;
-    MFN += GenerateMetadataName(R.SrcLetter, NAR_FULLBACKUP_VERSION);
+    MFN += GenerateMetadataName(R.BackupID, NAR_FULLBACKUP_VERSION);
     
     HANDLE RecoveryPartitionHandle = NarOpenVolume(NAR_RECOVERY_PARTITION_LETTER);
     if (RecoveryPartitionHandle == INVALID_HANDLE_VALUE) {
@@ -5336,8 +5423,19 @@ AppendRecoveryToFile(HANDLE File, char Letter) {
     return Result;
 }
 
+inline BOOLEAN
+NarFileNameExtensionCheck(const wchar_t *Path, const wchar_t *Extension){
+    size_t pl = wcslen(Path);
+    size_t el = wcslen(Extension);
+    if(pl <= el) return FALSE;
+    return (wcscmp(&Path[pl - el], Extension) == 0);
+}
+
 BOOLEAN
 NarGetBackupsInDirectory(const wchar_t* Directory, backup_metadata* B, int BufferSize, int* FoundCount) {
+    
+    //#error "IMPLEMENT THAT SHIT"
+    
     
     BOOLEAN Result = TRUE;
     
@@ -5372,7 +5470,7 @@ NarGetBackupsInDirectory(const wchar_t* Directory, backup_metadata* B, int Buffe
             //printf("Found file %S\n", FDATA.cFileName);
             
             //NOTE(Batuhan): Compare file name for metadata draft prefix NAR_ , if prefix found, try to read it
-            if (wcsncmp(FDATA.cFileName, WideMetadataFileNameDraft, wcslen(WideMetadataFileNameDraft)) == 0) {
+            if (NarFileNameExtensionCheck(FDATA.cFileName, MetadataExtension)) {
                 
                 wcscpy(wstrbuffer, Directory);
                 wcscat(wstrbuffer, L"\\");
@@ -5384,7 +5482,7 @@ NarGetBackupsInDirectory(const wchar_t* Directory, backup_metadata* B, int Buffe
                     if (ReadFile(F, &B[BackupFound], sizeof(*B), &BR, 0) && BR == sizeof(*B)) {
                         //NOTE(Batuhan): Since we just compared metadata file name draft, now, just compare full name, to determine its filename, since it might be corrupted
                         
-                        std::wstring T = GenerateMetadataName((wchar_t)B[BackupFound].Letter, B[BackupFound].Version);
+                        std::wstring T = GenerateMetadataName(B[BackupFound].ID, B[BackupFound].Version);
                         
                         if (wcscmp(FDATA.cFileName, T.c_str()) == 0) {
                             //NOTE(Batuhan): File name indicated from metadata and actual file name matches
@@ -5432,6 +5530,8 @@ NarGetBackupsInDirectory(const wchar_t* Directory, backup_metadata* B, int Buffe
     
     FindClose(FileIterator);
     return TRUE;
+    
+    
 }
 
 
@@ -5541,7 +5641,7 @@ NarLoadBootState() {
                                 VolInf.FilterFlags.IsActive = TRUE;
                                 VolInf.FullBackupExists = TRUE;
                                 VolInf.Version = BootTrackData[i].Version;
-                                std::wstring LogFileName = GenerateLogFileName(VolInf.Letter);
+                                std::wstring LogFileName = GenerateLogFileName(VolInf.BackupID);
                                 
                                 VolInf.LogHandle = CreateFileW(LogFileName.c_str(), GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, 0, 0);
                                 
@@ -6286,7 +6386,7 @@ NarGetFileNameFromPath(const wchar_t* Path, wchar_t *OutName, INT32 OutMaxLen) {
 
 */
 inline BOOLEAN
-NarRestoreFileFromBackups(wchar_t *RootDir, wchar_t *FileName, wchar_t *RestoreTo, wchar_t VolumeLetter, INT32 InVersion){
+NarRestoreFileFromBackups(wchar_t *RootDir, wchar_t *FileName, wchar_t *RestoreTo, nar_backup_id ID, INT32 InVersion){
     
     
     if(RootDir == NULL || FileName == NULL) return FALSE;
@@ -6310,9 +6410,9 @@ NarRestoreFileFromBackups(wchar_t *RootDir, wchar_t *FileName, wchar_t *RestoreT
     void* MemoryBuffer = malloc(1024);
     
     // NOTE(Batuhan): search file in versions from InVersion to FULL
-    nar_file_version_stack FileStack = NarSearchFileInVersions(RootDir, VolumeLetter, InVersion, FileName);
+    nar_file_version_stack FileStack = NarSearchFileInVersions(RootDir, ID, InVersion, FileName);
     if(FileStack.VersionsFound < 0){
-        printf("Failed to create file history stack for file %S for volume %c based on version %i\n", FileName, VolumeLetter, InVersion);
+        printf("Failed to create file history stack for file %S for volume %c based on version %i\n", FileName, ID.Letter, InVersion);
         goto ABORT;
     }
     
@@ -6328,22 +6428,23 @@ NarRestoreFileFromBackups(wchar_t *RootDir, wchar_t *FileName, wchar_t *RestoreT
          VersionID++) {
         
         memset(&FEHandle, 0, sizeof(FEHandle));
+        std::wstring metadatapath = GenerateMetadataName(ID, VersionID);
         
-        if (NarInitFEVolumeHandle(&FEHandle, NAR_FE_HAND_OPT_READ_BACKUP_VOLUME, (char)VolumeLetter, VersionID, RootDir)) {
+        if (NarInitFEVolumeHandleFromBackup(&FEHandle, metadatapath.c_str())) {
             
             NarFileExplorerSetFilePointer(FEHandle, FileStack.FileAbsoluteMFTOffset[VersionID - FileStack.StartingVersion]);
             memset(MemoryBuffer, 0, 1024);
             
             DWORD BytesRead = 0;
             if (!NarFileExplorerReadVolume(FEHandle, MemoryBuffer, 1024, &BytesRead) || BytesRead != 1024) {
-                printf("Couldn't read mft record of the file %S from volume %c's %i'th backup. Aborting file restore opeartion!\n", FileName, VolumeLetter, VersionID);
+                printf("Couldn't read mft record of the file %S from volume %c's %i'th backup. Aborting file restore opeartion!\n", FileName, ID.Letter, VersionID);
                 goto ABORT;
             }
-            printf("Successfully read file %S's mft record from volume %c's %i'th version\n", FileName, VolumeLetter, VersionID);
+            printf("Successfully read file %S's mft record from volume %c's %i'th version\n", FileName, ID.Letter, VersionID);
             
             lcn_from_mft_query_result QResult = ReadLCNFromMFTRecord(MemoryBuffer);
             if(QResult.Flags & QResult.FAIL){
-                printf("Couldnt parse file %S's mft file record at volume %c's version %i", FileName, VolumeLetter, VersionID);
+                printf("Couldnt parse file %S's mft file record at volume %c's version %i", FileName, ID.Letter, VersionID);
                 goto ABORT;
             }
             
@@ -6364,7 +6465,7 @@ NarRestoreFileFromBackups(wchar_t *RootDir, wchar_t *FileName, wchar_t *RestoreT
                     if (NarFileExplorerSetFilePointer(FEHandle, CopyStart)) {
                         
                         if (CopyData(FEHandle.VolumeHandle, RestoreFileHandle, CopyLen) == FALSE) {
-                            printf("Failed to copy file %S's %I64u bytes from volume %c's version %i at offset %I64u\n", FileName, CopyLen, VolumeLetter, VersionID, CopyStart);
+                            printf("Failed to copy file %S's %I64u bytes from volume %c's version %i at offset %I64u\n", FileName, CopyLen, ID.Letter, VersionID, CopyStart);
                         }
                         
                     }
@@ -6376,14 +6477,14 @@ NarRestoreFileFromBackups(wchar_t *RootDir, wchar_t *FileName, wchar_t *RestoreT
                 
             }
             else{
-                printf("Couldn't find any regions that intersects with file's regions in volume %c version %i, for file %S, skipping this version\n",VolumeLetter, VersionID, FileName);
+                printf("Couldn't find any regions that intersects with file's regions in volume %c version %i, for file %S, skipping this version\n",ID.Letter, VersionID, FileName);
             }
             
             NarFreeRegionIntersection(IntersectionRegions);
             
         }
         else{
-            printf("Couldn't initialize volume %c's handle to restore file %S from version %i. File's integrity might be broken, thus resulting corrupt file. Aborting restore!\n", VolumeLetter, FileName, VersionID);
+            printf("Couldn't initialize volume %c's handle to restore file %S from version %i. File's integrity might be broken, thus resulting corrupt file. Aborting restore!\n", ID.Letter, FileName, VersionID);
             goto ABORT;
         }
         
@@ -6702,7 +6803,7 @@ ReadFileDataFromMFT(void *RecordStart, lcn_from_mft_query_result QueryResult, vo
     That information is useful for pre restore operation. After that lookup we will be
 */
 nar_file_version_stack
-NarSearchFileInVersions(wchar_t *RootDir, wchar_t VolumeLetter, INT32 CeilVersion, wchar_t *FileName){
+NarSearchFileInVersions(wchar_t *RootDir, nar_backup_id ID, INT32 CeilVersion, wchar_t *FileName){
     
     nar_file_version_stack Result;
     memset(&Result, 0, sizeof(Result));
@@ -6739,11 +6840,11 @@ NarSearchFileInVersions(wchar_t *RootDir, wchar_t VolumeLetter, INT32 CeilVersio
     for(int i = CeilVersion; i!= NAR_FULLBACKUP_VERSION; i--){
         
         if(i < NAR_FULLBACKUP_VERSION){
-            printf("Version ID cant be lower than NAR_FULLBACKUP_VERSION(RootDir: %S, FileName: %S, Volume letter: %c, Selected version %i)\n", RootDir, FileName, VolumeLetter, CeilVersion);
+            printf("Version ID cant be lower than NAR_FULLBACKUP_VERSION(RootDir: %S, FileName: %S, Volume letter: %c, Selected version %i)\n", RootDir, FileName, ID.Letter, CeilVersion);
             break;
         }
         
-        nar_fe_search_result SearchResult = NarSearchFileInVolume(RootDir, FileName, VolumeLetter, i);
+        nar_fe_search_result SearchResult = NarSearchFileInVolume(RootDir, FileName, ID, i);
         if(SearchResult.Found == TRUE){
             Result.FileAbsoluteMFTOffset[Result.VersionsFound] = SearchResult.AbsoluteMFTRecordOffset;
             Result.StartingVersion = i;
@@ -6762,7 +6863,7 @@ NarSearchFileInVersions(wchar_t *RootDir, wchar_t VolumeLetter, INT32 CeilVersio
     Search's for specific file named FileName in given Handle. returns negative value if fails to do
 */
 inline nar_fe_search_result
-NarSearchFileInVolume(wchar_t* RootDir, wchar_t *FileName, wchar_t VolumeLetter, INT32 Version){
+NarSearchFileInVolume(wchar_t* RootDir, wchar_t *FileName, nar_backup_id ID, INT32 Version){
     
     TIMED_BLOCK();
     
@@ -6772,7 +6873,7 @@ NarSearchFileInVolume(wchar_t* RootDir, wchar_t *FileName, wchar_t VolumeLetter,
     // TODO(Batuhan): check if that actually equals to error state
     if(FileName == NULL) return Result;;
     
-    if(NarInitFileExplorerContext(&Ctx, NAR_FE_HAND_OPT_READ_BACKUP_VOLUME, VolumeLetter, Version, RootDir)){
+    if(NarInitFileExplorerContext(&Ctx,  RootDir)){
         
         TIMED_NAMED_BLOCK("File search by name(wcstok)");
         
@@ -6864,7 +6965,7 @@ NarSearchFileInVolume(wchar_t* RootDir, wchar_t *FileName, wchar_t VolumeLetter,
             }
             else{
                 
-                printf("NARFE Handle's context was null, terminating early(File: %S, RootDir: %S, VolumeLetter: %c, Version: %i)\n", FileName, RootDir, VolumeLetter, Version);
+                printf("NARFE Handle's context was null, terminating early(File: %S, RootDir: %S, VolumeLetter: %c, Version: %i)\n", FileName, RootDir, ID.Letter, Version);
                 // BMEX shouldnt be null
                 
             }
@@ -6872,13 +6973,13 @@ NarSearchFileInVolume(wchar_t* RootDir, wchar_t *FileName, wchar_t VolumeLetter,
             
         }
         else{
-            printf("Failed to find file %S in in volume %c in version %i in root dir %S\n", FileName, VolumeLetter, Version, RootDir);
+            printf("Failed to find file %S in in volume %c in version %i in root dir %S\n", FileName, ID.Letter, Version, RootDir);
         }
         
         
     }
     else{
-        printf("Couldnt initialize file explorer context for volume %c for version %i to restore file %S from root directory %S\n", VolumeLetter, Version, FileName, RootDir);
+        printf("Couldnt initialize file explorer context for volume %c for version %i to restore file %S from root directory %S\n", ID.Letter, Version, FileName, RootDir);
     }
     
     
@@ -7110,64 +7211,64 @@ ReadMFTLCNFromMetadata(HANDLE FHandle, backup_metadata Metadata, void *Buffer){
     
 */
 inline BOOLEAN
-NarInitFileExplorerContext(nar_backup_file_explorer_context* Ctx, INT32 HandleOptions, char Letter, int Version, wchar_t *RootDir) {
+NarInitFileExplorerContext(nar_backup_file_explorer_context* Ctx, const wchar_t *MetadataPath) {
     
     
     if (!Ctx) goto NAR_FAIL_TERMINATE;;
     
-    if(HandleOptions != NAR_FE_HAND_OPT_READ_BACKUP_VOLUME && HandleOptions != NAR_FE_HAND_OPT_READ_MOUNTED_VOLUME){
-        printf("Passed invalid HandleOptions to NarInitFileExplorerContext\n");
-        goto NAR_FAIL_TERMINATE;
-    }
-    
-    Ctx->HandleOption = HandleOptions;
     memset(Ctx, 0, sizeof(*Ctx));
     
+    Ctx->HandleOption = NAR_FE_HAND_OPT_READ_BACKUP_VOLUME;
     if (NarInitFileEntryList(&Ctx->EList, 10000)) {
         
         memset(Ctx->CurrentDirectory, 0, sizeof(Ctx->CurrentDirectory));
         memset(Ctx->RootDir, 0, sizeof(Ctx->RootDir));
         memset(&Ctx->HistoryStack, 0, sizeof(Ctx->HistoryStack));
         
-        if (NarInitFEVolumeHandle(&Ctx->FEHandle, HandleOptions, Letter, Version, RootDir)) {
+        if (NarInitFEVolumeHandleFromBackup(&Ctx->FEHandle, MetadataPath)) {
             
             BOOLEAN Status = FALSE;
+            Ctx->Letter = Ctx->FEHandle.BMEX->M.Letter;
             
+            // NOTE(Batuhan): IN
+#if 0            
             if(HandleOptions == NAR_FE_HAND_OPT_READ_MOUNTED_VOLUME){
                 Ctx->ClusterSize = NarGetVolumeClusterSize(Letter);
                 Ctx->MFTRecords = (nar_record*)NarGetMFTRegionsByCommandLine(Letter, &Ctx->MFTRecordsCount);
                 Status = TRUE;
             }
-            if(HandleOptions == NAR_FE_HAND_OPT_READ_BACKUP_VOLUME){
-                Ctx->ClusterSize = Ctx->FEHandle.BMEX->M.ClusterSize;
-                HANDLE BackupMetadataHandle = CreateFile(Ctx->FEHandle.BMEX->FilePath.c_str(), GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
-                if(BackupMetadataHandle != INVALID_HANDLE_VALUE){
+#endif
+            
+            
+            Ctx->ClusterSize = Ctx->FEHandle.BMEX->M.ClusterSize;
+            HANDLE BackupMetadataHandle = CreateFile(Ctx->FEHandle.BMEX->FilePath.c_str(), GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
+            if(BackupMetadataHandle != INVALID_HANDLE_VALUE){
+                
+                Ctx->MFTRecords = (nar_record*)malloc(Ctx->FEHandle.BMEX->M.Size.MFTMetadata * sizeof(nar_record));
+                if(Ctx->MFTRecords){
                     
-                    Ctx->MFTRecords = (nar_record*)malloc(Ctx->FEHandle.BMEX->M.Size.MFTMetadata * sizeof(nar_record));
-                    if(Ctx->MFTRecords){
-                        
-                        if(ReadMFTLCNFromMetadata(BackupMetadataHandle, Ctx->FEHandle.BMEX->M, Ctx->MFTRecords)){
-                            Ctx->MFTRecordsCount = Ctx->FEHandle.BMEX->M.Size.MFTMetadata / sizeof(nar_record);
-                            Status = TRUE;
-                        }
-                        else{
-                            printf("Couldnt read MFTLCN from metadata\n");
-                        }
-                        
+                    if(ReadMFTLCNFromMetadata(BackupMetadataHandle, Ctx->FEHandle.BMEX->M, Ctx->MFTRecords)){
+                        Ctx->MFTRecordsCount = Ctx->FEHandle.BMEX->M.Size.MFTMetadata / sizeof(nar_record);
+                        Status = TRUE;
                     }
                     else{
-                        printf("Failed to allocate memory for MFTLCN to read from backup metadata\n");
-                        // failed to allocate memory
+                        printf("Couldnt read MFTLCN from metadata\n");
                     }
                     
-                    CloseHandle(BackupMetadataHandle);
                 }
                 else{
-                    printf("Failed to open backup metadata for volume %c for version %i, filepath was %s\n", Ctx->FEHandle.BMEX->FilePath.c_str());
-                    DisplayError(GetLastError());
+                    printf("Failed to allocate memory for MFTLCN to read from backup metadata\n");
+                    // failed to allocate memory
                 }
-                // extract MFT regions from backup metadata
+                
+                CloseHandle(BackupMetadataHandle);
             }
+            else{
+                printf("Failed to open backup metadata for volume %c for version %i, filepath was %s\n", Ctx->FEHandle.BMEX->FilePath.c_str());
+                DisplayError(GetLastError());
+            }
+            // extract MFT regions from backup metadata
+            
             
             if (Status) {
                 
@@ -7186,7 +7287,7 @@ NarInitFileExplorerContext(nar_backup_file_explorer_context* Ctx, INT32 HandleOp
             NarPushDirectoryStack(Ctx, NAR_ROOT_MFT_ID);
             
             wchar_t vb[] = L"!:\\";
-            vb[0] = (wchar_t)Letter;
+            vb[0] = (wchar_t)Ctx->Letter;
             wcscat(Ctx->CurrentDirectory, vb);
             
 #if 0 // performance test
@@ -7396,84 +7497,37 @@ NarIsVolumeAvailable(char Letter){
 }
 
 
-/*
-    args:
-    FEV = output, simple
-    HandleOptions
-        NAR_READ_MOUNTED_VOLUME = Reads mounted local disk VolumeLetter and ignores rest of the parameters, and makes FEV->BMEX NULL to. this will lead FEV to become normal volume handle
-        NAR_READ_BACKUP_VOLUME 2 = Tries to find backup files in RootDir, if one not given, searches current running directory.
-                                    Then according to backup region information, handles read-seak operations in wrapped function
 
-*/
-inline BOOLEAN 
-NarInitFEVolumeHandle(nar_fe_volume_handle *FEV, INT32 HandleOptions, char VolumeLetter, INT32 Version, wchar_t *RootDir) {
+inline BOOLEAN
+NarInitFEVolumeHandleFromBackup(nar_fe_volume_handle *FEV, const wchar_t* MetadataFilePath){
+    // TODO(Batuhan): implement
     
-    if (!FEV) return FALSE;
+    if (FEV == 0 || MetadataFilePath == 0) return FALSE;
     
     BOOLEAN Result = FALSE;
     
-    if(HandleOptions != NAR_FE_HAND_OPT_READ_MOUNTED_VOLUME && HandleOptions != NAR_FE_HAND_OPT_READ_BACKUP_VOLUME){
-        printf("Invalid HandleOptions argument passed to NarInitFEVolumeHandle\n");
-        return FALSE;
-    }
     
-    if(HandleOptions == NAR_FE_HAND_OPT_READ_BACKUP_VOLUME){
-        
-        wchar_t Path[1024];
-        
-        memset(Path, 0, sizeof(Path));
-        
-        if(RootDir != NULL){
-            wcscat(Path, RootDir);
-            wcscat(Path, L"\\");
-        }
-        
-        std::wstring BinaryFileName = GenerateBinaryFileName((wchar_t)VolumeLetter, Version);
-        
-        wcscat(Path, BinaryFileName.c_str());
-        printf("Target file path to initialize file explorer volume handle : %S\n", Path);
-        
-        FEV->VolumeHandle = CreateFileW(Path, GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, 0, 0);
-        
-        if(FEV->VolumeHandle != INVALID_HANDLE_VALUE){
-            
-            std::wstring tmp;
-            if(RootDir != 0)
-                tmp = std::wstring(RootDir);
-            
-            FEV->BMEX = InitBackupMetadataEx(VolumeLetter, Version, tmp);
-            if(FEV->BMEX != NULL){
-                Result = TRUE;
-            }
-            else{
-                printf("Couldnt initialize backup metadata for volume %c for version %i from path %s\n", VolumeLetter, Version, RootDir);
-            }
-            
-        }  
-        else{
-            printf("Couldnt open file %s for FE Volume handle\n", Path);
-            DisplayError(GetLastError());
-        }
-        
-    }
-    if(HandleOptions == NAR_FE_HAND_OPT_READ_MOUNTED_VOLUME){
-        
-        FEV->BMEX = 0;
-        FEV->VolumeHandle = NarOpenVolume(VolumeLetter);
+    FEV->BMEX = InitBackupMetadataEx(MetadataFilePath);
+    if(FEV->BMEX != NULL){
+        std::wstring binarypath = GenerateBinaryFileName(FEV->BMEX->M.ID, FEV->BMEX->M.Version);
+        FEV->VolumeHandle = CreateFileW(binarypath.c_str(), GENERIC_READ , FILE_SHARE_READ, 0, OPEN_EXISTING, 0, 0);
         if(FEV->VolumeHandle != INVALID_HANDLE_VALUE){
             Result = TRUE;
         }
         else{
-            printf("Failed to open volume for file explorer for volume %c\n", VolumeLetter);
+            printf("Couldnt open file %s for FE Volume handle\n", binarypath.c_str());
+            DisplayError(GetLastError());
         }
     }
-    
+    else{
+        printf("Couldnt initialize backup metadata from path %S\n", MetadataFilePath);
+    }
     
     // failed
     if(!Result){
-        if(FEV){
+        if(FEV != 0){
             CloseHandle(FEV->VolumeHandle);
-            if(FEV->BMEX){
+            if(FEV->BMEX != 0){
                 FreeBackupMetadataEx(FEV->BMEX);
                 FEV->BMEX = 0;
                 FEV->VolumeHandle = INVALID_HANDLE_VALUE;
@@ -7481,8 +7535,59 @@ NarInitFEVolumeHandle(nar_fe_volume_handle *FEV, INT32 HandleOptions, char Volum
         }
     }
     
-    return Result;
 }
+
+inline BOOLEAN
+NarInitFEVolumeHandleFromVolume(nar_fe_volume_handle *FEV, char VolumeLetter){
+    
+    memset(FEV, 0, sizeof(*FEV));
+    BOOLEAN Result = FALSE;
+    
+    
+    FEV->BMEX = 0;
+    FEV->VolumeHandle = NarOpenVolume(VolumeLetter);
+    if(FEV->VolumeHandle != INVALID_HANDLE_VALUE){
+        Result = TRUE;
+    }
+    else{
+        printf("Failed to open volume for file explorer for volume %c\n", VolumeLetter);
+    }
+    
+    
+    
+    // failed
+    if(!Result){
+        if(FEV){
+            CloseHandle(FEV->VolumeHandle);
+        }
+    }
+    
+}
+
+
+/*
+    args:
+    FEV = output, simple
+    HandleOptions
+        NAR_READ_MOUNTED_VOLUME = Reads mounted local disk VolumeLetter and ignores rest of the parameters, and makes FEV->BMEX NULL to. this will lead FEV to become normal volume handle
+        NAR_READ_BACKUP_VOLUME 2 = Tries to find backup files in RootDir, if one not given, searches current running directory.
+                                    Then according to backup region information, handles read-seak operations in wrapped function
+*/
+#if 1
+inline BOOLEAN 
+NarInitFEVolumeHandle(nar_fe_volume_handle *FEV, INT32 HandleOptions, char Letter, const wchar_t *BackupMetadataPath) {
+    
+    if(HandleOptions == NAR_FE_HAND_OPT_READ_BACKUP_VOLUME){
+        return NarInitFEVolumeHandleFromBackup(FEV, BackupMetadataPath);
+    }
+    if(HandleOptions == NAR_FE_HAND_OPT_READ_MOUNTED_VOLUME){
+        return NarInitFEVolumeHandleFromVolume(FEV, Letter);
+    }
+    
+    printf("Unknown HandleOption passed as parameter %i\n", HandleOptions);
+    return FALSE;
+}
+#endif
 
 inline void 
 NarFreeFEVolumeHandle(nar_fe_volume_handle FEV) {
@@ -7810,7 +7915,17 @@ NarTestScratch(){
 int
 main(int argc, char* argv[]) {
     
-#if 1
+#if 1    
+	backup_metadata *m = new backup_metadata[120];
+	int bs = 120*sizeof(*m);
+	int out = 0;
+    
+	NarGetBackupsInDirectory(L"F:\\", m, bs, &out);
+	printf("herllo\n");
+	return 0;
+#endif
+    
+#if 0
     nar_backup_file_explorer_context ctx = {0};
     NarInitFileExplorerContext(&ctx, NAR_FE_HAND_OPT_READ_BACKUP_VOLUME, 'E', 0, NULL);
     

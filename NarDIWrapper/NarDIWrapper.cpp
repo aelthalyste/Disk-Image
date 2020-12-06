@@ -78,14 +78,14 @@ namespace NarDIWrapper {
         this->CW_Free();
     }
     
-    bool CSNarFileExplorer::CW_Init(wchar_t VolLetter, int Version, System::String^ RootDir){
+    bool CSNarFileExplorer::CW_Init(System::String^ MetadataPath){
         ctx = (nar_backup_file_explorer_context*)malloc(sizeof(nar_backup_file_explorer_context));
         
         wchar_t wptr[512];
         memset(wptr, 0, 1024);
-        SystemStringToWCharPtr(RootDir, wptr);
+        SystemStringToWCharPtr(MetadataPath, wptr);
         
-        return NarInitFileExplorerContext(ctx, NAR_FE_HAND_OPT_READ_MOUNTED_VOLUME, VolLetter, Version, wptr);
+        return NarInitFileExplorerContext(ctx, wptr);
         
     }
     
@@ -252,19 +252,18 @@ namespace NarDIWrapper {
     /*
   Version: -1 to restore full backup otherwise version number to restore(version number=0 first inc-diff backup)
   */
-    bool DiskTracker::CW_RestoreToVolume(wchar_t TargetLetter, wchar_t SrcLetter, INT Version, bool ShouldFormat, System::String^ RootDir) {
+    bool DiskTracker::CW_RestoreToVolume(wchar_t TargetLetter, BackupMetadata^ BM, bool ShouldFormat, System::String^ RootDir) {
         
         restore_inf R;
         
         R.TargetLetter = TargetLetter;
-        R.SrcLetter = SrcLetter;
-        R.Version = Version;
+        R.Version = BM->Version; 
+        R.BackupID = *BM->BackupID;
+        R.RootDir = msclr::interop::marshal_as<std::wstring>(RootDir);
         
-        if (Version < 0) {
+        if (BM->Version < 0) {
             R.Version = NAR_FULLBACKUP_VERSION;
         }
-        
-        R.RootDir = msclr::interop::marshal_as<std::wstring>(RootDir);
         
         return OfflineRestoreToVolume(&R, ShouldFormat);
         
@@ -274,14 +273,15 @@ namespace NarDIWrapper {
         return NarSaveBootState(C);
     }
     
-    bool DiskTracker::CW_RestoreToFreshDisk(wchar_t TargetLetter, wchar_t SrcLetter, INT Version, int DiskID, System::String^ RootDir) {
+    bool DiskTracker::CW_RestoreToFreshDisk(wchar_t TargetLetter, BackupMetadata^ BM, int DiskID, System::String^ RootDir) {
+        
         restore_inf R;
         R.TargetLetter = TargetLetter;
-        R.SrcLetter = SrcLetter;
-        R.Version = Version;
+        R.BackupID = *BM->BackupID;
         R.RootDir = msclr::interop::marshal_as<std::wstring>(RootDir);
+        R.Version = BM->Version;
         
-        if (Version < 0) {
+        if (BM->Version < 0) {
             R.Version = NAR_FULLBACKUP_VERSION;
         }
         
@@ -398,11 +398,12 @@ namespace NarDIWrapper {
                 BMet->VolumeUsedSize = BMList[i].VolumeUsedSize;
                 BMet->BytesNeedToCopy = BMList[i].Size.Regions;
                 BMet->MaxWriteOffset =  BMList[i].VersionMaxWriteOffset;
+                *BMet->BackupID = BMList[i].ID;
                 
                 BMet->BackupDate = gcnew CSNarFileTime(BMList[i].BackupDate.wYear, BMList[i].BackupDate.wMonth, BMList[i].BackupDate.wDay, BMList[i].BackupDate.wHour, BMList[i].BackupDate.wMinute, BMList[i].BackupDate.wSecond);
                 
                 pth = std::wstring(RootDir);
-                pth += GenerateBinaryFileName(BMet->Letter, BMet->Version);
+                pth += GenerateBinaryFileName(*BMet->BackupID, BMet->Version);
                 BMet->Fullpath = gcnew System::String(pth.c_str());
                 
                 ResultList->Add(BMet);

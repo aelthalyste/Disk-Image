@@ -1,4 +1,6 @@
-Changelog 30.11.2020 
+Changelog 
+
+30.11.2020 
 -Before this update, SetIncRecords and SetDiffRecords was sorting and merging regions in mutex locked region, that was causing msg thread to stall and unable to 
 fetch updates on time, causing it to skip significant amount of regions. That was pretty dumb, no idea how I did end up writing code like that, now in locked region, I
 just fetch data, release mutex, then process it.
@@ -8,3 +10,12 @@ on SetupStream, StreamInfo struct doesnt update accordingly! So you end up copyi
 SetupStream to return false
 -Looks like I was leaking almost all memory I allocted in the msg loop... Fixed
 -SaveMetadata was interpreting non-changed volumes as errors but looks like volume might not change between versions. Now it accepts it
+
+
+04.12.2020
+-I realized that I were adding MFT and INDX stuff more than to stream, per backup. SetupStream was in total mess, cleared it a bit and made more conceise.
+-Metadata's was not just simply storing MFT, but also INDX stuff, which they shouldnt, actually they shouldnt even store mft data itself too! but thats another fix for another day. So problem was file explorer couldn't able to
+move freely in backups, due to extra regions added by INDX stuff to the MFTRegions. Metadata should contain only and ONLY MFT regions, not INDX. File explorer does not expect to have anything other than MFT regions itself in backup
+metadata. And general backup system doesnt even need INDX regions too, so I jsut removed all INDX regions and datas from metadatas. But INDX and MFT regions are actually in the backup, in move naive way. Their region's temporarely
+calculated at SetupStream, then added to general region scheme.
+-Some API changes, i found that old data_array thing was dumb decision. But it's used so often i dont want to just rewrite everything. But each bug fix and new request is an opporunity to fix some old bad decisions.
