@@ -113,19 +113,7 @@ namespace DiskBackupWpfGUI
                 PropertyGroupDescription groupDescription = new PropertyGroupDescription("DiskName");
                 view.GroupDescriptions.Add(groupDescription);
 
-                foreach (var item in _diskList)
-                {
-                    DiskInfoPage page = new DiskInfoPage(item);
-                    Frame frame = new Frame();
-                    frame.Content = page;
-                    frame.VerticalAlignment = VerticalAlignment.Top;
-                    diskInfoStackPanel.Children.Add(frame);
-                    page = new DiskInfoPage(item);
-                    frame = new Frame();
-                    frame.Content = page;
-                    frame.VerticalAlignment = VerticalAlignment.Top;
-                    stackTasksDiskInfo.Children.Add(frame);
-                }
+                GetDiskPage();
             }
             catch (Exception e)
             {
@@ -160,7 +148,6 @@ namespace DiskBackupWpfGUI
 
             foreach (ActivityDownLog item in _logList)
             {
-                _logList.Add(item);
                 Console.WriteLine(item.Time + "-" + item.Detail);
             }
 
@@ -188,9 +175,33 @@ namespace DiskBackupWpfGUI
 
             #endregion
 
-
             RefreshTasks(_cancellationTokenSource.Token);
             this.Closing += (sender, e) => _cancellationTokenSource.Cancel();
+        }
+
+        private void GetDiskPage()
+        {
+            diskInfoStackPanel.Children.Clear();
+            stackTasksDiskInfo.Children.Clear();
+
+            foreach (var item in _diskList)
+            {
+                //denemek için burayı kaldır
+                /*foreach (var item2 in item.VolumeInfos)
+                {
+                    item2.Size += 100000000000;
+                }*/
+                DiskInfoPage page = new DiskInfoPage(item);
+                Frame frame = new Frame();
+                frame.Content = page;
+                frame.VerticalAlignment = VerticalAlignment.Top;
+                diskInfoStackPanel.Children.Add(frame);
+                page = new DiskInfoPage(item);
+                frame = new Frame();
+                frame.Content = page;
+                frame.VerticalAlignment = VerticalAlignment.Top;
+                stackTasksDiskInfo.Children.Add(frame);
+            }
         }
 
 
@@ -1602,12 +1613,29 @@ namespace DiskBackupWpfGUI
                     await Task.Delay(500);
                     var backupService = _scope.Resolve<IBackupService>();
 
+                    /*_diskList = backupService.GetDiskList();
+
+                    foreach (var diskItem in _diskList)
+                    {
+                        foreach (var volumeItem in diskItem.VolumeInfos)
+                        {
+                            volumeItem.StrFreeSize += "+ yeniledi";
+                            _volumeList.Add(volumeItem);
+                        }
+                    }
+
+                    CollectionView view = (CollectionView)CollectionViewSource.GetDefaultView(listViewDisk.ItemsSource);
+                    view.Refresh();*/
+
+                    // disk pageleri yeniliyor sorunsuz
+                    GetDiskPage();
+
                     //log down
                     List<ActivityDownLog> logList = new List<ActivityDownLog>();
                     /*logList.Add(new ActivityDownLog
                     {
-                        Detail = "Ebru",
-                        Time = "Eyüp"
+                        Detail = "Log yazısı",
+                        Time = DateTime.Now.ToString()
                     });*/
                     logList = backupService.GetDownLogList();
                     if (logList != null)
@@ -1654,6 +1682,7 @@ namespace DiskBackupWpfGUI
                     else
                         txtMakeABackup.Text = "";
 
+                    //backupları yeniliyor
                     if (backupService.GetRefreshIncDiffTaskFlag())
                     {
                         int taskSelectedIndex = -1;
@@ -1671,6 +1700,7 @@ namespace DiskBackupWpfGUI
                         backupService.RefreshIncDiffTaskFlag(false);
                     }
 
+                    //activity logu yeniliyor
                     if (backupService.GetRefreshIncDiffLogFlag())
                     {
                         int logSelectedIndex = -1;

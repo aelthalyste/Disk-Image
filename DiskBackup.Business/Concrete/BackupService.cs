@@ -516,10 +516,9 @@ namespace DiskBackup.Business.Concrete
 
                 logList.Add(new ActivityDownLog
                 {
-                    Detail = item.LogStr,
+                    Detail = item.LogStr.Trim(),
                     Time = logDate
                 });
-                _logger.Verbose("NarDIWrapper Log: {@tarih} {@datay}", logDate, item.LogStr);
             }
             return logList;
         }

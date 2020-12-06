@@ -1253,17 +1253,17 @@
                         <ListView Name="listViewLogDown" MinHeight="165" Margin="5,5,10,5" >
                             <ListView.View>
                                 <GridView>
-                                    <GridViewColumn Header="{DynamicResource time}" Width="290">
+                                    <GridViewColumn Header="{DynamicResource time}" Width="170">
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
                                                 <TextBlock Text="{Binding Time}" TextAlignment="Left"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
-                                    <GridViewColumn Header="{DynamicResource detail}" Width="750" >
+                                    <GridViewColumn Header="{DynamicResource detail}" Width="860" >
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
-                                                <TextBlock Text="{Binding Detail}" TextWrapping="Wrap" TextAlignment="Center"/>
+                                                <TextBlock Text="{Binding Detail}" TextWrapping="Wrap" TextAlignment="Left"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
@@ -1274,6 +1274,12 @@
                                     <Setter Property="HorizontalContentAlignment" Value="Stretch" />
                                 </Style>
                             </ListView.ItemContainerStyle>
+                            <ListView.Resources>
+                                <Style TargetType="{x:Type GridViewColumnHeader}">
+                                    <Setter Property="HorizontalContentAlignment" Value="Left" />
+                                    <Setter Property="Padding" Value="5,0"/>
+                                </Style>
+                            </ListView.Resources>
                         </ListView>
                     </DockPanel>
                 </Grid>
