@@ -42,6 +42,11 @@ namespace DiskBackup.Business.Concrete
             }
         }
 
+        public NetworkConnection(string networkName, string username, string password, string domain) : this(networkName, new NetworkCredential(username, password, domain))
+        {
+            
+        }
+
         ~NetworkConnection()
         {
             Dispose(false);
