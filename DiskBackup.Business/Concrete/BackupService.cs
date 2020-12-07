@@ -87,7 +87,8 @@ namespace DiskBackup.Business.Concrete
             // yedek volumu, versiondan gelecek, "E:\ebru-eyupDeneme"-- ters slaş ekle sonuna
             //_cSNarFileExplorer.CW_Init('C', 0, "");
             _logger.Verbose("İnitFileExplorer(): {@letter}, {@version}, {@path}", backupInfo.Letter, backupInfo.Version, backupInfo.BackupStorageInfo.Path);
-            _cSNarFileExplorer.CW_Init(backupInfo.Letter, backupInfo.Version, backupInfo.BackupStorageInfo.Path);
+            //_cSNarFileExplorer.CW_Init(backupInfo.Letter, backupInfo.Version, backupInfo.BackupStorageInfo.Path);
+            _cSNarFileExplorer.CW_Init(backupInfo.BackupStorageInfo.Path); // isim eklenmesi gerekmeli gibi
         }
 
         public List<DiskInformation> GetDiskList()
@@ -245,12 +246,16 @@ namespace DiskBackup.Business.Concrete
 
         public bool RestoreBackupVolume(RestoreTask restoreTask)
         {
-            return DiskTracker.CW_RestoreToVolume(restoreTask.TargetLetter[0], restoreTask.SourceLetter[0], restoreTask.BackupVersion, true, restoreTask.RootDir); //true gidecek
+            // hangi backup dosyası olduğu bulunup öyle verilmeli
+            return DiskTracker.CW_RestoreToVolume(restoreTask.TargetLetter[0], new BackupMetadata(), true, restoreTask.RootDir); //true gidecek
+            //return DiskTracker.CW_RestoreToVolume(restoreTask.TargetLetter[0], restoreTask.SourceLetter[0], restoreTask.BackupVersion, true, restoreTask.RootDir); //true gidecek
         }
 
         public bool RestoreBackupDisk(RestoreTask restoreTask)
         {
-            return DiskTracker.CW_RestoreToFreshDisk(restoreTask.TargetLetter[0], restoreTask.SourceLetter[0], restoreTask.BackupVersion, restoreTask.DiskId, restoreTask.RootDir);
+            // hangi backup dosyası olduğu bulunup öyle verilmeli
+            return DiskTracker.CW_RestoreToFreshDisk(restoreTask.TargetLetter[0], new BackupMetadata(), restoreTask.DiskId, restoreTask.RootDir);
+            //return DiskTracker.CW_RestoreToFreshDisk(restoreTask.TargetLetter[0], restoreTask.SourceLetter[0], restoreTask.BackupVersion, restoreTask.DiskId, restoreTask.RootDir);
         }
 
         public bool CleanChain(char letter)
