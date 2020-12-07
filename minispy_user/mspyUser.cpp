@@ -1806,16 +1806,9 @@ AddVolumeToTrack(PLOG_CONTEXT Context, wchar_t Letter, BackupType Type) {
     volume_backup_inf VolInf;
     BOOLEAN FOUND = FALSE;
     
-    if (Context->Volumes.Data) {
-        for (unsigned int i = 0; i < Context->Volumes.Count; i++) {
-            if (Context->Volumes.Data[i].Letter == Letter) {
-                FOUND = TRUE;
-                break;
-            }
-        }
-    }
+    INT32 ID = GetVolumeID(Context, Letter);
     
-    if (!FOUND) {
+    if (ID == NAR_INVALID_VOLUME_TRACK_ID) {
         
         NAR_COMMAND Command;
         Command.Type = NarCommandType_AddVolume;
@@ -2247,7 +2240,9 @@ TerminateBackup(volume_backup_inf* V, BOOLEAN Succeeded) {
     }
     
     if(V->Stream.Handle != INVALID_HANDLE_VALUE) CloseHandle(V->Stream.Handle);
-    if(V->Stream.Records.Data) free(V->Stream.Records.Data);
+    if(V->Stream.Records.Data){
+        FreeDataArray(&V->Stream.Records);
+    }
     NarFreeMFTRegionsByCommandLine(V->MFTLCN);
     
     V->Stream.Records.Count = 0;
@@ -7915,7 +7910,7 @@ NarTestScratch(){
 int
 main(int argc, char* argv[]) {
     
-#if 1    
+#if 0   
 	backup_metadata *m = new backup_metadata[120];
 	int bs = 120*sizeof(*m);
 	int out = 0;
@@ -7966,6 +7961,9 @@ main(int argc, char* argv[]) {
     
     if(SetupVSS() && ConnectDriver(&C)){
         
+        
+        
+        
         DotNetStreamInf inf = {0};
         char Volume = 0;
         int Type = 0;
@@ -8015,6 +8013,8 @@ main(int argc, char* argv[]) {
                     }
                     else{
                         TerminateBackup(v, NAR_SUCC);
+                        RemoveVolumeFromTrack(&C, 'E');
+                        AddVolumeToTrack(&C, 'E', (BackupType)0);
                     }
                     
                 }
