@@ -86,7 +86,7 @@ namespace DiskBackup.Business.Concrete
             //rootDir string biz buraya ne dönücez
             // yedek volumu, versiondan gelecek, "E:\ebru-eyupDeneme"-- ters slaş ekle sonuna
             //_cSNarFileExplorer.CW_Init('C', 0, "");
-            _logger.Verbose("İnitFileExplorer(): {@letter}, {@version}, {@path}", backupInfo.Letter, backupInfo.Version, backupInfo.BackupStorageInfo.Path);
+            _logger.Verbose("İnitFileExplorer(): {path}", backupInfo.BackupStorageInfo.Path + backupInfo.FileName);
             //_cSNarFileExplorer.CW_Init(backupInfo.Letter, backupInfo.Version, backupInfo.BackupStorageInfo.Path);
             _cSNarFileExplorer.CW_Init(backupInfo.BackupStorageInfo.Path + backupInfo.FileName); // isim eklenmesi gerekmeli gibi
         }

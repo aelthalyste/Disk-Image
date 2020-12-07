@@ -179,9 +179,14 @@ namespace DiskBackupWpfGUI
                     {
                         StorageName = txtBackupAreaName.Text,
                         Description = txtBackupAreaDescription.Text,
-                        Path = txtSettingsFolderPath.Text + @"\",
+                        //Path = txtSettingsFolderPath.Text + @"\",
                         IsCloud = cbBackupToCloud.IsChecked.Value,
                     };
+
+                    if (!txtSettingsFolderPath.Text.Last().Equals("\\"))
+                    {
+                        backupStorageInfo.Path = txtSettingsFolderPath.Text + @"\";
+                    }
 
                     backupStorageInfo.Type = BackupStorageType.Windows;
 
