@@ -24,10 +24,11 @@ namespace DiskBackup.Business.Concrete
 
         public bool AddBackupStorage(BackupStorageInfo backupStorageInfo)
         {
-            if(backupStorageInfo.Type == BackupStorageType.NAS && !ValideNasConnection(backupStorageInfo.Path, backupStorageInfo.Username, backupStorageInfo.Password, backupStorageInfo.Domain))
-            {
-                throw new Exception("NAS storage validation has failed. Check your network and credentials.");
-            }
+            //if(backupStorageInfo.Type == BackupStorageType.NAS && !ValideNasConnection(backupStorageInfo.Path, backupStorageInfo.Username, backupStorageInfo.Password, backupStorageInfo.Domain))
+            //{
+            //    throw new Exception("NAS storage validation has failed. Check your network and credentials.");
+            //}
+
             var result = _backupStorageDal.Add(backupStorageInfo);
             if (result != null)
             {
@@ -51,10 +52,11 @@ namespace DiskBackup.Business.Concrete
 
         public bool UpdateBackupStorage(BackupStorageInfo backupStorageInfo)
         {
-            if (backupStorageInfo.Type == BackupStorageType.NAS && !ValideNasConnection(backupStorageInfo.Path, backupStorageInfo.Username, backupStorageInfo.Password, backupStorageInfo.Domain))
+            /*if (backupStorageInfo.Type == BackupStorageType.NAS && !ValideNasConnection(backupStorageInfo.Path, backupStorageInfo.Username, backupStorageInfo.Password, backupStorageInfo.Domain))
             {
                 throw new Exception("NAS storage validation has failed. Check your network and credentials.");
-            }
+            }*/
+
             var result = _backupStorageDal.Update(backupStorageInfo);
             if (result != null)
             {
@@ -66,7 +68,7 @@ namespace DiskBackup.Business.Concrete
             }
         }
 
-        private bool ValideNasConnection(string nasAddr, string userName, string password, string domain)
+        public bool ValidateNasConnection(string nasAddr, string userName, string password, string domain)
         {
             try
             {

@@ -350,11 +350,11 @@ namespace DiskBackup.Business.Concrete
             statusInfo.SourceObje = taskInfo.StrObje;
 
             // NAS için
-            /*NetworkConnection nc = null;
+            NetworkConnection nc = null;
             if (taskInfo.BackupStorageInfo.Type == BackupStorageType.NAS)
             {
                 nc = new NetworkConnection(taskInfo.BackupStorageInfo.Path, taskInfo.BackupStorageInfo.Username, taskInfo.BackupStorageInfo.Password, taskInfo.BackupStorageInfo.Domain);
-            }*/
+            }
 
             foreach (var letter in letters) // C D E F
             {
@@ -428,10 +428,10 @@ namespace DiskBackup.Business.Concrete
             }
 
             // NAS için
-            /*if (nc != null)
+            if (nc != null)
             {
                 nc.Dispose();
-            }*/
+            }
 
             manualResetEvent.Dispose();
             _taskEventMap.Remove(taskInfo.Id);
