@@ -172,7 +172,7 @@ namespace DiskBackupWpfGUI
                     else
                         _taskInfo.NextDate = (DateTime)dtpSetTime.Value;
                     _taskInfo.RestoreTaskInfo.BackupVersion = _backupInfo.Version;
-                    _taskInfo.RestoreTaskInfo.RootDir = _backupInfo.BackupStorageInfo.Path;
+                    _taskInfo.RestoreTaskInfo.RootDir = _backupInfo.BackupStorageInfo.Path + _backupInfo.FileName;
                     _taskInfo.RestoreTaskInfo.SourceLetter = _backupInfo.Letter.ToString();
 
                     _taskInfo.BackupStorageInfo = _backupInfo.BackupStorageInfo;  // gelen backup'ın storageInfosu mevcut -- DEĞİŞECEK
@@ -216,8 +216,8 @@ namespace DiskBackupWpfGUI
                         try
                         {
                             _taskInfo.RestoreTaskInfo.TargetLetter = _backupService.AvailableVolumeLetter().ToString();
-                            Console.WriteLine("NarDIWrapper'dan alınan harf: ", _taskInfo.RestoreTaskInfo.TargetLetter);
-                            Console.WriteLine("NarDIWrapper'dan dönen char: ", _backupService.AvailableVolumeLetter());
+                            Console.WriteLine("NarDIWrapper'dan alınan harf: " + _taskInfo.RestoreTaskInfo.TargetLetter);
+                            Console.WriteLine("NarDIWrapper'dan dönen char: " + _backupService.AvailableVolumeLetter());
                         }
                         catch(Exception ex)
                         {
