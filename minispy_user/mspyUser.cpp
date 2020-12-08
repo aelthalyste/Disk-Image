@@ -1712,18 +1712,12 @@ GetMFTandINDXLCN(char VolumeLetter, HANDLE VolumeHandle) {
                         }
                         else {
                             printf("Couldnt read file records\n");
-#if _DEBUG
-                            DebugBreak();
-#endif
                             
                         }
                         
                         
                     }
                     else {
-#if _DEBUG
-                        DebugBreak();
-#endif
                         printf("FileCount %i\t FileBufferCount %i\n", FileCount, FileBufferCount);
                         // must iterate 
                         
@@ -7909,6 +7903,7 @@ NarTestScratch(){
 #define NAR_FAILED 0
 #define NAR_SUCC   1
 #define BREAK_CODE __debugbreak();
+#define BREAK_CODE
 #define loop for(;;)
 
 int

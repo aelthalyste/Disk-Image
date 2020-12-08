@@ -105,7 +105,6 @@ Return Value:
                             MSDNRetVAL = WaitForSingleObject(V->FileWriteMutex, 250);
                             if(MSDNRetVAL != WAIT_OBJECT_0){
                                 printf("Couldnt lock mutex to write records to file\n");
-                                free(Recs);
                                 continue;
                             }
                             
@@ -119,7 +118,6 @@ Return Value:
                             }
                             
                             ReleaseMutex(V->FileWriteMutex);
-                            free(Recs);
                             
                         }
                         else {
