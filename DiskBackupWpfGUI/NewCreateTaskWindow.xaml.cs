@@ -170,8 +170,6 @@ namespace DiskBackupWpfGUI
                 txtTimeWait.Text = _taskInfo.BackupTaskInfo.WaitNumberTryAgain.ToString();
             }
 
-            /**/
-
             txtTaskName.Focus();
 
             foreach (var item in _taskInfo.StrObje)
@@ -180,6 +178,14 @@ namespace DiskBackupWpfGUI
             }
 
             lblBackupStorages.Text = lblBackupStorages.Text.Substring(0, lblBackupStorages.Text.Length - 2);
+
+            _taskInfo.BackupTaskInfo.FailNumberTryAgain = 0;
+            _taskInfo.BackupTaskInfo.WaitNumberTryAgain = 0;
+            _taskInfo.BackupTaskInfo.AutoType = 0;
+            //_taskInfo.BackupTaskInfo.Days = null;
+            _taskInfo.BackupTaskInfo.WeeklyTime = WeeklyType.Unset;
+            _taskInfo.BackupTaskInfo.PeriodicTime = 0;
+            //_taskInfo.BackupTaskInfo.Months = null;
         }
 
         #region Title Bar
@@ -239,7 +245,7 @@ namespace DiskBackupWpfGUI
                         _taskInfo.NextDate = (DateTime)tpDaysTime.Value;
                         Console.WriteLine("Window: " + _taskInfo.NextDate.Hour + " saat" + _taskInfo.NextDate.Minute + " dakika");
 
-                        if (cbDaysTime.SelectedIndex == 2 && !_updateControl) // belirli günler seçilmeli
+                        if (cbDaysTime.SelectedIndex == 2) // belirli günler seçilmeli
                         {
                             _taskInfo.BackupTaskInfo.Days = ChooseDayAndMounthsWindow._days;
                         }
@@ -251,8 +257,7 @@ namespace DiskBackupWpfGUI
                     else if (rbWeeklyTime.IsChecked.Value)
                     {
                         _taskInfo.BackupTaskInfo.AutoType = AutoRunType.WeeklyTime;
-                        if (!_updateControl)
-                            _taskInfo.BackupTaskInfo.Months = ChooseDayAndMounthsWindow._months;
+                        _taskInfo.BackupTaskInfo.Months = ChooseDayAndMounthsWindow._months;
                         _taskInfo.NextDate = (DateTime)tpWeeklyTime.Value;
                         //haftalar
                         if (cbWeeklyTimeWeek.SelectedIndex == 0)
@@ -780,7 +785,7 @@ namespace DiskBackupWpfGUI
             else
             {
                 // doldurma yap
-                ChooseDayAndMounthsWindow chooseDays = new ChooseDayAndMounthsWindow(true, _taskInfo.BackupTaskInfo.Days);
+                ChooseDayAndMounthsWindow chooseDays = new ChooseDayAndMounthsWindow(true, _taskInfo.BackupTaskInfo.Days, _updateControl);
                 chooseDays.ShowDialog();
                 _taskInfo.BackupTaskInfo.Days = ChooseDayAndMounthsWindow._days;
             }
@@ -798,7 +803,7 @@ namespace DiskBackupWpfGUI
             }
             else
             {
-                ChooseDayAndMounthsWindow chooseDays = new ChooseDayAndMounthsWindow(false, _taskInfo.BackupTaskInfo.Months);
+                ChooseDayAndMounthsWindow chooseDays = new ChooseDayAndMounthsWindow(false, _taskInfo.BackupTaskInfo.Months, _updateControl);
                 chooseDays.ShowDialog();
                 _taskInfo.BackupTaskInfo.Months = ChooseDayAndMounthsWindow._months;
             }
@@ -892,7 +897,7 @@ namespace DiskBackupWpfGUI
                     }
                     else if (cbDaysTime.SelectedIndex == 2) // belirli günler seçilmeli
                     {
-                        if (ChooseDayAndMounthsWindow._days == null && !_updateControl)
+                        if (ChooseDayAndMounthsWindow._days == null)
                         {
                             errorFlag = true;
                         }
@@ -906,7 +911,7 @@ namespace DiskBackupWpfGUI
                     }
                     else // aylar seçilmeli
                     {
-                        if (ChooseDayAndMounthsWindow._months == null && !_updateControl)
+                        if (ChooseDayAndMounthsWindow._months == null)
                         {
                             errorFlag = true;
                         }

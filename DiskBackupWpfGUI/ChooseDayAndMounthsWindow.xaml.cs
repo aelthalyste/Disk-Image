@@ -19,8 +19,11 @@ namespace DiskBackupWpfGUI
     {
         public static string _days = null;
         public static string _months = null;
+        public string _daysOrMounths;
 
         private bool _chooseFlag;
+        private bool _updateControl;
+
 
         public ChooseDayAndMounthsWindow(bool chooseFlag)
         {
@@ -43,13 +46,15 @@ namespace DiskBackupWpfGUI
             }
         }
 
-        public ChooseDayAndMounthsWindow(bool chooseFlag, string daysOrMounths)
+        public ChooseDayAndMounthsWindow(bool chooseFlag, string daysOrMounths, bool updateControl)
         {
             InitializeComponent();
 
             _chooseFlag = chooseFlag;
             _days = null;
             _months = null;
+            _updateControl = updateControl;
+            _daysOrMounths = daysOrMounths;
 
             //chooseFlag = true gün, false ise ay
             if (chooseFlag)
@@ -113,6 +118,10 @@ namespace DiskBackupWpfGUI
         #region Title Bar
         private void btnChooseDayAndMounthsClose_Click(object sender, RoutedEventArgs e)
         {
+            if (_chooseFlag)
+                _days = _daysOrMounths;
+            else
+                _days = _daysOrMounths;
             Close();
         }
 

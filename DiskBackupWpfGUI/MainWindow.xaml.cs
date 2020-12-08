@@ -1610,7 +1610,7 @@ namespace DiskBackupWpfGUI
             {
                 try
                 {
-                    await Task.Delay(500);
+                    await Task.Delay(500, cancellationToken);
                     var backupService = _scope.Resolve<IBackupService>();
 
                     /*_diskList = backupService.GetDiskList();
@@ -1628,7 +1628,7 @@ namespace DiskBackupWpfGUI
                     view.Refresh();*/
 
                     // disk pageleri yeniliyor sorunsuz
-                    GetDiskPage();
+                    //GetDiskPage(); // çalışıyor ama timeout kontrolü
 
                     //log down
                     List<ActivityDownLog> logList = new List<ActivityDownLog>();
