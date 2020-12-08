@@ -20,6 +20,7 @@ namespace DiskBackup.Business.Abstract
         void DeleteBackupStorage(BackupStorageInfo backupStorageInfo);
         [OperationContract]
         bool UpdateBackupStorage(BackupStorageInfo backupStorageInfo);
-
+        [OperationContract]
+        bool ValidateNasConnection(string nasAddr, string userName, string password, string domain);
     }
 }

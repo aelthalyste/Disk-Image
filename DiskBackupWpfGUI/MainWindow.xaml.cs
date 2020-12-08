@@ -1757,5 +1757,34 @@ namespace DiskBackupWpfGUI
             return ($"{dblSByte:0.##} {Suffix[i]}");
         }
 
+        private void btnTaskEdit_Click(object sender, RoutedEventArgs e)
+        {
+            List<BackupStorageInfo> backupStorageInfoList = new List<BackupStorageInfo>();
+            foreach (BackupStorageInfo item in listViewBackupStorage.Items)
+            {
+                backupStorageInfoList.Add(item);
+            }
+
+            List<VolumeInfo> volumeInfoList = new List<VolumeInfo>();
+            foreach (VolumeInfo item in listViewDisk.SelectedItems)
+            {
+                volumeInfoList.Add(item);
+            }
+
+            TaskInfo taskInfo = (TaskInfo)listViewTasks.SelectedItem;
+            Console.WriteLine("Storage: " + taskInfo.BackupStorageInfoId + /*" - " + taskInfo.BackupStorageInfo.StorageName +*/ "\n" +
+                "BackupTaskInfı: " + taskInfo.BackupTaskId + /*" - " + taskInfo.BackupTaskInfo.TaskName +*/ "\n" +
+                "Status: " + taskInfo.StatusInfoId /* + " - " + taskInfo.StatusInfo.TaskName*/);
+
+            using (var scope = _scope.BeginLifetimeScope())
+            {
+                NewCreateTaskWindow newCreateTask = scope.Resolve<NewCreateTaskWindow>(new TypedParameter(backupStorageInfoList.GetType(), backupStorageInfoList),
+                    new TypedParameter(volumeInfoList.GetType(), volumeInfoList), new TypedParameter(taskInfo.GetType(), taskInfo));
+                newCreateTask.ShowDialog();
+            }
+            GetTasks();
+            var _backupStorageService = _scope.Resolve<IBackupStorageService>();
+            listViewBackupStorage.ItemsSource = GetBackupStorages(_volumeList, _backupStorageService.BackupStorageInfoList());
+        }
     }
 }
