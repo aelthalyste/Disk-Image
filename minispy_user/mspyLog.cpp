@@ -1,11 +1,6 @@
 #include <DriverSpecs.h>
 _Analysis_mode_(_Analysis_code_type_user_code_)
 
-
-
-#define TIME_BUFFER_LENGTH 20
-#define TIME_ERROR         "time error"
-
 #define POLL_INTERVAL   (15) // ms
 
 #ifndef min
@@ -110,7 +105,6 @@ Return Value:
                             MSDNRetVAL = WaitForSingleObject(V->FileWriteMutex, 250);
                             if(MSDNRetVAL != WAIT_OBJECT_0){
                                 printf("Couldnt lock mutex to write records to file\n");
-                                free(Recs);
                                 continue;
                             }
                             
@@ -118,14 +112,12 @@ Return Value:
                             SetFilePointer(V->LogHandle, 0, 0, FILE_END); // set it to the append mode
                             
                             for (unsigned int TempIndex = 0; TempIndex < RecCount; TempIndex++) {
-                                
                                 if (Recs[TempIndex].StartPos + Recs[TempIndex].Len < V->VolumeTotalClusterCount) {
                                     FileDump(&Recs[TempIndex], sizeof(nar_record), V->LogHandle);        
                                 }
                             }
                             
                             ReleaseMutex(V->FileWriteMutex);
-                            free(Recs);
                             
                         }
                         else {
@@ -153,8 +145,8 @@ Return Value:
                         
                         if (HRESULT_FROM_WIN32(ERROR_INVALID_HANDLE) == hResult) {
                             
-                            printf("The kernel component of minispy has unloaded. Exiting\n");
-                            ExitProcess(0);
+                            printf("The kernel component of minispy has unloaded\n");
+                            
                         }
                         else {
                             
