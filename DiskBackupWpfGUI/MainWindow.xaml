@@ -406,7 +406,7 @@
                     <DockPanel Grid.Column="1" VerticalAlignment="Top" Height="415" Background="#F2F2F2">
                         <StackPanel HorizontalAlignment="Center">
                             <Button Name="btnTaskEdit" ToolTip="{DynamicResource edit}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,25,0,5" 
-                                    Style="{StaticResource ImageButton}" Grid.Column="1" IsEnabled="False">
+                                    Style="{StaticResource ImageButton}" Grid.Column="1" IsEnabled="False" Click="btnTaskEdit_Click">
                                 <Button.Content>
                                     <Image Height="25" Width="25" HorizontalAlignment="Center" VerticalAlignment="Center">
                                         <Image.Style>

@@ -14,9 +14,7 @@ using System.Windows.Shapes;
 
 namespace DiskBackupWpfGUI
 {
-    /// <summary>
-    /// Interaction logic for ChooseDayAndMounths.xaml
-    /// </summary>
+    // Quarz'da cron pazardan başlıyor ve başlangıç değeri 1
     public partial class ChooseDayAndMounthsWindow : Window
     {
         public static string _days = null;
@@ -61,6 +59,8 @@ namespace DiskBackupWpfGUI
                 string[] words = daysOrMounths.Split(',');
                 foreach (var word in words)
                 {
+                    if (Convert.ToInt32(word) == 1)
+                        chbSunday.IsChecked = true;
                     if (Convert.ToInt32(word) == 2)
                         chbMonday.IsChecked = true;
                     if (Convert.ToInt32(word) == 3)
@@ -73,8 +73,6 @@ namespace DiskBackupWpfGUI
                         chbFriday.IsChecked = true;
                     if (Convert.ToInt32(word) == 7)
                         chbSaturday.IsChecked = true;
-                    if (Convert.ToInt32(word) == 1)
-                        chbSunday.IsChecked = true;
                 }
             }
             else
@@ -132,31 +130,31 @@ namespace DiskBackupWpfGUI
             //Kontrol ve kayıt işlemi yap
             if (_chooseFlag) // gün
             {
-                if (chbMonday.IsChecked.Value)
+                if (chbSunday.IsChecked.Value)
                 {
                     _days += 1 + ",";
                 }
-                if (chbTuesday.IsChecked.Value)
+                if (chbMonday.IsChecked.Value)
                 {
                     _days += 2 + ",";
                 }
-                if (chbWednesday.IsChecked.Value)
+                if (chbTuesday.IsChecked.Value)
                 {
                     _days += 3 + ",";
                 }
-                if (chbThursday.IsChecked.Value)
+                if (chbWednesday.IsChecked.Value)
                 {
                     _days += 4 + ",";
                 }
-                if (chbFriday.IsChecked.Value)
+                if (chbThursday.IsChecked.Value)
                 {
                     _days += 5 + ",";
                 }
-                if (chbSaturday.IsChecked.Value)
+                if (chbFriday.IsChecked.Value)
                 {
                     _days += 6 + ",";
                 }
-                if (chbSunday.IsChecked.Value)
+                if (chbSaturday.IsChecked.Value)
                 {
                     _days += 7 + ",";
                 }
