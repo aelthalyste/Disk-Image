@@ -325,6 +325,7 @@ namespace DiskBackupWpfGUI
                         taskSchedulerManager.DeleteJob(_taskInfo.ScheduleId);
                     }
                     _taskInfo.ScheduleId = "";
+                    _taskInfo.EnableDisable = 0;
 
                     // güncelleme işlemi yapacaksın
                     resultTaskInfo = UpdateToDatabase();
