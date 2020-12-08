@@ -2268,6 +2268,7 @@ Type is optional, after first backup
 BOOLEAN
 SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, DotNetStreamInf* SI) {
     
+    TIMED_BLOCK();
     
     BOOLEAN Return = FALSE;
     int ID = GetVolumeID(C, L);
@@ -2293,6 +2294,7 @@ SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, DotNetStreamInf* SI) {
     
     auto AppendINDXnMFTLCNToStream = [&]() {
         
+        TIMED_NAMED_BLOCK("AppendINDXMFTLCN");
         data_array<nar_record> MFTandINDXRegions = GetMFTandINDXLCN((char)L, VolInf->Stream.Handle);
         if (MFTandINDXRegions.Data != 0) {
             
@@ -2520,6 +2522,8 @@ SetFullRecords(volume_backup_inf* V) {
 
 BOOLEAN
 SetIncRecords(volume_backup_inf* VolInf) {
+    
+    TIMED_BLOCK();
     
     BOOLEAN Result = FALSE;
     if(VolInf == NULL){
@@ -2845,6 +2849,8 @@ SetDiffRecords(volume_backup_inf* V) {
 BOOLEAN
 SetupStreamHandle(volume_backup_inf* VolInf) {
     
+    TIMED_BLOCK();
+    
     if (VolInf == NULL) {
         printf("volume_backup_inf is null\n");
         return FALSE;
@@ -2880,21 +2886,6 @@ SetupStreamHandle(volume_backup_inf* VolInf) {
         }
         
         printf("Volume %c detached!\n", VolInf->Letter);
-        
-    }
-    
-    WCHAR Temp[] = L"!:\\";
-    Temp[0] = VolInf->Letter;
-    wchar_t* ShadowPathPtr = GetShadowPath(Temp, VolInf->VSSPTR);
-    wchar_t ShadowPath[512];
-    StrCpyW(ShadowPath, ShadowPathPtr);
-    
-    // TODO(Batuhan): undo it
-    // free(ShadowPathPtr);
-    
-    if (ShadowPath == NULL) {
-        printf("Can't get shadowpath from VSS\n");
-        return FALSE;
     }
     
     if (!VolInf->FullBackupExists) {
@@ -2932,7 +2923,20 @@ SetupStreamHandle(volume_backup_inf* VolInf) {
             return FALSE;  
         }
         
-        
+    }
+    
+    WCHAR Temp[] = L"!:\\";
+    Temp[0] = VolInf->Letter;
+    wchar_t* ShadowPathPtr = GetShadowPath(Temp, VolInf->VSSPTR);
+    wchar_t ShadowPath[512];
+    StrCpyW(ShadowPath, ShadowPathPtr);
+    
+    // TODO(Batuhan): undo it
+    // free(ShadowPathPtr);
+    
+    if (ShadowPath == NULL) {
+        printf("Can't get shadowpath from VSS\n");
+        return FALSE;
     }
     
     
@@ -8013,9 +8017,9 @@ main(int argc, char* argv[]) {
                     }
                     else{
                         TerminateBackup(v, NAR_SUCC);
-                        RemoveVolumeFromTrack(&C, 'E');
-                        AddVolumeToTrack(&C, 'E', (BackupType)0);
                     }
+                    
+                    PrintDebugRecords();
                     
                 }
                 else{
@@ -8059,7 +8063,7 @@ main(int argc, char* argv[]) {
     
 #endif
     
-    PrintDebugRecords();
+    
     //NarReleaseFileExplorerContext(&ctx);
     
     return 0;
