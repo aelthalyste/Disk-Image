@@ -1374,7 +1374,7 @@
                                             </Style>
                                         </Image.Style>
                                     </Image>
-                                    <TextBlock VerticalAlignment="Center" FontSize="17" Text="abdurrahim.vural@bilisimcenter.com"/>
+                                    <TextBlock VerticalAlignment="Center" FontSize="17" Text="demo@narbulut.com"/>
                                 </StackPanel>
                                 <StackPanel Orientation="Horizontal" Margin="10,10,0,10" >
                                     <Image Height="50" Margin="0,0,15,0" >

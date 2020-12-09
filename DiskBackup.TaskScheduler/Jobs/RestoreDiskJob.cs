@@ -79,7 +79,7 @@ namespace DiskBackup.TaskScheduler.Jobs
 
                     if (availableResult)
                     {
-                        result = _backupService.RestoreBackupVolume(task.RestoreTaskInfo);
+                        result = _backupService.RestoreBackupDisk(task.RestoreTaskInfo);
                         var cleanChainResult = _backupService.CleanChain(task.RestoreTaskInfo.TargetLetter[0]);
                         _logger.Information("{@task} {@value} zinciri temizlendi. Sonuç: {@cleanResult}", task, task.RestoreTaskInfo.TargetLetter[0], cleanChainResult);
                     }
