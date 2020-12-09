@@ -1625,7 +1625,7 @@ namespace DiskBackupWpfGUI
                 {
                     await Task.Delay(500, cancellationToken);
                     _logger.Verbose("RefreshTasks istekte bulunuldu");
-                    var backupService = _scope.Resolve<IBackupService>();
+                    //var backupService = _scope.Resolve<IBackupService>();
 
                     /*_diskList = backupService.GetDiskList();
 
@@ -1642,107 +1642,135 @@ namespace DiskBackupWpfGUI
                     view.Refresh();*/
 
                     // disk pageleri yeniliyor sorunsuz
-                    GetDiskPage(); 
+                    GetDiskPage();
 
                     //log down
-                    List<ActivityDownLog> logList = new List<ActivityDownLog>();
-                    /*logList.Add(new ActivityDownLog
-                    {
-                        Detail = "Log yazısı",
-                        Time = DateTime.Now.ToString()
-                    });*/
-                    logList = backupService.GetDownLogList();
-                    if (logList != null)
-                    {
-                        _logger.Verbose("RefreshTasks: ActivityLog down yenileniyor");
-
-                        foreach (ActivityDownLog item in logList)
-                        {
-                            _logList.Add(item);
-                        }
-
-                        listViewLogDown.Items.Refresh();
-                    }
+                    RefreshActivityLogDown();
 
                     // son yedekleme bilgisi
-                    if (listViewLog.Items.Count > 0)
-                    {
-                        _logger.Verbose("RefreshTasks: Son başarılı-başarısız tarih yazdırılıyor");
-
-                        ActivityLog lastLog = ((ActivityLog)listViewLog.Items[0]);
-                        txtRunningStateBlock.Text = lastLog.EndDate.ToString();
-                        if (lastLog.Status == StatusType.Success)
-                            txtRunningStateBlock.Foreground = Brushes.Green;
-                        else
-                            txtRunningStateBlock.Foreground = Brushes.Red;
-                    }
+                    RefreshMiddleTaskDate();
 
                     // Ortadaki statu
-                    TaskInfo runningTask = _taskInfoDal.GetList(x => x.Status == TaskStatusType.Working).FirstOrDefault();
-                    TaskInfo pausedTask = _taskInfoDal.GetList(x => x.Status == TaskStatusType.Paused).FirstOrDefault();
-                    if (runningTask != null)
-                    {
-                        _logger.Verbose("RefreshTasks: Çalışan task yazdırılıyor");
-
-                        // çalışanı yazdır
-                        runningTask.StatusInfo = _statusInfoDal.Get(x => x.Id == runningTask.StatusInfoId);
-                        txtMakeABackup.Text = Resources["makeABackup"].ToString() + ", "
-                            + FormatBytesNonStatic(runningTask.StatusInfo.DataProcessed)
-                            + ", %" + Math.Round((runningTask.StatusInfo.DataProcessed * 100.0) / (runningTask.StatusInfo.TotalDataProcessed), 2).ToString();
-                    }
-                    else if (pausedTask != null)
-                    {
-                        _logger.Verbose("RefreshTasks: Durdurulan task yazdırılıyor");
-
-                        // durdurulanı yazdır
-                        pausedTask.StatusInfo = _statusInfoDal.Get(x => x.Id == pausedTask.StatusInfoId);
-                        txtMakeABackup.Text = Resources["backupStopped"].ToString() + ", "
-                            + FormatBytesNonStatic(pausedTask.StatusInfo.DataProcessed)
-                            + ", %" + Math.Round((pausedTask.StatusInfo.DataProcessed * 100.0) / (pausedTask.StatusInfo.TotalDataProcessed), 2).ToString();
-                    }
-                    else
-                        txtMakeABackup.Text = "";
+                    RefreshMiddleTaskStatu();
 
                     //backupları yeniliyor
-                    if (backupService.GetRefreshIncDiffTaskFlag())
-                    {
-                        _logger.Verbose("RefreshTasks: Task listesi ve backuplar yenileniyor");
-
-                        int taskSelectedIndex = -1;
-                        if (listViewTasks.SelectedIndex != -1)
-                        {
-                            taskSelectedIndex = listViewTasks.SelectedIndex;
-                        }
-                        GetTasks();
-                        listViewTasks.SelectedIndex = taskSelectedIndex;
-
-                        _backupsItems = backupService.GetBackupFileList(_backupStorageDal.GetList());
-                        listViewBackups.ItemsSource = _backupsItems;
-                        listViewRestore.ItemsSource = _backupsItems;
-
-                        backupService.RefreshIncDiffTaskFlag(false);
-                    }
+                    RefreshBackupsandTasks();
 
                     //activity logu yeniliyor
-                    if (backupService.GetRefreshIncDiffLogFlag())
-                    {
-                        _logger.Verbose("RefreshTasks: Activitylog listesi yenileniyor");
-
-                        int logSelectedIndex = -1;
-                        if (listViewLog.SelectedIndex != -1)
-                        {
-                            logSelectedIndex = listViewLog.SelectedIndex;
-                        }
-                        ShowActivityLog();
-                        listViewLog.SelectedIndex = logSelectedIndex + 1;
-                        backupService.RefreshIncDiffLogFlag(false);
-                    }
+                    RefreshActivityLog();
                 }
                 catch (Exception e)
                 {
                     MessageBox.Show(e.Message);
                 }
 
+            }
+        }
+
+        private void RefreshActivityLogDown()
+        {
+            var backupService = _scope.Resolve<IBackupService>();
+            List<ActivityDownLog> logList = new List<ActivityDownLog>();
+            /*logList.Add(new ActivityDownLog
+            {
+                Detail = "Log yazısı",
+                Time = DateTime.Now.ToString()
+            });*/
+            logList = backupService.GetDownLogList();
+            if (logList != null)
+            {
+                _logger.Verbose("RefreshTasks: ActivityLog down yenileniyor");
+
+                foreach (ActivityDownLog item in logList)
+                {
+                    _logList.Add(item);
+                }
+
+                listViewLogDown.Items.Refresh();
+            }
+        }
+
+        private void RefreshMiddleTaskDate()
+        {
+            if (listViewLog.Items.Count > 0)
+            {
+                _logger.Verbose("RefreshTasks: Son başarılı-başarısız tarih yazdırılıyor");
+
+                ActivityLog lastLog = ((ActivityLog)listViewLog.Items[0]);
+                txtRunningStateBlock.Text = lastLog.EndDate.ToString();
+                if (lastLog.Status == StatusType.Success)
+                    txtRunningStateBlock.Foreground = Brushes.Green;
+                else
+                    txtRunningStateBlock.Foreground = Brushes.Red;
+            }
+        }
+
+        private void RefreshMiddleTaskStatu()
+        {
+            TaskInfo runningTask = _taskInfoDal.GetList(x => x.Status == TaskStatusType.Working).FirstOrDefault();
+            TaskInfo pausedTask = _taskInfoDal.GetList(x => x.Status == TaskStatusType.Paused).FirstOrDefault();
+            if (runningTask != null)
+            {
+                _logger.Verbose("RefreshTasks: Çalışan task yazdırılıyor");
+
+                // çalışanı yazdır
+                runningTask.StatusInfo = _statusInfoDal.Get(x => x.Id == runningTask.StatusInfoId);
+                txtMakeABackup.Text = Resources["makeABackup"].ToString() + ", "
+                    + FormatBytesNonStatic(runningTask.StatusInfo.DataProcessed)
+                    + ", %" + Math.Round((runningTask.StatusInfo.DataProcessed * 100.0) / (runningTask.StatusInfo.TotalDataProcessed), 2).ToString();
+            }
+            else if (pausedTask != null)
+            {
+                _logger.Verbose("RefreshTasks: Durdurulan task yazdırılıyor");
+
+                // durdurulanı yazdır
+                pausedTask.StatusInfo = _statusInfoDal.Get(x => x.Id == pausedTask.StatusInfoId);
+                txtMakeABackup.Text = Resources["backupStopped"].ToString() + ", "
+                    + FormatBytesNonStatic(pausedTask.StatusInfo.DataProcessed)
+                    + ", %" + Math.Round((pausedTask.StatusInfo.DataProcessed * 100.0) / (pausedTask.StatusInfo.TotalDataProcessed), 2).ToString();
+            }
+            else
+                txtMakeABackup.Text = "";
+        }
+
+        private void RefreshBackupsandTasks()
+        {
+            var backupService = _scope.Resolve<IBackupService>();
+            if (backupService.GetRefreshIncDiffTaskFlag())
+            {
+                _logger.Verbose("RefreshTasks: Task listesi ve backuplar yenileniyor");
+
+                int taskSelectedIndex = -1;
+                if (listViewTasks.SelectedIndex != -1)
+                {
+                    taskSelectedIndex = listViewTasks.SelectedIndex;
+                }
+                GetTasks();
+                listViewTasks.SelectedIndex = taskSelectedIndex;
+
+                _backupsItems = backupService.GetBackupFileList(_backupStorageDal.GetList());
+                listViewBackups.ItemsSource = _backupsItems;
+                listViewRestore.ItemsSource = _backupsItems;
+
+                backupService.RefreshIncDiffTaskFlag(false);
+            }
+        }
+
+        private void RefreshActivityLog()
+        {
+            var backupService = _scope.Resolve<IBackupService>();
+            if (backupService.GetRefreshIncDiffLogFlag())
+            {
+                _logger.Verbose("RefreshTasks: Activitylog listesi yenileniyor");
+
+                int logSelectedIndex = -1;
+                if (listViewLog.SelectedIndex != -1)
+                {
+                    logSelectedIndex = listViewLog.SelectedIndex;
+                }
+                ShowActivityLog();
+                listViewLog.SelectedIndex = logSelectedIndex + 1;
+                backupService.RefreshIncDiffLogFlag(false);
             }
         }
 
