@@ -69,8 +69,7 @@ namespace DiskBackupWpfGUI
         private readonly ILifetimeScope _scope;
         private readonly ILogger _logger;
 
-        public MainWindow(ILifetimeScope scope, ITaskInfoDal taskInfoDal, IBackupStorageDal backupStorageDal, IBackupTaskDal backupTaskDal, IStatusInfoDal statusInfoDal,
-            IActivityLogDal activityLogDal, ILogger logger, IRestoreTaskDal restoreTaskDal)
+        public MainWindow(ILifetimeScope scope, ITaskInfoDal taskInfoDal, IBackupStorageDal backupStorageDal, IBackupTaskDal backupTaskDal, IStatusInfoDal statusInfoDal, IActivityLogDal activityLogDal, ILogger logger, IRestoreTaskDal restoreTaskDal)
         {
             InitializeComponent();
 
@@ -88,14 +87,13 @@ namespace DiskBackupWpfGUI
             var backupStorageService = _scope.Resolve<IBackupStorageService>();
             if (!backupService.GetInitTracker())
                 MessageBox.Show("Driver intialize edilemedi!", "NARBULUT DİYOR Kİ;", MessageBoxButton.OK, MessageBoxImage.Error);
-            else
-                MessageBox.Show("Driver intialize edildi!", "NARBULUT DİYOR Kİ;", MessageBoxButton.OK, MessageBoxImage.Information);
 
 
             #region Disk Bilgileri
 
             try
             {
+                _logger.Verbose("GetDiskList metoduna istekte bulunuldu");
                 _diskList = backupService.GetDiskList();
 
                 foreach (var diskItem in _diskList)
@@ -125,26 +123,24 @@ namespace DiskBackupWpfGUI
 
             #region Yedekleme alanları
 
+            _logger.Verbose("GetDiskList metoduna istekte bulunuldu");
             listViewBackupStorage.ItemsSource = GetBackupStorages(_volumeList, backupStorageService.BackupStorageInfoList());
 
             #endregion
 
 
             #region Görevler
-
+            
             GetTasks();
 
             #endregion
 
 
             #region ActivityLog
-
             ShowActivityLog();
-            Console.WriteLine("Activity logu dolduruyorum şu anda");
+            _logger.Verbose("GetDownLogList metoduna istekte bulunuldu");
             _logList = backupService.GetDownLogList();
-            Console.WriteLine("Activity logu doldurdum şu anda");
             listViewLogDown.ItemsSource = _logList;
-            Console.WriteLine(_logList.Count() + "----- Count Bilgisis");
 
             foreach (ActivityDownLog item in _logList)
             {
@@ -158,6 +154,7 @@ namespace DiskBackupWpfGUI
 
             try
             {
+                _logger.Verbose("GetBackupFileList metoduna istekte bulunuldu");
                 _backupsItems = backupService.GetBackupFileList(_backupStorageDal.GetList());
 
                 foreach (var item in _backupsItems)
@@ -181,6 +178,7 @@ namespace DiskBackupWpfGUI
 
         private void GetDiskPage()
         {
+            _logger.Verbose("Disk Pro.Bar'ları güncelleniyor");
             diskInfoStackPanel.Children.Clear();
             stackTasksDiskInfo.Children.Clear();
 
@@ -680,6 +678,7 @@ namespace DiskBackupWpfGUI
 
         private void GetTasks()
         {
+            _logger.Verbose("GetTasks metoduna istekte bulunuldu");
             _taskInfoList = _taskInfoDal.GetList();
 
             foreach (var item in _taskInfoList)
@@ -1509,6 +1508,8 @@ namespace DiskBackupWpfGUI
 
         private void ShowActivityLog()
         {
+            _logger.Verbose("ShowActivityLog metoduna istekte bulunuldu");
+
             _activityLogList = _activityLogDal.GetList();
             foreach (var item in _activityLogList)
             {
