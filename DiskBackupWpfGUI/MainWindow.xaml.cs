@@ -132,7 +132,7 @@ namespace DiskBackupWpfGUI
 
 
             #region Görevler
-            
+
             GetTasks();
 
             #endregion
@@ -164,7 +164,7 @@ namespace DiskBackupWpfGUI
 
             #endregion
 
-            RefreshTasks(_cancellationTokenSource.Token);
+            RefreshTasks(_cancellationTokenSource.Token, backupService);
             this.Closing += (sender, e) => _cancellationTokenSource.Cancel();
         }
 
@@ -514,7 +514,7 @@ namespace DiskBackupWpfGUI
             {
                 backupService.ResumeTask(taskInfo);
             }
-            backupService.RefreshIncDiffTaskFlag(true);
+            RefreshBackupsandTasks(backupService);
         }
 
         private void btnTaskPause_Click(object sender, RoutedEventArgs e)
@@ -523,7 +523,7 @@ namespace DiskBackupWpfGUI
 
             var backupService = _scope.Resolve<IBackupService>();
             backupService.PauseTask((TaskInfo)listViewTasks.SelectedItem);
-            backupService.RefreshIncDiffTaskFlag(true);
+            RefreshBackupsandTasks(backupService);
         }
 
         private void btnTaskStop_Click(object sender, RoutedEventArgs e)
@@ -532,7 +532,7 @@ namespace DiskBackupWpfGUI
 
             var backupService = _scope.Resolve<IBackupService>();
             backupService.CancelTask((TaskInfo)listViewTasks.SelectedItem);
-            backupService.RefreshIncDiffTaskFlag(true);
+            RefreshBackupsandTasks(backupService);
         }
 
         private void btnEnableTask_Click(object sender, RoutedEventArgs e)
@@ -1617,7 +1617,7 @@ namespace DiskBackupWpfGUI
         #endregion
 
 
-        public async void RefreshTasks(CancellationToken cancellationToken)
+        public async void RefreshTasks(CancellationToken cancellationToken, IBackupService backupService)
         {
             while (!cancellationToken.IsCancellationRequested)
             {
@@ -1645,7 +1645,7 @@ namespace DiskBackupWpfGUI
                     GetDiskPage();
 
                     //log down
-                    RefreshActivityLogDown();
+                    RefreshActivityLogDown(backupService);
 
                     // son yedekleme bilgisi
                     RefreshMiddleTaskDate();
@@ -1654,10 +1654,17 @@ namespace DiskBackupWpfGUI
                     RefreshMiddleTaskStatu();
 
                     //backupları yeniliyor
-                    RefreshBackupsandTasks();
+                    if (backupService.GetRefreshIncDiffTaskFlag())
+                    {
+                        _logger.Verbose("RefreshTasks: Task listesi ve backuplar yenileniyor");
+
+                        RefreshBackupsandTasks(backupService);
+
+                        backupService.RefreshIncDiffTaskFlag(false);
+                    }
 
                     //activity logu yeniliyor
-                    RefreshActivityLog();
+                    RefreshActivityLog(backupService);
                 }
                 catch (Exception e)
                 {
@@ -1667,9 +1674,8 @@ namespace DiskBackupWpfGUI
             }
         }
 
-        private void RefreshActivityLogDown()
+        private void RefreshActivityLogDown(IBackupService backupService)
         {
-            var backupService = _scope.Resolve<IBackupService>();
             List<ActivityDownLog> logList = new List<ActivityDownLog>();
             /*logList.Add(new ActivityDownLog
             {
@@ -1733,34 +1739,28 @@ namespace DiskBackupWpfGUI
                 txtMakeABackup.Text = "";
         }
 
-        private void RefreshBackupsandTasks()
+        private void RefreshBackupsandTasks(IBackupService backupService)
         {
-            var backupService = _scope.Resolve<IBackupService>();
-            if (backupService.GetRefreshIncDiffTaskFlag())
+            _logger.Verbose("Task listesi ve backuplar yenileniyor");
+
+            int taskSelectedIndex = -1;
+            if (listViewTasks.SelectedIndex != -1)
             {
-                _logger.Verbose("RefreshTasks: Task listesi ve backuplar yenileniyor");
-
-                int taskSelectedIndex = -1;
-                if (listViewTasks.SelectedIndex != -1)
-                {
-                    taskSelectedIndex = listViewTasks.SelectedIndex;
-                }
-                GetTasks();
-                listViewTasks.SelectedIndex = taskSelectedIndex;
-
-                _backupsItems = backupService.GetBackupFileList(_backupStorageDal.GetList());
-                listViewBackups.ItemsSource = _backupsItems;
-                listViewRestore.ItemsSource = _backupsItems;
-
-                backupService.RefreshIncDiffTaskFlag(false);
+                taskSelectedIndex = listViewTasks.SelectedIndex;
             }
+            GetTasks();
+            listViewTasks.SelectedIndex = taskSelectedIndex;
+
+            _backupsItems = backupService.GetBackupFileList(_backupStorageDal.GetList());
+            listViewBackups.ItemsSource = _backupsItems;
+            listViewRestore.ItemsSource = _backupsItems;
         }
 
-        private void RefreshActivityLog()
+        private void RefreshActivityLog(IBackupService backupService)
         {
-            var backupService = _scope.Resolve<IBackupService>();
             if (backupService.GetRefreshIncDiffLogFlag())
             {
+                RefreshBackupsandTasks(backupService);
                 _logger.Verbose("RefreshTasks: Activitylog listesi yenileniyor");
 
                 int logSelectedIndex = -1;
