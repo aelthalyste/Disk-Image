@@ -144,11 +144,6 @@ namespace DiskBackupWpfGUI
             _logList = backupService.GetDownLogList();
             listViewLogDown.ItemsSource = _logList;
 
-            foreach (ActivityDownLog item in _logList)
-            {
-                Console.WriteLine(item.Time + "-" + item.Detail);
-            }
-
             #endregion
 
 
@@ -158,11 +153,6 @@ namespace DiskBackupWpfGUI
             {
                 _logger.Verbose("GetBackupFileList metoduna istekte bulunuldu");
                 _backupsItems = backupService.GetBackupFileList(_backupStorageDal.GetList());
-
-                foreach (var item in _backupsItems)
-                {
-                    Console.WriteLine(item.BackupStorageInfo.Path);
-                }
 
                 listViewBackups.ItemsSource = _backupsItems;
                 listViewRestore.ItemsSource = _backupsItems;
@@ -490,7 +480,6 @@ namespace DiskBackupWpfGUI
                         }
                         else
                         {
-                            Console.WriteLine("Boşum: " + taskInfo.ScheduleId);
                             taskSchedulerManager.BackupIncDiffNowJob(taskInfo).Wait();
                         }
                         StatusesWindow backupStatus = _scope.Resolve<StatusesWindow>(new NamedParameter("chooseFlag", 0), new NamedParameter("statusInfo", taskInfo.StatusInfo));
@@ -500,14 +489,12 @@ namespace DiskBackupWpfGUI
                     {
                         //full
                     }
-                    Console.WriteLine("Backup bitti");
                 }
                 else
                 {
                     //restore
                     Console.WriteLine("Restore başlatılıyor");
                     taskInfo.RestoreTaskInfo = _restoreTaskDal.Get(x => x.Id == taskInfo.RestoreTaskId);
-                    Console.WriteLine($"Patlamadım Id: {taskInfo.RestoreTaskInfo.Id} SchedulerId: {taskInfo.ScheduleId}");
                     if (taskInfo.RestoreTaskInfo.Type == RestoreType.RestoreVolume)
                     {
                         // restore disk ve volume ayrıntısı burada kontrol edilip çağırılacak
@@ -1655,7 +1642,7 @@ namespace DiskBackupWpfGUI
                     view.Refresh();*/
 
                     // disk pageleri yeniliyor sorunsuz
-                    //GetDiskPage(); // çalışıyor ama timeout kontrolü
+                    GetDiskPage(); 
 
                     //log down
                     List<ActivityDownLog> logList = new List<ActivityDownLog>();
@@ -1667,10 +1654,11 @@ namespace DiskBackupWpfGUI
                     logList = backupService.GetDownLogList();
                     if (logList != null)
                     {
+                        _logger.Verbose("RefreshTasks: ActivityLog down yenileniyor");
+
                         foreach (ActivityDownLog item in logList)
                         {
                             _logList.Add(item);
-                            Console.WriteLine(item.Time + "-" + item.Detail);
                         }
 
                         listViewLogDown.Items.Refresh();
@@ -1679,6 +1667,8 @@ namespace DiskBackupWpfGUI
                     // son yedekleme bilgisi
                     if (listViewLog.Items.Count > 0)
                     {
+                        _logger.Verbose("RefreshTasks: Son başarılı-başarısız tarih yazdırılıyor");
+
                         ActivityLog lastLog = ((ActivityLog)listViewLog.Items[0]);
                         txtRunningStateBlock.Text = lastLog.EndDate.ToString();
                         if (lastLog.Status == StatusType.Success)
@@ -1692,6 +1682,8 @@ namespace DiskBackupWpfGUI
                     TaskInfo pausedTask = _taskInfoDal.GetList(x => x.Status == TaskStatusType.Paused).FirstOrDefault();
                     if (runningTask != null)
                     {
+                        _logger.Verbose("RefreshTasks: Çalışan task yazdırılıyor");
+
                         // çalışanı yazdır
                         runningTask.StatusInfo = _statusInfoDal.Get(x => x.Id == runningTask.StatusInfoId);
                         txtMakeABackup.Text = Resources["makeABackup"].ToString() + ", "
@@ -1700,6 +1692,8 @@ namespace DiskBackupWpfGUI
                     }
                     else if (pausedTask != null)
                     {
+                        _logger.Verbose("RefreshTasks: Durdurulan task yazdırılıyor");
+
                         // durdurulanı yazdır
                         pausedTask.StatusInfo = _statusInfoDal.Get(x => x.Id == pausedTask.StatusInfoId);
                         txtMakeABackup.Text = Resources["backupStopped"].ToString() + ", "
@@ -1712,6 +1706,8 @@ namespace DiskBackupWpfGUI
                     //backupları yeniliyor
                     if (backupService.GetRefreshIncDiffTaskFlag())
                     {
+                        _logger.Verbose("RefreshTasks: Task listesi ve backuplar yenileniyor");
+
                         int taskSelectedIndex = -1;
                         if (listViewTasks.SelectedIndex != -1)
                         {
@@ -1730,6 +1726,8 @@ namespace DiskBackupWpfGUI
                     //activity logu yeniliyor
                     if (backupService.GetRefreshIncDiffLogFlag())
                     {
+                        _logger.Verbose("RefreshTasks: Activitylog listesi yenileniyor");
+
                         int logSelectedIndex = -1;
                         if (listViewLog.SelectedIndex != -1)
                         {
@@ -1799,9 +1797,9 @@ namespace DiskBackupWpfGUI
             }
 
             TaskInfo taskInfo = (TaskInfo)listViewTasks.SelectedItem;
-            Console.WriteLine("Storage: " + taskInfo.BackupStorageInfoId + /*" - " + taskInfo.BackupStorageInfo.StorageName +*/ "\n" +
-                "BackupTaskInfı: " + taskInfo.BackupTaskId + /*" - " + taskInfo.BackupTaskInfo.TaskName +*/ "\n" +
-                "Status: " + taskInfo.StatusInfoId /* + " - " + taskInfo.StatusInfo.TaskName*/);
+            //Console.WriteLine("Storage: " + taskInfo.BackupStorageInfoId + /*" - " + taskInfo.BackupStorageInfo.StorageName +*/ "\n" +
+            //    "BackupTaskInfı: " + taskInfo.BackupTaskId + /*" - " + taskInfo.BackupTaskInfo.TaskName +*/ "\n" +
+            //    "Status: " + taskInfo.StatusInfoId /* + " - " + taskInfo.StatusInfo.TaskName*/);
 
             using (var scope = _scope.BeginLifetimeScope())
             {
