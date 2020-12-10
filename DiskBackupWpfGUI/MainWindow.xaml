@@ -38,7 +38,7 @@
         </StackPanel>
         <Rectangle Grid.Row="1" Fill="#F2F2F2" Grid.ColumnSpan="2"/>
         <StackPanel Grid.Row="1" Orientation="Horizontal" Grid.ColumnSpan="2">
-            <TextBlock Text="{DynamicResource lastBackup}" FontSize="14" FontWeight="Bold" VerticalAlignment="Center" Margin="15,0,0,0"/>
+            <TextBlock Text="{DynamicResource lastProcess}" FontSize="14" FontWeight="Bold" VerticalAlignment="Center" Margin="15,0,0,0"/>
             <TextBlock Name="txtRunningStateBlock" FontWeight="Bold" FontSize="14" VerticalAlignment="Center" Margin="10,0,0,0" Foreground="Red" />
         </StackPanel>
         <StackPanel Orientation="Vertical" Grid.Row="1" Grid.ColumnSpan="2">
@@ -807,15 +807,15 @@
                                 <TextBlock Text=":" Margin="0,0,0,5" />
                             </StackPanel>
                             <StackPanel Grid.Column="2">
-                                <TextBlock Name="txtRVolumeSize" Text="--128 GB" Margin="0,0,0,5" />
-                                <TextBlock Name="txtRUsedSize" Text="--90 GB" Margin="0,0,0,5" />
-                                <TextBlock Name="txtRFolderSize" Text="--12 GB" Margin="0,0,0,5" />
-                                <TextBlock Name="txtRCreatedDate" Text="--28.10.2020" Margin="0,0,0,5" />
-                                <TextBlock Name="txtRBootablePartition" Text="--Evet" Margin="0,0,0,5" />
+                                <TextBlock Name="txtRVolumeSize" Margin="0,0,0,5" />
+                                <TextBlock Name="txtRUsedSize" Margin="0,0,0,5" />
+                                <TextBlock Name="txtRFolderSize" Margin="0,0,0,5" />
+                                <TextBlock Name="txtRCreatedDate" Margin="0,0,0,5" />
+                                <TextBlock Name="txtRBootablePartition" Margin="0,0,0,5" />
                                 <TextBlock Name="txtRzip" Text="--Evet (Standart)" Margin="0,0,0,5" />
                                 <TextBlock Name="txtROS" Margin="0,0,0,5" />
-                                <TextBlock Name="txtRPcName" Text="--BenimPc" Margin="0,0,0,5" />
-                                <TextBlock Name="txtRIpAddress" Text="--172.25.1.10" Margin="0,0,0,5" />
+                                <TextBlock Name="txtRPcName" Margin="0,0,0,5" />
+                                <TextBlock Name="txtRIpAddress" Margin="0,0,0,5" />
                                 <TextBlock Name="txtRDriveLetter" Margin="0,0,0,5" />
                                 <TextBlock Name="txtRBootPartition" Margin="0,0,0,5" />
                             </StackPanel>
@@ -952,7 +952,7 @@
                                 </Button.Content>
                             </Button>
                             <Button Name="btnFilesDelete" ToolTip="{DynamicResource delete}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5" 
-                                    Style="{StaticResource ImageButton}" Grid.Column="1" IsEnabled="False">
+                                    Style="{StaticResource ImageButton}" Grid.Column="1" IsEnabled="False" Click="btnFilesDelete_Click">
                                 <Button.Content>
                                     <Image HorizontalAlignment="Center" VerticalAlignment="Center">
                                         <Image.Style>

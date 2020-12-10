@@ -147,7 +147,7 @@
                     <Grid.RowDefinitions>
                         <RowDefinition/>
                     </Grid.RowDefinitions>
-                    <StackPanel Name="stackLocalDisc" Grid.Row="0" Margin="10,30,20,10" Visibility="Hidden">
+                    <StackPanel Name="stackLocalDisc" Grid.Row="0" Margin="10,30,20,10" Visibility="Visible">
                         <TextBlock Text="{DynamicResource localDisc}" />
                         <Grid Margin="20,20,0,0">
                             <Grid.ColumnDefinitions>
@@ -164,7 +164,7 @@
                             <TextBlock Text="{DynamicResource userName}" Grid.Row="2" Grid.Column="0" Visibility="Hidden"/>
                             <TextBlock Text="{DynamicResource password}" Grid.Row="3" Grid.Column="0" Visibility="Hidden"/>
 
-                            <TextBox Name="txtSettingsFolderPath" Grid.Row="1" Grid.Column="1" Width="250" Height="22" Margin="0,0,0,10" Padding="0,0,22,0" HorizontalAlignment="Left"/>
+                            <TextBox Name="txtSettingsFolderPath" Grid.Row="1" Grid.Column="1" Width="250" Height="22" Margin="0,0,0,10" Padding="0,0,22,0" IsReadOnly="True" HorizontalAlignment="Left"/>
                             <StackPanel Grid.Row="1" Grid.Column="1" HorizontalAlignment="Left" Margin="229,1,0,0">
                                 <Button Name="btnSettingsLocalFolder" Style="{StaticResource ArrowUpButton}" Click="btnSettingsLocalFolder_Click" Content="..." Width="20" Height="20" FontSize="15" />
                             </StackPanel>
@@ -173,7 +173,7 @@
                         </Grid>
                     </StackPanel>
 
-                    <StackPanel Name="stackNAS" Grid.Row="0" Margin="10,30,20,10" Visibility="Visible">
+                    <StackPanel Name="stackNAS" Grid.Row="0" Margin="10,30,20,10" Visibility="Hidden">
                         <TextBlock Text="{DynamicResource NASorSharing}" />
                         <Grid Margin="20,20,0,0">
                             <Grid.ColumnDefinitions>

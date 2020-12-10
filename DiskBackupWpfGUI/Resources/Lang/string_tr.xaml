@@ -7,6 +7,7 @@
     <system:String x:Key="createNewTask">Yeni Görev Oluştur</system:String>
     <system:String x:Key="disks">Diskler</system:String>
     <system:String x:Key="makeABackup">Yedek Alnıyor</system:String>
+    <system:String x:Key="backupRestore">Yedek Geri Yükleniyor</system:String>
     <system:String x:Key="backupStopped">Yedekleme Durduruldu</system:String>
     <system:String x:Key="volume">Volume</system:String>
     <system:String x:Key="letter">Harf</system:String>
@@ -62,6 +63,7 @@
     <system:String x:Key="help">Yardım</system:String>
     <system:String x:Key="viewBackups">Yedekleri Görüntüle</system:String>
     <system:String x:Key="lastBackup">Son Yedekleme :</system:String>
+    <system:String x:Key="lastProcess">Son İşlem :</system:String>
     <system:String x:Key="name">İsim</system:String>
     <system:String x:Key="nameWithDot">İsim :</system:String>
     <system:String x:Key="name2">Adı</system:String>
@@ -245,6 +247,9 @@
     <system:String x:Key="Error">Hata</system:String>
     <system:String x:Key="advancedOptions">Gelişmiş Ayarlar</system:String>
     <system:String x:Key="clone">Kopya</system:String>
+    <system:String x:Key="no">Hayır</system:String>
+    <system:String x:Key="yes">Evet</system:String>
+
 
 
 </ResourceDictionary>

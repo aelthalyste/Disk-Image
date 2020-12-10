@@ -101,7 +101,9 @@ namespace DiskBackupWpfGUI
                     foreach (var volumeItem in diskItem.VolumeInfos)
                     {
                         _volumeList.Add(volumeItem);
+                        Console.WriteLine(volumeItem.Letter);
                     }
+                    Console.WriteLine(diskItem.DiskId);
                 }
 
                 listViewDisk.ItemsSource = _volumeList;
@@ -166,32 +168,6 @@ namespace DiskBackupWpfGUI
 
             RefreshTasks(_cancellationTokenSource.Token, backupService);
             this.Closing += (sender, e) => _cancellationTokenSource.Cancel();
-        }
-
-        private void GetDiskPage()
-        {
-            _logger.Verbose("GetDiskPage istekte bulunuldu, Disk Pro.Bar'ları güncelleniyor");
-            diskInfoStackPanel.Children.Clear();
-            stackTasksDiskInfo.Children.Clear();
-
-            foreach (var item in _diskList)
-            {
-                //denemek için burayı kaldır
-                /*foreach (var item2 in item.VolumeInfos)
-                {
-                    item2.Size += 100000000000;
-                }*/
-                DiskInfoPage page = new DiskInfoPage(item);
-                Frame frame = new Frame();
-                frame.Content = page;
-                frame.VerticalAlignment = VerticalAlignment.Top;
-                diskInfoStackPanel.Children.Add(frame);
-                page = new DiskInfoPage(item);
-                frame = new Frame();
-                frame.Content = page;
-                frame.VerticalAlignment = VerticalAlignment.Top;
-                stackTasksDiskInfo.Children.Add(frame);
-            }
         }
 
 
@@ -479,7 +455,7 @@ namespace DiskBackupWpfGUI
                 TaskInfo taskInfo = (TaskInfo)listViewTasks.SelectedItem;
                 taskInfo.StatusInfo = _statusInfoDal.Get(x => x.Id == taskInfo.StatusInfoId);
                 taskInfo.BackupTaskInfo = _backupTaskDal.Get(x => x.Id == taskInfo.BackupTaskId);
-                StatusesWindow backupStatus = _scope.Resolve<StatusesWindow>(new NamedParameter("chooseFlag", 0), new NamedParameter("statusInfo", taskInfo.StatusInfo));
+                StatusesWindow backupStatus = _scope.Resolve<StatusesWindow>(new NamedParameter("chooseFlag", 0), new NamedParameter("taskInfo", taskInfo));
                 backupStatus.Show();
             }
         }
@@ -513,7 +489,7 @@ namespace DiskBackupWpfGUI
                         {
                             taskSchedulerManager.BackupIncDiffNowJob(taskInfo).Wait();
                         }
-                        StatusesWindow backupStatus = _scope.Resolve<StatusesWindow>(new NamedParameter("chooseFlag", 0), new NamedParameter("statusInfo", taskInfo.StatusInfo));
+                        StatusesWindow backupStatus = _scope.Resolve<StatusesWindow>(new NamedParameter("chooseFlag", 0), new NamedParameter("taskInfo", taskInfo));
                         backupStatus.Show();
                     }
                     else
@@ -1045,7 +1021,13 @@ namespace DiskBackupWpfGUI
                 txtRPcName.Text = backupInfo.PCName;
                 txtRIpAddress.Text = backupInfo.IpAddress;
                 txtRFolderSize.Text = backupInfo.StrFileSize;
+                if (Convert.ToBoolean(backupInfo.OSVolume))
+                    txtRBootablePartition.Text = Resources["yes"].ToString();
+                else
+                    txtRBootablePartition.Text = Resources["no"].ToString();
                 //Console.WriteLine("dosya adı : " + backupInfo.FileName);
+                //MessageBox.Show("backupInfo.Bootable: " + backupInfo.Bootable + "\n" + 
+                //    "backupInfo.OSVolume: " + backupInfo.OSVolume);
             }
             else
             {
@@ -1527,8 +1509,7 @@ namespace DiskBackupWpfGUI
             if (listViewLog.SelectedIndex != -1)
             {
                 ActivityLog activityLog = (ActivityLog)listViewLog.SelectedItem;
-                activityLog.StatusInfo = _statusInfoDal.Get(x => x.Id == activityLog.StatusInfoId);
-                StatusesWindow backupStatus = _scope.Resolve<StatusesWindow>(new NamedParameter("chooseFlag", 0), new NamedParameter("statusInfo", activityLog.StatusInfo));
+                StatusesWindow backupStatus = _scope.Resolve<StatusesWindow>(new NamedParameter("chooseFlag", 0), new NamedParameter("activityLog", activityLog));
                 backupStatus.Show();
             }
         }
@@ -1648,6 +1629,8 @@ namespace DiskBackupWpfGUI
         #endregion
 
 
+        #region Refresh function
+
         public async void RefreshTasks(CancellationToken cancellationToken, IBackupService backupService)
         {
             while (!cancellationToken.IsCancellationRequested)
@@ -1746,10 +1729,19 @@ namespace DiskBackupWpfGUI
                 _logger.Verbose("RefreshTasks: Çalışan task yazdırılıyor");
 
                 // çalışanı yazdır
-                runningTask.StatusInfo = _statusInfoDal.Get(x => x.Id == runningTask.StatusInfoId);
-                txtMakeABackup.Text = Resources["makeABackup"].ToString() + ", "
-                    + FormatBytesNonStatic(runningTask.StatusInfo.DataProcessed)
-                    + ", %" + Math.Round((runningTask.StatusInfo.DataProcessed * 100.0) / (runningTask.StatusInfo.TotalDataProcessed), 2).ToString();
+                if (runningTask.Type == TaskType.Backup)
+                {
+                    runningTask.StatusInfo = _statusInfoDal.Get(x => x.Id == runningTask.StatusInfoId);
+                    txtMakeABackup.Text = Resources["makeABackup"].ToString() + ", "
+                        + FormatBytesNonStatic(runningTask.StatusInfo.DataProcessed)
+                        + ", %" + Math.Round((runningTask.StatusInfo.DataProcessed * 100.0) / (runningTask.StatusInfo.TotalDataProcessed), 2).ToString();
+                }
+                else
+                {
+                    runningTask.StatusInfo = _statusInfoDal.Get(x => x.Id == runningTask.StatusInfoId);
+                    txtMakeABackup.Text = Resources["backupRestore"].ToString();
+                }
+
             }
             else if (pausedTask != null)
             {
@@ -1800,6 +1792,32 @@ namespace DiskBackupWpfGUI
             }
         }
 
+        private void GetDiskPage()
+        {
+            _logger.Verbose("GetDiskPage istekte bulunuldu, Disk Pro.Bar'ları güncelleniyor");
+            diskInfoStackPanel.Children.Clear();
+            stackTasksDiskInfo.Children.Clear();
+
+            foreach (var item in _diskList)
+            {
+                if (item.VolumeInfos.Count >= 1)
+                {
+                    DiskInfoPage page = new DiskInfoPage(item);
+                    Frame frame = new Frame();
+                    frame.Content = page;
+                    frame.VerticalAlignment = VerticalAlignment.Top;
+                    diskInfoStackPanel.Children.Add(frame);
+                    page = new DiskInfoPage(item);
+                    frame = new Frame();
+                    frame.Content = page;
+                    frame.VerticalAlignment = VerticalAlignment.Top;
+                    stackTasksDiskInfo.Children.Add(frame);
+                }
+            }
+        }
+
+        #endregion
+
         private static T FindParent<T>(DependencyObject dependencyObject) where T : DependencyObject
         {
             var parent = VisualTreeHelper.GetParent(dependencyObject);
@@ -1834,6 +1852,11 @@ namespace DiskBackupWpfGUI
             }
 
             return ($"{dblSByte:0.##} {Suffix[i]}");
+        }
+
+        private void btnFilesDelete_Click(object sender, RoutedEventArgs e)
+        {
+
         }
     }
 }
