@@ -1122,9 +1122,7 @@ Return Value:
             if (RtlPrefixUnicodeString(&UniStr, &nameInfo->Name, FALSE)) {
                 goto NAR_PREOP_FAILED_END;
             }
-            
-            
-            
+                       
             
 #else
             
@@ -1159,6 +1157,7 @@ Return Value:
                 goto NAR_PREOP_FAILED_END;
             }
             
+
             
 #endif
             
@@ -1188,6 +1187,25 @@ Return Value:
             if (RtlSuffixUnicodeString(&UniStr, &nameInfo->Name, FALSE)) {
                 goto NAR_PREOP_FAILED_END;
             }
+            RtlUnicodeStringPrintf(&UniStr, L"$Mft");
+            if (RtlSuffixUnicodeString(&UniStr, &nameInfo->Name, FALSE)) {
+                goto NAR_PREOP_FAILED_END;
+            }
+            RtlUnicodeStringPrintf(&UniStr, L"$LogFile");
+            if (RtlSuffixUnicodeString(&UniStr, &nameInfo->Name, FALSE)) {
+                goto NAR_PREOP_FAILED_END;
+            }
+            RtlUnicodeStringPrintf(&UniStr, L"$BitMap");
+            if (RtlSuffixUnicodeString(&UniStr, &nameInfo->Name, FALSE)) {
+                goto NAR_PREOP_FAILED_END;
+            }
+
+            /*
+            RtlUnicodeStringPrintf(&UniStr, L"$MFT");
+            if (RtlSuffixUnicodeString(&UniStr, &nameInfo->Name, FALSE)) {
+                goto NAR_PREOP_FAILED_END;
+            }
+             */
             
             //NAR
             
@@ -1483,8 +1501,7 @@ Return Value:
                 }
                 else {
                     DbgPrint("Couldnt get volume GUID, status : %i, sizeneeded : %i", status, SizeNeededForGUIDStr);
-                }
-                
+                }               
                 
                 
             }
