@@ -634,7 +634,7 @@
                                         <GridViewColumn Header="{DynamicResource createdDate}" Width="175" >
                                             <GridViewColumn.CellTemplate>
                                                 <DataTemplate>
-                                                    <TextBlock Text="{Binding CreatedDate}" TextAlignment="Center"/>
+                                                    <TextBlock Text="{Binding CreatedDate, StringFormat='dd.MM.yyyy HH:mm'}" TextAlignment="Center"/>
                                                 </DataTemplate>
                                             </GridViewColumn.CellTemplate>
                                         </GridViewColumn>

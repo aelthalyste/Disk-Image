@@ -388,6 +388,37 @@ namespace DiskBackupWpfGUI
 
         #region Tasks Tab
 
+        private void btnTaskEdit_Click(object sender, RoutedEventArgs e)
+        {
+            List<BackupStorageInfo> backupStorageInfoList = new List<BackupStorageInfo>();
+            foreach (BackupStorageInfo item in listViewBackupStorage.Items)
+            {
+                backupStorageInfoList.Add(item);
+            }
+
+            List<VolumeInfo> volumeInfoList = new List<VolumeInfo>();
+            foreach (VolumeInfo item in listViewDisk.SelectedItems)
+            {
+                volumeInfoList.Add(item);
+            }
+
+            TaskInfo taskInfo = (TaskInfo)listViewTasks.SelectedItem;
+            //Console.WriteLine("Storage: " + taskInfo.BackupStorageInfoId + /*" - " + taskInfo.BackupStorageInfo.StorageName +*/ "\n" +
+            //    "BackupTaskInfı: " + taskInfo.BackupTaskId + /*" - " + taskInfo.BackupTaskInfo.TaskName +*/ "\n" +
+            //    "Status: " + taskInfo.StatusInfoId /* + " - " + taskInfo.StatusInfo.TaskName*/);
+
+            using (var scope = _scope.BeginLifetimeScope())
+            {
+                NewCreateTaskWindow newCreateTask = scope.Resolve<NewCreateTaskWindow>(new TypedParameter(backupStorageInfoList.GetType(), backupStorageInfoList),
+                    new TypedParameter(volumeInfoList.GetType(), volumeInfoList), new TypedParameter(taskInfo.GetType(), taskInfo));
+                newCreateTask.ShowDialog();
+            }
+            GetTasks();
+            var _backupStorageService = _scope.Resolve<IBackupStorageService>();
+            _logger.Verbose("GetBackupStorages istekte bulunuldu");
+            listViewBackupStorage.ItemsSource = GetBackupStorages(_volumeList, _backupStorageService.BackupStorageInfoList());
+        }
+
         private void btnTaskDelete_Click(object sender, RoutedEventArgs e)
         {
             _logger.Verbose("btnTaskDelete_Click istekte bulunuldu");
@@ -1010,7 +1041,7 @@ namespace DiskBackupWpfGUI
                 txtRUsedSize.Text = backupInfo.StrUsedSize;
 
                 txtRDriveLetter.Text = backupInfo.Letter.ToString();
-                txtRCreatedDate.Text = backupInfo.CreatedDate;
+                txtRCreatedDate.Text = backupInfo.CreatedDate.ToString();
                 txtRPcName.Text = backupInfo.PCName;
                 txtRIpAddress.Text = backupInfo.IpAddress;
                 txtRFolderSize.Text = backupInfo.StrFileSize;
@@ -1677,11 +1708,6 @@ namespace DiskBackupWpfGUI
         private void RefreshActivityLogDown(IBackupService backupService)
         {
             List<ActivityDownLog> logList = new List<ActivityDownLog>();
-            /*logList.Add(new ActivityDownLog
-            {
-                Detail = "Log yazısı",
-                Time = DateTime.Now.ToString()
-            });*/
             logList = backupService.GetDownLogList();
             if (logList != null)
             {
@@ -1808,37 +1834,6 @@ namespace DiskBackupWpfGUI
             }
 
             return ($"{dblSByte:0.##} {Suffix[i]}");
-        }
-
-        private void btnTaskEdit_Click(object sender, RoutedEventArgs e)
-        {
-            List<BackupStorageInfo> backupStorageInfoList = new List<BackupStorageInfo>();
-            foreach (BackupStorageInfo item in listViewBackupStorage.Items)
-            {
-                backupStorageInfoList.Add(item);
-            }
-
-            List<VolumeInfo> volumeInfoList = new List<VolumeInfo>();
-            foreach (VolumeInfo item in listViewDisk.SelectedItems)
-            {
-                volumeInfoList.Add(item);
-            }
-
-            TaskInfo taskInfo = (TaskInfo)listViewTasks.SelectedItem;
-            //Console.WriteLine("Storage: " + taskInfo.BackupStorageInfoId + /*" - " + taskInfo.BackupStorageInfo.StorageName +*/ "\n" +
-            //    "BackupTaskInfı: " + taskInfo.BackupTaskId + /*" - " + taskInfo.BackupTaskInfo.TaskName +*/ "\n" +
-            //    "Status: " + taskInfo.StatusInfoId /* + " - " + taskInfo.StatusInfo.TaskName*/);
-
-            using (var scope = _scope.BeginLifetimeScope())
-            {
-                NewCreateTaskWindow newCreateTask = scope.Resolve<NewCreateTaskWindow>(new TypedParameter(backupStorageInfoList.GetType(), backupStorageInfoList),
-                    new TypedParameter(volumeInfoList.GetType(), volumeInfoList), new TypedParameter(taskInfo.GetType(), taskInfo));
-                newCreateTask.ShowDialog();
-            }
-            GetTasks();
-            var _backupStorageService = _scope.Resolve<IBackupStorageService>();
-            _logger.Verbose("GetBackupStorages istekte bulunuldu");
-            listViewBackupStorage.ItemsSource = GetBackupStorages(_volumeList, _backupStorageService.BackupStorageInfoList());
         }
     }
 }

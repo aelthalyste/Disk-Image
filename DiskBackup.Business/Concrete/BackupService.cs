@@ -189,11 +189,13 @@ namespace DiskBackup.Business.Concrete
                     backupInfo.FileName = returnItem.Fullpath.Split('\\').Last();
                     backupInfo.PCName = returnItem.ComputerName;
                     backupInfo.IpAddress = returnItem.IpAdress;
-                    backupInfo.CreatedDate = (returnItem.BackupDate.Day < 10) ? 0 + returnItem.BackupDate.Day.ToString() : returnItem.BackupDate.Day.ToString();
-                    backupInfo.CreatedDate = backupInfo.CreatedDate + "." + ((returnItem.BackupDate.Month < 10) ? 0 + returnItem.BackupDate.Month.ToString() : returnItem.BackupDate.Month.ToString());
-                    backupInfo.CreatedDate = backupInfo.CreatedDate + "." + returnItem.BackupDate.Year + " ";
-                    backupInfo.CreatedDate = backupInfo.CreatedDate + ((returnItem.BackupDate.Hour < 10) ? 0 + returnItem.BackupDate.Hour.ToString() : returnItem.BackupDate.Hour.ToString());
-                    backupInfo.CreatedDate = backupInfo.CreatedDate + ":" + ((returnItem.BackupDate.Minute < 10) ? 0 + returnItem.BackupDate.Minute.ToString() : returnItem.BackupDate.Minute.ToString());
+                    string createdDate = (returnItem.BackupDate.Day < 10) ? 0 + returnItem.BackupDate.Day.ToString() : returnItem.BackupDate.Day.ToString();
+                    createdDate = createdDate + "." + ((returnItem.BackupDate.Month < 10) ? 0 + returnItem.BackupDate.Month.ToString() : returnItem.BackupDate.Month.ToString());
+                    createdDate = createdDate + "." + returnItem.BackupDate.Year + " ";
+                    createdDate = createdDate + ((returnItem.BackupDate.Hour < 10) ? 0 + returnItem.BackupDate.Hour.ToString() : returnItem.BackupDate.Hour.ToString());
+                    createdDate = createdDate + ":" + ((returnItem.BackupDate.Minute < 10) ? 0 + returnItem.BackupDate.Minute.ToString() : returnItem.BackupDate.Minute.ToString());
+                    createdDate = createdDate + ":" + returnItem.BackupDate.Second.ToString();
+                    backupInfo.CreatedDate = Convert.ToDateTime(createdDate);
 
                     if (returnItem.Version == -1)
                         backupInfo.Type = BackupTypes.Full;
@@ -237,11 +239,13 @@ namespace DiskBackup.Business.Concrete
                     backupInfo.FileName = resultItem.Fullpath.Split('\\').Last();
                     backupInfo.PCName = resultItem.ComputerName;
                     backupInfo.IpAddress = resultItem.IpAdress;
-                    backupInfo.CreatedDate = (resultItem.BackupDate.Day < 10) ? 0 + resultItem.BackupDate.Day.ToString() : resultItem.BackupDate.Day.ToString();
-                    backupInfo.CreatedDate = backupInfo.CreatedDate + "." + ((resultItem.BackupDate.Month < 10) ? 0 + resultItem.BackupDate.Month.ToString() : resultItem.BackupDate.Month.ToString());
-                    backupInfo.CreatedDate = backupInfo.CreatedDate + "." + resultItem.BackupDate.Year + " ";
-                    backupInfo.CreatedDate = backupInfo.CreatedDate + ((resultItem.BackupDate.Hour < 10) ? 0 + resultItem.BackupDate.Hour.ToString() : resultItem.BackupDate.Hour.ToString());
-                    backupInfo.CreatedDate = backupInfo.CreatedDate + ":" + ((resultItem.BackupDate.Minute < 10) ? 0 + resultItem.BackupDate.Minute.ToString() : resultItem.BackupDate.Minute.ToString());
+                    string createdDate = (resultItem.BackupDate.Day < 10) ? 0 + resultItem.BackupDate.Day.ToString() : resultItem.BackupDate.Day.ToString();
+                    createdDate = createdDate + "." + ((resultItem.BackupDate.Month < 10) ? 0 + resultItem.BackupDate.Month.ToString() : resultItem.BackupDate.Month.ToString());
+                    createdDate = createdDate + "." + resultItem.BackupDate.Year + " ";
+                    createdDate = createdDate + ((resultItem.BackupDate.Hour < 10) ? 0 + resultItem.BackupDate.Hour.ToString() : resultItem.BackupDate.Hour.ToString());
+                    createdDate = createdDate + ":" + ((resultItem.BackupDate.Minute < 10) ? 0 + resultItem.BackupDate.Minute.ToString() : resultItem.BackupDate.Minute.ToString());
+                    createdDate = createdDate + ":" + resultItem.BackupDate.Second.ToString();
+                    backupInfo.CreatedDate = Convert.ToDateTime(createdDate);
 
                     if (resultItem.Version == -1)
                         backupInfo.Type = BackupTypes.Full;
