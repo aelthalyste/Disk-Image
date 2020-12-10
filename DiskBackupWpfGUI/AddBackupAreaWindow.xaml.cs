@@ -183,10 +183,11 @@ namespace DiskBackupWpfGUI
                         IsCloud = cbBackupToCloud.IsChecked.Value,
                     };
 
-                    if (!txtSettingsFolderPath.Text.Last().Equals("\\"))
-                    {
+                    if (txtSettingsFolderPath.Text.Length > 3) // equals kontrolüne bak
                         backupStorageInfo.Path = txtSettingsFolderPath.Text + @"\";
-                    }
+                    else
+                        backupStorageInfo.Path = txtSettingsFolderPath.Text;
+
 
                     backupStorageInfo.Type = BackupStorageType.Windows;
 

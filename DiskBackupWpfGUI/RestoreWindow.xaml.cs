@@ -55,7 +55,7 @@ namespace DiskBackupWpfGUI
 
             if (_volumeInfoList.Count == 1)
             {
-                if (volumeInfoList[0].Bootable) // bootable true ise işletim sistemi var
+                if (Convert.ToBoolean(backupInfo.OSVolume)) // bootable true ise işletim sistemi var
                     _taskInfo.RestoreTaskInfo.Type = RestoreType.RestoreDisk;
                 else
                     _taskInfo.RestoreTaskInfo.Type = RestoreType.RestoreVolume;
