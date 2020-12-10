@@ -325,6 +325,7 @@ namespace NarDIWrapper {
         List<VolumeInformation^>^ Result = gcnew  List<VolumeInformation^>;
         
         for (int i = 0; i < V.Count; i++) {
+            
             VolumeInformation^ BI = gcnew VolumeInformation;
             BI->TotalSize = V.Data[i].TotalSize;
             BI->FreeSize = V.Data[i].FreeSize;

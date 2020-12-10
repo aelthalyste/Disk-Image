@@ -3073,6 +3073,7 @@ OfflineRestoreCleanDisk(restore_inf* R, int DiskID) {
     BOOLEAN Result = FALSE;
     
     backup_metadata M = ReadMetadata(R->BackupID, R->Version, R->RootDir);
+    printf("Found backup for volume %c for version %i\n", M.Version, M.ID.Letter);
     
     if (M.IsOSVolume) {
         if (M.DiskType == NAR_DISKTYPE_GPT) {
@@ -3102,6 +3103,8 @@ OfflineRestoreCleanDisk(restore_inf* R, int DiskID) {
         }
     }
     else { //Is not OS volume
+        
+        printf("volume %c does not contain an OS\n", R->BackupID.Letter);
         if (M.DiskType == NAR_DISKTYPE_GPT) {
             
             if (NarCreateCleanGPTPartition(DiskID, (int)(M.VolumeTotalSize / (1024ull * 1024ull)), (char)R->TargetLetter)) {
@@ -3756,7 +3759,7 @@ NarCreateCleanGPTPartition(int DiskID, int VolumeSizeMB, char Letter) {
     
     char InputFN[] = "NARDPINPUT";
     if (NarDumpToFile(InputFN, Buffer, (unsigned int)strlen(Buffer))) {
-        sprintf(Buffer, "diskpart /s %s", InputFN);
+        sprintf(Buffer, "diskpart /s %s > .txt", InputFN);
         printf(Buffer);
         system(Buffer);
         return TRUE;
@@ -4310,6 +4313,7 @@ RestoreVersionWithoutLoop(restore_inf R, BOOLEAN RestoreMFT, HANDLE Volume) {
             printf("Error occured while restoring MFT\n");
         }
 #endif
+        
         
     }
     
@@ -7909,13 +7913,26 @@ NarTestScratch(){
 int
 main(int argc, char* argv[]) {
     
-#if 0   
+#if 1   
 	backup_metadata *m = new backup_metadata[120];
 	int bs = 120*sizeof(*m);
 	int out = 0;
     
 	NarGetBackupsInDirectory(L"F:\\", m, bs, &out);
-	printf("herllo\n");
+	for(int i =0; i< out; i++){
+        printf("volume %c version %i\n", m[i].Letter, m[i].Version);
+    }
+    int selected = 0;
+    scanf("%d", &selected);
+    restore_inf *R = new restore_inf;
+    R->TargetLetter = 'E';
+    R->BackupID = m[selected].ID;
+    R->Version = m[selected].Version;
+    R->RootDir = std::wstring();
+    
+    OfflineRestoreToVolume(R, TRUE);
+    
+    printf("herllo\n");
 	return 0;
 #endif
     
