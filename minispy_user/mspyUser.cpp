@@ -13,7 +13,7 @@
 
 #include <DriverSpecs.h>
 _Analysis_mode_(_Analysis_code_type_user_code_)
-ş
+
 #ifndef _CRT_SECURE_NO_WARNINGS
 #define _CRT_SECURE_NO_WARNINGS
 #endif
@@ -5936,19 +5936,15 @@ NarParseIndexAllocationAttribute(void *IndexAttribute, nar_record *OutRegions, I
 
 
 inline void
-NarGetFileListFromMFTID(nar_file_entries_list* EList, UINT64 TargetMFTID, nar_record* MFTRegions, UINT32 MFTRegionCount, UINT32 ClusterSize, nar_fe_volume_handle FEHandle) {
+NarGetFileListFromMFTID(nar_backup_file_explorer_context *Ctx, size_t TargetMFTID) {
     
-    
-#if 0    
-    nar_file_entries_list* EList, UINT64 TargetMFTID, nar_record* MFTRegions, UINT32 MFTRegionCount, UINT32 ClusterSize, 
-    nar_fe_volume_handle FEHandle;
+#if 1
+    nar_file_entries_list* EList = &Ctx->EList;
+    nar_record* MFTRegions = Ctx->MFTRecords;
+    UINT32 MFTRegionCount = Ctx->MFTRecordsCount;
+    UINT32 ClusterSize = Ctx->ClusterSize; 
+    nar_fe_volume_handle FEHandle = Ctx->FEHandle;
 #endif
-    
-    if (!EList) return;
-    
-    if (ClusterSize < 1024) {
-        *(int*)0 = 0;
-    }
     
     UINT64 FileCountInRegion = 0;
     UINT32 FileCountPerCluster = ClusterSize / 1024;
@@ -7021,7 +7017,7 @@ NarFileExplorerPushDirectory(nar_backup_file_explorer_context* Ctx, UINT32 Selec
     
     Ctx->EList.EntryCount = 0;
     
-    NarGetFileListFromMFTID(&Ctx->EList, NewMFTID, Ctx->MFTRecords, Ctx->MFTRecordsCount, 4096, Ctx->FEHandle);
+    NarGetFileListFromMFTID(Ctx, NewMFTID);
     
     
     
@@ -7034,7 +7030,7 @@ NarFileExplorerPopDirectory(nar_backup_file_explorer_context* Ctx) {
     
     Ctx->EList.EntryCount = 0;
     Ctx->EList.MFTIndex = Ctx->HistoryStack.S[Ctx->HistoryStack.I];
-    NarGetFileListFromMFTID(&Ctx->EList, Ctx->HistoryStack.S[Ctx->HistoryStack.I], Ctx->MFTRecords, Ctx->MFTRecordsCount, Ctx->ClusterSize, Ctx->FEHandle);
+    NarGetFileListFromMFTID(Ctx, Ctx->HistoryStack.S[Ctx->HistoryStack.I]);
     
     INT32 slen = (INT32)wcslen(Ctx->CurrentDirectory);
     INT32 CutPoint = slen - 1;
@@ -7221,7 +7217,7 @@ NarInitFileExplorerContext(nar_backup_file_explorer_context* Ctx, const wchar_t 
             Ctx->EList.MFTIndex = NAR_ROOT_MFT_ID;
             Ctx->HistoryStack.I = -1;
             
-            NarGetFileListFromMFTID(&Ctx->EList, NAR_ROOT_MFT_ID, Ctx->MFTRecords, Ctx->MFTRecordsCount, Ctx->ClusterSize, Ctx->FEHandle);
+            NarGetFileListFromMFTID(Ctx, NAR_ROOT_MFT_ID);
             
             NarPushDirectoryStack(Ctx, NAR_ROOT_MFT_ID);
             
@@ -7232,83 +7228,83 @@ NarInitFileExplorerContext(nar_backup_file_explorer_context* Ctx, const wchar_t 
 #if 0 // performance test
             
             for(int i =0; ;i++){
-                NarGetFileListFromMFTID(&Ctx->EList, i, Ctx->MFTRecords, Ctx->MFTRecordsCount, Ctx->ClusterSize, Ctx->FEHandle);
+                NarGetFileListFromMFTID(Ctx, i);
             }
             
             Ctx->EList.EntryCount = 0;
-            NarGetFileListFromMFTID(&Ctx->EList, 44571, Ctx->MFTRecords, Ctx->MFTRecordsCount, Ctx->ClusterSize, Ctx->FEHandle);
+            NarGetFileListFromMFTID(Ctx, 44571);
             
             Ctx->EList.EntryCount = 0;
-            NarGetFileListFromMFTID(&Ctx->EList, 120848, Ctx->MFTRecords, Ctx->MFTRecordsCount, Ctx->ClusterSize, Ctx->FEHandle);
-            
-            
-            Ctx->EList.EntryCount = 0;
-            NarGetFileListFromMFTID(&Ctx->EList, 98328, Ctx->MFTRecords, Ctx->MFTRecordsCount, Ctx->ClusterSize, Ctx->FEHandle);
-            
-            Ctx->EList.EntryCount = 0;
-            NarGetFileListFromMFTID(&Ctx->EList, 43085, Ctx->MFTRecords, Ctx->MFTRecordsCount, Ctx->ClusterSize, Ctx->FEHandle);
-            
-            Ctx->EList.EntryCount = 0;
-            NarGetFileListFromMFTID(&Ctx->EList, 204837, Ctx->MFTRecords, Ctx->MFTRecordsCount, Ctx->ClusterSize, Ctx->FEHandle);
-            
-            Ctx->EList.EntryCount = 0;
-            NarGetFileListFromMFTID(&Ctx->EList, 221313, Ctx->MFTRecords, Ctx->MFTRecordsCount, Ctx->ClusterSize, Ctx->FEHandle);
-            
-            Ctx->EList.EntryCount = 0;
-            NarGetFileListFromMFTID(&Ctx->EList, 228462, Ctx->MFTRecords, Ctx->MFTRecordsCount, Ctx->ClusterSize, Ctx->FEHandle);
-            
-            Ctx->EList.EntryCount = 0;
-            NarGetFileListFromMFTID(&Ctx->EList, 229948, Ctx->MFTRecords, Ctx->MFTRecordsCount, Ctx->ClusterSize, Ctx->FEHandle);
-            
-            Ctx->EList.EntryCount = 0;
-            NarGetFileListFromMFTID(&Ctx->EList, 44571, Ctx->MFTRecords, Ctx->MFTRecordsCount, Ctx->ClusterSize, Ctx->FEHandle);
-            
-            Ctx->EList.EntryCount = 0;
-            NarGetFileListFromMFTID(&Ctx->EList, 120848, Ctx->MFTRecords, Ctx->MFTRecordsCount, Ctx->ClusterSize, Ctx->FEHandle);
+            NarGetFileListFromMFTID(Ctx, 120848);
             
             
             Ctx->EList.EntryCount = 0;
-            NarGetFileListFromMFTID(&Ctx->EList, 98328, Ctx->MFTRecords, Ctx->MFTRecordsCount, Ctx->ClusterSize, Ctx->FEHandle);
+            NarGetFileListFromMFTID(Ctx, 98328);
             
             Ctx->EList.EntryCount = 0;
-            NarGetFileListFromMFTID(&Ctx->EList, 43085, Ctx->MFTRecords, Ctx->MFTRecordsCount, Ctx->ClusterSize, Ctx->FEHandle);
+            NarGetFileListFromMFTID(Ctx, 43085);
             
             Ctx->EList.EntryCount = 0;
-            NarGetFileListFromMFTID(&Ctx->EList, 204837, Ctx->MFTRecords, Ctx->MFTRecordsCount, Ctx->ClusterSize, Ctx->FEHandle);
+            NarGetFileListFromMFTID(Ctx, 204837);
             
             Ctx->EList.EntryCount = 0;
-            NarGetFileListFromMFTID(&Ctx->EList, 221313, Ctx->MFTRecords, Ctx->MFTRecordsCount, Ctx->ClusterSize, Ctx->FEHandle);
+            NarGetFileListFromMFTID(&Ctx, 221313);
             
             Ctx->EList.EntryCount = 0;
-            NarGetFileListFromMFTID(&Ctx->EList, 228462, Ctx->MFTRecords, Ctx->MFTRecordsCount, Ctx->ClusterSize, Ctx->FEHandle);
+            NarGetFileListFromMFTID(&Ctx, 228462);
             
             Ctx->EList.EntryCount = 0;
-            NarGetFileListFromMFTID(&Ctx->EList, 229948, Ctx->MFTRecords, Ctx->MFTRecordsCount, Ctx->ClusterSize, Ctx->FEHandle);
+            NarGetFileListFromMFTID(&Ctx, 229948);
             
             Ctx->EList.EntryCount = 0;
-            NarGetFileListFromMFTID(&Ctx->EList, 44571, Ctx->MFTRecords, Ctx->MFTRecordsCount, Ctx->ClusterSize, Ctx->FEHandle);
+            NarGetFileListFromMFTID(&Ctx, 44571);
             
             Ctx->EList.EntryCount = 0;
-            NarGetFileListFromMFTID(&Ctx->EList, 120848, Ctx->MFTRecords, Ctx->MFTRecordsCount, Ctx->ClusterSize, Ctx->FEHandle);
+            NarGetFileListFromMFTID(&Ctx, 120848);
             
             
             Ctx->EList.EntryCount = 0;
-            NarGetFileListFromMFTID(&Ctx->EList, 98328, Ctx->MFTRecords, Ctx->MFTRecordsCount, Ctx->ClusterSize, Ctx->FEHandle);
+            NarGetFileListFromMFTID(&Ctx, 98328);
             
             Ctx->EList.EntryCount = 0;
-            NarGetFileListFromMFTID(&Ctx->EList, 43085, Ctx->MFTRecords, Ctx->MFTRecordsCount, Ctx->ClusterSize, Ctx->FEHandle);
+            NarGetFileListFromMFTID(&Ctx, 43085);
             
             Ctx->EList.EntryCount = 0;
-            NarGetFileListFromMFTID(&Ctx->EList, 204837, Ctx->MFTRecords, Ctx->MFTRecordsCount, Ctx->ClusterSize, Ctx->FEHandle);
+            NarGetFileListFromMFTID(&Ctx, 204837);
             
             Ctx->EList.EntryCount = 0;
-            NarGetFileListFromMFTID(&Ctx->EList, 221313, Ctx->MFTRecords, Ctx->MFTRecordsCount, Ctx->ClusterSize, Ctx->FEHandle);
+            NarGetFileListFromMFTID(&Ctx, 221313);
             
             Ctx->EList.EntryCount = 0;
-            NarGetFileListFromMFTID(&Ctx->EList, 228462, Ctx->MFTRecords, Ctx->MFTRecordsCount, Ctx->ClusterSize, Ctx->FEHandle);
+            NarGetFileListFromMFTID(&Ctx, 228462);
             
             Ctx->EList.EntryCount = 0;
-            NarGetFileListFromMFTID(&Ctx->EList, 229948, Ctx->MFTRecords, Ctx->MFTRecordsCount, Ctx->ClusterSize, Ctx->FEHandle);
+            NarGetFileListFromMFTID(&Ctx, 229948);
+            
+            Ctx->EList.EntryCount = 0;
+            NarGetFileListFromMFTID(&Ctx, 44571);
+            
+            Ctx->EList.EntryCount = 0;
+            NarGetFileListFromMFTID(&Ctx, 120848);
+            
+            
+            Ctx->EList.EntryCount = 0;
+            NarGetFileListFromMFTID(&Ctx, 98328);
+            
+            Ctx->EList.EntryCount = 0;
+            NarGetFileListFromMFTID(&Ctx, 43085);
+            
+            Ctx->EList.EntryCount = 0;
+            NarGetFileListFromMFTID(&Ctx, 204837);
+            
+            Ctx->EList.EntryCount = 0;
+            NarGetFileListFromMFTID(&Ctx, 221313);
+            
+            Ctx->EList.EntryCount = 0;
+            NarGetFileListFromMFTID(&Ctx, 228462);
+            
+            Ctx->EList.EntryCount = 0;
+            NarGetFileListFromMFTID(&Ctx, 229948);
 #endif
             
         }

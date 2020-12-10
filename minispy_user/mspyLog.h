@@ -1167,7 +1167,7 @@ inline void
 NarReleaseFileExplorerContext(nar_backup_file_explorer_context* Ctx);
 
 inline void
-NarGetFileListFromMFTID(nar_file_entries_list* EList, UINT64 TargetMFTID, nar_record* MFTRegions, UINT32 MFTRegionCount, UINT32 ClusterSize, nar_fe_volume_handle FEHandle);
+NarGetFileListFromMFTID(nar_backup_file_explorer_context *Ctx, size_t TargetMFTID);
 
 inline void 
 NarFileExplorerPushDirectory(nar_backup_file_explorer_context* Ctx, UINT32 SelectedID);
