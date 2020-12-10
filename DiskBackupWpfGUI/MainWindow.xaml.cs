@@ -455,7 +455,7 @@ namespace DiskBackupWpfGUI
                 TaskInfo taskInfo = (TaskInfo)listViewTasks.SelectedItem;
                 taskInfo.StatusInfo = _statusInfoDal.Get(x => x.Id == taskInfo.StatusInfoId);
                 taskInfo.BackupTaskInfo = _backupTaskDal.Get(x => x.Id == taskInfo.BackupTaskId);
-                StatusesWindow backupStatus = _scope.Resolve<StatusesWindow>(new NamedParameter("chooseFlag", 0), new NamedParameter("statusInfo", taskInfo.StatusInfo));
+                StatusesWindow backupStatus = _scope.Resolve<StatusesWindow>(new NamedParameter("chooseFlag", 0), new NamedParameter("taskInfo", taskInfo));
                 backupStatus.Show();
             }
         }
@@ -489,7 +489,7 @@ namespace DiskBackupWpfGUI
                         {
                             taskSchedulerManager.BackupIncDiffNowJob(taskInfo).Wait();
                         }
-                        StatusesWindow backupStatus = _scope.Resolve<StatusesWindow>(new NamedParameter("chooseFlag", 0), new NamedParameter("statusInfo", taskInfo.StatusInfo));
+                        StatusesWindow backupStatus = _scope.Resolve<StatusesWindow>(new NamedParameter("chooseFlag", 0), new NamedParameter("taskInfo", taskInfo));
                         backupStatus.Show();
                     }
                     else
@@ -1509,8 +1509,7 @@ namespace DiskBackupWpfGUI
             if (listViewLog.SelectedIndex != -1)
             {
                 ActivityLog activityLog = (ActivityLog)listViewLog.SelectedItem;
-                activityLog.StatusInfo = _statusInfoDal.Get(x => x.Id == activityLog.StatusInfoId);
-                StatusesWindow backupStatus = _scope.Resolve<StatusesWindow>(new NamedParameter("chooseFlag", 0), new NamedParameter("statusInfo", activityLog.StatusInfo));
+                StatusesWindow backupStatus = _scope.Resolve<StatusesWindow>(new NamedParameter("chooseFlag", 0), new NamedParameter("activityLog", activityLog));
                 backupStatus.Show();
             }
         }

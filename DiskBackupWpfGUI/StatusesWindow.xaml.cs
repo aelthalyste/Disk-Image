@@ -25,16 +25,78 @@ namespace DiskBackupWpfGUI
         private CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
 
         private StatusInfo _statusInfo = new StatusInfo();
+        private ActivityLog _activityLog = new ActivityLog();
 
         private readonly IStatusInfoDal _statusInfoDal;
+        private readonly ITaskInfoDal _taskInfoDal;
 
-        public StatusesWindow(int chooseFlag, StatusInfo statusInfo, IStatusInfoDal statusInfoDal)
+        private int _taskId = 0;
+
+        public StatusesWindow(int chooseFlag, TaskInfo taskInfo, IStatusInfoDal statusInfoDal, ITaskInfoDal taskInfoDal)
         {
             InitializeComponent();
             _statusInfoDal = statusInfoDal;
-            _statusInfo = statusInfo;
+            _taskInfoDal = taskInfoDal;
+            _taskId = taskInfo.Id;
+            _statusInfo = taskInfo.StatusInfo;
             RefreshStatus(_cancellationTokenSource.Token);
             this.Closing += (sender, e) => _cancellationTokenSource.Cancel();
+            txtLastStatus.Text = taskInfo.StrStatus;
+
+            // 0 yedekleme durumu, 1 geri yükleme
+            if (chooseFlag == 0)
+            {
+                stackLocalTaskName.Visibility = Visibility.Visible;
+                txtLocalTaskName.Visibility = Visibility.Visible;
+                stackCloudTaskName.Visibility = Visibility.Visible;
+                txtCloudTaskName.Visibility = Visibility.Visible;
+                txtTitleBar.Text = Resources["backupStatus"].ToString();
+
+                txtLocalTaskName.Text = _statusInfo.TaskName;
+                txtLocalFileName.Text = _statusInfo.FileName;
+                txtLocalTime.Text = FormatMilliseconds(TimeSpan.FromMilliseconds(_statusInfo.TimeElapsed)); // milisaniye
+                txtLocalAverageDataRate.Text = _statusInfo.AverageDataRate.ToString() + " MB/s";
+                txtLocalDataProcessed.Text = FormatBytes(_statusInfo.DataProcessed).ToString(); //dönüş değerine bakılmalı byte, kb, mb, gb...
+                txtLocalInstantDataRate.Text = _statusInfo.InstantDataRate.ToString(); //dönüş değerine bakılmalı byte, kb, mb, gb...
+                if (_statusInfo.SourceObje.Contains("-"))
+                {
+                    var source = _statusInfo.SourceObje.Split('-');
+                    txtLocalSourceObje.Text = source[0];
+                    txtSourceSingle.Text = source[1];
+                }
+                else
+                {
+                    txtLocalSourceObje.Text = _statusInfo.SourceObje;
+                    txtSourceSingle.Text = _statusInfo.SourceObje;
+                }
+
+                pbTotalDataProcessed.Maximum = _statusInfo.TotalDataProcessed;
+                pbTotalDataProcessed.Value = _statusInfo.DataProcessed;
+            }
+            else
+            {
+                stackLocalTaskName.Visibility = Visibility.Visible;
+                txtLocalTaskName.Visibility = Visibility.Visible;
+                stackCloudTaskName.Visibility = Visibility.Visible;
+                txtCloudTaskName.Visibility = Visibility.Visible;
+                //stackLocalZip.Visibility = Visibility.Collapsed;
+                //txtLocalZip.Visibility = Visibility.Collapsed;
+                stackCloudZip.Visibility = Visibility.Collapsed;
+                txtCloudZip.Visibility = Visibility.Collapsed;
+                txtTitleBar.Text = Resources["restoreStatus"].ToString();
+            }
+        }
+
+        public StatusesWindow(int chooseFlag, ActivityLog activityLog, IStatusInfoDal statusInfoDal)
+        {
+            InitializeComponent();
+            _statusInfoDal = statusInfoDal;
+            StatusInfo statusInfo = _statusInfoDal.Get(x => x.Id == activityLog.StatusInfoId);
+            _statusInfo = statusInfo;
+            _activityLog = activityLog;
+            RefreshStatus(_cancellationTokenSource.Token);
+            this.Closing += (sender, e) => _cancellationTokenSource.Cancel();
+            txtLastStatus.Text = activityLog.StrStatus;
 
             // 0 yedekleme durumu, 1 geri yükleme
             if (chooseFlag == 0)
@@ -77,7 +139,7 @@ namespace DiskBackupWpfGUI
                 stackCloudZip.Visibility = Visibility.Collapsed;
                 txtCloudZip.Visibility = Visibility.Collapsed;
                 txtTitleBar.Text = Resources["restoreStatus"].ToString();
-            }
+            }            
         }
 
         public async void RefreshStatus(CancellationToken cancellationToken)
@@ -104,6 +166,19 @@ namespace DiskBackupWpfGUI
                 {
                     txtLocalSourceObje.Text = _statusInfo.SourceObje;
                     txtSourceSingle.Text = _statusInfo.SourceObje;
+                }
+
+                if (_taskId != 0)
+                {
+                    var resultTask = _taskInfoDal.Get(x => x.Id == _taskId);
+                    txtLastStatus.Text = Resources[resultTask.Status.ToString()].ToString();
+                }
+                else 
+                { 
+                    if (_activityLog.Status == StatusType.Fail && txtLocalPercentage.Text.Equals("100%"))
+                    {
+                        txtLocalPercentage.Text = "99.98%";
+                    }
                 }
             }
         }
