@@ -1002,9 +1002,10 @@ CompareNarRecords(const void* v1, const void* v2) {
     
 }
 
-wchar_t*
-GetShadowPath(std::wstring Drive, CComPtr<IVssBackupComponents>& ptr) {
-    wchar_t* Result = NULL;
+BOOLEAN
+GetShadowPath(std::wstring Drive, CComPtr<IVssBackupComponents>& ptr, wchar_t* OutShadowPath, size_t MaxOutCh) {
+    
+    BOOLEAN Result = FALSE;
     BOOLEAN Error = TRUE;
     VSS_ID sid = { 0 };
     HRESULT res;
@@ -1055,8 +1056,14 @@ GetShadowPath(std::wstring Drive, CComPtr<IVssBackupComponents>& ptr) {
     if (!Error) {
         VSS_SNAPSHOT_PROP SnapshotProp;
         ptr->GetSnapshotProperties(sid, &SnapshotProp);
-        Result = (wchar_t*)malloc(sizeof(wchar_t) * lstrlenW(SnapshotProp.m_pwszSnapshotDeviceObject) + 1);
-        Result = lstrcpyW(Result, SnapshotProp.m_pwszSnapshotDeviceObject);
+        
+        size_t l = wcslen(SnapshotProp.m_pwszSnapshotDeviceObject);
+        if(MaxOutCh > l){
+            wcscpy(OutShadowPath, SnapshotProp.m_pwszSnapshotDeviceObject);
+        }
+        else{
+            printf("Shadow path can't fit given string buffer\n");
+        }
     }
     
     return Result;
@@ -1117,7 +1124,7 @@ NarCreateThreadCom(
     Context->ShutDown = CreateSemaphoreW(NULL,
                                          0,
                                          1,
-                                         L"MiniSpy shut down"
+                                         L"Driver shut down!"
                                          );
     if (Context->ShutDown != NULL) {
         Context->Thread = CreateThread(NULL,
@@ -2810,29 +2817,6 @@ SetDiffRecords(volume_backup_inf* V) {
         MergeRegions(&V->Stream.Records);
     }
     
-#if 0
-    if (V->ActiveBackupInf.PossibleNewBackupRegionOffsetMark > 0xFFFFFFFFll) {
-        // TODO(Batuhan) :
-    }
-    
-    V->ActiveBackupInf.PossibleNewBackupRegionOffsetMark;
-    
-    V->Stream.Records.Data = (nar_record*)malloc(V->ActiveBackupInf.PossibleNewBackupRegionOffsetMark);
-    V->Stream.Records.Count = V->ActiveBackupInf.PossibleNewBackupRegionOffsetMark / sizeof(nar_record);
-    
-    DWORD BytesRead = 0;
-    DWORD TargetReadSize = (DWORD)V->ActiveBackupInf.PossibleNewBackupRegionOffsetMark;
-    Result = ReadFile(V->LogHandle, V->Stream.Records.Data, TargetReadSize, &BytesRead, 0);
-    
-    if (Result && TargetReadSize == BytesRead) {
-        // thats it?
-    }
-    else {
-        // TODO(Batuhan): 
-        
-    }
-#endif
-    
     
     return Result;
 }
@@ -2921,12 +2905,10 @@ SetupStreamHandle(volume_backup_inf* VolInf) {
     
     WCHAR Temp[] = L"!:\\";
     Temp[0] = VolInf->Letter;
-    wchar_t* ShadowPathPtr = GetShadowPath(Temp, VolInf->VSSPTR);
     wchar_t ShadowPath[512];
-    StrCpyW(ShadowPath, ShadowPathPtr);
-    
-    // TODO(Batuhan): undo it
-    // free(ShadowPathPtr);
+    if(GetShadowPath(Temp, VolInf->VSSPTR, ShadowPath, sizeof(ShadowPath)/sizeof(ShadowPath[0])) != TRUE){
+        
+    }
     
     if (ShadowPath == NULL) {
         printf("Can't get shadowpath from VSS\n");
@@ -4202,6 +4184,7 @@ GenerateMetadataName(nar_backup_id ID, int Version) {
     }
     
     Result += L"-";
+    //Result += std::wstring(ID.Letter);
     Result += NarBackupIDToWStr(ID);
     Result += MetadataExtension;
     
@@ -5432,8 +5415,6 @@ BOOLEAN
 NarGetBackupsInDirectory(const wchar_t* Directory, backup_metadata* B, int BufferSize, int* FoundCount) {
     
     //#error "IMPLEMENT THAT SHIT"
-    
-    
     BOOLEAN Result = TRUE;
     
     wchar_t WildcardDir[280];
@@ -5898,6 +5879,90 @@ NarPopDirectoryStack(nar_backup_file_explorer_context* Ctx) {
 }
 
 
+/*
+sets file explorer's read pointer to given MFTID's disk offset, so next read call(1024 bytes) will
+result reading MFTID'th mft file entry
+*/
+inline BOOLEAN
+NarFileExplorerSetFilePtr2MFTID(nar_backup_file_explorer_context* Ctx, size_t TargetMFTID){
+    
+    nar_fe_volume_handle FEV = Ctx->FEHandle;
+    nar_record* MFTRegions = Ctx->MFTRecords;
+    UINT32 MFTRegionCount = Ctx->MFTRecordsCount;
+    UINT32 ClusterSize = Ctx->ClusterSize;
+    
+    UINT64 FileCountInRegion = 0;
+    UINT32 FileCountPerCluster = ClusterSize / 1024;
+    UINT64 AdvancedFileCountSoFar = 0;
+    
+    UINT64 FileOffsetFromRegion = 0;
+    UINT64 FileOffsetAtVolume = 0;
+    
+    for (UINT32 RegionIndex = 0; RegionIndex < MFTRegionCount; RegionIndex++) {
+        
+        FileCountInRegion = (UINT64)MFTRegions[RegionIndex].Len * (UINT64)FileCountPerCluster;
+        if (FileCountInRegion + AdvancedFileCountSoFar >= TargetMFTID) {
+            // found
+            FileOffsetFromRegion = TargetMFTID - AdvancedFileCountSoFar;
+            FileOffsetAtVolume = (UINT64)MFTRegions[RegionIndex].StartPos * (UINT64)ClusterSize + FileOffsetFromRegion * 1024;
+            break;
+        }
+        
+        AdvancedFileCountSoFar += FileCountInRegion;
+        
+    }
+    
+    NarFileExplorerSetFilePointer(FEV, AdvancedFileCountSoFar);
+    
+}
+
+
+/*
+Reads MFTID'th mft entry from given handle H.
+ This  function DOES NOT PARSE ANYTHING AT ALL, just queries given MFT file entry from handle, and reads
+EXACTLY 1024 bytes
+
+Return: returns FALSE if MFTID CANT be queried from given volume(which is probable in backups, file might have been deleted)
+*/
+inline BOOLEAN
+NarFileExplorerReadMFTID(nar_backup_file_explorer_context *Ctx, size_t MFTID, void *Out){
+    
+    BOOLEAN Result = FALSE;
+    
+    if(NarFileExplorerSetFilePtr2MFTID(Ctx, MFTID)){
+        DWORD BytesRead = 0;
+        
+        if(NarFileExplorerReadVolume(Ctx->FEHandle, Out, 1024, &BytesRead)){
+            Result = TRUE;
+        }
+        else{
+            printf("Unable to read volume for MFT ID %I64u\n", MFTID);
+        }
+        
+    }
+    else{
+        printf("Unable to set file pointer for mft id %I64u\n", MFTID);
+    }
+    
+    return Result;
+    
+}
+
+/*
+What it wants as input:
+-Attribute list(0x20) attribute data
+-file explorer volume handle to move between different MFT entries(attributes in the list may have split across different mft entries)
+
+What it MAY  return:
+- Parsed BITMAP indices
+- Parsed INDX_ALLOCATION regions
+- Parsed INDX_ROOT regions
+*/
+inline void
+NarResolveAttributeList(void *AttrListAttribute){
+    
+}
+
 inline BOOLEAN
 NarParseIndexAllocationAttribute(void *IndexAttribute, nar_record *OutRegions, INT32 MaxRegionLen, INT32 *OutRegionsFound){
     
@@ -6018,6 +6083,12 @@ NarParseIndexAllocationAttribute(void *IndexAttribute, nar_record *OutRegions, I
 inline void
 NarGetFileListFromMFTID(nar_file_entries_list* EList, UINT64 TargetMFTID, nar_record* MFTRegions, UINT32 MFTRegionCount, UINT32 ClusterSize, nar_fe_volume_handle FEHandle) {
     
+    
+#if 0    
+    nar_file_entries_list* EList, UINT64 TargetMFTID, nar_record* MFTRegions, UINT32 MFTRegionCount, UINT32 ClusterSize, 
+    nar_fe_volume_handle FEHandle;
+#endif
+    
     if (!EList) return;
     
     if (ClusterSize < 1024) {
@@ -6064,6 +6135,7 @@ NarGetFileListFromMFTID(nar_file_entries_list* EList, UINT64 TargetMFTID, nar_re
             
             INT16 FlagOffset = 22;
             INT32 NAR_INDEX_ALLOCATION_FLAG = 0xA0;
+            INT32 NAR_BITMAP_FLAG = 0xB0;
             
             INT16 Flags = *(INT16*)((BYTE*)FileRecord + FlagOffset);
             INT16 DirectoryFlag = 0x0002;
@@ -6081,7 +6153,6 @@ NarGetFileListFromMFTID(nar_file_entries_list* EList, UINT64 TargetMFTID, nar_re
                 // its better write solid solution
                 
                 while (RemainingLen > 0) {
-                    
                     
                     // check INDEX_ROOT
                     if ((*(INT32*)FileAttribute & 0x90) == 0x90) {
@@ -6130,6 +6201,7 @@ NarGetFileListFromMFTID(nar_file_entries_list* EList, UINT64 TargetMFTID, nar_re
                     /*
 so some smart ass decided it would be wise to split some attributes into different disk locations, so i have to check if any file attribute is non-resident, if so, should check if that one is INDEX_ALLOCATION attribute, and again if so, should go read that disk offset and parse it. pretty trivial but also boring
 */
+                    
 #if 0
                     if(*(INT32*)FileAttribute & NAR_ATTRIBUTE_LIST) == NAR_ATTRIBUTE_LIST){
                         
@@ -6165,6 +6237,7 @@ so some smart ass decided it would be wise to split some attributes into differe
                                     
                                 };
                             };
+                            
                         };
                         
                         UINT32  Length       = *(UINT32*)NAR_OFFSET(FileAttribute, 0x04);
@@ -6197,6 +6270,20 @@ so some smart ass decided it would be wise to split some attributes into differe
                         // found INDEX_ALLOCATION attribute
                         break;
                     }
+                    
+#if 0                    
+                    // 0xB0 = BITMAP
+                    if((*(INT32*)FileAttribute & NAR_BITMAP_FLAG) == NAR_BITMAP_FLAG){
+                        
+                        UINT32 BitmapLen = *(UINT32*)NAR_OFFSET(FileAttribute, 0x10);
+                        char *Bitmap = (char*)malloc(BitmapLen);
+                        
+                        NarGetValidRegionIndicesFromBitmap(FileAttribute, Bitmap);
+                        
+                        
+                    }
+#endif
+                    
                     
                     if ((*(INT32*)FileAttribute & NAR_INDEX_ALLOCATION_FLAG) > NAR_INDEX_ALLOCATION_FLAG) break;// early termination
                     
@@ -7238,7 +7325,7 @@ NarInitFileExplorerContext(nar_backup_file_explorer_context* Ctx, const wchar_t 
             
             
             Ctx->ClusterSize = Ctx->FEHandle.BMEX->M.ClusterSize;
-            HANDLE BackupMetadataHandle = CreateFile(Ctx->FEHandle.BMEX->FilePath.c_str(), GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
+            HANDLE BackupMetadataHandle = CreateFileW(MetadataPath, GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
             if(BackupMetadataHandle != INVALID_HANDLE_VALUE){
                 
                 Ctx->MFTRecords = (nar_record*)malloc(Ctx->FEHandle.BMEX->M.Size.MFTMetadata * sizeof(nar_record));
@@ -7497,12 +7584,10 @@ NarIsVolumeAvailable(char Letter){
 
 inline BOOLEAN
 NarInitFEVolumeHandleFromBackup(nar_fe_volume_handle *FEV, const wchar_t* MetadataFilePath){
-    // TODO(Batuhan): implement
     
     if (FEV == 0 || MetadataFilePath == 0) return FALSE;
     
     BOOLEAN Result = FALSE;
-    
     
     FEV->BMEX = InitBackupMetadataEx(MetadataFilePath);
     if(FEV->BMEX != NULL){
@@ -7913,7 +7998,7 @@ NarTestScratch(){
 int
 main(int argc, char* argv[]) {
     
-#if 1   
+#if 0   
 	backup_metadata *m = new backup_metadata[120];
 	int bs = 120*sizeof(*m);
 	int out = 0;
@@ -7936,9 +8021,14 @@ main(int argc, char* argv[]) {
 	return 0;
 #endif
     
-#if 0
+#if 1
+    
+    /*
+    
+    */
+    
     nar_backup_file_explorer_context ctx = {0};
-    NarInitFileExplorerContext(&ctx, NAR_FE_HAND_OPT_READ_BACKUP_VOLUME, 'E', 0, NULL);
+    NarInitFileExplorerContext(&ctx, L"F:\\NAR_M_FULL-19472436995819492.narmd");
     
     NarFileExplorerPrint(&ctx);
     
@@ -7976,8 +8066,6 @@ main(int argc, char* argv[]) {
     C.CleaningUp = FALSE;
     
     if(SetupVSS() && ConnectDriver(&C)){
-        
-        
         
         
         DotNetStreamInf inf = {0};
