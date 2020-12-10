@@ -1199,7 +1199,7 @@ Return Value:
             STARTING_VCN_INPUT_BUFFER StartingInputVCNBuffer;
             RETRIEVAL_POINTERS_BUFFER ClusterMapBuffer;
             
-            DWORD WholeFileMapBufferSize = sizeof(RETRIEVAL_POINTERS_BUFFER) * 1024;
+            DWORD WholeFileMapBufferSize = sizeof(RETRIEVAL_POINTERS_BUFFER) * 128;
             RETRIEVAL_POINTERS_BUFFER* WholeFileMapBuffer = (RETRIEVAL_POINTERS_BUFFER*)ExAllocatePoolWithTag(PagedPool, WholeFileMapBufferSize, NAR_TAG);
             
             ClusterMapBuffer.StartingVcn.QuadPart = 0;
@@ -1256,7 +1256,7 @@ Return Value:
                 ClusterMapBuffer.Extents[0] = WholeFileMapBuffer->Extents[i];
                 
                 MaxIteration++;
-                if (MaxIteration > 1024) {
+                if (MaxIteration > 128) {
                     Error |= NAR_ERR_MAX_ITER;
                     break;
                 }
