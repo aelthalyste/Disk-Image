@@ -180,6 +180,7 @@ namespace DiskBackup.Business.Concrete
                     backupInfo.BackupStorageInfo = backupStorageItem;
                     backupInfo.BackupStorageInfoId = backupStorageItem.Id;
 
+                    backupInfo.Bootable = Convert.ToBoolean(returnItem.OSVolume);
                     backupInfo.VolumeSize = (long)returnItem.VolumeTotalSize;
                     backupInfo.StrVolumeSize = FormatBytes((long)returnItem.VolumeTotalSize);
                     backupInfo.UsedSize = (long)returnItem.VolumeUsedSize;
@@ -230,6 +231,7 @@ namespace DiskBackup.Business.Concrete
                     backupInfo.BackupStorageInfo = backupInfo.BackupStorageInfo;
                     backupInfo.BackupStorageInfoId = backupInfo.BackupStorageInfoId;
 
+                    backupInfo.Bootable = Convert.ToBoolean(resultItem.OSVolume);
                     backupInfo.VolumeSize = (long)resultItem.VolumeTotalSize;
                     backupInfo.StrVolumeSize = FormatBytes((long)resultItem.VolumeTotalSize);
                     backupInfo.UsedSize = (long)resultItem.VolumeUsedSize;
