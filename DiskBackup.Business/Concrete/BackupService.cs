@@ -48,6 +48,7 @@ namespace DiskBackup.Business.Concrete
         {
             // programla başlat 1 kere çalışması yeter
             // false değeri dönüyor ise eğer backup işlemlerini disable et
+            _logger.Verbose("InitTracker metodu çağırıldı");
             if (!_isStarted)
             {
                 _initTrackerResult = _diskTracker.CW_InitTracker();
@@ -58,42 +59,48 @@ namespace DiskBackup.Business.Concrete
 
         public bool GetInitTracker()
         {
+            _logger.Verbose("GetInitTracker metodu çağırıldı");
             return _initTrackerResult;
         }
 
         public bool GetRefreshIncDiffTaskFlag()
         {
+            _logger.Verbose("GetRefreshIncDiffTaskFlag metodu çağırıldı");
             return _refreshIncDiffTaskFlag;
         }
 
         public void RefreshIncDiffTaskFlag(bool value)
         {
+            _logger.Verbose("RefreshIncDiffTaskFlag metodu çağırıldı");
             _refreshIncDiffTaskFlag = value;
         }
 
         public bool GetRefreshIncDiffLogFlag()
         {
+            _logger.Verbose("GetRefreshIncDiffLogFlag metodu çağırıldı");
             return _refreshIncDiffLogFlag;
         }
 
         public void RefreshIncDiffLogFlag(bool value)
         {
+            _logger.Verbose("RefreshIncDiffLogFlag metodu çağırıldı");
             _refreshIncDiffLogFlag = value;
         }
 
         public void InitFileExplorer(BackupInfo backupInfo) //initTracker'la aynı mantıkla çalışır mı? (Explorer ctor'da 1 kere çağrılma)
         {
+            _logger.Verbose("InitFileExplorer metodu çağırıldı");
             //rootDir string biz buraya ne dönücez
             // yedek volumu, versiondan gelecek, "E:\ebru-eyupDeneme"-- ters slaş ekle sonuna
             //_cSNarFileExplorer.CW_Init('C', 0, "");
-            _logger.Verbose("İnitFileExplorer(): {path}", backupInfo.BackupStorageInfo.Path + backupInfo.FileName);
             //_cSNarFileExplorer.CW_Init(backupInfo.Letter, backupInfo.Version, backupInfo.BackupStorageInfo.Path);
+            _logger.Verbose("İnitFileExplorer: {path}", backupInfo.BackupStorageInfo.Path + backupInfo.FileName);
             _cSNarFileExplorer.CW_Init(backupInfo.BackupStorageInfo.Path + backupInfo.FileName); // isim eklenmesi gerekmeli gibi
         }
 
         public List<DiskInformation> GetDiskList()
         {
-            _logger.Verbose("Get disk list called");
+            _logger.Verbose("GetDiskList metodu çağırıldı");
             //PrioritySection 
             List<DiskInfo> disks = DiskTracker.CW_GetDisksOnSystem();
             List<VolumeInformation> volumes = DiskTracker.CW_GetVolumes();
@@ -152,6 +159,7 @@ namespace DiskBackup.Business.Concrete
         public List<BackupInfo> GetBackupFileList(List<BackupStorageInfo> backupStorageList)
         {
             //usedSize, bootable, sıkıştırma, pc name, ip address
+            _logger.Verbose("GetBackupFileList metodu çağırıldı");
             List<BackupInfo> backupInfoList = new List<BackupInfo>();
             //bootable = osVolume (true)
             foreach (BackupStorageInfo backupStorageItem in backupStorageList)
@@ -181,11 +189,13 @@ namespace DiskBackup.Business.Concrete
                     backupInfo.FileName = returnItem.Fullpath.Split('\\').Last();
                     backupInfo.PCName = returnItem.ComputerName;
                     backupInfo.IpAddress = returnItem.IpAdress;
-                    backupInfo.CreatedDate = (returnItem.BackupDate.Day < 10) ? 0 + returnItem.BackupDate.Day.ToString() : returnItem.BackupDate.Day.ToString();
-                    backupInfo.CreatedDate = backupInfo.CreatedDate + "." + ((returnItem.BackupDate.Month < 10) ? 0 + returnItem.BackupDate.Month.ToString() : returnItem.BackupDate.Month.ToString());
-                    backupInfo.CreatedDate = backupInfo.CreatedDate + "." + returnItem.BackupDate.Year + " ";
-                    backupInfo.CreatedDate = backupInfo.CreatedDate + ((returnItem.BackupDate.Hour < 10) ? 0 + returnItem.BackupDate.Hour.ToString() : returnItem.BackupDate.Hour.ToString());
-                    backupInfo.CreatedDate = backupInfo.CreatedDate + ":" + ((returnItem.BackupDate.Minute < 10) ? 0 + returnItem.BackupDate.Minute.ToString() : returnItem.BackupDate.Minute.ToString());
+                    string createdDate = (returnItem.BackupDate.Day < 10) ? 0 + returnItem.BackupDate.Day.ToString() : returnItem.BackupDate.Day.ToString();
+                    createdDate = createdDate + "." + ((returnItem.BackupDate.Month < 10) ? 0 + returnItem.BackupDate.Month.ToString() : returnItem.BackupDate.Month.ToString());
+                    createdDate = createdDate + "." + returnItem.BackupDate.Year + " ";
+                    createdDate = createdDate + ((returnItem.BackupDate.Hour < 10) ? 0 + returnItem.BackupDate.Hour.ToString() : returnItem.BackupDate.Hour.ToString());
+                    createdDate = createdDate + ":" + ((returnItem.BackupDate.Minute < 10) ? 0 + returnItem.BackupDate.Minute.ToString() : returnItem.BackupDate.Minute.ToString());
+                    createdDate = createdDate + ":" + returnItem.BackupDate.Second.ToString();
+                    backupInfo.CreatedDate = Convert.ToDateTime(createdDate);
 
                     if (returnItem.Version == -1)
                         backupInfo.Type = BackupTypes.Full;
@@ -203,7 +213,7 @@ namespace DiskBackup.Business.Concrete
         public BackupInfo GetBackupFile(BackupInfo backupInfo)
         {
             // seçilen dosyanın bilgilerini sağ tarafta kullanabilmek için
-            _logger.Verbose("Get backup info called. Parameter BackupInfo:{@BackupInfo}", backupInfo);
+            _logger.Verbose("Get backup metodu çağırıldı. Parameter BackupInfo:{@BackupInfo}", backupInfo);
             var result = DiskTracker.CW_GetBackupsInDirectory(backupInfo.BackupStorageInfo.Path);
 
             foreach (var resultItem in result)
@@ -229,11 +239,13 @@ namespace DiskBackup.Business.Concrete
                     backupInfo.FileName = resultItem.Fullpath.Split('\\').Last();
                     backupInfo.PCName = resultItem.ComputerName;
                     backupInfo.IpAddress = resultItem.IpAdress;
-                    backupInfo.CreatedDate = (resultItem.BackupDate.Day < 10) ? 0 + resultItem.BackupDate.Day.ToString() : resultItem.BackupDate.Day.ToString();
-                    backupInfo.CreatedDate = backupInfo.CreatedDate + "." + ((resultItem.BackupDate.Month < 10) ? 0 + resultItem.BackupDate.Month.ToString() : resultItem.BackupDate.Month.ToString());
-                    backupInfo.CreatedDate = backupInfo.CreatedDate + "." + resultItem.BackupDate.Year + " ";
-                    backupInfo.CreatedDate = backupInfo.CreatedDate + ((resultItem.BackupDate.Hour < 10) ? 0 + resultItem.BackupDate.Hour.ToString() : resultItem.BackupDate.Hour.ToString());
-                    backupInfo.CreatedDate = backupInfo.CreatedDate + ":" + ((resultItem.BackupDate.Minute < 10) ? 0 + resultItem.BackupDate.Minute.ToString() : resultItem.BackupDate.Minute.ToString());
+                    string createdDate = (resultItem.BackupDate.Day < 10) ? 0 + resultItem.BackupDate.Day.ToString() : resultItem.BackupDate.Day.ToString();
+                    createdDate = createdDate + "." + ((resultItem.BackupDate.Month < 10) ? 0 + resultItem.BackupDate.Month.ToString() : resultItem.BackupDate.Month.ToString());
+                    createdDate = createdDate + "." + resultItem.BackupDate.Year + " ";
+                    createdDate = createdDate + ((resultItem.BackupDate.Hour < 10) ? 0 + resultItem.BackupDate.Hour.ToString() : resultItem.BackupDate.Hour.ToString());
+                    createdDate = createdDate + ":" + ((resultItem.BackupDate.Minute < 10) ? 0 + resultItem.BackupDate.Minute.ToString() : resultItem.BackupDate.Minute.ToString());
+                    createdDate = createdDate + ":" + resultItem.BackupDate.Second.ToString();
+                    backupInfo.CreatedDate = Convert.ToDateTime(createdDate);
 
                     if (resultItem.Version == -1)
                         backupInfo.Type = BackupTypes.Full;
@@ -248,6 +260,7 @@ namespace DiskBackup.Business.Concrete
 
         public bool RestoreBackupVolume(RestoreTask restoreTask)
         {
+            _logger.Verbose("RestoreBackupVolume metodu çağırıldı");
             // hangi backup dosyası olduğu bulunup öyle verilmeli
             // rootDir = K:\O'yu K'ya Backup\Nar_BACKUP.nb
             string backupName = restoreTask.RootDir.Split('\\').Last();
@@ -275,6 +288,7 @@ namespace DiskBackup.Business.Concrete
         {
             // hangi backup dosyası olduğu bulunup öyle verilmeli
             // rootDir = K:\O'yu K'ya Backup\Nar_BACKUP.nb
+            _logger.Verbose("RestoreBackupDisk metodu çağırıldı");
             string backupName = restoreTask.RootDir.Split('\\').Last();
             string newRootDir = restoreTask.RootDir.Substring(0, restoreTask.RootDir.Length - backupName.Length);
 
@@ -298,11 +312,14 @@ namespace DiskBackup.Business.Concrete
 
         public bool CleanChain(char letter)
         {
+            _logger.Verbose("CleanChain metodu çağırıldı");
             return _diskTracker.CW_RemoveFromTrack(letter);
         }
 
         public char AvailableVolumeLetter()
         {
+            _logger.Verbose("AvailableVolumeLetter metodu çağırıldı");
+            
             var returnValue = DiskTracker.CW_GetFirstAvailableVolumeLetter();
             _logger.Verbose("{return} GetFirstAvailableVolumeLetter()'den dönen harf.", returnValue);
             return returnValue;
@@ -310,12 +327,13 @@ namespace DiskBackup.Business.Concrete
 
         public bool IsVolumeAvailable(char letter)
         {
+            _logger.Verbose("IsVolumeAvailable metodu çağırıldı");
             return DiskTracker.CW_IsVolumeAvailable(letter);
         }
 
         public byte CreateIncDiffBackup(TaskInfo taskInfo) // 0 başarısız, 1 başarılı, 2 kullanıcı durdurdu
         {
-            Console.WriteLine("Batu Method girildi");
+            _logger.Verbose("CreateIncDiffBackup metodu çağırıldı");
             if (_statusInfoDal == null)
                 throw new Exception("StatusInfoDal is null");
             var statusInfo = _statusInfoDal.Get(si => si.Id == taskInfo.StatusInfoId); //her task için uygulanmalı
@@ -440,7 +458,6 @@ namespace DiskBackup.Business.Concrete
 
             _cancellationTokenSource[taskInfo.Id].Dispose();
             _cancellationTokenSource.Remove(taskInfo.Id);
-            Console.WriteLine("Batu Method çıktı");
             if (result)
                 return 1;
             return 0;
@@ -448,11 +465,14 @@ namespace DiskBackup.Business.Concrete
 
         public bool CreateFullBackup(TaskInfo taskInfo) //bu method daha gelmedi 
         {
+            _logger.Verbose("CreateFullBackup metodu çağırıldı");
             throw new NotImplementedException();
         }
 
         public void PauseTask(TaskInfo taskInfo)
         {
+            _logger.Verbose("PauseTask metodu çağırıldı");
+
             var timeElapsed = _timeElapsedMap[taskInfo.Id];
             if (!_isStarted) throw new Exception("Backup is not started");
             timeElapsed.Stop();
@@ -471,6 +491,8 @@ namespace DiskBackup.Business.Concrete
 
         public void CancelTask(TaskInfo taskInfo)
         {
+            _logger.Verbose("CancelTask metodu çağırıldı");
+
             var timeElapsed = _timeElapsedMap[taskInfo.Id];
             _cancellationTokenSource[taskInfo.Id].Cancel();
             _isStarted = false;
@@ -492,6 +514,8 @@ namespace DiskBackup.Business.Concrete
 
         public void ResumeTask(TaskInfo taskInfo)
         {
+            _logger.Verbose("ResumeTask metodu çağırıldı");
+
             var timeElapsed = _timeElapsedMap[taskInfo.Id];
             if (!_isStarted) throw new Exception("Backup is not started");
             timeElapsed.Start();
@@ -511,6 +535,8 @@ namespace DiskBackup.Business.Concrete
 
         public List<FilesInBackup> GetFileInfoList()
         {
+            _logger.Verbose("GetFileInfoList metodu çağırıldı");
+
             var resultList = _cSNarFileExplorer.CW_GetFilesInCurrentDirectory();
             List<FilesInBackup> filesInBackupList = new List<FilesInBackup>();
             foreach (var item in resultList)
@@ -537,11 +563,15 @@ namespace DiskBackup.Business.Concrete
 
         public void FreeFileExplorer()
         {
+            //ilk çağırdığımızda init ettiğimiz FileExplorer metodunu kapatmak/serbest bırakmak için
+            _logger.Verbose("FreeFileExplorer metodu çağırıldı");
             _cSNarFileExplorer.CW_Free();
         }
 
         public bool GetSelectedFileInfo(FilesInBackup filesInBackup)
         {
+            _logger.Verbose("GetSelectedFileInfo metodu çağırıldı");
+
             CSNarFileEntry cSNarFileEntry = new CSNarFileEntry();
             cSNarFileEntry.ID = (ulong)filesInBackup.Id;
             cSNarFileEntry.IsDirectory = Convert.ToBoolean(filesInBackup.Type); //bool demişti short dönüyor? 1-0 hangisi file hangisi folder
@@ -553,16 +583,20 @@ namespace DiskBackup.Business.Concrete
 
         public void PopDirectory()
         {
+            _logger.Verbose("PopDirectory metodu çağırıldı");
             _cSNarFileExplorer.CW_PopDirectory();
         }
 
         public string GetCurrentDirectory()
         {
+            _logger.Verbose("GetCurrentDirectory metodu çağırıldı");
             return _cSNarFileExplorer.CW_GetCurrentDirectoryString();
         }
 
         public List<ActivityDownLog> GetDownLogList() //bu method daha gelmedi
         {
+            _logger.Verbose("GetDownLogList metodu çağırıldı");
+
             List<ActivityDownLog> logList = new List<ActivityDownLog>();
             foreach (var item in DiskTracker.CW_GetLogs())
             {
@@ -584,6 +618,8 @@ namespace DiskBackup.Business.Concrete
 
         public void RestoreFilesInBackup(int fileId, string backupDirectory, string targetDirectory) // batuhan hangi backup olduğunu nasıl anlayacak? backup directoryde backup ismi almıyor
         {
+            _logger.Verbose("RestoreFilesInBackup metodu çağırıldı");
+
             //_cSNarFileExplorer.CW_RestoreFile(ID, seçilen backup'ın directorysi dosya ismi olmadan, yüklenecek yer)
             //void CW_RestoreFile(INT64 ID);
             //_cSNarFileExplorer.CW_Free FileExplorer kapatıldığında Free çağırmakta fayda var bellek yönetimi için tutulan alanları geri veriyor sisteme
@@ -594,6 +630,8 @@ namespace DiskBackup.Business.Concrete
 
         private string FormatBytes(long bytes)
         {
+            _logger.Verbose("FormatBytes metodu çağırıldı");
+
             string[] Suffix = { "B", "KB", "MB", "GB", "TB" };
             int i;
             double dblSByte = bytes;

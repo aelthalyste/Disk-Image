@@ -14,7 +14,7 @@ namespace DiskBackup.Business.Concrete
         public BackupServiceClient() : base(
             new ServiceEndpoint(
                 ContractDescription.GetContract(typeof(IBackupService)),
-                new NetNamedPipeBinding(),
+                new NetNamedPipeBinding() { MaxBufferSize = 500000, MaxBufferPoolSize = 5000000, MaxReceivedMessageSize = 500000 , CloseTimeout = TimeSpan.MaxValue, OpenTimeout= TimeSpan.MaxValue, ReceiveTimeout = TimeSpan.MaxValue, SendTimeout = TimeSpan.MaxValue },
                 new EndpointAddress("net.pipe://localhost/nardiskbackup/backupservice")))
         {
 

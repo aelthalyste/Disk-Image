@@ -86,13 +86,13 @@ namespace DiskBackup.Service
             taskScheduler.InitShedulerAsync().Wait();
             Uri baseAddress = new Uri("net.pipe://localhost/nardiskbackup");
             _backupServiceHost = new ServiceHost(backupService, baseAddress);
-            _backupServiceHost.AddServiceEndpoint(typeof(IBackupService), new NetNamedPipeBinding(), "backupservice");
+            _backupServiceHost.AddServiceEndpoint(typeof(IBackupService), new NetNamedPipeBinding() { SendTimeout = TimeSpan.MaxValue, ReceiveTimeout = TimeSpan.MaxValue, CloseTimeout = TimeSpan.FromSeconds(2) }, "backupservice");
             _backupStorageServiceHost = new ServiceHost(backupStorageService, baseAddress);
-            _backupStorageServiceHost.AddServiceEndpoint(typeof(IBackupStorageService), new NetNamedPipeBinding(), "backupstorageservice");
+            _backupStorageServiceHost.AddServiceEndpoint(typeof(IBackupStorageService), new NetNamedPipeBinding() { SendTimeout = TimeSpan.MaxValue, ReceiveTimeout = TimeSpan.MaxValue, CloseTimeout = TimeSpan.FromSeconds(2) }, "backupstorageservice");
             _logServiceHost = new ServiceHost(logService, baseAddress);
-            _logServiceHost.AddServiceEndpoint(typeof(ILogService), new NetNamedPipeBinding(), "logservice");
+            _logServiceHost.AddServiceEndpoint(typeof(ILogService), new NetNamedPipeBinding() { SendTimeout = TimeSpan.MaxValue, ReceiveTimeout = TimeSpan.MaxValue, CloseTimeout = TimeSpan.FromSeconds(2) }, "logservice");
             _taskSchedulerHost = new ServiceHost(taskScheduler, baseAddress);
-            _taskSchedulerHost.AddServiceEndpoint(typeof(ITaskSchedulerManager), new NetNamedPipeBinding(), "taskscheduler");
+            _taskSchedulerHost.AddServiceEndpoint(typeof(ITaskSchedulerManager), new NetNamedPipeBinding() { SendTimeout = TimeSpan.MaxValue, ReceiveTimeout = TimeSpan.MaxValue, CloseTimeout = TimeSpan.FromSeconds(2) }, "taskscheduler");
             _backupServiceHost.Open();
             _backupStorageServiceHost.Open();
             _logServiceHost.Open();

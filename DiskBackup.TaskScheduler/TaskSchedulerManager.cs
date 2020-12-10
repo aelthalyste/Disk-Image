@@ -35,6 +35,8 @@ namespace DiskBackup.TaskScheduler
 
         public async Task InitShedulerAsync()
         {
+            _logger.Verbose("InitShedulerAsync metodu çağırıldı");
+
             StdSchedulerFactory factory = new StdSchedulerFactory();
             _scheduler = await factory.GetScheduler();
             _scheduler.JobFactory = _jobFactory;
@@ -43,12 +45,16 @@ namespace DiskBackup.TaskScheduler
 
         public async Task RunNowTrigger(string schedulerId)
         {
+            _logger.Verbose("RunNowTrigger metodu çağırıldı");
+
             var result = schedulerId.Split('/');
             await _scheduler.TriggerJob(new JobKey(result[0], result[1]));
         }
 
         public async Task DeleteJob(string schedulerId)
         {
+            _logger.Verbose("DeleteJob metodu çağırıldı");
+
             var result = schedulerId.Split('/');
             await _scheduler.DeleteJob(new JobKey(result[0], result[1]));
         }
@@ -58,6 +64,8 @@ namespace DiskBackup.TaskScheduler
         #region Daily
         public async Task BackupIncDiffEverydayJob(TaskInfo taskInfo)
         {
+            _logger.Verbose("BackupIncDiffEverydayJob metodu çağırıldı");
+
             IJobDetail job = JobBuilder.Create<BackupIncDiffJob>()
                 .WithIdentity($"backupIncDiffEverydayJob_{taskInfo.Id}", "Backup")
                 .UsingJobData("taskId", taskInfo.Id.ToString())
@@ -79,6 +87,8 @@ namespace DiskBackup.TaskScheduler
 
         public async Task BackupIncDiffWeekDaysJob(TaskInfo taskInfo)
         {
+            _logger.Verbose("BackupIncDiffWeekDaysJob metodu çağırıldı");
+
             IJobDetail job = JobBuilder.Create<BackupIncDiffJob>()
                 .WithIdentity($"backupIncDiffWeekDaysJob_{taskInfo.Id}", "Backup")
                 .UsingJobData("taskId", taskInfo.Id.ToString())
@@ -100,6 +110,8 @@ namespace DiskBackup.TaskScheduler
         //string çözümü düşünüldü
         public async Task BackupIncDiffCertainDaysJob(TaskInfo taskInfo)
         {
+            _logger.Verbose("BackupIncDiffCertainDaysJob metodu çağırıldı");
+
             IJobDetail job = JobBuilder.Create<BackupIncDiffJob>()
                 .WithIdentity($"backupIncDiffCertainDaysJob_{taskInfo.Id}", "Backup")
                 .UsingJobData("taskId", taskInfo.Id.ToString())
@@ -123,6 +135,8 @@ namespace DiskBackup.TaskScheduler
         #region Weekly
         public async Task BackupIncDiffWeeklyJob(TaskInfo taskInfo)
         {
+            _logger.Verbose("BackupIncDiffWeeklyJob metodu çağırıldı");
+
             IJobDetail job = JobBuilder.Create<BackupIncDiffJob>()
                 .WithIdentity($"backupIncDiffWeeklyJob_{taskInfo.Id}", "Backup")
                 .UsingJobData("taskId", taskInfo.Id.ToString())
@@ -146,6 +160,8 @@ namespace DiskBackup.TaskScheduler
         #region Periodic
         public async Task BackupIncDiffPeriodicHoursJob(TaskInfo taskInfo)
         {
+            _logger.Verbose("BackupIncDiffPeriodicHoursJob metodu çağırıldı");
+
             IJobDetail job = JobBuilder.Create<BackupIncDiffJob>()
                 .WithIdentity($"backupIncDiffPeriodicHoursJob_{taskInfo.Id}", "Backup")
                 .UsingJobData("taskId", taskInfo.Id.ToString())
@@ -167,6 +183,8 @@ namespace DiskBackup.TaskScheduler
 
         public async Task BackupIncDiffPeriodicMinutesJob(TaskInfo taskInfo)
         {
+            _logger.Verbose("BackupIncDiffPeriodicHoursJob metodu çağırıldı");
+
             IJobDetail job = JobBuilder.Create<BackupIncDiffJob>()
                 .WithIdentity($"backupIncDiffPeriodicHoursJob_{taskInfo.Id}", "Backup")
                 .UsingJobData("taskId", taskInfo.Id.ToString())
@@ -190,6 +208,8 @@ namespace DiskBackup.TaskScheduler
 
         public async Task BackupIncDiffNowJob(TaskInfo taskInfo)
         {
+            _logger.Verbose("BackupIncDiffNowJob metodu çağırıldı");
+
             Console.WriteLine("job'ın üzeri");
             IJobDetail job = JobBuilder.Create<BackupIncDiffJob>()
                 .WithIdentity($"backupIncDiffNowJob_{taskInfo.Id}", "Backup")
@@ -214,6 +234,8 @@ namespace DiskBackup.TaskScheduler
         #region Daily
         public async Task BackupFullEverydayJob(TaskInfo taskInfo)
         {
+            _logger.Verbose("BackupFullEverydayJob metodu çağırıldı");
+
             IJobDetail job = JobBuilder.Create<BackupFullJob>()
                 .WithIdentity($"backupFullEverydayJob_{taskInfo.Id}", "Backup")
                 .UsingJobData("taskId", taskInfo.Id.ToString())
@@ -234,6 +256,8 @@ namespace DiskBackup.TaskScheduler
 
         public async Task BackupFullWeekDaysJob(TaskInfo taskInfo)
         {
+            _logger.Verbose("BackupFullWeekDaysJob metodu çağırıldı");
+
             IJobDetail job = JobBuilder.Create<BackupFullJob>()
                 .WithIdentity($"backupFullWeekDaysJob_{taskInfo.Id}", "Backup")
                 .UsingJobData("taskId", taskInfo.Id.ToString())
@@ -255,6 +279,8 @@ namespace DiskBackup.TaskScheduler
         //string çözümü düşünüldü
         public async Task BackupFullCertainDaysJob(TaskInfo taskInfo)
         {
+            _logger.Verbose("BackupFullCertainDaysJob metodu çağırıldı");
+
             IJobDetail job = JobBuilder.Create<BackupFullJob>()
                 .WithIdentity($"backupFullCertainDaysJob_{taskInfo.Id}", "Backup")
                 .UsingJobData("taskId", taskInfo.Id.ToString())
@@ -278,6 +304,8 @@ namespace DiskBackup.TaskScheduler
         #region Weekly
         public async Task BackupFullWeeklyJob(TaskInfo taskInfo)
         {
+            _logger.Verbose("BackupFullWeeklyJob metodu çağırıldı");
+
             IJobDetail job = JobBuilder.Create<BackupFullJob>()
                 .WithIdentity($"backupFullWeeklyJob_{taskInfo.Id}", "Backup")
                 .UsingJobData("taskId", taskInfo.Id.ToString())
@@ -301,6 +329,8 @@ namespace DiskBackup.TaskScheduler
         #region Periodic
         public async Task BackupFullPeriodicHoursJob(TaskInfo taskInfo)
         {
+            _logger.Verbose("DeleteJob metodu çağırıldı");
+
             IJobDetail job = JobBuilder.Create<BackupFullJob>()
                 .WithIdentity($"backupFullPeriodicHoursJob_{taskInfo.Id}", "Backup")
                 .UsingJobData("taskId", taskInfo.Id.ToString())
@@ -345,6 +375,8 @@ namespace DiskBackup.TaskScheduler
 
         public async Task BackupFullNowJob(TaskInfo taskInfo)
         {
+            _logger.Verbose("BackupFullNowJob metodu çağırıldı");
+
             IJobDetail job = JobBuilder.Create<BackupFullJob>()
                 .WithIdentity($"backupFullNowJob_{taskInfo.Id}", "Backup")
                 .UsingJobData("taskId", taskInfo.Id.ToString())
@@ -368,6 +400,8 @@ namespace DiskBackup.TaskScheduler
 
         public async Task RestoreDiskJob(TaskInfo taskInfo)
         {
+            _logger.Verbose("RestoreDiskJob metodu çağırıldı");
+
             IJobDetail job = JobBuilder.Create<RestoreDiskJob>()
                 .WithIdentity($"restoreDiskJob_{taskInfo.Id}", "Restore")
                 .UsingJobData("taskId", taskInfo.Id.ToString())
@@ -387,6 +421,8 @@ namespace DiskBackup.TaskScheduler
 
         public async Task RestoreDiskNowJob(TaskInfo taskInfo)
         {
+            _logger.Verbose("RestoreDiskNowJob metodu çağırıldı");
+
             IJobDetail job = JobBuilder.Create<RestoreDiskJob>()
                 .WithIdentity($"restoreDiskNowJob_{taskInfo.Id}", "Restore")
                 .UsingJobData("taskId", taskInfo.Id.ToString())
@@ -410,6 +446,8 @@ namespace DiskBackup.TaskScheduler
 
         public async Task RestoreVolumeJob(TaskInfo taskInfo)
         {
+            _logger.Verbose("RestoreVolumeJob metodu çağırıldı");
+
             IJobDetail job = JobBuilder.Create<RestoreVolumeJob>()
                 .WithIdentity($"restoreVolumeJob_{taskInfo.Id}", "Restore")
                 .UsingJobData("taskId", taskInfo.Id.ToString())
@@ -430,6 +468,8 @@ namespace DiskBackup.TaskScheduler
 
         public async Task RestoreVolumeNowJob(TaskInfo taskInfo)
         {
+            _logger.Verbose("RestoreVolumeNowJob metodu çağırıldı");
+
             IJobDetail job = JobBuilder.Create<RestoreVolumeJob>()
                 .WithIdentity($"restoreVolumeNowJob_{taskInfo.Id}", "Restore")
                 .UsingJobData("taskId", taskInfo.Id.ToString())
@@ -453,16 +493,20 @@ namespace DiskBackup.TaskScheduler
 
         public bool CancelAllSchedule(List<TaskInfo> taskInfoList)
         {
+            _logger.Verbose("CancelAllSchedule metodu çağırıldı");
             throw new NotImplementedException();
         }
 
         public bool CancelSchedule(string scheduleId)
         {
+            _logger.Verbose("CancelSchedule metodu çağırıldı");
             throw new NotImplementedException();
         }
 
         public async Task DisableSchedule(TaskInfo task)
         {
+            _logger.Verbose("DisableSchedule metodu çağırıldı");
+
             var result = task.ScheduleId.Split('/');
             await _scheduler.PauseJob(new JobKey(result[0], result[1]));
             task.EnableDisable = 1;
@@ -472,6 +516,8 @@ namespace DiskBackup.TaskScheduler
 
         public async Task EnableSchedule(TaskInfo task)
         {
+            _logger.Verbose("EnableSchedule metodu çağırıldı");
+
             var result = task.ScheduleId.Split('/');
             await _scheduler.ResumeJob(new JobKey(result[0], result[1]));
             task.EnableDisable = 0;
@@ -481,31 +527,37 @@ namespace DiskBackup.TaskScheduler
 
         public async Task PauseAllScheduleAsync()
         {
+            _logger.Verbose("PauseAllScheduleAsync metodu çağırıldı");
             await _scheduler.PauseAll();
         }
 
         public bool PauseSchedule(string scheduleId)
         {
+            _logger.Verbose("PauseSchedule metodu çağırıldı");
             throw new NotImplementedException();
         }
 
         public async Task ResumeAllScheduleAsync(List<TaskInfo> taskInfoList)
         {
+            _logger.Verbose("ResumeAllScheduleAsync metodu çağırıldı");
             await _scheduler.ResumeAll();
         }
 
         public bool ResumeSchedule(string scheduleId)
         {
+            _logger.Verbose("ResumeSchedule metodu çağırıldı");
             throw new NotImplementedException();
         }
 
         public string ScheduleBackupTask(TaskInfo taskInfo)
         {
+            _logger.Verbose("ScheduleBackupTask metodu çağırıldı");
             throw new NotImplementedException();
         }
 
         public string ScheduleRestoreTask(TaskInfo taskInfo)
         {
+            _logger.Verbose("ScheduleRestoreTask metodu çağırıldı");
             throw new NotImplementedException();
         }
     }

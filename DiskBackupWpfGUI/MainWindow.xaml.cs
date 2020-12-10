@@ -69,8 +69,7 @@ namespace DiskBackupWpfGUI
         private readonly ILifetimeScope _scope;
         private readonly ILogger _logger;
 
-        public MainWindow(ILifetimeScope scope, ITaskInfoDal taskInfoDal, IBackupStorageDal backupStorageDal, IBackupTaskDal backupTaskDal, IStatusInfoDal statusInfoDal,
-            IActivityLogDal activityLogDal, ILogger logger, IRestoreTaskDal restoreTaskDal)
+        public MainWindow(ILifetimeScope scope, ITaskInfoDal taskInfoDal, IBackupStorageDal backupStorageDal, IBackupTaskDal backupTaskDal, IStatusInfoDal statusInfoDal, IActivityLogDal activityLogDal, ILogger logger, IRestoreTaskDal restoreTaskDal)
         {
             InitializeComponent();
 
@@ -88,14 +87,13 @@ namespace DiskBackupWpfGUI
             var backupStorageService = _scope.Resolve<IBackupStorageService>();
             if (!backupService.GetInitTracker())
                 MessageBox.Show("Driver intialize edilemedi!", "NARBULUT DİYOR Kİ;", MessageBoxButton.OK, MessageBoxImage.Error);
-            else
-                MessageBox.Show("Driver intialize edildi!", "NARBULUT DİYOR Kİ;", MessageBoxButton.OK, MessageBoxImage.Information);
 
 
             #region Disk Bilgileri
 
             try
             {
+                _logger.Verbose("GetDiskList metoduna istekte bulunuldu");
                 _diskList = backupService.GetDiskList();
 
                 foreach (var diskItem in _diskList)
@@ -125,6 +123,9 @@ namespace DiskBackupWpfGUI
 
             #region Yedekleme alanları
 
+            _logger.Verbose("GetDiskList metoduna istekte bulunuldu");
+            _logger.Verbose("GetBackupStorages istekte bulunuldu");
+
             listViewBackupStorage.ItemsSource = GetBackupStorages(_volumeList, backupStorageService.BackupStorageInfoList());
 
             #endregion
@@ -138,18 +139,10 @@ namespace DiskBackupWpfGUI
 
 
             #region ActivityLog
-
             ShowActivityLog();
-            Console.WriteLine("Activity logu dolduruyorum şu anda");
+            _logger.Verbose("GetDownLogList metoduna istekte bulunuldu");
             _logList = backupService.GetDownLogList();
-            Console.WriteLine("Activity logu doldurdum şu anda");
             listViewLogDown.ItemsSource = _logList;
-            Console.WriteLine(_logList.Count() + "----- Count Bilgisis");
-
-            foreach (ActivityDownLog item in _logList)
-            {
-                Console.WriteLine(item.Time + "-" + item.Detail);
-            }
 
             #endregion
 
@@ -158,12 +151,8 @@ namespace DiskBackupWpfGUI
 
             try
             {
+                _logger.Verbose("GetBackupFileList metoduna istekte bulunuldu");
                 _backupsItems = backupService.GetBackupFileList(_backupStorageDal.GetList());
-
-                foreach (var item in _backupsItems)
-                {
-                    Console.WriteLine(item.BackupStorageInfo.Path);
-                }
 
                 listViewBackups.ItemsSource = _backupsItems;
                 listViewRestore.ItemsSource = _backupsItems;
@@ -175,12 +164,13 @@ namespace DiskBackupWpfGUI
 
             #endregion
 
-            RefreshTasks(_cancellationTokenSource.Token);
+            RefreshTasks(_cancellationTokenSource.Token, backupService);
             this.Closing += (sender, e) => _cancellationTokenSource.Cancel();
         }
 
         private void GetDiskPage()
         {
+            _logger.Verbose("GetDiskPage istekte bulunuldu, Disk Pro.Bar'ları güncelleniyor");
             diskInfoStackPanel.Children.Clear();
             stackTasksDiskInfo.Children.Clear();
 
@@ -230,6 +220,8 @@ namespace DiskBackupWpfGUI
 
         private void btnCreateTask_Click(object sender, RoutedEventArgs e)
         {
+            _logger.Verbose("btnCreateTask_Click istekte bulunuldu");
+
             List<BackupStorageInfo> backupStorageInfoList = new List<BackupStorageInfo>();
             foreach (BackupStorageInfo item in listViewBackupStorage.Items)
             {
@@ -250,11 +242,14 @@ namespace DiskBackupWpfGUI
             }
             GetTasks();
             var _backupStorageService = _scope.Resolve<IBackupStorageService>();
+            _logger.Verbose("GetBackupStorages istekte bulunuldu");
             listViewBackupStorage.ItemsSource = GetBackupStorages(_volumeList, _backupStorageService.BackupStorageInfoList());
         }
 
         private void Expander_Loaded(object sender, RoutedEventArgs e)
         {
+            _logger.Verbose("Expander_Loaded istekte bulunuldu");
+
             var expander = sender as Expander;
 
             var size = expander.FindName("txtTotalSize") as TextBlock;
@@ -393,8 +388,41 @@ namespace DiskBackupWpfGUI
 
         #region Tasks Tab
 
+        private void btnTaskEdit_Click(object sender, RoutedEventArgs e)
+        {
+            List<BackupStorageInfo> backupStorageInfoList = new List<BackupStorageInfo>();
+            foreach (BackupStorageInfo item in listViewBackupStorage.Items)
+            {
+                backupStorageInfoList.Add(item);
+            }
+
+            List<VolumeInfo> volumeInfoList = new List<VolumeInfo>();
+            foreach (VolumeInfo item in listViewDisk.SelectedItems)
+            {
+                volumeInfoList.Add(item);
+            }
+
+            TaskInfo taskInfo = (TaskInfo)listViewTasks.SelectedItem;
+            //Console.WriteLine("Storage: " + taskInfo.BackupStorageInfoId + /*" - " + taskInfo.BackupStorageInfo.StorageName +*/ "\n" +
+            //    "BackupTaskInfı: " + taskInfo.BackupTaskId + /*" - " + taskInfo.BackupTaskInfo.TaskName +*/ "\n" +
+            //    "Status: " + taskInfo.StatusInfoId /* + " - " + taskInfo.StatusInfo.TaskName*/);
+
+            using (var scope = _scope.BeginLifetimeScope())
+            {
+                NewCreateTaskWindow newCreateTask = scope.Resolve<NewCreateTaskWindow>(new TypedParameter(backupStorageInfoList.GetType(), backupStorageInfoList),
+                    new TypedParameter(volumeInfoList.GetType(), volumeInfoList), new TypedParameter(taskInfo.GetType(), taskInfo));
+                newCreateTask.ShowDialog();
+            }
+            GetTasks();
+            var _backupStorageService = _scope.Resolve<IBackupStorageService>();
+            _logger.Verbose("GetBackupStorages istekte bulunuldu");
+            listViewBackupStorage.ItemsSource = GetBackupStorages(_volumeList, _backupStorageService.BackupStorageInfoList());
+        }
+
         private void btnTaskDelete_Click(object sender, RoutedEventArgs e)
         {
+            _logger.Verbose("btnTaskDelete_Click istekte bulunuldu");
+
             MessageBoxResult result = MessageBox.Show($"{listViewTasks.SelectedItems.Count} adet veri silinecek. Onaylıyor musunuz?", "Narbulut diyor ki; ", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
             if (result == MessageBoxResult.Yes)
             {
@@ -444,6 +472,8 @@ namespace DiskBackupWpfGUI
 
         private void listViewTasks_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
+            _logger.Verbose("listViewTasks_MouseDoubleClick istekte bulunuldu");
+
             if (listViewTasks.SelectedIndex != -1)
             {
                 TaskInfo taskInfo = (TaskInfo)listViewTasks.SelectedItem;
@@ -456,6 +486,8 @@ namespace DiskBackupWpfGUI
 
         private void btnTaskStart_Click(object sender, RoutedEventArgs e)
         {
+            _logger.Verbose("btnTaskStart_Click istekte bulunuldu");
+
             TaskInfo taskInfo = (TaskInfo)listViewTasks.SelectedItem;
             var backupService = _scope.Resolve<IBackupService>();
 
@@ -479,7 +511,6 @@ namespace DiskBackupWpfGUI
                         }
                         else
                         {
-                            Console.WriteLine("Boşum: " + taskInfo.ScheduleId);
                             taskSchedulerManager.BackupIncDiffNowJob(taskInfo).Wait();
                         }
                         StatusesWindow backupStatus = _scope.Resolve<StatusesWindow>(new NamedParameter("chooseFlag", 0), new NamedParameter("statusInfo", taskInfo.StatusInfo));
@@ -489,14 +520,12 @@ namespace DiskBackupWpfGUI
                     {
                         //full
                     }
-                    Console.WriteLine("Backup bitti");
                 }
                 else
                 {
                     //restore
                     Console.WriteLine("Restore başlatılıyor");
                     taskInfo.RestoreTaskInfo = _restoreTaskDal.Get(x => x.Id == taskInfo.RestoreTaskId);
-                    Console.WriteLine($"Patlamadım Id: {taskInfo.RestoreTaskInfo.Id} SchedulerId: {taskInfo.ScheduleId}");
                     if (taskInfo.RestoreTaskInfo.Type == RestoreType.RestoreVolume)
                     {
                         // restore disk ve volume ayrıntısı burada kontrol edilip çağırılacak
@@ -516,25 +545,31 @@ namespace DiskBackupWpfGUI
             {
                 backupService.ResumeTask(taskInfo);
             }
-            backupService.RefreshIncDiffTaskFlag(true);
+            RefreshBackupsandTasks(backupService);
         }
 
         private void btnTaskPause_Click(object sender, RoutedEventArgs e)
         {
+            _logger.Verbose("btnTaskPause_Click istekte bulunuldu");
+
             var backupService = _scope.Resolve<IBackupService>();
             backupService.PauseTask((TaskInfo)listViewTasks.SelectedItem);
-            backupService.RefreshIncDiffTaskFlag(true);
+            RefreshBackupsandTasks(backupService);
         }
 
         private void btnTaskStop_Click(object sender, RoutedEventArgs e)
         {
+            _logger.Verbose("btnTaskStop_Click istekte bulunuldu");
+
             var backupService = _scope.Resolve<IBackupService>();
             backupService.CancelTask((TaskInfo)listViewTasks.SelectedItem);
-            backupService.RefreshIncDiffTaskFlag(true);
+            RefreshBackupsandTasks(backupService);
         }
 
         private void btnEnableTask_Click(object sender, RoutedEventArgs e)
         {
+            _logger.Verbose("btnEnableTask_Click istekte bulunuldu");
+
             var taskSchedulerManager = _scope.Resolve<ITaskSchedulerManager>();
             foreach (TaskInfo item in listViewTasks.SelectedItems)
             {
@@ -545,6 +580,8 @@ namespace DiskBackupWpfGUI
 
         private void btnDisableTask_Click(object sender, RoutedEventArgs e)
         {
+            _logger.Verbose("btnDisableTask_Click istekte bulunuldu");
+
             var taskSchedulerManager = _scope.Resolve<ITaskSchedulerManager>();
             foreach (TaskInfo item in listViewTasks.SelectedItems)
             {
@@ -555,6 +592,8 @@ namespace DiskBackupWpfGUI
 
         private void btnCopyTask_Click(object sender, RoutedEventArgs e)
         {
+            _logger.Verbose("btnCopyTask_Click istekte bulunuldu");
+
             var task = (TaskInfo)listViewTasks.SelectedItem;
             task.Name = "(" + Resources["clone"] + ") " + task.Name;
             task.EnableDisable = 1;
@@ -596,80 +635,57 @@ namespace DiskBackupWpfGUI
 
         private void CreateBackupTaskScheduler(TaskInfo resultTask, string lastSchedulerId)
         {
-            Console.WriteLine("Scope öncesi:" + resultTask.Id);
+            _logger.Verbose("CreateBackupTaskScheduler istekte bulunuldu");
 
             var taskSchedulerManager = _scope.Resolve<ITaskSchedulerManager>();
-            Console.WriteLine("sonrası:" + resultTask.Id);
-
 
             if (resultTask.BackupTaskInfo.Type == BackupTypes.Diff || resultTask.BackupTaskInfo.Type == BackupTypes.Inc)
             {
-                Console.WriteLine("ilk if:" + resultTask.Id);
                 if (resultTask.BackupTaskInfo.AutoRun)
                 {
-                    Console.WriteLine("ifAutoRun:" + resultTask.Id);
-
                     if (resultTask.BackupTaskInfo.AutoType == AutoRunType.DaysTime)
                     {
-                        Console.WriteLine("ifAutoType:" + resultTask.Id);
-
                         if (lastSchedulerId.Contains("Everyday")) // everyday
                         {
-                            Console.WriteLine("Everyday");
                             taskSchedulerManager.BackupIncDiffEverydayJob(resultTask).Wait();
-                            Console.WriteLine("-" + resultTask.ScheduleId);
                         }
                         else if (lastSchedulerId.Contains("WeekDays")) //weekdays
                         {
-                            Console.WriteLine("Weekdays");
                             taskSchedulerManager.BackupIncDiffWeekDaysJob(resultTask).Wait();
                         }
                         else //certain
                         {
-                            Console.WriteLine("Certain");
                             taskSchedulerManager.BackupIncDiffCertainDaysJob(resultTask).Wait();
                         }
                     }
                     else if (resultTask.BackupTaskInfo.AutoType == AutoRunType.WeeklyTime)
                     {
-                        Console.WriteLine("Weekly");
                         taskSchedulerManager.BackupIncDiffWeeklyJob(resultTask).Wait();
-
                     }
                     else if (resultTask.BackupTaskInfo.AutoType == AutoRunType.Periodic)
                     {
-                        Console.WriteLine("if periodic");
                         if (lastSchedulerId.Contains("PeriodicHours")) //saat
                         {
-                            Console.WriteLine("Periodic hours");
                             taskSchedulerManager.BackupIncDiffPeriodicHoursJob(resultTask).Wait();
-
                         }
                         else //dakika
                         {
-                            Console.WriteLine("Periodic Minute");
                             taskSchedulerManager.BackupIncDiffPeriodicMinutesJob(resultTask).Wait();
-
                         }
                     }
-                    Console.WriteLine("ilk if sonu");
                 }
             }
             else
             {
-                Console.WriteLine("Full:" + resultTask.Id);
                 //full gelince buraya alıcaz paşayı
             }
 
             var returnTask = _taskInfoDal.Get(x => x.Id == resultTask.Id);
-            Console.WriteLine(returnTask.ScheduleId + " geldim ehehe");
 
             // Oluşturulan scheduler'ı pasif et
             if (returnTask.ScheduleId != "" && returnTask.ScheduleId != null)
             {
-                Console.WriteLine("Disable:" + returnTask.Id + " SchedulerId: " + returnTask.ScheduleId);
                 taskSchedulerManager.DisableSchedule(returnTask).Wait();
-                Console.WriteLine("Disable:" + returnTask.Id + " SchedulerId: " + returnTask.ScheduleId);
             }
             else
             {
@@ -680,6 +696,7 @@ namespace DiskBackupWpfGUI
 
         private void GetTasks()
         {
+            _logger.Verbose("GetTasks metoduna istekte bulunuldu");
             _taskInfoList = _taskInfoDal.GetList();
 
             foreach (var item in _taskInfoList)
@@ -699,6 +716,8 @@ namespace DiskBackupWpfGUI
 
         private void ToggleTaskButtons()
         {
+            _logger.Verbose("ToggleTaskButtons istekte bulunuldu");
+
             bool runningFlag = false;
             bool pauseFlag = false;
             bool disableFlag = false;
@@ -781,6 +800,8 @@ namespace DiskBackupWpfGUI
 
         private void DisableTaskButtons()
         {
+            _logger.Verbose("DisableTaskButtons istekte bulunuldu");
+
             btnDisableTask.IsEnabled = false;
             btnCopyTask.IsEnabled = false;
             btnTaskDelete.IsEnabled = false;
@@ -793,6 +814,8 @@ namespace DiskBackupWpfGUI
 
         private void PausedTaskButtons()
         {
+            _logger.Verbose("PausedTaskButtons istekte bulunuldu");
+
             btnTaskStart.IsEnabled = true;
             btnTaskEdit.IsEnabled = false;
             btnTaskPause.IsEnabled = false;
@@ -805,6 +828,8 @@ namespace DiskBackupWpfGUI
 
         private void RunningTaskButtons()
         {
+            _logger.Verbose("RunningTaskButtons istekte bulunuldu");
+
             btnTaskStart.IsEnabled = false;
             btnTaskEdit.IsEnabled = false; // çalışan görev düzenlenemez
             btnTaskPause.IsEnabled = true;
@@ -940,8 +965,6 @@ namespace DiskBackupWpfGUI
         }
         #endregion
 
-
-
         #endregion
 
 
@@ -949,6 +972,8 @@ namespace DiskBackupWpfGUI
 
         private void btnRestore_Click(object sender, RoutedEventArgs e)
         {
+            _logger.Verbose("btnRestore_Click istekte bulunuldu");
+
             List<VolumeInfo> volumeInfoList = new List<VolumeInfo>();
             foreach (VolumeInfo item in listViewRestoreDisk.SelectedItems)
             {
@@ -1016,7 +1041,7 @@ namespace DiskBackupWpfGUI
                 txtRUsedSize.Text = backupInfo.StrUsedSize;
 
                 txtRDriveLetter.Text = backupInfo.Letter.ToString();
-                txtRCreatedDate.Text = backupInfo.CreatedDate;
+                txtRCreatedDate.Text = backupInfo.CreatedDate.ToString();
                 txtRPcName.Text = backupInfo.PCName;
                 txtRIpAddress.Text = backupInfo.IpAddress;
                 txtRFolderSize.Text = backupInfo.StrFileSize;
@@ -1043,6 +1068,8 @@ namespace DiskBackupWpfGUI
 
         private void Expander_Loaded_1(object sender, RoutedEventArgs e)
         {
+            _logger.Verbose("Expander_Loaded_1 istekte bulunuldu");
+
             var expander = sender as Expander;
             _expanderRestoreDiskList.Add(expander);
             var size = expander.FindName("txtRestoreTotalSize") as TextBlock;
@@ -1159,6 +1186,8 @@ namespace DiskBackupWpfGUI
 
         private void btnFilesBrowse_Click(object sender, RoutedEventArgs e)
         {
+            _logger.Verbose("btnFilesBrowse_Click istekte bulunuldu");
+
             using (var scope = _scope.BeginLifetimeScope())
             {
                 var backupInfo = (BackupInfo)listViewBackups.SelectedItem;
@@ -1169,6 +1198,8 @@ namespace DiskBackupWpfGUI
 
         private void listViewBackups_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
+            _logger.Verbose("listViewBackups_MouseDoubleClick istekte bulunuldu");
+
             if (listViewBackups.SelectedIndex != -1)
             {
                 using (var scope = _scope.BeginLifetimeScope())
@@ -1312,11 +1343,13 @@ namespace DiskBackupWpfGUI
 
         private void btnBackupStorageAdd_Click(object sender, RoutedEventArgs e)
         {
+            _logger.Verbose("btnBackupStorageAdd_Click istekte bulunuldu");
             using (var scope = _scope.BeginLifetimeScope())
             {
                 AddBackupAreaWindow addBackupArea = scope.Resolve<AddBackupAreaWindow>();
                 addBackupArea.ShowDialog();
                 var backupStorageService = _scope.Resolve<IBackupStorageService>();
+                _logger.Verbose("GetBackupStorages istekte bulunuldu");
                 listViewBackupStorage.ItemsSource = GetBackupStorages(_volumeList, backupStorageService.BackupStorageInfoList());
                 chbAllBackupStorage.IsChecked = true;
                 chbAllBackupStorage.IsChecked = false;
@@ -1325,12 +1358,14 @@ namespace DiskBackupWpfGUI
 
         private void btnBackupStorageEdit_Click(object sender, RoutedEventArgs e)
         {
+            _logger.Verbose("btnBackupStorageEdit_Click istekte bulunuldu");
             using (var scope = _scope.BeginLifetimeScope())
             {
                 BackupStorageInfo backupStorageInfo = (BackupStorageInfo)listViewBackupStorage.SelectedItem;
                 AddBackupAreaWindow addBackupArea = scope.Resolve<AddBackupAreaWindow>(new TypedParameter(backupStorageInfo.GetType(), backupStorageInfo));
                 addBackupArea.ShowDialog();
                 var backupStorageService = _scope.Resolve<IBackupStorageService>();
+                _logger.Verbose("GetBackupStorages istekte bulunuldu");
                 listViewBackupStorage.ItemsSource = GetBackupStorages(_volumeList, backupStorageService.BackupStorageInfoList());
                 chbAllBackupStorage.IsChecked = true;
                 chbAllBackupStorage.IsChecked = false;
@@ -1339,6 +1374,8 @@ namespace DiskBackupWpfGUI
 
         private void btnBackupStorageDelete_Click(object sender, RoutedEventArgs e)
         {
+            _logger.Verbose("btnBackupStorageDelete_Click istekte bulunuldu");
+
             MessageBoxResult result = MessageBox.Show($"{listViewBackupStorage.SelectedItems.Count} adet veri silinecek. Onaylıyor musunuz?", "Narbulut diyor ki; ", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
             if (result == MessageBoxResult.Yes)
             {
@@ -1347,6 +1384,7 @@ namespace DiskBackupWpfGUI
                 {
                     backupStorageService.DeleteBackupStorage(item);
                 }
+                _logger.Verbose("GetBackupStorages istekte bulunuldu");
                 listViewBackupStorage.ItemsSource = GetBackupStorages(_volumeList, backupStorageService.BackupStorageInfoList());
             }
         }
@@ -1484,6 +1522,8 @@ namespace DiskBackupWpfGUI
 
         private void listViewLog_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
+            _logger.Verbose("listViewLog_MouseDoubleClick istekte bulunuldu");
+
             if (listViewLog.SelectedIndex != -1)
             {
                 ActivityLog activityLog = (ActivityLog)listViewLog.SelectedItem;
@@ -1495,6 +1535,8 @@ namespace DiskBackupWpfGUI
 
         private void btnLogDelete_Click(object sender, RoutedEventArgs e)
         {
+            _logger.Verbose("btnLogDelete_Click istekte bulunuldu");
+
             MessageBoxResult result = MessageBox.Show($"{((ActivityLog)listViewLog.SelectedItem).TaskInfoName} ile ilgili veri silinecek. Onaylıyor musunuz?", "Narbulut diyor ki; ", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
             if (result == MessageBoxResult.Yes)
             {
@@ -1509,6 +1551,8 @@ namespace DiskBackupWpfGUI
 
         private void ShowActivityLog()
         {
+            _logger.Verbose("ShowActivityLog metoduna istekte bulunuldu");
+
             _activityLogList = _activityLogDal.GetList();
             foreach (var item in _activityLogList)
             {
@@ -1604,14 +1648,15 @@ namespace DiskBackupWpfGUI
         #endregion
 
 
-        public async void RefreshTasks(CancellationToken cancellationToken)
+        public async void RefreshTasks(CancellationToken cancellationToken, IBackupService backupService)
         {
             while (!cancellationToken.IsCancellationRequested)
             {
                 try
                 {
-                    await Task.Delay(500);
-                    var backupService = _scope.Resolve<IBackupService>();
+                    await Task.Delay(500, cancellationToken);
+                    _logger.Verbose("RefreshTasks istekte bulunuldu");
+                    //var backupService = _scope.Resolve<IBackupService>();
 
                     /*_diskList = backupService.GetDiskList();
 
@@ -1631,93 +1676,127 @@ namespace DiskBackupWpfGUI
                     GetDiskPage();
 
                     //log down
-                    List<ActivityDownLog> logList = new List<ActivityDownLog>();
-                    /*logList.Add(new ActivityDownLog
-                    {
-                        Detail = "Log yazısı",
-                        Time = DateTime.Now.ToString()
-                    });*/
-                    logList = backupService.GetDownLogList();
-                    if (logList != null)
-                    {
-                        foreach (ActivityDownLog item in logList)
-                        {
-                            _logList.Add(item);
-                            Console.WriteLine(item.Time + "-" + item.Detail);
-                        }
-
-                        listViewLogDown.Items.Refresh();
-                    }
+                    RefreshActivityLogDown(backupService);
 
                     // son yedekleme bilgisi
-                    if (listViewLog.Items.Count > 0)
-                    {
-                        ActivityLog lastLog = ((ActivityLog)listViewLog.Items[0]);
-                        txtRunningStateBlock.Text = lastLog.EndDate.ToString();
-                        if (lastLog.Status == StatusType.Success)
-                            txtRunningStateBlock.Foreground = Brushes.Green;
-                        else
-                            txtRunningStateBlock.Foreground = Brushes.Red;
-                    }
+                    RefreshMiddleTaskDate();
 
                     // Ortadaki statu
-                    TaskInfo runningTask = _taskInfoDal.GetList(x => x.Status == TaskStatusType.Working).FirstOrDefault();
-                    TaskInfo pausedTask = _taskInfoDal.GetList(x => x.Status == TaskStatusType.Paused).FirstOrDefault();
-                    if (runningTask != null)
-                    {
-                        // çalışanı yazdır
-                        runningTask.StatusInfo = _statusInfoDal.Get(x => x.Id == runningTask.StatusInfoId);
-                        txtMakeABackup.Text = Resources["makeABackup"].ToString() + ", "
-                            + FormatBytesNonStatic(runningTask.StatusInfo.DataProcessed)
-                            + ", %" + Math.Round((runningTask.StatusInfo.DataProcessed * 100.0) / (runningTask.StatusInfo.TotalDataProcessed), 2).ToString();
-                    }
-                    else if (pausedTask != null)
-                    {
-                        // durdurulanı yazdır
-                        pausedTask.StatusInfo = _statusInfoDal.Get(x => x.Id == pausedTask.StatusInfoId);
-                        txtMakeABackup.Text = Resources["backupStopped"].ToString() + ", "
-                            + FormatBytesNonStatic(pausedTask.StatusInfo.DataProcessed)
-                            + ", %" + Math.Round((pausedTask.StatusInfo.DataProcessed * 100.0) / (pausedTask.StatusInfo.TotalDataProcessed), 2).ToString();
-                    }
-                    else
-                        txtMakeABackup.Text = "";
+                    RefreshMiddleTaskStatu();
 
                     //backupları yeniliyor
                     if (backupService.GetRefreshIncDiffTaskFlag())
                     {
-                        int taskSelectedIndex = -1;
-                        if (listViewTasks.SelectedIndex != -1)
-                        {
-                            taskSelectedIndex = listViewTasks.SelectedIndex;
-                        }
-                        GetTasks();
-                        listViewTasks.SelectedIndex = taskSelectedIndex;
+                        _logger.Verbose("RefreshTasks: Task listesi ve backuplar yenileniyor");
 
-                        _backupsItems = backupService.GetBackupFileList(_backupStorageDal.GetList());
-                        listViewBackups.ItemsSource = _backupsItems;
-                        listViewRestore.ItemsSource = _backupsItems;
+                        RefreshBackupsandTasks(backupService);
 
                         backupService.RefreshIncDiffTaskFlag(false);
                     }
 
                     //activity logu yeniliyor
-                    if (backupService.GetRefreshIncDiffLogFlag())
-                    {
-                        int logSelectedIndex = -1;
-                        if (listViewLog.SelectedIndex != -1)
-                        {
-                            logSelectedIndex = listViewLog.SelectedIndex;
-                        }
-                        ShowActivityLog();
-                        listViewLog.SelectedIndex = logSelectedIndex + 1;
-                        backupService.RefreshIncDiffLogFlag(false);
-                    }
+                    RefreshActivityLog(backupService);
                 }
                 catch (Exception e)
                 {
                     MessageBox.Show(e.Message);
                 }
 
+            }
+        }
+
+        private void RefreshActivityLogDown(IBackupService backupService)
+        {
+            List<ActivityDownLog> logList = new List<ActivityDownLog>();
+            logList = backupService.GetDownLogList();
+            if (logList != null)
+            {
+                _logger.Verbose("RefreshTasks: ActivityLog down yenileniyor");
+
+                foreach (ActivityDownLog item in logList)
+                {
+                    _logList.Add(item);
+                }
+
+                listViewLogDown.Items.Refresh();
+            }
+        }
+
+        private void RefreshMiddleTaskDate()
+        {
+            if (listViewLog.Items.Count > 0)
+            {
+                _logger.Verbose("RefreshTasks: Son başarılı-başarısız tarih yazdırılıyor");
+
+                ActivityLog lastLog = ((ActivityLog)listViewLog.Items[0]);
+                txtRunningStateBlock.Text = lastLog.EndDate.ToString();
+                if (lastLog.Status == StatusType.Success)
+                    txtRunningStateBlock.Foreground = Brushes.Green;
+                else
+                    txtRunningStateBlock.Foreground = Brushes.Red;
+            }
+        }
+
+        private void RefreshMiddleTaskStatu()
+        {
+            TaskInfo runningTask = _taskInfoDal.GetList(x => x.Status == TaskStatusType.Working).FirstOrDefault();
+            TaskInfo pausedTask = _taskInfoDal.GetList(x => x.Status == TaskStatusType.Paused).FirstOrDefault();
+            if (runningTask != null)
+            {
+                _logger.Verbose("RefreshTasks: Çalışan task yazdırılıyor");
+
+                // çalışanı yazdır
+                runningTask.StatusInfo = _statusInfoDal.Get(x => x.Id == runningTask.StatusInfoId);
+                txtMakeABackup.Text = Resources["makeABackup"].ToString() + ", "
+                    + FormatBytesNonStatic(runningTask.StatusInfo.DataProcessed)
+                    + ", %" + Math.Round((runningTask.StatusInfo.DataProcessed * 100.0) / (runningTask.StatusInfo.TotalDataProcessed), 2).ToString();
+            }
+            else if (pausedTask != null)
+            {
+                _logger.Verbose("RefreshTasks: Durdurulan task yazdırılıyor");
+
+                // durdurulanı yazdır
+                pausedTask.StatusInfo = _statusInfoDal.Get(x => x.Id == pausedTask.StatusInfoId);
+                txtMakeABackup.Text = Resources["backupStopped"].ToString() + ", "
+                    + FormatBytesNonStatic(pausedTask.StatusInfo.DataProcessed)
+                    + ", %" + Math.Round((pausedTask.StatusInfo.DataProcessed * 100.0) / (pausedTask.StatusInfo.TotalDataProcessed), 2).ToString();
+            }
+            else
+                txtMakeABackup.Text = "";
+        }
+
+        private void RefreshBackupsandTasks(IBackupService backupService)
+        {
+            _logger.Verbose("Task listesi ve backuplar yenileniyor");
+
+            int taskSelectedIndex = -1;
+            if (listViewTasks.SelectedIndex != -1)
+            {
+                taskSelectedIndex = listViewTasks.SelectedIndex;
+            }
+            GetTasks();
+            listViewTasks.SelectedIndex = taskSelectedIndex;
+
+            _backupsItems = backupService.GetBackupFileList(_backupStorageDal.GetList());
+            listViewBackups.ItemsSource = _backupsItems;
+            listViewRestore.ItemsSource = _backupsItems;
+        }
+
+        private void RefreshActivityLog(IBackupService backupService)
+        {
+            if (backupService.GetRefreshIncDiffLogFlag())
+            {
+                RefreshBackupsandTasks(backupService);
+                _logger.Verbose("RefreshTasks: Activitylog listesi yenileniyor");
+
+                int logSelectedIndex = -1;
+                if (listViewLog.SelectedIndex != -1)
+                {
+                    logSelectedIndex = listViewLog.SelectedIndex;
+                }
+                ShowActivityLog();
+                listViewLog.SelectedIndex = logSelectedIndex + 1;
+                backupService.RefreshIncDiffLogFlag(false);
             }
         }
 
@@ -1755,36 +1834,6 @@ namespace DiskBackupWpfGUI
             }
 
             return ($"{dblSByte:0.##} {Suffix[i]}");
-        }
-
-        private void btnTaskEdit_Click(object sender, RoutedEventArgs e)
-        {
-            List<BackupStorageInfo> backupStorageInfoList = new List<BackupStorageInfo>();
-            foreach (BackupStorageInfo item in listViewBackupStorage.Items)
-            {
-                backupStorageInfoList.Add(item);
-            }
-
-            List<VolumeInfo> volumeInfoList = new List<VolumeInfo>();
-            foreach (VolumeInfo item in listViewDisk.SelectedItems)
-            {
-                volumeInfoList.Add(item);
-            }
-
-            TaskInfo taskInfo = (TaskInfo)listViewTasks.SelectedItem;
-            Console.WriteLine("Storage: " + taskInfo.BackupStorageInfoId + /*" - " + taskInfo.BackupStorageInfo.StorageName +*/ "\n" +
-                "BackupTaskInfı: " + taskInfo.BackupTaskId + /*" - " + taskInfo.BackupTaskInfo.TaskName +*/ "\n" +
-                "Status: " + taskInfo.StatusInfoId /* + " - " + taskInfo.StatusInfo.TaskName*/);
-
-            using (var scope = _scope.BeginLifetimeScope())
-            {
-                NewCreateTaskWindow newCreateTask = scope.Resolve<NewCreateTaskWindow>(new TypedParameter(backupStorageInfoList.GetType(), backupStorageInfoList),
-                    new TypedParameter(volumeInfoList.GetType(), volumeInfoList), new TypedParameter(taskInfo.GetType(), taskInfo));
-                newCreateTask.ShowDialog();
-            }
-            GetTasks();
-            var _backupStorageService = _scope.Resolve<IBackupStorageService>();
-            listViewBackupStorage.ItemsSource = GetBackupStorages(_volumeList, _backupStorageService.BackupStorageInfoList());
         }
     }
 }
