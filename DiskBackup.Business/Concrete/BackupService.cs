@@ -380,6 +380,10 @@ namespace DiskBackup.Business.Concrete
             {
                 if (_diskTracker.CW_SetupStream(letter, (int)taskInfo.BackupTaskInfo.Type, str)) // 0 diff, 1 inc, full (2) ucu gelmediğinden ayrılabilir veya aynı devam edebilir
                 {
+                    // yeterli alan kontrolü yap
+                    if (!CheckDiskSize(taskInfo, statusInfo, timeElapsed, str, BytesReadSoFar))
+                        return 3;
+
                     statusInfo.SourceObje = statusInfo.SourceObje + "-" + letter;
                     unsafe
                     {
@@ -418,27 +422,32 @@ namespace DiskBackup.Business.Concrete
                             }
                             result = (long)str.CopySize == BytesReadSoFar;
                             _diskTracker.CW_TerminateBackup(result, letter); //işlemi başarılı olup olmadığı cancel gelmeden
-                            Console.WriteLine($"{BytesReadSoFar} okundu --- {str.CopySize} okunması gereken");
                             BytesReadSoFar = 0;
 
                             try
                             {
-                                File.Copy(str.MetadataFileName, taskInfo.BackupStorageInfo.Path + str.MetadataFileName, false); //backupStorageInfo path alınıcak
-                                                                                                                         //backupStorageInfo.Path ters slaş '\' ile bitmeli
-                                                                                                                         // uniq id geldiğinde false yapılacak
+                                File.Copy(str.MetadataFileName, taskInfo.BackupStorageInfo.Path + str.MetadataFileName, false);                              
                             }
                             catch (IOException iox)
                             {
-                                _logger.Error(iox, "{@str.MetadataFileName} isimli backup dosyasını yazma işlemi başarısız.", str.MetadataFileName);
-                                Console.WriteLine($"Yazma işlemi başarısız. Error: {iox}");
-                                //MessageBox.Show(iox.Message);
+                                _logger.Error(iox, "{dizin} dizinine metadata dosyası kopyalama işlemi başarısız.", (taskInfo.BackupStorageInfo.Path + str.MetadataFileName));
                             }
+                            try 
+                            {
+                                File.Delete(Directory.GetCurrentDirectory() + @"\" + str.MetadataFileName);
+                            }
+                            catch (IOException ex)
+                            {
+                                _logger.Error(ex, "{dizin} dizinindeki metadata dosyasını silme işlemi başarısız.", (Directory.GetCurrentDirectory() + @"\" + str.MetadataFileName));
+                            }
+
                             file.Close();
 
                             if (Convert.ToBoolean(DiskTracker.CW_MetadataEditTaskandDescriptionField(taskInfo.BackupStorageInfo.Path + str.MetadataFileName, taskInfo.Name, taskInfo.Descripiton)))
-                                Console.WriteLine("Task name yazma başarılı");
+                                _logger.Information("Metadata'ya görev bilgilerini yazma işlemi başarılı.");
                             else
-                                Console.WriteLine("Task name yazma başarısız");
+                                _logger.Information("Metadata'ya görev bilgilerini yazma işlemi başarısız.");
+
                         }
                     }
                     statusInfo.SourceObje = statusInfo.SourceObje.Substring(0, statusInfo.SourceObje.Length - 2);
@@ -463,6 +472,34 @@ namespace DiskBackup.Business.Concrete
             if (result)
                 return 1;
             return 0;
+        }
+
+        private bool CheckDiskSize(TaskInfo taskInfo, StatusInfo statusInfo, Stopwatch timeElapsed, StreamInfo str, long BytesReadSoFar)
+        {
+            List<DiskInformation> diskList = GetDiskList();
+            foreach (var diskItem in diskList)
+            {
+                foreach (var volumeItem in diskItem.VolumeInfos)
+                {
+                    if (taskInfo.BackupStorageInfo.Type == BackupStorageType.Windows)
+                    {
+                        if (taskInfo.BackupStorageInfo.Path[0] == volumeItem.Letter)
+                        {
+                            if (volumeItem.FreeSize < ((long)str.CopySize + 2147483648))
+                            {
+                                statusInfo.DataProcessed = BytesReadSoFar;
+                                statusInfo.TotalDataProcessed = (long)str.CopySize;
+                                statusInfo.AverageDataRate = 0; // MB/s
+                                statusInfo.InstantDataRate = 0; // MB/s
+                                statusInfo.TimeElapsed = timeElapsed.ElapsedMilliseconds;
+                                _statusInfoDal.Update(statusInfo);
+                                return false;
+                            }
+                        }
+                    }
+                }
+            }
+            return true;
         }
 
         public bool CreateFullBackup(TaskInfo taskInfo) //bu method daha gelmedi 
