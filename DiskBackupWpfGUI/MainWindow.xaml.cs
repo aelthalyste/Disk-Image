@@ -156,8 +156,8 @@ namespace DiskBackupWpfGUI
                 _logger.Verbose("GetBackupFileList metoduna istekte bulunuldu");
                 _backupsItems = backupService.GetBackupFileList(_backupStorageDal.GetList());
 
-                    listViewBackups.ItemsSource = _backupsItems;
-                    listViewRestore.ItemsSource = _backupsItems;
+                listViewBackups.ItemsSource = _backupsItems;
+                listViewRestore.ItemsSource = _backupsItems;
             }
             catch (Exception e)
             {
@@ -694,11 +694,8 @@ namespace DiskBackupWpfGUI
         {
             _logger.Verbose("ToggleTaskButtons istekte bulunuldu");
 
-            bool runningFlag = false;
-            bool pauseFlag = false;
-            bool disableFlag = false;
-            bool enableFlag = false;
-            bool restoreTaskFlag = false;
+            bool runningFlag = false, pauseFlag = false, disableFlag = false, enableFlag = false, restoreTaskFlag = false, brokenTaskFlag = false;
+
             foreach (TaskInfo item in listViewTasks.SelectedItems)
             {
                 if (item.Status.Equals(TaskStatusType.Working))
@@ -716,8 +713,10 @@ namespace DiskBackupWpfGUI
                     btnTaskStart.IsEnabled = true;
                     if (item.EnableDisable == 0)
                         enableFlag = true;
-                    else
+                    else if (item.EnableDisable == 1)
                         disableFlag = true;
+                    else if (item.EnableDisable == 2) // geçersiz görev
+                        brokenTaskFlag = true;
                 }
 
                 if (item.ScheduleId == null || item.ScheduleId == "") // schedulerId boş ise o görev için bir job oluşturulmamış demektir. Disable/Enable oluşamaz
@@ -771,6 +770,12 @@ namespace DiskBackupWpfGUI
             {
                 btnTaskPause.IsEnabled = false;
                 btnTaskStop.IsEnabled = false;
+            }
+
+            if (brokenTaskFlag)
+            {
+                DisableTaskButtons();
+                btnTaskDelete.IsEnabled = true;
             }
         }
 
@@ -1343,6 +1348,19 @@ namespace DiskBackupWpfGUI
         private void btnBackupStorageEdit_Click(object sender, RoutedEventArgs e)
         {
             _logger.Verbose("btnBackupStorageEdit_Click istekte bulunuldu");
+
+            bool taskRunnigFlag = false;
+            foreach (TaskInfo itemTask in listViewTasks.Items)
+            {
+                if (itemTask.BackupStorageInfoId == ((BackupStorageInfo)listViewBackupStorage.SelectedItem).Id && (itemTask.Status == TaskStatusType.Error || itemTask.Status == TaskStatusType.Paused || itemTask.Status == TaskStatusType.Working))
+                    taskRunnigFlag = true;
+            }
+            if (taskRunnigFlag)
+            {
+                MessageBox.Show("İşlemekte olan görevleriniz etkileneceği için bu işlemi gerçekleştiremezsiniz!", "Narbulut diyor ki;", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
             using (var scope = _scope.BeginLifetimeScope())
             {
                 BackupStorageInfo backupStorageInfo = (BackupStorageInfo)listViewBackupStorage.SelectedItem;
@@ -1362,7 +1380,34 @@ namespace DiskBackupWpfGUI
         {
             _logger.Verbose("btnBackupStorageDelete_Click istekte bulunuldu");
 
-            MessageBoxResult result = MessageBox.Show($"{listViewBackupStorage.SelectedItems.Count} adet veri silinecek. Onaylıyor musunuz?", "Narbulut diyor ki; ", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
+            // etkilenen task kontrolü
+            MessageBoxResult result;
+            bool taskReadyFlag = false, taskRunnigFlag = false;
+            foreach (TaskInfo itemTask in listViewTasks.Items)
+            {
+                foreach (BackupStorageInfo item in listViewBackupStorage.SelectedItems)
+                {
+                    if (itemTask.BackupStorageInfoId == item.Id && (itemTask.Status == TaskStatusType.Ready || itemTask.Status == TaskStatusType.FirstMissionExpected || itemTask.Status == TaskStatusType.Cancel))
+                    {
+                        taskReadyFlag = true;
+                    }
+                    else if (itemTask.BackupStorageInfoId == item.Id)
+                    {
+                        taskRunnigFlag = true;
+                    }
+                }
+            }
+
+            if (taskReadyFlag && !taskRunnigFlag)
+                result = MessageBox.Show($"{listViewBackupStorage.SelectedItems.Count} adet veri silinecek ve etkilenen görevleriniz olacak. Onaylıyor musunuz?", "Narbulut diyor ki; ", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
+            else if (taskRunnigFlag)
+            {
+                MessageBox.Show("İşlemekte olan görevleriniz etkileneceği için bu işlemi gerçekleştiremezsiniz!", "Narbulut diyor ki;", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+            else
+                result = MessageBox.Show($"{listViewBackupStorage.SelectedItems.Count} adet veri silinecek. Onaylıyor musunuz?", "Narbulut diyor ki; ", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
+
             if (result == MessageBoxResult.Yes)
             {
                 var backupStorageService = _scope.Resolve<IBackupStorageService>();
@@ -1370,11 +1415,47 @@ namespace DiskBackupWpfGUI
                 {
                     backupStorageService.DeleteBackupStorage(item);
                 }
+
+                foreach (TaskInfo itemTask in listViewTasks.Items) //etkilenen taskları etkisizleştir
+                {
+                    if (_backupStorageDal.Get(x => x.Id == itemTask.BackupStorageInfoId) == null)
+                    {
+                        itemTask.EnableDisable = 2;
+                        itemTask.BackupStorageInfoId = 0;
+
+                        if (itemTask.ScheduleId != null && itemTask.ScheduleId != "")
+                        {
+                            var taskSchedulerManager = _scope.Resolve<ITaskSchedulerManager>();
+                            taskSchedulerManager.DeleteJob(itemTask.ScheduleId);
+                            itemTask.ScheduleId = "";
+                        }
+
+                        _taskInfoDal.Update(itemTask);
+                    }
+                }
+
                 _logger.Verbose("GetBackupStorages istekte bulunuldu");
                 listViewBackupStorage.ItemsSource = GetBackupStorages(_volumeList, backupStorageService.BackupStorageInfoList());
                 var backupService = _scope.Resolve<IBackupService>();
                 RefreshBackupsandTasks(backupService);
             }
+        }
+
+        private MessageBoxResult TaskControlToBeAffected()
+        {
+            foreach (TaskInfo itemTask in listViewTasks.Items)
+            {
+                foreach (BackupStorageInfo item in listViewBackupStorage.SelectedItems)
+                {
+                    if (itemTask.BackupStorageInfoId == item.Id)
+                    {
+                        var resultTask = MessageBox.Show($"{listViewBackupStorage.SelectedItems.Count} adet veri silinecek ve etkilenen görevleriniz olacak. Onaylıyor musunuz?", "Narbulut diyor ki; ", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
+                        return resultTask;
+                    }
+                }
+            }
+            var result = MessageBox.Show($"{listViewBackupStorage.SelectedItems.Count} adet veri silinecek. Onaylıyor musunuz?", "Narbulut diyor ki; ", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
+            return result;
         }
 
         private void listViewBackupStorage_SelectionChanged(object sender, SelectionChangedEventArgs e)

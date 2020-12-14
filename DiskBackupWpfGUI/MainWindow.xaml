@@ -398,6 +398,9 @@
                                         <DataTrigger Binding="{Binding EnableDisable}" Value="1">
                                             <Setter Property="Foreground" Value="LightSlateGray"/>
                                         </DataTrigger>
+                                        <DataTrigger Binding="{Binding EnableDisable}" Value="2">
+                                            <Setter Property="Foreground" Value="Red"/>
+                                        </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
                             </ListView.ItemContainerStyle>
