@@ -26,7 +26,8 @@ namespace DiskBackup.Entities.Concrete
     {
         Success = 0,
         Fail = 1,
-        Cancel = 2
+        Cancel = 2,
+        NotEnoughDiskSpace = 3
     }
 
     public enum DetailedMissionType

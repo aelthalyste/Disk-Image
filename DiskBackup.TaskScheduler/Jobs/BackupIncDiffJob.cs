@@ -149,7 +149,7 @@ namespace DiskBackup.TaskScheduler.Jobs
             else if (result == 3)
             {
                 _logger.Information("{@task} için Incremental-Differantial görevi yetersiz alandan dolayı başlatılamadı. Sonuç: Başarısız.", task);
-                activityLog.Status = StatusType.Fail;
+                activityLog.Status = StatusType.NotEnoughDiskSpace;
                 UpdateActivityAndTask(activityLog, task);
             }
 

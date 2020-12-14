@@ -38,7 +38,7 @@ namespace DiskBackup.Service
         {
             var logger = new LoggerConfiguration()
                 .Destructure.ByTransforming<TaskInfo>(t => "|" + t.Id + "_" + t.Name + "|")
-                .MinimumLevel.Information()
+                .MinimumLevel.Verbose()
                 .WriteTo.File(Assembly.GetExecutingAssembly().Location + ".logs.txt", flushToDiskInterval: TimeSpan.FromMilliseconds(300),
                     outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss} [{Level:u}] {Properties:l} {Message:l}{NewLine}{Exception}")
                 .CreateLogger();

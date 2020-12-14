@@ -249,7 +249,6 @@
     <system:String x:Key="clone">Kopya</system:String>
     <system:String x:Key="no">Hayır</system:String>
     <system:String x:Key="yes">Evet</system:String>
-
-
+    <system:String x:Key="NotEnoughDiskSpace">Yetersiz Disk Alanı</system:String>
 
 </ResourceDictionary>

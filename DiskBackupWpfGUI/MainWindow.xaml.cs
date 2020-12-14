@@ -156,8 +156,8 @@ namespace DiskBackupWpfGUI
                 _logger.Verbose("GetBackupFileList metoduna istekte bulunuldu");
                 _backupsItems = backupService.GetBackupFileList(_backupStorageDal.GetList());
 
-                listViewBackups.ItemsSource = _backupsItems;
-                listViewRestore.ItemsSource = _backupsItems;
+                    listViewBackups.ItemsSource = _backupsItems;
+                    listViewRestore.ItemsSource = _backupsItems;
             }
             catch (Exception e)
             {

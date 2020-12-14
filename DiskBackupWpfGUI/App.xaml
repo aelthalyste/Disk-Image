@@ -76,6 +76,9 @@
                 <DataTrigger Binding="{Binding Status}" Value="2">
                     <Setter Property="Source" Value="Resources\Icon\icons8_cancel.ico" />
                 </DataTrigger>
+                <DataTrigger Binding="{Binding Status}" Value="3">
+                    <Setter Property="Source" Value="Resources\Icon\icons8_cancel.ico" />
+                </DataTrigger>
             </Style.Triggers>
         </Style>
 
