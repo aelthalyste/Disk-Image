@@ -226,15 +226,6 @@ namespace DiskBackup.Business.Concrete
                     createdDate = createdDate + ":" + returnItem.BackupDate.Second.ToString();
                 _logger.Verbose("28: -{tarih}-", createdDate);
                     backupInfo.CreatedDate = createdDate;
-                    /*try
-                    {
-                        backupInfo.CreatedDate = Convert.ToDateTime(createdDate.ToString());
-
-                    }
-                    catch(Exception ex)
-                    {
-                        _logger.Error(ex, "hatamız hazır");
-                    }*/
 
                 _logger.Verbose("29");
                     if (returnItem.Version == -1)
