@@ -164,7 +164,7 @@
                             <TextBlock Text="{DynamicResource userName}" Grid.Row="2" Grid.Column="0" Visibility="Hidden"/>
                             <TextBlock Text="{DynamicResource password}" Grid.Row="3" Grid.Column="0" Visibility="Hidden"/>
 
-                            <TextBox Name="txtSettingsFolderPath" Grid.Row="1" Grid.Column="1" Width="250" Height="22" Margin="0,0,0,10" Padding="0,0,22,0" IsReadOnly="True" HorizontalAlignment="Left"/>
+                            <TextBox Name="txtSettingsFolderPath" Grid.Row="1" Grid.Column="1" Width="250" Height="22" Margin="0,0,0,10" Padding="0,0,22,0" HorizontalAlignment="Left"/>
                             <StackPanel Grid.Row="1" Grid.Column="1" HorizontalAlignment="Left" Margin="229,1,0,0">
                                 <Button Name="btnSettingsLocalFolder" Style="{StaticResource ArrowUpButton}" Click="btnSettingsLocalFolder_Click" Content="..." Width="20" Height="20" FontSize="15" />
                             </StackPanel>

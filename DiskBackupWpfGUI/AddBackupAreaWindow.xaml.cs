@@ -3,6 +3,7 @@ using DiskBackup.Business.Concrete;
 using DiskBackup.DataAccess.Abstract;
 using DiskBackup.DataAccess.Concrete.EntityFramework;
 using DiskBackup.Entities.Concrete;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -29,24 +30,27 @@ namespace DiskBackupWpfGUI
 
         private IBackupStorageService _backupStorageService;
         public IBackupStorageDal _backupStorageDal;
+        private readonly ILogger _logger;
 
         private bool _showSettings = false;
         private bool _updateControl = false;
 
         private int _updateId;
 
-        public AddBackupAreaWindow(IBackupStorageService backupStorageService, IBackupStorageDal backupStorageDal)
+        public AddBackupAreaWindow(IBackupStorageService backupStorageService, IBackupStorageDal backupStorageDal, ILogger logger)
         {
             InitializeComponent();
             _updateControl = false;
             _backupStorageService = backupStorageService;
             _backupStorageDal = backupStorageDal;
+            _logger = logger.ForContext<AddBackupAreaWindow>();
         }
 
-        public AddBackupAreaWindow(BackupStorageInfo backupStorageInfo, IBackupStorageService backupStorageService, IBackupStorageDal backupStorageDal)
+        public AddBackupAreaWindow(BackupStorageInfo backupStorageInfo, IBackupStorageService backupStorageService, IBackupStorageDal backupStorageDal, ILogger logger)
         {
             InitializeComponent();
 
+            _logger = logger.ForContext<AddBackupAreaWindow>();
             _updateId = backupStorageInfo.Id;
             _updateControl = true;
             txtBackupAreaName.Text = backupStorageInfo.StorageName;
@@ -65,7 +69,7 @@ namespace DiskBackupWpfGUI
                 else // yerel disktir
                 {
                     rbLocalDisc.IsChecked = true;
-                    txtSettingsFolderPath.Text = backupStorageInfo.Path.Substring(0, backupStorageInfo.Path.Length - 1);
+                    txtSettingsFolderPath.Text = backupStorageInfo.Path;
                 }
             }
             else // sadece nas veya yerel disk
@@ -82,7 +86,7 @@ namespace DiskBackupWpfGUI
                 else // yerel disktir
                 {
                     rbLocalDisc.IsChecked = true;
-                    txtSettingsFolderPath.Text = backupStorageInfo.Path.Substring(0, backupStorageInfo.Path.Length - 1);
+                    txtSettingsFolderPath.Text = backupStorageInfo.Path;
                 }
             }
             _backupStorageService = backupStorageService;
@@ -161,6 +165,33 @@ namespace DiskBackupWpfGUI
                     MessageBox.Show("İlgili alanları lütfen boş geçmeyiniz. Yerel Disk", "NARBULUT DİYOR Kİ;", MessageBoxButton.OK, MessageBoxImage.Error);
                     controlFlag = false;
                 }
+                else
+                {
+                    if (!(txtSettingsFolderPath.Text[1].Equals(':')))
+                    {
+                        MessageBox.Show("Lütfen geçerli bir dizin giriniz.", "Narbulut diyor ki;", MessageBoxButton.OK, MessageBoxImage.Error);
+                        controlFlag = false;
+                    }
+                    else
+                    {
+                        bool exists = System.IO.Directory.Exists(txtSettingsFolderPath.Text);
+
+                        if (!exists)
+                        {
+                            try
+                            {
+                                System.IO.Directory.CreateDirectory(txtSettingsFolderPath.Text);
+                                _logger.Information("{dizin} dizini oluşturuldu.", txtSettingsFolderPath.Text);
+                            }
+                            catch (Exception ex)
+                            {
+                                _logger.Error(ex, "{dizin} dizini oluşturulamadı.", txtSettingsFolderPath.Text);
+                                MessageBox.Show("Girdiğiniz dizinde bu isimde dosya olduğu için aynı isimde klasör oluşturulamaz!", "Narbulut diyor ki;", MessageBoxButton.OK, MessageBoxImage.Error);
+                                controlFlag = false;
+                            }
+                        }
+                    }
+                }
             }
             else if (rbNAS.IsChecked.Value) // nas
             {
@@ -183,11 +214,10 @@ namespace DiskBackupWpfGUI
                         IsCloud = cbBackupToCloud.IsChecked.Value,
                     };
 
-                    if (txtSettingsFolderPath.Text.Length > 3) // equals kontrolüne bak
+                    if (!(txtSettingsFolderPath.Text.Last().Equals('\\'))) // equals kontrolüne bak
                         backupStorageInfo.Path = txtSettingsFolderPath.Text + @"\";
                     else
                         backupStorageInfo.Path = txtSettingsFolderPath.Text;
-
 
                     backupStorageInfo.Type = BackupStorageType.Windows;
 
@@ -203,7 +233,10 @@ namespace DiskBackupWpfGUI
                     {
                         //update
                         backupStorageInfo.Id = _updateId;
-                        backupStorageInfo.Path = txtSettingsFolderPath.Text + @"\";
+                        if (!(txtSettingsFolderPath.Text.Last().Equals('\\'))) // equals kontrolüne bak
+                            backupStorageInfo.Path = txtSettingsFolderPath.Text + @"\";
+                        else
+                            backupStorageInfo.Path = txtSettingsFolderPath.Text;
                         UpdateAndShowResult(backupStorageInfo);
                     }
                     else

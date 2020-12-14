@@ -1335,6 +1335,8 @@ namespace DiskBackupWpfGUI
                 listViewBackupStorage.ItemsSource = GetBackupStorages(_volumeList, backupStorageService.BackupStorageInfoList());
                 chbAllBackupStorage.IsChecked = true;
                 chbAllBackupStorage.IsChecked = false;
+                var backupService = _scope.Resolve<IBackupService>();
+                RefreshBackupsandTasks(backupService);
             }
         }
 
@@ -1351,6 +1353,8 @@ namespace DiskBackupWpfGUI
                 listViewBackupStorage.ItemsSource = GetBackupStorages(_volumeList, backupStorageService.BackupStorageInfoList());
                 chbAllBackupStorage.IsChecked = true;
                 chbAllBackupStorage.IsChecked = false;
+                var backupService = _scope.Resolve<IBackupService>();
+                RefreshBackupsandTasks(backupService);
             }
         }
 
@@ -1368,6 +1372,8 @@ namespace DiskBackupWpfGUI
                 }
                 _logger.Verbose("GetBackupStorages istekte bulunuldu");
                 listViewBackupStorage.ItemsSource = GetBackupStorages(_volumeList, backupStorageService.BackupStorageInfoList());
+                var backupService = _scope.Resolve<IBackupService>();
+                RefreshBackupsandTasks(backupService);
             }
         }
 
@@ -1518,7 +1524,7 @@ namespace DiskBackupWpfGUI
         {
             _logger.Verbose("btnLogDelete_Click istekte bulunuldu");
 
-            MessageBoxResult result = MessageBox.Show($"{((ActivityLog)listViewLog.SelectedItem).TaskInfoName} ile ilgili veri silinecek. Onaylıyor musunuz?", "Narbulut diyor ki; ", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
+            MessageBoxResult result = MessageBox.Show($"{listViewLog.SelectedItems.Count} tane veri silinecek. Onaylıyor musunuz?", "Narbulut diyor ki; ", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
             if (result == MessageBoxResult.Yes)
             {
                 foreach (ActivityLog item in listViewLog.SelectedItems)
