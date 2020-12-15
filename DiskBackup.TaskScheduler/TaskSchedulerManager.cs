@@ -509,7 +509,7 @@ namespace DiskBackup.TaskScheduler
 
             var result = task.ScheduleId.Split('/');
             await _scheduler.PauseJob(new JobKey(result[0], result[1]));
-            task.EnableDisable = 1;
+            task.EnableDisable = TecnicalTaskStatusType.Disable;
             _taskInfoDal.Update(task);
             //Task.Delay(500).Wait();
         }
@@ -520,7 +520,7 @@ namespace DiskBackup.TaskScheduler
 
             var result = task.ScheduleId.Split('/');
             await _scheduler.ResumeJob(new JobKey(result[0], result[1]));
-            task.EnableDisable = 0;
+            task.EnableDisable = TecnicalTaskStatusType.Enable;
             _taskInfoDal.Update(task);
             //Task.Delay(500).Wait();
         }

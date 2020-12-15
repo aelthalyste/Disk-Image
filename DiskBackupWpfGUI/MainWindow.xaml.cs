@@ -572,7 +572,7 @@ namespace DiskBackupWpfGUI
 
             var task = (TaskInfo)listViewTasks.SelectedItem;
             task.Name = "(" + Resources["clone"] + ") " + task.Name;
-            task.EnableDisable = 1;
+            task.EnableDisable = TecnicalTaskStatusType.Disable;
             task.LastWorkingDate = Convert.ToDateTime("01/01/0002");
 
             var backupTask = _backupTaskDal.Get(x => x.Id == task.BackupTaskId);
@@ -665,7 +665,7 @@ namespace DiskBackupWpfGUI
             }
             else
             {
-                returnTask.EnableDisable = 0;
+                returnTask.EnableDisable = TecnicalTaskStatusType.Enable;
                 _taskInfoDal.Update(returnTask);
             }
         }
@@ -711,11 +711,11 @@ namespace DiskBackupWpfGUI
                     btnTaskPause.IsEnabled = false;
                     btnTaskStop.IsEnabled = false;
                     btnTaskStart.IsEnabled = true;
-                    if (item.EnableDisable == 0)
+                    if (item.EnableDisable == TecnicalTaskStatusType.Enable)
                         enableFlag = true;
-                    else if (item.EnableDisable == 1)
+                    else if (item.EnableDisable == TecnicalTaskStatusType.Disable)
                         disableFlag = true;
-                    else if (item.EnableDisable == 2) // geçersiz görev
+                    else if (item.EnableDisable == TecnicalTaskStatusType.Broken) // geçersiz görev
                         brokenTaskFlag = true;
                 }
 
@@ -1420,7 +1420,7 @@ namespace DiskBackupWpfGUI
                 {
                     if (_backupStorageDal.Get(x => x.Id == itemTask.BackupStorageInfoId) == null)
                     {
-                        itemTask.EnableDisable = 2;
+                        itemTask.EnableDisable = TecnicalTaskStatusType.Broken;
                         itemTask.BackupStorageInfoId = 0;
 
                         if (itemTask.ScheduleId != null && itemTask.ScheduleId != "")

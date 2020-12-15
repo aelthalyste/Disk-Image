@@ -35,7 +35,7 @@ namespace DiskBackupWpfGUI
         private void CreateContainer()
         {
             var logger = new LoggerConfiguration()
-                .MinimumLevel.Verbose()
+                .MinimumLevel.Information()
                 .WriteTo.File(Assembly.GetExecutingAssembly().Location + ".logs.txt", flushToDiskInterval: TimeSpan.FromMilliseconds(300),
                     outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss} [{Level:u}] {Properties:l} {Message:l}{NewLine}{Exception}")
                 .CreateLogger();

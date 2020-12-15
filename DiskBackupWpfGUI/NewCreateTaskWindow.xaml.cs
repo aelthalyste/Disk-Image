@@ -4,6 +4,7 @@ using DiskBackup.Business.Concrete;
 using DiskBackup.DataAccess.Abstract;
 using DiskBackup.Entities.Concrete;
 using DiskBackup.TaskScheduler;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -36,6 +37,7 @@ namespace DiskBackupWpfGUI
         private ITaskSchedulerManager _schedulerManager;
 
         private readonly ILifetimeScope _scope;
+        private readonly ILogger _logger;
 
         private List<BackupStorageInfo> _backupStorageInfoList = new List<BackupStorageInfo>();
         private List<VolumeInfo> _volumeInfoList = new List<VolumeInfo>();
@@ -47,7 +49,7 @@ namespace DiskBackupWpfGUI
 
         public NewCreateTaskWindow(List<BackupStorageInfo> backupStorageInfoList, IBackupService backupService, IBackupStorageService backupStorageService,
             Func<AddBackupAreaWindow> createAddBackupWindow, List<VolumeInfo> volumeInfoList, IBackupTaskDal backupTaskDal, IStatusInfoDal statusInfoDal,
-            ITaskInfoDal taskInfoDal, ITaskSchedulerManager schedulerManager, ILifetimeScope scope)
+            ITaskInfoDal taskInfoDal, ITaskSchedulerManager schedulerManager, ILifetimeScope scope, ILogger logger)
         {
             InitializeComponent();
 
@@ -64,6 +66,7 @@ namespace DiskBackupWpfGUI
             _taskInfo.StatusInfo = new StatusInfo();
             _schedulerManager = schedulerManager;
             _scope = scope;
+            _logger = logger.ForContext<NewCreateTaskWindow>();
             _schedulerManager.InitShedulerAsync();
 
             txtTaskName.Focus();
@@ -81,7 +84,7 @@ namespace DiskBackupWpfGUI
 
         public NewCreateTaskWindow(List<BackupStorageInfo> backupStorageInfoList, IBackupService backupService, IBackupStorageService backupStorageService,
             Func<AddBackupAreaWindow> createAddBackupWindow, List<VolumeInfo> volumeInfoList, IBackupTaskDal backupTaskDal, IStatusInfoDal statusInfoDal,
-            ITaskInfoDal taskInfoDal, ITaskSchedulerManager schedulerManager, ILifetimeScope scope, TaskInfo taskInfo, IBackupStorageDal backupStorageDal)
+            ITaskInfoDal taskInfoDal, ITaskSchedulerManager schedulerManager, ILifetimeScope scope, TaskInfo taskInfo, IBackupStorageDal backupStorageDal, ILogger logger)
         {
             InitializeComponent();
 
@@ -103,6 +106,7 @@ namespace DiskBackupWpfGUI
             _taskInfo.StatusInfo = _statusInfoDal.Get(x => x.Id == _taskInfo.StatusInfoId);
             _schedulerManager = schedulerManager;
             _scope = scope;
+            _logger = logger.ForContext<NewCreateTaskWindow>();
             _schedulerManager.InitShedulerAsync();
 
             txtTaskName.Text = _taskInfo.Name;
@@ -223,6 +227,19 @@ namespace DiskBackupWpfGUI
                 _taskInfo.Descripiton = txtTaskDescription.Text;
                 _taskInfo.BackupTaskInfo.TaskName = txtTaskName.Text;
 
+                if (rbBTDifferential.IsChecked.Value) // diff
+                {
+                    _taskInfo.BackupTaskInfo.Type = BackupTypes.Diff;
+                }
+                else if (rbBTIncremental.IsChecked.Value) // inc
+                {
+                    _taskInfo.BackupTaskInfo.Type = BackupTypes.Inc;
+                }
+                else if (rbBTFull.IsChecked.Value) // full
+                {
+                    _taskInfo.BackupTaskInfo.Type = BackupTypes.Full;
+                }
+
                 // hedefdeki retentiontime vs
                 _taskInfo.BackupTaskInfo.RetentionTime = Convert.ToInt32(txtRetentionTime.Text);
                 _taskInfo.BackupTaskInfo.FullOverwrite = chbFullOverwrite.IsChecked.Value;
@@ -310,6 +327,13 @@ namespace DiskBackupWpfGUI
                     _taskInfo.BackupTaskInfo.WaitNumberTryAgain = Convert.ToInt32(txtTimeWait.Text);
                 }
 
+                // Zincir kontrolü
+                if (!ChainCheck())
+                {
+                    Close();
+                    return;
+                }
+
                 //veritabanı işlemleri
                 TaskInfo resultTaskInfo = new TaskInfo();
                 if (!_updateControl)
@@ -325,7 +349,18 @@ namespace DiskBackupWpfGUI
                         taskSchedulerManager.DeleteJob(_taskInfo.ScheduleId);
                     }
                     _taskInfo.ScheduleId = "";
-                    _taskInfo.EnableDisable = 0;
+                    _taskInfo.EnableDisable = TecnicalTaskStatusType.Enable;
+
+                    //Zincir temizlemeye gerek var mı kontrolü
+                    var resultBackupTask = _backupTaskDal.Get(x => x.Id == _taskInfo.BackupTaskId);
+                    if (resultBackupTask.Type != _taskInfo.BackupTaskInfo.Type)
+                    {
+                        _logger.Information("{harf} zincir temizleniyor. {oncekiTip} tipinden, {yeniTip} tipine düzenleme yapıldı.", _taskInfo.StrObje, Resources[resultBackupTask.Type.ToString()], Resources[_taskInfo.BackupTaskInfo.Type.ToString()]);
+                        foreach (var item in _taskInfo.StrObje)
+                        {
+                            _backupService.CleanChain(item);
+                        }
+                    }
 
                     // güncelleme işlemi yapacaksın
                     resultTaskInfo = UpdateToDatabase();
@@ -400,6 +435,67 @@ namespace DiskBackupWpfGUI
 
         }
 
+        private bool ChainCheck()
+        {
+            List<TaskInfo> brokenTaskList = new List<TaskInfo>();
+            List<TaskInfo> taskList = new List<TaskInfo>();
+            if (!_updateControl)
+                taskList = _taskInfoDal.GetList(x => x.Type == TaskType.Backup && x.EnableDisable != TecnicalTaskStatusType.Broken);
+            else
+                taskList = _taskInfoDal.GetList(x => x.Type == TaskType.Backup && x.EnableDisable != TecnicalTaskStatusType.Broken && x.Id != _taskInfo.Id);
+
+            foreach (var itemTask in taskList)
+            {
+                itemTask.BackupTaskInfo = _backupTaskDal.Get(x => x.Id == itemTask.BackupTaskId);
+                if (itemTask.BackupTaskInfo.Type != _taskInfo.BackupTaskInfo.Type) // ezicek bir tür var
+                {
+                    foreach (var item in itemTask.StrObje) // C D E
+                    {
+                        if (_taskInfo.StrObje.Contains(item))
+                        {
+                            brokenTaskList.Add(itemTask);
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (brokenTaskList.Count > 0) // bozulacak görevler var
+            {
+                foreach (var item in brokenTaskList)
+                {
+                    Console.WriteLine(item.Name);
+                }
+                var result = MessageBox.Show("Oluşturmak istediğiniz görevlerin, volumelarında işlemekte olan görevleriniz etkisiz hale getirilecek.\nOnaylıyor musunuz?", "Narbulut diyor ki; ", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
+                if (result == MessageBoxResult.No)
+                {
+                    return false;
+                }
+                else
+                {
+                    _logger.Information("Kullanıcının onayı doğrultusunda işlemekte olan diğer görevler etkisiz hale getiriliyor.");
+                    foreach (var itemTask in brokenTaskList)
+                    {
+                        foreach (var item in itemTask.StrObje)
+                        {
+                            _backupService.CleanChain(item);
+                        }
+                        itemTask.EnableDisable = TecnicalTaskStatusType.Broken;
+
+                        if (itemTask.ScheduleId != null && itemTask.ScheduleId != "")
+                        {
+                            var taskSchedulerManager = _scope.Resolve<ITaskSchedulerManager>();
+                            taskSchedulerManager.DeleteJob(itemTask.ScheduleId);
+                            itemTask.ScheduleId = "";
+                        }
+
+                        _taskInfoDal.Update(itemTask);
+                    }
+                }
+            }
+            return true;
+        }
+
         private void btnCreateTaskBack_Click(object sender, RoutedEventArgs e)
         {
             if (NCTTabControl.SelectedIndex != 0)
@@ -431,17 +527,14 @@ namespace DiskBackupWpfGUI
                 if (rbBTDifferential.IsChecked.Value) // diff
                 {
                     lblBackupType.Text = Resources["diff"].ToString();
-                    _taskInfo.BackupTaskInfo.Type = BackupTypes.Diff;
                 }
                 else if (rbBTIncremental.IsChecked.Value) // inc
                 {
                     lblBackupType.Text = Resources["inc"].ToString();
-                    _taskInfo.BackupTaskInfo.Type = BackupTypes.Inc;
                 }
                 else if (rbBTFull.IsChecked.Value) // full
                 {
                     lblBackupType.Text = Resources["full"].ToString();
-                    _taskInfo.BackupTaskInfo.Type = BackupTypes.Full;
                 }
 
                 if (checkAutoRun.IsChecked.Value) // otomatik çalıştır aktif ise

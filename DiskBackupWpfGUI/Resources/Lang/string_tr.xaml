@@ -71,10 +71,13 @@
     <system:String x:Key="scheduler">Zamanlama</system:String>
     <system:String x:Key="summary">Özet</system:String>
     <system:String x:Key="diff">Differential</system:String>
+    <system:String x:Key="Diff">Differential</system:String>
     <system:String x:Key="diffDescription">Seçilen dosyanızı ilk yedeğinize göre alır</system:String>
     <system:String x:Key="inc">Incremental</system:String>
+    <system:String x:Key="Inc">Incremental</system:String>
     <system:String x:Key="incDescription">Seçilen dosyanızı son yedeğinize göre alır</system:String>
     <system:String x:Key="full">Full</system:String>
+    <system:String x:Key="Full">Full</system:String>
     <system:String x:Key="fullDescription">Seçilen dosyanızı tam yedek alır</system:String>
     <system:String x:Key="back">Geri</system:String>
     <system:String x:Key="next">İleri</system:String>
