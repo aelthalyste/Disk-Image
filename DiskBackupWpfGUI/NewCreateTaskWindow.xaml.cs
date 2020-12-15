@@ -459,7 +459,7 @@ namespace DiskBackupWpfGUI
                     }
                 }
             }
-
+            int count = 0;
             if (brokenTaskList.Count > 0) // bozulacak görevler var
             {
                 foreach (var item in brokenTaskList)
@@ -476,24 +476,35 @@ namespace DiskBackupWpfGUI
                     _logger.Information("Kullanıcının onayı doğrultusunda işlemekte olan diğer görevler etkisiz hale getiriliyor.");
                     foreach (var itemTask in brokenTaskList)
                     {
-                        foreach (var item in itemTask.StrObje)
+                        if (itemTask.Status == TaskStatusType.Ready || itemTask.Status == TaskStatusType.FirstMissionExpected) // çalışmayan görevlerin etkisiz hale getirilmesine izin vermek
                         {
-                            _backupService.CleanChain(item);
-                        }
-                        itemTask.EnableDisable = TecnicalTaskStatusType.Broken;
+                            itemTask.EnableDisable = TecnicalTaskStatusType.Broken;
 
-                        if (itemTask.ScheduleId != null && itemTask.ScheduleId != "")
-                        {
-                            var taskSchedulerManager = _scope.Resolve<ITaskSchedulerManager>();
-                            taskSchedulerManager.DeleteJob(itemTask.ScheduleId);
-                            itemTask.ScheduleId = "";
-                        }
+                            if (itemTask.ScheduleId != null && itemTask.ScheduleId != "")
+                            {
+                                var taskSchedulerManager = _scope.Resolve<ITaskSchedulerManager>();
+                                taskSchedulerManager.DeleteJob(itemTask.ScheduleId);
+                                itemTask.ScheduleId = "";
+                            }
 
-                        _taskInfoDal.Update(itemTask);
+                            foreach (var item in itemTask.StrObje)
+                            {
+                                _backupService.CleanChain(item);
+                            }
+
+                            _taskInfoDal.Update(itemTask);
+                            count++;
+                        }                       
                     }
                 }
             }
-            return true;
+            if (count == brokenTaskList.Count)
+                return true;
+            else
+            {
+                MessageBox.Show("Çalışan görevler etkisiz hale getirilemediği için bu görev eklenemez.", "Narbulut diyor ki;", MessageBoxButton.OK, MessageBoxImage.Error);
+                return false;
+            }
         }
 
         private void btnCreateTaskBack_Click(object sender, RoutedEventArgs e)

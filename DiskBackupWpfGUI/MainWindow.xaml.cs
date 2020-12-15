@@ -427,6 +427,31 @@ namespace DiskBackupWpfGUI
 
                     // kendisini sil
                     _taskInfoDal.Delete(item);
+
+                    // zincir sıfırlama kontrolü
+                    var taskList = _taskInfoDal.GetList(x => x.EnableDisable != TecnicalTaskStatusType.Broken);
+                    bool chainFlag = false;
+                    foreach (var itemTask in taskList)
+                    {
+                        foreach (var itemLetter in itemTask.StrObje)
+                        {
+                            if (item.StrObje.Contains(itemLetter))
+                            {
+                                // sıfırlama işlemi yapılamaz
+                                chainFlag = true;
+                            }
+                        }
+                    }
+
+                    if (!chainFlag)
+                    {
+                        // sıfırla
+                        var backupService = _scope.Resolve<IBackupService>();
+                        foreach (var itemLetter in item.StrObje)
+                        {
+                            backupService.CleanChain(itemLetter);
+                        }
+                    }
                 }
                 GetTasks();
             }

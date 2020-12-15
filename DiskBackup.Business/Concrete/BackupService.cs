@@ -161,87 +161,52 @@ namespace DiskBackup.Business.Concrete
             //usedSize, bootable, sıkıştırma, pc name, ip address
             _logger.Verbose("GetBackupFileList metodu çağırıldı");
             List<BackupInfo> backupInfoList = new List<BackupInfo>();
-            _logger.Verbose("1");
             //bootable = osVolume (true)
             foreach (BackupStorageInfo backupStorageItem in backupStorageList)
             {
                 var returnList = DiskTracker.CW_GetBackupsInDirectory(backupStorageItem.Path);
-                _logger.Verbose("2");
 
                 foreach (var returnItem in returnList)
                 {
                     BackupInfo backupInfo = new BackupInfo();
-                    _logger.Verbose("3");
                     backupInfo.Letter = returnItem.Letter;
-                    _logger.Verbose("4");
-
                     backupInfo.Version = returnItem.Version;
-                    _logger.Verbose("5");
-
                     backupInfo.OSVolume = returnItem.OSVolume;
-                _logger.Verbose("6");
                     backupInfo.DiskType = returnItem.DiskType; //mbr gpt
-                _logger.Verbose("7");
                     backupInfo.OS = returnItem.WindowsName;
-                _logger.Verbose("8");
                     backupInfo.BackupTaskName = returnItem.TaskName;
-                _logger.Verbose("9");
                     backupInfo.Description = returnItem.TaskDescription;
-                _logger.Verbose("10");
                     backupInfo.BackupStorageInfo = backupStorageItem;
-                _logger.Verbose("11");
                     backupInfo.BackupStorageInfoId = backupStorageItem.Id;
 
-                _logger.Verbose("12");
                     backupInfo.Bootable = Convert.ToBoolean(returnItem.OSVolume);
-                _logger.Verbose("13");
                     backupInfo.VolumeSize = (long)returnItem.VolumeTotalSize;
-                _logger.Verbose("14");
                     backupInfo.StrVolumeSize = FormatBytes((long)returnItem.VolumeTotalSize);
-                _logger.Verbose("15");
                     backupInfo.UsedSize = (long)returnItem.VolumeUsedSize;
-                _logger.Verbose("16");
                     backupInfo.StrUsedSize = FormatBytes((long)returnItem.VolumeUsedSize);
-                _logger.Verbose("17");
                     backupInfo.FileSize = (long)returnItem.BytesNeedToCopy;
-                _logger.Verbose("18");
                     backupInfo.StrFileSize = FormatBytes((long)returnItem.BytesNeedToCopy);
-                _logger.Verbose("19");
                     backupInfo.FileName = returnItem.Fullpath.Split('\\').Last();
-                _logger.Verbose("20");
                     backupInfo.PCName = returnItem.ComputerName;
-                _logger.Verbose("21");
                     backupInfo.IpAddress = returnItem.IpAdress;
-                _logger.Verbose("22");
                     string createdDate = (returnItem.BackupDate.Day < 10) ? 0 + returnItem.BackupDate.Day.ToString() : returnItem.BackupDate.Day.ToString();
-                _logger.Verbose("23");
                     createdDate = createdDate + "." + ((returnItem.BackupDate.Month < 10) ? 0 + returnItem.BackupDate.Month.ToString() : returnItem.BackupDate.Month.ToString());
-                _logger.Verbose("24");
                     createdDate = createdDate + "." + returnItem.BackupDate.Year + " ";
-                _logger.Verbose("25");
                     createdDate = createdDate + ((returnItem.BackupDate.Hour < 10) ? 0 + returnItem.BackupDate.Hour.ToString() : returnItem.BackupDate.Hour.ToString());
-                _logger.Verbose("26");
                     createdDate = createdDate + ":" + ((returnItem.BackupDate.Minute < 10) ? 0 + returnItem.BackupDate.Minute.ToString() : returnItem.BackupDate.Minute.ToString());
-                _logger.Verbose("27");
                     createdDate = createdDate + ":" + returnItem.BackupDate.Second.ToString();
-                _logger.Verbose("28: -{tarih}-", createdDate);
                     backupInfo.CreatedDate = createdDate;
 
-                _logger.Verbose("29");
                     if (returnItem.Version == -1)
                         backupInfo.Type = BackupTypes.Full;
                     else
                         backupInfo.Type = (BackupTypes)returnItem.BackupType; // 2 full - 1 inc - 0 diff - BATU' inc 1 - diff 0
-                    _logger.Verbose("30");
 
 
                     backupInfoList.Add(backupInfo);
-                    _logger.Verbose("31");
-
                 }
             }
 
-                _logger.Verbose("32");
             return backupInfoList;
         }
 
@@ -349,6 +314,7 @@ namespace DiskBackup.Business.Concrete
         public bool CleanChain(char letter)
         {
             _logger.Verbose("CleanChain metodu çağırıldı");
+            _logger.Information("{letter} zinciri temizleniyor.", letter);
             return _diskTracker.CW_RemoveFromTrack(letter);
         }
 
@@ -412,6 +378,7 @@ namespace DiskBackup.Business.Concrete
 
             foreach (var letter in letters) // C D E F
             {
+                _logger.Information($"{letter} backup işlemi başlatılıyor...");
                 if (_diskTracker.CW_SetupStream(letter, (int)taskInfo.BackupTaskInfo.Type, str)) // 0 diff, 1 inc, full (2) ucu gelmediğinden ayrılabilir veya aynı devam edebilir
                 {
                     // yeterli alan kontrolü yap
