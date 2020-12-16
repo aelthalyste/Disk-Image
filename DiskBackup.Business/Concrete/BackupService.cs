@@ -321,7 +321,7 @@ namespace DiskBackup.Business.Concrete
         public char AvailableVolumeLetter()
         {
             _logger.Verbose("AvailableVolumeLetter metodu çağırıldı");
-            
+
             var returnValue = DiskTracker.CW_GetFirstAvailableVolumeLetter();
             _logger.Verbose("{return} GetFirstAvailableVolumeLetter()'den dönen harf.", returnValue);
             return returnValue;
@@ -346,9 +346,9 @@ namespace DiskBackup.Business.Concrete
             if (_diskTracker == null)
                 throw new Exception("_diskTracker is null");
             var manualResetEvent = new ManualResetEvent(true);
-            _taskEventMap[taskInfo.Id] = manualResetEvent; 
+            _taskEventMap[taskInfo.Id] = manualResetEvent;
 
-             var timeElapsed = new Stopwatch();
+            var timeElapsed = new Stopwatch();
             _timeElapsedMap[taskInfo.Id] = timeElapsed;
 
             timeElapsed.Start();
@@ -401,6 +401,7 @@ namespace DiskBackup.Business.Concrete
                                     manualResetEvent.Dispose();
                                     _cancellationTokenSource[taskInfo.Id].Dispose();
                                     _cancellationTokenSource.Remove(taskInfo.Id);
+                                    DeleteMissingBackupFile(taskInfo, str, file);
                                     return 2;
                                 }
                                 manualResetEvent.WaitOne();
@@ -427,13 +428,13 @@ namespace DiskBackup.Business.Concrete
 
                             try
                             {
-                                File.Copy(str.MetadataFileName, taskInfo.BackupStorageInfo.Path + str.MetadataFileName, false);                              
+                                File.Copy(str.MetadataFileName, taskInfo.BackupStorageInfo.Path + str.MetadataFileName, false);
                             }
                             catch (IOException iox)
                             {
                                 _logger.Error(iox, "{dizin} dizinine metadata dosyası kopyalama işlemi başarısız.", (taskInfo.BackupStorageInfo.Path + str.MetadataFileName));
                             }
-                            try 
+                            try
                             {
                                 File.Delete(Directory.GetCurrentDirectory() + @"\" + str.MetadataFileName);
                             }
@@ -472,7 +473,52 @@ namespace DiskBackup.Business.Concrete
             _cancellationTokenSource.Remove(taskInfo.Id);
             if (result)
                 return 1;
+            DeleteBrokenBackupFiles(taskInfo, str);
             return 0;
+        }
+
+        private void DeleteBrokenBackupFiles(TaskInfo taskInfo, StreamInfo str)
+        {
+            _logger.Information("Görev başarısız olduğu için {dizin} siliniyor.", taskInfo.BackupStorageInfo.Path + str.FileName);
+            try
+            {
+                File.Delete(taskInfo.BackupStorageInfo.Path + str.FileName);
+            }
+            catch (IOException ex)
+            {
+                _logger.Error(ex, "{dizin} dizinindeki dosya silme işlemi başarısız.", taskInfo.BackupStorageInfo.Path + str.FileName);
+            }
+            _logger.Information("Görev başarısız olduğu için {dizin} siliniyor.", (Directory.GetCurrentDirectory() + @"\" + str.MetadataFileName));
+            try
+            {
+                File.Delete(Directory.GetCurrentDirectory() + @"\" + str.MetadataFileName);
+            }
+            catch (IOException ex)
+            {
+                _logger.Error(ex, "{dizin} dizinindeki metadata dosyasını silme işlemi başarısız.", (Directory.GetCurrentDirectory() + @"\" + str.MetadataFileName));
+            }
+        }
+
+        private unsafe void DeleteMissingBackupFile(TaskInfo taskInfo, StreamInfo str, FileStream file)
+        {
+            // oluşturulan dosyayı sil
+            _logger.Information("Görev iptal edildiği için {dizin} siliniyor.", taskInfo.BackupStorageInfo.Path + str.FileName);
+            try
+            {
+                file.Close();
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "{dizin} dizinindeki dosyayı kapatma işlemi başarısız.", taskInfo.BackupStorageInfo.Path + str.FileName);
+            }
+            try
+            {
+                File.Delete(taskInfo.BackupStorageInfo.Path + str.FileName);
+            }
+            catch (IOException ex)
+            {
+                _logger.Error(ex, "{dizin} dizinindeki dosya silme işlemi başarısız.", taskInfo.BackupStorageInfo.Path + str.FileName);
+            }
         }
 
         private bool CheckDiskSize(TaskInfo taskInfo, StatusInfo statusInfo, Stopwatch timeElapsed, StreamInfo str, long BytesReadSoFar)
@@ -533,7 +579,7 @@ namespace DiskBackup.Business.Concrete
 
         public void CancelTask(TaskInfo taskInfo)
         {
-            _logger.Verbose("CancelTask metodu çağırıldı");
+            _logger.Information("CancelTask metodu çağırıldı");
 
             var timeElapsed = _timeElapsedMap[taskInfo.Id];
             _cancellationTokenSource[taskInfo.Id].Cancel();
@@ -550,7 +596,7 @@ namespace DiskBackup.Business.Concrete
             {
                 _taskEventMap[taskInfo.Id].Set();
             }
-            taskInfo.Status = TaskStatusType.Ready; 
+            taskInfo.Status = TaskStatusType.Ready;
             _taskInfoDal.Update(taskInfo);
         }
 
