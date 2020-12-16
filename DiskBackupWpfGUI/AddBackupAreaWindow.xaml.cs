@@ -3,6 +3,7 @@ using DiskBackup.Business.Concrete;
 using DiskBackup.DataAccess.Abstract;
 using DiskBackup.DataAccess.Concrete.EntityFramework;
 using DiskBackup.Entities.Concrete;
+using DiskBackup.TaskScheduler;
 using Serilog;
 using System;
 using System.Collections.Generic;
@@ -29,7 +30,9 @@ namespace DiskBackupWpfGUI
         // NAS kısmı gerçekleştirilecek
 
         private IBackupStorageService _backupStorageService;
-        public IBackupStorageDal _backupStorageDal;
+        private ITaskSchedulerManager _taskSchedulerManager;
+        private readonly IBackupStorageDal _backupStorageDal;
+        private readonly ITaskInfoDal _taskInfoDal;
         private readonly ILogger _logger;
 
         private bool _showSettings = false;
@@ -37,22 +40,28 @@ namespace DiskBackupWpfGUI
 
         private int _updateId;
 
-        public AddBackupAreaWindow(IBackupStorageService backupStorageService, IBackupStorageDal backupStorageDal, ILogger logger)
+        public AddBackupAreaWindow(IBackupStorageService backupStorageService, IBackupStorageDal backupStorageDal, ILogger logger, ITaskInfoDal taskInfoDal, ITaskSchedulerManager taskSchedulerManager)
         {
             InitializeComponent();
             _updateControl = false;
             _backupStorageService = backupStorageService;
             _backupStorageDal = backupStorageDal;
+            _taskInfoDal = taskInfoDal;
+            _taskSchedulerManager = taskSchedulerManager;
             _logger = logger.ForContext<AddBackupAreaWindow>();
         }
 
-        public AddBackupAreaWindow(BackupStorageInfo backupStorageInfo, IBackupStorageService backupStorageService, IBackupStorageDal backupStorageDal, ILogger logger)
+        public AddBackupAreaWindow(BackupStorageInfo backupStorageInfo, IBackupStorageService backupStorageService, IBackupStorageDal backupStorageDal, ILogger logger, ITaskInfoDal taskInfoDal, ITaskSchedulerManager taskSchedulerManager)
         {
             InitializeComponent();
 
             _logger = logger.ForContext<AddBackupAreaWindow>();
             _updateId = backupStorageInfo.Id;
             _updateControl = true;
+            _backupStorageService = backupStorageService;
+            _taskSchedulerManager = taskSchedulerManager;
+            _backupStorageDal = backupStorageDal;
+            _taskInfoDal = taskInfoDal;
             txtBackupAreaName.Text = backupStorageInfo.StorageName;
             txtBackupAreaDescription.Text = backupStorageInfo.Description;
             if (backupStorageInfo.IsCloud) //hibrit
@@ -89,8 +98,6 @@ namespace DiskBackupWpfGUI
                     txtSettingsFolderPath.Text = backupStorageInfo.Path;
                 }
             }
-            _backupStorageService = backupStorageService;
-            _backupStorageDal = backupStorageDal;
         }
 
         #region Title Bar
@@ -226,9 +233,6 @@ namespace DiskBackupWpfGUI
                         // bulut işlemleri gelecek (kullanılan alan vs...)
                     }
 
-
-                    Close();
-
                     if (_updateControl)
                     {
                         //update
@@ -237,6 +241,11 @@ namespace DiskBackupWpfGUI
                             backupStorageInfo.Path = txtSettingsFolderPath.Text + @"\";
                         else
                             backupStorageInfo.Path = txtSettingsFolderPath.Text;
+                        // bozulacak restorelar var mı kontrolü ve etkilenecek backuplar kontrolü
+                        if (AffectedTaskControl())
+                        {
+                            return;
+                        }
                         UpdateAndShowResult(backupStorageInfo);
                     }
                     else
@@ -271,6 +280,11 @@ namespace DiskBackupWpfGUI
                         //update
                         backupStorageInfo.Id = _updateId;
                         backupStorageInfo.Path = txtSettingsNASFolderPath.Text + @"\";
+                        // bozulacak restorelar var mı kontrolü ve etkilenecek backuplar kontrolü
+                        if (AffectedTaskControl())
+                        {
+                            return;
+                        }
                         UpdateAndShowResult(backupStorageInfo);
                     }
                     else
@@ -279,6 +293,7 @@ namespace DiskBackupWpfGUI
                         AddAndShowResult(backupStorageInfo);
                     }
                 }
+                Close();
             }
         }
 
@@ -287,6 +302,51 @@ namespace DiskBackupWpfGUI
             Close();
         }
         #endregion
+
+        private bool AffectedTaskControl()
+        {
+            Console.WriteLine("AffectedTaskControl girdi");
+            var taskList = _taskInfoDal.GetList();
+            bool taskRunnigFlag = false, restoreTaskFlag = false;
+            foreach (TaskInfo itemTask in taskList)
+            {
+                if (itemTask.BackupStorageInfoId == _updateId && (itemTask.Status == TaskStatusType.Error || itemTask.Status == TaskStatusType.Paused || itemTask.Status == TaskStatusType.Working))
+                    taskRunnigFlag = true;
+                if (itemTask.BackupStorageInfoId == _updateId && itemTask.Type == TaskType.Restore)
+                    restoreTaskFlag = true;
+            }
+            if (taskRunnigFlag)
+            {
+                MessageBox.Show("İşlemekte olan görevleriniz etkileneceği için bu işlemi gerçekleştiremezsiniz!", "Narbulut diyor ki;", MessageBoxButton.OK, MessageBoxImage.Error);
+                return true;
+            }
+            if (restoreTaskFlag)
+            {
+                var result = MessageBox.Show("Restore görevleriniz bu değişiklikten etkilenecek.\nOnaylıyor musunuz?", "Narbulut diyor ki;", MessageBoxButton.YesNo, MessageBoxImage.Question);
+                if (result == MessageBoxResult.No)
+                {
+                    return true;
+                }
+                // ilgili restoreları boz
+                foreach (TaskInfo itemTask in taskList) //etkilenen taskları etkisizleştir
+                {
+                    if (itemTask.BackupStorageInfoId == _updateId && itemTask.Type == TaskType.Restore)
+                    {
+                        itemTask.EnableDisable = TecnicalTaskStatusType.Broken;
+                        itemTask.BackupStorageInfoId = 0;
+
+                        if (itemTask.ScheduleId != null && itemTask.ScheduleId != "")
+                        {
+                            _taskSchedulerManager.DeleteJob(itemTask.ScheduleId);
+                            itemTask.ScheduleId = "";
+                        }
+
+                        _taskInfoDal.Update(itemTask);
+                    }
+                }
+            }
+            return false;
+        }
 
         private void rbLocalDisc_Checked(object sender, RoutedEventArgs e)
         {
