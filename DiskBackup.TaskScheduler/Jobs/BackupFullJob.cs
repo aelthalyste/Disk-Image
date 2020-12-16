@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 
 namespace DiskBackup.TaskScheduler.Jobs
 {
+    // BAŞTAN YAZILACAK
     public class BackupFullJob : IJob
     {
         private readonly IBackupService _backupService;

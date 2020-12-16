@@ -99,7 +99,6 @@ namespace DiskBackup.TaskScheduler.Jobs
             catch (Exception e)
             {
                 _logger.Error(e, "Incremental-Differantial backup görevinde hata oluştu. Task: {@Task}. Refirecount: {Count}", task, context.RefireCount);
-                Console.WriteLine("Catch'e düştü");
                 if (task.BackupTaskInfo.FailTryAgain)
                 {
                     exception = new JobExecutionException(e, context.RefireCount <= task.BackupTaskInfo.FailNumberTryAgain);
@@ -113,7 +112,6 @@ namespace DiskBackup.TaskScheduler.Jobs
 
             if (result == 0)
             {
-                Console.WriteLine("Batuhan'dan false değer geldi");
                 _logger.Information("{@task} için Incremental-Differantial görevi bitirildi. Sonuç: NarDIWrapper'dan false geldi.", task);
                 if (task.BackupTaskInfo.FailTryAgain)
                 {

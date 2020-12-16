@@ -457,20 +457,6 @@ namespace DiskBackupWpfGUI
             }
         }
 
-        private void listViewTasks_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            if (listViewTasks.SelectedIndex != -1)
-            {
-                btnTaskDelete.IsEnabled = true;
-                btnTaskEdit.IsEnabled = true;
-
-                //butonlar eklenmeye devam edecek burayada da checkboxlara da
-
-                // çalışan görevi start etme engellendi
-                ToggleTaskButtons();
-            }
-        }
-
         private void listViewTasks_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
             _logger.Verbose("listViewTasks_MouseDoubleClick istekte bulunuldu");
@@ -604,14 +590,14 @@ namespace DiskBackupWpfGUI
             backupTask.TaskName = task.Name;
             var resultBackupTask = _backupTaskDal.Add(backupTask);
             if (resultBackupTask == null)
-                MessageBox.Show("Kopyalam işlemi başarısız.", "Narbulut diyor ki;", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show("Kopyalama işlemi başarısız.", "Narbulut diyor ki;", MessageBoxButton.OK, MessageBoxImage.Error);
             else
             {
                 var statusInfo = _statusInfoDal.Get(x => x.Id == task.StatusInfoId);
                 statusInfo.TaskName = task.Name;
                 var resultStatusInfo = _statusInfoDal.Add(statusInfo);
                 if (resultStatusInfo == null)
-                    MessageBox.Show("Kopyalam işlemi başarısız.", "Narbulut diyor ki;", MessageBoxButton.OK, MessageBoxImage.Error);
+                    MessageBox.Show("Kopyalama işlemi başarısız.", "Narbulut diyor ki;", MessageBoxButton.OK, MessageBoxImage.Error);
                 else
                 {
                     string lastSchedulerId = task.ScheduleId;
@@ -622,7 +608,7 @@ namespace DiskBackupWpfGUI
                     task.StatusInfo = resultStatusInfo;
                     TaskInfo resultTask = _taskInfoDal.Add(task);
                     if (resultTask == null)
-                        MessageBox.Show("Kopyalam işlemi başarısız.", "Narbulut diyor ki;", MessageBoxButton.OK, MessageBoxImage.Error);
+                        MessageBox.Show("Kopyalama işlemi başarısız.", "Narbulut diyor ki;", MessageBoxButton.OK, MessageBoxImage.Error);
                     else
                     {
                         // scheduler oluştur
@@ -711,6 +697,15 @@ namespace DiskBackupWpfGUI
             DisableTaskButtons();
         }
 
+        private void listViewTasks_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (listViewTasks.SelectedItems.Count > 1)
+                ToggleTaskButtons();
+            else if (listViewTasks.SelectedItems.Count == 1)
+                SingleToggleTaskButtons();
+            else
+                DisableTaskButtons();
+        }
 
         #region Task Buttons
 
@@ -719,88 +714,184 @@ namespace DiskBackupWpfGUI
         {
             _logger.Verbose("ToggleTaskButtons istekte bulunuldu");
 
-            bool runningFlag = false, pauseFlag = false, disableFlag = false, enableFlag = false, restoreTaskFlag = false, brokenTaskFlag = false;
+            bool runningFlag = false, pauseFlag = false, disableFlag = false, enableFlag = false, restoreTaskFlag = false, brokenTaskFlag = false, readyFlag = false, backupTaskFlag = false;
 
             foreach (TaskInfo item in listViewTasks.SelectedItems)
             {
-                if (item.Status.Equals(TaskStatusType.Working))
-                {
-                    runningFlag = true;
-                }
-                else if (item.Status.Equals(TaskStatusType.Paused))
-                {
-                    pauseFlag = true;
-                }
-                else if (item.Status.Equals(TaskStatusType.Ready) || item.Status.Equals(TaskStatusType.FirstMissionExpected))
-                {
-                    btnTaskPause.IsEnabled = false;
-                    btnTaskStop.IsEnabled = false;
-                    btnTaskStart.IsEnabled = true;
-                    if (item.EnableDisable == TecnicalTaskStatusType.Enable)
-                        enableFlag = true;
-                    else if (item.EnableDisable == TecnicalTaskStatusType.Disable)
-                        disableFlag = true;
-                    else if (item.EnableDisable == TecnicalTaskStatusType.Broken) // geçersiz görev
-                        brokenTaskFlag = true;
-                }
+                if (item.Type.Equals(TaskType.Restore)) // restore'da düzenleme olmadığı için restore task klonlanamaz
+                    restoreTaskFlag = true;
+                else
+                    backupTaskFlag = true;
 
-                if (item.ScheduleId == null || item.ScheduleId == "") // schedulerId boş ise o görev için bir job oluşturulmamış demektir. Disable/Enable oluşamaz
+                if (item.EnableDisable == TecnicalTaskStatusType.Enable)
+                    enableFlag = true;
+                else if (item.EnableDisable == TecnicalTaskStatusType.Disable)
+                    disableFlag = true;
+                else if (item.EnableDisable == TecnicalTaskStatusType.Broken) // geçersiz görev
+                    brokenTaskFlag = true;
+
+                if (item.ScheduleId == null || item.ScheduleId == "")
                 {
                     enableFlag = true;
                     disableFlag = true;
                 }
 
+                if (item.Status.Equals(TaskStatusType.Working))
+                    runningFlag = true;
+                else if (item.Status.Equals(TaskStatusType.Paused))
+                    pauseFlag = true;
+                else if (item.Status.Equals(TaskStatusType.Ready) || item.Status.Equals(TaskStatusType.FirstMissionExpected))
+                    readyFlag = true;
+            }
+
+            DisableTaskButtons();
+            // KOPYALAMA, START, PAUSE, STOP, EDİT YOOOOK :)))))))))) xdxd xD
+
+            if (brokenTaskFlag && !runningFlag && !pauseFlag) // çalışmayan ve durdurulmayan tüm görevler silinebilir
+            {
+                btnTaskDelete.IsEnabled = true;
+            }
+            else
+            {
+                if (restoreTaskFlag && backupTaskFlag) // Ortak oldukları tek şey delete
+                {
+                    // Enable, Disable, silme yapılabilir
+                    if (readyFlag && !runningFlag && !pauseFlag)
+                    {
+                        btnTaskDelete.IsEnabled = true;
+                    }
+                }
+                else if (restoreTaskFlag) // Restore'da disable/Enable yok
+                {
+                    // restore button durumları
+                    if (readyFlag && !runningFlag)
+                    {
+                        btnTaskDelete.IsEnabled = true;
+                    }
+                }
+                else if (backupTaskFlag) // Hazır, İlk görev bekleniyor, working, hata, durduruldu, iptal edildi
+                {
+                    // backup button durumları
+                    if (disableFlag && !enableFlag)
+                    {
+                        btnEnableTask.IsEnabled = true;
+                        btnTaskDelete.IsEnabled = true; //bunu özellikle kontrol et
+                    }
+                    else if (enableFlag && !disableFlag)
+                    {
+                        if (readyFlag && !runningFlag && !pauseFlag)
+                        {
+                            btnDisableTask.IsEnabled = true;
+                            btnTaskDelete.IsEnabled = true;
+                        }
+                    }
+                    else if (enableFlag && disableFlag)
+                    {
+                        btnEnableTask.IsEnabled = false;
+                        btnDisableTask.IsEnabled = false;
+
+                        if (readyFlag && !runningFlag && !pauseFlag)
+                        {
+                            btnTaskDelete.IsEnabled = true;
+                        }
+                    }
+                }
+            }
+        }
+
+        private void SingleToggleTaskButtons()
+        {
+            _logger.Verbose("SingleToggleTaskButtons istekte bulunuldu");
+
+            bool runningFlag = false, pauseFlag = false, disableFlag = false, enableFlag = false, restoreTaskFlag = false, brokenTaskFlag = false, readyFlag = false, backupTaskFlag = false;
+            bool ortayaKarisik = false;
+
+            foreach (TaskInfo item in listViewTasks.SelectedItems)
+            {
                 if (item.Type.Equals(TaskType.Restore)) // restore'da düzenleme olmadığı için restore task klonlanamaz
                     restoreTaskFlag = true;
+                else
+                    backupTaskFlag = true;
+
+                if (item.EnableDisable == TecnicalTaskStatusType.Enable)
+                    enableFlag = true;
+                else if (item.EnableDisable == TecnicalTaskStatusType.Disable)
+                    disableFlag = true;
+                else if (item.EnableDisable == TecnicalTaskStatusType.Broken) // geçersiz görev
+                    brokenTaskFlag = true;
+
+                if (item.ScheduleId == null || item.ScheduleId == "")
+                {
+                    ortayaKarisik = true;
+                }
+
+                if (item.Status.Equals(TaskStatusType.Working))
+                    runningFlag = true;
+                else if (item.Status.Equals(TaskStatusType.Paused))
+                    pauseFlag = true;
+                else if (item.Status.Equals(TaskStatusType.Ready) || item.Status.Equals(TaskStatusType.FirstMissionExpected))
+                    readyFlag = true;
             }
 
-            if (runningFlag && pauseFlag)
-            {
-                DisableTaskButtons();
-            }
-            else if (runningFlag)
-            {
-                RunningTaskButtons();
-            }
-            else if (pauseFlag)
-            {
-                PausedTaskButtons();
-            }
-
-            if (enableFlag && disableFlag)
-            {
-                btnDisableTask.IsEnabled = false;
-                btnEnableTask.IsEnabled = false;
-            }
-            else if (enableFlag)
-            {
-                btnDisableTask.IsEnabled = true;
-                btnTaskStart.IsEnabled = true;
-            }
-            else
-            {
-                btnEnableTask.IsEnabled = true;
-                btnTaskStart.IsEnabled = false;
-            }
-
-            if (restoreTaskFlag || listViewTasks.SelectedItems.Count > 1) // restore task kopyalanamaz ve editlenemez!
-            {
-                btnCopyTask.IsEnabled = false;
-                btnTaskEdit.IsEnabled = false;
-            }
-            else
-                btnCopyTask.IsEnabled = true;
-
-            if ((runningFlag && restoreTaskFlag) || (pauseFlag && restoreTaskFlag)) // restore task cancel veya pause edilemez!
-            {
-                btnTaskPause.IsEnabled = false;
-                btnTaskStop.IsEnabled = false;
-            }
+            DisableTaskButtons();
 
             if (brokenTaskFlag)
             {
-                DisableTaskButtons();
                 btnTaskDelete.IsEnabled = true;
+            }
+            else
+            {
+                if (restoreTaskFlag) // Hazır, İlk görev bekleniyor, working, hata
+                {
+                    // restore button durumları
+
+                    if (readyFlag) // burada kontrol edilmesi gereken iki buton mevcut delete ve start
+                    {
+                        btnTaskDelete.IsEnabled = true;
+                        btnTaskStart.IsEnabled = true;
+                    }
+                }
+                else if (backupTaskFlag) // Hazır, İlk görev bekleniyor, working, hata, durduruldu, iptal edildi
+                {
+                    // backup button durumları
+                    if (disableFlag)
+                    {
+                        btnEnableTask.IsEnabled = true;
+                        btnCopyTask.IsEnabled = true;
+                        btnTaskEdit.IsEnabled = true;
+                        btnTaskDelete.IsEnabled = true;
+                    }
+                    else if (enableFlag)
+                    {
+                        btnDisableTask.IsEnabled = true;
+
+                        if (readyFlag)
+                        {
+                            btnCopyTask.IsEnabled = true;
+                            btnTaskEdit.IsEnabled = true;
+                            btnTaskDelete.IsEnabled = true;
+                            btnTaskStart.IsEnabled = true;
+                        }
+                        else if (runningFlag)
+                        {
+                            btnTaskPause.IsEnabled = true;
+                            btnTaskStop.IsEnabled = true;
+                            btnDisableTask.IsEnabled = false;
+                        }
+                        else if (pauseFlag)
+                        {
+                            btnTaskStop.IsEnabled = true;
+                            btnTaskStart.IsEnabled = true;
+                            btnDisableTask.IsEnabled = false;
+                        }
+                    }
+
+                    if (ortayaKarisik)
+                    {
+                        btnEnableTask.IsEnabled = false;
+                        btnDisableTask.IsEnabled = false;
+                    }
+                }
             }
         }
 
@@ -848,6 +939,7 @@ namespace DiskBackupWpfGUI
         #endregion
 
         #region Checkbox Operations
+
         private void chbAllTasksChechbox_Checked(object sender, RoutedEventArgs e)
         {
             _tasksAllControl = true;
@@ -857,30 +949,12 @@ namespace DiskBackupWpfGUI
                 listViewTasks.SelectedItems.Add(item);
             }
 
-            if (listViewTasks.SelectedItems.Count == 1)
-            {
-                btnTaskEdit.IsEnabled = true;
-                btnTaskStart.IsEnabled = true;
-                // çalışan görevi start etme engellendi
-
+            if (listViewTasks.SelectedItems.Count > 1)
                 ToggleTaskButtons();
-            }
+            else if (listViewTasks.SelectedItems.Count == 1)
+                SingleToggleTaskButtons();
             else
-            {
-                btnTaskEdit.IsEnabled = false;
-                btnTaskStart.IsEnabled = false;
-            }
-
-            if (listViewTasks.SelectedItems.Count > 0)
-            {
-                btnTaskDelete.IsEnabled = true;
-                //btnTaskStart.IsEnabled = true;
-            }
-            else
-            {
-                btnTaskDelete.IsEnabled = false;
-                //btnTaskStart.IsEnabled = false;
-            }
+                DisableTaskButtons();
         }
 
         private void chbAllTasksChechbox_Unchecked(object sender, RoutedEventArgs e)
@@ -894,29 +968,12 @@ namespace DiskBackupWpfGUI
                 _tasksAllControl = true;
             }
 
-            if (listViewTasks.SelectedItems.Count == 1)
-            {
-                btnTaskEdit.IsEnabled = true;
-                btnTaskStart.IsEnabled = true;
-                // çalışan görevi start etme engellendi
+            if (listViewTasks.SelectedItems.Count > 1)
                 ToggleTaskButtons();
-            }
+            else if (listViewTasks.SelectedItems.Count == 1)
+                SingleToggleTaskButtons();
             else
-            {
-                btnTaskEdit.IsEnabled = false;
-                btnTaskStart.IsEnabled = false;
-            }
-
-            if (listViewTasks.SelectedItems.Count > 0)
-            {
-                btnTaskDelete.IsEnabled = true;
-                //btnTaskStart.IsEnabled = true;
-            }
-            else
-            {
-                btnTaskDelete.IsEnabled = false;
-                //btnTaskStart.IsEnabled = false;
-            }
+                DisableTaskButtons();
         }
 
         private void chbTask_Checked(object sender, RoutedEventArgs e)
@@ -927,23 +984,12 @@ namespace DiskBackupWpfGUI
                 chbAllTasksChechbox.IsChecked = _tasksAllControl;
             }
 
-            if (listViewTasks.SelectedItems.Count == 1)
-            {
-                btnTaskEdit.IsEnabled = true;
-                btnTaskStart.IsEnabled = true;
-                // çalışan görevi start etme engellendi
+            if (listViewTasks.SelectedItems.Count > 1)
                 ToggleTaskButtons();
-            }
+            else if (listViewTasks.SelectedItems.Count == 1)
+                SingleToggleTaskButtons();
             else
-            {
-                btnTaskEdit.IsEnabled = false;
-                btnTaskStart.IsEnabled = false;
-            }
-
-            if (listViewTasks.SelectedItems.Count > 0)
-                btnTaskDelete.IsEnabled = true;
-            else
-                btnTaskDelete.IsEnabled = false;
+                DisableTaskButtons();
         }
 
         private void chbTask_Unchecked(object sender, RoutedEventArgs e)
@@ -951,23 +997,12 @@ namespace DiskBackupWpfGUI
             _tasksAllControl = false;
             chbAllTasksChechbox.IsChecked = false;
 
-            if (listViewTasks.SelectedItems.Count == 1)
-            {
-                btnTaskEdit.IsEnabled = true;
-                btnTaskStart.IsEnabled = true;
-                // çalışan görevi start etme engellendi
+            if (listViewTasks.SelectedItems.Count > 1)
                 ToggleTaskButtons();
-            }
+            else if (listViewTasks.SelectedItems.Count == 1)
+                SingleToggleTaskButtons();
             else
-            {
-                btnTaskEdit.IsEnabled = false;
-                btnTaskStart.IsEnabled = false;
-            }
-
-            if (listViewTasks.SelectedItems.Count > 0)
-                btnTaskDelete.IsEnabled = true;
-            else
-                btnTaskDelete.IsEnabled = false;
+                DisableTaskButtons();
         }
         #endregion
 
