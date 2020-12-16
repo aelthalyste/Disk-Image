@@ -150,6 +150,12 @@ namespace DiskBackup.TaskScheduler.Jobs
                 activityLog.Status = StatusType.NotEnoughDiskSpace;
                 UpdateActivityAndTask(activityLog, task);
             }
+            else if (result == 4)
+            {
+                _logger.Information("{@task} için Incremental-Differantial görevi NAS'a bağlanılamadığı için başlatılamadı. Sonuç: Başarısız.", task);
+                activityLog.Status = StatusType.ConnectionError;
+                UpdateActivityAndTask(activityLog, task);
+            }
 
         }
 

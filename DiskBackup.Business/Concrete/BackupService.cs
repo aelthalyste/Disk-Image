@@ -371,9 +371,17 @@ namespace DiskBackup.Business.Concrete
 
             // NAS için
             NetworkConnection nc = null;
-            if (taskInfo.BackupStorageInfo.Type == BackupStorageType.NAS)
+            try
+            {       
+                if (taskInfo.BackupStorageInfo.Type == BackupStorageType.NAS)
+                {
+                    nc = new NetworkConnection(taskInfo.BackupStorageInfo.Path.Substring(0, taskInfo.BackupStorageInfo.Path.Length - 1), taskInfo.BackupStorageInfo.Username, taskInfo.BackupStorageInfo.Password, "");
+                }
+            }
+            catch (Exception ex)
             {
-                nc = new NetworkConnection(taskInfo.BackupStorageInfo.Path, taskInfo.BackupStorageInfo.Username, taskInfo.BackupStorageInfo.Password, taskInfo.BackupStorageInfo.Domain);
+                _logger.Error(ex, "Uzak paylaşıma bağlanılamıyor.");
+                return 4;
             }
 
             foreach (var letter in letters) // C D E F
