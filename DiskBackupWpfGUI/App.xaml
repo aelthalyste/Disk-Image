@@ -80,7 +80,7 @@
                     <Setter Property="Source" Value="Resources\Icon\icons8-medium-risk-96.png" />
                 </DataTrigger>
                 <DataTrigger Binding="{Binding Status}" Value="4">
-                    <Setter Property="Source" Value="Resources\Icon\icons8-error-cloud-48.png" />
+                    <Setter Property="Source" Value="Resources\Icon\icons8_brake_warning_2.ico" />
                 </DataTrigger>
             </Style.Triggers>
         </Style>

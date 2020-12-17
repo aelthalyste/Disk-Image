@@ -37,8 +37,8 @@ namespace DiskBackup.Business.Concrete
                 userName,
                 0,
                 null,
-                null,
-                null);
+                IntPtr.Zero,
+                IntPtr.Zero);
 
             if (result != 0)
             {

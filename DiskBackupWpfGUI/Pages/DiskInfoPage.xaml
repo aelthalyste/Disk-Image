@@ -21,9 +21,9 @@
                         <TextBlock Name="diskNameTextBlock" VerticalAlignment="Center" FontWeight="Bold" FontSize="14">Disk 1</TextBlock>
                     </StackPanel>
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock Name="bootTypeTextBlock" FontSize="14">MBR</TextBlock>
-                        <TextBlock FontSize="14" Text=" "></TextBlock>
-                        <TextBlock Name="sizeTextBlock" FontSize="14">700 GB</TextBlock>
+                        <TextBlock Name="bootTypeTextBlock" FontSize="12">MBR</TextBlock>
+                        <TextBlock FontSize="12" Text=" "></TextBlock>
+                        <TextBlock Name="sizeTextBlock" FontSize="12">700 GB</TextBlock>
                     </StackPanel>
                 </StackPanel>
                 <UniformGrid Name="diskInfoUniformGrid" Rows="1" Grid.Column="1">

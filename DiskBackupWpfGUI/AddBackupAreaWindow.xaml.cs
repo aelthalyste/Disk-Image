@@ -202,7 +202,7 @@ namespace DiskBackupWpfGUI
             }
             else if (rbNAS.IsChecked.Value) // nas
             {
-                if (txtBackupAreaName.Text.Equals("") || txtSettingsNASFolderPath.Text.Equals("") || txtSettingsNASUserName.Text.Equals("") || txtSettingsNASPassword.Password.Equals(""))
+                if (txtBackupAreaName.Text.Equals("") || txtSettingsNASFolderPath.Text.Equals("") || txtSettingsNASUserName.Text.Equals("") || txtSettingsNASPassword.Password.Equals("") || txtSettingsNASDomain.Text.Equals(""))
                 {
                     MessageBox.Show("İlgili alanları lütfen boş geçmeyiniz. NAS", "NARBULUT DİYOR Kİ;", MessageBoxButton.OK, MessageBoxImage.Error);
                     controlFlag = false;
@@ -293,7 +293,6 @@ namespace DiskBackupWpfGUI
                         AddAndShowResult(backupStorageInfo);
                     }
                 }
-                Close();
             }
         }
 
@@ -437,7 +436,12 @@ namespace DiskBackupWpfGUI
                 NetworkConnection nc = null;
                 try
                 {
-                    nc = new NetworkConnection(backupStorageInfo.Path.Substring(0, backupStorageInfo.Path.Length - 1), backupStorageInfo.Username, backupStorageInfo.Password, backupStorageInfo.Domain);
+                    nc = new NetworkConnection(backupStorageInfo.Path.Substring(0, backupStorageInfo.Path.Length - 1), backupStorageInfo.Username, backupStorageInfo.Password, "");
+                    if (!backupStorageInfo.Path.Contains(backupStorageInfo.Domain))
+                    {
+                        Console.WriteLine("adanamerkez ");
+                        nasControlFlag = true;
+                    }
                 }
                 catch
                 {
@@ -483,7 +487,12 @@ namespace DiskBackupWpfGUI
                 NetworkConnection nc = null;
                 try
                 {
-                    nc = new NetworkConnection(backupStorageInfo.Path.Substring(0, backupStorageInfo.Path.Length - 1), backupStorageInfo.Username, backupStorageInfo.Password, backupStorageInfo.Domain);
+                    nc = new NetworkConnection(backupStorageInfo.Path.Substring(0, backupStorageInfo.Path.Length - 1), backupStorageInfo.Username, backupStorageInfo.Password, "");
+                    if (!backupStorageInfo.Path.Contains(backupStorageInfo.Domain))
+                    {
+                        Console.WriteLine("gebzeden geldim ");
+                        nasControlFlag = true;
+                    }
                 }
                 catch 
                 {
