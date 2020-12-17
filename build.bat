@@ -3,7 +3,7 @@
 call :StartTimer
 
 set build_options= -DUNICODE -D_UNICODE -D_CRT_SECURE_NO_WARNINGS
-set compile_flags=  -nologo /EHsc /W0 /DEBUG:FULL /Zi /FC /Od /INCREMENTAL:NO /Fac
+set compile_flags=  -nologo /EHsc /W0 /DEBUG:FULL /Zi /FC /Od /Fa /INCREMENTAL:NO
 set linker_flags=  "fltLib.lib" "vssapi.lib"
 rem /DEBUG:FULL /Zi /FC
 

@@ -93,8 +93,7 @@ Return Value:
                             continue;
                         }
                         
-                        
-                        INT32 DataUsed = (INT32)NAR_MB_DATA_USED(OutBuffer);
+                        INT32 DataUsed = NAR_MB_DATA_USED(OutBuffer);
                         
                         if (DataUsed > 0 && DataUsed < NAR_MEMORYBUFFER_SIZE) {
                             
@@ -110,6 +109,8 @@ Return Value:
                             
                             FlushFileBuffers(V->LogHandle);
                             SetFilePointer(V->LogHandle, 0, 0, FILE_END); // set it to the append mode
+                            
+                            printf("FETCHED %i long logs from kernel\n", DataUsed);
                             
                             for (unsigned int TempIndex = 0; TempIndex < RecCount; TempIndex++) {
                                 if (Recs[TempIndex].StartPos + Recs[TempIndex].Len < V->VolumeTotalClusterCount) {

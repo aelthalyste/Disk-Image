@@ -301,12 +301,15 @@ Return Value:
         //ExInitializePagedLookasideList(&NarData.LookAsideList, 0, 0, 0, NAR_LOOKASIDE_SIZE, NAR_TAG, 0);
         //ExInitializePagedLookasideList(&NarData.GUIDComparePagedLookAsideList, 0, 0, 0, NAR_GUID_STR_SIZE, NAR_TAG, 0);
         
+#if 0        
         NarData.VolumeRegionBuffer = ExAllocatePoolWithTag(PagedPool, NAR_VOLUMEREGIONBUFFERSIZE, NAR_TAG);
         if (NarData.VolumeRegionBuffer == NULL) {
             DbgPrint("Couldnt allocate %I64d paged memory for volume buffer\n", NAR_VOLUMEREGIONBUFFERSIZE);
             status = STATUS_FAILED_DRIVER_ENTRY;
             leave;
         }
+#endif
+        
         memset(NarData.VolumeRegionBuffer, 0, NAR_VOLUMEREGIONBUFFERSIZE);
         
         //Initializing each volume entry
@@ -581,40 +584,36 @@ Return Value:
     
     NTSTATUS status;
     
-    
-    if (NarData.VolumeRegionBuffer != NULL) {
+    FltUnregisterFilter(NarData.Filter);
+    DbgPrint("Filter unregistered\n");
+
+#if 0
         
-        
+    {
         for (int i = 0; i < NAR_MAX_VOLUME_COUNT; i++) {
             
+            // since we just cancelled all pending operations, we dont have to acquire mutexes nor release them
+
             ExAcquireFastMutex(&NarData.VolumeRegionBuffer[i].FastMutex);
             
             // invalidate volume name so no thread gains access to invalid memory adress
-            // memset(&NarData.VolumeRegionBuffer[i].Reserved[0], 0, sizeof(NarData.VolumeRegionBuffer[i].Reserved));
+            //memset(&NarData.VolumeRegionBuffer[i].Reserved[0], 0, sizeof(NarData.VolumeRegionBuffer[i].Reserved));
+            
             // checking with NULL is dumb at kernel level
             if (NarData.VolumeRegionBuffer[i].MemoryBuffer != NULL) {
-                DbgPrint("Freeing volume memory buffer %i\n", i);
+                //DbgPrint("Freeing volume memory buffer %i\n", i);
                 ExFreePoolWithTag(NarData.VolumeRegionBuffer[i].MemoryBuffer, NAR_TAG);
+                NarData.VolumeRegionBuffer[i].MemoryBuffer = 0;
             }
-            
             ExReleaseFastMutex(&NarData.VolumeRegionBuffer[i].FastMutex);
-            
         }
         
-        ExFreePoolWithTag(NarData.VolumeRegionBuffer, NAR_TAG);
-        DbgPrint("Freed volume region buffer\n");
+        //ExFreePoolWithTag(NarData.VolumeRegionBuffer, NAR_TAG);
+        //DbgPrint("Freed volume region buffer\n");
         
     }// If nardata.volumeregionbuffer != NULL
     
-    
-    //ExDeletePagedLookasideList(&NarData.LookAsideList);
-    DbgPrint("Lookasidelist deleted\n");
-    
-    //ExDeletePagedLookasideList(&NarData.GUIDComparePagedLookAsideList);
-    DbgPrint("GUID compare paged lookaside list deleted\n");
-    
-    FltUnregisterFilter(NarData.Filter);
-    DbgPrint("Filter unregistered\n");
+#endif
     
     return STATUS_SUCCESS;
 }
@@ -810,6 +809,16 @@ Return Value:
                 }
                 else {
                     DbgPrint("BIG IF BLOCK FAILED IN SPYMESSAGE\n"); // short but effective temporary message
+                    if(Command->VolumeGUIDStr == NULL){
+                        DbgPrint("VOLGUIDSTR WAS NULL\n");
+                    }
+                    if(OutputBuffer == NULL){
+                        DbgPrint("OUTPUTBUFFER WAS  NULL\n");
+                    }
+                    if(OutputBufferSize == NAR_MEMORYBUFFER_SIZE){
+                        DbgPrint("OUTPUTBUFFERSIZE WAS NOT EQUAL TO NAR_MEMORYBUFFER_SIZE NULL\n");
+                    }
+                    
                 }
                 
                 
@@ -1058,6 +1067,12 @@ Return Value:
         return  FLT_PREOP_SUCCESS_NO_CALLBACK;
     }
     
+    // If system shutdown requested, dont bother to log changes
+    if (Data->Iopb->MajorFunction == IRP_MJ_SHUTDOWN) {
+        //FltUnloadFilter(MINISPY_PORT_NAME);
+        //SpyFilterUnload(FLTFL_FILTER_UNLOAD_MANDATORY);
+        return FLT_PREOP_SUCCESS_NO_CALLBACK;
+    }
     
     PFLT_FILE_NAME_INFORMATION nameInfo = NULL;
     
@@ -1122,7 +1137,7 @@ Return Value:
             if (RtlPrefixUnicodeString(&UniStr, &nameInfo->Name, FALSE)) {
                 goto NAR_PREOP_FAILED_END;
             }
-                       
+            
             
 #else
             
@@ -1157,7 +1172,7 @@ Return Value:
                 goto NAR_PREOP_FAILED_END;
             }
             
-
+            
             
 #endif
             
@@ -1199,7 +1214,7 @@ Return Value:
             if (RtlSuffixUnicodeString(&UniStr, &nameInfo->Name, FALSE)) {
                 goto NAR_PREOP_FAILED_END;
             }
-
+            
             /*
             RtlUnicodeStringPrintf(&UniStr, L"$MFT");
             if (RtlSuffixUnicodeString(&UniStr, &nameInfo->Name, FALSE)) {
@@ -1416,6 +1431,11 @@ Return Value:
                         
                         ExAcquireFastMutex(&NarData.VolumeRegionBuffer[i].FastMutex);
                         
+                        if (NarData.VolumeRegionBuffer[i].MemoryBuffer == 0) {
+                            ExReleaseFastMutex(&NarData.VolumeRegionBuffer[i].FastMutex);
+                            continue;
+                        }
+                        
                         if (RtlCompareMemory(&CompareBuffer[0], NarData.VolumeRegionBuffer[i].GUIDStrVol.Buffer, NAR_GUID_STR_SIZE) == NAR_GUID_STR_SIZE) {
                             RemainingSizeOnBuffer = NAR_MEMORYBUFFER_SIZE - NAR_MB_USED(NarData.VolumeRegionBuffer[i].MemoryBuffer);
                             
@@ -1495,6 +1515,9 @@ Return Value:
                     
                     if (!Added) {
                         DbgPrint("Couldnt add entry to memory buffer, %wZ\n", &GUIDStringNPaged);
+                    }
+                    else{
+                        DbgPrint("Pushed %i bytes to mem buf\n", SizeNeededForMemoryBuffer);
                     }
                     
                     

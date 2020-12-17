@@ -125,6 +125,7 @@
     <Link>
       <AdditionalOptions>%(AdditionalOptions) /map</AdditionalOptions>
       <AdditionalDependencies>%(AdditionalDependencies);$(DDK_LIB_PATH)\fltMgr.lib</AdditionalDependencies>
+      <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
     </Link>
     <ClCompile>
       <TreatWarningAsError>false</TreatWarningAsError>

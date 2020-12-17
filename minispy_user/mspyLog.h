@@ -206,6 +206,7 @@ NarLog(const char *str, ...){
     DWORD Len = (DWORD)strlen(buf);
     DWORD H = 0;
     
+#if 0    
     if(WaitForSingleObject(GlobalLogMutex, 100) == WAIT_OBJECT_0){
         GlobalLogs[GlobalLogCount].LogString = (char*)NarScratchAllocate((Len + 1)*sizeof(buf[0]));
         memcpy(GlobalLogs[GlobalLogCount].LogString, &buf[0], (Len + 1)*sizeof(buf[0]));
@@ -213,6 +214,7 @@ NarLog(const char *str, ...){
         GlobalLogCount++;
         ReleaseMutex(GlobalLogMutex);
     }
+#endif
     
 #if 1    
     const static HANDLE File = CreateFileA("C:\\ProgramData\\NarDiskBackup\\NAR_APP_LOG_FILE.txt", GENERIC_WRITE|GENERIC_READ, FILE_SHARE_READ|FILE_SHARE_WRITE, 0, CREATE_ALWAYS, 0, 0);
@@ -222,9 +224,7 @@ NarLog(const char *str, ...){
     FlushFileBuffers(File);
 #endif
     
-    if (GlobalLogCount > 0) {
-        OutputDebugStringA(GlobalLogs[GlobalLogCount - 1].LogString);
-    }
+    OutputDebugStringA(buf);
     
 #if 0
     char szBuff[1024];
@@ -983,6 +983,14 @@ FreeFileRead(file_read FR);
 #define NAR_FEXP_END_MARK -2
 #define NAR_FEXP_SUCCEEDED 1
 
+#define NAR_INDEX_ALLOCATION_FLAG 0xA0
+#define NAR_INDEX_ROOT_FLAG 0x90
+#define NAR_BITMAP_FLAG     0xB0
+#define NAR_ATTRIBUTE_LIST 0x20
+
+#define NAR_FE_DIRECTORY_FLAG 0x01
+
+#define NAR_OFFSET(m, o) ((char*)(m) + (o))
 
 
 struct nar_fe_volume_handle{
@@ -1186,6 +1194,22 @@ NarFileExplorerReadVolume(nar_fe_volume_handle FEV, void* Buffer, DWORD ReadSize
 
 nar_file_version_stack
 NarSearchFileInVersions(wchar_t* RootDir, nar_backup_id ID, INT32 CeilVersion, wchar_t* FileName);
+
+
+inline void*
+NarGetBitmapAttributeData(void *BitmapAttributeStart);
+
+inline INT32
+NarGetBitmapAttributeDataLen(void *BitmapAttributeStart);
+
+inline BOOLEAN
+NarParseIndexAllocationAttribute(void *IndexAttribute, nar_record *OutRegions, INT32 MaxRegionLen, INT32 *OutRegionsFound);
+
+inline void
+NarParseIndxRegion(void *Data, nar_file_entries_list *EList);
+
+inline void
+NarResolveAttributeList(nar_backup_file_explorer_context *Ctx, void *Attribute);
 
 /*
     Ctx = output

@@ -1364,7 +1364,6 @@ GetMFTandINDXLCN(char VolumeLetter, HANDLE VolumeHandle) {
         INT16 DirectoryFlag = 0x0002;
         INT32 FileRecordSize = 1024;
         INT16 FlagOffset = 22;
-        INT32 NAR_INDEX_ALLOCATION_FLAG = 0xA0;
         
         
         if (VolumeHandle != INVALID_HANDLE_VALUE) {
@@ -3965,6 +3964,8 @@ NarOpenVolume(char Letter) {
     HANDLE Volume = CreateFileA(VolumePath, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_WRITE | FILE_SHARE_READ | FILE_SHARE_DELETE, 0, OPEN_EXISTING, 0, 0);
     if (Volume != INVALID_HANDLE_VALUE) {
         
+        
+#if 0        
         if (DeviceIoControl(Volume, FSCTL_LOCK_VOLUME, 0, 0, 0, 0, 0, 0)) {
             
         }
@@ -3980,6 +3981,7 @@ NarOpenVolume(char Letter) {
         else {
             // printf("Couldnt dismount volume\n");
         }
+#endif
         
         
     }
@@ -5767,7 +5769,7 @@ NarFileExplorerSetFilePtr2MFTID(nar_backup_file_explorer_context* Ctx, size_t Ta
         
     }
     
-    NarFileExplorerSetFilePointer(FEV, AdvancedFileCountSoFar);
+    return NarFileExplorerSetFilePointer(FEV, FileOffsetAtVolume);
     
 }
 
@@ -5787,7 +5789,7 @@ NarFileExplorerReadMFTID(nar_backup_file_explorer_context *Ctx, size_t MFTID, vo
     if(NarFileExplorerSetFilePtr2MFTID(Ctx, MFTID)){
         DWORD BytesRead = 0;
         
-        if(NarFileExplorerReadVolume(Ctx->FEHandle, Out, 1024, &BytesRead)){
+        if(NarFileExplorerReadVolume(Ctx->FEHandle, Out, 1024, &BytesRead) && BytesRead == 1024){
             Result = TRUE;
         }
         else{
@@ -5804,19 +5806,271 @@ NarFileExplorerReadMFTID(nar_backup_file_explorer_context *Ctx, size_t MFTID, vo
 }
 
 /*
+CAUTION: This function does NOT lookup attributes from ATTRIBUTE LIST, so if attribute is not resident in original file entry, function wont return it
+
+// NOTE(Batuhan): Function early terminates in attribute iteration loop if it finds attribute with higher ID than given AttributeID parameter
+
+For given MFT FileEntry, returns address AttributeID in given FileRecord. Caller can use return value to directly access given AttributeID 
+Function returns NULL if attribute is not present 
+*/
+inline void*
+NarFindFileAttributeFromFileRecord(void *FileRecord, INT32 AttributeID){
+    
+    if(!FileRecord) return 0;
+    
+    void *Start = FileRecord;
+    
+    INT16 FirstAttributeOffset = (*(INT16*)((BYTE*)FileRecord + 20));
+    void* FileAttribute = (char*)FileRecord + FirstAttributeOffset;
+    
+    INT32 RemainingLen = *(INT32*)((BYTE*)FileRecord + 24); // Real size of the file record
+    RemainingLen -= (FirstAttributeOffset + 8); //8 byte for end of record mark, remaining len includes it too.
+    
+    while(RemainingLen > 0){
+        
+        if(*(INT32*)FileAttribute == AttributeID){
+            return FileAttribute;
+        }
+        
+        // early termination
+        if(*(INT32*)FileAttribute > AttributeID){
+            break;
+        }
+        
+        //Just substract attribute size from remaininglen to determine if we should keep iterating
+        INT32 AttrSize = (*(unsigned short*)((BYTE*)FileAttribute + 4));
+        RemainingLen -= AttrSize;
+        FileAttribute = (BYTE*)FileAttribute + AttrSize;
+        if (AttrSize == 0) break;
+        
+    }
+    
+    return NULL;
+}
+
+/*
 What it wants as input:
--Attribute list(0x20) attribute data
--file explorer volume handle to move between different MFT entries(attributes in the list may have split across different mft entries)
+-Attribute list(0x20) attribute data, not an alternate file record that attribute list elements points to
+-file explorer context  to move between different MFT entries(attributes in the list may have split across different mft entries)
 
 What it MAY  return:
 - Parsed BITMAP indices
 - Parsed INDX_ALLOCATION regions
-- Parsed INDX_ROOT regions
+- Parsed INDX_ROOT information ()
 */
 inline void
-NarResolveAttributeList(void *AttrListAttribute){
+NarResolveAttributeList(nar_backup_file_explorer_context *Ctx, void *Attribute){
     
+    
+    if(!Ctx  || !Attribute) return;
+    
+    char FileEntry[1024];
+    
+    UINT32  Length       = *(UINT32*)NAR_OFFSET(Attribute, 0x04);
+    BOOLEAN IsResident   = !(*(BOOLEAN*)NAR_OFFSET(Attribute, 0x08));
+    
+    UINT16  AttributeID  = *(UINT16*)NAR_OFFSET(Attribute, 0x0E);
+    UINT32  AttributeLen = *(UINT32*)NAR_OFFSET(Attribute, 0x10);
+    UINT32 FirstAttributeOffset = *(UINT16*)NAR_OFFSET(Attribute, 0x14); 
+    
+    
+    //UINT16 RecordLength = *(UINT16*)NAR_OFFSET(Attribute, 0x04);
+    
+    // NOTE(Batuhan): zero if resident
+    UINT64 StartingVCN  = *(UINT64*)NAR_OFFSET(Attribute, 0x08);
+    
+    
+    /*
+    have to find INDX_ROOT, INDX_ALLOCATION, BITMAP from the attribute list and their associated MFT ID's. Then for each of them, I have to parse that specific
+    MFTID to extract neccecary data. For INDX_ROOT that is the file entry list, for INDX_ALLOC, that MUST be LCN regions, not file entries because file record might contain BITMAP that might be telling us to invalidate some of the clusters that are extracted directly from INDX_ALLOCATION attribute
+    */
+    
+    Attribute = NAR_OFFSET(Attribute, FirstAttributeOffset);
+    
+    // NOTE(Batuhan): Assumed that one attribute is not split across different file records
+    size_t BitmapMFTID = 0;
+    size_t IndxAllocationMFTID = 0;
+    size_t IndxRootMFTID = 0;
+    
+    for(INT32 RemLen = AttributeLen; RemLen > 0;){
+        
+        UINT32 AttType = *(UINT32*)Attribute;
+        if(AttType != NAR_INDEX_ALLOCATION_FLAG && AttType != NAR_INDEX_ROOT_FLAG && AttType != NAR_BITMAP_FLAG){
+            goto SKIP;
+        }
+        
+        // mft record number length is 6 bytes, we have to shift 16 bits to 
+        // truncate 8 bytes to 6.
+        UINT64 MFTID = *(UINT64*)NAR_OFFSET(Attribute, 0x10);
+        MFTID = (MFTID << 16);
+        MFTID = (MFTID >> 16);
+        
+        if(AttType == NAR_INDEX_ALLOCATION_FLAG) IndxAllocationMFTID = MFTID;
+        if(AttType == NAR_INDEX_ROOT_FLAG)       IndxRootMFTID = MFTID;
+        if(AttType == NAR_BITMAP_FLAG)           BitmapMFTID =  MFTID;
+        
+        SKIP:
+        
+        UINT16 RecordLen = *(UINT16*)NAR_OFFSET(Attribute, 0x04);
+        Attribute = (void*)NAR_OFFSET(Attribute, RecordLen);
+        RemLen -= RecordLen;
+        
+    }
+    
+    /*
+// NOTE(Batuhan): About BITMAP and INDEX_ALLOCATION attributes
+    i'th bit of BITMAP represents if INDEX_ALLOCATION's i'th cluster is in use, so lets say 
+636'th bit of the BITMAP data is not set(zero, 0), that means 636'th cluster of the INDEX_ALLOCATION needs to be removed from region array.
+
+What I assume right now, that unsused cluster id will be trimming point for rest of the region, meaning I can safely iterate next region without worrying if there are used regions after the unused cluster indx and if I have to insert new region for used ones etc etc.
+*/
+    
+    // NOTE(Batuhan): Sane way of handling BITMAP stuff is, first parse INDX_ALLOCATION, then check if BITMAP is present(it usually is if its a hot directory), then remove(trim, as stated above) unused clusters from that region, then parse remaining clusters!
+    
+    void* IndxData = 0;
+    
+    INT32 BitmapLen = 0; 
+    BYTE* BitmapData = 0;
+    
+    nar_record *IndxAllRegions = 0;
+    INT32 IndxAllRegionsCount = 0;
+    
+    if(IndxAllocationMFTID != 0){
+        
+        if(NarFileExplorerReadMFTID(Ctx, IndxAllocationMFTID, FileEntry)){
+            IndxData = NarFindFileAttributeFromFileRecord(FileEntry, NAR_INDEX_ALLOCATION_FLAG);
+        }
+        else{
+            // TODO(Batuhan): log error
+        }
+        
+        if(BitmapMFTID != IndxAllocationMFTID && BitmapMFTID != 0){
+            
+            if(NarFileExplorerReadMFTID(Ctx, BitmapMFTID, FileEntry)){
+                void* BitmapAttributeStart = NarFindFileAttributeFromFileRecord(FileEntry, NAR_BITMAP_FLAG);
+                BitmapLen = NarGetBitmapAttributeDataLen(BitmapAttributeStart);
+                BitmapData = (BYTE*)NarGetBitmapAttributeData(BitmapAttributeStart);
+            }
+            else{
+                // TODO(Batuhan): log error
+            }
+            
+        }
+        else{
+            // TODO(Batuhan): log err
+        }
+        
+        if(IndxData){
+            
+            INT32 RegionsReserved= 1024;
+            IndxAllRegions = (nar_record*)malloc(RegionsReserved*sizeof(nar_record));
+            
+            
+            if(NarParseIndexAllocationAttribute(IndxData, IndxAllRegions, RegionsReserved, &IndxAllRegionsCount)){
+                // NOTE(Batuhan): Success!
+            }
+            else{
+                // TODO(Batuhan): Memory might not have been enough to store regions in attribute, try to send something bigger once again
+                // TODO(Batuhan): log?
+            }
+            
+            // NOTE(Batuhan): Region trimming if bitmap is present
+            if(BitmapData){
+                
+                {
+                    // TODO(Batuhan): 16.12.2020 RESUME FROM HERE
+                }
+                
+            }
+            
+            BOOLEAN _i_ = 0;
+            for(_i_ = 0; 
+                NarFileExplorerSetFilePointer(Ctx->FEHandle, (UINT64)IndxAllRegions[_i_].StartPos*Ctx->ClusterSize) && _i_ < IndxAllRegionsCount;
+                _i_++){
+                
+                size_t IndxBufferSize = (UINT64)IndxAllRegions[_i_].Len * Ctx->ClusterSize;
+                void* IndxBuffer = malloc(IndxBufferSize);
+                DWORD BytesRead = 0;
+                
+                if(NarFileExplorerReadVolume(Ctx->FEHandle, IndxBuffer, IndxBufferSize, &BytesRead)){
+                    for(size_t _j_ =0; _j_ <  IndxBufferSize/(Ctx->ClusterSize); _j_++){
+                        void *IC = (char*)IndxBuffer + (UINT64)_j_*Ctx->ClusterSize;
+                        NarParseIndxRegion(IC, &Ctx->EList);
+                    }
+                }
+                
+                free(IndxBuffer);
+            }
+            
+            if(_i_ != IndxAllRegionsCount - 1){
+                printf("Couldn't iterate all indx allocation regions\n");
+                // TODO(Batuhan): couldnt iterate all regions
+            }
+            
+        }
+        else{
+            
+        }
+        
+    }
+    
+    
+    return;
 }
+
+
+inline void*
+NarGetBitmapAttributeData(void *BitmapAttributeStart){
+    void *Result = 0;
+    if(BitmapAttributeStart == NULL) return Result;
+    
+    // TODO(Batuhan): implementation
+    return Result;
+}
+
+inline INT32
+NarGetBitmapAttributeDataLen(void *BitmapAttributeStart){
+    INT32 Result = 0;
+    if(BitmapAttributeStart == NULL) return Result;
+    
+    // TODO(Batuhan): implementation
+    return Result;
+}
+
+
+/*
+Can be called for raw INDX_ROOT data or data pointed by INDX_ALLOCATION, to parse 
+file entries they contain
+*/
+inline void
+NarParseIndxRegion(void *Data, nar_file_entries_list *EList){
+    
+    Data= (char*)Data + 64;
+    
+    INT EntryParseResult = NAR_FEXP_END_MARK;
+    do {
+        
+        EntryParseResult = NarFileExplorerGetFileEntryFromData(Data, &EList->Entries[EList->EntryCount]);
+        if (EntryParseResult == NAR_FEXP_SUCCEEDED || EntryParseResult == NAR_FEXP_POSIX) {
+            
+            // do not accept posix files as FILE_ENTRY at all
+            if (EntryParseResult == NAR_FEXP_SUCCEEDED) {
+                EList->EntryCount++;
+                if(EList->EntryCount == EList->MaxEntryCount){
+                    NarExtentFileEntryList(EList, EList->MaxEntryCount * 2);
+                }
+            }
+            
+            UINT16 EntrySize = NAR_FEXP_INDX_ENTRY_SIZE(Data);
+            Data = (char*)Data + EntrySize;
+        }
+        
+    } while (EntryParseResult != NAR_FEXP_END_MARK);
+    
+    return;
+}
+
+
 
 inline BOOLEAN
 NarParseIndexAllocationAttribute(void *IndexAttribute, nar_record *OutRegions, INT32 MaxRegionLen, INT32 *OutRegionsFound){
@@ -5946,6 +6200,9 @@ NarGetFileListFromMFTID(nar_backup_file_explorer_context *Ctx, size_t TargetMFTI
     nar_fe_volume_handle FEHandle = Ctx->FEHandle;
 #endif
     
+    
+#if 0    
+    
     UINT64 FileCountInRegion = 0;
     UINT32 FileCountPerCluster = ClusterSize / 1024;
     UINT64 AdvancedFileCountSoFar = 0;
@@ -5954,7 +6211,6 @@ NarGetFileListFromMFTID(nar_backup_file_explorer_context *Ctx, size_t TargetMFTI
     UINT64 FileOffsetAtVolume = 0;
     
     for (UINT32 RegionIndex = 0; RegionIndex < MFTRegionCount; RegionIndex++) {
-        
         FileCountInRegion = (UINT64)MFTRegions[RegionIndex].Len * (UINT64)FileCountPerCluster;
         if (FileCountInRegion + AdvancedFileCountSoFar >= TargetMFTID) {
             // found
@@ -5962,13 +6218,13 @@ NarGetFileListFromMFTID(nar_backup_file_explorer_context *Ctx, size_t TargetMFTI
             FileOffsetAtVolume = (UINT64)MFTRegions[RegionIndex].StartPos * (UINT64)ClusterSize + FileOffsetFromRegion * 1024;
             break;
         }
-        
         AdvancedFileCountSoFar += FileCountInRegion;
-        
     }
     
+#endif
     
-    if (NarFileExplorerSetFilePointer(FEHandle, FileOffsetAtVolume)) {
+    
+    {
         
         BYTE Buffer[1024];
         memset(Buffer, 0, sizeof(Buffer));
@@ -5978,15 +6234,12 @@ NarGetFileListFromMFTID(nar_backup_file_explorer_context *Ctx, size_t TargetMFTI
         nar_record INDX_ALL_REGIONS[64];
         DWORD BytesRead = 0;
         
-        if (NarFileExplorerReadVolume(FEHandle, Buffer, 1024, &BytesRead) && BytesRead == 1024) {
-            
+        if (NarFileExplorerReadMFTID(Ctx, TargetMFTID, Buffer)) {
             
             // do parsing stuff
             void* FileRecord = &Buffer[0];
             
             INT16 FlagOffset = 22;
-            INT32 NAR_INDEX_ALLOCATION_FLAG = 0xA0;
-            INT32 NAR_BITMAP_FLAG = 0xB0;
             
             INT16 Flags = *(INT16*)((BYTE*)FileRecord + FlagOffset);
             INT16 DirectoryFlag = 0x0002;
@@ -6046,66 +6299,15 @@ NarGetFileListFromMFTID(nar_backup_file_explorer_context *Ctx, size_t TargetMFTI
                     }
                     
                     
-#define NAR_ATTRIBUTE_LIST 0x20
-                    
                     // NOTE(Batuhan): ntfs madness : if file has too many information, it cant fit into the single 1KB entry.
                     /*
 so some smart ass decided it would be wise to split some attributes into different disk locations, so i have to check if any file attribute is non-resident, if so, should check if that one is INDEX_ALLOCATION attribute, and again if so, should go read that disk offset and parse it. pretty trivial but also boring
 */
                     
-#if 0
-                    if(*(INT32*)FileAttribute & NAR_ATTRIBUTE_LIST) == NAR_ATTRIBUTE_LIST){
-                        
-                        
-                        // each record is aligned on 8 byte boundary
-#define NAR_OFFSET(m, o) ((char*)(m) + (o))
-                        
-                        struct{
-                            /*
-4
-4
-1
-1
-2
-2
-2
-*/
-                            UINT32  AttributeType;
-                            UINT32  Length;
-                            UINT8   NonResidentFlag;
-                            UINT8   NameLen;
-                            UINT16  NameOffset;
-                            UINT16  Flags;
-                            UINT16  AttributeID;
-                            
-                            union{
-                                struct{
-                                    UINT32  AttributeLen;
-                                    UINT16  AttributeOffset;
-                                    
-                                };
-                                struct{
-                                    
-                                };
-                            };
-                            
-                        };
-                        
-                        UINT32  Length       = *(UINT32*)NAR_OFFSET(FileAttribute, 0x04);
-                        BOOLEAN IsResident   = !(*(BOOLEAN*)NAR_OFFSET(FileAttribute, 0x08));
-                        UINT16  AttributeID  = *(UINT16*)NAR_OFFSET(FileAttribute, 0x0E);
-                        UINT32  AttributeLen = *(UINT32*)NAR_OFFSET(FileAttribute, 0x10);
-                        
-                        
-                        
-                        UINT16 RecordLength = *(UINT16*)NAR_OFFSET(FileAttribute, 0x04);
-                        // NOTE(Batuhan): zero if resident
-                        UINT64 StartingVCN  = *(UINT64*)NAR_OFFSET(FileAttribute, 0x08);
-                        UINT16 AttributeID  = *(UINT16*)NAR_OFFSET(FileAttribute, 0x18);
-                        
-                        
-                        // TODO(Batuhan): 
-                        
+#if 1
+                    if(*(INT32*)FileAttribute ==  NAR_ATTRIBUTE_LIST){
+                        // NOTE(Batuhan): satisfaction
+                        NarResolveAttributeList(Ctx, FileAttribute);
                     }
 #endif               
                     
@@ -6239,15 +6441,10 @@ so some smart ass decided it would be wise to split some attributes into differe
         }
         
     }
-    else {
-        // set file pointer failed
-    }
     
     
 }
 
-
-#define NAR_FE_DIRECTORY_FLAG 0x01
 
 inline void
 NarFileExplorerRestoreFolder(nar_backup_file_explorer_context *ctx, UINT32 SelectedListID, const wchar_t *RootDir){
@@ -7137,6 +7334,97 @@ ReadMFTLCNFromMetadata(HANDLE FHandle, backup_metadata Metadata, void *Buffer){
 }
 
 
+
+inline BOOLEAN
+NarInitFEVolumeHandleFromVolume(nar_fe_volume_handle *FEV, char VolumeLetter){
+    
+    memset(FEV, 0, sizeof(*FEV));
+    BOOLEAN Result = FALSE;
+    
+    
+    FEV->BMEX = 0;
+    FEV->VolumeHandle = NarOpenVolume(VolumeLetter);
+    if(FEV->VolumeHandle != INVALID_HANDLE_VALUE){
+        Result = TRUE;
+    }
+    else{
+        printf("Failed to open volume for file explorer for volume %c\n", VolumeLetter);
+    }
+    
+    
+    
+    // failed
+    if(!Result){
+        if(FEV){
+            CloseHandle(FEV->VolumeHandle);
+        }
+    }
+    
+    return Result;
+}
+
+inline BOOLEAN
+NarInitFileExplorerContextFromVolume(nar_backup_file_explorer_context *Ctx, char Letter){
+    
+    
+    if (!Ctx) goto NAR_FAIL_TERMINATE;;
+    
+    memset(Ctx, 0, sizeof(*Ctx));
+    
+    Ctx->HandleOption = NAR_FE_HAND_OPT_READ_BACKUP_VOLUME;
+    if (NarInitFileEntryList(&Ctx->EList, 10000)) {
+        
+        memset(Ctx->CurrentDirectory, 0, sizeof(Ctx->CurrentDirectory));
+        memset(Ctx->RootDir, 0, sizeof(Ctx->RootDir));
+        memset(&Ctx->HistoryStack, 0, sizeof(Ctx->HistoryStack));
+        
+        if (NarInitFEVolumeHandleFromVolume(&Ctx->FEHandle, Letter)) {
+            
+            BOOLEAN Status = FALSE;
+            Ctx->Letter = Letter;
+            
+            // NOTE(Batuhan): IN
+            
+#if 1            
+            Ctx->ClusterSize = NarGetVolumeClusterSize(Letter);
+            Ctx->MFTRecords = (nar_record*)NarGetMFTRegionsByCommandLine(Letter, &Ctx->MFTRecordsCount);
+            Status = TRUE;
+#endif
+            
+            
+            Ctx->EList.EntryCount = 0;
+            Ctx->EList.MFTIndex = NAR_ROOT_MFT_ID;
+            Ctx->HistoryStack.I = -1;
+            
+            NarGetFileListFromMFTID(Ctx, NAR_ROOT_MFT_ID);
+            
+            NarPushDirectoryStack(Ctx, NAR_ROOT_MFT_ID);
+            
+            wchar_t vb[] = L"!:\\";
+            vb[0] = (wchar_t)Ctx->Letter;
+            wcscat(Ctx->CurrentDirectory, vb);
+            
+        }
+        else {
+            goto NAR_FAIL_TERMINATE;
+        }
+    }
+    else {
+        goto NAR_FAIL_TERMINATE;
+    }
+    
+    return TRUE;
+    
+    NAR_FAIL_TERMINATE:
+    if(Ctx){
+        NarReleaseFileExplorerContext(Ctx);
+    }
+    
+    return FALSE;
+    
+}
+
+
 /*
     Ctx = output
     HandleOptions
@@ -7166,16 +7454,18 @@ NarInitFileExplorerContext(nar_backup_file_explorer_context* Ctx, const wchar_t 
             Ctx->Letter = Ctx->FEHandle.BMEX->M.Letter;
             
             // NOTE(Batuhan): IN
+            
 #if 0            
-            if(HandleOptions == NAR_FE_HAND_OPT_READ_MOUNTED_VOLUME){
-                Ctx->ClusterSize = NarGetVolumeClusterSize(Letter);
-                Ctx->MFTRecords = (nar_record*)NarGetMFTRegionsByCommandLine(Letter, &Ctx->MFTRecordsCount);
-                Status = TRUE;
-            }
+            Ctx->ClusterSize = NarGetVolumeClusterSize(Letter);
+            Ctx->MFTRecords = (nar_record*)NarGetMFTRegionsByCommandLine(Letter, &Ctx->MFTRecordsCount);
+            Status = TRUE;
 #endif
             
             
             Ctx->ClusterSize = Ctx->FEHandle.BMEX->M.ClusterSize;
+            
+            
+#if 1            
             HANDLE BackupMetadataHandle = CreateFileW(MetadataPath, GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
             if(BackupMetadataHandle != INVALID_HANDLE_VALUE){
                 
@@ -7203,6 +7493,7 @@ NarInitFileExplorerContext(nar_backup_file_explorer_context* Ctx, const wchar_t 
                 DisplayError(GetLastError());
             }
             // extract MFT regions from backup metadata
+#endif
             
             
             if (Status) {
@@ -7465,33 +7756,6 @@ NarInitFEVolumeHandleFromBackup(nar_fe_volume_handle *FEV, const wchar_t* Metada
                 FEV->BMEX = 0;
                 FEV->VolumeHandle = INVALID_HANDLE_VALUE;
             }
-        }
-    }
-    
-}
-
-inline BOOLEAN
-NarInitFEVolumeHandleFromVolume(nar_fe_volume_handle *FEV, char VolumeLetter){
-    
-    memset(FEV, 0, sizeof(*FEV));
-    BOOLEAN Result = FALSE;
-    
-    
-    FEV->BMEX = 0;
-    FEV->VolumeHandle = NarOpenVolume(VolumeLetter);
-    if(FEV->VolumeHandle != INVALID_HANDLE_VALUE){
-        Result = TRUE;
-    }
-    else{
-        printf("Failed to open volume for file explorer for volume %c\n", VolumeLetter);
-    }
-    
-    
-    
-    // failed
-    if(!Result){
-        if(FEV){
-            CloseHandle(FEV->VolumeHandle);
         }
     }
     
@@ -7846,8 +8110,130 @@ NarTestScratch(){
 #define BREAK_CODE
 #define loop for(;;)
 
+inline void
+NARDEBUG_AttributeListTest(){
+    
+    file_read Contents = NarReadFile("attlist");
+    void *Attribute = Contents.Data; 
+    
+    char FileEntry[1024];
+    UINT32  Length       = *(UINT32*)NAR_OFFSET(Attribute, 0x04);
+    BOOLEAN IsResident   = !(*(BOOLEAN*)NAR_OFFSET(Attribute, 0x08));
+    
+    UINT16  AttributeID  = *(UINT16*)NAR_OFFSET(Attribute, 0x0E);
+    UINT32  AttributeLen = *(UINT32*)NAR_OFFSET(Attribute, 0x10);
+    UINT32 FirstAttributeOffset = *(UINT16*)NAR_OFFSET(Attribute, 0x14); 
+    
+    UINT16 RecordLength = *(UINT16*)NAR_OFFSET(Attribute, 0x04);
+    
+    // NOTE(Batuhan): zero if resident
+    UINT64 StartingVCN  = *(UINT64*)NAR_OFFSET(Attribute, 0x08);
+    //UINT16 AttributeID  = *(UINT16*)NAR_OFFSET(Attribute, 0x18);
+    
+    /*
+have to find INDX_ROOT, INDX_ALLOCATION, BITMAP from the attribute list and their associated MFT ID's. Then for each of them, I have to parse that specific
+MFTID to extract neccecary data. For INDX_ROOT that is the file entry list, for INDX_ALLOC, that MUST be LCN regions, not file entries because file record might contain BITMAP that might be telling us to invalidate some of the clusters that are extracted directly from INDX_ALLOCATION attribute
+*/
+    
+    Attribute = NAR_OFFSET(Attribute, FirstAttributeOffset);
+    
+    // NOTE(Batuhan): Assumed that one attribute is not split across different file records
+    size_t BitmapMFTID = 0;
+    size_t IndxAllocationMFTID = 0;
+    size_t IndxRootMFTID = 0;
+    
+    for(INT32 RemLen = AttributeLen; RemLen > 0;){
+        
+        UINT32 AttType = *(UINT32*)Attribute;
+        if(AttType != NAR_INDEX_ALLOCATION_FLAG && AttType != NAR_INDEX_ROOT_FLAG && AttType != NAR_BITMAP_FLAG){
+            goto SKIP;
+        }
+        
+        // mft record number length is 6 bytes, we have to shift 16 bits to 
+        // truncate 8 bytes to 6.
+        UINT64 MFTID = *(UINT64*)NAR_OFFSET(Attribute, 0x10);
+        MFTID = (MFTID << 16);
+        MFTID = (MFTID >> 16);
+        
+        if(AttType == NAR_INDEX_ALLOCATION_FLAG) IndxAllocationMFTID = MFTID;
+        if(AttType == NAR_INDEX_ROOT_FLAG)       IndxRootMFTID = MFTID;
+        if(AttType == NAR_BITMAP_FLAG)           BitmapMFTID =  MFTID;
+        
+        SKIP:
+        
+        UINT16 RecordLen = *(UINT16*)NAR_OFFSET(Attribute, 0x04);
+        Attribute = (void*)NAR_OFFSET(Attribute, RecordLen);
+        RemLen -= RecordLen;
+    }
+    
+    printf("Done !\n");
+    printf("--IndxAllocationMFTID = %I64u\n", IndxAllocationMFTID);
+    printf("--IndxRootMFTID = %I64u\n", IndxRootMFTID);
+    printf("--BitmapMFTID = %I64u\n", BitmapMFTID);
+    
+    return;
+}
+
 int
 main(int argc, char* argv[]) {
+    
+    NARDEBUG_AttributeListTest();
+    
+    nar_backup_file_explorer_context ctx = {0};
+    NarInitFileExplorerContextFromVolume(&ctx, 'C');
+    file_read f = NarReadFile("attlist");
+    NarFileExplorerPrint(&ctx);
+    
+    int ListID = 0;
+    while (1) {
+        scanf("%i", &ListID);
+        
+        if (ListID == -42) {
+            break;
+        }
+        
+        if (ListID < 0) {
+            NarFileExplorerPopDirectory(&ctx);
+        }
+        else {
+            NarFileExplorerPushDirectory(&ctx, ListID);
+        }
+        
+        NarFileExplorerPrint(&ctx);
+        
+        Sleep(10);
+    }
+    
+    
+    return 0;
+    
+#if 0    
+    void *mb = malloc(NAR_MEMORYBUFFER_SIZE);
+    char psh[512];
+    memset(psh, 0, 512);
+    
+    NAR_INIT_MEMORYBUFFER(mb);
+    
+    NAR_MB_PUSH(mb, psh, 512);
+    NAR_MB_PUSH(mb, psh, 512);
+    NAR_MB_PUSH(mb, psh, 512);
+    NAR_MB_PUSH(mb, psh, 512);
+    
+    memset(mb, 0, NAR_MEMORYBUFFER_SIZE);
+    NAR_INIT_MEMORYBUFFER(mb);
+    
+    NAR_MB_PUSH(mb, psh, 512);
+    NAR_MB_PUSH(mb, psh, 512);
+    
+    memset(mb, 0, NAR_MEMORYBUFFER_SIZE);
+    NAR_INIT_MEMORYBUFFER(mb);
+    
+    NAR_MB_PUSH(mb, psh, 512);
+    NAR_MB_PUSH(mb, psh, 512);
+    
+    
+    return 0;
+#endif
     
 #if 0   
 	backup_metadata *m = new backup_metadata[120];
@@ -7872,14 +8258,7 @@ main(int argc, char* argv[]) {
 	return 0;
 #endif
     
-#if 1
-    
-    /*
-    
-    */
-    
-    nar_backup_file_explorer_context ctx = {0};
-    NarInitFileExplorerContext(&ctx, L"F:\\NAR_M_FULL-19472436995819492.narmd");
+#if 0
     
     NarFileExplorerPrint(&ctx);
     
@@ -7918,6 +8297,13 @@ main(int argc, char* argv[]) {
     
     if(SetupVSS() && ConnectDriver(&C)){
         
+#if 0        
+        AddVolumeToTrack(&C, 'E', (BackupType)0);
+        C.Volumes.Data[0].FilterFlags.IsActive = TRUE;
+        loop{
+            Sleep(16);
+        }
+#endif
         
         DotNetStreamInf inf = {0};
         char Volume = 0;
@@ -7925,7 +8311,7 @@ main(int argc, char* argv[]) {
         loop{
             
             memset(&inf, 0, sizeof(inf));
-            while(getchar() != 'E');
+            while(getchar() != '\n');
             
             Volume = 'E';
             
