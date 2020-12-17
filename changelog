@@ -19,3 +19,14 @@ move freely in backups, due to extra regions added by INDX stuff to the MFTRegio
 metadata. And general backup system doesnt even need INDX regions too, so I jsut removed all INDX regions and datas from metadatas. But INDX and MFT regions are actually in the backup, in move naive way. Their region's temporarely
 calculated at SetupStream, then added to general region scheme.
 -Some API changes, i found that old data_array thing was dumb decision. But it's used so often i dont want to just rewrite everything. But each bug fix and new request is an opporunity to fix some old bad decisions.
+
+
+17.12.2020
+-Small changes in driver(made VolumeRegionBuffer live in stack, reorganized dispatch routine at FilterUnload callback), but it stil crashes when shutting pc down. 
+-Added nice-to-have functions to small ntfs parser to remove cumbersome-repetetive parts of it, like:
+	-set file pointer to specific mft id
+	-direct read of specific file record from mft id
+	-some basic stuff related to file attribute parsing, made writing a code that involves scanning of file record easier(see NarResolveAttributeList implementation)
+-Moved some janky macro definitions to header file, stuff like attribute id, pointer addition		
+-There are regions that need to be replaced with new compressed API, especially in NarGetFileListFromMFTID
+-There are REGIONS/FUNCTIONS THAT ARE NOT IMPLEMENTED YET, ex: trimming parts of indx_allocation regions with the information from bitmap attribute, functions are kinda ready but not implemented

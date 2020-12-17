@@ -206,7 +206,7 @@ NarLog(const char *str, ...){
     DWORD Len = (DWORD)strlen(buf);
     DWORD H = 0;
     
-#if 0    
+#if 1    
     if(WaitForSingleObject(GlobalLogMutex, 100) == WAIT_OBJECT_0){
         GlobalLogs[GlobalLogCount].LogString = (char*)NarScratchAllocate((Len + 1)*sizeof(buf[0]));
         memcpy(GlobalLogs[GlobalLogCount].LogString, &buf[0], (Len + 1)*sizeof(buf[0]));

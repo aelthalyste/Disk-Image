@@ -3965,7 +3965,7 @@ NarOpenVolume(char Letter) {
     if (Volume != INVALID_HANDLE_VALUE) {
         
         
-#if 0        
+#if 1        
         if (DeviceIoControl(Volume, FSCTL_LOCK_VOLUME, 0, 0, 0, 0, 0, 0)) {
             
         }
