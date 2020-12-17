@@ -30,11 +30,15 @@ namespace DiskBackup.Business.Concrete
                 ? credentials.UserName
                 : string.Format(@"{0}\{1}", credentials.Domain, credentials.UserName);
 
-            var result = WNetAddConnection2(
+            var result = WNetUseConnection(
+                IntPtr.Zero,
                 netResource,
                 credentials.Password,
                 userName,
-                0);
+                0,
+                null,
+                null,
+                null);
 
             if (result != 0)
             {
@@ -66,6 +70,12 @@ namespace DiskBackup.Business.Concrete
         [DllImport("mpr.dll")]
         private static extern int WNetAddConnection2(NetResource netResource,
             string password, string username, int flags);
+
+        [DllImport("mpr.dll")]
+        private static extern int WNetUseConnection(IntPtr hwnd,NetResource netResource,
+            string password, string username, int flags, string accesName, 
+            IntPtr bufferSize, IntPtr result);
+
 
         [DllImport("mpr.dll")]
         private static extern int WNetCancelConnection2(string name, int flags,
