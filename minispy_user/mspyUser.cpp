@@ -3965,7 +3965,7 @@ NarOpenVolume(char Letter) {
     if (Volume != INVALID_HANDLE_VALUE) {
         
         
-#if 1        
+#if 0        
         if (DeviceIoControl(Volume, FSCTL_LOCK_VOLUME, 0, 0, 0, 0, 0, 0)) {
             
         }
@@ -5983,6 +5983,10 @@ What I assume right now, that unsused cluster id will be trimming point for rest
                 
             }
             
+            // NOTE(Batuhan): silently updates Ctx, nothing to worry about
+            // NarGetFileEntriesFromIndxClusters(Ctx, IndxAllRegions, IndxAllRegionsCount);
+            
+            
             BOOLEAN _i_ = 0;
             for(_i_ = 0; 
                 NarFileExplorerSetFilePointer(Ctx->FEHandle, (UINT64)IndxAllRegions[_i_].StartPos*Ctx->ClusterSize) && _i_ < IndxAllRegionsCount;
@@ -6038,12 +6042,45 @@ NarGetBitmapAttributeDataLen(void *BitmapAttributeStart){
 }
 
 
+inline void
+NarGetFileEntriesFromIndxClusters(nar_backup_file_explorer_context *Ctx, nar_record *Clusters, INT32 Count){
+    
+    if(Ctx == NULL || Clusters == NULL) return;
+    
+    
+    for(int _i_ = 0; 
+        NarFileExplorerSetFilePointer(Ctx->FEHandle, (UINT64)Clusters[_i_].StartPos*Ctx->ClusterSize) && _i_ < Count;
+        _i_++){
+        
+        size_t IndxBufferSize = (UINT64)Clusters[_i_].Len * Ctx->ClusterSize;
+        void* IndxBuffer = malloc(IndxBufferSize);
+        DWORD BytesRead = 0;
+        
+        if(NarFileExplorerReadVolume(Ctx->FEHandle, IndxBuffer, IndxBufferSize, &BytesRead)){
+            for(size_t _j_ =0; _j_ <  IndxBufferSize/(Ctx->ClusterSize); _j_++){
+                void *IC = (char*)IndxBuffer + (UINT64)_j_*Ctx->ClusterSize;
+                NarParseIndxRegion(IC, &Ctx->EList);
+            }
+        }
+        
+        free(IndxBuffer);
+    }
+    
+    
+}
+
+
 /*
+// TODO(Batuhan): What is raw INDX_ROOT data ? data region of INDX_ROOT attribute or attribute itself?
+Answer : attribute itself, which is same thing as data pointer by INDX_ALLOCATION data run
+ 
 Can be called for raw INDX_ROOT data or data pointed by INDX_ALLOCATION, to parse 
 file entries they contain
 */
 inline void
 NarParseIndxRegion(void *Data, nar_file_entries_list *EList){
+    
+    if(Data == NULL || EList == NULL) return;
     
     Data= (char*)Data + 64;
     
@@ -6075,9 +6112,10 @@ NarParseIndxRegion(void *Data, nar_file_entries_list *EList){
 inline BOOLEAN
 NarParseIndexAllocationAttribute(void *IndexAttribute, nar_record *OutRegions, INT32 MaxRegionLen, INT32 *OutRegionsFound){
     
+    if(IndexAttribute == NULL || OutRegions == NULL || OutRegionsFound == NULL) return FALSE;
+    
     TIMED_NAMED_BLOCK("Index stuff");
     
-    if(IndexAttribute == NULL || OutRegions == NULL || OutRegionsFound == NULL) return FALSE;
     
     BOOLEAN Result = TRUE;
     INT32 InternalRegionsFound = 0;
@@ -6193,254 +6231,85 @@ inline void
 NarGetFileListFromMFTID(nar_backup_file_explorer_context *Ctx, size_t TargetMFTID) {
     
 #if 1
-    nar_file_entries_list* EList = &Ctx->EList;
-    nar_record* MFTRegions = Ctx->MFTRecords;
-    UINT32 MFTRegionCount = Ctx->MFTRecordsCount;
-    UINT32 ClusterSize = Ctx->ClusterSize; 
+    nar_file_entries_list* EList  = &Ctx->EList;
+    nar_record* MFTRegions        = Ctx->MFTRecords;
+    UINT32 MFTRegionCount         = Ctx->MFTRecordsCount;
+    UINT32 ClusterSize            = Ctx->ClusterSize; 
     nar_fe_volume_handle FEHandle = Ctx->FEHandle;
 #endif
     
     
-#if 0    
+    BYTE Buffer[1024];
+    memset(Buffer, 0, sizeof(Buffer));
     
-    UINT64 FileCountInRegion = 0;
-    UINT32 FileCountPerCluster = ClusterSize / 1024;
-    UINT64 AdvancedFileCountSoFar = 0;
+    UINT32 IndexRegionsFound = 0;
     
-    UINT64 FileOffsetFromRegion = 0;
-    UINT64 FileOffsetAtVolume = 0;
+    nar_record INDX_ALL_REGIONS[64];
+    DWORD BytesRead = 0;
     
-    for (UINT32 RegionIndex = 0; RegionIndex < MFTRegionCount; RegionIndex++) {
-        FileCountInRegion = (UINT64)MFTRegions[RegionIndex].Len * (UINT64)FileCountPerCluster;
-        if (FileCountInRegion + AdvancedFileCountSoFar >= TargetMFTID) {
-            // found
-            FileOffsetFromRegion = TargetMFTID - AdvancedFileCountSoFar;
-            FileOffsetAtVolume = (UINT64)MFTRegions[RegionIndex].StartPos * (UINT64)ClusterSize + FileOffsetFromRegion * 1024;
-            break;
-        }
-        AdvancedFileCountSoFar += FileCountInRegion;
-    }
-    
+    if (NarFileExplorerReadMFTID(Ctx, TargetMFTID, Buffer)) {
+        
+        // do parsing stuff
+        void* FileRecord = &Buffer[0];
+        INT16 FlagOffset = 22;
+        
+        INT16 Flags = *(INT16*)((BYTE*)FileRecord + FlagOffset);
+        INT16 DirectoryFlag = 0x0002;
+        
+        if((Flags & DirectoryFlag) == DirectoryFlag){
+            
+            void* IndxRootAttr = NarFindFileAttributeFromFileRecord(FileRecord, NAR_INDEX_ROOT_FLAG);
+            void* IndxAllAttr  = NarFindFileAttributeFromFileRecord(FileRecord, NAR_INDEX_ALLOCATION_FLAG);
+            void* BitmapAttr   = NarFindFileAttributeFromFileRecord(FileRecord, NAR_BITMAP_FLAG);
+            void* AttrListAttr = NarFindFileAttributeFromFileRecord(FileRecord, NAR_ATTRIBUTE_LIST);
+            
+#if _DEBUG
+            if((AttrListAttr && IndxAllAttr) || (AttrListAttr && IndxAllRoot)){
+                __debugbreak();
+            }
 #endif
-    
-    
-    {
-        
-        BYTE Buffer[1024];
-        memset(Buffer, 0, sizeof(Buffer));
-        
-        UINT32 IndexRegionsFound = 0;
-        
-        nar_record INDX_ALL_REGIONS[64];
-        DWORD BytesRead = 0;
-        
-        if (NarFileExplorerReadMFTID(Ctx, TargetMFTID, Buffer)) {
             
-            // do parsing stuff
-            void* FileRecord = &Buffer[0];
-            
-            INT16 FlagOffset = 22;
-            
-            INT16 Flags = *(INT16*)((BYTE*)FileRecord + FlagOffset);
-            INT16 DirectoryFlag = 0x0002;
-            
-            if((Flags & DirectoryFlag) == DirectoryFlag){
-                
-                INT16 FirstAttributeOffset = (*(INT16*)((BYTE*)FileRecord + 20));
-                void* FileAttribute = (char*)FileRecord + FirstAttributeOffset;
-                
-                INT32 RemainingLen = *(INT32*)((BYTE*)FileRecord + 24); // Real size of the file record
-                RemainingLen -= (FirstAttributeOffset + 8); //8 byte for end of record mark, remaining len includes it too.
-                
-                // iterate until file attr 0xA0 found, which is INDEX_ALLOCATION
-                // maybe some dir does not contain INDEX_ALLOCATION, like empty dirs, or other things i am not aware of.
-                // its better write solid solution
-                
-                while (RemainingLen > 0) {
-                    
-                    // check INDEX_ROOT
-                    if ((*(INT32*)FileAttribute & 0x90) == 0x90) {
-                        
-                        UINT32 LenIncludingHeader = *(UINT32*)((char*)FileAttribute + 4);
-                        UINT32 AttributeLen = *(UINT32*)((char*)FileAttribute + 16);
-                        if (AttributeLen != 56 || LenIncludingHeader != 88) {
-                            // entries start after 64 bytes
-                            
-                            void *Entry = (char*)FileAttribute + 64;
-                            
-                            INT EntryParseResult = NAR_FEXP_END_MARK;
-                            
-                            do {
-                                memset(&EList->Entries[EList->EntryCount], 0, sizeof(EList->Entries[EList->EntryCount]));
-                                EntryParseResult = NarFileExplorerGetFileEntryFromData(Entry, &EList->Entries[EList->EntryCount]);
-                                
-                                if (EntryParseResult == NAR_FEXP_SUCCEEDED || EntryParseResult == NAR_FEXP_POSIX) {
-                                    
-                                    // do not accept POSIX files as FILE_ENTRY at all
-                                    if (EntryParseResult == NAR_FEXP_SUCCEEDED) {
-                                        EList->EntryCount++;
-                                        if(EList->EntryCount == EList->MaxEntryCount){
-                                            NarExtentFileEntryList(EList, EList->MaxEntryCount * 2);
-                                        }
-                                    }
-                                    
-                                    UINT16 EntrySize = NAR_FEXP_INDX_ENTRY_SIZE(Entry);
-                                    Entry = (char*)Entry + EntrySize;
-                                }
-                                
-                            } while (EntryParseResult != NAR_FEXP_END_MARK);
-                            
-                            
-                        }
-                        else {
-                            // index_root is empty
-                        }
-                        
-                    }
-                    
-                    
-                    // NOTE(Batuhan): ntfs madness : if file has too many information, it cant fit into the single 1KB entry.
-                    /*
+            // NOTE(Batuhan): ntfs madness : if file has too many information, it cant fit into the single 1KB entry.
+            /*
 so some smart ass decided it would be wise to split some attributes into different disk locations, so i have to check if any file attribute is non-resident, if so, should check if that one is INDEX_ALLOCATION attribute, and again if so, should go read that disk offset and parse it. pretty trivial but also boring
 */
-                    
-#if 1
-                    if(*(INT32*)FileAttribute ==  NAR_ATTRIBUTE_LIST){
-                        // NOTE(Batuhan): satisfaction
-                        NarResolveAttributeList(Ctx, FileAttribute);
-                    }
-#endif               
-                    
-                    // NOTE(Batuhan): found resident INDEX_ALLOCATION attribute
-                    if ((*(INT32*)FileAttribute & NAR_INDEX_ALLOCATION_FLAG) == NAR_INDEX_ALLOCATION_FLAG) {
-                        INT32 OutLen;
-                        if(NarParseIndexAllocationAttribute(FileAttribute, &INDX_ALL_REGIONS[IndexRegionsFound], 64 - IndexRegionsFound, &OutLen)){
-                            IndexRegionsFound += OutLen;
-                        }
-                        else{
-                            printf("Failed to parse index allocation info\n");
-                        }
-                        // found INDEX_ALLOCATION attribute
-                        break;
-                    }
-                    
-#if 0                    
-                    // 0xB0 = BITMAP
-                    if((*(INT32*)FileAttribute & NAR_BITMAP_FLAG) == NAR_BITMAP_FLAG){
-                        
-                        UINT32 BitmapLen = *(UINT32*)NAR_OFFSET(FileAttribute, 0x10);
-                        char *Bitmap = (char*)malloc(BitmapLen);
-                        
-                        NarGetValidRegionIndicesFromBitmap(FileAttribute, Bitmap);
-                        
-                        
-                    }
-#endif
-                    
-                    
-                    if ((*(INT32*)FileAttribute & NAR_INDEX_ALLOCATION_FLAG) > NAR_INDEX_ALLOCATION_FLAG) break;// early termination
-                    
-                    
-                    // found neither indexallocation nor attr bigger than it, just substract attribute size from remaininglen to determine if we should keep iterating
-                    INT32 AttrSize = (*(unsigned short*)((BYTE*)FileAttribute + 4));
-                    RemainingLen -= AttrSize;
-                    FileAttribute = (BYTE*)FileAttribute + AttrSize;
-                    if (AttrSize == 0) break;
-                    
-                }
+            // NOTE(Batuhan): Not sure If a record can contain both attribute list and indx_allocation stuff
+            NarResolveAttributeList(Ctx, AttrListAttr);
+            
+            INT32 OutLen = 0;
+            // NOTE(Batuhan): INDEX_ALLOCATION handling
+            if(NarParseIndexAllocationAttribute(IndxAllAttr, &INDX_ALL_REGIONS[IndexRegionsFound], 64 - IndexRegionsFound, &OutLen)){
+                // NOTE(Batuhan): successfully parsed indx allocation
+                IndexRegionsFound += OutLen;
+            }
+            else{
+                // TODO(Batuhan): error log ?
+            }
+            
+            // NOTE(Batuhan): INDEX_ROOT handling
+            NarParseIndxRegion(IndxRootAttr, EList);
+            
+            
+            // TODO(Batuhan): BITMAP handling
+            
+            if(BitmapAttr){
                 
+                // TODO(Batuhan): implement removal algorithm.
+                // If bitmap present, we have to trim(maybe just remove, i made an assumption about how bitmap and indx allocatin might be related) indx allocation regions
                 
             }
             
-            
-            
-            for (UINT32 IndexRegionIndex = 0; IndexRegionIndex < IndexRegionsFound; IndexRegionIndex++) {
-                
-                if (NarFileExplorerSetFilePointer(FEHandle, (UINT64)INDX_ALL_REGIONS[IndexRegionIndex].StartPos * (UINT64)ClusterSize)) {
-                    
-                    size_t IndxBufferSize = (UINT64)INDX_ALL_REGIONS[IndexRegionIndex].Len * (UINT64)ClusterSize;
-                    
-                    // TODO(Batuhan): small optimization idea, malloc OUTSIDE of the loop, please
-                    void* IndxBuffer = malloc(IndxBufferSize);
-                    
-                    if (IndxBuffer) {
-                        
-                        if (NarFileExplorerReadVolume(FEHandle, IndxBuffer, (DWORD)IndxBufferSize, &BytesRead) && BytesRead == IndxBufferSize) {
-                            
-                            
-                            // inspect each clusters in region
-                            
-                            for (UINT32 IndxRegionClusterIndex = 0; IndxRegionClusterIndex < (IndxBufferSize / 4096); IndxRegionClusterIndex++) {
-                                
-                                TIMED_NAMED_BLOCK("Index parsing hot region");
-                                
-                                void* IndxCluster = (char*)IndxBuffer + (UINT64)IndxRegionClusterIndex * 4096;
-                                
-                                // skip first 64 bytes, first file entry, 88 if ROOT's first region, i hate ntfs
-                                if (TargetMFTID == 5 && IndexRegionIndex == 0 && IndxRegionClusterIndex == 0) {
-                                    IndxCluster = (char*)IndxCluster + 88;
-                                }
-                                else {
-                                    IndxCluster = (char*)IndxCluster + 64;
-                                }
-                                
-                                
-                                INT EntryParseResult = NAR_FEXP_END_MARK;
-                                do {
-                                    
-                                    TIMED_NAMED_BLOCK("do while loop");
-                                    
-                                    EntryParseResult = NarFileExplorerGetFileEntryFromData(IndxCluster, &EList->Entries[EList->EntryCount]);
-                                    
-                                    if (EntryParseResult == NAR_FEXP_SUCCEEDED || EntryParseResult == NAR_FEXP_POSIX) {
-                                        
-                                        // do not accept posix files as FILE_ENTRY at all
-                                        if (EntryParseResult == NAR_FEXP_SUCCEEDED) {
-                                            TIMED_NAMED_BLOCK("if branch checking");
-                                            
-                                            EList->EntryCount++;
-                                            if(EList->EntryCount == EList->MaxEntryCount){
-                                                NarExtentFileEntryList(EList, EList->MaxEntryCount * 2);
-                                            }
-                                        }
-                                        
-                                        UINT16 EntrySize = NAR_FEXP_INDX_ENTRY_SIZE(IndxCluster);
-                                        IndxCluster = (char*)IndxCluster + EntrySize;
-                                    }
-                                    
-                                    
-                                } while (EntryParseResult != NAR_FEXP_END_MARK);
-                                
-                                
-                            }
-                            
-                            
-                            
-                        }
-                        else {
-                            // readfile failed for indx region
-                        }
-                        
-                        free(IndxBuffer);
-                    }
-                    else {
-                        // printf("Couldnt allocate memory");
-                    }
-                    
-                }
-                else {
-                    // couldnt set file pointer for index's ith region
-                }
-                
-            }
-            
-            
-        }
-        else {
-            // couldnt read file entry
         }
         
+        
+        NarGetFileEntriesFromIndxClusters(Ctx, INDX_ALL_REGIONS, IndexRegionsFound);
+        
+        
     }
+    else {
+        // couldnt read file entry
+    }
+    
     
     
 }

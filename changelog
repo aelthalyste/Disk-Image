@@ -30,3 +30,6 @@ calculated at SetupStream, then added to general region scheme.
 -Moved some janky macro definitions to header file, stuff like attribute id, pointer addition		
 -There are regions that need to be replaced with new compressed API, especially in NarGetFileListFromMFTID
 -There are REGIONS/FUNCTIONS THAT ARE NOT IMPLEMENTED YET, ex: trimming parts of indx_allocation regions with the information from bitmap attribute, functions are kinda ready but not implemented
+
+18.12.2020
+-Rewritten NarGetFileListFromMFTID with new API, not actual rewrite operation, actually just made API from it's bones and replaced with new ones!
