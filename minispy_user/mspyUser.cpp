@@ -6264,7 +6264,7 @@ NarGetFileListFromMFTID(nar_backup_file_explorer_context *Ctx, size_t TargetMFTI
             void* AttrListAttr = NarFindFileAttributeFromFileRecord(FileRecord, NAR_ATTRIBUTE_LIST);
             
 #if _DEBUG
-            if((AttrListAttr && IndxAllAttr) || (AttrListAttr && IndxAllRoot)){
+            if((AttrListAttr && IndxAllAttr) || (AttrListAttr && IndxRootAttr)){
                 __debugbreak();
             }
 #endif
