@@ -69,7 +69,7 @@ namespace NarDIWrapper {
         UINT64 MaxWriteOffset;  // last write offset that is going to be made
         
         wchar_t DiskType;
-        System::String^ Binarydataname; // fullpath of the backup
+        System::String^ Fullpath; // fullpath of the backup
         System::String^ Metadataname; // 
         System::String^ WindowsName;
         System::String^ TaskName;
