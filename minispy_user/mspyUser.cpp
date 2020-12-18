@@ -6268,18 +6268,38 @@ so some smart ass decided it would be wise to split some attributes into differe
             
             
             // TODO(Batuhan): BITMAP handling
-            
             if(BitmapAttr){
-                
                 // TODO(Batuhan): implement removal algorithm.
                 // If bitmap present, we have to trim(maybe just remove, i made an assumption about how bitmap and indx allocatin might be related) indx allocation regions
-                
             }
+            
+            
             
         }
         
+        /*
+$ROOT file has very very very unique special case when parsing a normal file record, it turns out
+i can't use general file record parsing function just for that very special case, so here, _almost_ same version of NarGetFileEntriesFromIndxClusters
+*/
+        for(int _i_ = 0; 
+            NarFileExplorerSetFilePointer(Ctx->FEHandle, (UINT64)INDX_ALL_REGIONS[_i_].StartPos*Ctx->ClusterSize) && _i_ < IndexRegionsFound;
+            _i_++){
+            
+            size_t IndxBufferSize = (UINT64)INDX_ALL_REGIONS[_i_].Len * Ctx->ClusterSize;
+            void* IndxBuffer = malloc(IndxBufferSize);
+            DWORD BytesRead = 0;
+            
+            if(NarFileExplorerReadVolume(Ctx->FEHandle, IndxBuffer, IndxBufferSize, &BytesRead)){
+                for(size_t _j_ =0; _j_ <  IndxBufferSize/(Ctx->ClusterSize); _j_++){
+                    void *IC = (char*)IndxBuffer + (UINT64)_j_*Ctx->ClusterSize;
+                    if(TargetMFTID == 5 && _i_ == 0 && _j_ == 0) IC = (char*)IC + 24;
+                    NarParseIndxRegion(IC, &Ctx->EList);
+                }
+            }
+            
+            free(IndxBuffer);
+        }
         
-        NarGetFileEntriesFromIndxClusters(Ctx, INDX_ALL_REGIONS, IndexRegionsFound);
         
         
     }
@@ -8025,11 +8045,11 @@ main(int argc, char* argv[]) {
     
     NARDEBUG_AttributeListTest();
     
-#if 1    
+#if 1 
     nar_backup_file_explorer_context ctx = {0};
     //NarInitFileExplorerContextFromVolume(&ctx, 'C');
-    //NarInitFileExplorerContextFromVolume(&ctx, 'C');
-    NarInitFileExplorerContext(&ctx, L"F:\NAR_M_0-19464719073806308.narmd");
+    //NarInitFileExplorerContextFromVolume(&ctx, 'E');
+    NarInitFileExplorerContext(&ctx, L"F:\NAR_M_FULL-6919479017019934692.narmd");
     
     file_read f = NarReadFile("attlist");
     NarFileExplorerPrint(&ctx);
