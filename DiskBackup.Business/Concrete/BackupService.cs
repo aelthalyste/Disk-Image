@@ -94,8 +94,8 @@ namespace DiskBackup.Business.Concrete
             // yedek volumu, versiondan gelecek, "E:\ebru-eyupDeneme"-- ters slaş ekle sonuna
             //_cSNarFileExplorer.CW_Init('C', 0, "");
             //_cSNarFileExplorer.CW_Init(backupInfo.Letter, backupInfo.Version, backupInfo.BackupStorageInfo.Path);
-            _logger.Verbose("İnitFileExplorer: {path}", backupInfo.BackupStorageInfo.Path + backupInfo.FileName);
-            _cSNarFileExplorer.CW_Init(backupInfo.BackupStorageInfo.Path + backupInfo.FileName); // isim eklenmesi gerekmeli gibi
+            _logger.Information("İnitFileExplorer: {path}", backupInfo.BackupStorageInfo.Path + backupInfo.MetadataFileName);
+            _cSNarFileExplorer.CW_Init(backupInfo.BackupStorageInfo.Path + backupInfo.MetadataFileName); // isim eklenmesi gerekmeli gibi
         }
 
         public List<DiskInformation> GetDiskList()
@@ -197,6 +197,8 @@ namespace DiskBackup.Business.Concrete
                     createdDate = createdDate + ":" + returnItem.BackupDate.Second.ToString();
                     backupInfo.CreatedDate = createdDate;
 
+                    backupInfo.MetadataFileName = returnItem.Metadataname;
+
                     if (returnItem.Version == -1)
                         backupInfo.Type = BackupTypes.Full;
                     else
@@ -247,6 +249,8 @@ namespace DiskBackup.Business.Concrete
                     createdDate = createdDate + ":" + ((resultItem.BackupDate.Minute < 10) ? 0 + resultItem.BackupDate.Minute.ToString() : resultItem.BackupDate.Minute.ToString());
                     createdDate = createdDate + ":" + resultItem.BackupDate.Second.ToString();
                     backupInfo.CreatedDate = createdDate;
+
+                    backupInfo.MetadataFileName = resultItem.Metadataname;
 
                     if (resultItem.Version == -1)
                         backupInfo.Type = BackupTypes.Full;

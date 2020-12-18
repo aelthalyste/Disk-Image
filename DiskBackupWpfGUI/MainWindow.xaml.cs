@@ -57,6 +57,7 @@ namespace DiskBackupWpfGUI
         private List<ActivityDownLog> _logList = new List<ActivityDownLog>();
 
         private CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        CollectionView _view;
 
         private readonly ITaskInfoDal _taskInfoDal;
         private readonly IBackupStorageDal _backupStorageDal;
@@ -109,9 +110,9 @@ namespace DiskBackupWpfGUI
                 listViewDisk.ItemsSource = _volumeList;
                 listViewRestoreDisk.ItemsSource = _volumeList;
 
-                CollectionView view = (CollectionView)CollectionViewSource.GetDefaultView(listViewDisk.ItemsSource);
+                _view = (CollectionView)CollectionViewSource.GetDefaultView(listViewDisk.ItemsSource);
                 PropertyGroupDescription groupDescription = new PropertyGroupDescription("DiskName");
-                view.GroupDescriptions.Add(groupDescription);
+                _view.GroupDescriptions.Add(groupDescription);
 
                 GetDiskPage();
             }
@@ -239,6 +240,7 @@ namespace DiskBackupWpfGUI
                 _diskExpenderIndex = 0;
             size.Text = FormatBytes(_diskList[_diskExpenderIndex++].Size);
         }
+
         private void listViewDisk_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (listViewDisk.SelectedIndex != -1)
@@ -1788,20 +1790,6 @@ namespace DiskBackupWpfGUI
                     _logger.Verbose("RefreshTasks istekte bulunuldu");
                     //var backupService = _scope.Resolve<IBackupService>();
 
-                    /*_diskList = backupService.GetDiskList();
-
-                    foreach (var diskItem in _diskList)
-                    {
-                        foreach (var volumeItem in diskItem.VolumeInfos)
-                        {
-                            volumeItem.StrFreeSize += "+ yeniledi";
-                            _volumeList.Add(volumeItem);
-                        }
-                    }
-
-                    CollectionView view = (CollectionView)CollectionViewSource.GetDefaultView(listViewDisk.ItemsSource);
-                    view.Refresh();*/
-
                     // disk pageleri yeniliyor sorunsuz
                     GetDiskPage();
 
@@ -1964,7 +1952,43 @@ namespace DiskBackupWpfGUI
             }
         }
 
+        private void RefreshDisk()
+        {
+            _expanderCheckBoxes.Clear();
+            _numberOfItems.Clear();
+            _groupName.Clear();
+            _restoreExpanderCheckBoxes.Clear();
+            _restoreNumberOfItems.Clear();
+            _restoreGroupName.Clear();
+            _expanderRestoreDiskList.Clear();
+
+            var backupService = _scope.Resolve<IBackupService>();
+
+            _diskList = backupService.GetDiskList();
+            _volumeList.Clear();
+
+            foreach (var diskItem in _diskList)
+            {
+                foreach (var volumeItem in diskItem.VolumeInfos)
+                {
+                    _volumeList.Add(volumeItem);
+                }
+            }
+            //_volumeList.ForEach(x => Console.WriteLine(x.Name));
+            _view.Refresh();
+        }
+
         #endregion
+
+        #region Genel Fonksiyonlar
+
+        private void mainTabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (e.Source != mainTabControl)
+                return;
+            if (mainTabControl.SelectedIndex == 0 || mainTabControl.SelectedIndex == 2)
+                RefreshDisk();
+        }
 
         private static T FindParent<T>(DependencyObject dependencyObject) where T : DependencyObject
         {
@@ -2001,6 +2025,7 @@ namespace DiskBackupWpfGUI
 
             return ($"{dblSByte:0.##} {Suffix[i]}");
         }
+        #endregion
 
         private void btnFilesDelete_Click(object sender, RoutedEventArgs e)
         {

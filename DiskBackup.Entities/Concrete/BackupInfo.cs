@@ -15,6 +15,7 @@ namespace DiskBackup.Entities.Concrete
         public int BackupStorageInfoId { get; set; } //foreignKey
         public BackupTypes Type { get; set; }
         public string FileName { get; set; }
+        public string MetadataFileName { get; set; }
         public string CreatedDate { get; set; }
         public string BackupTaskName { get; set; }
         public long VolumeSize { get; set; }
