@@ -169,14 +169,14 @@ namespace DiskBackupWpfGUI
             {
                 if (txtBackupAreaName.Text.Equals("") || txtSettingsFolderPath.Text.Equals(""))
                 {
-                    MessageBox.Show("İlgili alanları lütfen boş geçmeyiniz. Yerel Disk", "NARBULUT DİYOR Kİ;", MessageBoxButton.OK, MessageBoxImage.Error);
+                    MessageBox.Show("İlgili alanları lütfen boş geçmeyiniz. Yerel Disk", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
                     controlFlag = false;
                 }
                 else
                 {
                     if (!(txtSettingsFolderPath.Text[1].Equals(':')))
                     {
-                        MessageBox.Show("Lütfen geçerli bir dizin giriniz.", "Narbulut diyor ki;", MessageBoxButton.OK, MessageBoxImage.Error);
+                        MessageBox.Show("Lütfen geçerli bir dizin giriniz.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
                         controlFlag = false;
                     }
                     else
@@ -193,7 +193,7 @@ namespace DiskBackupWpfGUI
                             catch (Exception ex)
                             {
                                 _logger.Error(ex, "{dizin} dizini oluşturulamadı.", txtSettingsFolderPath.Text);
-                                MessageBox.Show("Girdiğiniz dizinde bu isimde dosya olduğu için aynı isimde klasör oluşturulamaz!", "Narbulut diyor ki;", MessageBoxButton.OK, MessageBoxImage.Error);
+                                MessageBox.Show("Girdiğiniz dizinde bu isimde dosya olduğu için aynı isimde klasör oluşturulamaz!", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
                                 controlFlag = false;
                             }
                         }
@@ -204,7 +204,7 @@ namespace DiskBackupWpfGUI
             {
                 if (txtBackupAreaName.Text.Equals("") || txtSettingsNASFolderPath.Text.Equals("") || txtSettingsNASUserName.Text.Equals("") || txtSettingsNASPassword.Password.Equals("") || txtSettingsNASDomain.Text.Equals(""))
                 {
-                    MessageBox.Show("İlgili alanları lütfen boş geçmeyiniz. NAS", "NARBULUT DİYOR Kİ;", MessageBoxButton.OK, MessageBoxImage.Error);
+                    MessageBox.Show("İlgili alanları lütfen boş geçmeyiniz. NAS", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
                     controlFlag = false;
                 }
             }
@@ -316,12 +316,12 @@ namespace DiskBackupWpfGUI
             }
             if (taskRunnigFlag)
             {
-                MessageBox.Show("İşlemekte olan görevleriniz etkileneceği için bu işlemi gerçekleştiremezsiniz!", "Narbulut diyor ki;", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show("İşlemekte olan görevleriniz etkileneceği için bu işlemi gerçekleştiremezsiniz!", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
                 return true;
             }
             if (restoreTaskFlag)
             {
-                var result = MessageBox.Show("Restore görevleriniz bu değişiklikten etkilenecek.\nOnaylıyor musunuz?", "Narbulut diyor ki;", MessageBoxButton.YesNo, MessageBoxImage.Question);
+                var result = MessageBox.Show("Restore görevleriniz bu değişiklikten etkilenecek.\nOnaylıyor musunuz?", Resources["MessageboxTitle"].ToString(), MessageBoxButton.YesNo, MessageBoxImage.Question);
                 if (result == MessageBoxResult.No)
                 {
                     return true;
@@ -439,14 +439,14 @@ namespace DiskBackupWpfGUI
                     if (result)
                     {
                         Close();
-                        MessageBox.Show("Güncelleme işlemi başarılı", "NARBULUT DİYOR Kİ;", MessageBoxButton.OK, MessageBoxImage.Information);
+                        MessageBox.Show("Güncelleme işlemi başarılı", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Information);
                     }
                     else
-                        MessageBox.Show("Güncelleme işlemi başarısız", "NARBULUT DİYOR Kİ;", MessageBoxButton.OK, MessageBoxImage.Error);
+                        MessageBox.Show("Güncelleme işlemi başarısız", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
                 }
                 else
                 {
-                    MessageBox.Show("Girdiğiniz NAS bilgileri hatalıdır", "NARBULUT DİYOR Kİ;", MessageBoxButton.OK, MessageBoxImage.Error);
+                    MessageBox.Show("Girdiğiniz NAS bilgileri hatalıdır", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
             else
@@ -455,10 +455,10 @@ namespace DiskBackupWpfGUI
                 if (result)
                 {
                     Close();
-                    MessageBox.Show("Güncelleme işlemi başarılı", "NARBULUT DİYOR Kİ;", MessageBoxButton.OK, MessageBoxImage.Information);
+                    MessageBox.Show("Güncelleme işlemi başarılı", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Information);
                 }
                 else
-                    MessageBox.Show("Güncelleme işlemi başarısız", "NARBULUT DİYOR Kİ;", MessageBoxButton.OK, MessageBoxImage.Error);
+                    MessageBox.Show("Güncelleme işlemi başarısız", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -473,14 +473,14 @@ namespace DiskBackupWpfGUI
                     if (result)
                     {
                         Close();
-                        MessageBox.Show("Ekleme işlemi başarılı", "NARBULUT DİYOR Kİ;", MessageBoxButton.OK, MessageBoxImage.Information);
+                        MessageBox.Show("Ekleme işlemi başarılı", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Information);
                     }
                     else
-                        MessageBox.Show("Ekleme işlemi başarısız", "NARBULUT DİYOR Kİ;", MessageBoxButton.OK, MessageBoxImage.Error);
+                        MessageBox.Show("Ekleme işlemi başarısız", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
                 }
                 else
                 {
-                    MessageBox.Show("Girdiğiniz NAS bilgileri hatalıdır", "NARBULUT DİYOR Kİ;", MessageBoxButton.OK, MessageBoxImage.Error);
+                    MessageBox.Show("Girdiğiniz NAS bilgileri hatalıdır", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
             else
@@ -490,10 +490,10 @@ namespace DiskBackupWpfGUI
                 if (result)
                 {
                     Close();
-                    MessageBox.Show("Ekleme işlemi başarılı", "NARBULUT DİYOR Kİ;", MessageBoxButton.OK, MessageBoxImage.Information);
+                    MessageBox.Show("Ekleme işlemi başarılı", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Information);
                 }
                 else
-                    MessageBox.Show("Ekleme işlemi başarısız", "NARBULUT DİYOR Kİ;", MessageBoxButton.OK, MessageBoxImage.Error);
+                    MessageBox.Show("Ekleme işlemi başarısız", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 

@@ -217,7 +217,7 @@ namespace DiskBackupWpfGUI
         {
             if (ConfirmNotEmpty())
             {
-                MessageBox.Show("İlgili alanları lütfen boş geçmeyiniz.", "NARBULUT DİYOR Kİ;", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show("İlgili alanları lütfen boş geçmeyiniz.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
             }
             else
             {
@@ -413,16 +413,16 @@ namespace DiskBackupWpfGUI
                     Close();
 
                     if (_updateControl)
-                        MessageBox.Show("Güncelleme başarılı.", "NARBULUT DİYOR Kİ;", MessageBoxButton.OK, MessageBoxImage.Information);
+                        MessageBox.Show("Güncelleme başarılı.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Information);
                     else
-                        MessageBox.Show("Ekleme başarılı.", "NARBULUT DİYOR Kİ;", MessageBoxButton.OK, MessageBoxImage.Information);
+                        MessageBox.Show("Ekleme başarılı.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Information);
                 }
                 else
                 {
                     if (_updateControl)
-                        MessageBox.Show("Güncelleme başarısız.", "NARBULUT DİYOR Kİ;", MessageBoxButton.OK, MessageBoxImage.Error);
+                        MessageBox.Show("Güncelleme başarısız.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
                     else
-                        MessageBox.Show("Ekleme başarısız.", "NARBULUT DİYOR Kİ;", MessageBoxButton.OK, MessageBoxImage.Error);
+                        MessageBox.Show("Ekleme başarısız.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
                 }
 
 
@@ -466,7 +466,7 @@ namespace DiskBackupWpfGUI
                 {
                     Console.WriteLine(item.Name);
                 }
-                var result = MessageBox.Show("Oluşturmak istediğiniz görevlerin, volumelarında işlemekte olan görevleriniz etkisiz hale getirilecek.\nOnaylıyor musunuz?", "Narbulut diyor ki; ", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
+                var result = MessageBox.Show("Oluşturmak istediğiniz görevlerin, volumelarında işlemekte olan görevleriniz etkisiz hale getirilecek.\nOnaylıyor musunuz?", Resources["MessageboxTitle"].ToString(), MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
                 if (result == MessageBoxResult.No)
                 {
                     return false;
@@ -502,7 +502,7 @@ namespace DiskBackupWpfGUI
                 return true;
             else
             {
-                MessageBox.Show("Çalışan görevler etkisiz hale getirilemediği için bu görev eklenemez.", "Narbulut diyor ki;", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show("Çalışan görevler etkisiz hale getirilemediği için bu görev eklenemez.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
                 return false;
             }
         }
@@ -1051,7 +1051,7 @@ namespace DiskBackupWpfGUI
             var resultBackupTask = _backupTaskDal.Add(_taskInfo.BackupTaskInfo);
             if (resultBackupTask == null)
             {
-                MessageBox.Show("Ekleme başarısız.", "NARBULUT DİYOR Kİ;", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show("Ekleme başarısız.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
                 return null;
             }
 
@@ -1061,7 +1061,7 @@ namespace DiskBackupWpfGUI
             var resultStatusInfo = _statusInfoDal.Add(_taskInfo.StatusInfo);
             if (resultStatusInfo == null)
             {
-                MessageBox.Show("Ekleme başarısız.", "NARBULUT DİYOR Kİ;", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show("Ekleme başarısız.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
                 return null;
             }
 
@@ -1073,7 +1073,7 @@ namespace DiskBackupWpfGUI
             var resultTaskInfo = _taskInfoDal.Add(_taskInfo);
             if (resultTaskInfo == null)
             {
-                MessageBox.Show("Ekleme başarısız.", "NARBULUT DİYOR Kİ;", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show("Ekleme başarısız.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
                 return null;
             }
 
@@ -1086,7 +1086,7 @@ namespace DiskBackupWpfGUI
             var resultBackupTask = _backupTaskDal.Update(_taskInfo.BackupTaskInfo);
             if (resultBackupTask == null)
             {
-                MessageBox.Show("Güncelleme başarısız.", "NARBULUT DİYOR Kİ;", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show("Güncelleme başarısız.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
                 return null;
             }
 
@@ -1096,7 +1096,7 @@ namespace DiskBackupWpfGUI
             var resultStatusInfo = _statusInfoDal.Update(_taskInfo.StatusInfo);
             if (resultStatusInfo == null)
             {
-                MessageBox.Show("Güncelleme başarısız.", "NARBULUT DİYOR Kİ;", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show("Güncelleme başarısız.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
                 return null;
             }
 
@@ -1108,7 +1108,7 @@ namespace DiskBackupWpfGUI
             var resultTaskInfo = _taskInfoDal.Update(_taskInfo);
             if (resultTaskInfo == null)
             {
-                MessageBox.Show("Güncelleme başarısız.", "NARBULUT DİYOR Kİ;", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show("Güncelleme başarısız.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
                 return null;
             }
 

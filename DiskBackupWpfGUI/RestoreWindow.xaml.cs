@@ -140,7 +140,7 @@ namespace DiskBackupWpfGUI
 
             if (dtpSetTime.Value <= DateTime.Now + TimeSpan.FromSeconds(10))
             {
-                MessageBox.Show("Geçmiş tarih için geri yükleme işlemi gerçekleştirilemez.", "NARBULUT DİYOR Kİ;", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show("Geçmiş tarih için geri yükleme işlemi gerçekleştirilemez.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
             }
             else
             {
@@ -149,7 +149,7 @@ namespace DiskBackupWpfGUI
                 {
                     if (txtTaskName.Text.Equals(""))
                     {
-                        MessageBox.Show("İlgili alanları lütfen boş geçmeyiniz. Hemen çalıştır", "NARBULUT DİYOR Kİ;", MessageBoxButton.OK, MessageBoxImage.Error);
+                        MessageBox.Show("İlgili alanları lütfen boş geçmeyiniz. Hemen çalıştır", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
                         nullControlFlag = false;
                     }
                 }
@@ -157,7 +157,7 @@ namespace DiskBackupWpfGUI
                 {
                     if (txtTaskName.Text.Equals("") || dtpSetTime.Value.Equals(""))
                     {
-                        MessageBox.Show("İlgili alanları lütfen boş geçmeyiniz. Zaman belirle", "NARBULUT DİYOR Kİ;", MessageBoxButton.OK, MessageBoxImage.Error);
+                        MessageBox.Show("İlgili alanları lütfen boş geçmeyiniz. Zaman belirle", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
                         nullControlFlag = false;
                     }
                 }
@@ -252,7 +252,7 @@ namespace DiskBackupWpfGUI
             var resultRestoreTask = _restoreTaskDal.Add(_taskInfo.RestoreTaskInfo);
             if (resultRestoreTask == null)
             {
-                MessageBox.Show("Ekleme başarısız.", "NARBULUT DİYOR Kİ;", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show("Ekleme başarısız.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
                 return null;
             }
 
@@ -262,7 +262,7 @@ namespace DiskBackupWpfGUI
             var resultStatusInfo = _statusInfoDal.Add(_taskInfo.StatusInfo);
             if (resultStatusInfo == null)
             {
-                MessageBox.Show("Ekleme başarısız.", "NARBULUT DİYOR Kİ;", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show("Ekleme başarısız.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
                 return null;
             }
 
@@ -274,7 +274,7 @@ namespace DiskBackupWpfGUI
             var resultTaskInfo = _taskInfoDal.Add(_taskInfo);
             if (resultTaskInfo == null)
             {
-                MessageBox.Show("Ekleme başarısız.", "NARBULUT DİYOR Kİ;", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show("Ekleme başarısız.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
                 return null;
             }
 

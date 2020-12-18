@@ -255,5 +255,6 @@
     <system:String x:Key="NotEnoughDiskSpace">Yetersiz Disk Alanı</system:String>
     <system:String x:Key="ConnectionError">Bağlanma Hatası</system:String>
     <system:String x:Key="ValidateConnection">Bağlantıyı Doğrula</system:String>
+    <system:String x:Key="MessageboxTitle">Narbulut Bilgilendirme</system:String>
 
 </ResourceDictionary>
