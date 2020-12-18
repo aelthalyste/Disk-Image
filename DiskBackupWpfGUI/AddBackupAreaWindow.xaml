@@ -147,7 +147,7 @@
                     <Grid.RowDefinitions>
                         <RowDefinition/>
                     </Grid.RowDefinitions>
-                    <StackPanel Name="stackLocalDisc" Grid.Row="0" Margin="10,30,20,10" Visibility="Visible">
+                    <StackPanel Name="stackLocalDisc" Grid.Row="0" Margin="10,30,20,10" Visibility="Hidden">
                         <TextBlock Text="{DynamicResource localDisc}" />
                         <Grid Margin="20,20,0,0">
                             <Grid.ColumnDefinitions>
@@ -173,7 +173,7 @@
                         </Grid>
                     </StackPanel>
 
-                    <StackPanel Name="stackNAS" Grid.Row="0" Margin="10,30,20,10" Visibility="Hidden">
+                    <StackPanel Name="stackNAS" Grid.Row="0" Margin="10,30,20,10" Visibility="Visible">
                         <TextBlock Text="{DynamicResource NASorSharing}" />
                         <Grid Margin="20,20,0,0">
                             <Grid.ColumnDefinitions>
@@ -181,6 +181,7 @@
                                 <ColumnDefinition/>
                             </Grid.ColumnDefinitions>
                             <Grid.RowDefinitions>
+                                <RowDefinition/>
                                 <RowDefinition/>
                                 <RowDefinition/>
                                 <RowDefinition/>
@@ -199,7 +200,24 @@
                             <TextBox Name="txtSettingsNASDomain" Grid.Row="2" Grid.Column="1" Width="250" Height="22" Margin="0,0,0,10" HorizontalAlignment="Left" VerticalContentAlignment="Center"/>
                             <TextBox Name="txtSettingsNASUserName" Grid.Row="3" Grid.Column="1" Width="250" Height="22" Margin="0,0,0,10" HorizontalAlignment="Left" VerticalContentAlignment="Center"/>
                             <PasswordBox Name="txtSettingsNASPassword" Grid.Row="4" Grid.Column="1" Width="250" Height="22" Margin="0,0,0,10" HorizontalAlignment="Left" VerticalContentAlignment="Center"/>
+                            <Image Name="imgValidateConnectionTrue" Height="25" Width="25" Grid.Row="5" Grid.ColumnSpan="2" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="250,0,0,0" Visibility="Hidden">
+                                <Image.Style>
+                                    <Style TargetType="Image">
+                                        <Setter Property="Source" Value="Resources/Icon/icons8_ok_3.ico"/>
+                                    </Style>
+                                </Image.Style>
+                            </Image>
+                            <Image Name="imgValidateConnectionFalse" Height="25" Width="25" Grid.Row="5" Grid.ColumnSpan="2" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="250,0,0,0">
+                                <Image.Style>
+                                    <Style TargetType="Image">
+                                        <Setter Property="Source" Value="Resources/Icon/icons8_cancel.ico"/>
+                                    </Style>
+                                </Image.Style>
+                            </Image>
+                            <Button Name="btnValidateConnection" Content="{DynamicResource ValidateConnection}" Click="btnValidateConnection_Click" Grid.Row="5" Grid.ColumnSpan="2" Style="{StaticResource WhiteButton}" Margin="100,0,0,0" Width="110" Height="25"/>
+
                         </Grid>
+
                     </StackPanel>
                 </Grid>
             </TabItem>

@@ -432,27 +432,7 @@ namespace DiskBackupWpfGUI
         {
             if (backupStorageInfo.Type == BackupStorageType.NAS)
             {
-                bool nasControlFlag = false;
-                NetworkConnection nc = null;
-                try
-                {
-                    nc = new NetworkConnection(backupStorageInfo.Path.Substring(0, backupStorageInfo.Path.Length - 1), backupStorageInfo.Username, backupStorageInfo.Password, backupStorageInfo.Domain);
-                    //if (!backupStorageInfo.Path.Contains(backupStorageInfo.Domain))
-                    //{
-                    //    Console.WriteLine("adanamerkez ");
-                    //    nasControlFlag = true;
-                    //}
-                }
-                catch
-                {
-                    MessageBox.Show("Girdiğiniz NAS bilgileri hatalıdır");
-                    nasControlFlag = true;
-                }
-
-                if (nc != null)
-                    nc.Dispose();
-
-                if (!nasControlFlag)
+                if (_backupStorageService.ValidateNasConnection(backupStorageInfo.Path.Substring(0, backupStorageInfo.Path.Length - 1), backupStorageInfo.Username, backupStorageInfo.Password, backupStorageInfo.Domain))
                 {
                     // güncelleme yap
                     var result = _backupStorageService.UpdateBackupStorage(backupStorageInfo);
@@ -463,7 +443,10 @@ namespace DiskBackupWpfGUI
                     }
                     else
                         MessageBox.Show("Güncelleme işlemi başarısız", "NARBULUT DİYOR Kİ;", MessageBoxButton.OK, MessageBoxImage.Error);
-
+                }
+                else
+                {
+                    MessageBox.Show("Girdiğiniz NAS bilgileri hatalıdır", "NARBULUT DİYOR Kİ;", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
             else
@@ -483,27 +466,7 @@ namespace DiskBackupWpfGUI
         {
             if (backupStorageInfo.Type == BackupStorageType.NAS)
             {
-                bool nasControlFlag = false;
-                NetworkConnection nc = null;
-                try
-                {
-                    nc = new NetworkConnection(backupStorageInfo.Path.Substring(0, backupStorageInfo.Path.Length - 1), backupStorageInfo.Username, backupStorageInfo.Password, backupStorageInfo.Domain);
-                    //if (!backupStorageInfo.Path.Contains(backupStorageInfo.Domain))
-                    //{
-                    //    Console.WriteLine("gebzeden geldim ");
-                    //    nasControlFlag = true;
-                    //}
-                }
-                catch 
-                {
-                    MessageBox.Show("Girdiğiniz NAS bilgileri hatalıdır");
-                    nasControlFlag = true;
-                }
-
-                if (nc != null)
-                    nc.Dispose();
-
-                if (!nasControlFlag)
+                if (_backupStorageService.ValidateNasConnection(backupStorageInfo.Path.Substring(0, backupStorageInfo.Path.Length - 1), backupStorageInfo.Username, backupStorageInfo.Password, backupStorageInfo.Domain))
                 {
                     // ekleme yap
                     var result = _backupStorageService.AddBackupStorage(backupStorageInfo);
@@ -514,6 +477,10 @@ namespace DiskBackupWpfGUI
                     }
                     else
                         MessageBox.Show("Ekleme işlemi başarısız", "NARBULUT DİYOR Kİ;", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+                else
+                {
+                    MessageBox.Show("Girdiğiniz NAS bilgileri hatalıdır", "NARBULUT DİYOR Kİ;", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
             else
@@ -530,5 +497,28 @@ namespace DiskBackupWpfGUI
             }
         }
 
+        private void btnValidateConnection_Click(object sender, RoutedEventArgs e)
+        {
+            BackupStorageInfo backupStorageInfo = new BackupStorageInfo
+            {
+                Path = txtSettingsNASFolderPath.Text + @"\",
+                Domain = txtSettingsNASDomain.Text,
+                Username = txtSettingsNASUserName.Text,
+                Password = txtSettingsNASPassword.Password
+            };
+
+            if (_backupStorageService.ValidateNasConnection(backupStorageInfo.Path.Substring(0, backupStorageInfo.Path.Length - 1), backupStorageInfo.Username, backupStorageInfo.Password, backupStorageInfo.Domain))
+            {
+                //doğrulama başarılı
+                imgValidateConnectionFalse.Visibility = Visibility.Collapsed;
+                imgValidateConnectionTrue.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                //başarısız
+                imgValidateConnectionFalse.Visibility = Visibility.Visible;
+                imgValidateConnectionTrue.Visibility = Visibility.Collapsed;
+            }
+        }
     }
 }
