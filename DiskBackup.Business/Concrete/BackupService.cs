@@ -375,7 +375,7 @@ namespace DiskBackup.Business.Concrete
             {       
                 if (taskInfo.BackupStorageInfo.Type == BackupStorageType.NAS)
                 {
-                    nc = new NetworkConnection(taskInfo.BackupStorageInfo.Path.Substring(0, taskInfo.BackupStorageInfo.Path.Length - 1), taskInfo.BackupStorageInfo.Domain + @"\" + taskInfo.BackupStorageInfo.Username, taskInfo.BackupStorageInfo.Password, "");
+                    nc = new NetworkConnection(taskInfo.BackupStorageInfo.Path.Substring(0, taskInfo.BackupStorageInfo.Path.Length - 1), taskInfo.BackupStorageInfo.Username, taskInfo.BackupStorageInfo.Password, taskInfo.BackupStorageInfo.Domain);
                 }
             }
             catch (Exception ex)

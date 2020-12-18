@@ -436,12 +436,12 @@ namespace DiskBackupWpfGUI
                 NetworkConnection nc = null;
                 try
                 {
-                    nc = new NetworkConnection(backupStorageInfo.Path.Substring(0, backupStorageInfo.Path.Length - 1), backupStorageInfo.Username, backupStorageInfo.Password, "");
-                    if (!backupStorageInfo.Path.Contains(backupStorageInfo.Domain))
-                    {
-                        Console.WriteLine("adanamerkez ");
-                        nasControlFlag = true;
-                    }
+                    nc = new NetworkConnection(backupStorageInfo.Path.Substring(0, backupStorageInfo.Path.Length - 1), backupStorageInfo.Username, backupStorageInfo.Password, backupStorageInfo.Domain);
+                    //if (!backupStorageInfo.Path.Contains(backupStorageInfo.Domain))
+                    //{
+                    //    Console.WriteLine("adanamerkez ");
+                    //    nasControlFlag = true;
+                    //}
                 }
                 catch
                 {
@@ -487,12 +487,12 @@ namespace DiskBackupWpfGUI
                 NetworkConnection nc = null;
                 try
                 {
-                    nc = new NetworkConnection(backupStorageInfo.Path.Substring(0, backupStorageInfo.Path.Length - 1), backupStorageInfo.Username, backupStorageInfo.Password, "");
-                    if (!backupStorageInfo.Path.Contains(backupStorageInfo.Domain))
-                    {
-                        Console.WriteLine("gebzeden geldim ");
-                        nasControlFlag = true;
-                    }
+                    nc = new NetworkConnection(backupStorageInfo.Path.Substring(0, backupStorageInfo.Path.Length - 1), backupStorageInfo.Username, backupStorageInfo.Password, backupStorageInfo.Domain);
+                    //if (!backupStorageInfo.Path.Contains(backupStorageInfo.Domain))
+                    //{
+                    //    Console.WriteLine("gebzeden geldim ");
+                    //    nasControlFlag = true;
+                    //}
                 }
                 catch 
                 {
