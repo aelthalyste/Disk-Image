@@ -4041,7 +4041,7 @@ GenerateMetadataName(nar_backup_id ID, int Version) {
     }
     
     Result += L"-";
-    Result += std::wstring(ID.Letter);
+    Result += std::to_wstring(ID.Letter);
     Result += NarBackupIDToWStr(ID);
     Result += MetadataExtension;
     
@@ -4062,7 +4062,7 @@ GenerateBinaryFileName(nar_backup_id ID, int Version) {
     }
     
     Result += L"-";
-    Result += std::wstring(ID.Letter);
+    Result += std::to_wstring(ID.Letter);
     Result += NarBackupIDToWStr(ID);
     
     Result += BackupExtension;

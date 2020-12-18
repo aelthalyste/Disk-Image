@@ -406,10 +406,10 @@ namespace NarDIWrapper {
                 BMet->BackupDate = gcnew CSNarFileTime(BMList[i].BackupDate.wYear, BMList[i].BackupDate.wMonth, BMList[i].BackupDate.wDay, BMList[i].BackupDate.wHour, BMList[i].BackupDate.wMinute, BMList[i].BackupDate.wSecond);
                 
                 pth = GenerateBinaryFileName(*BMet->BackupID, BMet->Version);
-                BMet->Fullpath = gcnew System::String(pth.c_str());
+                BMet->Binarydataname = gcnew System::String(pth.c_str());
                 
-                path = GenerateMetadataName(*BMet->BackupID, BMet->Version);
-                BMet->MetadataFileName = gcnew System::String(path.c_str());
+                pth = GenerateMetadataName(*BMet->BackupID, BMet->Version);
+                BMet->Metadataname = gcnew System::String(pth.c_str());
                 
                 ResultList->Add(BMet);
             }
