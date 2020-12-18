@@ -379,9 +379,11 @@ namespace NarDIWrapper {
         
         BOOLEAN bResult = NarGetBackupsInDirectory(RootDir, BMList, MaxMetadataCount, &Found);
         if (bResult && Found <= MaxMetadataCount) {
-            std::wstring pth;
+            
             
             for (int i = 0; i < Found; i++) {
+                std::wstring pth;
+                
                 BackupMetadata^ BMet = gcnew BackupMetadata;
                 BMet->Letter = (wchar_t)BMList[i].Letter;
                 BMet->BackupType = (int)BMList[i].BT;
@@ -403,9 +405,11 @@ namespace NarDIWrapper {
                 
                 BMet->BackupDate = gcnew CSNarFileTime(BMList[i].BackupDate.wYear, BMList[i].BackupDate.wMonth, BMList[i].BackupDate.wDay, BMList[i].BackupDate.wHour, BMList[i].BackupDate.wMinute, BMList[i].BackupDate.wSecond);
                 
-                pth = std::wstring(RootDir);
-                pth += GenerateBinaryFileName(*BMet->BackupID, BMet->Version);
+                pth = GenerateBinaryFileName(*BMet->BackupID, BMet->Version);
                 BMet->Fullpath = gcnew System::String(pth.c_str());
+                
+                path = GenerateMetadataName(*BMet->BackupID, BMet->Version);
+                BMet->MetadataFileName = gcnew System::String(path.c_str());
                 
                 ResultList->Add(BMet);
             }

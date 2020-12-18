@@ -4041,7 +4041,7 @@ GenerateMetadataName(nar_backup_id ID, int Version) {
     }
     
     Result += L"-";
-    //Result += std::wstring(ID.Letter);
+    Result += std::wstring(ID.Letter);
     Result += NarBackupIDToWStr(ID);
     Result += MetadataExtension;
     
@@ -4062,6 +4062,7 @@ GenerateBinaryFileName(nar_backup_id ID, int Version) {
     }
     
     Result += L"-";
+    Result += std::wstring(ID.Letter);
     Result += NarBackupIDToWStr(ID);
     
     Result += BackupExtension;
@@ -5944,27 +5945,10 @@ What I assume right now, that unsused cluster id will be trimming point for rest
             // TODO(Batuhan): log error
         }
         
-        if(BitmapMFTID != IndxAllocationMFTID && BitmapMFTID != 0){
-            
-            if(NarFileExplorerReadMFTID(Ctx, BitmapMFTID, FileEntry)){
-                void* BitmapAttributeStart = NarFindFileAttributeFromFileRecord(FileEntry, NAR_BITMAP_FLAG);
-                BitmapLen = NarGetBitmapAttributeDataLen(BitmapAttributeStart);
-                BitmapData = (BYTE*)NarGetBitmapAttributeData(BitmapAttributeStart);
-            }
-            else{
-                // TODO(Batuhan): log error
-            }
-            
-        }
-        else{
-            // TODO(Batuhan): log err
-        }
         
         if(IndxData){
-            
             INT32 RegionsReserved= 1024;
             IndxAllRegions = (nar_record*)malloc(RegionsReserved*sizeof(nar_record));
-            
             
             if(NarParseIndexAllocationAttribute(IndxData, IndxAllRegions, RegionsReserved, &IndxAllRegionsCount)){
                 // NOTE(Batuhan): Success!
@@ -5973,6 +5957,21 @@ What I assume right now, that unsused cluster id will be trimming point for rest
                 // TODO(Batuhan): Memory might not have been enough to store regions in attribute, try to send something bigger once again
                 // TODO(Batuhan): log?
             }
+            
+            
+            if(BitmapMFTID != 0){
+                
+                if(BitmapMFTID != IndxAllocationMFTID){
+                    NarFileExplorerReadMFTID(Ctx, BitmapMFTID, FileEntry);
+                }
+                
+                void* BitmapAttributeStart = NarFindFileAttributeFromFileRecord(FileEntry, NAR_BITMAP_FLAG);
+                BitmapLen = NarGetBitmapAttributeDataLen(BitmapAttributeStart);
+                BitmapData = (BYTE*)NarGetBitmapAttributeData(BitmapAttributeStart);
+                
+            }
+            
+            
             
             // NOTE(Batuhan): Region trimming if bitmap is present
             if(BitmapData){
@@ -5983,38 +5982,16 @@ What I assume right now, that unsused cluster id will be trimming point for rest
                 
             }
             
-            // NOTE(Batuhan): silently updates Ctx, nothing to worry about
-            // NarGetFileEntriesFromIndxClusters(Ctx, IndxAllRegions, IndxAllRegionsCount);
-            
-            
-            BOOLEAN _i_ = 0;
-            for(_i_ = 0; 
-                NarFileExplorerSetFilePointer(Ctx->FEHandle, (UINT64)IndxAllRegions[_i_].StartPos*Ctx->ClusterSize) && _i_ < IndxAllRegionsCount;
-                _i_++){
-                
-                size_t IndxBufferSize = (UINT64)IndxAllRegions[_i_].Len * Ctx->ClusterSize;
-                void* IndxBuffer = malloc(IndxBufferSize);
-                DWORD BytesRead = 0;
-                
-                if(NarFileExplorerReadVolume(Ctx->FEHandle, IndxBuffer, IndxBufferSize, &BytesRead)){
-                    for(size_t _j_ =0; _j_ <  IndxBufferSize/(Ctx->ClusterSize); _j_++){
-                        void *IC = (char*)IndxBuffer + (UINT64)_j_*Ctx->ClusterSize;
-                        NarParseIndxRegion(IC, &Ctx->EList);
-                    }
-                }
-                
-                free(IndxBuffer);
-            }
-            
-            if(_i_ != IndxAllRegionsCount - 1){
-                printf("Couldn't iterate all indx allocation regions\n");
-                // TODO(Batuhan): couldnt iterate all regions
-            }
             
         }
-        else{
-            
-        }
+        
+        
+        
+        
+        
+        // NOTE(Batuhan): silently updates Ctx, nothing to worry about
+        NarGetFileEntriesFromIndxClusters(Ctx, IndxAllRegions, IndxAllRegionsCount);
+        
         
     }
     
@@ -8048,8 +8025,12 @@ main(int argc, char* argv[]) {
     
     NARDEBUG_AttributeListTest();
     
+#if 1    
     nar_backup_file_explorer_context ctx = {0};
-    NarInitFileExplorerContextFromVolume(&ctx, 'C');
+    //NarInitFileExplorerContextFromVolume(&ctx, 'C');
+    //NarInitFileExplorerContextFromVolume(&ctx, 'C');
+    NarInitFileExplorerContext(&ctx, L"F:\NAR_M_0-19464719073806308.narmd");
+    
     file_read f = NarReadFile("attlist");
     NarFileExplorerPrint(&ctx);
     
@@ -8075,6 +8056,7 @@ main(int argc, char* argv[]) {
     
     
     return 0;
+#endif
     
 #if 0    
     void *mb = malloc(NAR_MEMORYBUFFER_SIZE);

@@ -240,7 +240,7 @@ NarLog(const char *str, ...){
 }
 
 
-#define printf(fmt, ...) NarLog(fmt, __VA_ARGS__)
+//#define printf(fmt, ...) NarLog(fmt, __VA_ARGS__)
 
 enum rec_or {
     LEFT = 0,
@@ -1210,6 +1210,9 @@ NarParseIndxRegion(void *Data, nar_file_entries_list *EList);
 
 inline void
 NarResolveAttributeList(nar_backup_file_explorer_context *Ctx, void *Attribute);
+
+inline void
+NarGetFileEntriesFromIndxClusters(nar_backup_file_explorer_context *Ctx, nar_record *Clusters, INT32 Count);
 
 /*
     Ctx = output

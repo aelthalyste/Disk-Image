@@ -70,6 +70,7 @@ namespace NarDIWrapper {
         
         wchar_t DiskType;
         System::String^ Fullpath; // fullpath of the backup
+        System::String^ Metadataname; // 
         System::String^ WindowsName;
         System::String^ TaskName;
         System::String^ TaskDescription;
