@@ -33,3 +33,18 @@ calculated at SetupStream, then added to general region scheme.
 
 18.12.2020
 -Rewritten NarGetFileListFromMFTID with new API, not actual rewrite operation, actually just made API from it's bones and replaced with new ones!
+
+20.12.2020
+My lazzy side was on keyboard yesterday. I ended up not writing any changelog for yesterday's changes.
+-I have updated some of the parts in the file restore thing, with new API.
+-Removed file name and rootdir parts of file_version_stack struct. Completely unnecessary member unrelated to what struct aims to do.
+-Removed memory allocation for data of bitmap attribute, if one present. Since bitmap data is not going to be larger than 1kb, it's safe to allocate it on stack, no overheat from malloc!
+-Added NarGetFileNameFromPath
+-There was case where when resolving attribute list, attribute list was pointing back to original file record and since original file record was parsing itself after calling resolvefileattributelist, that was resulting parsing file record two times.
+So I added parameter(MFTID of original file) to indicate where we came from. This helped to detect self pointing attribute lists.
+-There are special cases for MFTID, resulting almost doubling the code for parsing INDX_ALLOCATION attribute in codebase. Sadly, there is no solution available that im aware of.
+That special case is handled at call NarGetFileListFromMFTID, that was sanest choice to make API more generic and clean, more state independent.
+-Changed function parameters of all restorefile API to const wchar_t*.
+-Fixed memory access violation due to passing everything as wchar_t* when some of the things were coming directly from executable memory, resulting wcstok to edit adress that is not valid. Changing everying to const wchar_t*(as it should be), and made copies of them
+if any modification needed is solved access violation errors. That thing should have been fixed much time ago, I spotted it after I have written the API at the first day. Fix came up today, took 1 minute :).
+
