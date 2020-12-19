@@ -1106,7 +1106,7 @@ struct nar_file_version_stack {
     */
     
     // 0th element is first backup that contains file, goes up to  (VersionsFound)
-    UINT64* FileAbsoluteMFTOffset;
+    UINT64 FileAbsoluteMFTOffset[64];
     
 };
 
@@ -1209,10 +1209,11 @@ inline void
 NarParseIndxRegion(void *Data, nar_file_entries_list *EList);
 
 inline void
-NarResolveAttributeList(nar_backup_file_explorer_context *Ctx, void *Attribute);
+NarResolveAttributeList(nar_backup_file_explorer_context *Ctx, void *Attribute, size_t OriginalRecordID);
 
 inline void
-NarGetFileEntriesFromIndxClusters(nar_backup_file_explorer_context *Ctx, nar_record *Clusters, INT32 Count);
+NarGetFileEntriesFromIndxClusters(nar_backup_file_explorer_context *Ctx, nar_record *Clusters, INT32 Count, BYTE *Bitmap, INT32 BitmapLen);
+
 
 /*
     Ctx = output
