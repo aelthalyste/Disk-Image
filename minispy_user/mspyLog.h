@@ -240,7 +240,7 @@ NarLog(const char *str, ...){
 }
 
 
-//#define printf(fmt, ...) NarLog(fmt, __VA_ARGS__)
+#define printf(fmt, ...) NarLog(fmt, __VA_ARGS__)
 
 enum rec_or {
     LEFT = 0,
@@ -983,6 +983,7 @@ FreeFileRead(file_read FR);
 #define NAR_FEXP_END_MARK -2
 #define NAR_FEXP_SUCCEEDED 1
 
+#define NAR_DATA_FLAG 0x80
 #define NAR_INDEX_ALLOCATION_FLAG 0xA0
 #define NAR_INDEX_ROOT_FLAG 0x90
 #define NAR_BITMAP_FLAG     0xB0
@@ -1094,12 +1095,6 @@ struct nar_file_version_stack {
     */
     INT32 StartingVersion;
     
-    // Path to file to be searched in backups
-    wchar_t* FilePath;
-    
-    // path to search for backups in actual machine. unlikely null 
-    wchar_t* RootDir;
-    
     /*
         Offset to the file's mft record in backup file. Backful file begin + this value will lead
         file pointer to mft record
@@ -1107,7 +1102,6 @@ struct nar_file_version_stack {
     
     // 0th element is first backup that contains file, goes up to  (VersionsFound)
     UINT64 FileAbsoluteMFTOffset[64];
-    
 };
 
 struct nar_fe_search_result {
@@ -1184,7 +1178,7 @@ inline void
 NarFileExplorerPopDirectory(nar_backup_file_explorer_context* Ctx);
 
 inline nar_fe_search_result
-NarSearchFileInVolume(wchar_t* RootDir, wchar_t* FileName, nar_backup_id ID, INT32 Version);
+NarSearchFileInVolume(const wchar_t* RootDir, const wchar_t* FileName, nar_backup_id ID, INT32 Version);
 
 inline BOOLEAN
 NarFileExplorerSetFilePointer(nar_fe_volume_handle FEV, UINT64 NewFilePointer);
@@ -1193,7 +1187,7 @@ inline BOOLEAN
 NarFileExplorerReadVolume(nar_fe_volume_handle FEV, void* Buffer, DWORD ReadSize, DWORD* OutBytesRead);
 
 nar_file_version_stack
-NarSearchFileInVersions(wchar_t* RootDir, nar_backup_id ID, INT32 CeilVersion, wchar_t* FileName);
+NarSearchFileInVersions(const wchar_t* RootDir, nar_backup_id ID, INT32 CeilVersion, const wchar_t* FileName);
 
 
 inline void*

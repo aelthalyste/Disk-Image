@@ -5866,6 +5866,8 @@ NarResolveAttributeList(nar_backup_file_explorer_context *Ctx, void *Attribute, 
     if(Ctx == 0  || Attribute == 0) return;
     
     char FileEntry[1024];
+    BYTE BitmapBuffer[512];
+    memset(BitmapBuffer,0, sizeof(BitmapBuffer));
     
     UINT32  Length       = *(UINT32*)NAR_OFFSET(Attribute, 0x04);
     BOOLEAN IsResident   = !(*(BOOLEAN*)NAR_OFFSET(Attribute, 0x08));
@@ -5972,7 +5974,7 @@ What I assume right now, that unsused cluster id will be trimming point for rest
                 
                 // NOTE(Batuhan): unlikely, but have to check against that
                 if(BitmapDataTemp != 0){
-                    BitmapData = (BYTE*)malloc(BitmapLen);
+                    BitmapData = &BitmapBuffer[0];
                     memcpy(BitmapData, BitmapDataTemp, BitmapLen);
                 }
                 
@@ -5980,14 +5982,10 @@ What I assume right now, that unsused cluster id will be trimming point for rest
             
         }
         
-        
         // NOTE(Batuhan): silently updates Ctx, nothing to worry about
         NarGetFileEntriesFromIndxClusters(Ctx, IndxAllRegions, IndxAllRegionsCount, BitmapData, BitmapLen);
         
-        
     }
-    
-    if(BitmapData != 0) free(BitmapData);
     
     return;
 }
@@ -6242,6 +6240,9 @@ NarGetFileListFromMFTID(nar_backup_file_explorer_context *Ctx, size_t TargetMFTI
     
     
     BYTE Buffer[1024];
+    BYTE BitmapBuffer[512];
+    memset(BitmapBuffer, 0, sizeof(BitmapBuffer));
+    
     memset(Buffer, 0, sizeof(Buffer));
     
     UINT32 IndexRegionsFound = 0;
@@ -6249,7 +6250,6 @@ NarGetFileListFromMFTID(nar_backup_file_explorer_context *Ctx, size_t TargetMFTI
     nar_record INDX_ALL_REGIONS[64];
     memset(INDX_ALL_REGIONS, 0, sizeof(INDX_ALL_REGIONS));
     DWORD BytesRead = 0;
-    
     
     void* IndxRootAttr = 0;
     void* IndxAllAttr  = 0;
@@ -6306,7 +6306,7 @@ so some smart ass decided it would be wise to split some attributes into differe
                 if(BitmapAttr){
                     BitmapLen = NarGetBitmapAttributeDataLen(BitmapAttr);
                     BYTE* temp = (BYTE*)NarGetBitmapAttributeData(BitmapAttr);
-                    BitmapData = (BYTE*)malloc(BitmapLen);
+                    BitmapData = &BitmapBuffer[0];
                     memcpy(BitmapData, temp, BitmapLen);
                 }
             }
@@ -6366,12 +6366,8 @@ i can't use general file record parsing function just for that very special case
             
         }
         else{
-            
             NarGetFileEntriesFromIndxClusters(Ctx, INDX_ALL_REGIONS, IndexRegionsFound, BitmapData, BitmapLen);
-            
         }
-        
-        if(BitmapData != 0) free(BitmapData);
         
         
     }
@@ -6405,15 +6401,6 @@ NarFileExplorerRestoreFolder(nar_backup_file_explorer_context *ctx, UINT32 Selec
 }
 
 
-
-inline void
-NarFreeFileVersionStack(nar_file_version_stack Stack){
-    
-    if(Stack.FilePath != NULL)              free(Stack.FilePath);
-    if(Stack.RootDir != NULL)               free(Stack.RootDir);
-    if(Stack.FileAbsoluteMFTOffset != NULL) free(Stack.FileAbsoluteMFTOffset);
-    
-}
 
 // Path: any path name that contains trailing backslash
 // like = C:\\somedir\\thatfile.exe    or    \\relativedirectory\\dir2\\dir3\\ourfile.exe
@@ -6479,7 +6466,7 @@ NarGetFileNameFromPath(const wchar_t *path, wchar_t* Out, size_t MaxOut){
 
 */
 inline BOOLEAN
-NarRestoreFileFromBackups(wchar_t *RootDir, wchar_t *FileName, wchar_t *RestoreTo, nar_backup_id ID, INT32 InVersion){
+NarRestoreFileFromBackups(const wchar_t *RootDir, const wchar_t *FileName, const wchar_t *RestoreTo, nar_backup_id ID, INT32 InVersion){
     
     
     if(RootDir == NULL || FileName == NULL) return FALSE;
@@ -6594,7 +6581,6 @@ NarRestoreFileFromBackups(wchar_t *RootDir, wchar_t *FileName, wchar_t *RestoreT
     ABORT:
     
     free(MemoryBuffer);
-    NarFreeFileVersionStack(FileStack);
     NarFreeFEVolumeHandle(FEHandle);
     
     return Result;
@@ -6729,129 +6715,106 @@ ReadLCNFromMFTRecord(void* RecordStart) {
         Result.Records[Result.RecordCount++] = {Start, Len};
     };
     
-    while(RemainingLen > 0){
+    FileAttribute = NarFindFileAttributeFromFileRecord(RecordStart, NAR_DATA_FLAG);
+    if(FileAttribute != NULL){
         
-        // 0x80 == $DATA
-        if ((*(INT32*)FileAttribute & 0x80) == 0x80){
-            
-            // skip if data attribute is smt like Zone.Identifier or another alternate stream.
-            UINT8 AttributeNameLen = *((UINT8*)FileAttribute + 9);
-            if (AttributeNameLen != 0) {
-                goto SKIP_POINT;
-            }
-            
-            // skip if attribute represents resident data. this means file has some data in it's record itself. 
-            UINT8 AttributeResident = *((UINT8*)FileAttribute + 8);
-            if(AttributeResident){
-                // IMPORTANT TODO(Batuhan): Find and append these data points to result structure, restore operation depends on it
-                Result.Flags |= Result.HAS_DATA_IN_MFT;
-                goto SKIP_POINT;
-            }
-            
-            
-            INT32 DataRunsOffset = *(INT32*)((BYTE*)FileAttribute + 32);
-            void* DataRuns = (char*)FileAttribute + DataRunsOffset;
-            
-            // So it looks like dataruns doesnt actually tells you LCN, to save up space, they kinda use smt like 
-            // winapi's deviceiocontrol routine, maybe the reason for fetching VCN-LCN maps from winapi is weird because 
-            // thats how its implemented at ntfs at first place. who knows
-            // so thats how it looks
-            
-            /*
-                first one is always absolute LCN in the volume. rest of it is addition to previous one. if file is fragmanted, value will be
-                negative. so we dont have to check some edge cases here.
-                second data run will be lets say 0x11 04 43
-                and first one                    0x11 10 10
-                starting lcn is 0x10, but second data run does not start from 0x43, it starts from 0x10 + 0x43
+        // skip if data attribute is smt like Zone.Identifier or another alternate stream.
+        UINT8 AttributeNameLen = *((UINT8*)FileAttribute + 9);
+        
+        // skip if attribute represents resident data. this means file has some data in it's record itself. 
+        UINT8 AttributeNonResident = *((UINT8*)FileAttribute + 8);
+        if(!AttributeNonResident){
+            // IMPORTANT TODO(Batuhan): Find and append these data points to result structure, restore operation depends on it
+            Result.Flags |= Result.HAS_DATA_IN_MFT;
+        }
+        
+        
+        INT32 DataRunsOffset = *(INT32*)((BYTE*)FileAttribute + 32);
+        void* DataRuns = (char*)FileAttribute + DataRunsOffset;
+        
+        // So it looks like dataruns doesnt actually tells you LCN, to save up space, they kinda use smt like 
+        // winapi's deviceiocontrol routine, maybe the reason for fetching VCN-LCN maps from winapi is weird because 
+        // thats how its implemented at ntfs at first place. who knows
+        // so thats how it looks
+        
+        /*
+            first one is always absolute LCN in the volume. rest of it is addition to previous one. if file is fragmanted, value will be
+            negative. so we dont have to check some edge cases here.
+            second data run will be lets say 0x11 04 43
+            and first one                    0x11 10 10
+            starting lcn is 0x10, but second data run does not start from 0x43, it starts from 0x10 + 0x43
 
-                LCN[n] = LCN[n-1] + datarun cluster
-            */
+            LCN[n] = LCN[n-1] + datarun cluster
+        */
+        
+        char Size = *(BYTE*)DataRuns;
+        INT8 ClusterCountSize = (Size & 0x0F);
+        INT8 FirstClusterSize = (Size & 0xF0) >> 4;
+        
+        // Swipe to left to clear extra bits, then swap back to get correct result.
+        INT64 ClusterCount = *(INT64*)((char*)DataRuns + 1); // 1 byte for size variable
+        ClusterCount = ClusterCount & ~(0xFFFFFFFFFFFFFFFFULL << (ClusterCountSize * 8));
+        // cluster count must be > 0, no need to do 2s complement on it
+        
+        //same operation
+        INT64 FirstCluster = *(INT64*)((char*)DataRuns + 1 + ClusterCountSize);
+        FirstCluster = FirstCluster & ~(0xFFFFFFFFFFFFFFFFULL << (FirstClusterSize * 8));
+        
+        // i being dumb here probably, but code is ok
+        // 2s complement to support negative values
+        if ((FirstCluster >> ((FirstClusterSize - 1) * 8 + 7)) & 1U) {
+            FirstCluster = FirstCluster | ((0xFFFFFFFFFFFFFFFULL << (FirstClusterSize * 8)));
+        }
+        
+        INT64 OldClusterStart = FirstCluster;
+        void* D = (BYTE*)DataRuns + FirstClusterSize + ClusterCountSize + 1;
+        InsertToResult(FirstCluster, ClusterCount);
+        
+        while (*(BYTE*)D) {
             
-            char Size = *(BYTE*)DataRuns;
-            INT8 ClusterCountSize = (Size & 0x0F);
-            INT8 FirstClusterSize = (Size & 0xF0) >> 4;
+            Size = *(BYTE*)D;
+            
+            //UPDATE: Even tho entry finishes at 8 byte aligment, it doesnt finish itself here, adds at least 1 byte for zero termination to indicate its end
+            //so rather than tracking how much we read so far, we can check if we encountered zero termination
+            // NOTE(Batuhan): Each entry is at 8byte aligment, so lets say we thought there must be smt like 80 bytes reserved for 0xA0 attribute
+            // but since data run's size is not constant, it might finish at not exact multiple of 8, like 75, so rest of the 5 bytes are 0
+            // We can keep track how many bytes we read so far etc etc, but rather than that, if we just check if size is 0, which means rest is just filler 
+            // bytes to aligment border, we can break early.
+            if (Size == 0) break;  
+            
+            
+            // extract 4bit nibbles from size
+            ClusterCountSize = (Size & 0x0F);
+            FirstClusterSize = (Size & 0xF0) >> 4;
+            
+            // Sparse files may cause that, but not sure about what is sparse and if it effects directories. 
+            // If not, nothing to worry about, branch predictor should take care of that
+            if (ClusterCountSize == 0 || FirstClusterSize == 0)break;
             
             // Swipe to left to clear extra bits, then swap back to get correct result.
-            INT64 ClusterCount = *(INT64*)((char*)DataRuns + 1); // 1 byte for size variable
+            ClusterCount = *(INT64*)((BYTE*)D + 1);
             ClusterCount = ClusterCount & ~(0xFFFFFFFFFFFFFFFFULL << (ClusterCountSize * 8));
-            // cluster count must be > 0, no need to do 2s complement on it
             
+            // same dumbness
             //same operation
-            INT64 FirstCluster = *(INT64*)((char*)DataRuns + 1 + ClusterCountSize);
+            FirstCluster = *(INT64*)((BYTE*)D + 1 + ClusterCountSize);
             FirstCluster = FirstCluster & ~(0xFFFFFFFFFFFFFFFFULL << (FirstClusterSize * 8));
-            
-            // i being dumb here probably, but code is ok
-            // 2s complement to support negative values
             if ((FirstCluster >> ((FirstClusterSize - 1) * 8 + 7)) & 1U) {
-                FirstCluster = FirstCluster | ((0xFFFFFFFFFFFFFFFULL << (FirstClusterSize * 8)));
+                FirstCluster = FirstCluster | (0xFFFFFFFFFFFFFFFFULL << (FirstClusterSize * 8));
             }
             
-            INT64 OldClusterStart = FirstCluster;
-            void* D = (BYTE*)DataRuns + FirstClusterSize + ClusterCountSize + 1;
-            InsertToResult(FirstCluster, ClusterCount);
             
-            while (*(BYTE*)D) {
-                
-                Size = *(BYTE*)D;
-                
-                //UPDATE: Even tho entry finishes at 8 byte aligment, it doesnt finish itself here, adds at least 1 byte for zero termination to indicate its end
-                //so rather than tracking how much we read so far, we can check if we encountered zero termination
-                // NOTE(Batuhan): Each entry is at 8byte aligment, so lets say we thought there must be smt like 80 bytes reserved for 0xA0 attribute
-                // but since data run's size is not constant, it might finish at not exact multiple of 8, like 75, so rest of the 5 bytes are 0
-                // We can keep track how many bytes we read so far etc etc, but rather than that, if we just check if size is 0, which means rest is just filler 
-                // bytes to aligment border, we can break early.
-                if (Size == 0) break;  
-                
-                
-                // extract 4bit nibbles from size
-                ClusterCountSize = (Size & 0x0F);
-                FirstClusterSize = (Size & 0xF0) >> 4;
-                
-                // Sparse files may cause that, but not sure about what is sparse and if it effects directories. 
-                // If not, nothing to worry about, branch predictor should take care of that
-                if (ClusterCountSize == 0 || FirstClusterSize == 0)break;
-                
-                // Swipe to left to clear extra bits, then swap back to get correct result.
-                ClusterCount = *(INT64*)((BYTE*)D + 1);
-                ClusterCount = ClusterCount & ~(0xFFFFFFFFFFFFFFFFULL << (ClusterCountSize * 8));
-                
-                // same dumbness
-                //same operation
-                FirstCluster = *(INT64*)((BYTE*)D + 1 + ClusterCountSize);
-                FirstCluster = FirstCluster & ~(0xFFFFFFFFFFFFFFFFULL << (FirstClusterSize * 8));
-                if ((FirstCluster >> ((FirstClusterSize - 1) * 8 + 7)) & 1U) {
-                    FirstCluster = FirstCluster | (0xFFFFFFFFFFFFFFFFULL << (FirstClusterSize * 8));
-                }
-                
-                
-                FirstCluster += OldClusterStart;
-                // Update tail
-                OldClusterStart = FirstCluster;
-                
-                D = (BYTE*)D + (FirstClusterSize + ClusterCountSize + 1);
-                
-                InsertToResult((UINT32)FirstCluster, (UINT32)ClusterCount); // this isnt actually a narrowing at all. nothing to worry about(hope so)
-                
-            }
-            break;
+            FirstCluster += OldClusterStart;
+            // Update tail
+            OldClusterStart = FirstCluster;
+            
+            D = (BYTE*)D + (FirstClusterSize + ClusterCountSize + 1);
+            
+            InsertToResult((UINT32)FirstCluster, (UINT32)ClusterCount); // this isnt actually a narrowing at all. nothing to worry about(hope so)
             
         }
-        
-        if ((*(INT32*)FileAttribute & 0x80) > 0x80){
-            printf("Couldnt find 0x80 file attribute for $MFT\n");
-            break;// early termination
-        }
-        
-        
-        
-        SKIP_POINT:
-        // found neither Data nor attr bigger than it, just substract attribute size from remaininglen to determine if we should keep iterating
-        
-        RemainingLen -= (*(INT32*)((BYTE*)FileAttribute + 4));
-        FileAttribute = (BYTE*)FileAttribute + *(INT32*)((BYTE*)FileAttribute + 4);
         
     }
-    
     
     if(Result.RecordCount == 0 
        && Result.Flags != Result.FAIL 
@@ -6899,7 +6862,7 @@ ReadFileDataFromMFT(void *RecordStart, lcn_from_mft_query_result QueryResult, vo
     That information is useful for pre restore operation. After that lookup we will be
 */
 nar_file_version_stack
-NarSearchFileInVersions(wchar_t *RootDir, nar_backup_id ID, INT32 CeilVersion, wchar_t *FileName){
+NarSearchFileInVersions(const wchar_t *RootDir, nar_backup_id ID, INT32 CeilVersion, const wchar_t *FileName){
     
     nar_file_version_stack Result;
     memset(&Result, 0, sizeof(Result));
@@ -6907,17 +6870,6 @@ NarSearchFileInVersions(wchar_t *RootDir, nar_backup_id ID, INT32 CeilVersion, w
     if(FileName == NULL || RootDir == NULL){
         return Result;
     }
-    
-    size_t RootDirSize = RootDir ? wcslen(FileName)*sizeof(wchar_t) : 0; 
-    size_t FileNameSize = wcslen(FileName)*sizeof(wchar_t);
-    
-    // Reserve space via assuming file exists in all backups back to full backup. Since structure is small there isnt an overheat for memory
-    Result.RootDir = (wchar_t*)malloc(RootDirSize);
-    Result.FilePath = (wchar_t*)malloc(FileNameSize);
-    
-    memset(Result.RootDir, 0, RootDirSize);
-    memset(Result.FilePath, 0, FileNameSize);
-    
     
     INT32 StartingVersion = CeilVersion;
     
@@ -6948,7 +6900,7 @@ NarSearchFileInVersions(wchar_t *RootDir, nar_backup_id ID, INT32 CeilVersion, w
     Search's for specific file named FileName in given Handle. returns negative value if fails to do
 */
 inline nar_fe_search_result
-NarSearchFileInVolume(wchar_t* arg_RootDir, wchar_t *arg_FileName, nar_backup_id ID, INT32 Version){
+NarSearchFileInVolume(const wchar_t* arg_RootDir, const wchar_t *arg_FileName, nar_backup_id ID, INT32 Version){
     
     TIMED_BLOCK();
     
@@ -7013,7 +6965,7 @@ NarSearchFileInVolume(wchar_t* arg_RootDir, wchar_t *arg_FileName, nar_backup_id
         
         
         // NOTE(Batuhan): Found the file
-        if(FoundFileListID > 0){
+        if(FoundFileListID >= 0){
             
             Result.Found = TRUE;
             UINT64 FileMFTID = Ctx.EList.Entries[FoundFileListID].MFTFileIndex;
@@ -7313,7 +7265,6 @@ NarInitFEVolumeHandleFromVolume(nar_fe_volume_handle *FEV, char VolumeLetter){
     }
     
     
-    
     // failed
     if(!Result){
         if(FEV){
@@ -7358,7 +7309,6 @@ NarInitFileExplorerContextFromVolume(nar_backup_file_explorer_context *Ctx, char
             Ctx->HistoryStack.I = -1;
             
             NarGetFileListFromMFTID(Ctx, NAR_ROOT_MFT_ID);
-            
             NarPushDirectoryStack(Ctx, NAR_ROOT_MFT_ID);
             
             wchar_t vb[] = L"!:\\";
@@ -8142,62 +8092,75 @@ main(int argc, char* argv[]) {
     //for (int i = 0; i < 8;) {
     //}
     
-    {
-        wchar_t FileName[] = L"F:\\asldkfjasdlf.7z";
-        wchar_t *Token = 0;        
-        wchar_t *TokenStatus = 0;
-        Token = wcstok(FileName, L"\\", &TokenStatus);
-        printf("end");
-    }
     
+#if 1
     
-#if 1 
-    nar_backup_file_explorer_context ctx = {0};
-    
-    //NarInitFileExplorerContextFromVolume(&ctx, 'C');
-    //NarInitFileExplorerContextFromVolume(&ctx, 'E');
-    //NarInitFileExplorerContext(&ctx, L"F:\NAR_M_FULL-6919421833842132964.narmd");
-    INT32 bindex =0 ;
-    backup_metadata *B = new backup_metadata[20];
     
     {
-        INT32 Out;
-        NarGetBackupsInDirectory(L"F:\\", B, 20*sizeof(backup_metadata), &Out);
-        for(int i = 0; i < Out; i++){
-            printf("%i->Let:%i Ver:%i\n",i, B->Letter, B->Version);
-        }
-        scanf("%i", &bindex);
+        int a = 0;
+        scanf("%i", &a);
+        printf("%i\n", a);
     }
-    
-    
-    nar_backup_id id = B[bindex].ID;
-    
-    NarRestoreFileFromBackups(L"F:\\",L"E:\\Release.7z", L"F:\\", id, NAR_FULLBACKUP_VERSION);
-    return 0;
-    
-    file_read f = NarReadFile("attlist");
-    NarFileExplorerPrint(&ctx);
-    
-    int ListID = 0;
-    while (1) {
-        scanf("%i", &ListID);
+    {
         
-        if (ListID == -42) {
-            break;
+        nar_backup_file_explorer_context ctx = {0};
+        
+        NarInitFileExplorerContextFromVolume(&ctx, 'C');
+        //NarInitFileExplorerContextFromVolume(&ctx, 'E');
+        //NarInitFileExplorerContext(&ctx, L"F:\NAR_M_FULL-6919421833842132964.narmd");
+        
+        INT32 bindex =0 ;
+        
+        
+        if(0){
+            backup_metadata *B = new backup_metadata[20];
+            INT32 Out;
+            NarGetBackupsInDirectory(L"F:\\", B, 20*sizeof(backup_metadata), &Out);
+            for(int i = 0; i < Out; i++){
+                printf("%i->Let:%i Ver:%i\n",i, B->Letter, B->Version);
+            }
+            scanf("%i", &bindex);
+            
+            nar_backup_id id = B[bindex].ID;
+            
+            NarRestoreFileFromBackups(L"F:\\",L"E:\\Release\\minispy.inf", L"F:\\", id, NAR_FULLBACKUP_VERSION);
+            
+            return 0;
         }
         
-        if (ListID < 0) {
-            NarFileExplorerPopDirectory(&ctx);
-        }
-        else {
-            NarFileExplorerPushDirectory(&ctx, ListID);
-        }
         
         NarFileExplorerPrint(&ctx);
         
-        Sleep(10);
+        int ListID = 0;
+        while (1) {
+            scanf("%i", &ListID);
+            
+            if (ListID == -42) {
+                break;
+            }
+            
+            if (ListID < 0) {
+                NarFileExplorerPopDirectory(&ctx);
+            }
+            else {
+                NarFileExplorerPushDirectory(&ctx, ListID);
+            }
+            
+            NarFileExplorerPrint(&ctx);
+            
+            Sleep(10);
+        }
+        
+        NarReleaseFileExplorerContext(&ctx);
+        printf("program ended, press a button to close cmd\n");
+        
     }
     
+    {
+        int a = 0;
+        scanf("%i", &a);
+        printf("%i\n", a);
+    }
     
     return 0;
 #endif
