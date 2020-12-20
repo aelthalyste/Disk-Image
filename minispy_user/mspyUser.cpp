@@ -5806,6 +5806,14 @@ NarFileExplorerReadMFTID(nar_backup_file_explorer_context *Ctx, size_t MFTID, vo
     
 }
 
+/**/
+inline UINT64
+NarGetFileSizeFromRecord(void *R){
+    if(R == 0) return 0;
+    void *D = NarFindFileAttributeFromFileRecord(R, NAR_DATA_FLAG);
+    return *(UINT64*)NAR_OFFSET(D, 0x30);
+}
+
 /*
 CAUTION: This function does NOT lookup attributes from ATTRIBUTE LIST, so if attribute is not resident in original file entry, function wont return it
 
@@ -6475,7 +6483,6 @@ NarRestoreFileFromBackups(const wchar_t *RootDir, const wchar_t *FileName, const
     HANDLE RestoreFileHandle = INVALID_HANDLE_VALUE;
     
     {
-        
         wchar_t fn[512];
         memset(fn, 0, sizeof(fn));
         wcscat(fn, RestoreTo);
@@ -6491,6 +6498,7 @@ NarRestoreFileFromBackups(const wchar_t *RootDir, const wchar_t *FileName, const
     }
     
     void* MemoryBuffer = malloc(1024);
+    UINT64 RealFileSize = 0;
     
     // NOTE(Batuhan): search file in versions from InVersion to FULL
     nar_file_version_stack FileStack = NarSearchFileInVersions(RootDir, ID, InVersion, FileName);
@@ -6523,6 +6531,12 @@ NarRestoreFileFromBackups(const wchar_t *RootDir, const wchar_t *FileName, const
                 printf("Couldn't read mft record of the file %S from volume %c's %i'th backup. Aborting file restore opeartion!\n", FileName, ID.Letter, VersionID);
                 goto ABORT;
             }
+            
+            // NOTE(Batuhan): What I copy is allocated regions of the file, but user cares about real size of the region
+            if(VersionID == FileStack.StartingVersion){
+                RealFileSize = NarGetFileSizeFromRecord(MemoryBuffer);
+            }
+            
             printf("Successfully read file %S's mft record from volume %c's %i'th version\n", FileName, ID.Letter, VersionID);
             
             lcn_from_mft_query_result QResult = ReadLCNFromMFTRecord(MemoryBuffer);
@@ -6579,6 +6593,10 @@ NarRestoreFileFromBackups(const wchar_t *RootDir, const wchar_t *FileName, const
     Result = TRUE;
     
     ABORT:
+    
+    // NOTE(Batuhan): truncate file to real size
+    NarSetFilePointer(RestoreFileHandle, RealFileSize);
+    SetEndOfFile(RestoreFileHandle);
     
     free(MemoryBuffer);
     NarFreeFEVolumeHandle(FEHandle);
@@ -8097,22 +8115,16 @@ main(int argc, char* argv[]) {
     
     
     {
-        int a = 0;
-        scanf("%i", &a);
-        printf("%i\n", a);
-    }
-    {
         
         nar_backup_file_explorer_context ctx = {0};
         
-        NarInitFileExplorerContextFromVolume(&ctx, 'C');
+        //NarInitFileExplorerContextFromVolume(&ctx, 'C');
         //NarInitFileExplorerContextFromVolume(&ctx, 'E');
-        //NarInitFileExplorerContext(&ctx, L"F:\NAR_M_FULL-6919421833842132964.narmd");
-        
         INT32 bindex =0 ;
         
         
-        if(0){
+        if(1){
+            
             backup_metadata *B = new backup_metadata[20];
             INT32 Out;
             NarGetBackupsInDirectory(L"F:\\", B, 20*sizeof(backup_metadata), &Out);

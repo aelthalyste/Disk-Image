@@ -1234,6 +1234,9 @@ NarFileExplorerSetFilePointer(nar_fe_volume_handle FEV, UINT64 NewFilePointer);
 inline BOOLEAN
 NarFileExplorerReadVolume(nar_fe_volume_handle FEV, void* Buffer, DWORD ReadSize, DWORD* OutBytesRead);
 
+inline void*
+NarFindFileAttributeFromFileRecord(void *FileRecord, INT32 AttributeID);
+
 /*
     args:
     FEV = output, simple
