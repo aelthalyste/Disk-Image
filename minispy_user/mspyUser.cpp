@@ -4135,6 +4135,7 @@ RestoreVersionWithoutLoop(restore_inf R, BOOLEAN RestoreMFT, HANDLE Volume) {
         }
         if (RegionsFile == INVALID_HANDLE_VALUE) {
             printf("Couldn't open regions binary file: %S\n", BinaryFileName.c_str());
+            DisplayError(GetLastError());
         }
         CopyErrorsOccured++;
     }
@@ -8128,7 +8129,6 @@ main(int argc, char* argv[]) {
         //NarInitFileExplorerContextFromVolume(&ctx, 'E');
         INT32 bindex =0 ;
         
-        
         if(1){
             
             backup_metadata *B = new backup_metadata[20];
@@ -8138,19 +8138,23 @@ main(int argc, char* argv[]) {
                 printf("%i->Let:%i Ver:%i\n",i, B->Letter, B->Version);
             }
             
+            scanf("%i", &bindex);
+            
+#if 0            
             std::wstring name;
             std::wstring path;
             
             std::wcin>>path;
             std::wcin>>name;
+#endif
             
-            //nar_backup_id id = B[bindex].ID;
+            nar_backup_id id = B[bindex].ID;
             
-            NarInitFileExplorerContext(&ctx, path.c_str(), name.c_str());
+            //NarInitFileExplorerContext(&ctx, path.c_str(), name.c_str());
             
-            //NarRestoreFileFromBackups(L"F:\\",L"E:\\Release\\minispy.inf", L"F:\\", id, NAR_FULLBACKUP_VERSION);
+            NarRestoreFileFromBackups(L"F:\\",L"E:\\Release\\minispy.inf", L"F:\\", id, NAR_FULLBACKUP_VERSION);
             
-            //return 0;
+            return 0;
         }
         
         

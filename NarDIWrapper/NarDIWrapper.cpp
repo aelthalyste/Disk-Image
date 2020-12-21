@@ -165,7 +165,7 @@ namespace NarDIWrapper {
     
     void CSNarFileExplorer::CW_Free(){
         
-#if 0        
+#if 1        
         if (ctx) {
             NarReleaseFileExplorerContext(ctx);
             free(ctx);
@@ -192,7 +192,7 @@ namespace NarDIWrapper {
         SystemStringToWCharPtr(SysTargetDir, TargetDirectory);
         SystemStringToWCharPtr(SysBackupDirectory, RootDir);
         
-        NarRestoreFileFromBackups(RootDir, SelectedFilePath.c_str(), TargetDirectory, ctx->FEHandle.BMEX->M.ID, 0);
+        NarRestoreFileFromBackups(RootDir, SelectedFilePath.c_str(), TargetDirectory, ctx->FEHandle.BMEX->M.ID, NAR_FULLBACKUP_VERSION);
         
         
     }
