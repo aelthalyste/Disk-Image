@@ -81,12 +81,19 @@ namespace NarDIWrapper {
     bool CSNarFileExplorer::CW_Init(System::String^ SysRootDir, System::String^ SysMetadataName){
         
         ctx = (nar_backup_file_explorer_context*)malloc(sizeof(nar_backup_file_explorer_context));
+        if(ctx == NULL){
+            printf("Couldnt allocate memory for file explorer context\n");
+        }
         
         wchar_t rootdir[1024];
         wchar_t mname[1024];
+        memset(rootdir, 0, sizeof(rootdir));
+        memset(mname, 0, sizeof(mname));
         
         SystemStringToWCharPtr(SysRootDir, rootdir);
         SystemStringToWCharPtr(SysMetadataName, mname);
+        
+        printf("Rootdir %S, name %S\n", rootdir, mname);
         
         return NarInitFileExplorerContext(ctx, rootdir, mname);
         
@@ -139,6 +146,8 @@ namespace NarDIWrapper {
             Result->Add(Entry);
             
         }
+        
+        printf("Build file list with length %i\n", Result->Count);
         
         return Result;
         

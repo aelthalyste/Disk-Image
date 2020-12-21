@@ -7531,10 +7531,13 @@ NarInitFileExplorerContext(nar_backup_file_explorer_context* Ctx, const wchar_t 
             
         }
         else {
+            printf("Couldnt initialize fe volume handle\n");
             goto NAR_FAIL_TERMINATE;
         }
+        
     }
     else {
+        printf("Couldnt initialize entry list\n");
         goto NAR_FAIL_TERMINATE;
     }
     
@@ -7542,6 +7545,7 @@ NarInitFileExplorerContext(nar_backup_file_explorer_context* Ctx, const wchar_t 
     
     NAR_FAIL_TERMINATE:
     if(Ctx){
+        printf("Failed to initialize file explorer context\n");
         NarReleaseFileExplorerContext(Ctx);
     }
     
@@ -7693,6 +7697,8 @@ NarInitFEVolumeHandleFromBackup(nar_fe_volume_handle *FEV, const wchar_t *RootDi
             }
         }
     }
+    
+    return Result;
     
 }
 
