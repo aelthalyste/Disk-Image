@@ -6606,6 +6606,7 @@ NarRestoreFileFromBackups(const wchar_t *RootDir, const wchar_t *FileName, const
     // NOTE(Batuhan): truncate file to real size
     NarSetFilePointer(RestoreFileHandle, RealFileSize);
     SetEndOfFile(RestoreFileHandle);
+    CloseHandle(RestoreFileHandle);
     
     free(MemoryBuffer);
     NarFreeFEVolumeHandle(FEHandle);
