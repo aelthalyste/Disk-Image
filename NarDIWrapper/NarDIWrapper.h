@@ -154,7 +154,7 @@ namespace NarDIWrapper {
 
         */
         //NOTE im not sure about if RootDir is going to be converted to string for managed code
-        bool CW_Init(System::String^ MetadataPath);
+        bool CW_Init(System::String^ SysRootDir, System::String^ SysMetadataName);
         
         
         List<CSNarFileEntry^>^ CW_GetFilesInCurrentDirectory();

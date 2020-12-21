@@ -78,14 +78,17 @@ namespace NarDIWrapper {
         this->CW_Free();
     }
     
-    bool CSNarFileExplorer::CW_Init(System::String^ MetadataPath){
+    bool CSNarFileExplorer::CW_Init(System::String^ SysRootDir, System::String^ SysMetadataName){
+        
         ctx = (nar_backup_file_explorer_context*)malloc(sizeof(nar_backup_file_explorer_context));
         
-        wchar_t wptr[512];
-        memset(wptr, 0, 1024);
-        SystemStringToWCharPtr(MetadataPath, wptr);
+        wchar_t rootdir[512];
+        wchar_t mname[512];
         
-        return NarInitFileExplorerContext(ctx, wptr);
+        SystemStringToWCharPtr(SysRootDir, rootdir);
+        SystemStringToWCharPtr(SysMetadataName, mname);
+        
+        return NarInitFileExplorerContext(ctx, rootdir, mname);
         
     }
     
@@ -162,7 +165,25 @@ namespace NarDIWrapper {
         
     }
     
-    void CSNarFileExplorer::CW_RestoreFile(INT64 ID, System::String^ BackupDirectory, System::String^ TargetDir) {
+    void CSNarFileExplorer::CW_RestoreFile(INT64 ID, System::String^ SysBackupDirectory, System::String^ SysTargetDir) {
+        
+        if(ctx == NULL || ctx->EList.Entries == 0 || ctx->EList.EntryCount < ID){
+            if(!ctx) printf("File explorer context was null\n");
+            if(!ctx->EList.Entries) printf("File explorer's entry list was null\n");
+            if(ctx->EList.EntryCount  < ID) printf("Given file ID exceeds maximum file ID in entry list\n");
+            return;
+        }
+        
+        std::wstring SelectedFilePath = std::wstring(ctx->CurrentDirectory);
+        SelectedFilePath += ctx->EList.Entries[ID].Name;
+        
+        wchar_t TargetDirectory[512];
+        wchar_t RootDir[512];
+        SystemStringToWCharPtr(SysTargetDir, TargetDirectory);
+        SystemStringToWCharPtr(SysBackupDirectory, RootDir);
+        
+        NarRestoreFileFromBackups(RootDir, SelectedFilePath.c_str(), TargetDirectory, ctx->FEHandle.BMEX->M.ID, 0);
+        
         
     }
     

@@ -3965,7 +3965,7 @@ NarOpenVolume(char Letter) {
     if (Volume != INVALID_HANDLE_VALUE) {
         
         
-#if 0        
+#if 1        
         if (DeviceIoControl(Volume, FSCTL_LOCK_VOLUME, 0, 0, 0, 0, 0, 0)) {
             
         }
@@ -6519,9 +6519,10 @@ NarRestoreFileFromBackups(const wchar_t *RootDir, const wchar_t *FileName, const
          VersionID++) {
         
         memset(&FEHandle, 0, sizeof(FEHandle));
+        
         std::wstring metadatapath = GenerateMetadataName(ID, VersionID);
         
-        if (NarInitFEVolumeHandleFromBackup(&FEHandle, metadatapath.c_str())) {
+        if (NarInitFEVolumeHandleFromBackup(&FEHandle, RootDir, GenerateMetadataName(ID, VersionID).c_str())) {
             
             NarFileExplorerSetFilePointer(FEHandle, FileStack.FileAbsoluteMFTOffset[VersionID - FileStack.StartingVersion]);
             memset(MemoryBuffer, 0, 1024);
@@ -6533,7 +6534,7 @@ NarRestoreFileFromBackups(const wchar_t *RootDir, const wchar_t *FileName, const
             }
             
             // NOTE(Batuhan): What I copy is allocated regions of the file, but user cares about real size of the region
-            if(VersionID == FileStack.StartingVersion){
+            {
                 RealFileSize = NarGetFileSizeFromRecord(MemoryBuffer);
             }
             
@@ -6933,10 +6934,9 @@ NarSearchFileInVolume(const wchar_t* arg_RootDir, const wchar_t *arg_FileName, n
     // TODO(Batuhan): check if that actually equals to error state
     if(FileName == NULL) return Result;;
     
-    std::wstring __t = std::wstring(RootDir);
-    __t += GenerateMetadataName(ID, Version);
+    std::wstring __t =  GenerateMetadataName(ID, Version);
     
-    if(NarInitFileExplorerContext(&Ctx,  __t.c_str())){
+    if(NarInitFileExplorerContext(&Ctx,  RootDir, __t.c_str())){
         
         TIMED_NAMED_BLOCK("File search by name(wcstok)");
         
@@ -7363,7 +7363,7 @@ NarInitFileExplorerContextFromVolume(nar_backup_file_explorer_context *Ctx, char
     
 */
 inline BOOLEAN
-NarInitFileExplorerContext(nar_backup_file_explorer_context* Ctx, const wchar_t *MetadataPath) {
+NarInitFileExplorerContext(nar_backup_file_explorer_context* Ctx, const wchar_t *RootDir, const wchar_t *MetadataName) {
     
     
     if (!Ctx) goto NAR_FAIL_TERMINATE;;
@@ -7377,7 +7377,7 @@ NarInitFileExplorerContext(nar_backup_file_explorer_context* Ctx, const wchar_t 
         memset(Ctx->RootDir, 0, sizeof(Ctx->RootDir));
         memset(&Ctx->HistoryStack, 0, sizeof(Ctx->HistoryStack));
         
-        if (NarInitFEVolumeHandleFromBackup(&Ctx->FEHandle, MetadataPath)) {
+        if (NarInitFEVolumeHandleFromBackup(&Ctx->FEHandle, RootDir, MetadataName)) {
             
             BOOLEAN Status = FALSE;
             Ctx->Letter = Ctx->FEHandle.BMEX->M.Letter;
@@ -7393,9 +7393,11 @@ NarInitFileExplorerContext(nar_backup_file_explorer_context* Ctx, const wchar_t 
             
             Ctx->ClusterSize = Ctx->FEHandle.BMEX->M.ClusterSize;
             
+            std::wstring MetadataPath = std::wstring(RootDir);
+            MetadataPath += std::wstring(MetadataName);
             
 #if 1            
-            HANDLE BackupMetadataHandle = CreateFileW(MetadataPath, GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
+            HANDLE BackupMetadataHandle = CreateFileW(MetadataPath.c_str(), GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
             if(BackupMetadataHandle != INVALID_HANDLE_VALUE){
                 
                 Ctx->MFTRecords = (nar_record*)malloc(Ctx->FEHandle.BMEX->M.Size.MFTMetadata * sizeof(nar_record));
@@ -7654,21 +7656,25 @@ NarIsVolumeAvailable(char Letter){
 
 
 inline BOOLEAN
-NarInitFEVolumeHandleFromBackup(nar_fe_volume_handle *FEV, const wchar_t* MetadataFilePath){
+NarInitFEVolumeHandleFromBackup(nar_fe_volume_handle *FEV, const wchar_t *RootDir, const wchar_t* MetadataName){
     
-    if (FEV == 0 || MetadataFilePath == 0) return FALSE;
+    if (FEV == 0 || MetadataName == 0) return FALSE;
+    
+    std::wstring MetadataFilePath = std::wstring(RootDir);
+    MetadataFilePath += MetadataName;
     
     BOOLEAN Result = FALSE;
     
-    FEV->BMEX = InitBackupMetadataEx(MetadataFilePath);
+    FEV->BMEX = InitBackupMetadataEx(MetadataFilePath.c_str());
     if(FEV->BMEX != NULL){
-        std::wstring binarypath = GenerateBinaryFileName(FEV->BMEX->M.ID, FEV->BMEX->M.Version);
+        std::wstring binarypath = std::wstring(RootDir);
+        binarypath += GenerateBinaryFileName(FEV->BMEX->M.ID, FEV->BMEX->M.Version);
         FEV->VolumeHandle = CreateFileW(binarypath.c_str(), GENERIC_READ , FILE_SHARE_READ, 0, OPEN_EXISTING, 0, 0);
         if(FEV->VolumeHandle != INVALID_HANDLE_VALUE){
             Result = TRUE;
         }
         else{
-            printf("Couldnt open file %s for FE Volume handle\n", binarypath.c_str());
+            printf("Couldnt open file %S for FE Volume handle\n", binarypath.c_str());
             DisplayError(GetLastError());
         }
     }
@@ -7699,7 +7705,7 @@ NarInitFEVolumeHandleFromBackup(nar_fe_volume_handle *FEV, const wchar_t* Metada
         NAR_READ_BACKUP_VOLUME 2 = Tries to find backup files in RootDir, if one not given, searches current running directory.
                                     Then according to backup region information, handles read-seak operations in wrapped function
 */
-#if 1
+#if 0
 inline BOOLEAN 
 NarInitFEVolumeHandle(nar_fe_volume_handle *FEV, INT32 HandleOptions, char Letter, const wchar_t *BackupMetadataPath) {
     
@@ -8102,18 +8108,12 @@ MFTID to extract neccecary data. For INDX_ROOT that is the file entry list, for 
     
     return;
 }
+#include<iostream>
 
 int
 main(int argc, char* argv[]) {
     
-    //NARDEBUG_AttributeListTest();
-    //for (int i = 0; i < 8;) {
-    //}
-    
-    
 #if 1
-    
-    
     {
         
         nar_backup_file_explorer_context ctx = {0};
@@ -8131,13 +8131,19 @@ main(int argc, char* argv[]) {
             for(int i = 0; i < Out; i++){
                 printf("%i->Let:%i Ver:%i\n",i, B->Letter, B->Version);
             }
-            scanf("%i", &bindex);
             
-            nar_backup_id id = B[bindex].ID;
             
-            NarRestoreFileFromBackups(L"F:\\",L"E:\\Release\\minispy.inf", L"F:\\", id, NAR_FULLBACKUP_VERSION);
+            std::wstring path;
+            std::wcin>>path;
             
-            return 0;
+            //nar_backup_id id = B[bindex].ID;
+            
+            
+            NarInitFileExplorerContext(&ctx, L"F:\\", path.c_str());
+            
+            //NarRestoreFileFromBackups(L"F:\\",L"E:\\Release\\minispy.inf", L"F:\\", id, 0);
+            
+            //return 0;
         }
         
         
@@ -8175,34 +8181,7 @@ main(int argc, char* argv[]) {
     }
     
     return 0;
-#endif
     
-#if 0    
-    void *mb = malloc(NAR_MEMORYBUFFER_SIZE);
-    char psh[512];
-    memset(psh, 0, 512);
-    
-    NAR_INIT_MEMORYBUFFER(mb);
-    
-    NAR_MB_PUSH(mb, psh, 512);
-    NAR_MB_PUSH(mb, psh, 512);
-    NAR_MB_PUSH(mb, psh, 512);
-    NAR_MB_PUSH(mb, psh, 512);
-    
-    memset(mb, 0, NAR_MEMORYBUFFER_SIZE);
-    NAR_INIT_MEMORYBUFFER(mb);
-    
-    NAR_MB_PUSH(mb, psh, 512);
-    NAR_MB_PUSH(mb, psh, 512);
-    
-    memset(mb, 0, NAR_MEMORYBUFFER_SIZE);
-    NAR_INIT_MEMORYBUFFER(mb);
-    
-    NAR_MB_PUSH(mb, psh, 512);
-    NAR_MB_PUSH(mb, psh, 512);
-    
-    
-    return 0;
 #endif
     
 #if 0   
@@ -8281,9 +8260,9 @@ main(int argc, char* argv[]) {
         loop{
             
             memset(&inf, 0, sizeof(inf));
-            while(getchar() != '\n');
             
-            Volume = 'E';
+            printf("ENTER LETTER TO DO BACKUP \n");
+            scanf("%c", &Volume);
             
             BackupType bt = (BackupType)Type;
             

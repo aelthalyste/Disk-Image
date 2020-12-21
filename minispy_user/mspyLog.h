@@ -240,7 +240,7 @@ NarLog(const char *str, ...){
 }
 
 
-#define printf(fmt, ...) NarLog(fmt, __VA_ARGS__)
+//#define printf(fmt, ...) NarLog(fmt, __VA_ARGS__)
 
 enum rec_or {
     LEFT = 0,
@@ -1064,7 +1064,6 @@ struct nar_backup_file_explorer_context {
     wchar_t RootDir[256];
     
     BYTE HandleOption;
-    
     UINT32 LastIndx;
     
     unsigned int MFTRecordsCount;
@@ -1218,7 +1217,7 @@ NarGetFileEntriesFromIndxClusters(nar_backup_file_explorer_context *Ctx, nar_rec
 
 */
 inline BOOLEAN
-NarInitFileExplorerContext(nar_backup_file_explorer_context* Ctx, const wchar_t *MetadataPath);
+NarInitFileExplorerContext(nar_backup_file_explorer_context* Ctx, const wchar_t *RootDir, const wchar_t *MetadataPath);
 
 inline INT32
 NarGetVolumeClusterSize(char Letter);
@@ -1250,7 +1249,7 @@ inline BOOLEAN
 NarInitFEVolumeHandle(nar_fe_volume_handle *FEV, INT32 HandleOptions, char VolumeLetter, const wchar_t *BackupMetadataPath);
 #endif
 
-inline BOOLEAN NarInitFEVolumeHandleFromBackup(nar_fe_volume_handle *FEV, const wchar_t* MetadataFilePath);
+inline BOOLEAN NarInitFEVolumeHandleFromBackup(nar_fe_volume_handle *FEV, const wchar_t* RootDir, const wchar_t* MetadataFilePath);
 inline BOOLEAN NarInitFEVolumeHandleFromVolume(nar_fe_volume_handle *FEV, char VolumeLetter, INT32 Version, nar_backup_id ID, wchar_t *RootDir);
 
 
