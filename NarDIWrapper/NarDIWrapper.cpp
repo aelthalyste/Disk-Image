@@ -82,8 +82,8 @@ namespace NarDIWrapper {
         
         ctx = (nar_backup_file_explorer_context*)malloc(sizeof(nar_backup_file_explorer_context));
         
-        wchar_t rootdir[512];
-        wchar_t mname[512];
+        wchar_t rootdir[1024];
+        wchar_t mname[1024];
         
         SystemStringToWCharPtr(SysRootDir, rootdir);
         SystemStringToWCharPtr(SysMetadataName, mname);
@@ -142,7 +142,6 @@ namespace NarDIWrapper {
         
         return Result;
         
-        
     }
     
     bool CSNarFileExplorer::CW_SelectDirectory(UINT64 ID){
@@ -157,11 +156,13 @@ namespace NarDIWrapper {
     
     void CSNarFileExplorer::CW_Free(){
         
+#if 0        
         if (ctx) {
             NarReleaseFileExplorerContext(ctx);
             free(ctx);
             ctx = 0;
         }
+#endif
         
     }
     
