@@ -4040,8 +4040,11 @@ GenerateMetadataName(nar_backup_id ID, int Version) {
         Result += std::to_wstring(Version);
     }
     
+    wchar_t t[8];
+    wsprintf(t, L"%c", ID.Letter);
+    
     Result += L"-";
-    Result += std::to_wstring(ID.Letter);
+    Result += std::wstring(t);
     Result += NarBackupIDToWStr(ID);
     Result += MetadataExtension;
     
@@ -4061,8 +4064,12 @@ GenerateBinaryFileName(nar_backup_id ID, int Version) {
         Result += std::to_wstring(Version);
     }
     
+    
+    wchar_t t[8];
+    wsprintf(t, L"%c", ID.Letter);
+    
     Result += L"-";
-    Result += std::to_wstring(ID.Letter);
+    Result += std::wstring(t);
     Result += NarBackupIDToWStr(ID);
     
     Result += BackupExtension;
@@ -8120,6 +8127,16 @@ MFTID to extract neccecary data. For INDX_ROOT that is the file entry list, for 
 int
 main(int argc, char* argv[]) {
     
+    UINT8 l = 'C';
+    wchar_t bf[512];
+    
+    wsprintf(bf, L"%c", l);
+    
+    std::wstring a = std::wstring(bf);
+    
+    std::wcout<<a;
+    return 0;
+    
 #if 1
     {
         
@@ -8196,12 +8213,12 @@ main(int argc, char* argv[]) {
 #endif
     
 #if 0   
-	backup_metadata *m = new backup_metadata[120];
-	int bs = 120*sizeof(*m);
-	int out = 0;
+    backup_metadata *m = new backup_metadata[120];
+    int bs = 120*sizeof(*m);
+    int out = 0;
     
-	NarGetBackupsInDirectory(L"F:\\", m, bs, &out);
-	for(int i =0; i< out; i++){
+    NarGetBackupsInDirectory(L"F:\\", m, bs, &out);
+    for(int i =0; i< out; i++){
         printf("volume %c version %i\n", m[i].Letter, m[i].Version);
     }
     int selected = 0;
@@ -8215,7 +8232,7 @@ main(int argc, char* argv[]) {
     OfflineRestoreToVolume(R, TRUE);
     
     printf("herllo\n");
-	return 0;
+    return 0;
 #endif
     
 #if 0
