@@ -8132,16 +8132,17 @@ main(int argc, char* argv[]) {
                 printf("%i->Let:%i Ver:%i\n",i, B->Letter, B->Version);
             }
             
-            
+            std::wstring name;
             std::wstring path;
+            
             std::wcin>>path;
+            std::wcin>>name;
             
             //nar_backup_id id = B[bindex].ID;
             
+            NarInitFileExplorerContext(&ctx, path.c_str(), name.c_str());
             
-            NarInitFileExplorerContext(&ctx, L"F:\\", path.c_str());
-            
-            //NarRestoreFileFromBackups(L"F:\\",L"E:\\Release\\minispy.inf", L"F:\\", id, 0);
+            //NarRestoreFileFromBackups(L"F:\\",L"E:\\Release\\minispy.inf", L"F:\\", id, NAR_FULLBACKUP_VERSION);
             
             //return 0;
         }

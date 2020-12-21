@@ -225,6 +225,7 @@ NarLog(const char *str, ...){
 #endif
     
     OutputDebugStringA(buf);
+    printf(buf);
     
 #if 0
     char szBuff[1024];
@@ -240,7 +241,7 @@ NarLog(const char *str, ...){
 }
 
 
-//#define printf(fmt, ...) NarLog(fmt, __VA_ARGS__)
+#define printf(fmt, ...) NarLog(fmt, __VA_ARGS__)
 
 enum rec_or {
     LEFT = 0,
