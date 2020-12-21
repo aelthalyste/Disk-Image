@@ -28,11 +28,13 @@ namespace DiskBackupWpfGUI
         IBackupService _backupManager;
         List<FilesInBackup> _filesInBackupList = new List<FilesInBackup>();
         private bool _fileAllControl;
+        BackupInfo _backupInfo;
 
         public FileExplorerWindow(IBackupService backupManager, BackupInfo backupInfo)
         {
             InitializeComponent();
             _backupManager = backupManager;
+            _backupInfo = backupInfo;
 
             _backupManager.InitFileExplorer(backupInfo);
             _filesInBackupList = _backupManager.GetFileInfoList();
@@ -70,9 +72,14 @@ namespace DiskBackupWpfGUI
 
         private void btnFolder_Click(object sender, RoutedEventArgs e)
         {
-            var dialog = new System.Windows.Forms.FolderBrowserDialog();
-            System.Windows.Forms.DialogResult result = dialog.ShowDialog();
-            txtFolderPath.Text = dialog.SelectedPath;
+            using (var dialog = new System.Windows.Forms.FolderBrowserDialog())
+            {
+                var result = dialog.ShowDialog();
+                if (result == System.Windows.Forms.DialogResult.OK)
+                {
+                    txtFolderPath.Text = dialog.SelectedPath;
+                }
+            }
         }
 
         private void btnBack_Click(object sender, RoutedEventArgs e)
@@ -166,6 +173,41 @@ namespace DiskBackupWpfGUI
         }
 
         #endregion
+
+        private void btnRestore_Click(object sender, RoutedEventArgs e)
+        {
+            if (listViewFileExplorer.SelectedItems.Count != 0)
+            {
+                foreach (FilesInBackup item in listViewFileExplorer.SelectedItems)
+                {
+                    _backupManager.RestoreFilesInBackup(item.Id, _backupInfo.BackupStorageInfo.Path, txtFolderPath.Text + @"\");
+                }
+            }
+        }
+
+        private void listViewFileExplorer_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (listViewFileExplorer.SelectedItems.Count != 0 && txtFolderPath.Text != null && txtFolderPath.Text != "")
+                btnRestore.IsEnabled = true;
+            else
+                btnRestore.IsEnabled = false;
+            foreach (FilesInBackup item in listViewFileExplorer.SelectedItems) // değiştir sunumdan sonra
+            {
+                if (item.Type == FileType.Folder)
+                {
+                    btnRestore.IsEnabled = false;
+                    break;
+                }
+            }
+        }
+
+        private void txtFolderPath_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (listViewFileExplorer.SelectedItems.Count != 0 && txtFolderPath.Text != null && txtFolderPath.Text != "")
+                btnRestore.IsEnabled = true;
+            else
+                btnRestore.IsEnabled = false;
+        }
 
         //Seçilen değere gitmek için ise CW_SelectDirectory(seçilenID)
         //tekrardan getFilesInCurrentDirectory istenecek

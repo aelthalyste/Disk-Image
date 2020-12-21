@@ -90,12 +90,8 @@ namespace DiskBackup.Business.Concrete
         public void InitFileExplorer(BackupInfo backupInfo) //initTracker'la aynı mantıkla çalışır mı? (Explorer ctor'da 1 kere çağrılma)
         {
             _logger.Verbose("InitFileExplorer metodu çağırıldı");
-            //rootDir string biz buraya ne dönücez
-            // yedek volumu, versiondan gelecek, "E:\ebru-eyupDeneme"-- ters slaş ekle sonuna
-            //_cSNarFileExplorer.CW_Init('C', 0, "");
-            //_cSNarFileExplorer.CW_Init(backupInfo.Letter, backupInfo.Version, backupInfo.BackupStorageInfo.Path);
-            _logger.Information("İnitFileExplorer: {path}", backupInfo.BackupStorageInfo.Path + backupInfo.MetadataFileName);
-            _cSNarFileExplorer.CW_Init(backupInfo.BackupStorageInfo.Path + backupInfo.MetadataFileName); // isim eklenmesi gerekmeli gibi
+            _logger.Information("İnitFileExplorer: {path}, {name}", backupInfo.BackupStorageInfo.Path, backupInfo.MetadataFileName);
+            _cSNarFileExplorer.CW_Init(backupInfo.BackupStorageInfo.Path, backupInfo.MetadataFileName); // isim eklenmesi gerekmeli gibi
         }
 
         public List<DiskInformation> GetDiskList()
@@ -657,6 +653,7 @@ namespace DiskBackup.Business.Concrete
                     ((item.LastModifiedTime.Minute < 10) ? 0 + item.LastModifiedTime.Minute.ToString() : item.LastModifiedTime.Minute.ToString());
 
                 filesInBackupList.Add(filesInBackup);
+                _logger.Information("Dosya adı: {name}", item.Name);
             }
             return filesInBackupList;
         }
@@ -716,15 +713,9 @@ namespace DiskBackup.Business.Concrete
             return logList;
         }
 
-        public void RestoreFilesInBackup(int fileId, string backupDirectory, string targetDirectory) // batuhan hangi backup olduğunu nasıl anlayacak? backup directoryde backup ismi almıyor
+        public void RestoreFilesInBackup(long fileId, string backupDirectory, string targetDirectory) // batuhan hangi backup olduğunu nasıl anlayacak? backup directoryde backup ismi almıyor
         {
             _logger.Verbose("RestoreFilesInBackup metodu çağırıldı");
-
-            //_cSNarFileExplorer.CW_RestoreFile(ID, seçilen backup'ın directorysi dosya ismi olmadan, yüklenecek yer)
-            //void CW_RestoreFile(INT64 ID);
-            //_cSNarFileExplorer.CW_Free FileExplorer kapatıldığında Free çağırmakta fayda var bellek yönetimi için tutulan alanları geri veriyor sisteme
-            /*Geri yükle fileExplorerdan istenen dosyayı geri yüklemek için
-            cSNarFileExplorer.CW_RestoreFile(dosyaid, Backupdirectory (ilgil backup hariç), kaydedilecekyol)*/
             _cSNarFileExplorer.CW_RestoreFile(fileId, backupDirectory, targetDirectory);
         }
 
