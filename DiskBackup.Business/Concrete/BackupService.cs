@@ -160,6 +160,21 @@ namespace DiskBackup.Business.Concrete
             //bootable = osVolume (true)
             foreach (BackupStorageInfo backupStorageItem in backupStorageList)
             {
+                NetworkConnection nc = null;
+                if (backupStorageItem.Type == BackupStorageType.NAS)
+                {
+                    try
+                    {
+                        if (backupStorageItem.Type == BackupStorageType.NAS)
+                        {
+                            nc = new NetworkConnection(backupStorageItem.Path.Substring(0, backupStorageItem.Path.Length - 1), backupStorageItem.Username, backupStorageItem.Password, backupStorageItem.Domain);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.Error(ex, "Backup dosyaları uzak paylaşıma bağlanılamadığında gösterilemiyor. {path}", backupStorageItem.Path);
+                    }
+                }
                 var returnList = DiskTracker.CW_GetBackupsInDirectory(backupStorageItem.Path);
 
                 foreach (var returnItem in returnList)
@@ -174,7 +189,6 @@ namespace DiskBackup.Business.Concrete
                     backupInfo.Description = returnItem.TaskDescription;
                     backupInfo.BackupStorageInfo = backupStorageItem;
                     backupInfo.BackupStorageInfoId = backupStorageItem.Id;
-
                     backupInfo.Bootable = Convert.ToBoolean(returnItem.OSVolume);
                     backupInfo.VolumeSize = (long)returnItem.VolumeTotalSize;
                     backupInfo.StrVolumeSize = FormatBytes((long)returnItem.VolumeTotalSize);
@@ -192,7 +206,6 @@ namespace DiskBackup.Business.Concrete
                     createdDate = createdDate + ":" + ((returnItem.BackupDate.Minute < 10) ? 0 + returnItem.BackupDate.Minute.ToString() : returnItem.BackupDate.Minute.ToString());
                     createdDate = createdDate + ":" + returnItem.BackupDate.Second.ToString();
                     backupInfo.CreatedDate = createdDate;
-
                     backupInfo.MetadataFileName = returnItem.Metadataname;
 
                     if (returnItem.Version == -1)
@@ -200,9 +213,11 @@ namespace DiskBackup.Business.Concrete
                     else
                         backupInfo.Type = (BackupTypes)returnItem.BackupType; // 2 full - 1 inc - 0 diff - BATU' inc 1 - diff 0
 
-
                     backupInfoList.Add(backupInfo);
                 }
+
+                if (nc != null)
+                    nc.Dispose();
             }
 
             return backupInfoList;
