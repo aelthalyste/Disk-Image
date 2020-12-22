@@ -191,7 +191,7 @@ namespace DiskBackupWpfGUI
 
                         if (resultTaskInfo != null)
                         {
-                            MessageBox.Show("Ekleme işlemi başarılı");
+                            MessageBox.Show("Ekleme işlemi başarılı", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Information);
                             if (_taskInfo.NextDate == Convert.ToDateTime("01/01/0002")) // hemen çalıştır
                             {
                                 _taskInfo.LastWorkingDate = DateTime.Now;
@@ -229,7 +229,7 @@ namespace DiskBackupWpfGUI
 
                         if (resultTaskInfo != null)
                         {
-                            MessageBox.Show("Ekleme işlemi başarılı");
+                            MessageBox.Show("Ekleme işlemi başarılı", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Information);
                             if (_taskInfo.NextDate == Convert.ToDateTime("01/01/0002")) // hemen çalıştır
                             {
                                 _taskInfo.LastWorkingDate = DateTime.Now;

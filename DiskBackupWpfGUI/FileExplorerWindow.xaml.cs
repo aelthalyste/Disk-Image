@@ -15,6 +15,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using DiskBackup.Business.Abstract;
 using DiskBackup.Business.Concrete;
+using DiskBackup.DataAccess.Abstract;
 using DiskBackup.Entities.Concrete;
 using NarDIWrapper;
 
@@ -25,32 +26,54 @@ namespace DiskBackupWpfGUI
     /// </summary>
     public partial class FileExplorerWindow : Window
     {
-        IBackupService _backupManager;
-        List<FilesInBackup> _filesInBackupList = new List<FilesInBackup>();
-        private bool _fileAllControl;
-        BackupInfo _backupInfo;
+        private IBackupService _backupManager;
+        private readonly IBackupStorageDal _backupStorageDal;
 
-        public FileExplorerWindow(IBackupService backupManager, BackupInfo backupInfo)
+        private List<FilesInBackup> _filesInBackupList = new List<FilesInBackup>();
+        private BackupInfo _backupInfo;
+        private NetworkConnection _nc;
+
+        private bool _fileAllControl;
+
+        public FileExplorerWindow(IBackupService backupManager, BackupInfo backupInfo, IBackupStorageDal backupStorageDal)
         {
             InitializeComponent();
+            _backupStorageDal = backupStorageDal;
             _backupManager = backupManager;
             _backupInfo = backupInfo;
+            _nc = null;
+
+            var backupStorageInfo = _backupStorageDal.Get(x => x.Id == backupInfo.BackupStorageInfoId);         
+            if (backupStorageInfo.Type == BackupStorageType.NAS)
+            {
+                try
+                {
+                    if (backupStorageInfo.Type == BackupStorageType.NAS)
+                    {
+                        _nc = new NetworkConnection(backupStorageInfo.Path.Substring(0, backupStorageInfo.Path.Length - 1), backupStorageInfo.Username, backupStorageInfo.Password, backupStorageInfo.Domain);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Backup dosyaları uzak paylaşıma bağlanılamadığından gösterilemiyor. {backupStorageInfo.Path}", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
+            }
 
             _backupManager.InitFileExplorer(backupInfo);
             _filesInBackupList = _backupManager.GetFileInfoList();
-
             RemoveSystemFiles();
-
             listViewFileExplorer.ItemsSource = _filesInBackupList;
             SortItems();
             txtfileExplorerPath.Text = _backupManager.GetCurrentDirectory();
-            
         }
 
         #region Title Bar
         private void btnClose_Click(object sender, RoutedEventArgs e)
         {
             _backupManager.FreeFileExplorer();
+            if (_nc != null)
+                _nc.Dispose();
             Close();
         }
 
@@ -66,7 +89,6 @@ namespace DiskBackupWpfGUI
                 DragMove();
             }
         }
-
 
         #endregion
 

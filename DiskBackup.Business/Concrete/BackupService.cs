@@ -172,7 +172,7 @@ namespace DiskBackup.Business.Concrete
                     }
                     catch (Exception ex)
                     {
-                        _logger.Error(ex, "Backup dosyaları uzak paylaşıma bağlanılamadığında gösterilemiyor. {path}", backupStorageItem.Path);
+                        _logger.Error(ex, "Uzak paylaşıma bağlanılamadığı için backup dosyaları gösterilemiyor. {path}", backupStorageItem.Path);
                     }
                 }
                 var returnList = DiskTracker.CW_GetBackupsInDirectory(backupStorageItem.Path);
@@ -395,7 +395,7 @@ namespace DiskBackup.Business.Concrete
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "Uzak paylaşıma bağlanılamıyor.");
+                _logger.Error(ex, "Uzak paylaşıma bağlanılamadığı için backup işlemine devam edilemiyor. {path}", taskInfo.BackupStorageInfo.Path);
                 return 4;
             }
 
@@ -668,7 +668,6 @@ namespace DiskBackup.Business.Concrete
                     ((item.LastModifiedTime.Minute < 10) ? 0 + item.LastModifiedTime.Minute.ToString() : item.LastModifiedTime.Minute.ToString());
 
                 filesInBackupList.Add(filesInBackup);
-                _logger.Information("Dosya adı: {name}", item.Name);
             }
             return filesInBackupList;
         }

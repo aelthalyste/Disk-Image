@@ -1790,9 +1790,6 @@ namespace DiskBackupWpfGUI
                     _logger.Verbose("RefreshTasks istekte bulunuldu");
                     //var backupService = _scope.Resolve<IBackupService>();
 
-                    // disk pageleri yeniliyor sorunsuz
-                    GetDiskPage();
-
                     //log down
                     RefreshActivityLogDown(backupService);
 
@@ -1808,7 +1805,6 @@ namespace DiskBackupWpfGUI
                         _logger.Verbose("RefreshTasks: Task listesi ve backuplar yenileniyor");
 
                         RefreshBackupsandTasks(backupService);
-
                         backupService.RefreshIncDiffTaskFlag(false);
                     }
 
@@ -1980,6 +1976,7 @@ namespace DiskBackupWpfGUI
 
         #endregion
 
+
         #region Genel Fonksiyonlar
 
         private void mainTabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -1988,6 +1985,8 @@ namespace DiskBackupWpfGUI
                 return;
             if (mainTabControl.SelectedIndex == 0 || mainTabControl.SelectedIndex == 2)
                 RefreshDisk();
+            if (mainTabControl.SelectedIndex == 0 || mainTabControl.SelectedIndex == 1)
+                GetDiskPage();
         }
 
         private static T FindParent<T>(DependencyObject dependencyObject) where T : DependencyObject
