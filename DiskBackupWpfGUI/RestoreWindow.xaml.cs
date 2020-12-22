@@ -134,9 +134,9 @@ namespace DiskBackupWpfGUI
             }
         }
 
-        public bool CheckAndBreakAffectedTask(TaskInfo taskInfo)
+        private bool CheckAndBreakAffectedTask(TaskInfo taskInfo)
         {
-            var taskList = _taskInfoDal.GetList();
+            var taskList = _taskInfoDal.GetList(x => x.EnableDisable != TecnicalTaskStatusType.Broken);
             bool checkFlag = false;
             foreach (var itemTask in taskList)
             {

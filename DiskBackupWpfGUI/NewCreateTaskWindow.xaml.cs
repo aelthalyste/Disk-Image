@@ -34,6 +34,7 @@ namespace DiskBackupWpfGUI
         private readonly IStatusInfoDal _statusInfoDal;
         private readonly ITaskInfoDal _taskInfoDal;
         private readonly IBackupStorageDal _backupStorageDal;
+        private readonly IRestoreTaskDal _restoreTaskDal;
         private ITaskSchedulerManager _schedulerManager;
 
         private readonly ILifetimeScope _scope;
@@ -49,7 +50,7 @@ namespace DiskBackupWpfGUI
 
         public NewCreateTaskWindow(List<BackupStorageInfo> backupStorageInfoList, IBackupService backupService, IBackupStorageService backupStorageService,
             Func<AddBackupAreaWindow> createAddBackupWindow, List<VolumeInfo> volumeInfoList, IBackupTaskDal backupTaskDal, IStatusInfoDal statusInfoDal,
-            ITaskInfoDal taskInfoDal, ITaskSchedulerManager schedulerManager, ILifetimeScope scope, ILogger logger)
+            ITaskInfoDal taskInfoDal, ITaskSchedulerManager schedulerManager, ILifetimeScope scope, ILogger logger, IRestoreTaskDal restoreTaskDal)
         {
             InitializeComponent();
 
@@ -62,6 +63,7 @@ namespace DiskBackupWpfGUI
             _backupTaskDal = backupTaskDal;
             _statusInfoDal = statusInfoDal;
             _taskInfoDal = taskInfoDal;
+            _restoreTaskDal = restoreTaskDal;
             _taskInfo.BackupTaskInfo = new BackupTask();
             _taskInfo.StatusInfo = new StatusInfo();
             _schedulerManager = schedulerManager;
@@ -84,7 +86,8 @@ namespace DiskBackupWpfGUI
 
         public NewCreateTaskWindow(List<BackupStorageInfo> backupStorageInfoList, IBackupService backupService, IBackupStorageService backupStorageService,
             Func<AddBackupAreaWindow> createAddBackupWindow, List<VolumeInfo> volumeInfoList, IBackupTaskDal backupTaskDal, IStatusInfoDal statusInfoDal,
-            ITaskInfoDal taskInfoDal, ITaskSchedulerManager schedulerManager, ILifetimeScope scope, TaskInfo taskInfo, IBackupStorageDal backupStorageDal, ILogger logger)
+            ITaskInfoDal taskInfoDal, ITaskSchedulerManager schedulerManager, ILifetimeScope scope, TaskInfo taskInfo, IBackupStorageDal backupStorageDal, ILogger logger,
+            IRestoreTaskDal restoreTaskDal)
         {
             InitializeComponent();
 
@@ -97,7 +100,7 @@ namespace DiskBackupWpfGUI
             _backupTaskDal = backupTaskDal;
             _statusInfoDal = statusInfoDal;
             _taskInfoDal = taskInfoDal;
-
+            _restoreTaskDal = restoreTaskDal;
             _updateControl = true;
             _backupStorageDal = backupStorageDal;
             _taskInfo = taskInfo;
@@ -334,6 +337,14 @@ namespace DiskBackupWpfGUI
                     return;
                 }
 
+                // Restore kontrolü
+                var result = CheckAndBreakAffectedTask(_taskInfo);
+                if (!result)
+                {
+                    Close();
+                    return;
+                }
+
                 //veritabanı işlemleri
                 TaskInfo resultTaskInfo = new TaskInfo();
                 if (!_updateControl)
@@ -435,6 +446,61 @@ namespace DiskBackupWpfGUI
 
         }
 
+        private bool CheckAndBreakAffectedTask(TaskInfo taskInfo)
+        {
+            var taskList = _taskInfoDal.GetList(x => x.Type == TaskType.Restore && x.EnableDisable != TecnicalTaskStatusType.Broken);
+            List<TaskInfo> taskAffectedList = new List<TaskInfo>();
+
+            foreach (var item in taskList)
+            {
+                item.RestoreTaskInfo = _restoreTaskDal.Get(x => x.Id == item.RestoreTaskId);
+                if (item.RestoreTaskInfo.Type == RestoreType.RestoreDisk)
+                    taskAffectedList.Add(item);
+            }
+
+            bool checkFlag = false;
+            foreach (var itemTask in taskAffectedList)
+            {
+                foreach (var itemObje in taskInfo.StrObje) // bozulacak backup volumeleri
+                {
+                    if (itemTask.StrObje.Contains(itemObje))
+                    {
+                        checkFlag = true;
+                    }
+                }
+            }
+
+            MessageBoxResult result = MessageBoxResult.Yes;
+
+            if (checkFlag)
+                result = MessageBox.Show($"Etkilenecek olan restore görevleriniz var. \nOnaylıyor musunuz?", Resources["MessageboxTitle"].ToString(), MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
+            if (result == MessageBoxResult.No)
+                return false;
+
+            if (result == MessageBoxResult.Yes && checkFlag)
+            {
+                foreach (var itemTask in taskAffectedList)
+                {
+                    foreach (var itemObje in taskInfo.StrObje) // bozulacak backup volumeleri
+                    {
+                        if (itemTask.StrObje.Contains(itemObje))
+                        {
+                            itemTask.EnableDisable = TecnicalTaskStatusType.Broken;
+
+                            if (itemTask.ScheduleId != null && itemTask.ScheduleId != "")
+                            {
+                                _schedulerManager.DeleteJob(itemTask.ScheduleId);
+                                itemTask.ScheduleId = "";
+                            }
+
+                            _taskInfoDal.Update(itemTask);
+                        }
+                    }
+                }
+            }
+            return true;
+        }
+
         private bool ChainCheck()
         {
             List<TaskInfo> brokenTaskList = new List<TaskInfo>();
@@ -494,7 +560,7 @@ namespace DiskBackupWpfGUI
 
                             _taskInfoDal.Update(itemTask);
                             count++;
-                        }                       
+                        }
                     }
                 }
             }
