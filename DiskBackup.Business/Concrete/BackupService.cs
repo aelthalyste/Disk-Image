@@ -147,6 +147,14 @@ namespace DiskBackup.Business.Concrete
                         diskList[index].VolumeInfos.Add(volumeInfo);
                     }
                 }
+
+                // raw, boş disk vs kontrolü
+                if (diskList[index].VolumeInfos.Count < 1)
+                {
+                    diskList.Remove(temp);
+                    index--;
+                }
+
                 index++;
             }
             return diskList;
@@ -274,7 +282,6 @@ namespace DiskBackup.Business.Concrete
         {
             _logger.Verbose("RestoreBackupVolume metodu çağırıldı");
             // rootDir = K:\O'yu K'ya Backup\Nar_BACKUP.nb -- hangi backup dosyası olduğu bulunup öyle verilmeli
-
             NetworkConnection nc = null;
             if (taskInfo.BackupStorageInfo.Type == BackupStorageType.NAS)
             {

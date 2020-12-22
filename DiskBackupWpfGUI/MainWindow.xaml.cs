@@ -1018,18 +1018,27 @@ namespace DiskBackupWpfGUI
             _logger.Verbose("btnRestore_Click istekte bulunuldu");
 
             List<VolumeInfo> volumeInfoList = new List<VolumeInfo>();
+            int i = 0;
             foreach (VolumeInfo item in listViewRestoreDisk.SelectedItems)
             {
+                Console.WriteLine(i++);
                 volumeInfoList.Add(item);
+                Console.WriteLine(item.DiskName + " " + item.Letter);
             }
+            Console.WriteLine("Ben geldim");
 
             BackupInfo backupInfo = (BackupInfo)listViewRestore.SelectedItem;
             bool controlFlag = false;
+            Console.WriteLine("Disk listesi");
+            _diskList.ForEach(x => Console.WriteLine(x.VolumeInfos[0].DiskName));
+            Console.WriteLine("Volume listesi");
+            volumeInfoList.ForEach(x => Console.WriteLine(x.DiskName));
             if (volumeInfoList.Count > 1)
             {
                 //disk kontrol et
                 foreach (var item in _diskList)
                 {
+                    Console.WriteLine(item.VolumeInfos[0].DiskName);
                     if (item.VolumeInfos[0].DiskName.Equals(volumeInfoList[0].DiskName))
                     {
                         if (backupInfo.UsedSize > item.Size)
@@ -1932,19 +1941,16 @@ namespace DiskBackupWpfGUI
 
             foreach (var item in _diskList)
             {
-                if (item.VolumeInfos.Count >= 1)
-                {
-                    DiskInfoPage page = new DiskInfoPage(item);
-                    Frame frame = new Frame();
-                    frame.Content = page;
-                    frame.VerticalAlignment = VerticalAlignment.Top;
-                    diskInfoStackPanel.Children.Add(frame);
-                    page = new DiskInfoPage(item);
-                    frame = new Frame();
-                    frame.Content = page;
-                    frame.VerticalAlignment = VerticalAlignment.Top;
-                    stackTasksDiskInfo.Children.Add(frame);
-                }
+                DiskInfoPage page = new DiskInfoPage(item);
+                Frame frame = new Frame();
+                frame.Content = page;
+                frame.VerticalAlignment = VerticalAlignment.Top;
+                diskInfoStackPanel.Children.Add(frame);
+                page = new DiskInfoPage(item);
+                frame = new Frame();
+                frame.Content = page;
+                frame.VerticalAlignment = VerticalAlignment.Top;
+                stackTasksDiskInfo.Children.Add(frame);
             }
         }
 

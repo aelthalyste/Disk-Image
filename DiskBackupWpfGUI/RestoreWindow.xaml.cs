@@ -134,10 +134,56 @@ namespace DiskBackupWpfGUI
             }
         }
 
+        public bool CheckAndBreakAffectedTask(TaskInfo taskInfo)
+        {
+            var taskList = _taskInfoDal.GetList();
+            bool checkFlag = false;
+            foreach (var itemTask in taskList)
+            {
+                foreach (var itemObje in taskInfo.StrObje) // bozulacak backup volumeleri
+                {
+                    if (itemTask.StrObje.Contains(itemObje))
+                    {
+                        checkFlag = true;
+                    }
+                }
+            }
+
+            MessageBoxResult result = MessageBoxResult.Yes;
+
+            if (checkFlag)
+                result = MessageBox.Show($"Etkilenecek olan görevleriniz var. \nOnaylıyor musunuz?", Resources["MessageboxTitle"].ToString(), MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
+            
+            if (result == MessageBoxResult.No)
+                return false;
+
+            if (result == MessageBoxResult.Yes && checkFlag)
+            {
+                foreach (var itemTask in taskList)
+                {
+                    foreach (var itemObje in taskInfo.StrObje) // bozulacak backup volumeleri
+                    {
+                        if (itemTask.StrObje.Contains(itemObje))
+                        {
+                            itemTask.EnableDisable = TecnicalTaskStatusType.Broken;
+
+                            if (itemTask.ScheduleId != null && itemTask.ScheduleId != "")
+                            {
+                                _schedulerManager.DeleteJob(itemTask.ScheduleId);
+                                itemTask.ScheduleId = "";
+                            }
+
+                            _taskInfoDal.Update(itemTask);
+                        }
+                    }
+                }
+            }
+            return true;
+        }
+
         private void btnRestoreOk_Click(object sender, RoutedEventArgs e)
         {
             //Kaydedip Silinecek
-
             if (dtpSetTime.Value <= DateTime.Now + TimeSpan.FromSeconds(10))
             {
                 MessageBox.Show("Geçmiş tarih için geri yükleme işlemi gerçekleştirilemez.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
@@ -184,7 +230,6 @@ namespace DiskBackupWpfGUI
                     {
                         //görevlerde kontrol için gerekli
                         _taskInfo.StrObje = _volumeInfoList[0].Letter.ToString();
-
                         _taskInfo.RestoreTaskInfo.TargetLetter = _volumeInfoList[0].Letter.ToString();
 
                         TaskInfo resultTaskInfo = SaveToDatabase();
@@ -217,29 +262,33 @@ namespace DiskBackupWpfGUI
                         {
                             _taskInfo.RestoreTaskInfo.TargetLetter = _backupService.AvailableVolumeLetter().ToString();
                             Console.WriteLine("NarDIWrapper'dan alınan harf: " + _taskInfo.RestoreTaskInfo.TargetLetter);
-                            Console.WriteLine("NarDIWrapper'dan dönen char: " + _backupService.AvailableVolumeLetter());
                         }
                         catch(Exception ex)
                         {
                             _logger.Error(ex, "NarDIWrapper'dan uygun disk için harf alınamadı.");
-                            Console.WriteLine("NarDIWrapper'dan uygun disk için harf alınamadı.");
+                            MessageBox.Show($"Restore gerçekleştirilecek uygun volume harfiniz bulunamamaktadır.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Information);
+                            Close();
                         }
 
-                        TaskInfo resultTaskInfo = SaveToDatabase();
+                        var result = CheckAndBreakAffectedTask(_taskInfo);
 
-                        if (resultTaskInfo != null)
+                        if (result)
                         {
-                            MessageBox.Show("Ekleme işlemi başarılı", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Information);
-                            if (_taskInfo.NextDate == Convert.ToDateTime("01/01/0002")) // hemen çalıştır
+                            TaskInfo resultTaskInfo = SaveToDatabase();
+
+                            if (resultTaskInfo != null)
                             {
-                                _taskInfo.LastWorkingDate = DateTime.Now;
-                                _taskInfoDal.Update(resultTaskInfo);
-                                _schedulerManager.RestoreDiskNowJob(resultTaskInfo).Wait();
+                                MessageBox.Show("Ekleme işlemi başarılı", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Information);
+                                if (_taskInfo.NextDate == Convert.ToDateTime("01/01/0002")) // hemen çalıştır
+                                {
+                                    _taskInfo.LastWorkingDate = DateTime.Now;
+                                    _taskInfoDal.Update(resultTaskInfo);
+                                    _schedulerManager.RestoreDiskNowJob(resultTaskInfo).Wait();
+                                }
+                                else
+                                    _schedulerManager.RestoreDiskJob(resultTaskInfo).Wait();
                             }
-                            else
-                                _schedulerManager.RestoreDiskJob(resultTaskInfo).Wait();
                         }
-                        
                     }
                     Close();
                 }
