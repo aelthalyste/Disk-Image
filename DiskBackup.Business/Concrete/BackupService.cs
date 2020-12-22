@@ -87,10 +87,10 @@ namespace DiskBackup.Business.Concrete
             _refreshIncDiffLogFlag = value;
         }
 
-        public void InitFileExplorer(BackupInfo backupInfo) //initTracker'la aynı mantıkla çalışır mı? (Explorer ctor'da 1 kere çağrılma)
+        public void InitFileExplorer(BackupInfo backupInfo)
         {
             _logger.Verbose("InitFileExplorer metodu çağırıldı");
-            _logger.Information("İnitFileExplorer: {path}, {name}", backupInfo.BackupStorageInfo.Path, backupInfo.MetadataFileName);
+            _logger.Verbose("İnitFileExplorer: {path}, {name}", backupInfo.BackupStorageInfo.Path, backupInfo.MetadataFileName);
             _cSNarFileExplorer.CW_Init(backupInfo.BackupStorageInfo.Path, backupInfo.MetadataFileName); // isim eklenmesi gerekmeli gibi
         }
 
@@ -165,10 +165,7 @@ namespace DiskBackup.Business.Concrete
                 {
                     try
                     {
-                        if (backupStorageItem.Type == BackupStorageType.NAS)
-                        {
-                            nc = new NetworkConnection(backupStorageItem.Path.Substring(0, backupStorageItem.Path.Length - 1), backupStorageItem.Username, backupStorageItem.Password, backupStorageItem.Domain);
-                        }
+                        nc = new NetworkConnection(backupStorageItem.Path.Substring(0, backupStorageItem.Path.Length - 1), backupStorageItem.Username, backupStorageItem.Password, backupStorageItem.Domain);
                     }
                     catch (Exception ex)
                     {
@@ -242,7 +239,6 @@ namespace DiskBackup.Business.Concrete
                     backupInfo.Description = resultItem.TaskDescription;
                     backupInfo.BackupStorageInfo = backupInfo.BackupStorageInfo;
                     backupInfo.BackupStorageInfoId = backupInfo.BackupStorageInfoId;
-
                     backupInfo.Bootable = Convert.ToBoolean(resultItem.OSVolume);
                     backupInfo.VolumeSize = (long)resultItem.VolumeTotalSize;
                     backupInfo.StrVolumeSize = FormatBytes((long)resultItem.VolumeTotalSize);
@@ -260,13 +256,13 @@ namespace DiskBackup.Business.Concrete
                     createdDate = createdDate + ":" + ((resultItem.BackupDate.Minute < 10) ? 0 + resultItem.BackupDate.Minute.ToString() : resultItem.BackupDate.Minute.ToString());
                     createdDate = createdDate + ":" + resultItem.BackupDate.Second.ToString();
                     backupInfo.CreatedDate = createdDate;
-
                     backupInfo.MetadataFileName = resultItem.Metadataname;
 
                     if (resultItem.Version == -1)
                         backupInfo.Type = BackupTypes.Full;
                     else
                         backupInfo.Type = (BackupTypes)resultItem.BackupType; // 2 full - 1 inc - 0 diff - BATU' inc 1 - diff 0
+
                     return backupInfo;
                 }
             }
@@ -274,54 +270,87 @@ namespace DiskBackup.Business.Concrete
             return null;
         }
 
-        public bool RestoreBackupVolume(RestoreTask restoreTask)
+        public bool RestoreBackupVolume(TaskInfo taskInfo)
         {
             _logger.Verbose("RestoreBackupVolume metodu çağırıldı");
-            // hangi backup dosyası olduğu bulunup öyle verilmeli
-            // rootDir = K:\O'yu K'ya Backup\Nar_BACKUP.nb
-            string backupName = restoreTask.RootDir.Split('\\').Last();
-            string newRootDir = restoreTask.RootDir.Substring(0, restoreTask.RootDir.Length - backupName.Length);
+            // rootDir = K:\O'yu K'ya Backup\Nar_BACKUP.nb -- hangi backup dosyası olduğu bulunup öyle verilmeli
+
+            NetworkConnection nc = null;
+            if (taskInfo.BackupStorageInfo.Type == BackupStorageType.NAS)
+            {
+                try
+                {
+                    nc = new NetworkConnection(taskInfo.BackupStorageInfo.Path.Substring(0, taskInfo.BackupStorageInfo.Path.Length - 1), taskInfo.BackupStorageInfo.Username, taskInfo.BackupStorageInfo.Password, taskInfo.BackupStorageInfo.Domain);
+                }
+                catch (Exception ex)
+                {
+                    _logger.Error(ex, "Uzak paylaşıma bağlanılamadığı için restore gerçekleştirilemiyor. {path}", taskInfo.BackupStorageInfo.Path);
+                    return false;
+                }
+            }
+
+            string backupName = taskInfo.RestoreTaskInfo.RootDir.Split('\\').Last();
+            string newRootDir = taskInfo.RestoreTaskInfo.RootDir.Substring(0, taskInfo.RestoreTaskInfo.RootDir.Length - backupName.Length);
 
             var resultList = DiskTracker.CW_GetBackupsInDirectory(newRootDir);
             BackupMetadata backupMetadata = new BackupMetadata();
 
             foreach (var item in resultList)
             {
-                if (item.Fullpath.Equals(restoreTask.RootDir))
+                if (item.Fullpath.Equals(taskInfo.RestoreTaskInfo.RootDir))
                 {
                     backupMetadata = item;
-                    _logger.Verbose("|{@restoreTaskId}| restore taskı için restoreVolume gerçekleştirilecek.", restoreTask.Id);
-                    return DiskTracker.CW_RestoreToVolume(restoreTask.TargetLetter[0], backupMetadata, true, newRootDir); //true gidecek
+                    _logger.Verbose("|{@restoreTaskId}| restore taskı için restoreVolume gerçekleştirilecek.", taskInfo.RestoreTaskInfo.Id);
+                    return DiskTracker.CW_RestoreToVolume(taskInfo.RestoreTaskInfo.TargetLetter[0], backupMetadata, true, newRootDir); //true gidecek
                 }
             }
 
-            _logger.Verbose("|{@restoreTaskId}| restore taskı için backupMetadata bulunamadı.", restoreTask.Id);
+            if (nc != null)
+                nc.Dispose();
+
+            _logger.Verbose("|{@restoreTaskId}| restore taskı için backupMetadata bulunamadı.", taskInfo.RestoreTaskInfo.Id);
             return false;
             //return DiskTracker.CW_RestoreToVolume(restoreTask.TargetLetter[0], restoreTask.SourceLetter[0], restoreTask.BackupVersion, true, restoreTask.RootDir); //true gidecek
         }
 
-        public bool RestoreBackupDisk(RestoreTask restoreTask)
+        public bool RestoreBackupDisk(TaskInfo taskInfo)
         {
-            // hangi backup dosyası olduğu bulunup öyle verilmeli
-            // rootDir = K:\O'yu K'ya Backup\Nar_BACKUP.nb
             _logger.Verbose("RestoreBackupDisk metodu çağırıldı");
-            string backupName = restoreTask.RootDir.Split('\\').Last();
-            string newRootDir = restoreTask.RootDir.Substring(0, restoreTask.RootDir.Length - backupName.Length);
+            // rootDir = K:\O'yu K'ya Backup\Nar_BACKUP.nb -- hangi backup dosyası olduğu bulunup öyle verilmeli
+            NetworkConnection nc = null;
+            if (taskInfo.BackupStorageInfo.Type == BackupStorageType.NAS)
+            {
+                try
+                {
+                    nc = new NetworkConnection(taskInfo.BackupStorageInfo.Path.Substring(0, taskInfo.BackupStorageInfo.Path.Length - 1), taskInfo.BackupStorageInfo.Username, taskInfo.BackupStorageInfo.Password, taskInfo.BackupStorageInfo.Domain);
+                }
+                catch (Exception ex)
+                {
+                    _logger.Error(ex, "Uzak paylaşıma bağlanılamadığı için restore gerçekleştirilemiyor. {path}", taskInfo.BackupStorageInfo.Path);
+                    return false;
+                }
+            }
+
+            string backupName = taskInfo.RestoreTaskInfo.RootDir.Split('\\').Last();
+            string newRootDir = taskInfo.RestoreTaskInfo.RootDir.Substring(0, taskInfo.RestoreTaskInfo.RootDir.Length - backupName.Length);
 
             var resultList = DiskTracker.CW_GetBackupsInDirectory(newRootDir);
             BackupMetadata backupMetadata = new BackupMetadata();
 
             foreach (var item in resultList)
             {
-                if (item.Fullpath.Equals(restoreTask.RootDir))
+                if (item.Fullpath.Equals(taskInfo.RestoreTaskInfo.RootDir))
                 {
                     backupMetadata = item;
-                    _logger.Verbose("|{@restoreTaskId}| restore taskı için restoreDisk gerçekleştirilecek.", restoreTask.Id);
-                    return DiskTracker.CW_RestoreToFreshDisk(restoreTask.TargetLetter[0], backupMetadata, restoreTask.DiskId, newRootDir);
+                    _logger.Verbose("|{@restoreTaskId}| restore taskı için restoreDisk gerçekleştirilecek.", taskInfo.RestoreTaskInfo.Id);
+                    return DiskTracker.CW_RestoreToFreshDisk(taskInfo.RestoreTaskInfo.TargetLetter[0], backupMetadata, taskInfo.RestoreTaskInfo.DiskId, newRootDir);
                 }
             }
 
-            _logger.Verbose("|{@restoreTaskId}| restore taskı için backupMetadata bulunamadı.", restoreTask.Id);
+            if (nc != null)
+                nc.Dispose();
+
+            _logger.Verbose("|{@restoreTaskId}| restore taskı için backupMetadata bulunamadı.", taskInfo.RestoreTaskInfo.Id);
             return false;
             //return DiskTracker.CW_RestoreToFreshDisk(restoreTask.TargetLetter[0], restoreTask.SourceLetter[0], restoreTask.BackupVersion, restoreTask.DiskId, restoreTask.RootDir);
         }
@@ -387,7 +416,7 @@ namespace DiskBackup.Business.Concrete
             // NAS için
             NetworkConnection nc = null;
             try
-            {       
+            {
                 if (taskInfo.BackupStorageInfo.Type == BackupStorageType.NAS)
                 {
                     nc = new NetworkConnection(taskInfo.BackupStorageInfo.Path.Substring(0, taskInfo.BackupStorageInfo.Path.Length - 1), taskInfo.BackupStorageInfo.Username, taskInfo.BackupStorageInfo.Password, taskInfo.BackupStorageInfo.Domain);
