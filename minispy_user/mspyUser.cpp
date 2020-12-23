@@ -7091,7 +7091,7 @@ NarFileExplorerGetFileEntryFromData(void *IndxCluster, nar_file_entry *OutFileEn
     UINT64 CreationTime = *(UINT64*)((char*)IndxCluster + NAR_TIME_OFFSET);
     UINT64 ModificationTime = *(UINT64*)((char*)IndxCluster + NAR_TIME_OFFSET + 8);
     UINT64 FileSize = *(UINT64*)((char*)IndxCluster + NAR_SIZE_OFFSET);
-    UINT64 Attributes = *(UINT64*)((char*)IndxCluster + NAR_ATTRIBUTE_OFFSET);
+    UINT32 Attributes = *(UINT32*)((char*)IndxCluster + NAR_ATTRIBUTE_OFFSET);
     
     char* NamePtr = ((char*)IndxCluster + NAR_NAME_OFFSET);
     if (*NamePtr == 0) {
@@ -7108,8 +7108,8 @@ NarFileExplorerGetFileEntryFromData(void *IndxCluster, nar_file_entry *OutFileEn
     
     OutFileEntry->IsDirectory = FALSE;
     
-    // from pure observation in hex editor. hope we wont miss anything
-    if (Attributes > 10000000) {
+    // from observation in hex editor. hope we wont miss anything
+    if (Attributes >= 0x10000000) {
         OutFileEntry->IsDirectory = TRUE;
     }
     
@@ -7131,7 +7131,7 @@ NarFileExplorerPushDirectory(nar_backup_file_explorer_context* Ctx, UINT32 Selec
         printf("ID exceeds size\n");
         return;
     }
-    if (Ctx->EList.Entries != 0 && Ctx->EList.Entries[SelectedListID].Size != 0) {
+    if (Ctx->EList.Entries != 0 && !Ctx->EList.Entries[SelectedListID].IsDirectory) {
         printf("Not a directory\n");
         return;
     }
@@ -8025,42 +8025,18 @@ MFTID to extract neccecary data. For INDX_ROOT that is the file entry list, for 
 int
 main(int argc, char* argv[]) {
     
-    NarLoadBootState();
-    
-    {
-        char bf[512];
-        memset(bf, 'a', sizeof(bf));
-        bf[511] = 0;
-        
-        NarGetProductName(bf);
-        
-        printf("%S",bf);
-        return 0;
-    }
-    
-    
-    
-    UINT8 l = 'C';
-    wchar_t bf[512];
-    
-    wsprintf(bf, L"%c", l);
-    
-    std::wstring a = std::wstring(bf);
-    
-    std::wcout<<a;
-    return 0;
     
 #if 1
     {
-        
         nar_backup_file_explorer_context ctx = {0};
         
-        //NarInitFileExplorerContextFromVolume(&ctx, 'C');
+        NarInitFileExplorerContextFromVolume(&ctx, 'C');
         //NarInitFileExplorerContextFromVolume(&ctx, 'E');
         INT32 bindex =0 ;
         
         if(1){
             
+#if 0            
             backup_metadata *B = new backup_metadata[20];
             INT32 Out;
             NarGetBackupsInDirectory(L"F:\\", B, 20*sizeof(backup_metadata), &Out);
@@ -8069,6 +8045,9 @@ main(int argc, char* argv[]) {
             }
             
             scanf("%i", &bindex);
+            nar_backup_id id = B[bindex].ID;
+            
+#endif
             
 #if 0            
             std::wstring name;
@@ -8078,13 +8057,12 @@ main(int argc, char* argv[]) {
             std::wcin>>name;
 #endif
             
-            nar_backup_id id = B[bindex].ID;
-            
             //NarInitFileExplorerContext(&ctx, path.c_str(), name.c_str());
             
-            NarRestoreFileFromBackups(L"F:\\",L"E:\\Release\\minispy.inf", L"F:\\", id, NAR_FULLBACKUP_VERSION);
+            //NarRestoreFileFromBackups(L"F:\\",L"E:\\Release\\minispy.inf", L"F:\\", id, NAR_FULLBACKUP_VERSION);
             
-            return 0;
+            //return 0;
+            
         }
         
         

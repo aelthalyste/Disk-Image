@@ -217,7 +217,7 @@ NarLog(const char *str, ...){
 #endif
     
 #if 1    
-    const static HANDLE File = CreateFileA("C:\\ProgramData\\NarDiskBackup\\NAR_APP_LOG_FILE.txt", GENERIC_WRITE|GENERIC_READ, FILE_SHARE_READ|FILE_SHARE_WRITE, 0, CREATE_ALWAYS, 0, 0);
+    const static HANDLE File = CreateFileA("C:\\ProgramData\\NarDiskBackup\\NAR_APP_LOG_FILE.txt", GENERIC_WRITE|GENERIC_READ, FILE_SHARE_READ|FILE_SHARE_WRITE, 0, CREATE_NEW, 0, 0);
     
     SetFilePointer(File, 0, 0, FILE_END);
     WriteFile(File, buf, Len, &H, 0);
