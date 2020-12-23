@@ -333,56 +333,80 @@
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
-                                    <GridViewColumn Header="{DynamicResource type}" Width="65">
+                                    <GridViewColumn Width="65">
+                                        <GridViewColumn.Header>
+                                            <GridViewColumnHeader Content="{DynamicResource type}" Tag="Type" Click="listviewTasksColumnHeaderSort_Click"/>
+                                        </GridViewColumn.Header>
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
                                                 <TextBlock Style="{StaticResource MTBListViewType}" TextAlignment="Center"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
-                                    <GridViewColumn Header="{DynamicResource taskName}" Width="135">
+                                    <GridViewColumn Width="135">
+                                        <GridViewColumn.Header>
+                                            <GridViewColumnHeader Content="{DynamicResource taskName}" Tag="Name" Click="listviewTasksColumnHeaderSort_Click"/>
+                                        </GridViewColumn.Header>
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
                                                 <TextBlock Text="{Binding Name}" TextAlignment="Left"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
-                                    <GridViewColumn Header="{DynamicResource object}" Width="65" >
+                                    <GridViewColumn Width="65" >
+                                        <GridViewColumn.Header>
+                                            <GridViewColumnHeader Content="{DynamicResource object}" Tag="Obje" Click="listviewTasksColumnHeaderSort_Click"/>
+                                        </GridViewColumn.Header>
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
                                                 <TextBlock Text="{Binding Obje}" TextAlignment="Center"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
-                                    <GridViewColumn Header="{DynamicResource statu}" Width="125" >
+                                    <GridViewColumn Width="125" >
+                                        <GridViewColumn.Header>
+                                            <GridViewColumnHeader Content="{DynamicResource statu}" Tag="Status" Click="listviewTasksColumnHeaderSort_Click"/>
+                                        </GridViewColumn.Header>
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
                                                 <TextBlock Text="{Binding StrStatus}" TextAlignment="Center"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
-                                    <GridViewColumn Header="{DynamicResource lastStudy}" Width="125" >
+                                    <GridViewColumn Width="125" >
+                                        <GridViewColumn.Header>
+                                            <GridViewColumnHeader Content="{DynamicResource lastStudy}" Tag="LastWorkingDate" Click="listviewTasksColumnHeaderSort_Click"/>
+                                        </GridViewColumn.Header>
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
                                                 <TextBlock Text="{Binding LastWorkingDate, StringFormat='dd.MM.yyyy HH:mm'}" Style="{StaticResource MTBListViewLastWorkingDate}" TextAlignment="Center"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
-                                    <GridViewColumn Header="{DynamicResource nextStudy}" Width="125" >
+                                    <GridViewColumn Width="125" >
+                                        <GridViewColumn.Header>
+                                            <GridViewColumnHeader Content="{DynamicResource nextStudy}" Tag="NextDate" Click="listviewTasksColumnHeaderSort_Click"/>
+                                        </GridViewColumn.Header>
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
                                                 <TextBlock Text="{Binding NextDate, StringFormat='dd.MM.yyyy HH:mm'}" Style="{StaticResource MTBListViewNextDate}" TextAlignment="Center"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
-                                    <GridViewColumn Header="{DynamicResource target}" Width="175" >
+                                    <GridViewColumn Width="175" >
+                                        <GridViewColumn.Header>
+                                            <GridViewColumnHeader Content="{DynamicResource target}" Tag="BackupStorageInfo.StorageName" Click="listviewTasksColumnHeaderSort_Click"/>
+                                        </GridViewColumn.Header>
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
                                                 <TextBlock Text="{Binding BackupStorageInfo.StorageName}" TextAlignment="Center"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
-                                    <GridViewColumn Header="{DynamicResource description}" Width="155" >
+                                    <GridViewColumn Width="155" >
+                                        <GridViewColumn.Header>
+                                            <GridViewColumnHeader Content="{DynamicResource description}" Tag="Descripiton" Click="listviewTasksColumnHeaderSort_Click"/>
+                                        </GridViewColumn.Header>
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
                                                 <TextBlock Text="{Binding Descripiton}" TextWrapping="Wrap" TextAlignment="Center"/>
@@ -621,34 +645,49 @@
                                 <ListView.View>
                                     <GridView>
                                         <GridViewColumn Width="60">
+                                            <GridViewColumn.Header>
+                                                <GridViewColumnHeader Content="{DynamicResource type}" Tag="Type" Click="listviewRestoreColumnHeaderSort_Click"/>
+                                            </GridViewColumn.Header>
                                             <GridViewColumn.CellTemplate>
                                                 <DataTemplate>
                                                     <Image Style="{StaticResource ViewBackupsListViewItemImage}"/>
                                                 </DataTemplate>
                                             </GridViewColumn.CellTemplate>
                                         </GridViewColumn>
-                                        <GridViewColumn Header="{DynamicResource fileName}" Width="220">
+                                        <GridViewColumn Width="220">
+                                            <GridViewColumn.Header>
+                                                <GridViewColumnHeader Content="{DynamicResource fileName}" Tag="FileName" Click="listviewRestoreColumnHeaderSort_Click"/>
+                                            </GridViewColumn.Header>
                                             <GridViewColumn.CellTemplate>
                                                 <DataTemplate>
                                                     <TextBlock Text="{Binding FileName}" TextAlignment="Left"/>
                                                 </DataTemplate>
                                             </GridViewColumn.CellTemplate>
                                         </GridViewColumn>
-                                        <GridViewColumn Header="{DynamicResource createdDate}" Width="175" >
+                                        <GridViewColumn Width="175" >
+                                            <GridViewColumn.Header>
+                                                <GridViewColumnHeader Content="{DynamicResource createdDate}" Tag="CreatedDate" Click="listviewRestoreColumnHeaderSort_Click"/>
+                                            </GridViewColumn.Header>
                                             <GridViewColumn.CellTemplate>
                                                 <DataTemplate>
                                                     <TextBlock Text="{Binding CreatedDate}" TextAlignment="Center"/>
                                                 </DataTemplate>
                                             </GridViewColumn.CellTemplate>
                                         </GridViewColumn>
-                                        <GridViewColumn Header="{DynamicResource volumeSize}" Width="150" >
+                                        <GridViewColumn Width="150" >
+                                            <GridViewColumn.Header>
+                                                <GridViewColumnHeader Content="{DynamicResource volumeSize}" Tag="VolumeSize" Click="listviewRestoreColumnHeaderSort_Click"/>
+                                            </GridViewColumn.Header>
                                             <GridViewColumn.CellTemplate>
                                                 <DataTemplate>
                                                     <TextBlock Text="{Binding StrVolumeSize}" TextAlignment="Center"/>
                                                 </DataTemplate>
                                             </GridViewColumn.CellTemplate>
                                         </GridViewColumn >
-                                        <GridViewColumn Header="{DynamicResource folderSize}" Width="150" >
+                                        <GridViewColumn Width="150" >
+                                            <GridViewColumn.Header>
+                                                <GridViewColumnHeader Content="{DynamicResource folderSize}" Tag="FileSize" Click="listviewRestoreColumnHeaderSort_Click"/>
+                                            </GridViewColumn.Header>
                                             <GridViewColumn.CellTemplate>
                                                 <DataTemplate>
                                                     <TextBlock Text="{Binding StrFileSize}" TextAlignment="Center"/>
@@ -871,50 +910,70 @@
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
-                                    <GridViewColumn Header="{DynamicResource type}" Width="95">
+                                    <GridViewColumn Width="95">
+                                        <GridViewColumn.Header>
+                                            <GridViewColumnHeader Content="{DynamicResource type}" Tag="Type" Click="listviewBackupsColumnHeaderSort_Click"/>
+                                        </GridViewColumn.Header>
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
                                                 <Image Style="{StaticResource ViewBackupsListViewItemImage}"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
-                                    <GridViewColumn Header="{DynamicResource fileName}" Width="155" >
-                                        <!-- filesName de aynı bak buraya-->
+                                    <GridViewColumn Width="155" >
+                                        <GridViewColumn.Header>
+                                            <GridViewColumnHeader Content="{DynamicResource fileName}" Tag="FileName" Click="listviewBackupsColumnHeaderSort_Click"/>
+                                        </GridViewColumn.Header>
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
                                                 <TextBlock Text="{Binding FileName}" TextAlignment="Left"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
-                                    <GridViewColumn Header="{DynamicResource createdDate}" Width="165" >
+                                    <GridViewColumn Width="165" >
+                                        <GridViewColumn.Header>
+                                            <GridViewColumnHeader Content="{DynamicResource createdDate}" Tag="CreatedDate" Click="listviewBackupsColumnHeaderSort_Click"/>
+                                        </GridViewColumn.Header>
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
                                                 <TextBlock Text="{Binding CreatedDate}" TextAlignment="Center"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
-                                    <GridViewColumn Header="{DynamicResource taskName}" Width="170" >
+                                    <GridViewColumn Width="170" >
+                                        <GridViewColumn.Header>
+                                            <GridViewColumnHeader Content="{DynamicResource taskName}" Tag="BackupTaskName" Click="listviewBackupsColumnHeaderSort_Click"/>
+                                        </GridViewColumn.Header>
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
                                                 <TextBlock Text="{Binding BackupTaskName}" TextAlignment="Center"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
-                                    <GridViewColumn Header="{DynamicResource volumeSize}" Width="125" >
+                                    <GridViewColumn Width="125" >
+                                        <GridViewColumn.Header>
+                                            <GridViewColumnHeader Content="{DynamicResource volumeSize}" Tag="VolumeSize" Click="listviewBackupsColumnHeaderSort_Click"/>
+                                        </GridViewColumn.Header>
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
                                                 <TextBlock Text="{Binding StrVolumeSize}" TextAlignment="Center"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
-                                    <GridViewColumn Header="{DynamicResource folderSize}" Width="125" >
+                                    <GridViewColumn Width="125" >
+                                        <GridViewColumn.Header>
+                                            <GridViewColumnHeader Content="{DynamicResource folderSize}" Tag="FileSize" Click="listviewBackupsColumnHeaderSort_Click"/>
+                                        </GridViewColumn.Header>
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
                                                 <TextBlock Text="{Binding StrFileSize}" TextAlignment="Center"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
-                                    <GridViewColumn Header="{DynamicResource description}" Width="135" >
+                                    <GridViewColumn Width="135" >
+                                        <GridViewColumn.Header>
+                                            <GridViewColumnHeader Content="{DynamicResource description}" Tag="Description" Click="listviewBackupsColumnHeaderSort_Click"/>
+                                        </GridViewColumn.Header>
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
                                                 <TextBlock Text="{Binding Description}" TextWrapping="Wrap" TextAlignment="Center"/>
@@ -1013,14 +1072,20 @@
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
-                                    <GridViewColumn Header="{DynamicResource domainName}" Width="155">
+                                    <GridViewColumn Width="155">
+                                        <GridViewColumn.Header>
+                                            <GridViewColumnHeader Content="{DynamicResource domainName}" Tag="StorageName" Click="listviewBackupStorageColumnHeaderSort_Click"/>
+                                        </GridViewColumn.Header>
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
                                                 <TextBlock Text="{Binding StorageName}" TextAlignment="Left"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
-                                    <GridViewColumn Header="{DynamicResource type}" Width="100" >
+                                    <GridViewColumn Width="100" >
+                                        <GridViewColumn.Header>
+                                            <GridViewColumnHeader Content="{DynamicResource type}" Tag="Type" Click="listviewBackupStorageColumnHeaderSort_Click"/>
+                                        </GridViewColumn.Header>
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
                                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
@@ -1031,7 +1096,10 @@
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
-                                    <GridViewColumn Header="{DynamicResource capacity}" Width="125" >
+                                    <GridViewColumn Width="125" >
+                                        <GridViewColumn.Header>
+                                            <GridViewColumnHeader Content="{DynamicResource capacity}" Tag="Capacity" Click="listviewBackupStorageColumnHeaderSort_Click"/>
+                                        </GridViewColumn.Header>
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
                                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
@@ -1042,7 +1110,10 @@
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
-                                    <GridViewColumn Header="{DynamicResource usedSize}" Width="125" >
+                                    <GridViewColumn Width="125" >
+                                        <GridViewColumn.Header>
+                                            <GridViewColumnHeader Content="{DynamicResource usedSize}" Tag="UsedSize" Click="listviewBackupStorageColumnHeaderSort_Click"/>
+                                        </GridViewColumn.Header>
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
                                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
@@ -1053,7 +1124,10 @@
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
-                                    <GridViewColumn Header="{DynamicResource freeSize}" Width="125" >
+                                    <GridViewColumn Width="125" >
+                                        <GridViewColumn.Header>
+                                            <GridViewColumnHeader Content="{DynamicResource freeSize}" Tag="FreeSize" Click="listviewBackupStorageColumnHeaderSort_Click"/>
+                                        </GridViewColumn.Header>
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
                                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
@@ -1064,14 +1138,20 @@
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
-                                    <GridViewColumn Header="{DynamicResource folderPath}" Width="170" >
+                                    <GridViewColumn Width="170" >
+                                        <GridViewColumn.Header>
+                                            <GridViewColumnHeader Content="{DynamicResource folderPath}" Tag="Path" Click="listviewBackupStorageColumnHeaderSort_Click"/>
+                                        </GridViewColumn.Header>
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
                                                 <TextBlock Text="{Binding Path}" TextAlignment="Left"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
-                                    <GridViewColumn Header="{DynamicResource description}" Width="170" >
+                                    <GridViewColumn Width="170" >
+                                        <GridViewColumn.Header>
+                                            <GridViewColumnHeader Content="{DynamicResource description}" Tag="Description" Click="listviewBackupStorageColumnHeaderSort_Click"/>
+                                        </GridViewColumn.Header>
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
                                                 <TextBlock Text="{Binding Description}" TextWrapping="Wrap" TextAlignment="Center"/>
@@ -1176,42 +1256,60 @@
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
-                                    <GridViewColumn Header="{DynamicResource startDate}" Width="155">
+                                    <GridViewColumn Width="155">
+                                        <GridViewColumn.Header>
+                                            <GridViewColumnHeader Content="{DynamicResource startDate}" Tag="StartDate" Click="listviewLogColumnHeaderSort_Click"/>
+                                        </GridViewColumn.Header>
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
                                                 <TextBlock Text="{Binding StartDate, StringFormat='dd.MM.yyyy HH:mm'}" TextAlignment="Center"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
-                                    <GridViewColumn Header="{DynamicResource endDate}" Width="155" >
+                                    <GridViewColumn Width="155" >
+                                        <GridViewColumn.Header>
+                                            <GridViewColumnHeader Content="{DynamicResource endDate}" Tag="EndDate" Click="listviewLogColumnHeaderSort_Click"/>
+                                        </GridViewColumn.Header>
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
                                                 <TextBlock Text="{Binding EndDate, StringFormat='dd.MM.yyyy HH:mm'}" TextAlignment="Center"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
-                                    <GridViewColumn Header="{DynamicResource type}" Width="125" >
+                                    <GridViewColumn Width="125" >
+                                        <GridViewColumn.Header>
+                                            <GridViewColumnHeader Content="{DynamicResource type}" Tag="Type" Click="listviewLogColumnHeaderSort_Click"/>
+                                        </GridViewColumn.Header>
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
                                                 <TextBlock Text="{Binding Type}" TextAlignment="Center"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
-                                    <GridViewColumn Header="{DynamicResource taskName}" Width="180" >
+                                    <GridViewColumn Width="180" >
+                                        <GridViewColumn.Header>
+                                            <GridViewColumnHeader Content="{DynamicResource taskName}" Tag="TaskInfoName" Click="listviewLogColumnHeaderSort_Click"/>
+                                        </GridViewColumn.Header>
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
                                                 <TextBlock Text="{Binding TaskInfoName}" TextAlignment="Center"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
-                                    <GridViewColumn Header="{DynamicResource target}" Width="180" >
+                                    <GridViewColumn Width="180" >
+                                        <GridViewColumn.Header>
+                                            <GridViewColumnHeader Content="{DynamicResource target}" Tag="BackupStoragePath" Click="listviewLogColumnHeaderSort_Click"/>
+                                        </GridViewColumn.Header>
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
                                                 <TextBlock Text="{Binding BackupStoragePath}" TextAlignment="Center"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
-                                    <GridViewColumn Header="{DynamicResource statu}" Width="165" >
+                                    <GridViewColumn Width="165" >
+                                        <GridViewColumn.Header>
+                                            <GridViewColumnHeader Content="{DynamicResource statu}" Tag="Status" Click="listviewLogColumnHeaderSort_Click"/>
+                                        </GridViewColumn.Header>
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
                                                 <TextBlock Text="{Binding StrStatus}" TextAlignment="Center"/>

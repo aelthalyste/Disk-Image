@@ -179,6 +179,7 @@
     <Compile Include="StatusesWindow.xaml.cs">
       <DependentUpon>StatusesWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Utils\SortAdorner.cs" />
     <Page Include="AddBackupAreaWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
