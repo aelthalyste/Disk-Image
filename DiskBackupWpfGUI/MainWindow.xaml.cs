@@ -6,6 +6,7 @@ using DiskBackup.DataAccess.Abstract;
 using DiskBackup.Entities.Concrete;
 using DiskBackup.TaskScheduler;
 using DiskBackup.TaskScheduler.Jobs;
+using DiskBackupWpfGUI.Utils;
 using Serilog;
 using System;
 using System.Collections.Generic;
@@ -2032,9 +2033,139 @@ namespace DiskBackupWpfGUI
         }
         #endregion
 
+
+        #region Listviews Sort
+
+        //ActivityLog
+        private GridViewColumnHeader listViewLogCol = null;
+        private SortAdorner listViewLogAdorner = null;
+
+        private void listviewLogColumnHeaderSort_Click(object sender, RoutedEventArgs e)
+        {
+            GridViewColumnHeader column = (sender as GridViewColumnHeader);
+            string sortBy = column.Tag.ToString();
+            if (listViewLogCol != null)
+            {
+                AdornerLayer.GetAdornerLayer(listViewLogCol).Remove(listViewLogAdorner);
+                listViewLog.Items.SortDescriptions.Clear();
+            }
+
+            ListSortDirection newDir = ListSortDirection.Ascending;
+            if (listViewLogCol == column && listViewLogAdorner.Direction == newDir)
+                newDir = ListSortDirection.Descending;
+
+            listViewLogCol = column;
+            listViewLogAdorner = new SortAdorner(listViewLogCol, newDir);
+            AdornerLayer.GetAdornerLayer(listViewLogCol).Add(listViewLogAdorner);
+            listViewLog.Items.SortDescriptions.Add(new SortDescription(sortBy, newDir));
+        }
+
+        //Backup Storage
+        private GridViewColumnHeader listViewBackupStorageCol = null;
+        private SortAdorner listViewBackupStorageAdorner = null;
+
+        private void listviewBackupStorageColumnHeaderSort_Click(object sender, RoutedEventArgs e)
+        {
+            GridViewColumnHeader column = (sender as GridViewColumnHeader);
+            string sortBy = column.Tag.ToString();
+            if (listViewBackupStorageCol != null)
+            {
+                AdornerLayer.GetAdornerLayer(listViewBackupStorageCol).Remove(listViewBackupStorageAdorner);
+                listViewBackupStorage.Items.SortDescriptions.Clear();
+            }
+
+            ListSortDirection newDir = ListSortDirection.Ascending;
+            if (listViewBackupStorageCol == column && listViewBackupStorageAdorner.Direction == newDir)
+                newDir = ListSortDirection.Descending;
+
+            listViewBackupStorageCol = column;
+            listViewBackupStorageAdorner = new SortAdorner(listViewBackupStorageCol, newDir);
+            AdornerLayer.GetAdornerLayer(listViewBackupStorageCol).Add(listViewBackupStorageAdorner);
+            listViewBackupStorage.Items.SortDescriptions.Add(new SortDescription(sortBy, newDir));
+        }
+
+        //Yedekleri görüntüle
+        private GridViewColumnHeader listViewBackupsCol = null;
+        private SortAdorner listViewBackupsAdorner = null;
+
+        private void listviewBackupsColumnHeaderSort_Click(object sender, RoutedEventArgs e)
+        {
+            GridViewColumnHeader column = (sender as GridViewColumnHeader);
+            string sortBy = column.Tag.ToString();
+            if (listViewBackupsCol != null)
+            {
+                AdornerLayer.GetAdornerLayer(listViewBackupsCol).Remove(listViewBackupsAdorner);
+                listViewBackups.Items.SortDescriptions.Clear();
+            }
+
+            ListSortDirection newDir = ListSortDirection.Ascending;
+            if (listViewBackupsCol == column && listViewBackupsAdorner.Direction == newDir)
+                newDir = ListSortDirection.Descending;
+
+            listViewBackupsCol = column;
+            listViewBackupsAdorner = new SortAdorner(listViewBackupsCol, newDir);
+            AdornerLayer.GetAdornerLayer(listViewBackupsCol).Add(listViewBackupsAdorner);
+            listViewBackups.Items.SortDescriptions.Add(new SortDescription(sortBy, newDir));
+        }
+
+        //Geri Yükle
+        private GridViewColumnHeader listViewRestoreCol = null;
+        private SortAdorner listViewRestoreAdorner = null;
+
+        private void listviewRestoreColumnHeaderSort_Click(object sender, RoutedEventArgs e)
+        {
+            GridViewColumnHeader column = (sender as GridViewColumnHeader);
+            string sortBy = column.Tag.ToString();
+            if (listViewRestoreCol != null)
+            {
+                AdornerLayer.GetAdornerLayer(listViewRestoreCol).Remove(listViewRestoreAdorner);
+                listViewRestore.Items.SortDescriptions.Clear();
+            }
+
+            ListSortDirection newDir = ListSortDirection.Ascending;
+            if (listViewRestoreCol == column && listViewRestoreAdorner.Direction == newDir)
+                newDir = ListSortDirection.Descending;
+
+            listViewRestoreCol = column;
+            listViewRestoreAdorner = new SortAdorner(listViewRestoreCol, newDir);
+            AdornerLayer.GetAdornerLayer(listViewRestoreCol).Add(listViewRestoreAdorner);
+            listViewRestore.Items.SortDescriptions.Add(new SortDescription(sortBy, newDir));
+        }
+
+        //Görevler
+        private GridViewColumnHeader listViewTasksCol = null;
+        private SortAdorner listViewTasksAdorner = null;
+
+        private void listviewTasksColumnHeaderSort_Click(object sender, RoutedEventArgs e)
+        {
+            GridViewColumnHeader column = (sender as GridViewColumnHeader);
+            string sortBy = column.Tag.ToString();
+            if (listViewTasksCol != null)
+            {
+                AdornerLayer.GetAdornerLayer(listViewTasksCol).Remove(listViewTasksAdorner);
+                listViewTasks.Items.SortDescriptions.Clear();
+            }
+
+            ListSortDirection newDir = ListSortDirection.Ascending;
+            if (listViewTasksCol == column && listViewTasksAdorner.Direction == newDir)
+                newDir = ListSortDirection.Descending;
+
+            listViewTasksCol = column;
+            listViewTasksAdorner = new SortAdorner(listViewTasksCol, newDir);
+            AdornerLayer.GetAdornerLayer(listViewTasksCol).Add(listViewTasksAdorner);
+            listViewTasks.Items.SortDescriptions.Add(new SortDescription(sortBy, newDir));
+        }
+
+        #endregion
+
+
         private void btnFilesDelete_Click(object sender, RoutedEventArgs e)
         {
 
         }
+
+
     }
+
+
 }
