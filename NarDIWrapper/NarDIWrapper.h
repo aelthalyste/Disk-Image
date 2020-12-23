@@ -60,7 +60,7 @@ namespace NarDIWrapper {
         }
         
         bool IsSameChainID(BackupMetadata^ bm){
-            return (*bm->BackupID) == *BackupID;
+            return memcmp(bm->BackupID, BackupID, sizeof(*BackupID));
         }
         
         wchar_t Letter;
@@ -212,10 +212,6 @@ namespace NarDIWrapper {
         
         bool CW_TerminateBackup(bool Succeeded, wchar_t VolumeLetter);
         
-        
-        ExistingBackupInfo CW_IsVolumeTracked(wchar_t Letter){
-            
-        }
         
         
         static bool CW_RestoreToVolume(wchar_t TargetLetter, BackupMetadata^ BM, bool ShouldFormat, System::String^ RootDir);
