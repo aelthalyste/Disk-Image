@@ -1726,12 +1726,10 @@ GetVolumesOnTrack(PLOG_CONTEXT C, volume_information* Out, unsigned int BufferSi
             continue;
         }
         
-        
-        
-        Out[VolumesFound].Letter = (char)V->Letter;
-        Out[VolumesFound].Bootable = V->IsOSVolume;
-        Out[VolumesFound].DiskID = NarGetVolumeDiskID((char)V->Letter);
-        Out[VolumesFound].DiskType = (char)NarGetVolumeDiskType((char)V->Letter);
+        Out[VolumesFound].Letter    = (char)V->Letter;
+        Out[VolumesFound].Bootable  = V->IsOSVolume;
+        Out[VolumesFound].DiskID    = NarGetVolumeDiskID((char)V->Letter);
+        Out[VolumesFound].DiskType  = (char)NarGetVolumeDiskType((char)V->Letter);
         Out[VolumesFound].TotalSize = NarGetVolumeTotalSize((char)V->Letter);
         
         VolumesFound++;
@@ -2098,6 +2096,7 @@ TerminateBackup(volume_backup_inf* V, BOOLEAN Succeeded) {
     if(V->Stream.Records.Data){
         FreeDataArray(&V->Stream.Records);
     }
+    
     NarFreeMFTRegionsByCommandLine(V->MFTLCN);
     
     V->Stream.Records.Count = 0;
@@ -2750,7 +2749,7 @@ SetupStreamHandle(volume_backup_inf* VolInf) {
             
         }
         else{
-            printf("Couldnt create log file for volume %c\n", VolInf->Letter);      
+            printf("Couldnt create log file for volume %c, %S\n", VolInf->Letter, LogFileName.c_str());      
             DisplayError(GetLastError());
             return FALSE;  
         }
@@ -4013,7 +4012,6 @@ NarGenerateBackupID(char Letter){
     Result.Hour = T.wHour;
     Result.Min = T.wMinute;
     Result.Letter = Letter;
-    
     
     return Result;
 }
@@ -5478,9 +5476,12 @@ NarLoadBootState() {
                         
                         for (int i = 0; i < BootTrackDataCount; i++) {
                             
-                            
                             bResult = InitVolumeInf(&VolInf, (char)BootTrackData[i].Letter, (BackupType)BootTrackData[i].BackupType);
+                            
                             if (bResult) {
+                                
+                                VolInf.BackupID = {0};
+                                VolInf.BackupID = BootTrackData[i].BackupID;
                                 
                                 VolInf.FilterFlags.IsActive = TRUE;
                                 VolInf.FullBackupExists = TRUE;
@@ -5495,7 +5496,6 @@ NarLoadBootState() {
                                     Result->Volumes.Insert(VolInf);
                                     
                                     bResult = TRUE;
-                                    
                                 }
                                 else {
                                     printf("Couldnt open existing log file %S\n", LogFileName.c_str());
@@ -8025,8 +8025,9 @@ MFTID to extract neccecary data. For INDX_ROOT that is the file entry list, for 
 int
 main(int argc, char* argv[]) {
     
+    NarLoadBootState();
+    
     {
-        
         char bf[512];
         memset(bf, 'a', sizeof(bf));
         bf[511] = 0;

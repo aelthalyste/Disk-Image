@@ -30,6 +30,7 @@ namespace NarDIWrapper {
         CSNarFileTime(){
             
         }
+        
         CSNarFileTime(WORD pYear, WORD pMonth, WORD pDay, WORD pHour, WORD pMinute, WORD pSecond){
             Year = pYear;
             Month = pMonth;
@@ -45,9 +46,11 @@ namespace NarDIWrapper {
         WORD Hour;
         WORD Minute;
         WORD Second;
+        
     };
     
     public ref class BackupMetadata {
+        
         public:
         BackupMetadata(){
             BackupID = new nar_backup_id;
@@ -57,8 +60,7 @@ namespace NarDIWrapper {
         }
         
         bool IsSameChainID(BackupMetadata^ bm){
-            return (memcmp(bm->BackupID, BackupID, sizeof(*BackupID)) == 0);
-
+            return (*bm->BackupID) == *BackupID;
         }
         
         wchar_t Letter;
@@ -180,6 +182,15 @@ namespace NarDIWrapper {
     };
     
     
+    public ref class ExistingBackupInfo{
+        public:
+        bool Exists;
+        wchar_t Letter;
+        int Version;
+    };
+    
+    
+    
     
     public ref class DiskTracker
     {
@@ -202,9 +213,9 @@ namespace NarDIWrapper {
         bool CW_TerminateBackup(bool Succeeded, wchar_t VolumeLetter);
         
         
-        //terminate backuptan sonra cagir
-        bool CW_SaveBootState();
-        
+        ExistingBackupInfo CW_IsVolumeTracked(wchar_t Letter){
+            
+        }
         
         
         static bool CW_RestoreToVolume(wchar_t TargetLetter, BackupMetadata^ BM, bool ShouldFormat, System::String^ RootDir);

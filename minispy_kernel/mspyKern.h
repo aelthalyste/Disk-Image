@@ -307,22 +307,6 @@ SpyExceptionFilter(
 //---------------------------------------------------------------------------
 
 
-//---------------------------------------------------------------------------
-//  Logging routines
-//---------------------------------------------------------------------------
-PRECORD_LIST
-SpyNewRecord(
-             VOID
-             );
-
-VOID
-SpyLogPreOperationData(
-                       _In_ PFLT_CALLBACK_DATA Data,
-                       _In_ PCFLT_RELATED_OBJECTS FltObjects,
-                       _Inout_ PRECORD_LIST RecordList
-                       );
-
-
 
 #endif  //__MSPYKERN_H__
 

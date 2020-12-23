@@ -407,23 +407,6 @@ struct stream {
 };
 
 
-
-
-struct nar_backup_id{
-    union{
-        unsigned long long Q;
-        struct{
-            UINT16 Year;
-            UINT8 Month;
-            UINT8 Day;
-            UINT8 Hour;
-            UINT8 Min;
-            UINT8 Letter;
-        };
-    };
-};
-
-
 /*
 This function silently merges local time with given parameters
 */
@@ -639,6 +622,7 @@ struct disk_information {
 };
 
 
+
 /*
 example output of diskpart list volume command
 Volume ###  Ltr  Label        Fs     Type        Size     Status     Info
@@ -657,6 +641,7 @@ struct volume_information {
     char DiskType;
     wchar_t VolumeName[MAX_PATH + 1];
 };
+
 
 // Up to 2GB
 struct file_read {
@@ -1125,8 +1110,12 @@ struct lcn_from_mft_query_result {
     INT16 DataOffset;
     INT16 DataLen;
     
-    // i dont want to use dynamically allocated array then free it. Since these tasks are disk IO bounded, i can totally neglect cache behavior(thats a big sin) and preallocate big stack array and never have to deal with freeing it
-    // probably %95 of it will be empty most of the time
+    /* 
+I dont want to use dynamically allocated array then free it. 
+Since these tasks are disk IO bounded, I can totally neglect cache behavior(thats a big sin) and preallocate big stack array and never have to deal with freeing it
+     probably %95 of it will be empty most of the time
+*/
+    
     INT32 RecordCount;
     nar_record Records[1024];
     
@@ -1284,13 +1273,6 @@ FileDump(
          _In_ INT32 DataSize,
          _In_ HANDLE File
          );
-
-VOID
-ScreenDump(
-           _In_ ULONG SequenceNumber,
-           _In_ WCHAR CONST* Name,
-           _In_ PRECORD_DATA RecordData
-           );
 
 BOOLEAN
 ConnectDriver(PLOG_CONTEXT Ctx);

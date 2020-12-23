@@ -60,11 +60,29 @@ Environment:
 // force 1 byte aligment
 #pragma pack(push ,1)
 
+
+struct nar_backup_id{
+    union{
+        unsigned long long Q;
+        struct{
+            UINT16 Year;
+            UINT8 Month;
+            UINT8 Day;
+            UINT8 Hour;
+            UINT8 Min;
+            UINT8 Letter;
+        };
+    };
+};
+
+typedef struct nar_backup_id nar_backup_id;
+
 typedef struct _nar_boot_track_data{
     UINT64 LastBackupOffset;
     char Letter;
     char Version;
     char BackupType;
+    nar_backup_id BackupID;
 }nar_boot_track_data;
 #pragma pack(pop)
 
@@ -104,10 +122,10 @@ typedef struct _nar_boot_track_data{
 #define MINISPY_MIN_VERSION 0
 
 typedef struct _MINISPYVER {
-
+    
     USHORT Major;
     USHORT Minor;
-
+    
 } MINISPYVER, * PMINISPYVER;
 
 //
@@ -130,113 +148,9 @@ typedef _Return_type_success_(return >= 0) LONG NTSTATUS;
 //#define RECORD_SIZE     1024
 #define RECORD_SIZE     4096
 
-//
-//  This defines the type of record buffer this is along with certain flags.
-//
-
-#define RECORD_TYPE_NORMAL                       0x00000000
-#define RECORD_TYPE_FILETAG                      0x00000004
-
-#define RECORD_TYPE_FLAG_STATIC                  0x80000000
-#define RECORD_TYPE_FLAG_EXCEED_MEMORY_ALLOWANCE 0x20000000
-#define RECORD_TYPE_FLAG_OUT_OF_MEMORY           0x10000000
-#define RECORD_TYPE_FLAG_MASK                    0xffff0000
-
-//
-//  The fixed data received for RECORD_TYPE_NORMAL
-//
-
-typedef struct _RECORD_DATA {
-
-    LARGE_INTEGER OriginatingTime;
-    LARGE_INTEGER CompletionTime;
-
-    FILE_ID DeviceObject;
-    FILE_ID FileObject;
-    FILE_ID Transaction;
-
-    FILE_ID ProcessId;
-    FILE_ID ThreadId;
-
-    ULONG_PTR Information;
-
-    NTSTATUS Status;
-
-    ULONG IrpFlags;
-    ULONG Flags;
-
-    UCHAR CallbackMajorId;
-    UCHAR CallbackMinorId;
-    UCHAR Reserved[2];      // Alignment on IA64
-
-#pragma warning(push)
-#pragma warning(disable:4201) // disable warnings for structures-unions without names
-
-
-    struct {
-        UINT32 S;
-        UINT32 L;
-    }P[5];
-    UINT32 RecCount;
-    UINT32 Error;
-
-
-
-    ULONG EcpCount;
-    ULONG KnownEcpMask;
-
-} RECORD_DATA, * PRECORD_DATA;
-
 
 #pragma warning(pop)
 
-
-//
-//  What information we actually log.
-//
-
-#pragma warning(push)
-#pragma warning(disable:4200) // disable warnings for structures with zero length arrays.
-
-typedef struct _LOG_RECORD {
-
-
-    ULONG Length;           // Length of log record.  This Does not include
-    ULONG SequenceNumber;   // space used by other members of RECORD_LIST
-
-    ULONG RecordType;       // The type of log record this is.
-    ULONG Reserved;         // For alignment on IA64
-
-    RECORD_DATA Data;
-    WCHAR Name[];           //  This is a null terminated string
-
-} LOG_RECORD, * PLOG_RECORD;
-
-#pragma warning(pop)
-
-//
-//  How the mini-filter manages the log records.
-//
-
-typedef struct _RECORD_LIST {
-
-    LIST_ENTRY List;
-
-    //
-    // Must always be last item.  See MAX_LOG_RECORD_LENGTH macro below.
-    // Must be aligned on PVOID boundary in this structure. This is because the
-    // log records are going to be packed one after another & accessed directly
-    // Size of log record must also be multiple of PVOID size to avoid alignment
-    // faults while accessing the log records on IA64
-    //
-
-    LOG_RECORD LogRecord;
-
-} RECORD_LIST, * PRECORD_LIST;
-
-//
-//  Defines the commands between the utility and the filter
-//
 
 
 //
@@ -253,12 +167,12 @@ typedef enum NAR_COMMAND_TYPE {
 }NAR_COMMAND_TYPE;
 
 typedef struct NAR_COMMAND {
-
+    
     NAR_COMMAND_TYPE Type;
     struct {
         WCHAR VolumeGUIDStr[49];     // Null terminated VolumeGUID string
     };
-
+    
 }NAR_COMMAND;
 
 #pragma warning(pop)
@@ -295,7 +209,7 @@ typedef struct _NAR_CONNECTION_CONTEXT {
 
 #define REMAINING_NAME_SPACE(LogRecord) \
 (FLT_ASSERT((LogRecord)->Length >= sizeof(LOG_RECORD)), \
- (USHORT)(MAX_NAME_SPACE - ((LogRecord)->Length - sizeof(LOG_RECORD))))
+(USHORT)(MAX_NAME_SPACE - ((LogRecord)->Length - sizeof(LOG_RECORD))))
 
 #define MAX_LOG_RECORD_LENGTH  (RECORD_SIZE - FIELD_OFFSET( RECORD_LIST, LogRecord ))
 
