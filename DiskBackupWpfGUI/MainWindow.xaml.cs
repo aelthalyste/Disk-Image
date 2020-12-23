@@ -1853,7 +1853,8 @@ namespace DiskBackupWpfGUI
             {
                 _logger.Verbose("RefreshTasks: Son başarılı-başarısız tarih yazdırılıyor");
 
-                ActivityLog lastLog = ((ActivityLog)listViewLog.Items[0]);
+                var lastLog = _activityLogDal.GetList().LastOrDefault();
+                //ActivityLog lastLog = ((ActivityLog)listViewLog.Items[0]);
                 txtRunningStateBlock.Text = lastLog.EndDate.ToString();
                 if (lastLog.Status == StatusType.Success)
                     txtRunningStateBlock.Foreground = Brushes.Green;

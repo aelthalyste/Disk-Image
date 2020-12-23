@@ -209,7 +209,7 @@ namespace DiskBackup.Business.Concrete
                     createdDate = createdDate + "." + returnItem.BackupDate.Year + " ";
                     createdDate = createdDate + ((returnItem.BackupDate.Hour < 10) ? 0 + returnItem.BackupDate.Hour.ToString() : returnItem.BackupDate.Hour.ToString());
                     createdDate = createdDate + ":" + ((returnItem.BackupDate.Minute < 10) ? 0 + returnItem.BackupDate.Minute.ToString() : returnItem.BackupDate.Minute.ToString());
-                    createdDate = createdDate + ":" + returnItem.BackupDate.Second.ToString();
+                    createdDate = createdDate + ":" + ((returnItem.BackupDate.Second < 10) ? 0 + returnItem.BackupDate.Second.ToString() : returnItem.BackupDate.Second.ToString());
                     backupInfo.CreatedDate = createdDate;
                     backupInfo.MetadataFileName = returnItem.Metadataname;
 
@@ -262,7 +262,7 @@ namespace DiskBackup.Business.Concrete
                     createdDate = createdDate + "." + resultItem.BackupDate.Year + " ";
                     createdDate = createdDate + ((resultItem.BackupDate.Hour < 10) ? 0 + resultItem.BackupDate.Hour.ToString() : resultItem.BackupDate.Hour.ToString());
                     createdDate = createdDate + ":" + ((resultItem.BackupDate.Minute < 10) ? 0 + resultItem.BackupDate.Minute.ToString() : resultItem.BackupDate.Minute.ToString());
-                    createdDate = createdDate + ":" + resultItem.BackupDate.Second.ToString();
+                    createdDate = createdDate + ":" + ((resultItem.BackupDate.Second < 10) ? 0 + resultItem.BackupDate.Second.ToString() : resultItem.BackupDate.Second.ToString());
                     backupInfo.CreatedDate = createdDate;
                     backupInfo.MetadataFileName = resultItem.Metadataname;
 
