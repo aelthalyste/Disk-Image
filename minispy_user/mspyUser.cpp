@@ -6290,12 +6290,6 @@ NarGetFileListFromMFTID(nar_backup_file_explorer_context *Ctx, size_t TargetMFTI
             BitmapAttr   = NarFindFileAttributeFromFileRecord(FileRecord, NAR_BITMAP_FLAG);
             AttrListAttr = NarFindFileAttributeFromFileRecord(FileRecord, NAR_ATTRIBUTE_LIST);
             
-#if 0
-            if((AttrListAttr && IndxAllAttr) || (AttrListAttr && IndxRootAttr)){
-                __debugbreak();
-            }
-#endif
-            
             // NOTE(Batuhan): ntfs madness : if file has too many information, it cant fit into the single 1KB entry.
             /*
 so some smart ass decided it would be wise to split some attributes into different disk locations, so i have to check if any file attribute is non-resident, if so, should check if that one is INDEX_ALLOCATION attribute, and again if so, should go read that disk offset and parse it. pretty trivial but also boring
@@ -7305,7 +7299,6 @@ NarInitFEVolumeHandleFromVolume(nar_fe_volume_handle *FEV, char VolumeLetter){
 inline BOOLEAN
 NarInitFileExplorerContextFromVolume(nar_backup_file_explorer_context *Ctx, char Letter){
     
-    
     if (!Ctx) goto NAR_FAIL_TERMINATE;;
     
     memset(Ctx, 0, sizeof(*Ctx));
@@ -7322,14 +7315,9 @@ NarInitFileExplorerContextFromVolume(nar_backup_file_explorer_context *Ctx, char
             BOOLEAN Status = FALSE;
             Ctx->Letter = Letter;
             
-            // NOTE(Batuhan): IN
-            
-#if 1            
             Ctx->ClusterSize = NarGetVolumeClusterSize(Letter);
             Ctx->MFTRecords = (nar_record*)NarGetMFTRegionsByCommandLine(Letter, &Ctx->MFTRecordsCount);
             Status = TRUE;
-#endif
-            
             
             Ctx->EList.EntryCount = 0;
             Ctx->EList.MFTIndex = NAR_ROOT_MFT_ID;
@@ -7391,15 +7379,6 @@ NarInitFileExplorerContext(nar_backup_file_explorer_context* Ctx, const wchar_t 
             BOOLEAN Status = FALSE;
             Ctx->Letter = Ctx->FEHandle.BMEX->M.Letter;
             
-            // NOTE(Batuhan): IN
-            
-#if 0            
-            Ctx->ClusterSize = NarGetVolumeClusterSize(Letter);
-            Ctx->MFTRecords = (nar_record*)NarGetMFTRegionsByCommandLine(Letter, &Ctx->MFTRecordsCount);
-            Status = TRUE;
-#endif
-            
-            
             Ctx->ClusterSize = Ctx->FEHandle.BMEX->M.ClusterSize;
             
             std::wstring MetadataPath = std::wstring(RootDir);
@@ -7436,14 +7415,6 @@ NarInitFileExplorerContext(nar_backup_file_explorer_context* Ctx, const wchar_t 
 #endif
             
             
-            if (Status) {
-                
-            }
-            else {
-                // TODO (Batuhan) :
-                // MFT Record setup has been failed, abort
-            }
-            
             Ctx->EList.EntryCount = 0;
             Ctx->EList.MFTIndex = NAR_ROOT_MFT_ID;
             Ctx->HistoryStack.I = -1;
@@ -7457,85 +7428,9 @@ NarInitFileExplorerContext(nar_backup_file_explorer_context* Ctx, const wchar_t 
             wcscat(Ctx->CurrentDirectory, vb);
             
 #if 0 // performance test
-            
             for(int i =0; ;i++){
                 NarGetFileListFromMFTID(Ctx, i);
             }
-            
-            Ctx->EList.EntryCount = 0;
-            NarGetFileListFromMFTID(Ctx, 44571);
-            
-            Ctx->EList.EntryCount = 0;
-            NarGetFileListFromMFTID(Ctx, 120848);
-            
-            
-            Ctx->EList.EntryCount = 0;
-            NarGetFileListFromMFTID(Ctx, 98328);
-            
-            Ctx->EList.EntryCount = 0;
-            NarGetFileListFromMFTID(Ctx, 43085);
-            
-            Ctx->EList.EntryCount = 0;
-            NarGetFileListFromMFTID(Ctx, 204837);
-            
-            Ctx->EList.EntryCount = 0;
-            NarGetFileListFromMFTID(&Ctx, 221313);
-            
-            Ctx->EList.EntryCount = 0;
-            NarGetFileListFromMFTID(&Ctx, 228462);
-            
-            Ctx->EList.EntryCount = 0;
-            NarGetFileListFromMFTID(&Ctx, 229948);
-            
-            Ctx->EList.EntryCount = 0;
-            NarGetFileListFromMFTID(&Ctx, 44571);
-            
-            Ctx->EList.EntryCount = 0;
-            NarGetFileListFromMFTID(&Ctx, 120848);
-            
-            
-            Ctx->EList.EntryCount = 0;
-            NarGetFileListFromMFTID(&Ctx, 98328);
-            
-            Ctx->EList.EntryCount = 0;
-            NarGetFileListFromMFTID(&Ctx, 43085);
-            
-            Ctx->EList.EntryCount = 0;
-            NarGetFileListFromMFTID(&Ctx, 204837);
-            
-            Ctx->EList.EntryCount = 0;
-            NarGetFileListFromMFTID(&Ctx, 221313);
-            
-            Ctx->EList.EntryCount = 0;
-            NarGetFileListFromMFTID(&Ctx, 228462);
-            
-            Ctx->EList.EntryCount = 0;
-            NarGetFileListFromMFTID(&Ctx, 229948);
-            
-            Ctx->EList.EntryCount = 0;
-            NarGetFileListFromMFTID(&Ctx, 44571);
-            
-            Ctx->EList.EntryCount = 0;
-            NarGetFileListFromMFTID(&Ctx, 120848);
-            
-            
-            Ctx->EList.EntryCount = 0;
-            NarGetFileListFromMFTID(&Ctx, 98328);
-            
-            Ctx->EList.EntryCount = 0;
-            NarGetFileListFromMFTID(&Ctx, 43085);
-            
-            Ctx->EList.EntryCount = 0;
-            NarGetFileListFromMFTID(&Ctx, 204837);
-            
-            Ctx->EList.EntryCount = 0;
-            NarGetFileListFromMFTID(&Ctx, 221313);
-            
-            Ctx->EList.EntryCount = 0;
-            NarGetFileListFromMFTID(&Ctx, 228462);
-            
-            Ctx->EList.EntryCount = 0;
-            NarGetFileListFromMFTID(&Ctx, 229948);
 #endif
             
         }
@@ -7980,8 +7875,10 @@ NarGetProductName(char* OutName) {
     HKEY Key;
     if (RegOpenKeyA(HKEY_LOCAL_MACHINE, "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion", &Key) == ERROR_SUCCESS) {
         DWORD H = 0;
-        RegGetValueA(Key, 0, "ProductName", RRF_RT_ANY, 0, OutName, &H);
-        RegCloseKey(Key);
+        if(RegGetValueA(Key, 0, "ProductName", RRF_RT_ANY, 0, OutName, &H) != ERROR_SUCCESS){
+            DisplayError(GetLastError());
+        }
+        //RegCloseKey(Key);
     }
     
 }
@@ -8127,6 +8024,20 @@ MFTID to extract neccecary data. For INDX_ROOT that is the file entry list, for 
 
 int
 main(int argc, char* argv[]) {
+    
+    {
+        
+        char bf[512];
+        memset(bf, 'a', sizeof(bf));
+        bf[511] = 0;
+        
+        NarGetProductName(bf);
+        
+        printf("%S",bf);
+        return 0;
+    }
+    
+    
     
     UINT8 l = 'C';
     wchar_t bf[512];

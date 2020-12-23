@@ -56,6 +56,11 @@ namespace NarDIWrapper {
             delete BackupID;
         }
         
+        bool IsSameChainID(BackupMetadata^ bm){
+            return (memcmp(bm->BackupID, BackupID, sizeof(*BackupID)) == 0);
+
+        }
+        
         wchar_t Letter;
         int BackupType;
         int Version;
