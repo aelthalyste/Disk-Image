@@ -82,6 +82,9 @@
                 <DataTrigger Binding="{Binding Status}" Value="4">
                     <Setter Property="Source" Value="Resources\Icon\icons8_brake_warning_2.ico" />
                 </DataTrigger>
+                <DataTrigger Binding="{Binding Status}" Value="5">
+                    <Setter Property="Source" Value="Resources\Icon\icons8-delete-file-24.png" />
+                </DataTrigger>
             </Style.Triggers>
         </Style>
 

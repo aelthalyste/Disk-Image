@@ -243,7 +243,11 @@ namespace DiskBackup.Business.Concrete
                 {
                     backupMetadata = item;
                     _logger.Verbose("|{@restoreTaskId}| restore taskı için restoreVolume gerçekleştirilecek.", taskInfo.RestoreTaskInfo.Id);
-                    return Convert.ToByte(DiskTracker.CW_RestoreToVolume(taskInfo.RestoreTaskInfo.TargetLetter[0], backupMetadata, true, newRootDir)); //true gidecek
+
+                    if (ChainInTheSameDirectory(resultList, backupMetadata))
+                        return Convert.ToByte(DiskTracker.CW_RestoreToVolume(taskInfo.RestoreTaskInfo.TargetLetter[0], backupMetadata, true, newRootDir)); //true gidecek
+                    else
+                        return 3; // eksik dosya hatası yazdır
                 }
             }
 
@@ -252,6 +256,65 @@ namespace DiskBackup.Business.Concrete
 
             _logger.Verbose("|{@restoreTaskId}| restore taskı için backupMetadata bulunamadı.", taskInfo.RestoreTaskInfo.Id);
             return 0;
+        }
+
+        private bool ChainInTheSameDirectory(List<BackupMetadata> backupMetadataList, BackupMetadata backupMetadata)
+        {
+            // Tüm dosyalar aynı dizinde mi kontrolü yap
+            List<BackupMetadata> chainList = new List<BackupMetadata>();
+
+            if (backupMetadata.Version != -1)
+            {
+                _logger.Information("Backup Version: " + backupMetadata.Version.ToString());
+                _logger.Information("Backup Type: {type} | 0 diff - 1 inc", backupMetadata.BackupType.ToString());
+                foreach (var itemBackupMetadata in backupMetadataList)
+                {
+                    if (!itemBackupMetadata.IsSameChainID(backupMetadata))
+                        chainList.Add(itemBackupMetadata);
+                }
+
+                chainList = chainList.OrderBy(x => x.Version).ToList();
+                _logger.Information("----------------------------------LİSTE--------------------------");
+                chainList.ForEach(x => _logger.Information(x.Version.ToString() + " - " + x.Fullpath + " - " + x.BackupType.ToString()));
+                _logger.Information("--------------------------------------------------------------------------------------------------------");
+
+                if (backupMetadata.BackupType == 0) // 0 diff - diff restore
+                {
+                    // Full ve restore edilecek backup aynı dizinde olması gerekiyor.
+                    if (chainList[0].Version == -1)
+                    {
+                        _logger.Information("if (chainList[0].Version == -1) TRUE");
+                        return true;
+                    }                      
+                    else
+                    {
+                        _logger.Information("if (chainList[0].Version == -1) FALSE");
+                        return false;
+                    }
+                                           
+                }
+                else if (backupMetadata.BackupType == 1) // 1 inc - inc restore
+                {
+                    // ilgili backup versiyonuna kadar tüm backuplar aynı dizinde olmalı. Sayıyı kontrol et, versiyonları kontrol et
+                    _logger.Information("Count: {c} - Version: {v}", chainList.Count, backupMetadata.Version + 2);
+                    if (chainList.Count >= backupMetadata.Version + 2)
+                    {                      
+                        for (int i = 0; i <= backupMetadata.Version + 1; i++)
+                        {
+                            if (!(chainList[i].Version == i - 1))
+                            {
+                                _logger.Information("Bu backup gerçekleştirilemez");
+                                return false;
+                            }                               
+                        }
+                        return true;
+                    }
+                    else
+                        return false;
+                }
+            }
+            // zaten zincirin devamına bakmaya gerek yok
+            return true;
         }
 
         public byte RestoreBackupDisk(TaskInfo taskInfo)
@@ -283,7 +346,11 @@ namespace DiskBackup.Business.Concrete
                 {
                     backupMetadata = item;
                     _logger.Verbose("|{@restoreTaskId}| restore taskı için restoreDisk gerçekleştirilecek.", taskInfo.RestoreTaskInfo.Id);
-                    return Convert.ToByte(DiskTracker.CW_RestoreToFreshDisk(taskInfo.RestoreTaskInfo.TargetLetter[0], backupMetadata, taskInfo.RestoreTaskInfo.DiskId, newRootDir));
+
+                    if (ChainInTheSameDirectory(resultList, backupMetadata))
+                        return Convert.ToByte(DiskTracker.CW_RestoreToFreshDisk(taskInfo.RestoreTaskInfo.TargetLetter[0], backupMetadata, taskInfo.RestoreTaskInfo.DiskId, newRootDir));
+                    else
+                        return 3; // eksik dosya hatası yazdır
                 }
             }
 

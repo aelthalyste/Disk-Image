@@ -256,5 +256,6 @@
     <system:String x:Key="ConnectionError">Bağlanma Hatası</system:String>
     <system:String x:Key="ValidateConnection">Bağlantıyı Doğrula</system:String>
     <system:String x:Key="MessageboxTitle">Narbulut Bilgilendirme</system:String>
+    <system:String x:Key="MissingFile">Eksik Dosya</system:String>
 
 </ResourceDictionary>

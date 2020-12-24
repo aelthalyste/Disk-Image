@@ -107,6 +107,12 @@ namespace DiskBackup.TaskScheduler.Jobs
                 activityLog.Status = StatusType.ConnectionError;
                 UpdateActivityAndTask(activityLog, task);
             }
+            else if (result == 3)
+            {
+                _logger.Verbose("{@task} volume job'ın result result eksik dosyalar var", task);
+                activityLog.Status = StatusType.MissingFile;
+                UpdateActivityAndTask(activityLog, task);
+            }
 
             _logger.Information("{@task} restore volume görevi bitirildi. Sonuç: {@result}.", task, result);
             return Task.CompletedTask; // return değeri kaldırılacak ve async'e çevirilecek burası
