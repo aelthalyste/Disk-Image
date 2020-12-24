@@ -184,40 +184,7 @@ namespace DiskBackup.Business.Concrete
 
                 foreach (var returnItem in returnList)
                 {
-                    BackupInfo backupInfo = new BackupInfo();
-                    backupInfo.Letter = returnItem.Letter;
-                    backupInfo.Version = returnItem.Version;
-                    backupInfo.OSVolume = returnItem.OSVolume;
-                    backupInfo.DiskType = returnItem.DiskType; //mbr gpt
-                    backupInfo.OS = returnItem.WindowsName;
-                    backupInfo.BackupTaskName = returnItem.TaskName;
-                    backupInfo.Description = returnItem.TaskDescription;
-                    backupInfo.BackupStorageInfo = backupStorageItem;
-                    backupInfo.BackupStorageInfoId = backupStorageItem.Id;
-                    backupInfo.Bootable = Convert.ToBoolean(returnItem.OSVolume);
-                    backupInfo.VolumeSize = (long)returnItem.VolumeTotalSize;
-                    backupInfo.StrVolumeSize = FormatBytes((long)returnItem.VolumeTotalSize);
-                    backupInfo.UsedSize = (long)returnItem.VolumeUsedSize;
-                    backupInfo.StrUsedSize = FormatBytes((long)returnItem.VolumeUsedSize);
-                    backupInfo.FileSize = (long)returnItem.BytesNeedToCopy;
-                    backupInfo.StrFileSize = FormatBytes((long)returnItem.BytesNeedToCopy);
-                    backupInfo.FileName = returnItem.Fullpath.Split('\\').Last();
-                    backupInfo.PCName = returnItem.ComputerName;
-                    backupInfo.IpAddress = returnItem.IpAdress;
-                    string createdDate = (returnItem.BackupDate.Day < 10) ? 0 + returnItem.BackupDate.Day.ToString() : returnItem.BackupDate.Day.ToString();
-                    createdDate = createdDate + "." + ((returnItem.BackupDate.Month < 10) ? 0 + returnItem.BackupDate.Month.ToString() : returnItem.BackupDate.Month.ToString());
-                    createdDate = createdDate + "." + returnItem.BackupDate.Year + " ";
-                    createdDate = createdDate + ((returnItem.BackupDate.Hour < 10) ? 0 + returnItem.BackupDate.Hour.ToString() : returnItem.BackupDate.Hour.ToString());
-                    createdDate = createdDate + ":" + ((returnItem.BackupDate.Minute < 10) ? 0 + returnItem.BackupDate.Minute.ToString() : returnItem.BackupDate.Minute.ToString());
-                    createdDate = createdDate + ":" + ((returnItem.BackupDate.Second < 10) ? 0 + returnItem.BackupDate.Second.ToString() : returnItem.BackupDate.Second.ToString());
-                    backupInfo.CreatedDate = createdDate;
-                    backupInfo.MetadataFileName = returnItem.Metadataname;
-
-                    if (returnItem.Version == -1)
-                        backupInfo.Type = BackupTypes.Full;
-                    else
-                        backupInfo.Type = (BackupTypes)returnItem.BackupType; // 2 full - 1 inc - 0 diff - BATU' inc 1 - diff 0
-
+                    BackupInfo backupInfo = ConvertToBackupInfo(backupStorageItem, returnItem);
                     backupInfoList.Add(backupInfo);
                 }
 
@@ -230,7 +197,7 @@ namespace DiskBackup.Business.Concrete
 
         public BackupInfo GetBackupFile(BackupInfo backupInfo)
         {
-            // seçilen dosyanın bilgilerini sağ tarafta kullanabilmek için
+            // Bu fonksiyonu kullanır ve hata alınır ise ilk bakılması gereken yer BackupStorageIdleri
             _logger.Verbose("Get backup metodu çağırıldı. Parameter BackupInfo:{@BackupInfo}", backupInfo);
             var result = DiskTracker.CW_GetBackupsInDirectory(backupInfo.BackupStorageInfo.Path);
 
@@ -238,40 +205,8 @@ namespace DiskBackup.Business.Concrete
             {
                 if (resultItem.Version == backupInfo.Version && resultItem.BackupType.Equals(backupInfo.Type) && resultItem.DiskType.Equals(backupInfo.DiskType))
                 {
-                    backupInfo.Letter = resultItem.Letter;
-                    backupInfo.Version = resultItem.Version;
-                    backupInfo.OSVolume = resultItem.OSVolume;
-                    backupInfo.DiskType = resultItem.DiskType; //mbr gpt
-                    backupInfo.OS = resultItem.WindowsName;
-                    backupInfo.BackupTaskName = resultItem.TaskName;
-                    backupInfo.Description = resultItem.TaskDescription;
-                    backupInfo.BackupStorageInfo = backupInfo.BackupStorageInfo;
-                    backupInfo.BackupStorageInfoId = backupInfo.BackupStorageInfoId;
-                    backupInfo.Bootable = Convert.ToBoolean(resultItem.OSVolume);
-                    backupInfo.VolumeSize = (long)resultItem.VolumeTotalSize;
-                    backupInfo.StrVolumeSize = FormatBytes((long)resultItem.VolumeTotalSize);
-                    backupInfo.UsedSize = (long)resultItem.VolumeUsedSize;
-                    backupInfo.StrUsedSize = FormatBytes((long)resultItem.VolumeUsedSize);
-                    backupInfo.FileSize = (long)resultItem.BytesNeedToCopy;
-                    backupInfo.StrFileSize = FormatBytes((long)resultItem.BytesNeedToCopy);
-                    backupInfo.FileName = resultItem.Fullpath.Split('\\').Last();
-                    backupInfo.PCName = resultItem.ComputerName;
-                    backupInfo.IpAddress = resultItem.IpAdress;
-                    string createdDate = (resultItem.BackupDate.Day < 10) ? 0 + resultItem.BackupDate.Day.ToString() : resultItem.BackupDate.Day.ToString();
-                    createdDate = createdDate + "." + ((resultItem.BackupDate.Month < 10) ? 0 + resultItem.BackupDate.Month.ToString() : resultItem.BackupDate.Month.ToString());
-                    createdDate = createdDate + "." + resultItem.BackupDate.Year + " ";
-                    createdDate = createdDate + ((resultItem.BackupDate.Hour < 10) ? 0 + resultItem.BackupDate.Hour.ToString() : resultItem.BackupDate.Hour.ToString());
-                    createdDate = createdDate + ":" + ((resultItem.BackupDate.Minute < 10) ? 0 + resultItem.BackupDate.Minute.ToString() : resultItem.BackupDate.Minute.ToString());
-                    createdDate = createdDate + ":" + ((resultItem.BackupDate.Second < 10) ? 0 + resultItem.BackupDate.Second.ToString() : resultItem.BackupDate.Second.ToString());
-                    backupInfo.CreatedDate = createdDate;
-                    backupInfo.MetadataFileName = resultItem.Metadataname;
-
-                    if (resultItem.Version == -1)
-                        backupInfo.Type = BackupTypes.Full;
-                    else
-                        backupInfo.Type = (BackupTypes)resultItem.BackupType; // 2 full - 1 inc - 0 diff - BATU' inc 1 - diff 0
-
-                    return backupInfo;
+                    _logger.Verbose("-------------" + backupInfo.BackupStorageInfo.Id + " " + backupInfo.BackupStorageInfo.StorageName);
+                    return ConvertToBackupInfo(backupInfo.BackupStorageInfo, resultItem);
                 }
             }
 
@@ -767,6 +702,44 @@ namespace DiskBackup.Business.Concrete
         {
             _logger.Verbose("RestoreFilesInBackup metodu çağırıldı");
             _cSNarFileExplorer.CW_RestoreFile(fileId, backupDirectory, targetDirectory);
+        }
+
+        private BackupInfo ConvertToBackupInfo(BackupStorageInfo backupStorageItem, BackupMetadata backupMetadata)
+        {
+            BackupInfo backupInfo = new BackupInfo();
+            backupInfo.Letter = backupMetadata.Letter;
+            backupInfo.Version = backupMetadata.Version;
+            backupInfo.OSVolume = backupMetadata.OSVolume;
+            backupInfo.DiskType = backupMetadata.DiskType; //mbr gpt
+            backupInfo.OS = backupMetadata.WindowsName;
+            backupInfo.BackupTaskName = backupMetadata.TaskName;
+            backupInfo.Description = backupMetadata.TaskDescription;
+            backupInfo.BackupStorageInfo = backupStorageItem;
+            backupInfo.BackupStorageInfoId = backupStorageItem.Id;
+            backupInfo.Bootable = Convert.ToBoolean(backupMetadata.OSVolume);
+            backupInfo.VolumeSize = (long)backupMetadata.VolumeTotalSize;
+            backupInfo.StrVolumeSize = FormatBytes((long)backupMetadata.VolumeTotalSize);
+            backupInfo.UsedSize = (long)backupMetadata.VolumeUsedSize;
+            backupInfo.StrUsedSize = FormatBytes((long)backupMetadata.VolumeUsedSize);
+            backupInfo.FileSize = (long)backupMetadata.BytesNeedToCopy;
+            backupInfo.StrFileSize = FormatBytes((long)backupMetadata.BytesNeedToCopy);
+            backupInfo.FileName = backupMetadata.Fullpath.Split('\\').Last();
+            backupInfo.PCName = backupMetadata.ComputerName;
+            backupInfo.IpAddress = backupMetadata.IpAdress;
+            string createdDate = (backupMetadata.BackupDate.Day < 10) ? 0 + backupMetadata.BackupDate.Day.ToString() : backupMetadata.BackupDate.Day.ToString();
+            createdDate = createdDate + "." + ((backupMetadata.BackupDate.Month < 10) ? 0 + backupMetadata.BackupDate.Month.ToString() : backupMetadata.BackupDate.Month.ToString());
+            createdDate = createdDate + "." + backupMetadata.BackupDate.Year + " ";
+            createdDate = createdDate + ((backupMetadata.BackupDate.Hour < 10) ? 0 + backupMetadata.BackupDate.Hour.ToString() : backupMetadata.BackupDate.Hour.ToString());
+            createdDate = createdDate + ":" + ((backupMetadata.BackupDate.Minute < 10) ? 0 + backupMetadata.BackupDate.Minute.ToString() : backupMetadata.BackupDate.Minute.ToString());
+            createdDate = createdDate + ":" + ((backupMetadata.BackupDate.Second < 10) ? 0 + backupMetadata.BackupDate.Second.ToString() : backupMetadata.BackupDate.Second.ToString());
+            backupInfo.CreatedDate = createdDate;
+            backupInfo.MetadataFileName = backupMetadata.Metadataname;
+
+            if (backupMetadata.Version == -1)
+                backupInfo.Type = BackupTypes.Full;
+            else
+                backupInfo.Type = (BackupTypes)backupMetadata.BackupType; // 2 full - 1 inc - 0 diff - BATU' inc 1 - diff 0
+            return backupInfo;
         }
 
         private string FormatBytes(long bytes)

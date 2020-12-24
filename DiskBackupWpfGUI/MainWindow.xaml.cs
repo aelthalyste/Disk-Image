@@ -75,18 +75,19 @@ namespace DiskBackupWpfGUI
         {
             InitializeComponent();
 
+            Console.WriteLine(DateTime.Now);
+            
             _logger = logger.ForContext<MainWindow>();
-
             _backupStorageDal = backupStorageDal;
             _activityLogDal = activityLogDal;
             _backupTaskDal = backupTaskDal;
             _statusInfoDal = statusInfoDal;
             _taskInfoDal = taskInfoDal;
             _restoreTaskDal = restoreTaskDal;
-
             _scope = scope;
             var backupService = _scope.Resolve<IBackupService>();
             var backupStorageService = _scope.Resolve<IBackupStorageService>();
+
             if (!backupService.GetInitTracker())
                 MessageBox.Show("Driver intialize edilemedi!", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
 
@@ -95,7 +96,7 @@ namespace DiskBackupWpfGUI
 
             try
             {
-                _logger.Verbose("GetDiskList metoduna istekte bulunuldu");
+                _logger.Information("GetDiskList metoduna istekte bulunuldu");
                 _diskList = backupService.GetDiskList();
 
                 foreach (var diskItem in _diskList)
@@ -103,9 +104,7 @@ namespace DiskBackupWpfGUI
                     foreach (var volumeItem in diskItem.VolumeInfos)
                     {
                         _volumeList.Add(volumeItem);
-                        Console.WriteLine(volumeItem.Letter);
                     }
-                    Console.WriteLine(diskItem.DiskId);
                 }
 
                 listViewDisk.ItemsSource = _volumeList;
@@ -127,8 +126,8 @@ namespace DiskBackupWpfGUI
 
             #region Yedekleme alanları
 
-            _logger.Verbose("GetDiskList metoduna istekte bulunuldu");
-            _logger.Verbose("GetBackupStorages istekte bulunuldu");
+            _logger.Information("GetDiskList metoduna istekte bulunuldu");
+            _logger.Information("GetBackupStorages istekte bulunuldu");
 
             listViewBackupStorage.ItemsSource = GetBackupStorages(_volumeList, backupStorageService.BackupStorageInfoList());
 
@@ -143,8 +142,9 @@ namespace DiskBackupWpfGUI
 
 
             #region ActivityLog
+
             ShowActivityLog();
-            _logger.Verbose("GetDownLogList metoduna istekte bulunuldu");
+            _logger.Information("GetDownLogList metoduna istekte bulunuldu");
             _logList = backupService.GetDownLogList();
             listViewLogDown.ItemsSource = _logList;
 
@@ -167,6 +167,7 @@ namespace DiskBackupWpfGUI
             }
 
             #endregion
+
 
             RefreshTasks(_cancellationTokenSource.Token, backupService);
             this.Closing += (sender, e) => _cancellationTokenSource.Cancel();
