@@ -8,6 +8,7 @@ using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Security.AccessControl;
@@ -732,7 +733,7 @@ namespace DiskBackup.Business.Concrete
             createdDate = createdDate + ((backupMetadata.BackupDate.Hour < 10) ? 0 + backupMetadata.BackupDate.Hour.ToString() : backupMetadata.BackupDate.Hour.ToString());
             createdDate = createdDate + ":" + ((backupMetadata.BackupDate.Minute < 10) ? 0 + backupMetadata.BackupDate.Minute.ToString() : backupMetadata.BackupDate.Minute.ToString());
             createdDate = createdDate + ":" + ((backupMetadata.BackupDate.Second < 10) ? 0 + backupMetadata.BackupDate.Second.ToString() : backupMetadata.BackupDate.Second.ToString());
-            backupInfo.CreatedDate = createdDate;
+            backupInfo.CreatedDate = Convert.ToDateTime(createdDate, CultureInfo.CreateSpecificCulture("tr-TR")); ;
             backupInfo.MetadataFileName = backupMetadata.Metadataname;
 
             if (backupMetadata.Version == -1)

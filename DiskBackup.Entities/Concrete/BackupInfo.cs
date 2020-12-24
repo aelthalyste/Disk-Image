@@ -16,7 +16,7 @@ namespace DiskBackup.Entities.Concrete
         public BackupTypes Type { get; set; }
         public string FileName { get; set; }
         public string MetadataFileName { get; set; }
-        public string CreatedDate { get; set; }
+        public DateTime CreatedDate { get; set; }
         public string BackupTaskName { get; set; }
         public long VolumeSize { get; set; }
         public string StrVolumeSize { get; set; }
