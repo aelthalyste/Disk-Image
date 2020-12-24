@@ -34,7 +34,7 @@ namespace DiskBackup.TaskScheduler.Jobs
 
         public Task Execute(IJobExecutionContext context)
         {
-            bool result = false;
+            byte result = 0;
             bool availableResult = false;
             var taskId = int.Parse(context.JobDetail.JobDataMap["taskId"].ToString());
             var task = _taskInfoDal.Get(x => x.Id == taskId);
@@ -91,20 +91,26 @@ namespace DiskBackup.TaskScheduler.Jobs
             catch (Exception e)
             {
                 _logger.Error(e, "{@Task} restore volume görevinde hata oluştu.", task);
-                result = false;
+                result = 0;
                 availableResult = false;
             }
 
-            if (result || availableResult)
+            if (result == 1 || availableResult)
             {
                 _logger.Verbose("{@task} volume job'ın result true ifindeyim", task);
                 activityLog.Status = StatusType.Success;
                 UpdateActivityAndTask(activityLog, task);
             }
-            else
+            else if (result == 0)
             {
                 _logger.Verbose("{@task} volume job'ın result false ifindeyim", task);
                 activityLog.Status = StatusType.Fail;
+                UpdateActivityAndTask(activityLog, task);
+            }
+            else if (result == 2)
+            {
+                _logger.Verbose("{@task} volume job'ın result bağlantı hatası ifindeyim", task);
+                activityLog.Status = StatusType.ConnectionError;
                 UpdateActivityAndTask(activityLog, task);
             }
 

@@ -214,7 +214,7 @@ namespace DiskBackup.Business.Concrete
             return null;
         }
 
-        public bool RestoreBackupVolume(TaskInfo taskInfo)
+        public byte RestoreBackupVolume(TaskInfo taskInfo)
         {
             _logger.Verbose("RestoreBackupVolume metodu çağırıldı");
             // rootDir = K:\O'yu K'ya Backup\Nar_BACKUP.nb -- hangi backup dosyası olduğu bulunup öyle verilmeli
@@ -228,13 +228,12 @@ namespace DiskBackup.Business.Concrete
                 catch (Exception ex)
                 {
                     _logger.Error(ex, "Uzak paylaşıma bağlanılamadığı için restore gerçekleştirilemiyor. {path}", taskInfo.BackupStorageInfo.Path);
-                    return false;
+                    return 2;
                 }
             }
 
             string backupName = taskInfo.RestoreTaskInfo.RootDir.Split('\\').Last();
             string newRootDir = taskInfo.RestoreTaskInfo.RootDir.Substring(0, taskInfo.RestoreTaskInfo.RootDir.Length - backupName.Length);
-
             var resultList = DiskTracker.CW_GetBackupsInDirectory(newRootDir);
             BackupMetadata backupMetadata = new BackupMetadata();
 
@@ -244,7 +243,7 @@ namespace DiskBackup.Business.Concrete
                 {
                     backupMetadata = item;
                     _logger.Verbose("|{@restoreTaskId}| restore taskı için restoreVolume gerçekleştirilecek.", taskInfo.RestoreTaskInfo.Id);
-                    return DiskTracker.CW_RestoreToVolume(taskInfo.RestoreTaskInfo.TargetLetter[0], backupMetadata, true, newRootDir); //true gidecek
+                    return Convert.ToByte(DiskTracker.CW_RestoreToVolume(taskInfo.RestoreTaskInfo.TargetLetter[0], backupMetadata, true, newRootDir)); //true gidecek
                 }
             }
 
@@ -252,11 +251,10 @@ namespace DiskBackup.Business.Concrete
                 nc.Dispose();
 
             _logger.Verbose("|{@restoreTaskId}| restore taskı için backupMetadata bulunamadı.", taskInfo.RestoreTaskInfo.Id);
-            return false;
-            //return DiskTracker.CW_RestoreToVolume(restoreTask.TargetLetter[0], restoreTask.SourceLetter[0], restoreTask.BackupVersion, true, restoreTask.RootDir); //true gidecek
+            return 0;
         }
 
-        public bool RestoreBackupDisk(TaskInfo taskInfo)
+        public byte RestoreBackupDisk(TaskInfo taskInfo)
         {
             _logger.Verbose("RestoreBackupDisk metodu çağırıldı");
             // rootDir = K:\O'yu K'ya Backup\Nar_BACKUP.nb -- hangi backup dosyası olduğu bulunup öyle verilmeli
@@ -270,13 +268,12 @@ namespace DiskBackup.Business.Concrete
                 catch (Exception ex)
                 {
                     _logger.Error(ex, "Uzak paylaşıma bağlanılamadığı için restore gerçekleştirilemiyor. {path}", taskInfo.BackupStorageInfo.Path);
-                    return false;
+                    return 2;
                 }
             }
 
             string backupName = taskInfo.RestoreTaskInfo.RootDir.Split('\\').Last();
             string newRootDir = taskInfo.RestoreTaskInfo.RootDir.Substring(0, taskInfo.RestoreTaskInfo.RootDir.Length - backupName.Length);
-
             var resultList = DiskTracker.CW_GetBackupsInDirectory(newRootDir);
             BackupMetadata backupMetadata = new BackupMetadata();
 
@@ -286,7 +283,7 @@ namespace DiskBackup.Business.Concrete
                 {
                     backupMetadata = item;
                     _logger.Verbose("|{@restoreTaskId}| restore taskı için restoreDisk gerçekleştirilecek.", taskInfo.RestoreTaskInfo.Id);
-                    return DiskTracker.CW_RestoreToFreshDisk(taskInfo.RestoreTaskInfo.TargetLetter[0], backupMetadata, taskInfo.RestoreTaskInfo.DiskId, newRootDir);
+                    return Convert.ToByte(DiskTracker.CW_RestoreToFreshDisk(taskInfo.RestoreTaskInfo.TargetLetter[0], backupMetadata, taskInfo.RestoreTaskInfo.DiskId, newRootDir));
                 }
             }
 
@@ -294,8 +291,7 @@ namespace DiskBackup.Business.Concrete
                 nc.Dispose();
 
             _logger.Verbose("|{@restoreTaskId}| restore taskı için backupMetadata bulunamadı.", taskInfo.RestoreTaskInfo.Id);
-            return false;
-            //return DiskTracker.CW_RestoreToFreshDisk(restoreTask.TargetLetter[0], restoreTask.SourceLetter[0], restoreTask.BackupVersion, restoreTask.DiskId, restoreTask.RootDir);
+            return 0;
         }
 
         public bool CleanChain(char letter)
@@ -523,23 +519,19 @@ namespace DiskBackup.Business.Concrete
             {
                 foreach (var volumeItem in diskItem.VolumeInfos)
                 {
-                    if (taskInfo.BackupStorageInfo.Type == BackupStorageType.Windows)
+                    if (taskInfo.BackupStorageInfo.Type == BackupStorageType.Windows &&
+                        taskInfo.BackupStorageInfo.Path[0] == volumeItem.Letter &&
+                        volumeItem.FreeSize < ((long)str.CopySize + 2147483648))
                     {
-                        if (taskInfo.BackupStorageInfo.Path[0] == volumeItem.Letter)
-                        {
-                            if (volumeItem.FreeSize < ((long)str.CopySize + 2147483648))
-                            {
-                                _logger.Information("Volume Free Size: {FreeSize}, CopySize: {copySize}, ClusterSize: {cluster} ", volumeItem.FreeSize, str.CopySize, str.ClusterSize);
+                        _logger.Information("Volume Free Size: {FreeSize}, CopySize: {copySize}, ClusterSize: {cluster} ", volumeItem.FreeSize, str.CopySize, str.ClusterSize);
 
-                                statusInfo.DataProcessed = BytesReadSoFar;
-                                statusInfo.TotalDataProcessed = (long)str.CopySize;
-                                statusInfo.AverageDataRate = 0; // MB/s
-                                statusInfo.InstantDataRate = 0; // MB/s
-                                statusInfo.TimeElapsed = timeElapsed.ElapsedMilliseconds;
-                                _statusInfoDal.Update(statusInfo);
-                                return false;
-                            }
-                        }
+                        statusInfo.DataProcessed = BytesReadSoFar;
+                        statusInfo.TotalDataProcessed = (long)str.CopySize;
+                        statusInfo.AverageDataRate = 0; // MB/s
+                        statusInfo.InstantDataRate = 0; // MB/s
+                        statusInfo.TimeElapsed = timeElapsed.ElapsedMilliseconds;
+                        _statusInfoDal.Update(statusInfo);
+                        return false;
                     }
                 }
             }
@@ -657,7 +649,7 @@ namespace DiskBackup.Business.Concrete
 
             CSNarFileEntry cSNarFileEntry = new CSNarFileEntry();
             cSNarFileEntry.ID = (ulong)filesInBackup.Id;
-            cSNarFileEntry.IsDirectory = Convert.ToBoolean(filesInBackup.Type); //bool demişti short dönüyor? 1-0 hangisi file hangisi folder
+            cSNarFileEntry.IsDirectory = Convert.ToBoolean(filesInBackup.Type);
             cSNarFileEntry.Name = filesInBackup.Name;
             cSNarFileEntry.Size = (ulong)filesInBackup.Size;
             //tarihler eklenecek. oluşturma tarihi önemli mi?
