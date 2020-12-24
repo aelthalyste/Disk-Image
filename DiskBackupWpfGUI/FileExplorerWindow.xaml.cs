@@ -118,19 +118,22 @@ namespace DiskBackupWpfGUI
 
         private void listViewFileExplorer_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
-            FilesInBackup filesInBackup = (FilesInBackup)listViewFileExplorer.SelectedItem;
-
-            foreach (var item in _filesInBackupList)
+            if (listViewFileExplorer.SelectedIndex != -1)
             {
-                if(item.Name.Equals(filesInBackup.Name) && item.StrSize.Equals(filesInBackup.StrSize))
+                FilesInBackup filesInBackup = (FilesInBackup)listViewFileExplorer.SelectedItem;
+
+                foreach (var item in _filesInBackupList)
                 {
-                    _backupManager.GetSelectedFileInfo(item);
-                    _filesInBackupList = _backupManager.GetFileInfoList();
-                    RemoveSystemFiles();
-                    listViewFileExplorer.ItemsSource = _filesInBackupList;
-                    SortItems();
-                    txtfileExplorerPath.Text = _backupManager.GetCurrentDirectory();
-                    break;
+                    if (item.Name.Equals(filesInBackup.Name) && item.StrSize.Equals(filesInBackup.StrSize))
+                    {
+                        _backupManager.GetSelectedFileInfo(item);
+                        _filesInBackupList = _backupManager.GetFileInfoList();
+                        RemoveSystemFiles();
+                        listViewFileExplorer.ItemsSource = _filesInBackupList;
+                        SortItems();
+                        txtfileExplorerPath.Text = _backupManager.GetCurrentDirectory();
+                        break;
+                    }
                 }
             }
         }

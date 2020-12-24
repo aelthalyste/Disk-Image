@@ -182,9 +182,10 @@ namespace DiskBackup.Business.Concrete
                     }
                 }
                 var returnList = DiskTracker.CW_GetBackupsInDirectory(backupStorageItem.Path);
-
+                _logger.Information("------------------------KONTROL------------------------------");
                 foreach (var returnItem in returnList)
                 {
+                    _logger.Information(returnItem.Version + " - " + returnItem.Fullpath);
                     BackupInfo backupInfo = ConvertToBackupInfo(backupStorageItem, returnItem);
                     backupInfoList.Add(backupInfo);
                 }
@@ -258,6 +259,7 @@ namespace DiskBackup.Business.Concrete
             return 0;
         }
 
+        //Informationları sil
         private bool ChainInTheSameDirectory(List<BackupMetadata> backupMetadataList, BackupMetadata backupMetadata)
         {
             // Tüm dosyalar aynı dizinde mi kontrolü yap
@@ -290,8 +292,7 @@ namespace DiskBackup.Business.Concrete
                     {
                         _logger.Information("if (chainList[0].Version == -1) FALSE");
                         return false;
-                    }
-                                           
+                    }                                          
                 }
                 else if (backupMetadata.BackupType == 1) // 1 inc - inc restore
                 {
