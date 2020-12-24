@@ -379,7 +379,7 @@
                                         </GridViewColumn.Header>
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
-                                                <TextBlock Text="{Binding LastWorkingDate, StringFormat='dd.MM.yyyy HH:mm'}" Style="{StaticResource MTBListViewLastWorkingDate}" TextAlignment="Center"/>
+                                                <TextBlock Text="{Binding LastWorkingDate}" Style="{StaticResource MTBListViewLastWorkingDate}" TextAlignment="Center"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
@@ -389,7 +389,7 @@
                                         </GridViewColumn.Header>
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
-                                                <TextBlock Text="{Binding NextDate, StringFormat='dd.MM.yyyy HH:mm'}" Style="{StaticResource MTBListViewNextDate}" TextAlignment="Center"/>
+                                                <TextBlock Text="{Binding NextDate}" Style="{StaticResource MTBListViewNextDate}" TextAlignment="Center"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
@@ -1262,7 +1262,7 @@
                                         </GridViewColumn.Header>
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
-                                                <TextBlock Text="{Binding StartDate, StringFormat='dd.MM.yyyy HH:mm'}" TextAlignment="Center"/>
+                                                <TextBlock Text="{Binding StartDate}" TextAlignment="Center"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
@@ -1272,7 +1272,8 @@
                                         </GridViewColumn.Header>
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
-                                                <TextBlock Text="{Binding EndDate, StringFormat='dd.MM.yyyy HH:mm'}" TextAlignment="Center"/>
+                                                <!--<TextBlock Text="{Binding EndDate, StringFormat='g'}" TextAlignment="Center"/> Saniyeleri kaldırıyor-->
+                                                <TextBlock Text="{Binding EndDate}" TextAlignment="Center"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
