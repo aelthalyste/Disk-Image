@@ -26,9 +26,6 @@ namespace DiskBackupWpfGUI
     /// </summary>
     public partial class AddBackupAreaWindow : Window
     {
-        // Nar depolama ve lisans bilgileri için uç alınacak
-        // NAS kısmı gerçekleştirilecek
-
         private IBackupStorageService _backupStorageService;
         private ITaskSchedulerManager _taskSchedulerManager;
         private readonly IBackupStorageDal _backupStorageDal;
@@ -37,7 +34,6 @@ namespace DiskBackupWpfGUI
 
         private bool _showSettings = false;
         private bool _updateControl = false;
-
         private int _updateId;
 
         public AddBackupAreaWindow(IBackupStorageService backupStorageService, IBackupStorageDal backupStorageDal, ILogger logger, ITaskInfoDal taskInfoDal, ITaskSchedulerManager taskSchedulerManager)
@@ -336,7 +332,14 @@ namespace DiskBackupWpfGUI
 
                         if (itemTask.ScheduleId != null && itemTask.ScheduleId != "")
                         {
-                            _taskSchedulerManager.DeleteJob(itemTask.ScheduleId);
+                            try
+                            {
+                                _taskSchedulerManager.DeleteJob(itemTask.ScheduleId);
+                            }
+                            catch (Exception ex)
+                            {
+                                _logger.Error(ex, "Jobı silme işlemi gerçekleştirilemiyor. |_taskSchedulerManager.DeleteJob()|");
+                            }
                             itemTask.ScheduleId = "";
                         }
 
@@ -430,11 +433,29 @@ namespace DiskBackupWpfGUI
 
         private void UpdateAndShowResult(BackupStorageInfo backupStorageInfo)
         {
-            if (backupStorageInfo.Type == BackupStorageType.NAS)
+            try
             {
-                if (_backupStorageService.ValidateNasConnection(backupStorageInfo.Path.Substring(0, backupStorageInfo.Path.Length - 1), backupStorageInfo.Username, backupStorageInfo.Password, backupStorageInfo.Domain))
+                if (backupStorageInfo.Type == BackupStorageType.NAS)
                 {
-                    // güncelleme yap
+                    if (_backupStorageService.ValidateNasConnection(backupStorageInfo.Path.Substring(0, backupStorageInfo.Path.Length - 1), backupStorageInfo.Username, backupStorageInfo.Password, backupStorageInfo.Domain))
+                    {
+                        // güncelleme yap
+                        var result = _backupStorageService.UpdateBackupStorage(backupStorageInfo);
+                        if (result)
+                        {
+                            Close();
+                            MessageBox.Show("Güncelleme işlemi başarılı", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Information);
+                        }
+                        else
+                            MessageBox.Show("Güncelleme işlemi başarısız", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+                    }
+                    else
+                    {
+                        MessageBox.Show("Girdiğiniz NAS bilgileri hatalıdır", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+                    }
+                }
+                else
+                {
                     var result = _backupStorageService.UpdateBackupStorage(backupStorageInfo);
                     if (result)
                     {
@@ -444,31 +465,41 @@ namespace DiskBackupWpfGUI
                     else
                         MessageBox.Show("Güncelleme işlemi başarısız", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
                 }
-                else
-                {
-                    MessageBox.Show("Girdiğiniz NAS bilgileri hatalıdır", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
-                }
             }
-            else
+            catch (Exception ex)
             {
-                var result = _backupStorageService.UpdateBackupStorage(backupStorageInfo);
-                if (result)
-                {
-                    Close();
-                    MessageBox.Show("Güncelleme işlemi başarılı", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Information);
-                }
-                else
-                    MessageBox.Show("Güncelleme işlemi başarısız", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+                _logger.Error(ex, "Beklenmedik hatadan dolayı güncelleme işlemi başarılı olamadı.");
+                MessageBox.Show("Beklenmedik hata oluştu. Güncelleme işlemi başarılı olamadı.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
             }
+
         }
 
         private void AddAndShowResult(BackupStorageInfo backupStorageInfo)
         {
-            if (backupStorageInfo.Type == BackupStorageType.NAS)
+            try
             {
-                if (_backupStorageService.ValidateNasConnection(backupStorageInfo.Path.Substring(0, backupStorageInfo.Path.Length - 1), backupStorageInfo.Username, backupStorageInfo.Password, backupStorageInfo.Domain))
+                if (backupStorageInfo.Type == BackupStorageType.NAS)
                 {
-                    // ekleme yap
+                    if (_backupStorageService.ValidateNasConnection(backupStorageInfo.Path.Substring(0, backupStorageInfo.Path.Length - 1), backupStorageInfo.Username, backupStorageInfo.Password, backupStorageInfo.Domain))
+                    {
+                        // ekleme yap
+                        var result = _backupStorageService.AddBackupStorage(backupStorageInfo);
+                        if (result)
+                        {
+                            Close();
+                            MessageBox.Show("Ekleme işlemi başarılı", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Information);
+                        }
+                        else
+                            MessageBox.Show("Ekleme işlemi başarısız", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+                    }
+                    else
+                    {
+                        MessageBox.Show("Girdiğiniz NAS bilgileri hatalıdır", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+                    }
+                }
+                else
+                {
+                    // kayıt et
                     var result = _backupStorageService.AddBackupStorage(backupStorageInfo);
                     if (result)
                     {
@@ -478,23 +509,13 @@ namespace DiskBackupWpfGUI
                     else
                         MessageBox.Show("Ekleme işlemi başarısız", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
                 }
-                else
-                {
-                    MessageBox.Show("Girdiğiniz NAS bilgileri hatalıdır", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
-                }
             }
-            else
+            catch (Exception ex)
             {
-                // kayıt et
-                var result = _backupStorageService.AddBackupStorage(backupStorageInfo);
-                if (result)
-                {
-                    Close();
-                    MessageBox.Show("Ekleme işlemi başarılı", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Information);
-                }
-                else
-                    MessageBox.Show("Ekleme işlemi başarısız", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+                _logger.Error(ex, "Beklenmedik hatadan dolayı ekleme işlemi başarılı olamadı.");
+                MessageBox.Show("Beklenmedik hata oluştu. Ekleme işlemi başarılı olamadı.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
             }
+
         }
 
         private void btnValidateConnection_Click(object sender, RoutedEventArgs e)
@@ -507,17 +528,23 @@ namespace DiskBackupWpfGUI
                 Password = txtSettingsNASPassword.Password
             };
 
-            if (_backupStorageService.ValidateNasConnection(backupStorageInfo.Path.Substring(0, backupStorageInfo.Path.Length - 1), backupStorageInfo.Username, backupStorageInfo.Password, backupStorageInfo.Domain))
+            try
             {
-                //doğrulama başarılı
-                imgValidateConnectionFalse.Visibility = Visibility.Collapsed;
-                imgValidateConnectionTrue.Visibility = Visibility.Visible;
+                if (_backupStorageService.ValidateNasConnection(backupStorageInfo.Path.Substring(0, backupStorageInfo.Path.Length - 1), backupStorageInfo.Username, backupStorageInfo.Password, backupStorageInfo.Domain))
+                {
+                    //doğrulama başarılı
+                    imgValidateConnectionFalse.Visibility = Visibility.Collapsed;
+                    imgValidateConnectionTrue.Visibility = Visibility.Visible;
+                }
+                else
+                {
+                    //başarısız
+                    imgValidateConnectionFalse.Visibility = Visibility.Visible;
+                    imgValidateConnectionTrue.Visibility = Visibility.Collapsed;
+                }
             }
-            else
+            catch
             {
-                //başarısız
-                imgValidateConnectionFalse.Visibility = Visibility.Visible;
-                imgValidateConnectionTrue.Visibility = Visibility.Collapsed;
             }
         }
     }

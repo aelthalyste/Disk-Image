@@ -2163,7 +2163,11 @@ namespace DiskBackupWpfGUI
 
         private void btnFilesDelete_Click(object sender, RoutedEventArgs e)
         {
-
+            var backupInfo = (BackupInfo)listViewBackups.SelectedItem;
+            if (backupInfo.BackupStorageInfo.Type == BackupStorageType.NAS)
+            {
+                MessageBox.Show("NAS bilgileri girilmeli");
+            }
         }
 
 
