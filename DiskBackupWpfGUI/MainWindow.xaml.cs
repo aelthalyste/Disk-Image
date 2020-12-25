@@ -2166,12 +2166,14 @@ namespace DiskBackupWpfGUI
             var backupInfo = (BackupInfo)listViewBackups.SelectedItem;
             if (backupInfo.BackupStorageInfo.Type == BackupStorageType.NAS)
             {
-                MessageBox.Show("NAS bilgileri girilmeli");
+                using (var scope = _scope.BeginLifetimeScope())
+                {
+                    ValidateNASWindow newCreateTask = scope.Resolve<ValidateNASWindow>(new TypedParameter(backupInfo.BackupStorageInfo.GetType(), backupInfo.BackupStorageInfo));
+                    newCreateTask.ShowDialog();
+                }
             }
         }
 
 
     }
-
-
 }

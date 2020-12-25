@@ -5,9 +5,9 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:DiskBackupWpfGUI"
         mc:Ignorable="d"
-        Title="{DynamicResource ValidateNAS}" 
+        Title="{DynamicResource ValidateNAS}"
         Height="250" 
-        Width="470" 
+        Width="450" 
         ResizeMode="CanMinimize" 
         WindowStartupLocation="CenterScreen" 
         Icon="Resources/Icon/NarBulut_PNG_Icon_White_V3.png" 
@@ -26,7 +26,7 @@
 
         <StackPanel Panel.ZIndex="1" Orientation="Horizontal" HorizontalAlignment="Center" MouseDown="MyTitleBar_MouseDown">
             <Image Source="Resources/Icon/NarBulut_PNG_Icon_White_V3.png" Margin="0,0,5,0"/>
-            <TextBlock Name="txtTitleBar" Style="{StaticResource TitleBarText}"></TextBlock>
+            <TextBlock Name="txtTitleBar" Text="{DynamicResource ValidateNAS}" Style="{StaticResource TitleBarText}"></TextBlock>
         </StackPanel>
         <StackPanel Name="MyTitleBar" VerticalAlignment="Top" MouseDown="MyTitleBar_MouseDown">
             <Border Background="#27527B" Height="30">
@@ -36,10 +36,9 @@
             </Border>
         </StackPanel>
 
-
         <Grid Margin="20,20,0,0" Grid.Row="1">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="150"/>
+                <ColumnDefinition Width="130"/>
                 <ColumnDefinition/>
             </Grid.ColumnDefinitions>
             <Grid.RowDefinitions>
@@ -53,15 +52,11 @@
             <TextBlock Text="{DynamicResource userName}" Grid.Row="2" Grid.Column="0"/>
             <TextBlock Text="{DynamicResource password}" Grid.Row="3" Grid.Column="0"/>
 
-            <TextBox Name="txtSettingsNASFolderPath" Grid.Row="0" Grid.Column="1" Width="250" Height="22" Margin="0,0,0,10" Padding="0,0,22,0" HorizontalAlignment="Left" VerticalContentAlignment="Center"/>
-            <StackPanel Grid.Row="0" Grid.Column="1" HorizontalAlignment="Left" Margin="229,1,0,0">
-                <Button Name="btnSettingsNASFolder" Style="{StaticResource ArrowUpButton}" Click="btnSettingsNASFolder_Click" Content="..." Width="20" Height="20" FontSize="15" />
-            </StackPanel>
-            <TextBox Name="txtSettingsNASDomain" Grid.Row="1" Grid.Column="1" Width="250" Height="22" Margin="0,0,0,10" HorizontalAlignment="Left" VerticalContentAlignment="Center"/>
-            <TextBox Name="txtSettingsNASUserName" Grid.Row="2" Grid.Column="1" Width="250" Height="22" Margin="0,0,0,10" HorizontalAlignment="Left" VerticalContentAlignment="Center"/>
-            <PasswordBox Name="txtSettingsNASPassword" Grid.Row="3" Grid.Column="1" Width="250" Height="22" Margin="0,0,0,10" HorizontalAlignment="Left" VerticalContentAlignment="Center"/>
-            
-        </Grid>
+            <TextBox Name="txtValidateNASFolderPath" Grid.Row="0" Grid.Column="1" Width="250" Height="22" Margin="0,0,0,10" Padding="0,0,22,0" HorizontalAlignment="Left" VerticalContentAlignment="Center" IsEnabled="False"/>
+            <TextBox Name="txtValidateNASDomain" Grid.Row="1" Grid.Column="1" Width="250" Height="22" Margin="0,0,0,10" HorizontalAlignment="Left" VerticalContentAlignment="Center" IsEnabled="False"/>
+            <TextBox Name="txtValidateNASUserName" Grid.Row="2" Grid.Column="1" Width="250" Height="22" Margin="0,0,0,10" HorizontalAlignment="Left" VerticalContentAlignment="Center" IsEnabled="False"/>
+            <PasswordBox Name="txtValidateNASPassword" Grid.Row="3" Grid.Column="1" Width="250" Height="22" Margin="0,0,0,10" HorizontalAlignment="Left" VerticalContentAlignment="Center"/>
+        </Grid>                   
 
         <Button Name="btnValidateNAS" ToolTip="{DynamicResource ValidateConnection}" Click="btnValidateNAS_Click" Grid.Row="2" Width="110" Height="25" HorizontalAlignment="Right"  Margin="30,0"  Style="{StaticResource WhiteButton}" Grid.Column="1">
             <Button.Content>
@@ -77,7 +72,7 @@
                 </Style>
             </Image.Style>
         </Image>
-        <Image Name="imgValidateConnectionTrue" Height="25" Width="25" Grid.Row="5" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="110,0,0,0" Visibility="Hidden">
+        <Image Name="imgValidateConnectionTrue" Height="25" Width="25" Grid.Row="5" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="110,0,0,0" Visibility="Hidden">
             <Image.Style>
                 <Style TargetType="Image">
                     <Setter Property="Source" Value="Resources/Icon/icons8_ok_3.ico"/>

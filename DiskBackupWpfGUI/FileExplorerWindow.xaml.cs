@@ -58,8 +58,8 @@ namespace DiskBackupWpfGUI
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show($"Backup dosyaları uzak paylaşıma bağlanılamadığından gösterilemiyor. {backupStorageInfo.Path}", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
                     _logger.Error(ex, "Uzak paylaşıma bağlanılamadığı için file explorer açılamıyor.");
+                    MessageBox.Show($"Backup dosyaları uzak paylaşıma bağlanılamadığından gösterilemiyor. {backupStorageInfo.Path}", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
                     return;
                 }
             }
@@ -75,8 +75,8 @@ namespace DiskBackupWpfGUI
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Beklenmedik bir hata ile karşılaşıldığından bu işleme devam edilemiyor.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
                 _logger.Error(ex, "Beklenmedik hatadan dolayı file explorer açılamıyor.");
+                MessageBox.Show($"Beklenmedik bir hata ile karşılaşıldığından bu işleme devam edilemiyor.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
             
@@ -244,8 +244,8 @@ namespace DiskBackupWpfGUI
                     }
                     catch (Exception ex)
                     {
-                        MessageBox.Show($"Beklenmedik bir hata ile karşılaşıldığından bu işleme devam edilemiyor.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
                         _logger.Error(ex, $"Dosya restore işlemi gerçekleştirilemedi. {"item.Id: " + item.Id + " txtFolderPath.Text: " + txtFolderPath.Text}");
+                        MessageBox.Show($"Beklenmedik bir hata ile karşılaşıldığından bu işleme devam edilemiyor.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
                     }
                 }
             }
