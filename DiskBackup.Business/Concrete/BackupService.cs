@@ -180,7 +180,6 @@ namespace DiskBackup.Business.Concrete
                         {
                             volumeInfo.DiskType = "GPT";
                             volumeInfo.Status = "Sağlıklı";
-
                         }
                         diskList[index].VolumeInfos.Add(volumeInfo);
                     }

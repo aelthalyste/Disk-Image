@@ -47,8 +47,6 @@ namespace DiskBackupWpfGUI
         {
             try
             {
-                // validate yerine connection açılacak
-
                 if (_backupStorageService.ValidateNasConnection(_backupStorageInfo.Path.Substring(0, _backupStorageInfo.Path.Length - 1), _backupStorageInfo.Username, txtValidateNASPassword.Password, _backupStorageInfo.Domain))
                 {
                     //doğrulama başarılı
@@ -56,6 +54,12 @@ namespace DiskBackupWpfGUI
                     imgValidateConnectionTrue.Visibility = Visibility.Visible;
 
                     // diğer pencereler burada flag'e göre açılacak
+
+                    // restore NAS dosyasının restore'u
+                    
+                    // file explorer
+
+                    // silme işlemi eğer silmeyle gelindiyse
                 }
                 else
                 {
@@ -67,8 +71,6 @@ namespace DiskBackupWpfGUI
             catch
             {
             }
-
-            // bağlantı kapatılacak
         }
 
         private void btnValidateNASClose_Click(object sender, RoutedEventArgs e)
