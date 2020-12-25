@@ -33,7 +33,6 @@ namespace DiskBackupWpfGUI
 
         private List<FilesInBackup> _filesInBackupList = new List<FilesInBackup>();
         private BackupInfo _backupInfo;
-        private NetworkConnection _nc;
 
         private bool _fileAllControl;
 
@@ -44,25 +43,6 @@ namespace DiskBackupWpfGUI
             _backupManager = backupManager;
             _backupInfo = backupInfo;
             _logger = logger.ForContext<FileExplorerWindow>();
-            _nc = null;
-
-            var backupStorageInfo = _backupStorageDal.Get(x => x.Id == backupInfo.BackupStorageInfoId);
-            if (backupStorageInfo.Type == BackupStorageType.NAS)
-            {
-                try
-                {
-                    if (backupStorageInfo.Type == BackupStorageType.NAS)
-                    {
-                        _nc = new NetworkConnection(backupStorageInfo.Path.Substring(0, backupStorageInfo.Path.Length - 1), backupStorageInfo.Username, backupStorageInfo.Password, backupStorageInfo.Domain);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    _logger.Error(ex, "Uzak paylaşıma bağlanılamadığı için file explorer açılamıyor.");
-                    MessageBox.Show($"Backup dosyaları uzak paylaşıma bağlanılamadığından gösterilemiyor. {backupStorageInfo.Path}", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
-                    return;
-                }
-            }
 
             try
             {
@@ -93,8 +73,6 @@ namespace DiskBackupWpfGUI
             {
                 _logger.Error(ex, "Beklenmedik hata oluştu. |_backupManager.FreeFileExplorer()|");
             }
-            if (_nc != null)
-                _nc.Dispose();
             Close();
         }
 

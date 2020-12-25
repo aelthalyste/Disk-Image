@@ -36,13 +36,17 @@ namespace DiskBackup.Business.Concrete
 
         private readonly IStatusInfoDal _statusInfoDal; // status bilgilerini veritabanına yazabilmek için gerekli
         private readonly ITaskInfoDal _taskInfoDal; // status bilgilerini veritabanına yazabilmek için gerekli
+        private readonly IBackupStorageDal _backupStorageDal;
         private readonly ILogger _logger;
 
-        public BackupService(IStatusInfoDal statusInfoRepository, ITaskInfoDal taskInfoDal, ILogger logger)
+        private NetworkConnection _nc;
+
+        public BackupService(IStatusInfoDal statusInfoRepository, ITaskInfoDal taskInfoDal, ILogger logger, IBackupStorageDal backupStorageDal)
         {
             _statusInfoDal = statusInfoRepository;
             _taskInfoDal = taskInfoDal;
             _logger = logger.ForContext<BackupService>();
+            _backupStorageDal = backupStorageDal;
         }
 
         public bool InitTracker()
@@ -52,8 +56,17 @@ namespace DiskBackup.Business.Concrete
             _logger.Verbose("InitTracker metodu çağırıldı");
             if (!_isStarted)
             {
-                _initTrackerResult = _diskTracker.CW_InitTracker();
-                _isStarted = true;
+                try
+                {
+                    _initTrackerResult = _diskTracker.CW_InitTracker();
+                    _isStarted = true;
+                }
+                catch (Exception ex)
+                {
+                    _isStarted = false;
+                    _logger.Error(ex, "_diskTracker.CW_InitTracker() gerçekleştirilemedi.");
+                }
+
             }
             return _initTrackerResult;
         }
@@ -92,7 +105,31 @@ namespace DiskBackup.Business.Concrete
         {
             _logger.Verbose("InitFileExplorer metodu çağırıldı");
             _logger.Verbose("İnitFileExplorer: {path}, {name}", backupInfo.BackupStorageInfo.Path, backupInfo.MetadataFileName);
-            _cSNarFileExplorer.CW_Init(backupInfo.BackupStorageInfo.Path, backupInfo.MetadataFileName); // isim eklenmesi gerekmeli gibi
+            var backupStorageInfo = _backupStorageDal.Get(x => x.Id == backupInfo.BackupStorageInfoId);
+            if (backupStorageInfo.Type == BackupStorageType.NAS)
+            {
+                try
+                {
+                    if (backupStorageInfo.Type == BackupStorageType.NAS)
+                    {
+                        _nc = new NetworkConnection(backupStorageInfo.Path.Substring(0, backupStorageInfo.Path.Length - 1), backupStorageInfo.Username, backupStorageInfo.Password, backupStorageInfo.Domain);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.Error(ex, "Uzak paylaşıma bağlanılamadığı için file explorer açılamıyor.");
+                    return;
+                }
+            }
+
+            try
+            {
+                _cSNarFileExplorer.CW_Init(backupInfo.BackupStorageInfo.Path, backupInfo.MetadataFileName); // isim eklenmesi gerekmeli gibi
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "_cSNarFileExplorer.CW_Init() gerçekleştirilemedi.");
+            }
         }
 
         public List<DiskInformation> GetDiskList()
@@ -365,7 +402,15 @@ namespace DiskBackup.Business.Concrete
         {
             _logger.Verbose("CleanChain metodu çağırıldı");
             _logger.Information("{letter} zinciri temizleniyor.", letter);
-            return _diskTracker.CW_RemoveFromTrack(letter);
+            try
+            {
+                return _diskTracker.CW_RemoveFromTrack(letter);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "_diskTracker.CW_RemoveFromTrack() gerçekleştirilemedi.");
+            }
+            return false;
         }
 
         public char AvailableVolumeLetter()
@@ -678,28 +723,35 @@ namespace DiskBackup.Business.Concrete
         public List<FilesInBackup> GetFileInfoList()
         {
             _logger.Verbose("GetFileInfoList metodu çağırıldı");
-
-            var resultList = _cSNarFileExplorer.CW_GetFilesInCurrentDirectory();
             List<FilesInBackup> filesInBackupList = new List<FilesInBackup>();
-            foreach (var item in resultList)
+            try
             {
-                FilesInBackup filesInBackup = new FilesInBackup();
-                filesInBackup.Id = (long)item.ID;
-                filesInBackup.Name = item.Name;
-                filesInBackup.Type = (FileType)Convert.ToInt16(item.IsDirectory); //Directory ise 1 
-                filesInBackup.Size = (long)item.Size;
-                filesInBackup.StrSize = FormatBytes((long)item.Size);
+                var resultList = _cSNarFileExplorer.CW_GetFilesInCurrentDirectory();
+                foreach (var item in resultList)
+                {
+                    FilesInBackup filesInBackup = new FilesInBackup();
+                    filesInBackup.Id = (long)item.ID;
+                    filesInBackup.Name = item.Name;
+                    filesInBackup.Type = (FileType)Convert.ToInt16(item.IsDirectory); //Directory ise 1 
+                    filesInBackup.Size = (long)item.Size;
+                    filesInBackup.StrSize = FormatBytes((long)item.Size);
 
-                filesInBackup.UpdatedDate = (item.LastModifiedTime.Day < 10) ? 0 + item.LastModifiedTime.Day.ToString() : item.LastModifiedTime.Day.ToString();
-                filesInBackup.UpdatedDate = filesInBackup.UpdatedDate + "." +
-                    ((item.LastModifiedTime.Month < 10) ? 0 + item.LastModifiedTime.Month.ToString() : item.LastModifiedTime.Month.ToString());
-                filesInBackup.UpdatedDate = filesInBackup.UpdatedDate + "." + item.LastModifiedTime.Year + " ";
-                filesInBackup.UpdatedDate = filesInBackup.UpdatedDate + ((item.LastModifiedTime.Hour < 10) ? 0 + item.LastModifiedTime.Hour.ToString() : item.LastModifiedTime.Hour.ToString());
-                filesInBackup.UpdatedDate = filesInBackup.UpdatedDate + ":" +
-                    ((item.LastModifiedTime.Minute < 10) ? 0 + item.LastModifiedTime.Minute.ToString() : item.LastModifiedTime.Minute.ToString());
+                    filesInBackup.UpdatedDate = (item.LastModifiedTime.Day < 10) ? 0 + item.LastModifiedTime.Day.ToString() : item.LastModifiedTime.Day.ToString();
+                    filesInBackup.UpdatedDate = filesInBackup.UpdatedDate + "." +
+                        ((item.LastModifiedTime.Month < 10) ? 0 + item.LastModifiedTime.Month.ToString() : item.LastModifiedTime.Month.ToString());
+                    filesInBackup.UpdatedDate = filesInBackup.UpdatedDate + "." + item.LastModifiedTime.Year + " ";
+                    filesInBackup.UpdatedDate = filesInBackup.UpdatedDate + ((item.LastModifiedTime.Hour < 10) ? 0 + item.LastModifiedTime.Hour.ToString() : item.LastModifiedTime.Hour.ToString());
+                    filesInBackup.UpdatedDate = filesInBackup.UpdatedDate + ":" +
+                        ((item.LastModifiedTime.Minute < 10) ? 0 + item.LastModifiedTime.Minute.ToString() : item.LastModifiedTime.Minute.ToString());
 
-                filesInBackupList.Add(filesInBackup);
+                    filesInBackupList.Add(filesInBackup);
+                }
             }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "GetFileInfoList() gerçekleştirilemedi.");
+            }
+
             return filesInBackupList;
         }
 
@@ -707,7 +759,16 @@ namespace DiskBackup.Business.Concrete
         {
             //ilk çağırdığımızda init ettiğimiz FileExplorer metodunu kapatmak/serbest bırakmak için
             _logger.Verbose("FreeFileExplorer metodu çağırıldı");
-            _cSNarFileExplorer.CW_Free();
+            try
+            {
+                _cSNarFileExplorer.CW_Free();
+                if (_nc != null)
+                    _nc.Dispose();
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "_cSNarFileExplorer.CW_Free() gerçekleştirilemedi.");
+            }
         }
 
         public bool GetSelectedFileInfo(FilesInBackup filesInBackup)
@@ -720,19 +781,42 @@ namespace DiskBackup.Business.Concrete
             cSNarFileEntry.Name = filesInBackup.Name;
             cSNarFileEntry.Size = (ulong)filesInBackup.Size;
             //tarihler eklenecek. oluşturma tarihi önemli mi?
-            return _cSNarFileExplorer.CW_SelectDirectory((ulong)cSNarFileEntry.ID);
+            try
+            {
+                return _cSNarFileExplorer.CW_SelectDirectory((ulong)cSNarFileEntry.ID);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "_cSNarFileExplorer.CW_SelectDirectory() gerçekleştirilemedi.");
+            }
+            return false;
         }
 
         public void PopDirectory()
         {
             _logger.Verbose("PopDirectory metodu çağırıldı");
-            _cSNarFileExplorer.CW_PopDirectory();
+            try
+            {
+                _cSNarFileExplorer.CW_PopDirectory();
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "_cSNarFileExplorer.CW_PopDirectory() gerçekleştirilemedi.");
+            }
         }
 
         public string GetCurrentDirectory()
         {
             _logger.Verbose("GetCurrentDirectory metodu çağırıldı");
-            return _cSNarFileExplorer.CW_GetCurrentDirectoryString();
+            try
+            {
+                return _cSNarFileExplorer.CW_GetCurrentDirectoryString();
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "_cSNarFileExplorer.CW_GetCurrentDirectoryString() gerçekleştirilemedi.");
+            }
+            return "";
         }
 
         public List<ActivityDownLog> GetDownLogList() //bu method daha gelmedi
@@ -761,7 +845,14 @@ namespace DiskBackup.Business.Concrete
         public void RestoreFilesInBackup(long fileId, string backupDirectory, string targetDirectory) // batuhan hangi backup olduğunu nasıl anlayacak? backup directoryde backup ismi almıyor
         {
             _logger.Verbose("RestoreFilesInBackup metodu çağırıldı");
-            _cSNarFileExplorer.CW_RestoreFile(fileId, backupDirectory, targetDirectory);
+            try
+            {
+                _cSNarFileExplorer.CW_RestoreFile(fileId, backupDirectory, targetDirectory);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "_cSNarFileExplorer.CW_RestoreFile() gerçekleştirilemedi.");
+            }
         }
 
         private BackupInfo ConvertToBackupInfo(BackupStorageInfo backupStorageItem, BackupMetadata backupMetadata)
