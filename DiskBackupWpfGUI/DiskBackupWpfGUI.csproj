@@ -180,6 +180,9 @@
       <DependentUpon>StatusesWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="Utils\SortAdorner.cs" />
+    <Compile Include="ValidateNASWindow.xaml.cs">
+      <DependentUpon>ValidateNASWindow.xaml</DependentUpon>
+    </Compile>
     <Page Include="AddBackupAreaWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -225,6 +228,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="StatusesWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="ValidateNASWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
