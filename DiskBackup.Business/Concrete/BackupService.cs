@@ -163,35 +163,49 @@ namespace DiskBackup.Business.Concrete
 
         public List<BackupInfo> GetBackupFileList(List<BackupStorageInfo> backupStorageList)
         {
-            //usedSize, bootable, sıkıştırma, pc name, ip address
             _logger.Verbose("GetBackupFileList metodu çağırıldı");
             List<BackupInfo> backupInfoList = new List<BackupInfo>();
             //bootable = osVolume (true)
+            int index = 0;
             foreach (BackupStorageInfo backupStorageItem in backupStorageList)
             {
-                NetworkConnection nc = null;
-                if (backupStorageItem.Type == BackupStorageType.NAS)
+                //Aynı path mi kontrolü
+                bool controlFlag = true;
+                for (int i = index - 1; i >= 0; i--)
                 {
-                    try
+                    if (backupStorageItem.Path == backupStorageList[i].Path)
                     {
-                        nc = new NetworkConnection(backupStorageItem.Path.Substring(0, backupStorageItem.Path.Length - 1), backupStorageItem.Username, backupStorageItem.Password, backupStorageItem.Domain);
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.Error(ex, "Uzak paylaşıma bağlanılamadığı için backup dosyaları gösterilemiyor. {path}", backupStorageItem.Path);
+                        controlFlag = false;
+                        break;
                     }
                 }
-                var returnList = DiskTracker.CW_GetBackupsInDirectory(backupStorageItem.Path);
-                _logger.Information("------------------------KONTROL------------------------------");
-                foreach (var returnItem in returnList)
-                {
-                    _logger.Information(returnItem.Version + " - " + returnItem.Fullpath);
-                    BackupInfo backupInfo = ConvertToBackupInfo(backupStorageItem, returnItem);
-                    backupInfoList.Add(backupInfo);
-                }
+                index++;
 
-                if (nc != null)
-                    nc.Dispose();
+                if (controlFlag)
+                {
+                    NetworkConnection nc = null;
+                    if (backupStorageItem.Type == BackupStorageType.NAS)
+                    {
+                        try
+                        {
+                            nc = new NetworkConnection(backupStorageItem.Path.Substring(0, backupStorageItem.Path.Length - 1), backupStorageItem.Username, backupStorageItem.Password, backupStorageItem.Domain);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.Error(ex, "Uzak paylaşıma bağlanılamadığı için backup dosyaları gösterilemiyor. {path}", backupStorageItem.Path);
+                        }
+                    }
+
+                    var returnList = DiskTracker.CW_GetBackupsInDirectory(backupStorageItem.Path);
+                    foreach (var returnItem in returnList)
+                    {
+                        BackupInfo backupInfo = ConvertToBackupInfo(backupStorageItem, returnItem);
+                        backupInfoList.Add(backupInfo);
+                    }
+
+                    if (nc != null)
+                        nc.Dispose();
+                }
             }
 
             return backupInfoList;
@@ -262,13 +276,12 @@ namespace DiskBackup.Business.Concrete
         //Informationları sil
         private bool ChainInTheSameDirectory(List<BackupMetadata> backupMetadataList, BackupMetadata backupMetadata)
         {
+            _logger.Verbose("ChainInTheSameDirectory metodu çağırıldı");
             // Tüm dosyalar aynı dizinde mi kontrolü yap
             List<BackupMetadata> chainList = new List<BackupMetadata>();
 
             if (backupMetadata.Version != -1)
             {
-                _logger.Information("Backup Version: " + backupMetadata.Version.ToString());
-                _logger.Information("Backup Type: {type} | 0 diff - 1 inc", backupMetadata.BackupType.ToString());
                 foreach (var itemBackupMetadata in backupMetadataList)
                 {
                     if (!itemBackupMetadata.IsSameChainID(backupMetadata))
@@ -276,37 +289,24 @@ namespace DiskBackup.Business.Concrete
                 }
 
                 chainList = chainList.OrderBy(x => x.Version).ToList();
-                _logger.Information("----------------------------------LİSTE--------------------------");
-                chainList.ForEach(x => _logger.Information(x.Version.ToString() + " - " + x.Fullpath + " - " + x.BackupType.ToString()));
-                _logger.Information("--------------------------------------------------------------------------------------------------------");
 
                 if (backupMetadata.BackupType == 0) // 0 diff - diff restore
                 {
                     // Full ve restore edilecek backup aynı dizinde olması gerekiyor.
                     if (chainList[0].Version == -1)
-                    {
-                        _logger.Information("if (chainList[0].Version == -1) TRUE");
                         return true;
-                    }                      
                     else
-                    {
-                        _logger.Information("if (chainList[0].Version == -1) FALSE");
                         return false;
-                    }                                          
                 }
                 else if (backupMetadata.BackupType == 1) // 1 inc - inc restore
                 {
                     // ilgili backup versiyonuna kadar tüm backuplar aynı dizinde olmalı. Sayıyı kontrol et, versiyonları kontrol et
-                    _logger.Information("Count: {c} - Version: {v}", chainList.Count, backupMetadata.Version + 2);
                     if (chainList.Count >= backupMetadata.Version + 2)
-                    {                      
+                    {
                         for (int i = 0; i <= backupMetadata.Version + 1; i++)
                         {
                             if (!(chainList[i].Version == i - 1))
-                            {
-                                _logger.Information("Bu backup gerçekleştirilemez");
                                 return false;
-                            }                               
                         }
                         return true;
                     }
@@ -314,7 +314,6 @@ namespace DiskBackup.Business.Concrete
                         return false;
                 }
             }
-            // zaten zincirin devamına bakmaya gerek yok
             return true;
         }
 
