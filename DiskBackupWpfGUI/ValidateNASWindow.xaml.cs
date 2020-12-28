@@ -27,6 +27,8 @@ namespace DiskBackupWpfGUI
         private BackupStorageInfo _backupStorageInfo;
         private BackupInfo _backupInfo;
 
+        public bool _validate = false;
+
         public ValidateNASWindow(IBackupStorageService backupStorageService, IBackupService backupService, BackupInfo backupInfo)
         {
             InitializeComponent();
@@ -57,7 +59,7 @@ namespace DiskBackupWpfGUI
                     //doğrulama başarılı
                     imgValidateConnectionFalse.Visibility = Visibility.Collapsed;
                     imgValidateConnectionTrue.Visibility = Visibility.Visible;
-
+                    _validate = true;
                     // silme işlemleri                  
                     var result2 = _backupService.BackupFileDelete(_backupInfo);
                     if (result2 == 5)
@@ -72,6 +74,7 @@ namespace DiskBackupWpfGUI
                     //başarısız
                     imgValidateConnectionFalse.Visibility = Visibility.Visible;
                     imgValidateConnectionTrue.Visibility = Visibility.Collapsed;
+                    _validate = false;
                 }
             }
             catch

@@ -2172,19 +2172,67 @@ namespace DiskBackupWpfGUI
             //var backupInfo = (BackupInfo)listViewBackups.SelectedItem;
             MessageBoxResult result = MessageBoxResult.No;
             if (listViewBackups.SelectedItems.Count > 1)
-                result = MessageBox.Show($"{listViewBackups.SelectedItems.Count} adet backup dosyasının silinmesi diğer backuplarınızı etklileyebilir. Emin misiniz?", Resources["MessageboxTitle"].ToString(), MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
+            {
+                bool controlFlag = false;
+                foreach (BackupInfo backupInfo in listViewBackups.SelectedItems)
+                {
+                    if (backupInfo.Type == BackupTypes.Full)
+                    {
+                        result = MessageBox.Show($"Full backup dosyalarına bağlı olan diğer backuplarınız silinecektir. Emin misiniz?", Resources["MessageboxTitle"].ToString(), MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
+                        controlFlag = true;
+                        break;
+                    }
+                }
+                if (!controlFlag)
+                    result = MessageBox.Show($"{listViewBackups.SelectedItems.Count} adet backup dosyasının silinmesi diğer backuplarınızı etklileyebilir. Emin misiniz?", Resources["MessageboxTitle"].ToString(), MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
+            }
             else
                 result = MessageBox.Show($"{((BackupInfo)listViewBackups.SelectedItem).FileName} backup dosyasının silinmesi diğer backuplarınızı etklileyebilir. Emin misiniz?", Resources["MessageboxTitle"].ToString(), MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
             if (result == MessageBoxResult.Yes)
             {
+                Dictionary<string, bool> NAS = new Dictionary<string, bool>();
+                NAS.Add("EbruAndEyup", true);
+
                 foreach (BackupInfo backupInfo in listViewBackups.SelectedItems)
                 {
                     if (backupInfo.BackupStorageInfo.Type == BackupStorageType.NAS)
                     {
-                        using (var scope = _scope.BeginLifetimeScope())
+                        bool controlFlag = false;
+                        foreach (var item in NAS)
                         {
-                            ValidateNASWindow newCreateTask = scope.Resolve<ValidateNASWindow>(new TypedParameter(backupInfo.GetType(), backupInfo));
-                            newCreateTask.ShowDialog();
+                            if (backupInfo.BackupStorageInfo.Path.Contains(item.Key))
+                            {
+                                if (!item.Value)
+                                {
+                                    using (var scope = _scope.BeginLifetimeScope())
+                                    {
+                                        ValidateNASWindow newCreateTask = scope.Resolve<ValidateNASWindow>(new TypedParameter(backupInfo.GetType(), backupInfo));
+                                        newCreateTask.ShowDialog();
+                                        var ip = backupInfo.BackupStorageInfo.Path.Split('\\')[2];
+                                        NAS[item.Key] = newCreateTask._validate;
+                                        controlFlag = true;
+                                    }
+                                }
+                                else
+                                {
+                                    var result2 = backupService.BackupFileDelete(backupInfo);
+                                    if (result2 == 5)
+                                        MessageBox.Show("Silme başarılı");
+                                    else
+                                        MessageBox.Show("Silme başarısız, " + result2);
+                                    controlFlag = true;
+                                }
+                            }
+                        }
+                        if (!controlFlag)
+                        {
+                            using (var scope = _scope.BeginLifetimeScope())
+                            {
+                                ValidateNASWindow newCreateTask = scope.Resolve<ValidateNASWindow>(new TypedParameter(backupInfo.GetType(), backupInfo));
+                                newCreateTask.ShowDialog();
+                                var ip = backupInfo.BackupStorageInfo.Path.Split('\\')[2];
+                                NAS.Add(ip, newCreateTask._validate);
+                            }
                         }
                     }
                     else
@@ -2196,6 +2244,11 @@ namespace DiskBackupWpfGUI
                         else
                             MessageBox.Show("Silme başarısız, " + result2);
                     }
+                }
+
+                foreach (var item in NAS)
+                {
+                    Console.WriteLine(item.Key + " " + item.Value);
                 }
             }
 
