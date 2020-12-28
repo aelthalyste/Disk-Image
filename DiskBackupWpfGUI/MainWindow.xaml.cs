@@ -2179,12 +2179,11 @@ namespace DiskBackupWpfGUI
             {
                 foreach (BackupInfo backupInfo in listViewBackups.SelectedItems)
                 {
-
                     if (backupInfo.BackupStorageInfo.Type == BackupStorageType.NAS)
                     {
                         using (var scope = _scope.BeginLifetimeScope())
                         {
-                            ValidateNASWindow newCreateTask = scope.Resolve<ValidateNASWindow>(new TypedParameter(backupInfo.BackupStorageInfo.GetType(), backupInfo.BackupStorageInfo));
+                            ValidateNASWindow newCreateTask = scope.Resolve<ValidateNASWindow>(new TypedParameter(backupInfo.GetType(), backupInfo));
                             newCreateTask.ShowDialog();
                         }
                     }

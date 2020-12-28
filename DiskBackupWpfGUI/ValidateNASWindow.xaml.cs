@@ -22,17 +22,22 @@ namespace DiskBackupWpfGUI
     public partial class ValidateNASWindow : Window
     {
         private IBackupStorageService _backupStorageService;
-        private BackupStorageInfo _backupStorageInfo;
+        private IBackupService _backupService;
 
-        public ValidateNASWindow(IBackupStorageService backupStorageService, BackupStorageInfo backupStorageInfo)
+        private BackupStorageInfo _backupStorageInfo;
+        private BackupInfo _backupInfo;
+
+        public ValidateNASWindow(IBackupStorageService backupStorageService, IBackupService backupService, BackupInfo backupInfo)
         {
             InitializeComponent();
             _backupStorageService = backupStorageService;
-            _backupStorageInfo = backupStorageInfo;
+            _backupService = backupService;
+            _backupInfo = backupInfo;
+            _backupStorageInfo = backupInfo.BackupStorageInfo;
 
-            txtValidateNASFolderPath.Text = backupStorageInfo.Path.Substring(0, backupStorageInfo.Path.Length - 1);
-            txtValidateNASDomain.Text = backupStorageInfo.Domain;
-            txtValidateNASUserName.Text = backupStorageInfo.Username;
+            txtValidateNASFolderPath.Text = backupInfo.BackupStorageInfo.Path.Substring(0, backupInfo.BackupStorageInfo.Path.Length - 1);
+            txtValidateNASDomain.Text = backupInfo.BackupStorageInfo.Domain;
+            txtValidateNASUserName.Text = backupInfo.BackupStorageInfo.Username;
         }
 
         private void MyTitleBar_MouseDown(object sender, MouseButtonEventArgs e)
@@ -53,7 +58,14 @@ namespace DiskBackupWpfGUI
                     imgValidateConnectionFalse.Visibility = Visibility.Collapsed;
                     imgValidateConnectionTrue.Visibility = Visibility.Visible;
 
-                    // silme işlemi 
+                    // silme işlemleri                  
+                    var result2 = _backupService.BackupFileDelete(_backupInfo);
+                    if (result2 == 5)
+                        MessageBox.Show("Silme başarılı");
+                    else
+                        MessageBox.Show("Silme başarısız, " + result2);
+
+                    Close();
                 }
                 else
                 {
