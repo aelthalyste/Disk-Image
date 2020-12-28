@@ -912,7 +912,9 @@ namespace DiskBackup.Business.Concrete
 
 
 
-
+        /*0 - NAS'a bağlanamama
+          1 - Silme işlemleri gerçekleştirilemedi
+          2 - Sorun yaşanmadı veya silinecek dosya bulunmadı (zincirden silebileceğimiz için direkt kullanıcıyı bilgilendirmiyoruz)*/
         public byte BackupFileDelete(BackupInfo backupInfo)
         {
             var backupStorageInfo = _backupStorageDal.Get(x => x.Id == backupInfo.BackupStorageInfoId);
@@ -925,20 +927,14 @@ namespace DiskBackup.Business.Concrete
                     return 0; // bağlantı sağlanamadığı için işlem gerçekleştirilemiyor
             }
 
-            var backupMetadataList = DiskTracker.CW_GetBackupsInDirectory(backupStorageInfo.Path);
-            BackupMetadata backupMetadata = new BackupMetadata { Version = -200 };
-            foreach (var backupMetadataItem in backupMetadataList)
-            {
-                if (backupMetadataItem.Fullpath == backupInfo.BackupStorageInfo.Path + backupInfo.FileName)
-                    backupMetadata = backupMetadataItem;
-            }
+            BackupMetadata backupMetadata = GetBackupMetadata(backupInfo, backupStorageInfo);
 
             if (nc != null)
                 nc.Dispose();
 
             if (backupMetadata.Version != -200) // ilgili metadata bulundu
             {
-                //zinciri bul
+                //tüm backupları getir
                 var backupStorageList = _backupStorageDal.GetList();
                 List<BackupMetadata> backupMetadataAllList = new List<BackupMetadata>();
                 int index = 0;
@@ -975,79 +971,20 @@ namespace DiskBackup.Business.Concrete
                         //tüm zinciri sil
                         foreach (var item in chainList)
                         {
-                            NetworkConnection nc2 = null;
-                            string backupName = item.Fullpath.Split('\\').Last();
-                            string newRootDir = item.Fullpath.Substring(0, item.Fullpath.Length - backupName.Length);
-                            if (newRootDir[0].Equals('\\')) // nasdır connection aç
-                            {
-                                foreach (var backupStorageItem in backupStorageList)
-                                {
-                                    if (newRootDir.Equals(backupStorageItem.Path) && backupStorageInfo.Type == BackupStorageType.NAS)
-                                    {
-                                        nc2 = NASConnection(backupStorageInfo);
-                                        if (nc2 == null)
-                                        {
-                                            _logger.Error("Uzak paylaşıma bağlanılamadığı için backup dosyası silinemiyor. {path}", item.Fullpath);
-                                            return 0; // bağlantı sağlanamadığı için işlem gerçekleştirilemiyor
-                                        }
-                                        break;
-                                    }
-                                }
-                            }
-
-                            try
-                            {
-                                File.Delete(item.Fullpath);
-                                File.Delete(newRootDir + item.Metadataname);
-                            }
-                            catch (IOException ex)
-                            {
-                                _logger.Error(ex, "{dizin} dizinindeki dosya silme işlemi başarısız.", item.Fullpath);
-                            }
-
-                            if (nc2 != null)
-                                nc2.Dispose();
+                            var result = DeleteBackupFileAndMetadata(backupStorageInfo, item, backupStorageList);
+                            if (result != 2)
+                                return result;
                         }
+
                         CleanChain(backupMetadata.Letter);
                         _logger.Information("Diff silme işleminden sonra, {letter} için yeni zincir başlatıldı.", backupMetadata.Letter);
                     }
                     else
                     {
                         // direkt sil etkilenecek backup yok
-                        NetworkConnection nc2 = null;
-                        string backupName = backupMetadata.Fullpath.Split('\\').Last();
-                        string newRootDir = backupMetadata.Fullpath.Substring(0, backupMetadata.Fullpath.Length - backupName.Length);
-
-                        if (newRootDir[0].Equals('\\')) // nasdır connection aç
-                        {
-                            foreach (var backupStorageItem in backupStorageList)
-                            {
-                                if (newRootDir.Equals(backupStorageItem.Path) && backupStorageInfo.Type == BackupStorageType.NAS)
-                                {
-                                    nc2 = NASConnection(backupStorageInfo);
-                                    if (nc2 == null)
-                                    {
-                                        _logger.Error("Uzak paylaşıma bağlanılamadığı için backup dosyası silinemiyor. {path}", backupMetadata.Fullpath);
-                                        return 0; // bağlantı sağlanamadığı için işlem gerçekleştirilemiyor
-                                    }
-                                    break;
-                                }
-                            }
-                        }
-
-                        try
-                        {
-                            File.Delete(backupMetadata.Fullpath);
-                            File.Delete(newRootDir + backupMetadata.Metadataname);
-                        }
-                        catch (IOException ex)
-                        {
-                            _logger.Error(ex, "{dizin} dizinindeki dosya silme işlemi başarısız.", backupMetadata.Fullpath);
-                            return 2; // silme işleminde sorun çıktı
-                        }
-
-                        if (nc2 != null)
-                            nc2.Dispose();
+                        var result = DeleteBackupFileAndMetadata(backupStorageInfo, backupMetadata, backupStorageList);
+                        if (result != 2)
+                            return result;
                     }
                 }
                 else if (backupMetadata.BackupType == 1) // 1 inc - inc restore
@@ -1060,39 +997,9 @@ namespace DiskBackup.Business.Concrete
                         {
                             for (int i = index2; i < chainList.Count; i++)
                             {
-                                NetworkConnection nc2 = null;
-                                string backupName = chainList[i].Fullpath.Split('\\').Last();
-                                string newRootDir = chainList[i].Fullpath.Substring(0, chainList[i].Fullpath.Length - backupName.Length);
-
-                                if (newRootDir[0].Equals('\\')) // nasdır connection aç
-                                {
-                                    foreach (var backupStorageItem in backupStorageList)
-                                    {
-                                        if (newRootDir.Equals(backupStorageItem.Path) && backupStorageInfo.Type == BackupStorageType.NAS)
-                                        {
-                                            nc2 = NASConnection(backupStorageInfo);
-                                            if (nc2 == null)
-                                            {
-                                                _logger.Error("Uzak paylaşıma bağlanılamadığı için backup dosyası silinemiyor. {path}", chainList[i].Fullpath);
-                                                return 0; // bağlantı sağlanamadığı için işlem gerçekleştirilemiyor
-                                            }
-                                            break;
-                                        }
-                                    }
-                                }
-
-                                try
-                                {
-                                    File.Delete(chainList[i].Fullpath);
-                                    File.Delete(newRootDir + chainList[i].Metadataname);
-                                }
-                                catch (IOException ex)
-                                {
-                                    _logger.Error(ex, "{dizin} dizinindeki dosya silme işlemi başarısız.", backupMetadataItem.Fullpath);
-                                }
-
-                                if (nc2 != null)
-                                    nc2.Dispose();
+                                var result = DeleteBackupFileAndMetadata(backupStorageInfo, chainList[i], backupStorageList);
+                                if (result != 2)
+                                    return result;
                             }
                             break;
                         }
@@ -1104,12 +1011,60 @@ namespace DiskBackup.Business.Concrete
                     _logger.Information("Inc silme işleminden sonra, {letter} için yeni zincir başlatıldı.", backupMetadata.Letter);
                 }
             }
-            else
+
+            return 2;
+        }
+
+        private byte DeleteBackupFileAndMetadata(BackupStorageInfo backupStorageInfo, BackupMetadata backupMetadata, List<BackupStorageInfo> backupStorageList)
+        {
+            NetworkConnection nc2 = null;
+            string backupName = backupMetadata.Fullpath.Split('\\').Last();
+            string newRootDir = backupMetadata.Fullpath.Substring(0, backupMetadata.Fullpath.Length - backupName.Length);
+            if (newRootDir[0].Equals('\\')) // nasdır connection aç
             {
-                return 1; // if'in else durumu ilgili backup bulunamadı
+                foreach (var backupStorageItem in backupStorageList)
+                {
+                    if (newRootDir.Equals(backupStorageItem.Path) && backupStorageInfo.Type == BackupStorageType.NAS)
+                    {
+                        nc2 = NASConnection(backupStorageInfo);
+                        if (nc2 == null)
+                        {
+                            _logger.Error("Uzak paylaşıma bağlanılamadığı için backup dosyası silinemiyor. {path}", backupMetadata.Fullpath);
+                            return 0; // bağlantı sağlanamadığı için işlem gerçekleştirilemiyor
+                        }
+                        break;
+                    }
+                }
             }
 
-            return 5;
+            try
+            {
+                File.Delete(backupMetadata.Fullpath);
+                File.Delete(newRootDir + backupMetadata.Metadataname);
+            }
+            catch (IOException ex)
+            {
+                _logger.Error(ex, "{dizin} dizinindeki dosya silme işlemi başarısız.", backupMetadata.Fullpath);
+                return 1; // silme işleminde sorun çıktı
+            }
+
+            if (nc2 != null)
+                nc2.Dispose();
+
+            return 2;
+        }
+
+        private BackupMetadata GetBackupMetadata(BackupInfo backupInfo, BackupStorageInfo backupStorageInfo)
+        {
+            var backupMetadataList = DiskTracker.CW_GetBackupsInDirectory(backupStorageInfo.Path);
+            BackupMetadata backupMetadata = new BackupMetadata { Version = -200 };
+            foreach (var backupMetadataItem in backupMetadataList)
+            {
+                if (backupMetadataItem.Fullpath == backupInfo.BackupStorageInfo.Path + backupInfo.FileName)
+                    backupMetadata = backupMetadataItem;
+            }
+
+            return backupMetadata;
         }
 
         private List<BackupMetadata> GetChainList(BackupMetadata backupMetadata, List<BackupMetadata> backupMetadataAllList)

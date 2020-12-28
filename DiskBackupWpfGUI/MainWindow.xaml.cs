@@ -2213,14 +2213,15 @@ namespace DiskBackupWpfGUI
                                         controlFlag = true;
                                     }
                                 }
-                                else
+                                else if (item.Value)
                                 {
                                     var result2 = backupService.BackupFileDelete(backupInfo);
-                                    if (result2 == 5)
-                                        MessageBox.Show("Silme başarılı");
-                                    else
-                                        MessageBox.Show("Silme başarısız, " + result2);
+                                    if (result2 == 0)
+                                        MessageBox.Show("NAS'a bağlanamadınız.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+                                    else if (result2 == 1)
+                                        MessageBox.Show("Beklenmedik bir hata ile karşılaşıldı. Silme işlemi gerçekleştirilemedi.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
                                     controlFlag = true;
+                                    Console.WriteLine("Main 1 sildim");
                                 }
                             }
                         }
@@ -2235,14 +2236,16 @@ namespace DiskBackupWpfGUI
                             }
                         }
                     }
-                    else
+                    else if (backupInfo.BackupStorageInfo.Type == BackupStorageType.Windows)
                     {
                         // silme işlemleri                  
                         var result2 = backupService.BackupFileDelete(backupInfo);
-                        if (result2 == 5)
-                            MessageBox.Show("Silme başarılı");
-                        else
-                            MessageBox.Show("Silme başarısız, " + result2);
+                        if (result2 == 0)
+                            MessageBox.Show("NAS'a bağlanamadınız.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+                        else if (result2 == 1)
+                            MessageBox.Show("Beklenmedik bir hata ile karşılaşıldı. Silme işlemi gerçekleştirilemedi.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+
+                        Console.WriteLine("Main 2 sildim" + backupInfo.BackupStorageInfo.Type);
                     }
                 }
 
