@@ -53,13 +53,7 @@ namespace DiskBackupWpfGUI
                     imgValidateConnectionFalse.Visibility = Visibility.Collapsed;
                     imgValidateConnectionTrue.Visibility = Visibility.Visible;
 
-                    // diğer pencereler burada flag'e göre açılacak
-
-                    // restore NAS dosyasının restore'u
-                    
-                    // file explorer
-
-                    // silme işlemi eğer silmeyle gelindiyse
+                    // silme işlemi 
                 }
                 else
                 {

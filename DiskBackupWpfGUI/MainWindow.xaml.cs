@@ -76,7 +76,7 @@ namespace DiskBackupWpfGUI
             InitializeComponent();
 
             Console.WriteLine(DateTime.Now);
-            
+
             _logger = logger.ForContext<MainWindow>();
             _backupStorageDal = backupStorageDal;
             _activityLogDal = activityLogDal;
@@ -1913,6 +1913,11 @@ namespace DiskBackupWpfGUI
             GetTasks();
             listViewTasks.SelectedIndex = taskSelectedIndex;
 
+            RefreshBackups(backupService);
+        }
+
+        private void RefreshBackups(IBackupService backupService)
+        {
             _backupsItems = backupService.GetBackupFileList(_backupStorageDal.GetList());
             listViewBackups.ItemsSource = _backupsItems;
             listViewRestore.ItemsSource = _backupsItems;
@@ -2163,17 +2168,40 @@ namespace DiskBackupWpfGUI
 
         private void btnFilesDelete_Click(object sender, RoutedEventArgs e)
         {
-            var backupInfo = (BackupInfo)listViewBackups.SelectedItem;
-            if (backupInfo.BackupStorageInfo.Type == BackupStorageType.NAS)
+            var backupService = _scope.Resolve<IBackupService>();
+            //var backupInfo = (BackupInfo)listViewBackups.SelectedItem;
+            MessageBoxResult result = MessageBoxResult.No;
+            if (listViewBackups.SelectedItems.Count > 1)
+                result = MessageBox.Show($"{listViewBackups.SelectedItems.Count} adet backup dosyasının silinmesi diğer backuplarınızı etklileyebilir. Emin misiniz?", Resources["MessageboxTitle"].ToString(), MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
+            else
+                result = MessageBox.Show($"{((BackupInfo)listViewBackups.SelectedItem).FileName} backup dosyasının silinmesi diğer backuplarınızı etklileyebilir. Emin misiniz?", Resources["MessageboxTitle"].ToString(), MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
+            if (result == MessageBoxResult.Yes)
             {
-                using (var scope = _scope.BeginLifetimeScope())
+                foreach (BackupInfo backupInfo in listViewBackups.SelectedItems)
                 {
-                    ValidateNASWindow newCreateTask = scope.Resolve<ValidateNASWindow>(new TypedParameter(backupInfo.BackupStorageInfo.GetType(), backupInfo.BackupStorageInfo));
-                    newCreateTask.ShowDialog();
+
+                    if (backupInfo.BackupStorageInfo.Type == BackupStorageType.NAS)
+                    {
+                        using (var scope = _scope.BeginLifetimeScope())
+                        {
+                            ValidateNASWindow newCreateTask = scope.Resolve<ValidateNASWindow>(new TypedParameter(backupInfo.BackupStorageInfo.GetType(), backupInfo.BackupStorageInfo));
+                            newCreateTask.ShowDialog();
+                        }
+                    }
+                    else
+                    {
+                        // silme işlemleri                  
+                        var result2 = backupService.BackupFileDelete(backupInfo);
+                        if (result2 == 5)
+                            MessageBox.Show("Silme başarılı");
+                        else
+                            MessageBox.Show("Silme başarısız, " + result2);
+                    }
                 }
             }
-        }
 
+            RefreshBackups(backupService);
+        }
 
     }
 }

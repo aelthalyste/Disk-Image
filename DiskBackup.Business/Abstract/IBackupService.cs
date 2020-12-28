@@ -75,5 +75,8 @@ namespace DiskBackup.Business.Abstract
         [OperationContract]
         void RefreshIncDiffLogFlag(bool value);
 
+        [OperationContract]
+        byte BackupFileDelete(BackupInfo backupInfo);
+
     }
 }
