@@ -2191,13 +2191,14 @@ namespace DiskBackupWpfGUI
             if (result == MessageBoxResult.Yes)
             {
                 Dictionary<string, bool> NAS = new Dictionary<string, bool>();
+                Dictionary<string, bool> tempNas = new Dictionary<string, bool>();
                 NAS.Add("EbruAndEyup", true);
 
                 foreach (BackupInfo backupInfo in listViewBackups.SelectedItems)
                 {
                     if (backupInfo.BackupStorageInfo.Type == BackupStorageType.NAS)
                     {
-                        bool controlFlag = false;
+                        bool controlFlag = false, changeFlag = false;
                         foreach (var item in NAS)
                         {
                             if (backupInfo.BackupStorageInfo.Path.Contains(item.Key))
@@ -2206,11 +2207,12 @@ namespace DiskBackupWpfGUI
                                 {
                                     using (var scope = _scope.BeginLifetimeScope())
                                     {
-                                        ValidateNASWindow newCreateTask = scope.Resolve<ValidateNASWindow>(new TypedParameter(backupInfo.GetType(), backupInfo));
-                                        newCreateTask.ShowDialog();
+                                        ValidateNASWindow validateNASWindow = scope.Resolve<ValidateNASWindow>(new TypedParameter(backupInfo.GetType(), backupInfo));
+                                        validateNASWindow.ShowDialog();
                                         var ip = backupInfo.BackupStorageInfo.Path.Split('\\')[2];
-                                        NAS[item.Key] = newCreateTask._validate;
+                                        tempNas.Add(item.Key, validateNASWindow._validate);
                                         controlFlag = true;
+                                        changeFlag = true;
                                     }
                                 }
                                 else if (item.Value)
@@ -2221,18 +2223,24 @@ namespace DiskBackupWpfGUI
                                     else if (result2 == 1)
                                         MessageBox.Show("Beklenmedik bir hata ile karşılaşıldı. Silme işlemi gerçekleştirilemedi.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
                                     controlFlag = true;
-                                    Console.WriteLine("Main 1 sildim");
                                 }
                             }
                         }
+
+                        if (changeFlag)
+                        {
+                            NAS[tempNas.Keys.First()] = tempNas.Values.First();
+                            tempNas.Clear();
+                        }
+
                         if (!controlFlag)
                         {
                             using (var scope = _scope.BeginLifetimeScope())
                             {
-                                ValidateNASWindow newCreateTask = scope.Resolve<ValidateNASWindow>(new TypedParameter(backupInfo.GetType(), backupInfo));
-                                newCreateTask.ShowDialog();
+                                ValidateNASWindow validateNASWindow = scope.Resolve<ValidateNASWindow>(new TypedParameter(backupInfo.GetType(), backupInfo));
+                                validateNASWindow.ShowDialog();
                                 var ip = backupInfo.BackupStorageInfo.Path.Split('\\')[2];
-                                NAS.Add(ip, newCreateTask._validate);
+                                NAS.Add(ip, validateNASWindow._validate);
                             }
                         }
                     }
@@ -2244,14 +2252,7 @@ namespace DiskBackupWpfGUI
                             MessageBox.Show("NAS'a bağlanamadınız.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
                         else if (result2 == 1)
                             MessageBox.Show("Beklenmedik bir hata ile karşılaşıldı. Silme işlemi gerçekleştirilemedi.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
-
-                        Console.WriteLine("Main 2 sildim" + backupInfo.BackupStorageInfo.Type);
                     }
-                }
-
-                foreach (var item in NAS)
-                {
-                    Console.WriteLine(item.Key + " " + item.Value);
                 }
             }
 
