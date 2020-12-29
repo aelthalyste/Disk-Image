@@ -1278,6 +1278,105 @@ namespace DiskBackupWpfGUI
                 btnFilesDelete.IsEnabled = true;
                 btnFilesBrowse.IsEnabled = true;
             }
+            else
+            {
+                btnFilesDelete.IsEnabled = false;
+                btnFilesBrowse.IsEnabled = false;
+            }
+        }
+
+        private void btnFilesDelete_Click(object sender, RoutedEventArgs e)
+        {
+            var backupService = _scope.Resolve<IBackupService>();
+            //var backupInfo = (BackupInfo)listViewBackups.SelectedItem;
+            MessageBoxResult result = MessageBoxResult.No;
+            if (listViewBackups.SelectedItems.Count > 1)
+            {
+                bool controlFlag = false;
+                foreach (BackupInfo backupInfo in listViewBackups.SelectedItems)
+                {
+                    if (backupInfo.Type == BackupTypes.Full)
+                    {
+                        result = MessageBox.Show($"Full backup dosyalarına bağlı olan diğer backuplarınız silinecektir. Emin misiniz?", Resources["MessageboxTitle"].ToString(), MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
+                        controlFlag = true;
+                        break;
+                    }
+                }
+                if (!controlFlag)
+                    result = MessageBox.Show($"{listViewBackups.SelectedItems.Count} adet backup dosyasının silinmesi diğer backuplarınızı etklileyebilir. Emin misiniz?", Resources["MessageboxTitle"].ToString(), MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
+            }
+            else
+                result = MessageBox.Show($"{((BackupInfo)listViewBackups.SelectedItem).FileName} backup dosyasının silinmesi diğer backuplarınızı etklileyebilir. Emin misiniz?", Resources["MessageboxTitle"].ToString(), MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
+            
+            if (result == MessageBoxResult.Yes)
+            {
+                Dictionary<string, bool> NAS = new Dictionary<string, bool>();
+                Dictionary<string, bool> tempNas = new Dictionary<string, bool>();
+                NAS.Add("EbruAndEyup", true);
+
+                foreach (BackupInfo backupInfo in listViewBackups.SelectedItems)
+                {
+                    if (backupInfo.BackupStorageInfo.Type == BackupStorageType.NAS)
+                    {
+                        bool controlFlag = false, changeFlag = false;
+                        foreach (var item in NAS)
+                        {
+                            if (backupInfo.BackupStorageInfo.Path.Contains(item.Key))
+                            {
+                                if (!item.Value)
+                                {
+                                    using (var scope = _scope.BeginLifetimeScope())
+                                    {
+                                        ValidateNASWindow validateNASWindow = scope.Resolve<ValidateNASWindow>(new TypedParameter(backupInfo.GetType(), backupInfo));
+                                        validateNASWindow.ShowDialog();
+                                        var ip = backupInfo.BackupStorageInfo.Path.Split('\\')[2];
+                                        tempNas.Add(item.Key, validateNASWindow._validate);
+                                        controlFlag = true;
+                                        changeFlag = true;
+                                    }
+                                }
+                                else if (item.Value)
+                                {
+                                    var result2 = backupService.BackupFileDelete(backupInfo);
+                                    if (result2 == 0)
+                                        MessageBox.Show("NAS'a bağlanamadınız.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+                                    else if (result2 == 1)
+                                        MessageBox.Show("Beklenmedik bir hata ile karşılaşıldı. Silme işlemi gerçekleştirilemedi.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+                                    controlFlag = true;
+                                }
+                            }
+                        }
+
+                        if (changeFlag)
+                        {
+                            NAS[tempNas.Keys.First()] = tempNas.Values.First();
+                            tempNas.Clear();
+                        }
+
+                        if (!controlFlag)
+                        {
+                            using (var scope = _scope.BeginLifetimeScope())
+                            {
+                                ValidateNASWindow validateNASWindow = scope.Resolve<ValidateNASWindow>(new TypedParameter(backupInfo.GetType(), backupInfo));
+                                validateNASWindow.ShowDialog();
+                                var ip = backupInfo.BackupStorageInfo.Path.Split('\\')[2];
+                                NAS.Add(ip, validateNASWindow._validate);
+                            }
+                        }
+                    }
+                    else if (backupInfo.BackupStorageInfo.Type == BackupStorageType.Windows)
+                    {
+                        // silme işlemleri                  
+                        var result2 = backupService.BackupFileDelete(backupInfo);
+                        if (result2 == 0)
+                            MessageBox.Show("NAS'a bağlanamadınız.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+                        else if (result2 == 1)
+                            MessageBox.Show("Beklenmedik bir hata ile karşılaşıldı. Silme işlemi gerçekleştirilemedi.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+                    }
+                }
+            }
+
+            RefreshBackups(backupService);
         }
 
         #region Checkbox Operations
@@ -2166,98 +2265,6 @@ namespace DiskBackupWpfGUI
         #endregion
 
 
-        private void btnFilesDelete_Click(object sender, RoutedEventArgs e)
-        {
-            var backupService = _scope.Resolve<IBackupService>();
-            //var backupInfo = (BackupInfo)listViewBackups.SelectedItem;
-            MessageBoxResult result = MessageBoxResult.No;
-            if (listViewBackups.SelectedItems.Count > 1)
-            {
-                bool controlFlag = false;
-                foreach (BackupInfo backupInfo in listViewBackups.SelectedItems)
-                {
-                    if (backupInfo.Type == BackupTypes.Full)
-                    {
-                        result = MessageBox.Show($"Full backup dosyalarına bağlı olan diğer backuplarınız silinecektir. Emin misiniz?", Resources["MessageboxTitle"].ToString(), MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
-                        controlFlag = true;
-                        break;
-                    }
-                }
-                if (!controlFlag)
-                    result = MessageBox.Show($"{listViewBackups.SelectedItems.Count} adet backup dosyasının silinmesi diğer backuplarınızı etklileyebilir. Emin misiniz?", Resources["MessageboxTitle"].ToString(), MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
-            }
-            else
-                result = MessageBox.Show($"{((BackupInfo)listViewBackups.SelectedItem).FileName} backup dosyasının silinmesi diğer backuplarınızı etklileyebilir. Emin misiniz?", Resources["MessageboxTitle"].ToString(), MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
-            if (result == MessageBoxResult.Yes)
-            {
-                Dictionary<string, bool> NAS = new Dictionary<string, bool>();
-                Dictionary<string, bool> tempNas = new Dictionary<string, bool>();
-                NAS.Add("EbruAndEyup", true);
-
-                foreach (BackupInfo backupInfo in listViewBackups.SelectedItems)
-                {
-                    if (backupInfo.BackupStorageInfo.Type == BackupStorageType.NAS)
-                    {
-                        bool controlFlag = false, changeFlag = false;
-                        foreach (var item in NAS)
-                        {
-                            if (backupInfo.BackupStorageInfo.Path.Contains(item.Key))
-                            {
-                                if (!item.Value)
-                                {
-                                    using (var scope = _scope.BeginLifetimeScope())
-                                    {
-                                        ValidateNASWindow validateNASWindow = scope.Resolve<ValidateNASWindow>(new TypedParameter(backupInfo.GetType(), backupInfo));
-                                        validateNASWindow.ShowDialog();
-                                        var ip = backupInfo.BackupStorageInfo.Path.Split('\\')[2];
-                                        tempNas.Add(item.Key, validateNASWindow._validate);
-                                        controlFlag = true;
-                                        changeFlag = true;
-                                    }
-                                }
-                                else if (item.Value)
-                                {
-                                    var result2 = backupService.BackupFileDelete(backupInfo);
-                                    if (result2 == 0)
-                                        MessageBox.Show("NAS'a bağlanamadınız.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
-                                    else if (result2 == 1)
-                                        MessageBox.Show("Beklenmedik bir hata ile karşılaşıldı. Silme işlemi gerçekleştirilemedi.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
-                                    controlFlag = true;
-                                }
-                            }
-                        }
-
-                        if (changeFlag)
-                        {
-                            NAS[tempNas.Keys.First()] = tempNas.Values.First();
-                            tempNas.Clear();
-                        }
-
-                        if (!controlFlag)
-                        {
-                            using (var scope = _scope.BeginLifetimeScope())
-                            {
-                                ValidateNASWindow validateNASWindow = scope.Resolve<ValidateNASWindow>(new TypedParameter(backupInfo.GetType(), backupInfo));
-                                validateNASWindow.ShowDialog();
-                                var ip = backupInfo.BackupStorageInfo.Path.Split('\\')[2];
-                                NAS.Add(ip, validateNASWindow._validate);
-                            }
-                        }
-                    }
-                    else if (backupInfo.BackupStorageInfo.Type == BackupStorageType.Windows)
-                    {
-                        // silme işlemleri                  
-                        var result2 = backupService.BackupFileDelete(backupInfo);
-                        if (result2 == 0)
-                            MessageBox.Show("NAS'a bağlanamadınız.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
-                        else if (result2 == 1)
-                            MessageBox.Show("Beklenmedik bir hata ile karşılaşıldı. Silme işlemi gerçekleştirilemedi.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
-                    }
-                }
-            }
-
-            RefreshBackups(backupService);
-        }
 
     }
 }
