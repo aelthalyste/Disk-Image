@@ -22,8 +22,6 @@ namespace DiskBackupWpfGUI
         public string _daysOrMounths;
 
         private bool _chooseFlag;
-        private bool _updateControl;
-
 
         public ChooseDayAndMounthsWindow(bool chooseFlag)
         {
@@ -53,7 +51,6 @@ namespace DiskBackupWpfGUI
             _chooseFlag = chooseFlag;
             _days = null;
             _months = null;
-            _updateControl = updateControl;
             _daysOrMounths = daysOrMounths;
 
             //chooseFlag = true gün, false ise ay
@@ -121,7 +118,7 @@ namespace DiskBackupWpfGUI
             if (_chooseFlag)
                 _days = _daysOrMounths;
             else
-                _days = _daysOrMounths;
+                _months = _daysOrMounths;
             Close();
         }
 

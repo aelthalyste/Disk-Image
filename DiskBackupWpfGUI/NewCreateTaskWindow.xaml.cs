@@ -56,6 +56,8 @@ namespace DiskBackupWpfGUI
 
             _backupStorageInfoList = backupStorageInfoList;
             cbTargetBackupArea.ItemsSource = _backupStorageInfoList;
+            if (_backupStorageInfoList.Count > 0)
+                cbTargetBackupArea.SelectedIndex = 0;
             _backupService = backupService;
             _backupStorageService = backupStorageService;
             _createAddBackupWindow = createAddBackupWindow;
@@ -731,8 +733,20 @@ namespace DiskBackupWpfGUI
                 }
             }
 
-            _backupStorageInfoList = MainWindow.GetBackupStorages(volumeList, _backupStorageService.BackupStorageInfoList());
+            diskList = _backupService.GetDiskList();
+
+            foreach (var diskItem in diskList)
+            {
+                foreach (var volumeItem in diskItem.VolumeInfos)
+                {
+                    volumeList.Add(volumeItem);
+                }
+            }
+
+            _backupStorageInfoList = GetBackupStorages(volumeList, _backupStorageService.BackupStorageInfoList());
             cbTargetBackupArea.ItemsSource = _backupStorageInfoList;
+            if (_backupStorageInfoList.Count > 0)
+                cbTargetBackupArea.SelectedIndex = _backupStorageInfoList.Count-1;
         }
 
         #region Arrow Button
@@ -1010,6 +1024,7 @@ namespace DiskBackupWpfGUI
 
         #endregion
 
+
         private void NCTTabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (NCTTabControl.SelectedIndex == 0)
@@ -1179,6 +1194,54 @@ namespace DiskBackupWpfGUI
             }
 
             return resultTaskInfo;
+        }
+
+        public List<BackupStorageInfo> GetBackupStorages(List<VolumeInfo> volumeList, List<BackupStorageInfo> backupStorageInfoList)
+        {
+            string backupStorageLetter;
+
+            foreach (var storageItem in backupStorageInfoList)
+            {
+                backupStorageLetter = storageItem.Path.Substring(0, storageItem.Path.Length - (storageItem.Path.Length - 1));
+
+                foreach (var volumeItem in volumeList)
+                {
+                    if (backupStorageLetter.Equals(Convert.ToString(volumeItem.Letter)))
+                    {
+                        storageItem.StrCapacity = volumeItem.StrSize;
+                        storageItem.StrFreeSize = volumeItem.StrFreeSize;
+                        storageItem.StrUsedSize = FormatBytes(volumeItem.Size - volumeItem.FreeSize);
+                        storageItem.Capacity = volumeItem.Size;
+                        storageItem.FreeSize = volumeItem.FreeSize;
+                        storageItem.UsedSize = volumeItem.Size - volumeItem.FreeSize;
+                    }
+                }
+
+                if (storageItem.IsCloud) // cloud bilgileri alınıp hibritse burada doldurulacak
+                {
+                    storageItem.CloudCapacity = 107374182400;
+                    storageItem.CloudUsedSize = 21474836480;
+                    storageItem.CloudFreeSize = 85899345920;
+                    storageItem.StrCloudCapacity = FormatBytes(storageItem.CloudCapacity);
+                    storageItem.StrCloudUsedSize = FormatBytes(storageItem.CloudUsedSize);
+                    storageItem.StrCloudFreeSize = FormatBytes(storageItem.CloudFreeSize);
+                }
+            }
+
+            return backupStorageInfoList;
+        }
+
+        private string FormatBytes(long bytes)
+        {
+            string[] Suffix = { "B", "KB", "MB", "GB", "TB" };
+            int i;
+            double dblSByte = bytes;
+            for (i = 0; i < Suffix.Length && bytes >= 1024; i++, bytes /= 1024)
+            {
+                dblSByte = bytes / 1024.0;
+            }
+
+            return ($"{dblSByte:0.##} {Suffix[i]}");
         }
 
         #region Focus Event

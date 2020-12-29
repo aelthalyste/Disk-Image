@@ -1464,7 +1464,7 @@ namespace DiskBackupWpfGUI
 
         #region Backup Storage Tab
 
-        public static List<BackupStorageInfo> GetBackupStorages(List<VolumeInfo> volumeList, List<BackupStorageInfo> backupStorageInfoList)
+        public List<BackupStorageInfo> GetBackupStorages(List<VolumeInfo> volumeList, List<BackupStorageInfo> backupStorageInfoList)
         {
             //List<BackupStorageInfo> backupStorageInfoList = _backupStorageService.BackupStorageInfoList();
             string backupStorageLetter;
@@ -1976,7 +1976,7 @@ namespace DiskBackupWpfGUI
                 {
                     runningTask.StatusInfo = _statusInfoDal.Get(x => x.Id == runningTask.StatusInfoId);
                     txtMakeABackup.Text = Resources["makeABackup"].ToString() + ", "
-                        + FormatBytesNonStatic(runningTask.StatusInfo.DataProcessed)
+                        + FormatBytes(runningTask.StatusInfo.DataProcessed)
                         + ", %" + Math.Round((runningTask.StatusInfo.DataProcessed * 100.0) / (runningTask.StatusInfo.TotalDataProcessed), 2).ToString();
                 }
                 else
@@ -1993,7 +1993,7 @@ namespace DiskBackupWpfGUI
                 // durdurulanı yazdır
                 pausedTask.StatusInfo = _statusInfoDal.Get(x => x.Id == pausedTask.StatusInfoId);
                 txtMakeABackup.Text = Resources["backupStopped"].ToString() + ", "
-                    + FormatBytesNonStatic(pausedTask.StatusInfo.DataProcessed)
+                    + FormatBytes(pausedTask.StatusInfo.DataProcessed)
                     + ", %" + Math.Round((pausedTask.StatusInfo.DataProcessed * 100.0) / (pausedTask.StatusInfo.TotalDataProcessed), 2).ToString();
             }
             else
@@ -2125,18 +2125,6 @@ namespace DiskBackupWpfGUI
             return ($"{dblSByte:0.##} {Suffix[i]}");
         }
 
-        private string FormatBytesNonStatic(long bytes)
-        {
-            string[] Suffix = { "B", "KB", "MB", "GB", "TB" };
-            int i;
-            double dblSByte = bytes;
-            for (i = 0; i < Suffix.Length && bytes >= 1024; i++, bytes /= 1024)
-            {
-                dblSByte = bytes / 1024.0;
-            }
-
-            return ($"{dblSByte:0.##} {Suffix[i]}");
-        }
         #endregion
 
 
