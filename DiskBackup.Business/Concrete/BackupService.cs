@@ -472,6 +472,11 @@ namespace DiskBackup.Business.Concrete
 
             foreach (var letter in letters) // C D E F
             {
+                // anlık veri için
+                Stopwatch passingTime = new Stopwatch();
+                long instantProcessData = 0;
+                passingTime.Start();
+
                 _logger.Information($"{letter} backup işlemi başlatılıyor...");
                 if (_diskTracker.CW_SetupStream(letter, (int)taskInfo.BackupTaskInfo.Type, str)) // 0 diff, 1 inc, full (2) ucu gelmediğinden ayrılabilir veya aynı devam edebilir
                 {
@@ -504,14 +509,24 @@ namespace DiskBackup.Business.Concrete
                                 file.Write(buffer, 0, Read);
                                 BytesReadSoFar += Read;
 
-                                statusInfo.FileName = taskInfo.BackupStorageInfo.Path + str.MetadataFileName;
+                                instantProcessData += Read; // anlık veri için              
 
+                                statusInfo.FileName = taskInfo.BackupStorageInfo.Path + str.MetadataFileName;
                                 statusInfo.DataProcessed = BytesReadSoFar;
                                 statusInfo.TotalDataProcessed = (long)str.CopySize;
                                 statusInfo.AverageDataRate = ((statusInfo.TotalDataProcessed / 1024.0) / 1024.0) / (timeElapsed.ElapsedMilliseconds / 1000.0); // MB/s
-                                statusInfo.InstantDataRate = ((BytesReadSoFar / 1024.0) / 1024.0) / (timeElapsed.ElapsedMilliseconds / 1000.0); // MB/s
+                                if (instantProcessData != 0) // anlık veri için 0 gelmesin diye
+                                    statusInfo.InstantDataRate = ((instantProcessData / 1024.0) / 1024.0) / (passingTime.ElapsedMilliseconds / 1000.0); // MB/s
                                 statusInfo.TimeElapsed = timeElapsed.ElapsedMilliseconds;
                                 _statusInfoDal.Update(statusInfo);
+
+                                _logger.Information($"gecen süre: {passingTime.ElapsedMilliseconds} islenen veri: {instantProcessData}");
+                                if (passingTime.ElapsedMilliseconds > 1000) // anlık veri için her saniye güncellensin diye
+                                {
+                                    instantProcessData = 0;
+                                    passingTime.Restart();
+                                    _logger.Information($"Restart edildi. gecen süre: {passingTime.ElapsedMilliseconds} islenen veri: {instantProcessData}");
+                                }
 
                                 if (Read != bufferSize)
                                     break;
