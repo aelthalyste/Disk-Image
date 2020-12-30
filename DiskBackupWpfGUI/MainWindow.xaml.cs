@@ -134,16 +134,6 @@ namespace DiskBackupWpfGUI
             #endregion
 
 
-            #region Görevler
-
-            Console.WriteLine("Async üzeri: " + DateTime.Now);
-            //GetTasks();
-            GetTasksAsync();
-            Console.WriteLine("Async altı: " + DateTime.Now);
-
-            #endregion
-
-
             #region ActivityLog
 
             Console.WriteLine("Activity Log üzeri: " + DateTime.Now);
@@ -154,7 +144,7 @@ namespace DiskBackupWpfGUI
                 _logList = backupService.GetDownLogList();
                 listViewLogDown.ItemsSource = _logList;
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 _logger.Error(e, "BackupService'den NARDIWrapper logları getirilemedi!");
             }
@@ -162,6 +152,15 @@ namespace DiskBackupWpfGUI
 
             #endregion
 
+
+            #region Görevler
+
+            Console.WriteLine("Async üzeri: " + DateTime.Now);
+            GetTasks();
+            //GetTasksAsync();
+            Console.WriteLine("Async altı: " + DateTime.Now);
+
+            #endregion
 
             #region Backup dosya bilgileri
 

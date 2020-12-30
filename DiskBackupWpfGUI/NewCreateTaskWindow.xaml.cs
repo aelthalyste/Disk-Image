@@ -191,6 +191,8 @@ namespace DiskBackupWpfGUI
             _taskInfo.BackupTaskInfo.FailNumberTryAgain = 0;
             _taskInfo.BackupTaskInfo.WaitNumberTryAgain = 0;
             _taskInfo.BackupTaskInfo.AutoType = 0;
+            ChooseDayAndMounthsWindow._days = _taskInfo.BackupTaskInfo.Days;
+            ChooseDayAndMounthsWindow._months = _taskInfo.BackupTaskInfo.Months;
             //_taskInfo.BackupTaskInfo.Days = null;
             _taskInfo.BackupTaskInfo.WeeklyTime = WeeklyType.Unset;
             _taskInfo.BackupTaskInfo.PeriodicTime = 0;
