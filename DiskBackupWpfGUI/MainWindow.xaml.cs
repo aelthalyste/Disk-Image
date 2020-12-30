@@ -91,9 +91,6 @@ namespace DiskBackupWpfGUI
             if (!backupService.GetInitTracker())
                 MessageBox.Show("Driver intialize edilemedi!", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
 
-
-            #region Disk Bilgileri
-
             try
             {
                 _logger.Information("GetDiskList metoduna istekte bulunuldu");
@@ -121,72 +118,81 @@ namespace DiskBackupWpfGUI
                 _logger.Error(e, "Disk bilgileri getirilemedi!");
             }
 
-            #endregion
+            Initilaze();
 
+            /*
+             Yedekleme alanları
+            Görevler
+            Activity log
+            Backup dosya bilgileri
+             */
 
-            #region Yedekleme alanları
-
-            _logger.Information("GetDiskList metoduna istekte bulunuldu");
-            _logger.Information("GetBackupStorages istekte bulunuldu");
-
-            listViewBackupStorage.ItemsSource = GetBackupStorages(_volumeList, backupStorageService.BackupStorageInfoList());
-
-            #endregion
-
-
-            #region ActivityLog
-
-            Console.WriteLine("Activity Log üzeri: " + DateTime.Now);
-            ShowActivityLog();
-            _logger.Information("GetDownLogList metoduna istekte bulunuldu");
-            try
-            {
-                _logList = backupService.GetDownLogList();
-                listViewLogDown.ItemsSource = _logList;
-            }
-            catch (Exception e)
-            {
-                _logger.Error(e, "BackupService'den NARDIWrapper logları getirilemedi!");
-            }
-            Console.WriteLine("Activity Log altı: " + DateTime.Now);
-
-            #endregion
-
-
-            #region Görevler
-
-            Console.WriteLine("Async üzeri: " + DateTime.Now);
-            GetTasks();
-            //GetTasksAsync();
-            Console.WriteLine("Async altı: " + DateTime.Now);
-
-            #endregion
-
-            #region Backup dosya bilgileri
-
-            Console.WriteLine("Backup Dosyaları üzeri: " + DateTime.Now);
-            try
-            {
-                _logger.Verbose("GetBackupFileList metoduna istekte bulunuldu");
-                _backupsItems = backupService.GetBackupFileList(_backupStorageDal.GetList());
-
-                listViewBackups.ItemsSource = _backupsItems;
-                listViewRestore.ItemsSource = _backupsItems;
-            }
-            catch (Exception e)
-            {
-                _logger.Error(e, "Backup dosyaları getirilemedi!");
-            }
-            Console.WriteLine("Backup Dosyaları üzeri: " + DateTime.Now);
-
-            #endregion
-
-
-            RefreshTasks(_cancellationTokenSource.Token, backupService);
             this.Closing += (sender, e) => _cancellationTokenSource.Cancel();
+            Console.WriteLine("CTOR SON: " + DateTime.Now);
         }
 
-        private async void GetTasksAsync()
+
+        #region Async Listviewleri Doldurma Fonksiyonları
+
+        private async void Initilaze()
+        {
+            Console.WriteLine("Initilaze Baş : " + DateTime.Now);
+            var backupService = _scope.Resolve<IBackupService>();
+            Console.WriteLine("Backup storage: " + DateTime.Now);
+            await GetBackupStoragesAsync(_volumeList);
+            Console.WriteLine("Task: " + DateTime.Now);
+            await GetTasksAsync();
+            Console.WriteLine("Activity: " + DateTime.Now);
+            await ShowActivityLogAsync(backupService);
+            Console.WriteLine("Backup Dosyaları getirilmeden önce: " + DateTime.Now);
+            await ShowBackupsFilesAsync(backupService);
+            Console.WriteLine("Refresh: " + DateTime.Now);
+            RefreshTasks(_cancellationTokenSource.Token, backupService);
+            Console.WriteLine("Initilaze son: " + DateTime.Now);
+        }
+
+        public async Task GetBackupStoragesAsync(List<VolumeInfo> volumeList)
+        {
+            //List<BackupStorageInfo> backupStorageInfoList = _backupStorageService.BackupStorageInfoList();
+
+            var backupStorageInfoList = await Task.Run(() => 
+            { 
+                return _backupStorageDal.GetList(); 
+            });
+            string backupStorageLetter;
+
+            foreach (var storageItem in backupStorageInfoList)
+            {
+                backupStorageLetter = storageItem.Path.Substring(0, storageItem.Path.Length - (storageItem.Path.Length - 1));
+
+                foreach (var volumeItem in volumeList)
+                {
+                    if (backupStorageLetter.Equals(Convert.ToString(volumeItem.Letter)))
+                    {
+                        storageItem.StrCapacity = volumeItem.StrSize;
+                        storageItem.StrFreeSize = volumeItem.StrFreeSize;
+                        storageItem.StrUsedSize = FormatBytes(volumeItem.Size - volumeItem.FreeSize);
+                        storageItem.Capacity = volumeItem.Size;
+                        storageItem.FreeSize = volumeItem.FreeSize;
+                        storageItem.UsedSize = volumeItem.Size - volumeItem.FreeSize;
+                    }
+                }
+
+                if (storageItem.IsCloud) // cloud bilgileri alınıp hibritse burada doldurulacak
+                {
+                    storageItem.CloudCapacity = 107374182400;
+                    storageItem.CloudUsedSize = 21474836480;
+                    storageItem.CloudFreeSize = 85899345920;
+                    storageItem.StrCloudCapacity = FormatBytes(storageItem.CloudCapacity);
+                    storageItem.StrCloudUsedSize = FormatBytes(storageItem.CloudUsedSize);
+                    storageItem.StrCloudFreeSize = FormatBytes(storageItem.CloudFreeSize);
+                }
+            }
+
+            listViewBackupStorage.ItemsSource = backupStorageInfoList;
+        }
+
+        private async Task GetTasksAsync()
         {
             _logger.Verbose("GetTasksAsync metoduna istekte bulunuldu");
             var liste = await Task.Run(() =>
@@ -205,6 +211,57 @@ namespace DiskBackupWpfGUI
             DisableTaskButtons();
             Console.WriteLine("GetTasksAsync: " + DateTime.Now);
         }
+
+        private async Task ShowActivityLogAsync(IBackupService backupService)
+        {
+            _logger.Verbose("ShowActivityLog metoduna istekte bulunuldu");
+
+            _activityLogList = await Task.Run(() =>
+            {
+                return _activityLogDal.GetList();
+            });
+
+            foreach (var item in _activityLogList)
+            {
+                item.StrStatus = Resources[$"{item.StrStatus}"].ToString();
+            }
+
+            listViewLog.ItemsSource = _activityLogList;
+            CollectionView view = (CollectionView)CollectionViewSource.GetDefaultView(listViewLog.ItemsSource);
+            view.SortDescriptions.Add(new SortDescription("Id", ListSortDirection.Descending));
+
+            try
+            {
+                _logList = backupService.GetDownLogList();
+                listViewLogDown.ItemsSource = _logList;
+            }
+            catch (Exception e)
+            {
+                _logger.Error(e, "BackupService'den NARDIWrapper logları getirilemedi!");
+            }
+        }
+
+        private async Task ShowBackupsFilesAsync(IBackupService backupService)
+        {
+            try
+            {
+                _logger.Verbose("GetBackupFileList metoduna istekte bulunuldu");
+                _backupsItems = await Task.Run(() =>
+                {
+                    return backupService.GetBackupFileList(_backupStorageDal.GetList());
+                });
+
+                listViewBackups.ItemsSource = _backupsItems;
+                listViewRestore.ItemsSource = _backupsItems;
+            }
+            catch (Exception e)
+            {
+                _logger.Error(e, "Backup dosyaları getirilemedi!");
+            }
+        }
+
+        #endregion
+
 
         #region Title Bar
         private void btnMainClose_Click(object sender, RoutedEventArgs e)
@@ -1932,13 +1989,13 @@ namespace DiskBackupWpfGUI
                     //var backupService = _scope.Resolve<IBackupService>();
 
                     //log down
-                    RefreshActivityLogDown(backupService);
+                    RefreshActivityLogDownAsync(backupService);
 
                     // son yedekleme bilgisi
-                    RefreshMiddleTaskDate();
+                    RefreshMiddleTaskDateAsync();
 
                     // Ortadaki statu
-                    RefreshMiddleTaskStatu();
+                    RefreshMiddleTaskStatuAsync();
 
                     //backupları yeniliyor
                     if (backupService.GetRefreshIncDiffTaskFlag())
@@ -1961,10 +2018,14 @@ namespace DiskBackupWpfGUI
             }
         }
 
-        private void RefreshActivityLogDown(IBackupService backupService)
+        private async void RefreshActivityLogDownAsync(IBackupService backupService)
         {
             List<ActivityDownLog> logList = new List<ActivityDownLog>();
-            logList = backupService.GetDownLogList();
+            logList = await Task.Run(() =>
+            {
+                return backupService.GetDownLogList();
+            });
+
             if (logList != null)
             {
                 _logger.Verbose("RefreshTasks: ActivityLog down yenileniyor");
@@ -1978,13 +2039,16 @@ namespace DiskBackupWpfGUI
             }
         }
 
-        private void RefreshMiddleTaskDate()
+        private async void RefreshMiddleTaskDateAsync()
         {
             if (listViewLog.Items.Count > 0)
             {
                 _logger.Verbose("RefreshTasks: Son başarılı-başarısız tarih yazdırılıyor");
 
-                var lastLog = _activityLogDal.GetList().LastOrDefault();
+                var lastLog = await Task.Run(() =>
+                {
+                    return _activityLogDal.GetList().LastOrDefault();
+                });
                 //ActivityLog lastLog = ((ActivityLog)listViewLog.Items[0]);
                 txtRunningStateBlock.Text = lastLog.EndDate.ToString();
                 if (lastLog.Status == StatusType.Success)
@@ -1994,10 +2058,18 @@ namespace DiskBackupWpfGUI
             }
         }
 
-        private void RefreshMiddleTaskStatu()
+        private async void RefreshMiddleTaskStatuAsync()
         {
-            TaskInfo runningTask = _taskInfoDal.GetList(x => x.Status == TaskStatusType.Working).FirstOrDefault();
-            TaskInfo pausedTask = _taskInfoDal.GetList(x => x.Status == TaskStatusType.Paused).FirstOrDefault();
+            TaskInfo runningTask = await Task.Run(() =>
+            {
+                return _taskInfoDal.GetList(x => x.Status == TaskStatusType.Working).FirstOrDefault();
+            });
+
+            TaskInfo pausedTask = await Task.Run(() =>
+            {
+                return _taskInfoDal.GetList(x => x.Status == TaskStatusType.Paused).FirstOrDefault();
+            });
+
             if (runningTask != null)
             {
                 _logger.Verbose("RefreshTasks: Çalışan task yazdırılıyor");
