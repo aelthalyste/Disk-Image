@@ -258,5 +258,6 @@
     <system:String x:Key="MessageboxTitle">Narbulut Bilgilendirme</system:String>
     <system:String x:Key="MissingFile">Eksik Dosya</system:String>
     <system:String x:Key="ValidateNAS">NAS Doğrulama</system:String>
+    <system:String x:Key="loading...">Yükleniyor...</system:String>
 
 </ResourceDictionary>

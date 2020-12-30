@@ -125,7 +125,7 @@ namespace DiskBackupWpfGUI
             Görevler
             Activity log
             Backup dosya bilgileri
-             */
+            */
 
             this.Closing += (sender, e) => _cancellationTokenSource.Cancel();
             Console.WriteLine("CTOR SON: " + DateTime.Now);
@@ -136,6 +136,8 @@ namespace DiskBackupWpfGUI
 
         private async void Initilaze()
         {
+            mainTabControl.IsEnabled = false;
+            txtMakeABackup.Text = Resources["loading..."].ToString();
             Console.WriteLine("Initilaze Baş : " + DateTime.Now);
             var backupService = _scope.Resolve<IBackupService>();
             Console.WriteLine("Backup storage: " + DateTime.Now);
@@ -143,18 +145,19 @@ namespace DiskBackupWpfGUI
             Console.WriteLine("Task: " + DateTime.Now);
             await GetTasksAsync();
             Console.WriteLine("Activity: " + DateTime.Now);
-            await ShowActivityLogAsync(backupService);
+            await ShowActivityLogAsync();
+            await ShowActivityLogDownAsync(backupService);
             Console.WriteLine("Backup Dosyaları getirilmeden önce: " + DateTime.Now);
             await ShowBackupsFilesAsync(backupService);
             Console.WriteLine("Refresh: " + DateTime.Now);
+            mainTabControl.IsEnabled = true;
             RefreshTasks(_cancellationTokenSource.Token, backupService);
             Console.WriteLine("Initilaze son: " + DateTime.Now);
         }
 
         public async Task GetBackupStoragesAsync(List<VolumeInfo> volumeList)
         {
-            //List<BackupStorageInfo> backupStorageInfoList = _backupStorageService.BackupStorageInfoList();
-
+            _logger.Verbose("GetBackupStoragesAsync metoduna istekte bulunuldu");
             var backupStorageInfoList = await Task.Run(() => 
             { 
                 return _backupStorageDal.GetList(); 
@@ -212,9 +215,9 @@ namespace DiskBackupWpfGUI
             Console.WriteLine("GetTasksAsync: " + DateTime.Now);
         }
 
-        private async Task ShowActivityLogAsync(IBackupService backupService)
+        private async Task ShowActivityLogAsync()
         {
-            _logger.Verbose("ShowActivityLog metoduna istekte bulunuldu");
+            _logger.Verbose("ShowActivityLogAsync metoduna istekte bulunuldu");
 
             _activityLogList = await Task.Run(() =>
             {
@@ -229,10 +232,17 @@ namespace DiskBackupWpfGUI
             listViewLog.ItemsSource = _activityLogList;
             CollectionView view = (CollectionView)CollectionViewSource.GetDefaultView(listViewLog.ItemsSource);
             view.SortDescriptions.Add(new SortDescription("Id", ListSortDirection.Descending));
+        }
 
+        private async Task ShowActivityLogDownAsync(IBackupService backupService)
+        {
+            _logger.Verbose("ShowActivityLogDownAsync metoduna istekte bulunuldu");
             try
             {
-                _logList = backupService.GetDownLogList();
+                _logList = await Task.Run(() =>
+                {
+                    return backupService.GetDownLogList();
+                });
                 listViewLogDown.ItemsSource = _logList;
             }
             catch (Exception e)
@@ -243,9 +253,9 @@ namespace DiskBackupWpfGUI
 
         private async Task ShowBackupsFilesAsync(IBackupService backupService)
         {
+            _logger.Verbose("ShowBackupsFilesAsync metoduna istekte bulunuldu");
             try
             {
-                _logger.Verbose("GetBackupFileList metoduna istekte bulunuldu");
                 _backupsItems = await Task.Run(() =>
                 {
                     return backupService.GetBackupFileList(_backupStorageDal.GetList());
@@ -1997,6 +2007,7 @@ namespace DiskBackupWpfGUI
                     // Ortadaki statu
                     RefreshMiddleTaskStatuAsync();
 
+                    // --- ASYNC DEGİLLER BAKILACAK
                     //backupları yeniliyor
                     if (backupService.GetRefreshIncDiffTaskFlag())
                     {
@@ -2012,7 +2023,6 @@ namespace DiskBackupWpfGUI
                 catch (Exception e)
                 {
                     MessageBox.Show(e.Message);
-                    // log bastır
                 }
 
             }
@@ -2020,6 +2030,8 @@ namespace DiskBackupWpfGUI
 
         private async void RefreshActivityLogDownAsync(IBackupService backupService)
         {
+            _logger.Verbose("RefreshActivityLogDownAsync istekte bulunuldu");
+
             List<ActivityDownLog> logList = new List<ActivityDownLog>();
             logList = await Task.Run(() =>
             {
@@ -2041,6 +2053,8 @@ namespace DiskBackupWpfGUI
 
         private async void RefreshMiddleTaskDateAsync()
         {
+            _logger.Verbose("RefreshMiddleTaskDateAsync istekte bulunuldu");
+
             if (listViewLog.Items.Count > 0)
             {
                 _logger.Verbose("RefreshTasks: Son başarılı-başarısız tarih yazdırılıyor");
@@ -2060,6 +2074,8 @@ namespace DiskBackupWpfGUI
 
         private async void RefreshMiddleTaskStatuAsync()
         {
+            _logger.Verbose("RefreshMiddleTaskStatuAsync istekte bulunuldu");
+
             TaskInfo runningTask = await Task.Run(() =>
             {
                 return _taskInfoDal.GetList(x => x.Status == TaskStatusType.Working).FirstOrDefault();
@@ -2105,7 +2121,7 @@ namespace DiskBackupWpfGUI
 
         private void RefreshBackupsandTasks(IBackupService backupService)
         {
-            _logger.Verbose("Task listesi ve backuplar yenileniyor");
+            _logger.Verbose("RefreshBackupsandTasks istekte bulunuldu");
 
             int taskSelectedIndex = -1;
             if (listViewTasks.SelectedIndex != -1)
@@ -2120,6 +2136,8 @@ namespace DiskBackupWpfGUI
 
         private void RefreshBackups(IBackupService backupService)
         {
+            _logger.Verbose("RefreshBackups istekte bulunuldu");
+
             _backupsItems = backupService.GetBackupFileList(_backupStorageDal.GetList());
             listViewBackups.ItemsSource = _backupsItems;
             listViewRestore.ItemsSource = _backupsItems;
@@ -2127,6 +2145,8 @@ namespace DiskBackupWpfGUI
 
         private void RefreshActivityLog(IBackupService backupService)
         {
+            _logger.Verbose("RefreshActivityLog istekte bulunuldu");
+
             if (backupService.GetRefreshIncDiffLogFlag())
             {
                 RefreshBackupsandTasks(backupService);
@@ -2166,6 +2186,8 @@ namespace DiskBackupWpfGUI
 
         private void RefreshDisk()
         {
+            _logger.Verbose("RefreshDisk istekte bulunuldu, Disk Listviewler güncelleniyor");
+
             _expanderCheckBoxes.Clear();
             _numberOfItems.Clear();
             _groupName.Clear();
