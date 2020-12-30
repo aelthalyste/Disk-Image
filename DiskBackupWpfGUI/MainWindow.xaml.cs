@@ -136,23 +136,36 @@ namespace DiskBackupWpfGUI
 
             #region Görevler
 
-            GetTasks();
+            Console.WriteLine("Async üzeri: " + DateTime.Now);
+            //GetTasks();
+            GetTasksAsync();
+            Console.WriteLine("Async altı: " + DateTime.Now);
 
             #endregion
 
 
             #region ActivityLog
 
+            Console.WriteLine("Activity Log üzeri: " + DateTime.Now);
             ShowActivityLog();
             _logger.Information("GetDownLogList metoduna istekte bulunuldu");
-            _logList = backupService.GetDownLogList();
-            listViewLogDown.ItemsSource = _logList;
+            try
+            {
+                _logList = backupService.GetDownLogList();
+                listViewLogDown.ItemsSource = _logList;
+            }
+            catch(Exception e)
+            {
+                _logger.Error(e, "BackupService'den NARDIWrapper logları getirilemedi!");
+            }
+            Console.WriteLine("Activity Log altı: " + DateTime.Now);
 
             #endregion
 
 
             #region Backup dosya bilgileri
 
+            Console.WriteLine("Backup Dosyaları üzeri: " + DateTime.Now);
             try
             {
                 _logger.Verbose("GetBackupFileList metoduna istekte bulunuldu");
@@ -165,6 +178,7 @@ namespace DiskBackupWpfGUI
             {
                 _logger.Error(e, "Backup dosyaları getirilemedi!");
             }
+            Console.WriteLine("Backup Dosyaları üzeri: " + DateTime.Now);
 
             #endregion
 
@@ -173,6 +187,25 @@ namespace DiskBackupWpfGUI
             this.Closing += (sender, e) => _cancellationTokenSource.Cancel();
         }
 
+        private async void GetTasksAsync()
+        {
+            _logger.Verbose("GetTasksAsync metoduna istekte bulunuldu");
+            var liste = await Task.Run(() =>
+            {
+                return _taskInfoDal.GetList();
+            });
+            _taskInfoList = liste;
+
+            foreach (var item in _taskInfoList)
+            {
+                item.BackupStorageInfo = _backupStorageDal.Get(x => x.Id == item.BackupStorageInfoId);
+                item.StrStatus = item.Status.ToString();
+                item.StrStatus = Resources[item.StrStatus].ToString();
+            }
+            listViewTasks.ItemsSource = _taskInfoList;
+            DisableTaskButtons();
+            Console.WriteLine("GetTasksAsync: " + DateTime.Now);
+        }
 
         #region Title Bar
         private void btnMainClose_Click(object sender, RoutedEventArgs e)
@@ -695,7 +728,6 @@ namespace DiskBackupWpfGUI
                 item.BackupStorageInfo = _backupStorageDal.Get(x => x.Id == item.BackupStorageInfoId);
                 item.StrStatus = item.Status.ToString();
                 item.StrStatus = Resources[item.StrStatus].ToString();
-                Console.WriteLine(item.StrStatus);
             }
             listViewTasks.ItemsSource = _taskInfoList;
             DisableTaskButtons();
@@ -2112,7 +2144,7 @@ namespace DiskBackupWpfGUI
             return parentT ?? FindParent<T>(parent);
         }
 
-        private static string FormatBytes(long bytes)
+        private string FormatBytes(long bytes)
         {
             string[] Suffix = { "B", "KB", "MB", "GB", "TB" };
             int i;
