@@ -511,7 +511,7 @@ namespace DiskBackup.Business.Concrete
 
                                 instantProcessData += Read; // anlık veri için              
 
-                                statusInfo.FileName = taskInfo.BackupStorageInfo.Path + str.MetadataFileName;
+                                statusInfo.FileName = taskInfo.BackupStorageInfo.Path + str.FileName;
                                 statusInfo.DataProcessed = BytesReadSoFar;
                                 statusInfo.TotalDataProcessed = (long)str.CopySize;
                                 statusInfo.AverageDataRate = ((statusInfo.TotalDataProcessed / 1024.0) / 1024.0) / (timeElapsed.ElapsedMilliseconds / 1000.0); // MB/s
@@ -520,12 +520,12 @@ namespace DiskBackup.Business.Concrete
                                 statusInfo.TimeElapsed = timeElapsed.ElapsedMilliseconds;
                                 _statusInfoDal.Update(statusInfo);
 
-                                _logger.Information($"gecen süre: {passingTime.ElapsedMilliseconds} islenen veri: {instantProcessData}");
+                                //_logger.Information($"gecen süre: {passingTime.ElapsedMilliseconds} islenen veri: {instantProcessData}");
                                 if (passingTime.ElapsedMilliseconds > 1000) // anlık veri için her saniye güncellensin diye
                                 {
                                     instantProcessData = 0;
                                     passingTime.Restart();
-                                    _logger.Information($"Restart edildi. gecen süre: {passingTime.ElapsedMilliseconds} islenen veri: {instantProcessData}");
+                                    //_logger.Information($"Restart edildi. gecen süre: {passingTime.ElapsedMilliseconds} islenen veri: {instantProcessData}");
                                 }
 
                                 if (Read != bufferSize)

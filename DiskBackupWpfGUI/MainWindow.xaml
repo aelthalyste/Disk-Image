@@ -39,10 +39,10 @@
         <Rectangle Grid.Row="1" Fill="#F2F2F2" Grid.ColumnSpan="2"/>
         <ProgressBar Minimum="0" Maximum="100" Name="pbLoading" IsIndeterminate="True" Grid.Row="1" Grid.ColumnSpan="2">
             <ProgressBar.Foreground>
-                <LinearGradientBrush EndPoint="0,1" StartPoint="1,0">
-                    <GradientStop Color="#093C59" Offset="0"/>
-                    <GradientStop Color="#B9DEF0" Offset="1"/>
-                </LinearGradientBrush>
+                <RadialGradientBrush RadiusY="5">
+                    <GradientStop Color="#FF093C59" Offset="0"/>
+                    <GradientStop Color="#FFB9DEF0" Offset="1"/>
+                </RadialGradientBrush>
             </ProgressBar.Foreground>
         </ProgressBar>
         <StackPanel Grid.Row="1" Orientation="Horizontal" Grid.ColumnSpan="2">

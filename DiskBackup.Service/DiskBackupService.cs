@@ -13,6 +13,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.ServiceModel;
@@ -29,6 +30,7 @@ namespace DiskBackup.Service
         private ServiceHost _backupStorageServiceHost;
         private ServiceHost _logServiceHost;
         private ServiceHost _taskSchedulerHost;
+
         public DiskBackupService()
         {
             InitializeComponent();
@@ -73,7 +75,32 @@ namespace DiskBackup.Service
 
         private void CleanUp()
         {
+            var logger = _container.Resolve<ILogger>();
+            var taskInfoDal = _container.Resolve<ITaskInfoDal>();
+            var statusInfoDal = _container.Resolve<IStatusInfoDal>();
 
+            var taskList = taskInfoDal.GetList();     
+            foreach (var taskItem in taskList)
+            {
+                if (taskItem.Status != TaskStatusType.FirstMissionExpected && taskItem.Status != TaskStatusType.Ready)
+                {
+                    logger.Error("{taskInfo} görevi işletilirken, beklenmedik bir şekilde servis kapatıldı veya kapandı. Gerekli düzenlemeler gerçekleştirildi.", taskItem);
+                    taskItem.Status = TaskStatusType.Ready;
+                    taskInfoDal.Update(taskItem);
+                    if (taskItem.Type == TaskType.Backup)
+                    {
+                        var status = statusInfoDal.Get(x => x.Id == taskItem.StatusInfoId);
+                        try
+                        {
+                            File.Delete(status.FileName);
+                        }
+                        catch (IOException ex)
+                        {
+                            logger.Error(ex, $"{status.FileName} silerken hata oluştu.");
+                        }
+                    }
+                }
+            }
         }
 
         private void StartHost()

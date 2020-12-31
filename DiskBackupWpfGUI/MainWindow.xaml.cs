@@ -152,6 +152,7 @@ namespace DiskBackupWpfGUI
             Console.WriteLine("Refresh: " + DateTime.Now);
             mainTabControl.IsEnabled = true;
             pbLoading.Visibility = Visibility.Collapsed;
+            pbLoading.IsIndeterminate = false;
             RefreshTasks(_cancellationTokenSource.Token, backupService);
             Console.WriteLine("Initilaze son: " + DateTime.Now);
         }
