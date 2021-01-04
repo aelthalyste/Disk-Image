@@ -44,4 +44,7 @@
       <Filter>Driver Files</Filter>
     </Inf>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="*.txt;*.htm;*.html" />
+  </ItemGroup>
 </Project>

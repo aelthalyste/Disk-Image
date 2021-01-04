@@ -156,15 +156,7 @@ typedef struct _nar_kernel_data {
     ULONG NameQueryMethod;
     
     
-    
-    //
-    // Lookaside list to allocate pre-operation UNICODE STRINGS and maybe to early fetch all regions, each entry size is LookAsideSize
-    //
-#define LOOKASIDE_ACTIVE 0
-#if LOOKASIDE_ACTIVE
-    // PAGED_LOOKASIDE_LIST LookAsideList;
-#endif
-    
+       
     //
     // In order to compare volume guid strings in list and preop strings, they MUST be allocated in non-paged pool. This nonpaged lookaside list handles this allocation
     //
@@ -182,7 +174,11 @@ typedef struct _nar_kernel_data {
         
         // First 4 byte used to indicate used size, first 4 bytes included as used, so memorybuffers max usable size is NAR_MEMORYBUFFER_SIZE - sizeof*(INT32)
         // Do not directly call this to push data, instead use NAR_PUSH_MB macro
-        void* MemoryBuffer;
+        void *MemoryBuffer;
+
+        char Letter;
+        unsigned char VolFileID; // usually (Letter - 'A')
+
     } VolumeRegionBuffer[NAR_MAX_VOLUME_COUNT];
     
     
@@ -190,15 +186,8 @@ typedef struct _nar_kernel_data {
     UNICODE_STRING UserName;
     ULONG UserModePID;
     int OsDeviceID;
-    
+    HANDLE FileHandles[30];
 } nar_data;
-
-
-
-//struct {
-//  UINT32 S;
-//  UINT32 L;
-//}P[5];
 
 
 //

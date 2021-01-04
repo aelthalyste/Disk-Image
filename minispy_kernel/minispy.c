@@ -16,6 +16,8 @@ Environment:
 
 --*/
 
+#define NAR_KERNEL 1
+
 #include "mspyKern.h"
 #include <stdio.h>
 #include <Ntstrsafe.h>
@@ -298,8 +300,6 @@ Return Value:
 #endif
         
         
-        //ExInitializePagedLookasideList(&NarData.LookAsideList, 0, 0, 0, NAR_LOOKASIDE_SIZE, NAR_TAG, 0);
-        //ExInitializePagedLookasideList(&NarData.GUIDComparePagedLookAsideList, 0, 0, 0, NAR_GUID_STR_SIZE, NAR_TAG, 0);
         
 #if 0        
         NarData.VolumeRegionBuffer = ExAllocatePoolWithTag(PagedPool, NAR_VOLUMEREGIONBUFFERSIZE, NAR_TAG);
@@ -317,7 +317,7 @@ Return Value:
             
             ExInitializeFastMutex(&NarData.VolumeRegionBuffer[i].FastMutex);
             NarData.VolumeRegionBuffer[i].MemoryBuffer = 0;
-            NarData.VolumeRegionBuffer[i].MemoryBuffer = ExAllocatePoolWithTag(PagedPool, NAR_MEMORYBUFFER_SIZE, NAR_TAG);
+            NarData.VolumeRegionBuffer[i].MemoryBuffer = ExAllocatePoolWithTag(NonPagedPool, NAR_MEMORYBUFFER_SIZE, NAR_TAG);
             
             NarData.VolumeRegionBuffer[i].GUIDStrVol.Length = 0;
             NarData.VolumeRegionBuffer[i].GUIDStrVol.MaximumLength = sizeof(NarData.VolumeRegionBuffer[i].Reserved);
@@ -374,10 +374,9 @@ Return Value:
                         DbgPrint("After FltAttachVolume, status %X\n", status);
                         if (status == STATUS_SUCCESS) {
                             
-                            DbgPrint("Hell is other people\n");
                             DbgPrint("Successfully attached volume (%c) GUID : (%wZ)\n", TrackedVolumes[i].Letter, &NarData.VolumeRegionBuffer[i].GUIDStrVol);
                             DbgPrint("GUID len %i, max len %i\n", NarData.VolumeRegionBuffer[i].GUIDStrVol.Length, NarData.VolumeRegionBuffer[i].GUIDStrVol.MaximumLength);
-                            
+                            NarData.VolumeRegionBuffer[i].VolFileID = TrackedVolumes[i].Letter - 'A';
                         }
                         else {
                             DbgPrint("Couldnt attach volume volume %c, GUID: %wZ, status %i\n", TrackedVolumes[i].Letter, &NarData.VolumeRegionBuffer[i].GUIDStrVol, status);
@@ -402,12 +401,34 @@ Return Value:
                 DbgPrint("Sprintf failed, volume letter %c, uni str %wZ", TrackedVolumes[i].Letter, &VolumeNameUniStr);
                 
             }
-            
-            
-            
         }
         
+
         
+
+        for (wchar_t c = L'A'; c <= 'Z'; c++) {
+            
+            wchar_t NameTemp[] = L"\\SystemRoot\\TempName_";
+            NameTemp[sizeof(NameTemp) / 2 - 2] = c;
+            UNICODE_STRING Fn = { 0 };
+            RtlInitUnicodeString(&Fn, NameTemp);
+
+            IO_STATUS_BLOCK iosb;
+            OBJECT_ATTRIBUTES objAttr;
+
+            InitializeObjectAttributes(&objAttr, &Fn, OBJ_KERNEL_HANDLE | OBJ_CASE_INSENSITIVE, NULL, NULL);
+
+            NTSTATUS status = ZwCreateFile(&NarData.FileHandles[c - L'A'], FILE_APPEND_DATA | SYNCHRONIZE, &objAttr, &iosb, NULL,
+                FILE_ATTRIBUTE_NORMAL,
+                FILE_SHARE_READ | FILE_SHARE_WRITE, FILE_OPEN_IF,
+                FILE_SEQUENTIAL_ONLY | FILE_WRITE_THROUGH | FILE_SYNCHRONOUS_IO_NONALERT,
+                NULL, 0);
+
+            if (!NT_SUCCESS(status)) {
+                DbgPrint("Unable to create file\n");
+            }
+
+        }
         
         
     }
@@ -587,7 +608,8 @@ Return Value:
     FltUnregisterFilter(NarData.Filter);
     DbgPrint("Filter unregistered\n");
 
-#if 0
+    
+#if 1
         
     {
         for (int i = 0; i < NAR_MAX_VOLUME_COUNT; i++) {
@@ -596,23 +618,47 @@ Return Value:
 
             ExAcquireFastMutex(&NarData.VolumeRegionBuffer[i].FastMutex);
             
+
+            nar_log_thread_params tp = { 0 };
+            tp.Data         = NAR_MB_DATA(NarData.VolumeRegionBuffer[i].MemoryBuffer);
+            tp.DataLen      = NAR_MB_DATA_USED(NarData.VolumeRegionBuffer[i].MemoryBuffer);
+            tp.FileID       = NarData.VolumeRegionBuffer[i].VolFileID;
+
+            HANDLE Thread = 0;
+            NTSTATUS status = PsCreateSystemThread(&Thread, THREAD_ALL_ACCESS, 0, 0, 0, NarThreadJob, &tp);
+            if (NT_SUCCESS(status)) {
+                ZwClose(Thread);
+                NAR_INIT_MEMORYBUFFER(NarData.VolumeRegionBuffer[i].MemoryBuffer);
+            }
+            else {
+                DbgPrint("failed to create thread\n");
+            }
+
+            // check if there are still logs that need to be flushed
+            
+
             // invalidate volume name so no thread gains access to invalid memory adress
-            //memset(&NarData.VolumeRegionBuffer[i].Reserved[0], 0, sizeof(NarData.VolumeRegionBuffer[i].Reserved));
+            memset(&NarData.VolumeRegionBuffer[i].Reserved[0], 0, sizeof(NarData.VolumeRegionBuffer[i].Reserved));
             
             // checking with NULL is dumb at kernel level
             if (NarData.VolumeRegionBuffer[i].MemoryBuffer != NULL) {
-                //DbgPrint("Freeing volume memory buffer %i\n", i);
                 ExFreePoolWithTag(NarData.VolumeRegionBuffer[i].MemoryBuffer, NAR_TAG);
                 NarData.VolumeRegionBuffer[i].MemoryBuffer = 0;
             }
             ExReleaseFastMutex(&NarData.VolumeRegionBuffer[i].FastMutex);
+            
         }
         
-        //ExFreePoolWithTag(NarData.VolumeRegionBuffer, NAR_TAG);
-        //DbgPrint("Freed volume region buffer\n");
         
     }// If nardata.volumeregionbuffer != NULL
     
+
+
+    for (size_t i = 0; i < sizeof(NarData.FileHandles)/8; i++) {
+        ZwClose(NarData.FileHandles[i]);
+    }
+
+
 #endif
     
     return STATUS_SUCCESS;
@@ -757,72 +803,6 @@ Return Value:
             
             
             NAR_COMMAND* Command = (NAR_COMMAND*)InputBuffer;
-            if (Command->Type == NarCommandType_GetVolumeLog) {
-                
-                INT32 FoundVolume = FALSE;
-                
-                if (Command->VolumeGUIDStr != NULL
-                    && OutputBuffer != NULL
-                    && OutputBufferSize == NAR_MEMORYBUFFER_SIZE) {
-                    
-                    //memset(OutputBuffer, 0, OutputBufferSize);
-                    
-                    int DEBUG_COPIED_DATA = 0;
-                    for (int i = 0; i < NAR_MAX_VOLUME_COUNT; i++) {
-                        
-                        
-                        ExAcquireFastMutex(&NarData.VolumeRegionBuffer[i].FastMutex);
-                        if (RtlCompareMemory(Command->VolumeGUIDStr, NarData.VolumeRegionBuffer[i].Reserved, NAR_GUID_STR_SIZE) == NAR_GUID_STR_SIZE) {
-                            
-                            memcpy(OutputBuffer, NarData.VolumeRegionBuffer[i].MemoryBuffer, NAR_MB_USED(NarData.VolumeRegionBuffer[i].MemoryBuffer));
-                            DEBUG_COPIED_DATA = NAR_MB_USED(NarData.VolumeRegionBuffer[i].MemoryBuffer);
-                            
-                            memset(NarData.VolumeRegionBuffer[i].MemoryBuffer, 0, NAR_MEMORYBUFFER_SIZE);
-                            
-                            NAR_INIT_MEMORYBUFFER(NarData.VolumeRegionBuffer[i].MemoryBuffer);
-                            
-                            // reset memory buffer.
-                            FoundVolume = TRUE;
-                            
-                            // early termination
-                            ExReleaseFastMutex(&NarData.VolumeRegionBuffer[i].FastMutex);
-                            break;
-                            
-                        }
-                        
-                        ExReleaseFastMutex(&NarData.VolumeRegionBuffer[i].FastMutex);
-                        
-                    }
-                    
-                    
-                    *ReturnOutputBufferLength = 0;
-                    if (FoundVolume == FALSE) {
-                        DbgPrint("Volume not found! %wZ\n", Command->VolumeGUIDStr);
-                    }
-                    else {
-                        *ReturnOutputBufferLength = (ULONG)NAR_MEMORYBUFFER_SIZE;
-                        //DbgPrint("Succ copied data to output buffer, size %i\n", DEBUG_COPIED_DATA);
-                    }
-                    
-                    
-                    
-                }
-                else {
-                    DbgPrint("BIG IF BLOCK FAILED IN SPYMESSAGE\n"); // short but effective temporary message
-                    if(Command->VolumeGUIDStr == NULL){
-                        DbgPrint("VOLGUIDSTR WAS NULL\n");
-                    }
-                    if(OutputBuffer == NULL){
-                        DbgPrint("OUTPUTBUFFER WAS  NULL\n");
-                    }
-                    if(OutputBufferSize == NAR_MEMORYBUFFER_SIZE){
-                        DbgPrint("OUTPUTBUFFERSIZE WAS NOT EQUAL TO NAR_MEMORYBUFFER_SIZE NULL\n");
-                    }
-                    
-                }
-                
-                
-            }
             if (Command->Type == NarCommandType_AddVolume) {
                 
                 DbgPrint("Command add volume received\n");
@@ -875,7 +855,9 @@ Return Value:
                                     
                                     VolumeAdded = TRUE;
                                     VolumeAddIndex = i;
-                                    
+                                    NarData.VolumeRegionBuffer[i].Letter = Command->Letter;
+                                    NarData.VolumeRegionBuffer[i].VolFileID = Command->Letter - 'A';
+
                                     ExReleaseFastMutex(&NarData.VolumeRegionBuffer[i].FastMutex);
                                     break;
                                     
@@ -1013,6 +995,55 @@ NarSubMemoryExists(void* mem1, void* mem2, int mem1len, int mem2len) {
 }
 
 
+inline BOOLEAN
+LogMemoryBuffer(void* MemoryBuffer, size_t VolumeFileID){
+    
+    BOOLEAN Result = FALSE;
+    nar_log_thread_params tp = { 0 };
+    
+    tp.Data     = NAR_MB_DATA(MemoryBuffer);
+    tp.DataLen  = NAR_MB_DATA_USED(MemoryBuffer);
+    tp.FileID   = VolumeFileID;
+
+
+    HANDLE Thread = 0;
+    NTSTATUS status = PsCreateSystemThread(&Thread, THREAD_ALL_ACCESS, 0, 0, 0, NarThreadJob, &tp);
+    if (NT_SUCCESS(status)) {
+        ZwClose(Thread);
+        Result = TRUE;
+    }
+    else {
+        DbgPrint("failed to create thread\n");
+    }
+    return Result;
+
+}
+
+
+// DECLARE_CONST_UNICODE_STRING()
+
+
+inline void
+NarThreadJob(PVOID param) {
+
+    nar_log_thread_params* tp = (nar_log_thread_params*)param;
+
+    {
+        IO_STATUS_BLOCK iosb;
+
+        NTSTATUS status = ZwWriteFile(NarData.FileHandles[tp->FileID], 0, 0, 0, &iosb, (tp->Data), tp->DataLen, 0, 0);
+        if (NT_SUCCESS(status)) {
+            //DbgPrint("Successfully flushed file contents\n");
+            NAR_INIT_MEMORYBUFFER(param);
+        }
+        else {
+            DbgPrint("couldnt write to file, err id %i\n", status);
+        }
+    }
+    
+    return;
+}
+
 //---------------------------------------------------------------------------
 //              Operation filtering routines
 //---------------------------------------------------------------------------
@@ -1060,27 +1091,28 @@ Return Value:
     UNREFERENCED_PARAMETER(defaultName);
     UNREFERENCED_PARAMETER(nameToUse);
     UNREFERENCED_PARAMETER(CompletionContext);
-    
-    ULONG PID = FltGetRequestorProcessId(Data);
+
+    // If system shutdown requested, dont bother to log changes
+    if (Data->Iopb->MajorFunction == IRP_MJ_SHUTDOWN) {
+        return FLT_PREOP_SUCCESS_NO_CALLBACK;
+    }
+
+    //ULONG PID = FltGetRequestorProcessId(Data);
     // filter out temporary files and files that would be closed if last handle freed
-    if ((Data->Iopb->TargetFileObject->Flags & FO_TEMPORARY_FILE) == FO_TEMPORARY_FILE || (Data->Iopb->TargetFileObject->Flags & FO_DELETE_ON_CLOSE) == FO_DELETE_ON_CLOSE || PID == NarData.UserModePID) {
+    if ((Data->Iopb->TargetFileObject->Flags & FO_TEMPORARY_FILE) == FO_TEMPORARY_FILE) {
         return  FLT_PREOP_SUCCESS_NO_CALLBACK;
     }
     
-    // If system shutdown requested, dont bother to log changes
-    if (Data->Iopb->MajorFunction == IRP_MJ_SHUTDOWN) {
-        //FltUnloadFilter(MINISPY_PORT_NAME);
-        //SpyFilterUnload(FLTFL_FILTER_UNLOAD_MANDATORY);
-        return FLT_PREOP_SUCCESS_NO_CALLBACK;
-    }
+
     
     PFLT_FILE_NAME_INFORMATION nameInfo = NULL;
     
 #if 1
     
     
-    void* UnicodeStrBuffer = 0;
-    
+    //void* UnicodeStrBuffer = 0;
+    unsigned char UnicodeStrBuffer[NAR_LOOKASIDE_SIZE];
+
     if (FltObjects->FileObject != NULL) {
         
         status = FltGetFileNameInformation(Data,
@@ -1089,58 +1121,18 @@ Return Value:
                                            &nameInfo);
         if (NT_SUCCESS(status)) {
             
-            // Harddiskdevice\path\asdfs\sdffsd\file
-            /*
-               C:\Users\adm\AppData\Local\Temp
-               C:\Users\adm\AppData\Local\Microsoft\Windows\Temporary Internet Files
-               C:\Users\adm\AppData\Local\Google\Chrome\User Data\Default\Cache
-               C:\Users\adm\AppData\Local\Opera Software
-               C:\Users\adm\AppData\Local\Mozilla\Firefox\Profiles
-               C:\Windows\CSC
-            */
-            
-            //FltGetVolumeName(FltObjects->Volume, StringBuffer, 0);
             
             UNICODE_STRING UniStr;
-            UnicodeStrBuffer = ExAllocatePoolWithTag(PagedPool, NAR_LOOKASIDE_SIZE, NAR_TAG);
-            if (UnicodeStrBuffer == NULL) {
-                DbgPrint("Couldnt allocate memory for unicode string\n");
-                return FLT_PREOP_SUCCESS_NO_CALLBACK;
-            }
+            
+            //UnicodeStrBuffer = ExAllocatePoolWithTag(PagedPool, NAR_LOOKASIDE_SIZE, NAR_TAG);
+            //if (UnicodeStrBuffer == NULL) {
+            //    DbgPrint("Couldnt allocate memory for unicode string\n");
+            //    return FLT_PREOP_SUCCESS_NO_CALLBACK;
+            //}
             
             RtlInitEmptyUnicodeString(&UniStr, UnicodeStrBuffer, NAR_LOOKASIDE_SIZE);
             
-            //
-#if 0
-            
-            RtlUnicodeStringPrintf(&UniStr, L"\\Device\\HarddiskVolume%i\\Users\\%S\\AppData\\Local\\Temp", NarData.OsDeviceID, NarData.UserName);
-            if (RtlPrefixUnicodeString(&UniStr, &nameInfo->Name, FALSE)) {
-                goto NAR_PREOP_FAILED_END;
-            }
-            
-            RtlUnicodeStringPrintf(&UniStr, L"\\Device\\HarddiskVolume%i\\Users\\%S\\AppData\\Local\\Microsoft\\Windows\\Temporary Internet Files", NarData.OsDeviceID, NarData.UserName);
-            if (RtlPrefixUnicodeString(&UniStr, &nameInfo->Name, FALSE)) {
-                goto NAR_PREOP_FAILED_END;
-            }
-            
-            RtlUnicodeStringPrintf(&UniStr, L"\\Device\\HarddiskVolume%i\\Users\\%S\\AppData\\Local\\Google\\Chrome\\User Data\\Default\\Cache", NarData.OsDeviceID, NarData.UserName);
-            if (RtlPrefixUnicodeString(&UniStr, &nameInfo->Name, FALSE)) {
-                goto NAR_PREOP_FAILED_END;
-            }
-            
-            RtlUnicodeStringPrintf(&UniStr, L"\\Device\\HarddiskVolume%i\\Users\\%S\\AppData\\Local\\Opera Software", NarData.OsDeviceID, NarData.UserName);
-            if (RtlPrefixUnicodeString(&UniStr, &nameInfo->Name, FALSE)) {
-                goto NAR_PREOP_FAILED_END;
-            }
-            
-            RtlUnicodeStringPrintf(&UniStr, L"\\Device\\HarddiskVolume%i\\Users\\%S\\AppData\\Local\\Mozilla\\Firefox\\Profiles", NarData.OsDeviceID, NarData.UserName);
-            if (RtlPrefixUnicodeString(&UniStr, &nameInfo->Name, FALSE)) {
-                goto NAR_PREOP_FAILED_END;
-            }
-            
-            
-#else
-            
+            //       
             
             RtlUnicodeStringPrintf(&UniStr, L"\\AppData\\Local\\Temp");
             if (NarSubMemoryExists(nameInfo->Name.Buffer, UniStr.Buffer, nameInfo->Name.Length, UniStr.Length)) {
@@ -1171,13 +1163,30 @@ Return Value:
             if (NarSubMemoryExists(nameInfo->Name.Buffer, UniStr.Buffer, nameInfo->Name.Length, UniStr.Length)) {
                 goto NAR_PREOP_FAILED_END;
             }
+
+            RtlUnicodeStringPrintf(&UniStr, L"\\Example.txt");
+            if (NarSubMemoryExists(nameInfo->Name.Buffer, UniStr.Buffer, nameInfo->Name.Length, UniStr.Length)) {
+                goto NAR_PREOP_FAILED_END;
+            }
             
             
             
-#endif
+
             
             
             //Suffix area
+            RtlUnicodeStringPrintf(&UniStr, L"$Mft");
+            if (RtlSuffixUnicodeString(&UniStr, &nameInfo->Name, FALSE)) {
+                goto NAR_PREOP_FAILED_END;
+            }
+            RtlUnicodeStringPrintf(&UniStr, L"$LogFile");
+            if (RtlSuffixUnicodeString(&UniStr, &nameInfo->Name, FALSE)) {
+                goto NAR_PREOP_FAILED_END;
+            }
+            RtlUnicodeStringPrintf(&UniStr, L"$BitMap");
+            if (RtlSuffixUnicodeString(&UniStr, &nameInfo->Name, FALSE)) {
+                goto NAR_PREOP_FAILED_END;
+            }
             RtlUnicodeStringPrintf(&UniStr, L".tmp");
             if (RtlSuffixUnicodeString(&UniStr, &nameInfo->Name, FALSE)) {
                 goto NAR_PREOP_FAILED_END;
@@ -1202,18 +1211,7 @@ Return Value:
             if (RtlSuffixUnicodeString(&UniStr, &nameInfo->Name, FALSE)) {
                 goto NAR_PREOP_FAILED_END;
             }
-            RtlUnicodeStringPrintf(&UniStr, L"$Mft");
-            if (RtlSuffixUnicodeString(&UniStr, &nameInfo->Name, FALSE)) {
-                goto NAR_PREOP_FAILED_END;
-            }
-            RtlUnicodeStringPrintf(&UniStr, L"$LogFile");
-            if (RtlSuffixUnicodeString(&UniStr, &nameInfo->Name, FALSE)) {
-                goto NAR_PREOP_FAILED_END;
-            }
-            RtlUnicodeStringPrintf(&UniStr, L"$BitMap");
-            if (RtlSuffixUnicodeString(&UniStr, &nameInfo->Name, FALSE)) {
-                goto NAR_PREOP_FAILED_END;
-            }
+
             
             /*
             RtlUnicodeStringPrintf(&UniStr, L"$MFT");
@@ -1233,8 +1231,10 @@ Return Value:
             RETRIEVAL_POINTERS_BUFFER ClusterMapBuffer;
             
             DWORD WholeFileMapBufferSize = sizeof(RETRIEVAL_POINTERS_BUFFER) * 128;
-            RETRIEVAL_POINTERS_BUFFER* WholeFileMapBuffer = (RETRIEVAL_POINTERS_BUFFER*)ExAllocatePoolWithTag(PagedPool, WholeFileMapBufferSize, NAR_TAG);
+            //RETRIEVAL_POINTERS_BUFFER* WholeFileMapBuffer = (RETRIEVAL_POINTERS_BUFFER*)ExAllocatePoolWithTag(PagedPool, WholeFileMapBufferSize, NAR_TAG);
             
+            RETRIEVAL_POINTERS_BUFFER WholeFileMapBuffer[128];
+
             ClusterMapBuffer.StartingVcn.QuadPart = 0;
             StartingInputVCNBuffer.StartingVcn.QuadPart = 0;
             
@@ -1279,7 +1279,7 @@ Return Value:
             if (!NT_SUCCESS(status)) {
                 DbgPrint("FltFsControl failed with code %i,  file name %wZ\n", status, &nameInfo->Name);
                 
-                ExFreePoolWithTag(WholeFileMapBuffer, NAR_TAG);
+                //ExFreePoolWithTag(WholeFileMapBuffer, NAR_TAG);
                 
                 goto NAR_PREOP_FAILED_END;
             }
@@ -1399,7 +1399,7 @@ Return Value:
                 
             }
             
-            ExFreePoolWithTag(WholeFileMapBuffer, NAR_TAG);
+            // ExFreePoolWithTag(WholeFileMapBuffer, NAR_TAG);
             
             
             // TODO(BATUHAN): try one loop via KeTestSpinLock, to fast check if volume is available for fast access, if it is available and matches GUID, immidiately flush all regions and return, if not available test higher elements in list.
@@ -1435,7 +1435,7 @@ Return Value:
                             ExReleaseFastMutex(&NarData.VolumeRegionBuffer[i].FastMutex);
                             continue;
                         }
-                        
+                                            
                         if (RtlCompareMemory(&CompareBuffer[0], NarData.VolumeRegionBuffer[i].GUIDStrVol.Buffer, NAR_GUID_STR_SIZE) == NAR_GUID_STR_SIZE) {
                             RemainingSizeOnBuffer = NAR_MEMORYBUFFER_SIZE - NAR_MB_USED(NarData.VolumeRegionBuffer[i].MemoryBuffer);
                             
@@ -1445,64 +1445,24 @@ Return Value:
                             }
                             else {
                                 
-                                DbgPrint("not enought memory, will flush contents to file\n");
-#if 0
-                                UNICODE_STRING FileName = { 0 };
                                 
-#if 0
-                                wchar_t VolumeName[50];
-                                memset(VolumeName, 0, sizeof(VolumeName));
+                                nar_log_thread_params tp = { 0 };
+                                tp.Data         = NAR_MB_DATA(NarData.VolumeRegionBuffer[i].MemoryBuffer);
+                                tp.DataLen      = NAR_MB_DATA_USED(NarData.VolumeRegionBuffer[i].MemoryBuffer);
+                                tp.FileID       = NarData.VolumeRegionBuffer[i].VolFileID;
                                 
-                                wchar_t FileNameBuffer[128];
-                                memset(FileNameBuffer, 0, sizeof(FileNameBuffer));
-                                
-                                memcpy(VolumeName, &NarData.VolumeRegionBuffer[i].GUIDStrVol.Buffer[4], (NarData.VolumeRegionBuffer[i].GUIDStrVol.Length - 4) * 2);
-                                DbgPrint("Vol name extracted %S\n", VolumeName);                                
-                                
-                                RtlInitEmptyUnicodeString(&FileName, &FileNameBuffer[0], sizeof(FileNameBuffer));
-                                RtlUnicodeStringCatString(&FileName, L"\\SystemRoot\\LOGFILE_");
-                                RtlUnicodeStringCatString(&FileName, VolumeName);
-#else
-                                
-                                RtlInitUnicodeString(&FileName, L"\\SystemRoot\\Example.txt");
-#endif
-                                DbgPrint("File name generated %wZ\n", &FileName);
-                                
-                                IO_STATUS_BLOCK iosb;
-                                OBJECT_ATTRIBUTES objAttr;
-                                InitializeObjectAttributes(&objAttr, &FileName, OBJ_KERNEL_HANDLE | OBJ_CASE_INSENSITIVE, NULL, NULL);
-                                HANDLE FileHandle;
-                                
-                                status = ZwCreateFile(&FileHandle, FILE_APPEND_DATA | SYNCHRONIZE, &objAttr, &iosb, NULL,
-                                                      FILE_ATTRIBUTE_NORMAL,
-                                                      FILE_SHARE_READ | FILE_SHARE_WRITE, FILE_OPEN_IF,
-                                                      FILE_SEQUENTIAL_ONLY | FILE_WRITE_THROUGH | FILE_SYNCHRONOUS_IO_NONALERT,
-                                                      NULL, 0);
-                                
+                                HANDLE Thread = 0;
+                                NTSTATUS status = PsCreateSystemThread(&Thread, THREAD_ALL_ACCESS, 0, 0, 0, NarThreadJob, &tp);
                                 if (NT_SUCCESS(status)) {
-                                    
-                                    UINT32 TempBufferSize = NAR_MB_USED(NarData.VolumeRegionBuffer[i].MemoryBuffer);
-                                    
-                                    status = ZwWriteFile(FileHandle, 0, 0, 0, &iosb, NAR_MB_DATA(NarData.VolumeRegionBuffer[i].MemoryBuffer), TempBufferSize, 0, 0);
-                                    if (NT_SUCCESS(status)) {
-                                        DbgPrint("Successfully flushed file contents\n");
-                                        NAR_INIT_MEMORYBUFFER(NarData.VolumeRegionBuffer[i].MemoryBuffer);
-                                    }
-                                    else {
-                                        DbgPrint("couldnt write to file, err id %i\n", status);
-                                    }
-                                    
-                                    ZwClose(FileHandle);
-                                    
+                                    ZwClose(Thread);
+                                    NAR_INIT_MEMORYBUFFER(NarData.VolumeRegionBuffer[i].MemoryBuffer);
                                 }
                                 else {
-                                    DbgPrint("ZwCreateFile failed with code %X\n", status);
+                                    DbgPrint("failed to create thread\n");
                                 }
                                 
-                                
-                                
-                                //NAR_MB_MARK_NOT_ENOUGH_SPACE(NarData.VolumeRegionBuffer[i].MemoryBuffer);
-#endif
+
+                            
                             }
                             
                             ExReleaseFastMutex(&NarData.VolumeRegionBuffer[i].FastMutex);
@@ -1514,10 +1474,10 @@ Return Value:
                     }
                     
                     if (!Added) {
-                        DbgPrint("Couldnt add entry to memory buffer, %wZ\n", &GUIDStringNPaged);
+                        //DbgPrint("Couldnt add entry to memory buffer, %wZ\n", &GUIDStringNPaged);
                     }
                     else{
-                        DbgPrint("Pushed %i bytes to mem buf\n", SizeNeededForMemoryBuffer);
+                        //DbgPrint("Pushed %i bytes to mem buf\n", SizeNeededForMemoryBuffer);
                     }
                     
                     
@@ -1550,17 +1510,16 @@ Return Value:
     
 #endif
     
-    if (UnicodeStrBuffer) {
-        ExFreePoolWithTag(UnicodeStrBuffer, NAR_TAG);
-    }
+    //if (UnicodeStrBuffer) {
+    //    ExFreePoolWithTag(UnicodeStrBuffer, NAR_TAG);
+    //}
     
     return FLT_PREOP_SUCCESS_NO_CALLBACK;
     
     NAR_PREOP_FAILED_END:
-    
-    if (UnicodeStrBuffer) {
-        ExFreePoolWithTag(UnicodeStrBuffer, NAR_TAG);
-    }
+    //if (UnicodeStrBuffer) {
+    //    ExFreePoolWithTag(UnicodeStrBuffer, NAR_TAG);
+    //}
     
     return FLT_PREOP_SUCCESS_NO_CALLBACK;
     

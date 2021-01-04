@@ -83,10 +83,12 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <TargetName>minispy</TargetName>
     <IntDir>$(SolutionDir)\bin\$(ProjectName)\$(Platform)\$(ConfigurationName)\</IntDir>
+    <EnableInf2cat>false</EnableInf2cat>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <TargetName>minispy</TargetName>
     <IntDir>$(SolutionDir)\bin\$(ProjectName)\$(Platform)\$(ConfigurationName)\</IntDir>
+    <EnableInf2cat>false</EnableInf2cat>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <TargetName>minispy</TargetName>

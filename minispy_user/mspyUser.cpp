@@ -1666,8 +1666,9 @@ AddVolumeToTrack(PLOG_CONTEXT Context, wchar_t Letter, BackupType Type) {
     if (ID == NAR_INVALID_VOLUME_TRACK_ID) {
         
         NAR_COMMAND Command;
-        Command.Type = NarCommandType_AddVolume;
-        
+        Command.Type    = NarCommandType_AddVolume;
+        Command.Letter  = Letter;
+
         if (NarGetVolumeGUIDKernelCompatible(Letter, Command.VolumeGUIDStr)) {
             
             DWORD BytesReturned;
@@ -8026,7 +8027,7 @@ int
 main(int argc, char* argv[]) {
     
     
-#if 1
+#if 0
     {
         nar_backup_file_explorer_context ctx = {0};
         
@@ -8164,16 +8165,15 @@ main(int argc, char* argv[]) {
     C.CleaningUp = FALSE;
     
     if(SetupVSS() && ConnectDriver(&C)){
-        
-#if 0        
-        AddVolumeToTrack(&C, 'E', (BackupType)0);
-        C.Volumes.Data[0].FilterFlags.IsActive = TRUE;
+        DotNetStreamInf inf = {0};
+#if 1        
+        SetupStream(&C, (wchar_t)'C', (BackupType)0, &inf);
         loop{
             Sleep(16);
         }
 #endif
         
-        DotNetStreamInf inf = {0};
+        
         char Volume = 0;
         int Type = 0;
         loop{

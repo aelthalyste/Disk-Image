@@ -47,6 +47,13 @@ Return Value:
         
 #pragma warning(pop)
         
+        // // TODO(Batuhan): MUST REMOVE
+        Sleep(16);
+        // TODO(Batuhan): REMOVE
+        continue;
+        // TODO(Batuhan): REMOVE
+        
+        
         //
         //  Check to see if we should shut down.
         //

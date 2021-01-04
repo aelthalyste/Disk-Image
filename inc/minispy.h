@@ -38,8 +38,8 @@ Environment:
 
 #define NAR_GUID_STR_SIZE 96
 
-#define NAR_MEMORYBUFFER_SIZE       (1024*1024*16) // 1k
-#define NAR_MAX_VOLUME_COUNT        (8)
+#define NAR_MEMORYBUFFER_SIZE       (1024*128*1) // 1mb
+#define NAR_MAX_VOLUME_COUNT        (12)
 #define NAR_REGIONBUFFER_SIZE       (sizeof(*NarData.VolumeRegionBuffer)) //struct itself
 #define NAR_VOLUMEREGIONBUFFERSIZE  (NAR_MAX_VOLUME_COUNT)*(NAR_REGIONBUFFER_SIZE)
 
@@ -75,6 +75,72 @@ struct nar_backup_id{
     };
 };
 
+
+struct nar_log_thread_params {
+    void* Data;
+    INT DataLen;
+    size_t FileID;
+};
+
+#ifndef __cplusplus
+typedef struct nar_log_thread_params nar_log_thread_params;
+#endif
+
+
+
+
+
+
+// nar volume change log = nvcl
+#define NAR_LOG_FILE_EXTENSION L".nvcl"
+
+#if NAR_KERNEL
+
+#include <ntstrsafe.h>
+
+inline BOOLEAN
+LogMemoryBuffer(void* MemBuffer, size_t VolFileID);
+
+inline void
+NarThreadJob(PVOID param);
+
+/*
+APPENDS generated log file name to OUTPUT. 
+If you want it to just generate log file name, call it with empty OUTPUT buffer.
+*/
+inline void
+GenerateLogFileName(PUNICODE_STRING Output, PCUNICODE_STRING VolumeKernelName) {
+    
+    UNICODE_STRING prefix = { 0 };
+    RtlInitUnicodeString(&prefix, L"NAR_LOG_");
+
+    UNICODE_STRING ext = { 0 };
+    RtlInitUnicodeString(&ext, NAR_LOG_FILE_EXTENSION);
+    
+
+    RtlUnicodeStringCat(Output, &prefix);
+    RtlUnicodeStringCat(Output, VolumeKernelName);
+    RtlUnicodeStringCat(Output, &ext);
+
+}
+
+#else
+
+
+//#include <string>
+//inline std::wstring
+//GenerateLogFileName(const wchar_t *VolumeKernelName) {
+//    std::wstring Result;
+//    Result += "NAR_LOG_";
+//    Result += std::wstring(VolumeKernelName);
+//    Result += std::wstinrg(NAR_LOG_FILE_EXTENSION);
+//    return Result;
+//}
+
+#endif
+
+
+
 typedef struct nar_backup_id nar_backup_id;
 
 typedef struct _nar_boot_track_data{
@@ -86,47 +152,6 @@ typedef struct _nar_boot_track_data{
 }nar_boot_track_data;
 #pragma pack(pop)
 
-//
-//  FltMgr's IRP major codes
-//
-
-#define IRP_MJ_ACQUIRE_FOR_SECTION_SYNCHRONIZATION  ((UCHAR)-1)
-#define IRP_MJ_RELEASE_FOR_SECTION_SYNCHRONIZATION  ((UCHAR)-2)
-#define IRP_MJ_ACQUIRE_FOR_MOD_WRITE                ((UCHAR)-3)
-#define IRP_MJ_RELEASE_FOR_MOD_WRITE                ((UCHAR)-4)
-#define IRP_MJ_ACQUIRE_FOR_CC_FLUSH                 ((UCHAR)-5)
-#define IRP_MJ_RELEASE_FOR_CC_FLUSH                 ((UCHAR)-6)
-#define IRP_MJ_NOTIFY_STREAM_FO_CREATION            ((UCHAR)-7)
-
-#define IRP_MJ_FAST_IO_CHECK_IF_POSSIBLE            ((UCHAR)-13)
-#define IRP_MJ_NETWORK_QUERY_OPEN                   ((UCHAR)-14)
-#define IRP_MJ_MDL_READ                             ((UCHAR)-15)
-#define IRP_MJ_MDL_READ_COMPLETE                    ((UCHAR)-16)
-#define IRP_MJ_PREPARE_MDL_WRITE                    ((UCHAR)-17)
-#define IRP_MJ_MDL_WRITE_COMPLETE                   ((UCHAR)-18)
-#define IRP_MJ_VOLUME_MOUNT                         ((UCHAR)-19)
-#define IRP_MJ_VOLUME_DISMOUNT                      ((UCHAR)-20)
-
-//
-//  My own definition for transaction notify command
-//
-
-#define IRP_MJ_TRANSACTION_NOTIFY                   ((UCHAR)-40)
-
-
-//
-//  Version definition
-//
-
-#define MINISPY_MAJ_VERSION 2
-#define MINISPY_MIN_VERSION 0
-
-typedef struct _MINISPYVER {
-    
-    USHORT Major;
-    USHORT Minor;
-    
-} MINISPYVER, * PMINISPYVER;
 
 //
 //  Name of minispy's communication server port
@@ -172,6 +197,7 @@ typedef struct NAR_COMMAND {
     struct {
         WCHAR VolumeGUIDStr[49];     // Null terminated VolumeGUID string
     };
+    char Letter; // neccecary for driver to calculate it's fileid
     
 }NAR_COMMAND;
 
