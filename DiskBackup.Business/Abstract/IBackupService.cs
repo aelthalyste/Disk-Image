@@ -39,9 +39,9 @@ namespace DiskBackup.Business.Abstract
 
         //Parametreler bu methodun içinde RestoreTask oluşturacak
         [OperationContract]
-        bool RestoreBackupVolume(TaskInfo taskInfo);
+        byte RestoreBackupVolume(TaskInfo taskInfo);
         [OperationContract]
-        bool RestoreBackupDisk(TaskInfo taskInfo);
+        byte RestoreBackupDisk(TaskInfo taskInfo);
         //Restore işleminde disk seçilirse CW_RestoreToFreshDisk, volume seçilirse CW_RestoreToVolume
         [OperationContract]
         bool CleanChain(char letter);
@@ -74,6 +74,9 @@ namespace DiskBackup.Business.Abstract
         bool GetRefreshIncDiffLogFlag();
         [OperationContract]
         void RefreshIncDiffLogFlag(bool value);
+
+        [OperationContract]
+        byte BackupFileDelete(BackupInfo backupInfo);
 
     }
 }

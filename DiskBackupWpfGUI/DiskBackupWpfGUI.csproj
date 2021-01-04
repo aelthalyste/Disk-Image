@@ -180,6 +180,9 @@
       <DependentUpon>StatusesWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="Utils\SortAdorner.cs" />
+    <Compile Include="ValidateNASWindow.xaml.cs">
+      <DependentUpon>ValidateNASWindow.xaml</DependentUpon>
+    </Compile>
     <Page Include="AddBackupAreaWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -225,6 +228,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="StatusesWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="ValidateNASWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -416,6 +423,7 @@
     <Content Include="image_disk.db">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Resource Include="Resources\Icon\icons8-delete-file-24.png" />
     <Resource Include="Resources\Icon\icons8-undo-96-disable.png" />
     <Resource Include="Resources\Icon\icons8-undo-96.png" />
     <Resource Include="Resources\Icon\icons8_brake_warning_2.ico" />

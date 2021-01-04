@@ -37,6 +37,14 @@
             </Border>
         </StackPanel>
         <Rectangle Grid.Row="1" Fill="#F2F2F2" Grid.ColumnSpan="2"/>
+        <ProgressBar Minimum="0" Maximum="100" Name="pbLoading" IsIndeterminate="True" Grid.Row="1" Grid.ColumnSpan="2">
+            <ProgressBar.Foreground>
+                <RadialGradientBrush RadiusY="5">
+                    <GradientStop Color="#FF093C59" Offset="0"/>
+                    <GradientStop Color="#FFB9DEF0" Offset="1"/>
+                </RadialGradientBrush>
+            </ProgressBar.Foreground>
+        </ProgressBar>
         <StackPanel Grid.Row="1" Orientation="Horizontal" Grid.ColumnSpan="2">
             <TextBlock Text="{DynamicResource lastProcess}" FontSize="14" FontWeight="Bold" VerticalAlignment="Center" Margin="15,0,0,0"/>
             <TextBlock Name="txtRunningStateBlock" FontWeight="Bold" FontSize="14" VerticalAlignment="Center" Margin="10,0,0,0" Foreground="Red" />
@@ -379,7 +387,7 @@
                                         </GridViewColumn.Header>
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
-                                                <TextBlock Text="{Binding LastWorkingDate, StringFormat='dd.MM.yyyy HH:mm'}" Style="{StaticResource MTBListViewLastWorkingDate}" TextAlignment="Center"/>
+                                                <TextBlock Text="{Binding LastWorkingDate}" Style="{StaticResource MTBListViewLastWorkingDate}" TextAlignment="Center"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
@@ -389,7 +397,7 @@
                                         </GridViewColumn.Header>
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
-                                                <TextBlock Text="{Binding NextDate, StringFormat='dd.MM.yyyy HH:mm'}" Style="{StaticResource MTBListViewNextDate}" TextAlignment="Center"/>
+                                                <TextBlock Text="{Binding NextDate}" Style="{StaticResource MTBListViewNextDate}" TextAlignment="Center"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
@@ -1262,7 +1270,7 @@
                                         </GridViewColumn.Header>
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
-                                                <TextBlock Text="{Binding StartDate, StringFormat='dd.MM.yyyy HH:mm'}" TextAlignment="Center"/>
+                                                <TextBlock Text="{Binding StartDate}" TextAlignment="Center"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
@@ -1272,7 +1280,8 @@
                                         </GridViewColumn.Header>
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
-                                                <TextBlock Text="{Binding EndDate, StringFormat='dd.MM.yyyy HH:mm'}" TextAlignment="Center"/>
+                                                <!--<TextBlock Text="{Binding EndDate, StringFormat='g'}" TextAlignment="Center"/> Saniyeleri kaldırıyor-->
+                                                <TextBlock Text="{Binding EndDate}" TextAlignment="Center"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>

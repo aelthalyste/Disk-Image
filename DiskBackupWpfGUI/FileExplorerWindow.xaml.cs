@@ -18,6 +18,7 @@ using DiskBackup.Business.Concrete;
 using DiskBackup.DataAccess.Abstract;
 using DiskBackup.Entities.Concrete;
 using NarDIWrapper;
+using Serilog;
 
 namespace DiskBackupWpfGUI
 {
@@ -28,52 +29,50 @@ namespace DiskBackupWpfGUI
     {
         private IBackupService _backupManager;
         private readonly IBackupStorageDal _backupStorageDal;
+        private readonly ILogger _logger;
 
         private List<FilesInBackup> _filesInBackupList = new List<FilesInBackup>();
         private BackupInfo _backupInfo;
-        private NetworkConnection _nc;
 
         private bool _fileAllControl;
 
-        public FileExplorerWindow(IBackupService backupManager, BackupInfo backupInfo, IBackupStorageDal backupStorageDal)
+        public FileExplorerWindow(IBackupService backupManager, BackupInfo backupInfo, IBackupStorageDal backupStorageDal, ILogger logger)
         {
             InitializeComponent();
             _backupStorageDal = backupStorageDal;
             _backupManager = backupManager;
             _backupInfo = backupInfo;
-            _nc = null;
+            _logger = logger.ForContext<FileExplorerWindow>();
 
-            var backupStorageInfo = _backupStorageDal.Get(x => x.Id == backupInfo.BackupStorageInfoId);         
-            if (backupStorageInfo.Type == BackupStorageType.NAS)
+            try
             {
-                try
-                {
-                    if (backupStorageInfo.Type == BackupStorageType.NAS)
-                    {
-                        _nc = new NetworkConnection(backupStorageInfo.Path.Substring(0, backupStorageInfo.Path.Length - 1), backupStorageInfo.Username, backupStorageInfo.Password, backupStorageInfo.Domain);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show($"Backup dosyaları uzak paylaşıma bağlanılamadığından gösterilemiyor. {backupStorageInfo.Path}", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
-                    return;
-                }
+                _backupManager.InitFileExplorer(backupInfo);
+                _filesInBackupList = _backupManager.GetFileInfoList();
+                RemoveSystemFiles();
+                listViewFileExplorer.ItemsSource = _filesInBackupList;
+                SortItems();
+                txtfileExplorerPath.Text = _backupManager.GetCurrentDirectory();
             }
-
-            _backupManager.InitFileExplorer(backupInfo);
-            _filesInBackupList = _backupManager.GetFileInfoList();
-            RemoveSystemFiles();
-            listViewFileExplorer.ItemsSource = _filesInBackupList;
-            SortItems();
-            txtfileExplorerPath.Text = _backupManager.GetCurrentDirectory();
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "Beklenmedik hatadan dolayı file explorer açılamıyor.");
+                MessageBox.Show($"Beklenmedik bir hata ile karşılaşıldığından bu işleme devam edilemiyor.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+            
         }
 
         #region Title Bar
         private void btnClose_Click(object sender, RoutedEventArgs e)
         {
-            _backupManager.FreeFileExplorer();
-            if (_nc != null)
-                _nc.Dispose();
+            try
+            {
+                _backupManager.FreeFileExplorer();
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "Beklenmedik hata oluştu. |_backupManager.FreeFileExplorer()|");
+            }
             Close();
         }
 
@@ -106,31 +105,46 @@ namespace DiskBackupWpfGUI
 
         private void btnBack_Click(object sender, RoutedEventArgs e)
         {
-            _backupManager.PopDirectory();
-            _filesInBackupList = _backupManager.GetFileInfoList();
-            RemoveSystemFiles();
-            listViewFileExplorer.ItemsSource = _filesInBackupList;
-            SortItems();
-            txtfileExplorerPath.Text = _backupManager.GetCurrentDirectory();
-            // pop diyip
-            // getFilesInCurrentDirectory
+            try
+            {
+                _backupManager.PopDirectory();
+                _filesInBackupList = _backupManager.GetFileInfoList();
+                RemoveSystemFiles();
+                listViewFileExplorer.ItemsSource = _filesInBackupList;
+                SortItems();
+                txtfileExplorerPath.Text = _backupManager.GetCurrentDirectory();
+            }
+            catch(Exception ex)
+            {
+                _logger.Error(ex, "Beklenmedik hata oluştuğu için file explorerda geri gidilemiyor");
+            }
         }
 
         private void listViewFileExplorer_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
-            FilesInBackup filesInBackup = (FilesInBackup)listViewFileExplorer.SelectedItem;
-
-            foreach (var item in _filesInBackupList)
+            if (listViewFileExplorer.SelectedIndex != -1)
             {
-                if(item.Name.Equals(filesInBackup.Name) && item.StrSize.Equals(filesInBackup.StrSize))
+                FilesInBackup filesInBackup = (FilesInBackup)listViewFileExplorer.SelectedItem;
+
+                foreach (var item in _filesInBackupList)
                 {
-                    _backupManager.GetSelectedFileInfo(item);
-                    _filesInBackupList = _backupManager.GetFileInfoList();
-                    RemoveSystemFiles();
-                    listViewFileExplorer.ItemsSource = _filesInBackupList;
-                    SortItems();
-                    txtfileExplorerPath.Text = _backupManager.GetCurrentDirectory();
-                    break;
+                    if (item.Name.Equals(filesInBackup.Name) && item.StrSize.Equals(filesInBackup.StrSize))
+                    {
+                        try
+                        {
+                            _backupManager.GetSelectedFileInfo(item);
+                            _filesInBackupList = _backupManager.GetFileInfoList();
+                            RemoveSystemFiles();
+                            listViewFileExplorer.ItemsSource = _filesInBackupList;
+                            SortItems();
+                            txtfileExplorerPath.Text = _backupManager.GetCurrentDirectory();
+                        }
+                        catch(Exception ex)
+                        {
+                            _logger.Error(ex, "Beklenmedik hata oluştuğu için file explorerda içine girilemiyor");
+                        }
+                        break;
+                    }
                 }
             }
         }
@@ -202,7 +216,15 @@ namespace DiskBackupWpfGUI
             {
                 foreach (FilesInBackup item in listViewFileExplorer.SelectedItems)
                 {
-                    _backupManager.RestoreFilesInBackup(item.Id, _backupInfo.BackupStorageInfo.Path, txtFolderPath.Text + @"\");
+                    try
+                    {
+                        _backupManager.RestoreFilesInBackup(item.Id, _backupInfo.BackupStorageInfo.Path, txtFolderPath.Text + @"\");
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.Error(ex, $"Dosya restore işlemi gerçekleştirilemedi. {"item.Id: " + item.Id + " txtFolderPath.Text: " + txtFolderPath.Text}");
+                        MessageBox.Show($"Beklenmedik bir hata ile karşılaşıldığından bu işleme devam edilemiyor.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+                    }
                 }
             }
         }

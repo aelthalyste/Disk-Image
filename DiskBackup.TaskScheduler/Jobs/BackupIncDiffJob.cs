@@ -86,13 +86,7 @@ namespace DiskBackup.TaskScheduler.Jobs
                     _taskInfoDal.Update(task);
                     _backupService.RefreshIncDiffTaskFlag(true);
                     result = _backupService.CreateIncDiffBackup(task);
-
-                    //for (int i = 0; i < 100000; i++)
-                    //{
-                    //    Console.WriteLine(i);
-                    //}
                 }
-
 
                 Console.WriteLine("Done");
             }

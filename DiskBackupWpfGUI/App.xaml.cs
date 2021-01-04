@@ -58,6 +58,7 @@ namespace DiskBackupWpfGUI
             builder.RegisterType<AddBackupAreaWindow>();
             builder.RegisterType<FileExplorerWindow>();
             builder.RegisterType<ChooseDayAndMounthsWindow>();
+            builder.RegisterType<ValidateNASWindow>();
             _container = builder.Build();
         }
     }

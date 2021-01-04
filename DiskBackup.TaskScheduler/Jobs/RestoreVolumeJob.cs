@@ -36,7 +36,7 @@ namespace DiskBackup.TaskScheduler.Jobs
 
         public Task Execute(IJobExecutionContext context) // async ekleyeceğiz
         {
-            bool result = false;
+            byte result = 0;
             var taskId = int.Parse(context.JobDetail.JobDataMap["taskId"].ToString());
             var task = _taskInfoDal.Get(x => x.Id == taskId);
             _logger.Information("{@task} için restore volume görevi başlatıldı.", task);
@@ -86,19 +86,31 @@ namespace DiskBackup.TaskScheduler.Jobs
             catch (Exception e)
             {
                 _logger.Error(e, "{@Task} restore volume görevinde hata oluştu.", task);
-                result = false;
+                result = 0;
             }
 
-            if (result)
+            if (result == 1)
             {
                 _logger.Verbose("{@task} volume job'ın result true ifindeyim", task);
                 activityLog.Status = StatusType.Success;
                 UpdateActivityAndTask(activityLog, task);
             }
-            else
+            else if (result == 0)
             {
                 _logger.Verbose("{@task} volume job'ın result false ifindeyim", task);
                 activityLog.Status = StatusType.Fail;
+                UpdateActivityAndTask(activityLog, task);
+            }
+            else if (result == 2) // bağlantı hatası
+            {
+                _logger.Verbose("{@task} volume job'ın result result bağlantı hatası ifindeyim", task);
+                activityLog.Status = StatusType.ConnectionError;
+                UpdateActivityAndTask(activityLog, task);
+            }
+            else if (result == 3)
+            {
+                _logger.Verbose("{@task} volume job'ın result result eksik dosyalar var", task);
+                activityLog.Status = StatusType.MissingFile;
                 UpdateActivityAndTask(activityLog, task);
             }
 
