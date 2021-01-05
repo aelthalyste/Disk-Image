@@ -61,10 +61,10 @@ namespace DiskBackupWpfGUI
                     imgValidateConnectionTrue.Visibility = Visibility.Visible;
                     _validate = true;
                     // silme işlemleri                  
-                    var result2 = _backupService.BackupFileDelete(_backupInfo);
-                    if (result2 == 0)
+                    var result = _backupService.BackupFileDelete(_backupInfo);
+                    if (result == 0)
                         MessageBox.Show("NAS'a bağlanamadınız.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
-                    else if (result2 == 1)
+                    else if (result == 1)
                         MessageBox.Show("Beklenmedik bir hata ile karşılaşıldı. Silme işlemi gerçekleştirilemedi.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
 
                     Console.WriteLine("Validate sildim");
@@ -81,6 +81,10 @@ namespace DiskBackupWpfGUI
             }
             catch
             {
+                //başarısız
+                imgValidateConnectionFalse.Visibility = Visibility.Visible;
+                imgValidateConnectionTrue.Visibility = Visibility.Collapsed;
+                _validate = false;
             }
         }
 

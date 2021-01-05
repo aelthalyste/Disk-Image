@@ -373,7 +373,17 @@ namespace DiskBackupWpfGUI
                         _logger.Information("{harf} zincir temizleniyor. {oncekiTip} tipinden, {yeniTip} tipine düzenleme yapıldı.", _taskInfo.StrObje, Resources[resultBackupTask.Type.ToString()], Resources[_taskInfo.BackupTaskInfo.Type.ToString()]);
                         foreach (var item in _taskInfo.StrObje)
                         {
-                            _backupService.CleanChain(item);
+                            try
+                            {
+                                _backupService.CleanChain(item);
+                            }
+                            catch (Exception ex)
+                            {
+                                _logger.Error(ex, "Beklenmedik hatadan dolayı {harf} zincir temizleme işlemi gerçekleştirilemedi.", item);
+                                MessageBox.Show($"Beklenmedik hata oluştu. {item} zincir temizleme başarılı olamadı.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+                                Close();
+                                return;
+                            }
                         }
                     }
 
@@ -559,7 +569,17 @@ namespace DiskBackupWpfGUI
 
                             foreach (var item in itemTask.StrObje)
                             {
-                                _backupService.CleanChain(item);
+                                try
+                                {
+                                    _backupService.CleanChain(item);
+                                }
+                                catch (Exception ex)
+                                {
+                                    _logger.Error(ex, "Beklenmedik hatadan dolayı {harf} zincir temizleme işlemi gerçekleştirilemedi.", item);
+                                    MessageBox.Show($"Beklenmedik hata oluştu. {item} zincir temizleme başarılı olamadı.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+                                    Close();
+                                    return false;
+                                }
                             }
 
                             _taskInfoDal.Update(itemTask);
@@ -723,32 +743,31 @@ namespace DiskBackupWpfGUI
             AddBackupAreaWindow addBackupArea = _createAddBackupWindow();
             addBackupArea.ShowDialog();
 
-            //karşılaştırma yapıp ekleneni yeniden gösteriyoruz
-            List<DiskInformation> diskList = _backupService.GetDiskList();
-            List<VolumeInfo> volumeList = new List<VolumeInfo>();
-
-            foreach (var diskItem in diskList)
+            try
             {
-                foreach (var volumeItem in diskItem.VolumeInfos)
+                //karşılaştırma yapıp ekleneni yeniden gösteriyoruz
+                List<DiskInformation> diskList = _backupService.GetDiskList();
+                List<VolumeInfo> volumeList = new List<VolumeInfo>();
+
+                foreach (var diskItem in diskList)
                 {
-                    volumeList.Add(volumeItem);
+                    foreach (var volumeItem in diskItem.VolumeInfos)
+                    {
+                        volumeList.Add(volumeItem);
+                    }
                 }
+
+                _backupStorageInfoList = GetBackupStorages(volumeList, _backupStorageService.BackupStorageInfoList());
+                cbTargetBackupArea.ItemsSource = _backupStorageInfoList;
+                if (_backupStorageInfoList.Count > 0)
+                    cbTargetBackupArea.SelectedIndex = _backupStorageInfoList.Count - 1;
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "Beklenmedik hata oluştu.");
+                MessageBox.Show("Beklenmedik hata oluştu.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
             }
 
-            diskList = _backupService.GetDiskList();
-
-            foreach (var diskItem in diskList)
-            {
-                foreach (var volumeItem in diskItem.VolumeInfos)
-                {
-                    volumeList.Add(volumeItem);
-                }
-            }
-
-            _backupStorageInfoList = GetBackupStorages(volumeList, _backupStorageService.BackupStorageInfoList());
-            cbTargetBackupArea.ItemsSource = _backupStorageInfoList;
-            if (_backupStorageInfoList.Count > 0)
-                cbTargetBackupArea.SelectedIndex = _backupStorageInfoList.Count-1;
         }
 
         #region Arrow Button

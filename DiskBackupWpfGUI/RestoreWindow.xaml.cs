@@ -268,6 +268,7 @@ namespace DiskBackupWpfGUI
                             _logger.Error(ex, "NarDIWrapper'dan uygun disk için harf alınamadı.");
                             MessageBox.Show($"Restore gerçekleştirilecek uygun volume harfiniz bulunamamaktadır.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Information);
                             Close();
+                            return;
                         }
 
                         var result = CheckAndBreakAffectedTask(_taskInfo);

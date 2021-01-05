@@ -88,8 +88,20 @@ namespace DiskBackupWpfGUI
             var backupService = _scope.Resolve<IBackupService>();
             var backupStorageService = _scope.Resolve<IBackupStorageService>();
 
-            if (!backupService.GetInitTracker())
+            try
+            {
+                if (!backupService.GetInitTracker())
+                {
+                    _logger.Information("Driver intialize edilemedi.");
+                    MessageBox.Show("Driver intialize edilemedi!", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "Driver intialize edilemedi.");
                 MessageBox.Show("Driver intialize edilemedi!", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+
 
             try
             {
@@ -160,9 +172,9 @@ namespace DiskBackupWpfGUI
         public async Task GetBackupStoragesAsync(List<VolumeInfo> volumeList)
         {
             _logger.Verbose("GetBackupStoragesAsync metoduna istekte bulunuldu");
-            var backupStorageInfoList = await Task.Run(() => 
-            { 
-                return _backupStorageDal.GetList(); 
+            var backupStorageInfoList = await Task.Run(() =>
+            {
+                return _backupStorageDal.GetList();
             });
             string backupStorageLetter;
 
@@ -554,7 +566,15 @@ namespace DiskBackupWpfGUI
                         var backupService = _scope.Resolve<IBackupService>();
                         foreach (var itemLetter in item.StrObje)
                         {
-                            backupService.CleanChain(itemLetter);
+                            try
+                            {
+                                backupService.CleanChain(itemLetter);
+                            }
+                            catch (Exception ex)
+                            {
+                                _logger.Error(ex, "Beklenmedik hatadan dolayı {harf} zincir temizleme işlemi gerçekleştirilemedi.", itemLetter);
+                                //EYBRUG: Chain kısmı gerçekleştirilemiyorsa delete gerçekleştirilmemesi sağlanabilir bu kısım yukarı alınarak
+                            }
                         }
                     }
                 }
@@ -635,7 +655,15 @@ namespace DiskBackupWpfGUI
             }
             else if (taskInfo.Status.Equals(TaskStatusType.Paused))
             {
-                backupService.ResumeTask(taskInfo);
+                try
+                {
+                    backupService.ResumeTask(taskInfo);
+                }
+                catch (Exception ex)
+                {
+                    _logger.Error(ex, "Beklenmedik hatadan dolayı taska devam edilemiyor.");
+                    MessageBox.Show("Beklenmedik hata oluştu. Task'a devam edilemiyor.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+                }
             }
             RefreshBackupsandTasks(backupService);
         }
@@ -645,7 +673,15 @@ namespace DiskBackupWpfGUI
             _logger.Verbose("btnTaskPause_Click istekte bulunuldu");
 
             var backupService = _scope.Resolve<IBackupService>();
-            backupService.PauseTask((TaskInfo)listViewTasks.SelectedItem);
+            try
+            {
+                backupService.PauseTask((TaskInfo)listViewTasks.SelectedItem);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "Beklenmedik hatadan dolayı task duraklatılamıyor.");
+                MessageBox.Show("Beklenmedik hata oluştu. Task duraklatılamıyor.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+            }
             RefreshBackupsandTasks(backupService);
         }
 
@@ -654,7 +690,15 @@ namespace DiskBackupWpfGUI
             _logger.Verbose("btnTaskStop_Click istekte bulunuldu");
 
             var backupService = _scope.Resolve<IBackupService>();
-            backupService.CancelTask((TaskInfo)listViewTasks.SelectedItem);
+            try
+            {
+                backupService.CancelTask((TaskInfo)listViewTasks.SelectedItem);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "Beklenmedik hatadan dolayı task durdurulamıyor.");
+                MessageBox.Show("Beklenmedik hata oluştu. Task durdurulamıyor.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+            }
             RefreshBackupsandTasks(backupService);
         }
 
@@ -1407,7 +1451,7 @@ namespace DiskBackupWpfGUI
             }
             else
                 result = MessageBox.Show($"{((BackupInfo)listViewBackups.SelectedItem).FileName} backup dosyasının silinmesi diğer backuplarınızı etklileyebilir. Emin misiniz?", Resources["MessageboxTitle"].ToString(), MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
-            
+
             if (result == MessageBoxResult.Yes)
             {
                 Dictionary<string, bool> NAS = new Dictionary<string, bool>();
@@ -1437,11 +1481,19 @@ namespace DiskBackupWpfGUI
                                 }
                                 else if (item.Value)
                                 {
-                                    var result2 = backupService.BackupFileDelete(backupInfo);
-                                    if (result2 == 0)
-                                        MessageBox.Show("NAS'a bağlanamadınız.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
-                                    else if (result2 == 1)
+                                    try
+                                    {
+                                        var result2 = backupService.BackupFileDelete(backupInfo);
+                                        if (result2 == 0)
+                                            MessageBox.Show("NAS'a bağlanamadınız.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+                                        else if (result2 == 1)
+                                            MessageBox.Show("Beklenmedik bir hata ile karşılaşıldı. Silme işlemi gerçekleştirilemedi.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        _logger.Error(ex, "Beklenmedik hatadan dolayı silme işlemi gerçekleştirilemedi.");
                                         MessageBox.Show("Beklenmedik bir hata ile karşılaşıldı. Silme işlemi gerçekleştirilemedi.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+                                    }
                                     controlFlag = true;
                                 }
                             }
@@ -1466,12 +1518,20 @@ namespace DiskBackupWpfGUI
                     }
                     else if (backupInfo.BackupStorageInfo.Type == BackupStorageType.Windows)
                     {
-                        // silme işlemleri                  
-                        var result2 = backupService.BackupFileDelete(backupInfo);
-                        if (result2 == 0)
-                            MessageBox.Show("NAS'a bağlanamadınız.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
-                        else if (result2 == 1)
+                        // silme işlemleri 
+                        try
+                        {
+                            var result2 = backupService.BackupFileDelete(backupInfo);
+                            if (result2 == 0)
+                                MessageBox.Show("NAS'a bağlanamadınız.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+                            else if (result2 == 1)
+                                MessageBox.Show("Beklenmedik bir hata ile karşılaşıldı. Silme işlemi gerçekleştirilemedi.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.Error(ex, "Beklenmedik hatadan dolayı silme işlemi gerçekleştirilemedi.");
                             MessageBox.Show("Beklenmedik bir hata ile karşılaşıldı. Silme işlemi gerçekleştirilemedi.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+                        }
                     }
                 }
             }
@@ -2035,10 +2095,16 @@ namespace DiskBackupWpfGUI
             _logger.Verbose("RefreshActivityLogDownAsync istekte bulunuldu");
 
             List<ActivityDownLog> logList = new List<ActivityDownLog>();
-            logList = await Task.Run(() =>
+            try
             {
-                return backupService.GetDownLogList();
-            });
+                logList = await Task.Run(() =>
+                {
+                    return backupService.GetDownLogList();
+                });
+            }
+            catch
+            {
+            }
 
             if (logList != null)
             {
@@ -2139,29 +2205,40 @@ namespace DiskBackupWpfGUI
         private void RefreshBackups(IBackupService backupService)
         {
             _logger.Verbose("RefreshBackups istekte bulunuldu");
-
-            _backupsItems = backupService.GetBackupFileList(_backupStorageDal.GetList());
-            listViewBackups.ItemsSource = _backupsItems;
-            listViewRestore.ItemsSource = _backupsItems;
+            try
+            {
+                _backupsItems = backupService.GetBackupFileList(_backupStorageDal.GetList());
+                listViewBackups.ItemsSource = _backupsItems;
+                listViewRestore.ItemsSource = _backupsItems;
+            }
+            catch
+            {
+            }
         }
 
         private void RefreshActivityLog(IBackupService backupService)
         {
             _logger.Verbose("RefreshActivityLog istekte bulunuldu");
 
-            if (backupService.GetRefreshIncDiffLogFlag())
+            try
             {
-                RefreshBackupsandTasks(backupService);
-                _logger.Verbose("RefreshTasks: Activitylog listesi yenileniyor");
-
-                int logSelectedIndex = -1;
-                if (listViewLog.SelectedIndex != -1)
+                if (backupService.GetRefreshIncDiffLogFlag())
                 {
-                    logSelectedIndex = listViewLog.SelectedIndex;
+                    RefreshBackupsandTasks(backupService);
+                    _logger.Verbose("RefreshTasks: Activitylog listesi yenileniyor");
+
+                    int logSelectedIndex = -1;
+                    if (listViewLog.SelectedIndex != -1)
+                    {
+                        logSelectedIndex = listViewLog.SelectedIndex;
+                    }
+                    ShowActivityLog();
+                    listViewLog.SelectedIndex = logSelectedIndex + 1;
+                    backupService.RefreshIncDiffLogFlag(false);
                 }
-                ShowActivityLog();
-                listViewLog.SelectedIndex = logSelectedIndex + 1;
-                backupService.RefreshIncDiffLogFlag(false);
+            }
+            catch
+            {
             }
         }
 
@@ -2189,29 +2266,37 @@ namespace DiskBackupWpfGUI
         private void RefreshDisk()
         {
             _logger.Verbose("RefreshDisk istekte bulunuldu, Disk Listviewler güncelleniyor");
-
-            _expanderCheckBoxes.Clear();
-            _numberOfItems.Clear();
-            _groupName.Clear();
-            _restoreExpanderCheckBoxes.Clear();
-            _restoreNumberOfItems.Clear();
-            _restoreGroupName.Clear();
-            _expanderRestoreDiskList.Clear();
-
-            var backupService = _scope.Resolve<IBackupService>();
-
-            _diskList = backupService.GetDiskList();
-            _volumeList.Clear();
-
-            foreach (var diskItem in _diskList)
+            try
             {
-                foreach (var volumeItem in diskItem.VolumeInfos)
+                _expanderCheckBoxes.Clear();
+                _numberOfItems.Clear();
+                _groupName.Clear();
+                _restoreExpanderCheckBoxes.Clear();
+                _restoreNumberOfItems.Clear();
+                _restoreGroupName.Clear();
+                _expanderRestoreDiskList.Clear();
+
+                var backupService = _scope.Resolve<IBackupService>();
+                _diskList = backupService.GetDiskList();
+                _volumeList.Clear();
+
+                foreach (var diskItem in _diskList)
                 {
-                    _volumeList.Add(volumeItem);
+                    foreach (var volumeItem in diskItem.VolumeInfos)
+                    {
+                        _volumeList.Add(volumeItem);
+                    }
                 }
+                //_volumeList.ForEach(x => Console.WriteLine(x.Name));
+                _view.Refresh();
             }
-            //_volumeList.ForEach(x => Console.WriteLine(x.Name));
-            _view.Refresh();
+            catch (Exception ex)
+            {
+                _logger.Fatal(ex, "Disk listesi yenilenemedi.");
+                MessageBox.Show("Beklenmedik hata oluştu.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+                Close();
+            }
+
         }
 
         #endregion

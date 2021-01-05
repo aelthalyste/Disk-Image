@@ -545,6 +545,9 @@ namespace DiskBackupWpfGUI
             }
             catch
             {
+                //başarısız
+                imgValidateConnectionFalse.Visibility = Visibility.Visible;
+                imgValidateConnectionTrue.Visibility = Visibility.Collapsed;
             }
         }
     }
