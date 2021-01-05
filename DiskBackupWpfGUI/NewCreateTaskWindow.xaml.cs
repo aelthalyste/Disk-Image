@@ -224,7 +224,7 @@ namespace DiskBackupWpfGUI
         {
             if (ConfirmNotEmpty())
             {
-                MessageBox.Show("İlgili alanları lütfen boş geçmeyiniz.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show(Resources["notNullMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
             }
             else
             {
@@ -380,7 +380,7 @@ namespace DiskBackupWpfGUI
                             catch (Exception ex)
                             {
                                 _logger.Error(ex, "Beklenmedik hatadan dolayı {harf} zincir temizleme işlemi gerçekleştirilemedi.", item);
-                                MessageBox.Show($"Beklenmedik hata oluştu. {item} zincir temizleme başarılı olamadı.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+                                MessageBox.Show(Resources["unexpectedError1MB"].ToString() + $" {item} " + Resources["notChainCleanMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
                                 Close();
                                 return;
                             }
@@ -438,16 +438,16 @@ namespace DiskBackupWpfGUI
                     Close();
 
                     if (_updateControl)
-                        MessageBox.Show("Güncelleme başarılı.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Information);
+                        MessageBox.Show(Resources["updateSuccessMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Information);
                     else
-                        MessageBox.Show("Ekleme başarılı.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Information);
+                        MessageBox.Show(Resources["addSuccessMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Information);
                 }
                 else
                 {
                     if (_updateControl)
-                        MessageBox.Show("Güncelleme başarısız.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+                        MessageBox.Show(Resources["updateFailMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
                     else
-                        MessageBox.Show("Ekleme başarısız.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+                        MessageBox.Show(Resources["addFailMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
                 }
 
 
@@ -487,7 +487,7 @@ namespace DiskBackupWpfGUI
             MessageBoxResult result = MessageBoxResult.Yes;
 
             if (checkFlag)
-                result = MessageBox.Show($"Etkilenecek olan restore görevleriniz var. \nOnaylıyor musunuz?", Resources["MessageboxTitle"].ToString(), MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
+                result = MessageBox.Show(Resources["restoreTaskAffectedMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
             if (result == MessageBoxResult.No)
                 return false;
 
@@ -546,7 +546,7 @@ namespace DiskBackupWpfGUI
                 {
                     Console.WriteLine(item.Name);
                 }
-                var result = MessageBox.Show("Oluşturmak istediğiniz görevlerin, volumelarında işlemekte olan görevleriniz etkisiz hale getirilecek.\nOnaylıyor musunuz?", Resources["MessageboxTitle"].ToString(), MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
+                var result = MessageBox.Show(Resources["volumeAffectedMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
                 if (result == MessageBoxResult.No)
                 {
                     return false;
@@ -576,7 +576,7 @@ namespace DiskBackupWpfGUI
                                 catch (Exception ex)
                                 {
                                     _logger.Error(ex, "Beklenmedik hatadan dolayı {harf} zincir temizleme işlemi gerçekleştirilemedi.", item);
-                                    MessageBox.Show($"Beklenmedik hata oluştu. {item} zincir temizleme başarılı olamadı.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+                                    MessageBox.Show(Resources["unexpectedError1MB"].ToString() + $" {item} " + Resources["notChainCleanMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
                                     Close();
                                     return false;
                                 }
@@ -592,7 +592,7 @@ namespace DiskBackupWpfGUI
                 return true;
             else
             {
-                MessageBox.Show("Çalışan görevler etkisiz hale getirilemediği için bu görev eklenemez.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show(Resources["runningTaskAffectedMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
                 return false;
             }
         }
@@ -765,7 +765,7 @@ namespace DiskBackupWpfGUI
             catch (Exception ex)
             {
                 _logger.Error(ex, "Beklenmedik hata oluştu.");
-                MessageBox.Show("Beklenmedik hata oluştu.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show(Resources["unexpectedErrorMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
             }
 
         }
@@ -1153,7 +1153,7 @@ namespace DiskBackupWpfGUI
             var resultBackupTask = _backupTaskDal.Add(_taskInfo.BackupTaskInfo);
             if (resultBackupTask == null)
             {
-                MessageBox.Show("Ekleme başarısız.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show(Resources["addFailMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
                 return null;
             }
 
@@ -1163,7 +1163,7 @@ namespace DiskBackupWpfGUI
             var resultStatusInfo = _statusInfoDal.Add(_taskInfo.StatusInfo);
             if (resultStatusInfo == null)
             {
-                MessageBox.Show("Ekleme başarısız.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show(Resources["addFailMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
                 return null;
             }
 
@@ -1175,7 +1175,7 @@ namespace DiskBackupWpfGUI
             var resultTaskInfo = _taskInfoDal.Add(_taskInfo);
             if (resultTaskInfo == null)
             {
-                MessageBox.Show("Ekleme başarısız.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show(Resources["addFailMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
                 return null;
             }
 
@@ -1188,7 +1188,7 @@ namespace DiskBackupWpfGUI
             var resultBackupTask = _backupTaskDal.Update(_taskInfo.BackupTaskInfo);
             if (resultBackupTask == null)
             {
-                MessageBox.Show("Güncelleme başarısız.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show(Resources["updateFailMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
                 return null;
             }
 
@@ -1198,7 +1198,7 @@ namespace DiskBackupWpfGUI
             var resultStatusInfo = _statusInfoDal.Update(_taskInfo.StatusInfo);
             if (resultStatusInfo == null)
             {
-                MessageBox.Show("Güncelleme başarısız.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show(Resources["updateFailMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
                 return null;
             }
 
@@ -1210,7 +1210,7 @@ namespace DiskBackupWpfGUI
             var resultTaskInfo = _taskInfoDal.Update(_taskInfo);
             if (resultTaskInfo == null)
             {
-                MessageBox.Show("Güncelleme başarısız.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show(Resources["updateFailMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
                 return null;
             }
 

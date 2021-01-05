@@ -93,13 +93,13 @@ namespace DiskBackupWpfGUI
                 if (!backupService.GetInitTracker())
                 {
                     _logger.Information("Driver intialize edilemedi.");
-                    MessageBox.Show("Driver intialize edilemedi!", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+                    MessageBox.Show(Resources["driverNotInitializedMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
             catch (Exception ex)
             {
                 _logger.Error(ex, "Driver intialize edilemedi.");
-                MessageBox.Show("Driver intialize edilemedi!", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show(Resources["driverNotInitializedMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
             }
 
 
@@ -516,7 +516,7 @@ namespace DiskBackupWpfGUI
         {
             _logger.Verbose("btnTaskDelete_Click istekte bulunuldu");
 
-            MessageBoxResult result = MessageBox.Show($"{listViewTasks.SelectedItems.Count} adet veri silinecek. Onaylıyor musunuz?", Resources["MessageboxTitle"].ToString(), MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
+            MessageBoxResult result = MessageBox.Show($" {listViewTasks.SelectedItems.Count} " + Resources["deletePieceMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
             if (result == MessageBoxResult.Yes)
             {
                 foreach (TaskInfo item in listViewTasks.SelectedItems)
@@ -662,7 +662,7 @@ namespace DiskBackupWpfGUI
                 catch (Exception ex)
                 {
                     _logger.Error(ex, "Beklenmedik hatadan dolayı taska devam edilemiyor.");
-                    MessageBox.Show("Beklenmedik hata oluştu. Task'a devam edilemiyor.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+                    MessageBox.Show(Resources["unexpectedErrorMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
             RefreshBackupsandTasks(backupService);
@@ -680,7 +680,7 @@ namespace DiskBackupWpfGUI
             catch (Exception ex)
             {
                 _logger.Error(ex, "Beklenmedik hatadan dolayı task duraklatılamıyor.");
-                MessageBox.Show("Beklenmedik hata oluştu. Task duraklatılamıyor.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show(Resources["unexpectedErrorMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
             }
             RefreshBackupsandTasks(backupService);
         }
@@ -697,7 +697,7 @@ namespace DiskBackupWpfGUI
             catch (Exception ex)
             {
                 _logger.Error(ex, "Beklenmedik hatadan dolayı task durdurulamıyor.");
-                MessageBox.Show("Beklenmedik hata oluştu. Task durdurulamıyor.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show(Resources["unexpectedErrorMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
             }
             RefreshBackupsandTasks(backupService);
         }
@@ -739,14 +739,14 @@ namespace DiskBackupWpfGUI
             backupTask.TaskName = task.Name;
             var resultBackupTask = _backupTaskDal.Add(backupTask);
             if (resultBackupTask == null)
-                MessageBox.Show("Kopyalama işlemi başarısız.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show(Resources["cloneFailMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
             else
             {
                 var statusInfo = _statusInfoDal.Get(x => x.Id == task.StatusInfoId);
                 statusInfo.TaskName = task.Name;
                 var resultStatusInfo = _statusInfoDal.Add(statusInfo);
                 if (resultStatusInfo == null)
-                    MessageBox.Show("Kopyalama işlemi başarısız.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+                    MessageBox.Show(Resources["cloneFailMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
                 else
                 {
                     string lastSchedulerId = task.ScheduleId;
@@ -757,7 +757,7 @@ namespace DiskBackupWpfGUI
                     task.StatusInfo = resultStatusInfo;
                     TaskInfo resultTask = _taskInfoDal.Add(task);
                     if (resultTask == null)
-                        MessageBox.Show("Kopyalama işlemi başarısız.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+                        MessageBox.Show(Resources["cloneFailMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
                     else
                     {
                         // scheduler oluştur
@@ -1190,7 +1190,7 @@ namespace DiskBackupWpfGUI
                         if (backupInfo.UsedSize > item.Size)
                         {
                             controlFlag = true;
-                            MessageBox.Show("Bu restore boyutlardan dolayı gerçekleştirilemez.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+                            MessageBox.Show(Resources["sizeConflictMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
                         }
                     }
                 }
@@ -1200,7 +1200,7 @@ namespace DiskBackupWpfGUI
                 if (backupInfo.UsedSize > volumeInfoList[0].Size)
                 {
                     controlFlag = true;
-                    MessageBox.Show("Bu restore boyutlardan dolayı gerçekleştirilemez.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+                    MessageBox.Show(Resources["sizeConflictMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
                 }
 
             }
@@ -1441,16 +1441,16 @@ namespace DiskBackupWpfGUI
                 {
                     if (backupInfo.Type == BackupTypes.Full)
                     {
-                        result = MessageBox.Show($"Full backup dosyalarına bağlı olan diğer backuplarınız silinecektir. Emin misiniz?", Resources["MessageboxTitle"].ToString(), MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
+                        result = MessageBox.Show(Resources["fullBackupDeleteMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
                         controlFlag = true;
                         break;
                     }
                 }
                 if (!controlFlag)
-                    result = MessageBox.Show($"{listViewBackups.SelectedItems.Count} adet backup dosyasının silinmesi diğer backuplarınızı etklileyebilir. Emin misiniz?", Resources["MessageboxTitle"].ToString(), MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
+                    result = MessageBox.Show($" {listViewBackups.SelectedItems.Count} " + Resources["deleteBackupPieceMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
             }
             else
-                result = MessageBox.Show($"{((BackupInfo)listViewBackups.SelectedItem).FileName} backup dosyasının silinmesi diğer backuplarınızı etklileyebilir. Emin misiniz?", Resources["MessageboxTitle"].ToString(), MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
+                result = MessageBox.Show($"{((BackupInfo)listViewBackups.SelectedItem).FileName} " + Resources["deleteBackupPieceMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
 
             if (result == MessageBoxResult.Yes)
             {
@@ -1485,14 +1485,14 @@ namespace DiskBackupWpfGUI
                                     {
                                         var result2 = backupService.BackupFileDelete(backupInfo);
                                         if (result2 == 0)
-                                            MessageBox.Show("NAS'a bağlanamadınız.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+                                            MessageBox.Show(Resources["notConnectNASMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
                                         else if (result2 == 1)
-                                            MessageBox.Show("Beklenmedik bir hata ile karşılaşıldı. Silme işlemi gerçekleştirilemedi.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+                                            MessageBox.Show(Resources["deleteFailMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
                                     }
                                     catch (Exception ex)
                                     {
                                         _logger.Error(ex, "Beklenmedik hatadan dolayı silme işlemi gerçekleştirilemedi.");
-                                        MessageBox.Show("Beklenmedik bir hata ile karşılaşıldı. Silme işlemi gerçekleştirilemedi.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+                                        MessageBox.Show(Resources["deleteFailMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
                                     }
                                     controlFlag = true;
                                 }
@@ -1523,14 +1523,14 @@ namespace DiskBackupWpfGUI
                         {
                             var result2 = backupService.BackupFileDelete(backupInfo);
                             if (result2 == 0)
-                                MessageBox.Show("NAS'a bağlanamadınız.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+                                MessageBox.Show(Resources["notConnectNASMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
                             else if (result2 == 1)
-                                MessageBox.Show("Beklenmedik bir hata ile karşılaşıldı. Silme işlemi gerçekleştirilemedi.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+                                MessageBox.Show(Resources["deleteFailMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
                         }
                         catch (Exception ex)
                         {
                             _logger.Error(ex, "Beklenmedik hatadan dolayı silme işlemi gerçekleştirilemedi.");
-                            MessageBox.Show("Beklenmedik bir hata ile karşılaşıldı. Silme işlemi gerçekleştirilemedi.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+                            MessageBox.Show(Resources["deleteFailMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
                         }
                     }
                 }
@@ -1689,7 +1689,7 @@ namespace DiskBackupWpfGUI
             }
             if (taskRunnigFlag)
             {
-                MessageBox.Show("İşlemekte olan görevleriniz etkileneceği için bu işlemi gerçekleştiremezsiniz!", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show(Resources["runningTaskAffectedMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
 
@@ -1731,14 +1731,14 @@ namespace DiskBackupWpfGUI
             }
 
             if (taskReadyFlag && !taskRunnigFlag)
-                result = MessageBox.Show($"{listViewBackupStorage.SelectedItems.Count} adet veri silinecek ve etkilenen görevleriniz olacak. Onaylıyor musunuz?", Resources["MessageboxTitle"].ToString(), MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
+                result = MessageBox.Show($"{listViewBackupStorage.SelectedItems.Count} " + Resources["deleteTaskPieceMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
             else if (taskRunnigFlag)
             {
-                MessageBox.Show("İşlemekte olan görevleriniz etkileneceği için bu işlemi gerçekleştiremezsiniz!", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show(Resources["runningTaskAffectedMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
             else
-                result = MessageBox.Show($"{listViewBackupStorage.SelectedItems.Count} adet veri silinecek. Onaylıyor musunuz?", Resources["MessageboxTitle"].ToString(), MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
+                result = MessageBox.Show($"{listViewBackupStorage.SelectedItems.Count} " + Resources["deletePieceMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
 
             if (result == MessageBoxResult.Yes)
             {
@@ -1781,12 +1781,12 @@ namespace DiskBackupWpfGUI
                 {
                     if (itemTask.BackupStorageInfoId == item.Id)
                     {
-                        var resultTask = MessageBox.Show($"{listViewBackupStorage.SelectedItems.Count} adet veri silinecek ve etkilenen görevleriniz olacak. Onaylıyor musunuz?", Resources["MessageboxTitle"].ToString(), MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
+                        var resultTask = MessageBox.Show($"{listViewBackupStorage.SelectedItems.Count} " + Resources["deleteTaskPieceMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
                         return resultTask;
                     }
                 }
             }
-            var result = MessageBox.Show($"{listViewBackupStorage.SelectedItems.Count} adet veri silinecek. Onaylıyor musunuz?", Resources["MessageboxTitle"].ToString(), MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
+            var result = MessageBox.Show($"{listViewBackupStorage.SelectedItems.Count} " + Resources["deletePieceMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
             return result;
         }
 
@@ -1937,7 +1937,7 @@ namespace DiskBackupWpfGUI
         {
             _logger.Verbose("btnLogDelete_Click istekte bulunuldu");
 
-            MessageBoxResult result = MessageBox.Show($"{listViewLog.SelectedItems.Count} tane veri silinecek. Onaylıyor musunuz?", Resources["MessageboxTitle"].ToString(), MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
+            MessageBoxResult result = MessageBox.Show($"{listViewLog.SelectedItems.Count} " + Resources["deletePieceMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
             if (result == MessageBoxResult.Yes)
             {
                 foreach (ActivityLog item in listViewLog.SelectedItems)
@@ -2084,7 +2084,7 @@ namespace DiskBackupWpfGUI
                 }
                 catch (Exception e)
                 {
-                    MessageBox.Show(e.Message);
+                    MessageBox.Show("Refresh: " + e.Message, Resources["MessageboxTitle"].ToString(), MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
                 }
 
             }
@@ -2293,7 +2293,7 @@ namespace DiskBackupWpfGUI
             catch (Exception ex)
             {
                 _logger.Fatal(ex, "Disk listesi yenilenemedi.");
-                MessageBox.Show("Beklenmedik hata oluştu.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show(Resources["unexpectedError1MB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
                 Close();
             }
 
