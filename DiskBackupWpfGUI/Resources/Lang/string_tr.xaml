@@ -166,7 +166,7 @@
     <system:String x:Key="sourceInfo">Kaynak Bilgisi</system:String>
     <system:String x:Key="processedTotal">İşlenen Toplam Veri</system:String>
     <system:String x:Key="narTransfer">Narbulut'a aktarım</system:String>
-    <system:String x:Key="settingsContent">Hesaplar alan yönetimi diğer tanımları bu alandan yönetin</system:String>
+    <system:String x:Key="settingsContent">Hesaplar, alan yönetimi ve diğer tanımları bu alandan yönetin</system:String>
     <system:String x:Key="appLicense">Uygulama Lisansı :</system:String>
     <system:String x:Key="endDateDot">Bitiş Tarihi :</system:String>
     <system:String x:Key="items">adet</system:String>
@@ -188,7 +188,6 @@
     <system:String x:Key="versionDot">Versiyon :</system:String>
     <system:String x:Key="error">Hata</system:String>
     <system:String x:Key="successful">Başarılı</system:String>
-    <system:String x:Key="firstBackupExpected">İlk yedek bekleniyor</system:String>
     <system:String x:Key="addBackupArea">Yedekleme Alanı Ekle</system:String>
     <system:String x:Key="backupAreaName">Yedekleme Alanı Adı</system:String>
     <system:String x:Key="NASorSharing">NAS veya Paylaşım</system:String>
@@ -254,5 +253,4 @@
     <system:String x:Key="MissingFile">Eksik Dosya</system:String>
     <system:String x:Key="ValidateNAS">NAS Doğrulama</system:String>
     <system:String x:Key="loading...">Yükleniyor...</system:String>
-
 </ResourceDictionary>
