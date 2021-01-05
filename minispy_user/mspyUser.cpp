@@ -5,10 +5,6 @@
 /*
 *  // TODO(Batuhan): URGENT, ZEROING OUT MFT REGIONS THAT EXCEEDS 4GB IS IMPOSSIBLE NOW, GO TO  RestoreVersionWithoutLoop and fix it 
  *  // TODO(Batuhan): We are double sorting regions, just to append indx and lcn regions. Rather than doing that, remove sort from setupdiffrecords & setupincrecords and do it in the setupstream function, this way we would just append then sort + merge once, not twice(which may be too expensive for regions files > 100M)
-*
-*
-*
-*
 */
 
 #include <DriverSpecs.h>
@@ -101,36 +97,6 @@ MergeRegions(data_array<nar_record>* R) {
     R->Data = (nar_record*)realloc(R->Data, sizeof(nar_record) * R->Count);
     
 }
-
-void
-TestMergeRegions(){
-    
-    nar_record testArray[20];
-    
-    testArray[0] = {0,  150};
-    testArray[1] = {80, 40};
-    testArray[2] = {160, 20};
-    testArray[3] = {170, 30};
-    testArray[4] = {195, 50};
-    testArray[5] = {250, 150};
-    testArray[6] = {300, 500};
-    testArray[7] = {400, 600};
-    testArray[8] = {600, 80};
-    testArray[9] = {680, 450};
-    
-    data_array<nar_record> r;
-    r.Count = 10;
-    r.Data = &testArray[0];
-    MergeRegions(&r);
-    
-    for(size_t i = 0; i<r.Count; i++){
-        printf("%u\t%u\n", r.Data[i].StartPos, r.Data[i].Len);
-    }
-    
-}
-
-
-
 
 #if 0 // OPTIMIZED INCREMENTAL MERGE ALORITHM
 
@@ -935,7 +901,6 @@ InitVolumeInf(volume_backup_inf* VolInf, wchar_t Letter, BackupType Type) {
     VolInf->ClusterSize = 0;
     VolInf->VSSPTR = 0;
     
-    VolInf->LogHandle = INVALID_HANDLE_VALUE;
     
     VolInf->Stream.Records = { 0,0 };
     VolInf->Stream.Handle = 0;
@@ -1053,6 +1018,7 @@ GetShadowPath(std::wstring Drive, CComPtr<IVssBackupComponents>& ptr, wchar_t* O
         printf("Can't initialize VSS for backup\n");
     }
     
+    
     if (!Error) {
         VSS_SNAPSHOT_PROP SnapshotProp;
         ptr->GetSnapshotProperties(sid, &SnapshotProp);
@@ -1065,6 +1031,7 @@ GetShadowPath(std::wstring Drive, CComPtr<IVssBackupComponents>& ptr, wchar_t* O
             printf("Shadow path can't fit given string buffer\n");
         }
     }
+    
     
     return Result;
 }
@@ -1093,64 +1060,6 @@ IsRegionsCollide(nar_record R1, nar_record R2) {
     return Result;
 }
 
-
-inline VOID
-NarCloseThreadCom(
-                  PLOG_CONTEXT Context
-                  ) {
-    // NOTE: Context->Thread MUST NOT be null before entering this function.
-    
-    Context->CleaningUp = TRUE;
-    WaitForSingleObject(Context->ShutDown, INFINITE);
-    
-    CloseHandle(Context->ShutDown);
-    CloseHandle(Context->Thread);
-    
-    Context->ShutDown = NULL;
-}
-
-inline BOOL
-NarCreateThreadCom(
-                   PLOG_CONTEXT Context
-                   ) {
-    
-    if (Context->Thread != NULL || Context->ShutDown != NULL) {
-        printf("THREAD OR SHUTDOWN WASNT NULL\n");
-    }
-    
-    BOOL Result = FALSE;
-    Context->CleaningUp = FALSE;
-    
-    Context->ShutDown = CreateSemaphoreW(NULL,
-                                         0,
-                                         1,
-                                         L"Driver shut down!"
-                                         );
-    if (Context->ShutDown != NULL) {
-        Context->Thread = CreateThread(NULL,
-                                       0,
-                                       RetrieveLogRecords,
-                                       (LPVOID)Context,
-                                       0,
-                                       0);
-        if (Context->Thread != NULL) {
-            printf("Communication thread created successfully\n");
-            Result = TRUE;
-        }
-        else {
-            printf("Can't create thread to communicate with driver\n");
-            DisplayError(GetLastError());
-        }
-        
-    }
-    else {
-        //Unable to create semaphore
-        printf("Could not create semaphore for thread..\n");
-        DisplayError(GetLastError());
-    }
-    
-    return Result;
-}
 
 /*
 Pass by value, might be slow if input str is too big ??
@@ -1664,11 +1573,10 @@ AddVolumeToTrack(PLOG_CONTEXT Context, wchar_t Letter, BackupType Type) {
     INT32 ID = GetVolumeID(Context, Letter);
     
     if (ID == NAR_INVALID_VOLUME_TRACK_ID) {
-        
         NAR_COMMAND Command;
         Command.Type    = NarCommandType_AddVolume;
         Command.Letter  = Letter;
-
+        
         if (NarGetVolumeGUIDKernelCompatible(Letter, Command.VolumeGUIDStr)) {
             
             DWORD BytesReturned;
@@ -1691,14 +1599,10 @@ AddVolumeToTrack(PLOG_CONTEXT Context, wchar_t Letter, BackupType Type) {
             printf("Couldnt get volume kernel compatible volume GUID\n");
             DisplayError(GetLastError());
         }
-        
-        
     }
     else {
         printf("Volume %c is already in list\n", (char)Letter);
     }
-    
-    
     
     return !ErrorOccured;
 }
@@ -1838,7 +1742,7 @@ RemoveVolumeFromTrack(LOG_CONTEXT *C, wchar_t L) {
         
         V->FullBackupExists = FALSE;
         V->FilterFlags.IsActive = FALSE;
-        CloseHandle(V->LogHandle);
+        
         
         FreeDataArray(&V->Stream.Records);
         V->Stream.RecIndex = 0;
@@ -1886,17 +1790,16 @@ Attachs filter
 SetActive: default value is TRUE
 */
 inline BOOLEAN
-AttachVolume(volume_backup_inf* VolInf, BOOLEAN SetActive) {
+AttachVolume(char Letter) {
     
     BOOLEAN Return = FALSE;
     HRESULT Result = 0;
     
     WCHAR Temp[] = L"!:\\";
-    Temp[0] = VolInf->Letter;
+    Temp[0] = (wchar_t)Letter;
     
     Result = FilterAttach(MINISPY_NAME, Temp, 0, 0, 0);
     if (SUCCEEDED(Result) || Result == ERROR_FLT_INSTANCE_NAME_COLLISION) {
-        VolInf->FilterFlags.IsActive = SetActive;
         Return = TRUE;
     }
     else {
@@ -1917,7 +1820,7 @@ GetVolumeID(PLOG_CONTEXT C, wchar_t Letter) {
             for (unsigned int i = 0; i < C->Volumes.Count; i++) {
                 // TODO(Batuhan): check invalidated entry !
                 
-                if (C->Volumes.Data[i].Letter == Letter) {
+                if (!C->Volumes.Data[i].INVALIDATEDENTRY && C->Volumes.Data[i].Letter == Letter) {
                     ID = (int)i; // safe conversion
                     break;
                 }
@@ -2033,6 +1936,7 @@ TerminateBackup(volume_backup_inf* V, BOOLEAN Succeeded) {
     printf("Succeeded %i for volume %c\n", Succeeded, V->Letter);
     
     if (!V->FullBackupExists) {
+        
         //Termination of fullbackup
         printf("Fullbackup operation will be terminated\n");
         if (Succeeded) {
@@ -2051,15 +1955,17 @@ TerminateBackup(volume_backup_inf* V, BOOLEAN Succeeded) {
             printf("Operation failed, closing log handle\n");
             //Somehow operation failed.
             V->FilterFlags.IsActive = FALSE;
-            CLEANHANDLE(V->LogHandle);
+            
             V->FullBackupExists = FALSE;
             
         }
         
         //Termination of fullbackup
         //neccecary for incremental backup
-        V->LastBackupRegionOffset = 0;
-        V->ActiveBackupInf.PossibleNewBackupRegionOffsetMark = 0;
+        if(V->BT == BackupType::Inc){
+            V->IncLogMark.LastBackupRegionOffset = 0;
+            V->PossibleNewBackupRegionOffsetMark = 0;
+        }
         
         // after 
         V->Version = 0;
@@ -2080,10 +1986,14 @@ TerminateBackup(volume_backup_inf* V, BOOLEAN Succeeded) {
             we should overwrite and truncate it
          */
             Return = TRUE;
-            printf("Swapping LastBackupRegionOffset and PossibleNewBackupRegionOffsetMark (%I64u, %I64u) \n", V->LastBackupRegionOffset, V->ActiveBackupInf.PossibleNewBackupRegionOffsetMark);
             V->Version++;
-            V->LastBackupRegionOffset = V->ActiveBackupInf.PossibleNewBackupRegionOffsetMark;
-            V->ActiveBackupInf.PossibleNewBackupRegionOffsetMark = 0;
+            
+            
+            if(V->BT == BackupType::Inc){
+                V->IncLogMark.LastBackupRegionOffset = V->PossibleNewBackupRegionOffsetMark;
+            }
+            
+            V->PossibleNewBackupRegionOffsetMark = 0;
             
             //backup operation succeeded condition end (for diff and inc)
         }
@@ -2094,7 +2004,8 @@ TerminateBackup(volume_backup_inf* V, BOOLEAN Succeeded) {
     }
     
     if(V->Stream.Handle != INVALID_HANDLE_VALUE) CloseHandle(V->Stream.Handle);
-    if(V->Stream.Records.Data){
+    
+    if(V->Stream.Records.Data != NULL){
         FreeDataArray(&V->Stream.Records);
     }
     
@@ -2107,15 +2018,6 @@ TerminateBackup(volume_backup_inf* V, BOOLEAN Succeeded) {
     
     return Return;
 }
-
-BOOLEAN
-CheckForErrors(PLOG_CONTEXT C) {
-    if (C) {
-        return C->DriverErrorOccured;
-    }
-    return FALSE;
-}
-
 
 /*
 Type is optional, after first backup
@@ -2137,7 +2039,6 @@ SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, DotNetStreamInf* SI) {
             return FALSE;
         }
     }
-    
     
     volume_backup_inf* VolInf = &C->Volumes.Data[ID];
     printf("Entered setup stream for volume %c, version %i\n", (char)L, VolInf->Version);
@@ -2161,6 +2062,7 @@ SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, DotNetStreamInf* SI) {
             
             qsort(VolInf->Stream.Records.Data, VolInf->Stream.Records.Count, sizeof(nar_record), CompareNarRecords);
             MergeRegions(&VolInf->Stream.Records);
+            
         }
         else {
             printf("Couldnt parse MFT at setupstream function for volume %c, version %i\n", L, VolInf->Version);
@@ -2169,62 +2071,82 @@ SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, DotNetStreamInf* SI) {
         FreeDataArray(&MFTandINDXRegions);
     };
     
-    if (SetupStreamHandle(VolInf)) {
+    
+    VolInf->VSSPTR.Release();
+    
+    WCHAR Temp[] = L"!:\\";
+    Temp[0] = VolInf->Letter;
+    wchar_t ShadowPath[256];
+    if(GetShadowPath(Temp, VolInf->VSSPTR, ShadowPath, sizeof(ShadowPath)/sizeof(ShadowPath[0])) != TRUE){
+        // TODO(Batuhan): Error
+    }
+    
+    if (ShadowPath == NULL) {
+        printf("Can't get shadowpath from VSS\n");
+        return FALSE;
+    }
+    
+    // no overheat for attaching volume again and again
+    if(AttachVolume(VolInf->Letter)){
+        printf("Cant attach volume\n");
+        return FALSE;
+    }
+    
+    VolInf->Stream.Handle = CreateFileW(ShadowPath, GENERIC_READ, 0, NULL, OPEN_EXISTING, NULL, NULL);
+    if (VolInf->Stream.Handle == INVALID_HANDLE_VALUE) {
+        printf("Can not open shadow path %S..\n", ShadowPath);
+        DisplayError(GetLastError());
+        return FALSE;
+    }
+    printf("Setup stream handle successfully\n");
+    
+    // NOTE(Batuhan): Experimental feature, from now on (06.10.2020), every binary data MUST contain MFTLCN with extended INDEX_ALLOCATION data.
+    // that helps file explorer to search that volume 
+    
+    if (!VolInf->FullBackupExists) {
+        printf("Fullbackup stream is preparing\n");
+        //Fullbackup stream
+        if (SetFullRecords(VolInf)) {
+            Return = TRUE;
+        }
+        else {
+            printf("SetFullRecords failed!\n");
+        }
         
-        // NOTE(Batuhan): Experimental feature, from now on (06.10.2020), every binary data MUST contain MFTLCN with extended INDEX_ALLOCATION data.
-        // that helps file explorer to search that volume 
+        if (SI && Return) {
+            SI->MetadataFileName = GenerateMetadataName(VolInf->BackupID, NAR_FULLBACKUP_VERSION);
+            SI->FileName = GenerateBinaryFileName(VolInf->BackupID, NAR_FULLBACKUP_VERSION);
+        }
+    }
+    else {
+        //Incremental or diff stream
+        BackupType T = VolInf->BT;
         
-        printf("Setup stream handle successfully\n");
-        if (!VolInf->FullBackupExists) {
-            printf("Fullbackup stream is preparing\n");
-            //Fullbackup stream
-            if (SetFullRecords(VolInf)) {
+        if (T == BackupType::Diff) {
+            if (SetDiffRecords(C->Port,VolInf)) {
                 Return = TRUE;
             }
             else {
-                printf("SetFullRecords failed!\n");
+                printf("Couldn't setup diff records for streaming\n");
             }
             
-            if (SI && Return) {
-                SI->MetadataFileName = GenerateMetadataName(VolInf->BackupID, NAR_FULLBACKUP_VERSION);
-                SI->FileName = GenerateBinaryFileName(VolInf->BackupID, NAR_FULLBACKUP_VERSION);
-            }
         }
-        else {
-            //Incremental or diff stream
-            BackupType T = VolInf->BT;
-            
-            
-            if (T == BackupType::Diff) {
-                if (SetDiffRecords(VolInf)) {
-                    Return = TRUE;
-                }
-                else {
-                    printf("Couldn't setup diff records for streaming\n");
-                }
-                
+        else if (T == BackupType::Inc) {
+            if (SetIncRecords(C->Port, VolInf)) {
+                Return = TRUE;
             }
-            else if (T == BackupType::Inc) {
-                if (SetIncRecords(VolInf)) {
-                    Return = TRUE;
-                }
-                else {
-                    printf("Couldn't setup inc records for streaming\n");
-                }
-                
+            else {
+                printf("Couldn't setup inc records for streaming\n");
             }
             
-            if (SI && Return) {
-                SI->FileName = GenerateBinaryFileName(VolInf->BackupID, VolInf->Version);
-                SI->MetadataFileName = GenerateMetadataName(VolInf->BackupID, VolInf->Version);
-            }
+        }
+        
+        if (SI && Return) {
+            SI->FileName = GenerateBinaryFileName(VolInf->BackupID, VolInf->Version);
+            SI->MetadataFileName = GenerateMetadataName(VolInf->BackupID, VolInf->Version);
         }
         
     }
-    else {
-        printf("SetupStreamHandle failed\n");
-    }
-    
     
     if(Return != FALSE){
         volume_backup_inf* V = VolInf;
@@ -2376,87 +2298,56 @@ SetFullRecords(volume_backup_inf* V) {
 }
 
 BOOLEAN
-SetIncRecords(volume_backup_inf* VolInf) {
+SetIncRecords(HANDLE CommPort, volume_backup_inf* V) {
     
     TIMED_BLOCK();
     
     BOOLEAN Result = FALSE;
-    if(VolInf == NULL){
+    if(V == NULL){
         printf("SetIncRecords: VolInf was null\n");
         return FALSE;
     }
     
-    VolInf->Stream.Records.Data = 0;
-    VolInf->Stream.Records.Count = 0;
+    V->PossibleNewBackupRegionOffsetMark = NarGetLogFileSizeFromKernel(CommPort, V->Letter);
+    DWORD TargetReadSize = (DWORD)(V->PossibleNewBackupRegionOffsetMark - V->IncLogMark.LastBackupRegionOffset);
     
-    DWORD TargetReadSize = 0;
-    DWORD BytesRead = 0;
+    V->Stream.Records.Data = 0;
+    V->Stream.Records.Count = 0;
     
-    DWORD RetVal = WaitForSingleObject(VolInf->FileWriteMutex, 500);
-    if(RetVal == WAIT_OBJECT_0) {
+    std::wstring logfilepath = GenerateLogFilePath(V->Letter);
+    HANDLE LogHandle = CreateFileW(logfilepath.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, 0, 0, OPEN_EXISTING, 0);
+    
+    // calling malloc with 0 is undefined behaviour, but not having logs is possible thing that might happen and no need to worry about it since
+    // setupstream will include mft to stream, stream will not be empty.
+    if(TargetReadSize != 0){
         
-        FlushFileBuffers(VolInf->LogHandle);       
-        
-        // safe to read from V->LogHandle
-        
-        if(VolInf->ActiveBackupInf.PossibleNewBackupRegionOffsetMark - VolInf->LastBackupRegionOffset < 0xFFFFFFFFll){
-            // NOTE(Batuhan): Assumption made here, change in log file size does not exceed 32 bit max integer value.
-            TargetReadSize = (DWORD)(VolInf->ActiveBackupInf.PossibleNewBackupRegionOffsetMark - VolInf->LastBackupRegionOffset);
+        if(NarSetFilePointer(LogHandle, (UINT64)V->IncLogMark.LastBackupRegionOffset)){
             
-            if(NarSetFilePointer(VolInf->LogHandle, (UINT64)VolInf->LastBackupRegionOffset)){
-                
-                VolInf->Stream.Records.Data = (nar_record*)malloc(TargetReadSize);
-                memset(VolInf->Stream.Records.Data, 0, TargetReadSize);
-                VolInf->Stream.Records.Count = TargetReadSize/sizeof(nar_record);
-                
-                if(ReadFile(VolInf->LogHandle, VolInf->Stream.Records.Data, TargetReadSize, &BytesRead, 0) && BytesRead == TargetReadSize){
-                    Result = TRUE;
-                }
-                else{
-                    
-                    printf("SetIncRecords Couldnt read %lu, instead read %lu\n", TargetReadSize, BytesRead);
-                    DisplayError(GetLastError());
-                    
-                }
-                
+            V->Stream.Records.Data = (nar_record*)malloc(TargetReadSize);
+            V->Stream.Records.Count = TargetReadSize/sizeof(nar_record);
+            DWORD BytesRead = 0;
+            
+            if(ReadFile(LogHandle, V->Stream.Records.Data, TargetReadSize, &BytesRead, 0) && BytesRead == TargetReadSize){
+                Result = TRUE;
             }
             else{
-                printf("Couldnt set file pointer\n");
+                printf("SetIncRecords Couldnt read %lu, instead read %lu\n", TargetReadSize, BytesRead);
+                DisplayError(GetLastError());
+                
+                free(V->Stream.Records.Data);
+                V->Stream.Records.Count = 0;
             }
             
         }
         else{
-            printf("Records appended since last backups size exceeds 4GB, size %I64u\n", VolInf->ActiveBackupInf.PossibleNewBackupRegionOffsetMark - VolInf->LastBackupRegionOffset);
-            // TODO exceeds 4GB limit
+            printf("Couldnt set file pointer\n");
         }
         
-        
-        ReleaseMutex(VolInf->FileWriteMutex);
-        
-    }
-    else{
-        
-        printf("Couldnt lock write file, ");
-        if(RetVal == WAIT_TIMEOUT){
-            printf("TIMEOUT");   
-        }
-        else if(RetVal == WAIT_FAILED){
-            printf("FAILED");
-        }
-        else if(RetVal == WAIT_ABANDONED){
-            printf("ABONDONED");
-        }
-        else{
-            printf("UNDEFINED\n");
+        if(Result == TRUE){
+            qsort(V->Stream.Records.Data, V->Stream.Records.Count, sizeof(nar_record), CompareNarRecords);
+            MergeRegions(&V->Stream.Records);
         }
         
-        printf("\n");
-        
-    }
-    
-    if(Result == TRUE){
-        qsort(VolInf->Stream.Records.Data, VolInf->Stream.Records.Count, sizeof(nar_record), CompareNarRecords);
-        MergeRegions(&VolInf->Stream.Records);
     }
     
     return Result;
@@ -2575,102 +2466,96 @@ WriteStream(restore_inf* RestoreInf, void* Data, int Size) {
 #endif
 
 
-BOOLEAN
-SetDiffRecords(volume_backup_inf* V) {
+ULONGLONG
+NarGetLogFileSizeFromKernel(HANDLE CommPort, char Letter){
     
-    TIMED_BLOCK();
+    ULONGLONG Result = 0;
     
-    printf("Entered SetDiffRecords\n");
-    BOOLEAN Result = FALSE;
+    NAR_COMMAND Cmd = {0};
+    Cmd.Letter = Letter;
+    Cmd.Type = NarCommandType_FlushLog;
     
-    if (V == NULL || V->LogHandle == INVALID_HANDLE_VALUE) {
+    if(NarGetVolumeGUIDKernelCompatible(Letter, &Cmd.VolumeGUIDStr[0])){
         
-        if(V){
-            if(V->LogHandle == INVALID_HANDLE_VALUE){
-                printf("LogHandle has invalid handle value\n");
-            }
+        DWORD BR = 0;
+        NAR_LOG_INF Respond = {0};
+        
+        HRESULT hResult = FilterSendMessage(CommPort, &Cmd, sizeof(NAR_COMMAND), &Respond, sizeof(Respond), &BR);
+        if(SUCCEEDED(hResult) && FALSE == Respond.ErrorOccured){
+            Result = Respond.CurrentSize;
         }
         else{
-            printf("volume backup inf structure was null\n");
+            printf("FilterSendMessage failed, couldnt remove volume from kernel side, err %i\n", hResult);
+            DisplayError(GetLastError());
         }
-        
-        return FALSE;
-        
-    }
-    
-    DWORD WINAPIRetVAL = WaitForSingleObject(V->FileWriteMutex, 500);
-    if(WINAPIRetVAL == WAIT_OBJECT_0){
-        FlushFileBuffers(V->LogHandle);
-        
-        // we are safe to assume file ptr has lower value than 63 bit integer value
-        V->ActiveBackupInf.PossibleNewBackupRegionOffsetMark = (INT64)NarGetFilePointer(V->LogHandle);
-        if(V->ActiveBackupInf.PossibleNewBackupRegionOffsetMark < 0xFFFFFFFFll){
-            
-            // NOTE (Batuhan): IMPORTANT, so if total log size exceeds 4GB, we cant backup succcessfully, since reading file larger than 4GB is 
-            // problem by itself, one can do partially load file and continuously compress it via qsort & mergeregions. then final log size drastically
-            // becames lower.
-            
-            DWORD TargetReadSize = (DWORD)V->ActiveBackupInf.PossibleNewBackupRegionOffsetMark; // not so safe to truncate
-            DWORD BytesRead = 0;
-            
-            if(NarSetFilePointer(V->LogHandle, 0)){
-                
-                V->Stream.Records.Data = (nar_record*)malloc(TargetReadSize);
-                V->Stream.Records.Count = TargetReadSize / sizeof(nar_record);
-                
-                if(ReadFile(V->LogHandle, V->Stream.Records.Data, TargetReadSize, &BytesRead,0) && BytesRead == TargetReadSize){
-                    
-                    printf("Succ read diff records, will sort and merge regions to save in space\n");
-                    Result = TRUE;
-                    
-                }
-                else{
-                    
-                    printf("SetDiffRecords Couldnt read %lu, instead read %lu\n", TargetReadSize, BytesRead);
-                    DisplayError(GetLastError());
-                    
-                }
-                
-            }
-            else{
-                
-                printf("Couldnt set file pointer to beginning of the file\n");
-                
-            }
-            
-        }  
-        else{
-            printf("LogFile size exceeds 4GB, cant process that much log, %I64d\n", V->ActiveBackupInf.PossibleNewBackupRegionOffsetMark);
-        }
-        
-        ReleaseMutex(V->FileWriteMutex);
         
     }
     else{
         
-        printf("Couldnt lock write file, ");
-        if(WINAPIRetVAL == WAIT_TIMEOUT){
-            printf("TIMEOUT");   
-        }
-        else if(WINAPIRetVAL == WAIT_FAILED){
-            printf("FAILED");
-        }
-        else if(WINAPIRetVAL == WAIT_ABANDONED){
-            printf("ABONDONED");
+    }
+    
+    return Result;
+}
+
+
+
+
+BOOLEAN
+SetDiffRecords(HANDLE CommPort ,volume_backup_inf* V) {
+    
+    
+    TIMED_BLOCK();
+    
+    if(V == NULL) return FALSE;
+    
+    printf("Entered SetDiffRecords\n");
+    BOOLEAN Result = FALSE;
+    
+    V->PossibleNewBackupRegionOffsetMark = NarGetLogFileSizeFromKernel(CommPort, V->Letter);
+    std::wstring logfilepath = GenerateLogFilePath(V->Letter);
+    HANDLE LogHandle = CreateFileW(logfilepath.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, 0, 0, OPEN_EXISTING, 0);
+    
+    // NOTE (Batuhan): IMPORTANT, so if total log size exceeds 4GB, we cant backup succcessfully, since reading file larger than 4GB is 
+    // problem by itself, one can do partially load file and continuously compress it via qsort & mergeregions. then final log size drastically
+    // becames lower.
+    
+    // not so safe to truncate
+    DWORD TargetReadSize = (DWORD)(V->PossibleNewBackupRegionOffsetMark - V->DiffLogMark.BackupStartOffset); 
+    
+    
+    // calling malloc with 0 is undefined behaviour
+    if(TargetReadSize != 0){
+        
+        if(NarSetFilePointer(LogHandle, V->DiffLogMark.BackupStartOffset)){
+            
+            V->Stream.Records.Data = (nar_record*)malloc(TargetReadSize);
+            V->Stream.Records.Count = TargetReadSize / sizeof(nar_record);
+            DWORD BytesRead = 0;
+            if(ReadFile(LogHandle, V->Stream.Records.Data, TargetReadSize, &BytesRead,0) && BytesRead == TargetReadSize){
+                printf("Succ read diff records, will sort and merge regions to save in space\n");
+                Result = TRUE;
+            }
+            else{
+                printf("SetDiffRecords Couldnt read %lu, instead read %lu\n", TargetReadSize, BytesRead);
+                DisplayError(GetLastError());
+                
+                free(V->Stream.Records.Data);
+                V->Stream.Records.Count = 0;
+            }
+            
         }
         else{
-            printf("UNDEFINED\n");
+            printf("Couldnt set file pointer to beginning of the file\n");
         }
         
-        printf("\n");
+        if(Result == TRUE){
+            qsort(V->Stream.Records.Data, V->Stream.Records.Count, sizeof(nar_record), CompareNarRecords);
+            MergeRegions(&V->Stream.Records);
+        }
         
     }
     
-    if(Result == TRUE){
-        qsort(V->Stream.Records.Data, V->Stream.Records.Count, sizeof(nar_record), CompareNarRecords);
-        MergeRegions(&V->Stream.Records);
-    }
-    
+    CloseHandle(LogHandle);
     
     return Result;
 }
@@ -2690,76 +2575,9 @@ SetupStreamHandle(volume_backup_inf* VolInf) {
     VolInf->VSSPTR.Release();
     
     
-    VolInf->FilterFlags.IsActive = TRUE;
-    
-    if (VolInf->FullBackupExists) {
-        
-        DWORD RetVal = WaitForSingleObject(VolInf->FileWriteMutex, 500);
-        if(RetVal == WAIT_OBJECT_0){
-            
-            LARGE_INTEGER CurrentFilePtr = {0};
-            FlushFileBuffers(VolInf->LogHandle);
-            
-            if(GetFileSizeEx(VolInf->LogHandle, &CurrentFilePtr) != 0){
-                VolInf->ActiveBackupInf.PossibleNewBackupRegionOffsetMark = CurrentFilePtr.QuadPart;
-                printf("Current log file size %I64d\n", CurrentFilePtr.QuadPart);
-            }
-            else{
-                printf("Couldnt get log file size\n");
-                DisplayError(GetLastError());
-            }
-            
-            ReleaseMutex(VolInf->FileWriteMutex);
-            
-        }
-        else{
-            printf("Couldnt lock file write mutex @ setupstreamhandle, returning false\n");
-            return FALSE;
-        }
-        
-        printf("Volume %c detached!\n", VolInf->Letter);
-    }
-    
-    if (!VolInf->FullBackupExists) {
-        printf("!FullBackupExists ");
-        std::wstring LogFileName = GenerateLogFileName(VolInf->BackupID);
-        
-        VolInf->LogHandle = CreateFileW(LogFileName.c_str(), GENERIC_WRITE | GENERIC_READ, 0, 0, CREATE_ALWAYS, 0, 0);
-        if(VolInf->LogHandle != INVALID_HANDLE_VALUE){
-            
-            DWORD RetVal = WaitForSingleObject(VolInf->FileWriteMutex, 500);
-            if(RetVal == WAIT_OBJECT_0){
-                
-                LARGE_INTEGER CurrentFilePtr = {0};
-                if(GetFileSizeEx(VolInf->LogHandle, &CurrentFilePtr) != 0){
-                    VolInf->ActiveBackupInf.PossibleNewBackupRegionOffsetMark = CurrentFilePtr.QuadPart;
-                    printf("Log file size %I64d\n", CurrentFilePtr.QuadPart);
-                }
-                else{
-                    printf("COuldnt get log file size, !VolInf->FullBackupExists\n");
-                    DisplayError(GetLastError());
-                }
-                
-                ReleaseMutex(VolInf->FileWriteMutex);
-				
-            }
-            else{
-                printf("Couldnt lock file write mutex @ setupstreamhandle, returning false\n");
-                return FALSE;
-            }
-            
-        }
-        else{
-            printf("Couldnt create log file for volume %c, %S\n", VolInf->Letter, LogFileName.c_str());      
-            DisplayError(GetLastError());
-            return FALSE;  
-        }
-        
-    }
-    
     WCHAR Temp[] = L"!:\\";
     Temp[0] = VolInf->Letter;
-    wchar_t ShadowPath[512];
+    wchar_t ShadowPath[256];
     if(GetShadowPath(Temp, VolInf->VSSPTR, ShadowPath, sizeof(ShadowPath)/sizeof(ShadowPath[0])) != TRUE){
         
     }
@@ -2770,13 +2588,12 @@ SetupStreamHandle(volume_backup_inf* VolInf) {
     }
     
     
-    if (!AttachVolume(VolInf)) {
+    if(AttachVolume(VolInf->Letter)){
         printf("Cant attach volume\n");
         return FALSE;
     }
     
     VolInf->Stream.Handle = CreateFileW(ShadowPath, GENERIC_READ, 0, NULL, OPEN_EXISTING, NULL, NULL);
-    
     if (VolInf->Stream.Handle == INVALID_HANDLE_VALUE) {
         printf("Can not open shadow path %S..\n", ShadowPath);
         DisplayError(GetLastError());
@@ -2856,7 +2673,7 @@ ConnectDriver(PLOG_CONTEXT Ctx) {
     CTX.OsDeviceID = Buffer[0];
     DWORD BytesWritten = 256;
     //GetUserNameW(&CTX.UserName[0], &BytesWritten) && BytesWritten != 0
-    // TODO (Batuhan): Pass username as string
+    
     if (TRUE) {
         
         hResult = FilterConnectCommunicationPort(MINISPY_PORT_NAME,
@@ -2865,14 +2682,6 @@ ConnectDriver(PLOG_CONTEXT Ctx) {
                                                  NULL, &Ctx->Port);
         
         if (!IS_ERROR(hResult)) {
-            
-            if (NarCreateThreadCom(Ctx)) {
-                Result = TRUE;
-            }
-            else {
-                CloseHandle(Ctx->Port);
-                printf("Can't create thread to communicate with driver\n");
-            }
             
         }
         else {
@@ -4077,10 +3886,20 @@ GenerateBinaryFileName(nar_backup_id ID, int Version) {
     
 }
 
+
+/*
+Unlike generatemetadata, binary functions, this one generates absolute path of the log file. Which is 
+under windows folder
+C:\Windows\Log....
+*/
 inline std::wstring
-GenerateLogFileName(nar_backup_id ID) {
-    std::wstring Result = L"LOGFILE_";
-    Result += NarBackupIDToWStr(ID);
+GenerateLogFilePath(char Letter) {
+    wchar_t NameTemp[] = L"NAR_LOG_FILE__";
+    NameTemp[sizeof(NameTemp) / 2 - 2] = Letter;
+    
+    std::wstring Result = L"C:\\Windows\\";
+    Result += std::wstring(NameTemp);
+    
     return Result;
 }
 
@@ -5440,9 +5259,8 @@ NarLoadBootState() {
     Result = (LOG_CONTEXT*)malloc(sizeof(LOG_CONTEXT));
     memset(Result, 0, sizeof(LOG_CONTEXT));
     Result->Port = INVALID_HANDLE_VALUE;
-    Result->ShutDown = NULL;
-    Result->Thread = NULL;
-    Result->CleaningUp = FALSE;
+    
+    
     Result->Volumes = { 0,0 };
     
     
@@ -5487,21 +5305,8 @@ NarLoadBootState() {
                                 VolInf.FilterFlags.IsActive = TRUE;
                                 VolInf.FullBackupExists = TRUE;
                                 VolInf.Version = BootTrackData[i].Version;
-                                std::wstring LogFileName = GenerateLogFileName(VolInf.BackupID);
                                 
-                                VolInf.LogHandle = CreateFileW(LogFileName.c_str(), GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, 0, 0);
-                                
-                                if (VolInf.LogHandle != INVALID_HANDLE_VALUE) {
-                                    // succ created file, we can continue logging.
-                                    printf("Succ add volume %c to list at version %i\n", VolInf.Letter, VolInf.Version);
-                                    Result->Volumes.Insert(VolInf);
-                                    
-                                    bResult = TRUE;
-                                }
-                                else {
-                                    printf("Couldnt open existing log file %S\n", LogFileName.c_str());
-                                    DisplayError(GetLastError());
-                                }
+                                Result->Volumes.Insert(VolInf);
                                 
                             }
                             else{
@@ -5588,7 +5393,7 @@ NarSaveBootState(LOG_CONTEXT* CTX) {
                     Pack.Letter = (char)CTX->Volumes.Data[i].Letter;
                     Pack.Version = (char)CTX->Volumes.Data[i].Version; // for testing purposes, 128 version looks like fine
                     Pack.BackupType = (char)CTX->Volumes.Data[i].BT;
-                    Pack.LastBackupOffset = (UINT64)CTX->Volumes.Data[i].LastBackupRegionOffset;
+                    Pack.LastBackupOffset = (UINT64)CTX->Volumes.Data[i].IncLogMark.LastBackupRegionOffset;
                     
                     DWORD BR = 0;
                     
@@ -8104,29 +7909,6 @@ main(int argc, char* argv[]) {
     
 #endif
     
-#if 0   
-    backup_metadata *m = new backup_metadata[120];
-    int bs = 120*sizeof(*m);
-    int out = 0;
-    
-    NarGetBackupsInDirectory(L"F:\\", m, bs, &out);
-    for(int i =0; i< out; i++){
-        printf("volume %c version %i\n", m[i].Letter, m[i].Version);
-    }
-    int selected = 0;
-    scanf("%d", &selected);
-    restore_inf *R = new restore_inf;
-    R->TargetLetter = 'E';
-    R->BackupID = m[selected].ID;
-    R->Version = m[selected].Version;
-    R->RootDir = std::wstring();
-    
-    OfflineRestoreToVolume(R, TRUE);
-    
-    printf("herllo\n");
-    return 0;
-#endif
-    
 #if 0
     
     NarFileExplorerPrint(&ctx);
@@ -8160,9 +7942,7 @@ main(int argc, char* argv[]) {
     
     LOG_CONTEXT C = {0};
     C.Port = INVALID_HANDLE_VALUE;
-    C.ShutDown = NULL;
-    C.Thread = NULL;
-    C.CleaningUp = FALSE;
+    
     
     if(SetupVSS() && ConnectDriver(&C)){
         DotNetStreamInf inf = {0};

@@ -220,19 +220,12 @@ namespace NarDIWrapper {
         }
         
         C->Port = INVALID_HANDLE_VALUE;
-        C->ShutDown = NULL;
-        C->Thread = NULL;
-        C->CleaningUp = FALSE;
     }
     
     DiskTracker::~DiskTracker() {
         //Do deconstructor things
         
         free(C->Volumes.Data);
-        C->CleaningUp = TRUE;
-        WaitForSingleObject(C->ShutDown, INFINITE);
-        CloseHandle(C->Thread);
-        CloseHandle(C->ShutDown);
         
         delete C;
     }

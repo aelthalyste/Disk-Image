@@ -417,7 +417,7 @@ inline std::wstring
 GenerateMetadataName(nar_backup_id id, int Version);
 
 inline std::wstring
-GenerateLogFileName(nar_backup_id id);
+GenerateLogFilePath(char Letter);
 
 inline std::wstring
 GenerateBinaryFileName(nar_backup_id id, int Version);
@@ -445,27 +445,37 @@ struct volume_backup_inf {
     
     nar_backup_id BackupID;
     
-    HANDLE LogHandle; //Handle to file that is logging volume's changes.
+    // HANDLE LogHandle; //Handle to file that is logging volume's changes.
     
     ////Incremental change count of the volume, this value will be reseted after every SUCCESSFUL backup operation
     // this value times sizeof(nar_record) indicates how much data appended since last backup, useful when doing incremental backups
     // we dont need that actually, possiblenewbackupregionoffsetmark - lastbackupoffset is equal to that thing
     //UINT32 IncRecordCount;  // IGNORED IF DIFF BACKUP
     
-    // INdicates where last backup regions end in local metadata. bytes after that offset is non-backed up parts of the volume.
+    // Indicates where last backup regions end in local metadata. bytes after that offset is non-backed up parts of the volume.
     // this value + increcordcount*sizeof(nar_record) is PossibleNewBackupRegionOffsetMark
-    INT64 LastBackupRegionOffset;
     
-    struct{
-        INT64 PossibleNewBackupRegionOffsetMark;
-    }ActiveBackupInf;
+    
+    INT64 PossibleNewBackupRegionOffsetMark;
+    
+    union {
+        struct{
+            INT64 BackupStartOffset;
+        }DiffLogMark;
+        
+        struct{
+            INT64 LastBackupRegionOffset;
+        }IncLogMark;
+    };
     
     DWORD VolumeTotalClusterCount;
+    
+    
     
     /*
     Valid after diff-incremental setup. Stores all changes occured on disk, starting from latest incremental, or beginning if request was diff
     Diff between this and RecordsMem, RecordsMem is just temporary buffer that stores live changes on the disk, and will be flushed to file after it's available
-  
+    
     This structure contains information to track stream head. After every read, ClusterIndex MUST be incremented accordingly and if read operation exceeds that region, RecIndex must be incremented too.
     */
     
@@ -710,20 +720,8 @@ NarGetProductName(char* OutName);
 //  Structure for managing current state.
 //
 struct LOG_CONTEXT {
-    
     HANDLE Port;
-    HANDLE Thread;
-    BOOLEAN LogToScreen;
-    
     data_array<volume_backup_inf> Volumes;
-    
-    //
-    // For synchronizing shutting down of both threads
-    //
-    wchar_t RootDir[512];
-    BOOLEAN CleaningUp;
-    BOOLEAN DriverErrorOccured;
-    HANDLE  ShutDown;
 };
 typedef LOG_CONTEXT* PLOG_CONTEXT;
 
@@ -738,8 +736,9 @@ Function declerations
 */
 
 
-#define Kilobyte(val) (val)*1024LL
-#define Megabyte(val) Kilobyte(val)*1024LL
+#define Kilobyte(val) ((val)*1024ll)
+#define Megabyte(val) (Kilobyte(val)*1024ll)
+#define Gigabyte(val) (Megabyte(val)*1024ll)
 
 void
 MergeRegions(data_array<nar_record>* R);
@@ -785,11 +784,14 @@ SetupStreamHandle(volume_backup_inf* V);
 BOOLEAN
 SetFullRecords(volume_backup_inf* V);
 
-BOOLEAN
-SetIncRecords(volume_backup_inf* VolInf);
+ULONGLONG
+NarGetLogFileSizeFromKernel(HANDLE CommPort, char Letter);
 
 BOOLEAN
-SetDiffRecords(volume_backup_inf* VolInf);
+SetIncRecords(HANDLE CommPort, volume_backup_inf* VolInf);
+
+BOOLEAN
+SetDiffRecords(HANDLE CommPort, volume_backup_inf* VolInf);
 
 BOOLEAN
 TerminateBackup(volume_backup_inf* V, BOOLEAN Succeeded);
@@ -1262,17 +1264,6 @@ NarFileExplorerGetFileEntryFromData(void* IndxCluster, nar_file_entry* OutFileEn
 inline void
 NarFreeFileVersionStack(nar_file_version_stack Stack);
 
-DWORD WINAPI
-RetrieveLogRecords(
-                   _In_ LPVOID lpParameter
-                   );
-
-BOOL
-FileDump(
-         _In_ PVOID Data,
-         _In_ INT32 DataSize,
-         _In_ HANDLE File
-         );
 
 BOOLEAN
 ConnectDriver(PLOG_CONTEXT Ctx);

@@ -78,8 +78,12 @@ struct nar_backup_id{
 
 struct nar_log_thread_params {
     void* Data;
-    INT DataLen;
     size_t FileID;
+    size_t FileSize;
+    LONG InternalError; // NTSTATUS = LONG
+    INT DataLen;
+    BOOLEAN ShouldFlush;
+    BOOLEAN ShouldQueryFileSize;
 };
 
 #ifndef __cplusplus
@@ -98,11 +102,9 @@ typedef struct nar_log_thread_params nar_log_thread_params;
 
 #include <ntstrsafe.h>
 
-inline BOOLEAN
-LogMemoryBuffer(void* MemBuffer, size_t VolFileID);
 
 inline void
-NarThreadJob(PVOID param);
+NarWriteLogtoFile(PVOID param);
 
 /*
 APPENDS generated log file name to OUTPUT. 
@@ -113,15 +115,15 @@ GenerateLogFileName(PUNICODE_STRING Output, PCUNICODE_STRING VolumeKernelName) {
     
     UNICODE_STRING prefix = { 0 };
     RtlInitUnicodeString(&prefix, L"NAR_LOG_");
-
+    
     UNICODE_STRING ext = { 0 };
     RtlInitUnicodeString(&ext, NAR_LOG_FILE_EXTENSION);
     
-
+    
     RtlUnicodeStringCat(Output, &prefix);
     RtlUnicodeStringCat(Output, VolumeKernelName);
     RtlUnicodeStringCat(Output, &ext);
-
+    
 }
 
 #else
@@ -188,7 +190,8 @@ typedef _Return_type_success_(return >= 0) LONG NTSTATUS;
 typedef enum NAR_COMMAND_TYPE {
     NarCommandType_GetVolumeLog,
     NarCommandType_DeleteVolume,
-    NarCommandType_AddVolume
+    NarCommandType_AddVolume,
+    NarCommandType_FlushLog // Flushes all logs and returns current file size in bytes
 }NAR_COMMAND_TYPE;
 
 typedef struct NAR_COMMAND {
@@ -200,6 +203,11 @@ typedef struct NAR_COMMAND {
     char Letter; // neccecary for driver to calculate it's fileid
     
 }NAR_COMMAND;
+
+typedef struct NAR_LOG_INF{
+    UINT64 CurrentSize;
+    BOOLEAN ErrorOccured;
+}NAR_LOG_INF;
 
 #pragma warning(pop)
 
