@@ -253,4 +253,23 @@
     <system:String x:Key="MissingFile">Eksik Dosya</system:String>
     <system:String x:Key="ValidateNAS">NAS Doğrulama</system:String>
     <system:String x:Key="loading...">Yükleniyor...</system:String>
+    
+    <system:String x:Key="notNullMB">İlgili alanları lütfen boş geçmeyiniz.</system:String>
+    <system:String x:Key="validateDirectoryMB">Lütfen geçerli bir dizin giriniz.</system:String>
+    <system:String x:Key="sameNameInDirectoryMB">Girilen dizinde bu isimde dosya olduğu için aynı isimde klasör oluşturulamaz!</system:String>
+    <system:String x:Key="runningTaskAffectedMB">Çalışmakta olan görevleriniz etkileneceği için bu işlemi gerçekleştiremezsiniz!</system:String>
+    <system:String x:Key="restoreTaskAffectedMB">Restore görevleriniz bu değişiklikten etkilenecek. Onaylıyor musunuz?</system:String>
+    <system:String x:Key="updateSuccessMB">Güncelleme işlemi başarılı</system:String>
+    <system:String x:Key="updateFailMB">Güncelleme işlemi başarısız</system:String>
+    <system:String x:Key="incorrectNASMB">Girdiğiniz NAS bilgileri hatalıdır</system:String>
+    <system:String x:Key="unexpectedUpdateMB">Beklenmedik hata oluştu. Güncelleme işlemi başarısız oldu</system:String>
+    <system:String x:Key="addSuccessMB">Ekleme işlemi başarılı</system:String>
+    <system:String x:Key="addFailMB">Ekleme işlemi başarısız</system:String>
+    <system:String x:Key="unexpectedErrorMB">Beklenmedik bir hata ile karşılaşıldığından bu işleme devam edilemiyor.</system:String>
+    <system:String x:Key="deleteFailMB">Beklenmedik hata oluştu. Silme işlemi gerçekleştirilemedi.</system:String>
+    <system:String x:Key="notConnectNASMB">NAS'a bağlanamadınız.</system:String>
+    <system:String x:Key="taskAffectedMB">Etkilenecek olan görevleriniz var. Onaylıyor musunuz?</system:String>
+    <system:String x:Key="notSchedulePastDaysMB">Geçmiş tarih için geri yükleme işlemi gerçekleştirilemez.</system:String>
+    <system:String x:Key="notAvailableVolumeLetterMB">Restore gerçekleştirilecek, uygun volume harfiniz bulunmamaktadır.</system:String>  
+    
 </ResourceDictionary>

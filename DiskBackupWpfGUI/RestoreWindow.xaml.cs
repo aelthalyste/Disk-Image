@@ -152,7 +152,7 @@ namespace DiskBackupWpfGUI
             MessageBoxResult result = MessageBoxResult.Yes;
 
             if (checkFlag)
-                result = MessageBox.Show($"Etkilenecek olan görevleriniz var. \nOnaylıyor musunuz?", Resources["MessageboxTitle"].ToString(), MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
+                result = MessageBox.Show(Resources["taskAffectedMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
             
             if (result == MessageBoxResult.No)
                 return false;
@@ -186,7 +186,7 @@ namespace DiskBackupWpfGUI
             //Kaydedip Silinecek
             if (dtpSetTime.Value <= DateTime.Now + TimeSpan.FromSeconds(10))
             {
-                MessageBox.Show("Geçmiş tarih için geri yükleme işlemi gerçekleştirilemez.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show(Resources["notSchedulePastDaysMB"].ToString(), Resources["MessageboxTitle"].ToString(),  MessageBoxButton.OK, MessageBoxImage.Error);
             }
             else
             {
@@ -195,7 +195,7 @@ namespace DiskBackupWpfGUI
                 {
                     if (txtTaskName.Text.Equals(""))
                     {
-                        MessageBox.Show("İlgili alanları lütfen boş geçmeyiniz. Hemen çalıştır", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+                        MessageBox.Show(Resources["notNullMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
                         nullControlFlag = false;
                     }
                 }
@@ -203,7 +203,7 @@ namespace DiskBackupWpfGUI
                 {
                     if (txtTaskName.Text.Equals("") || dtpSetTime.Value.Equals(""))
                     {
-                        MessageBox.Show("İlgili alanları lütfen boş geçmeyiniz. Zaman belirle", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+                        MessageBox.Show(Resources["notNullMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
                         nullControlFlag = false;
                     }
                 }
@@ -236,7 +236,7 @@ namespace DiskBackupWpfGUI
 
                         if (resultTaskInfo != null)
                         {
-                            MessageBox.Show("Ekleme işlemi başarılı", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Information);
+                            MessageBox.Show(Resources["addSuccessMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Information);
                             if (_taskInfo.NextDate == Convert.ToDateTime("01/01/0002")) // hemen çalıştır
                             {
                                 _taskInfo.LastWorkingDate = DateTime.Now;
@@ -265,8 +265,8 @@ namespace DiskBackupWpfGUI
                         }
                         catch(Exception ex)
                         {
-                            _logger.Error(ex, "NarDIWrapper'dan uygun disk için harf alınamadı.");
-                            MessageBox.Show($"Restore gerçekleştirilecek uygun volume harfiniz bulunamamaktadır.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Information);
+                            _logger.Error(ex, "NarDIWrapper'dan uygun disk için harf alınamadı."); 
+                            MessageBox.Show(Resources["notAvailableVolumeLetterMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Information);
                             Close();
                             return;
                         }
@@ -279,7 +279,7 @@ namespace DiskBackupWpfGUI
 
                             if (resultTaskInfo != null)
                             {
-                                MessageBox.Show("Ekleme işlemi başarılı", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Information);
+                                MessageBox.Show(Resources["addSuccessMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Information);
                                 if (_taskInfo.NextDate == Convert.ToDateTime("01/01/0002")) // hemen çalıştır
                                 {
                                     _taskInfo.LastWorkingDate = DateTime.Now;
@@ -302,7 +302,7 @@ namespace DiskBackupWpfGUI
             var resultRestoreTask = _restoreTaskDal.Add(_taskInfo.RestoreTaskInfo);
             if (resultRestoreTask == null)
             {
-                MessageBox.Show("Ekleme başarısız.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show(Resources["addFailMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
                 return null;
             }
 
@@ -312,7 +312,7 @@ namespace DiskBackupWpfGUI
             var resultStatusInfo = _statusInfoDal.Add(_taskInfo.StatusInfo);
             if (resultStatusInfo == null)
             {
-                MessageBox.Show("Ekleme başarısız.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show(Resources["addFailMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
                 return null;
             }
 
@@ -324,7 +324,7 @@ namespace DiskBackupWpfGUI
             var resultTaskInfo = _taskInfoDal.Add(_taskInfo);
             if (resultTaskInfo == null)
             {
-                MessageBox.Show("Ekleme başarısız.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show(Resources["addFailMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
                 return null;
             }
 

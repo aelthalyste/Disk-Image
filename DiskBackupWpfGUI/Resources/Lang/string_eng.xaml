@@ -267,4 +267,24 @@
     <system:String x:Key="ValidateNAS">Validate NAS</system:String>
     <system:String x:Key="loading...">Loading...</system:String>
 
+    <system:String x:Key="notNullMB">Please do not leave the relevant fields blank.</system:String>
+    <system:String x:Key="validateDirectoryMB">Please enter a valid directory.</system:String>
+    <system:String x:Key="sameNameInDirectoryMB">A folder with the same name cannot be created because there is a file with this name in the directory entered!</system:String>
+    <system:String x:Key="runningTaskAffectedMB">You cannot do this because your running tasks will be affected!</system:String>
+    <system:String x:Key="restoreTaskAffectedMB">Your restore tasks will be affected by this change. Do you confirm?</system:String>
+    <system:String x:Key="updateSuccessMB">Update successful</system:String>
+    <system:String x:Key="updateFailMB">Update failed</system:String>
+    <system:String x:Key="incorrectNASMB">Girdiğiniz NAS bilgileri yanlış</system:String>
+    <system:String x:Key="unexpectedUpdateMB">An unexpected error has occurred. Update failed</system:String>
+    <system:String x:Key="addSuccessMB">Adding is successful</system:String>
+    <!--sıkıntı çıkabilir-->
+    <system:String x:Key="addFailMB">Adding is failed</system:String>
+    <!--sıkıntı çıkabilir-->
+    <system:String x:Key="unexpectedErrorMB">This operation cannot be continued because an unexpected error has been encountered.</system:String>
+    <system:String x:Key="deleteFailMB">An unexpected error has occurred. Deletion could not be performed.</system:String>
+    <system:String x:Key="notConnectNASMB">You could not connect to NAS.</system:String>
+    <system:String x:Key="taskAffectedMB">You have missions that will be affected. Do you confirm?</system:String>
+    <system:String x:Key="notSchedulePastDaysMB">Restore cannot be performed for the past date.</system:String>
+    <system:String x:Key="notAvailableVolumeLetterMB">You do not have the appropriate volume letter to restore.</system:String>
+
 </ResourceDictionary>

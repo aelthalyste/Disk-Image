@@ -63,9 +63,9 @@ namespace DiskBackupWpfGUI
                     // silme işlemleri                  
                     var result = _backupService.BackupFileDelete(_backupInfo);
                     if (result == 0)
-                        MessageBox.Show("NAS'a bağlanamadınız.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
-                    else if (result == 1)
-                        MessageBox.Show("Beklenmedik bir hata ile karşılaşıldı. Silme işlemi gerçekleştirilemedi.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+                        MessageBox.Show( Resources["notConnectNASMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+                    else if (result == 1) 
+                        MessageBox.Show(Resources["deleteFailMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
 
                     Console.WriteLine("Validate sildim");
 
