@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"
+	 xmlns:difxapp="http://schemas.microsoft.com/wix/DifxAppExtension">
+	<?define Service_TargetDir=$(var.DiskBackup.Service.TargetDir)?>
+	<?define UI_TargetDir=$(var.DiskBackupWpfGUI.TargetDir)?>
+	<Product Id="*" Name="Narbulut DiskBackup" Language="1033" Version="1.0.0.0" Manufacturer="Narbulut Bilgi Teknolojileri San. ve Tic. A.Ş." UpgradeCode="b5acc323-9d6f-4beb-a666-8633cbff7a5b">
+		<Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
+
+		<MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
+		<MediaTemplate EmbedCab="yes"/>
+
+		<Feature Id="ProductFeature" Title="DiskBackup.Setup" Level="1">
+			<ComponentGroupRef Id="ProductComponents" />
+		</Feature>
+	</Product>
+
+	<Fragment>
+		<Directory Id="TARGETDIR" Name="SourceDir">
+			<Directory Id="ProgramFilesFolder">
+				<Directory Id="INSTALLFOLDER" Name="NarDiskBackup">
+					<Directory Id="X_86" Name="x86" />
+					<Directory Id="X_64" Name="x64" />
+				</Directory>
+			</Directory>
+			<Directory Id="CommonAppDataFolder">
+				<Directory Id="ApplicationData" Name="NarDiskBackup"/>
+			</Directory>
+		</Directory>
+	</Fragment>
+
+	<Fragment>
+		<ComponentGroup Id="ProductComponents">
+			<!-- TODO: Remove the comments around this Component element and the ComponentRef below in order to add resources to this installer. -->
+			 <Component Id="Executables" Guid="E68E1012-777A-4106-B422-8846059657FF"  Directory="INSTALLFOLDER">
+				 <File Id="DiskBackup.Service.exe" Name="DiskBackup.Service.exe" Source="$(var.Service_TargetDir)DiskBackup.Service.exe" KeyPath="yes" />
+				 <File Id="DiskBackup.Service.exe.config" Name="DiskBackup.Service.exe.config" Source="$(var.Service_TargetDir)DiskBackup.Service.exe.config"/>
+				 <File Id="quartz.config" Name="quartz.config" Source="$(var.Service_TargetDir)quartz.config"/>
+				 <File Id="DiskBackup.TaskScheduler.dll" Name="DiskBackup.TaskScheduler.dll" Source="$(var.Service_TargetDir)DiskBackup.TaskScheduler.dll"/>			 
+				 <File Id="DiskBackup.Business.dll" Name="DiskBackup.Business.dll" Source="$(var.Service_TargetDir)DiskBackup.Business.dll"/>
+				 <File Id="NarDIWrapper.dll" Name="NarDIWrapper.dll" Source="$(var.Service_TargetDir)NarDIWrapper.dll"/>
+				 <File Id="DiskBackup.DataAccess.dll" Name="DiskBackup.DataAccess.dll" Source="$(var.Service_TargetDir)DiskBackup.DataAccess.dll"/>
+				 <File Id="DiskBackup.Entities.dll" Name="DiskBackup.Entities.dll" Source="$(var.Service_TargetDir)DiskBackup.Entities.dll"/>
+				 <File Id="DiskBackup.Core.dll" Name="DiskBackup.Core.dll" Source="$(var.Service_TargetDir)DiskBackup.Core.dll"/>
+				 <File Id="Quartz.dll" Name="Quartz.dll" Source="$(var.Service_TargetDir)Quartz.dll"/>
+				 <File Id="Microsoft.Extensions.Logging.Abstractions.dll" Name="Microsoft.Extensions.Logging.Abstractions.dll" Source="$(var.Service_TargetDir)Microsoft.Extensions.Logging.Abstractions.dll"/>
+				 <File Id="System.Runtime.CompilerServices.Unsafe.dll" Name="System.Runtime.CompilerServices.Unsafe.dll" Source="$(var.Service_TargetDir)System.Runtime.CompilerServices.Unsafe.dll"/>
+				 <File Id="Microsoft.Bcl.AsyncInterfaces.dll" Name="Microsoft.Bcl.AsyncInterfaces.dll" Source="$(var.Service_TargetDir)Microsoft.Bcl.AsyncInterfaces.dll"/>
+				 <File Id="System.Diagnostics.DiagnosticSource.dll" Name="System.Diagnostics.DiagnosticSource.dll" Source="$(var.Service_TargetDir)System.Diagnostics.DiagnosticSource.dll"/>
+				 <File Id="Autofac.dll" Name="Autofac.dll" Source="$(var.Service_TargetDir)Autofac.dll"/>
+				 <File Id="Serilog.dll" Name="Serilog.dll" Source="$(var.Service_TargetDir)Serilog.dll"/>
+				 <File Id="System.Data.SQLite.EF6.dll" Name="System.Data.SQLite.EF6.dll" Source="$(var.Service_TargetDir)System.Data.SQLite.EF6.dll"/>
+				 <File Id="System.Data.SQLite.Linq.dll" Name="System.Data.SQLite.Linq.dll" Source="$(var.Service_TargetDir)System.Data.SQLite.Linq.dll"/>
+				 <File Id="System.Data.SQLite.dll" Name="System.Data.SQLite.dll" Source="$(var.Service_TargetDir)System.Data.SQLite.dll"/>
+				 <File Id="EntityFramework.SqlServer.dll" Name="EntityFramework.SqlServer.dll" Source="$(var.Service_TargetDir)EntityFramework.SqlServer.dll"/>		 
+				 <File Id="EntityFramework.dll" Name="EntityFramework.dll" Source="$(var.Service_TargetDir)EntityFramework.dll"/>
+				 <File Id="System.Buffers.dll" Name="System.Buffers.dll" Source="$(var.Service_TargetDir)System.Buffers.dll"/>
+				 <File Id="System.Memory.dll" Name="System.Memory.dll" Source="$(var.Service_TargetDir)System.Memory.dll"/>
+				 <File Id="System.Threading.Tasks.Extensions.dll" Name="System.Threading.Tasks.Extensions.dll" Source="$(var.Service_TargetDir)System.Threading.Tasks.Extensions.dll"/>
+				 <File Id="Serilog.Sinks.File.dll" Name="Serilog.Sinks.File.dll" Source="$(var.Service_TargetDir)Serilog.Sinks.File.dll"/>
+				 <File Id="System.Numerics.Vectors.dll" Name="System.Numerics.Vectors.dll" Source="$(var.Service_TargetDir)System.Numerics.Vectors.dll"/>
+				 <File Id="DiskBackupWpfGUI.exe" Name="DiskBackupWpfGUI.exe" Source="$(var.UI_TargetDir)DiskBackupWpfGUI.exe"/>
+				 <File Id="DiskBackupWpfGUI.exe.config" Name="DiskBackupWpfGUI.exe.config" Source="$(var.UI_TargetDir)DiskBackupWpfGUI.exe.config"/>
+				 <File Id="Xceed.Wpf.Toolkit.dll" Name="Xceed.Wpf.Toolkit.dll" Source="$(var.UI_TargetDir)Xceed.Wpf.Toolkit.dll"/>
+				 <File Id="Xceed.Wpf.AvalonDock.Themes.VS2010.dll" Name="Xceed.Wpf.AvalonDock.Themes.VS2010.dll" Source="$(var.UI_TargetDir)Xceed.Wpf.AvalonDock.Themes.VS2010.dll"/>
+				 <File Id="Xceed.Wpf.AvalonDock.Themes.Metro.dll" Name="Xceed.Wpf.AvalonDock.Themes.Metro.dll" Source="$(var.UI_TargetDir)Xceed.Wpf.AvalonDock.Themes.Metro.dll"/>
+				 <File Id="Xceed.Wpf.AvalonDock.Themes.Aero.dll" Name="Xceed.Wpf.AvalonDock.Themes.Aero.dll" Source="$(var.UI_TargetDir)Xceed.Wpf.AvalonDock.Themes.Aero.dll"/>
+				 <File Id="Xceed.Wpf.AvalonDock.dll" Name="Xceed.Wpf.AvalonDock.dll" Source="$(var.UI_TargetDir)Xceed.Wpf.AvalonDock.dll"/>
+				 <File Id="Newtonsoft.Json.dll" Name="Newtonsoft.Json.dll" Source="$(var.UI_TargetDir)Newtonsoft.Json.dll"/>
+				 <ServiceInstall Id="ServiceInstaller" Type="ownProcess" Vital="yes" Name="DiskBackupService" Description="NarBulut Disk Yedekleme Uygulaması" DisplayName="DiskBackupService" Start="auto" ErrorControl="ignore" Account="LocalSystem" Interactive="no"></ServiceInstall>
+				 <ServiceControl Id="ServiceControl" Name="DiskBackupService" Start="install" Wait="yes" Stop="both" Remove="uninstall" />
+			 </Component>
+			<Component Id="InteropDll" Guid="685A18FE-4C44-43DF-B6BF-EBDB3D6DA398" Directory="X_86">
+				<File Id="SQLite.Interop.dll" Name="SQLite.Interop.dll" Source="$(var.Service_TargetDir)x86\SQLite.Interop.dll" KeyPath="yes" />
+			</Component>
+			<Component Id="InteropDllx64" Guid="14F596F6-3A3A-4608-A1BC-F383E0A46E2D" Directory="X_64">
+				<File Id="SQLite.Interop.dllx64" Name="SQLite.Interop.dll" Source="$(var.Service_TargetDir)x64\SQLite.Interop.dll" KeyPath="yes" />
+			</Component>
+			<Component Id="Databases" Guid="D2532401-F81A-4CD9-B639-1E608B603785" Directory="ApplicationData">
+				<File Id="disk_image_quartz.db" Name="disk_image_quartz.db" Source="$(var.UI_TargetDir)disk_image_quartz.db" KeyPath="yes" />
+				<File Id="image_disk.db" Name="image_disk.db" Source="$(var.UI_TargetDir)image_disk.db"/>
+			</Component>
+			<Component Id="Driver" Guid="D7CF9890-12EC-4577-98E2-B22BC802CF13" Directory="INSTALLFOLDER">
+				<File Id="minispy.sys" Name="minispy.sys" Source="minispy.sys" KeyPath="yes" />
+				<File Id="minispy.inf" Name="minispy.inf" Source="minispy.inf"/>
+				<difxapp:Driver ForceInstall="yes"/>
+			</Component>
+		</ComponentGroup>
+	</Fragment>
+</Wix>
