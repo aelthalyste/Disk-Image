@@ -38,7 +38,7 @@ Environment:
 
 #define NAR_GUID_STR_SIZE 96
 
-#define NAR_MEMORYBUFFER_SIZE       (1024*128*1) // 1mb
+#define NAR_MEMORYBUFFER_SIZE       (2048*1) //
 #define NAR_MAX_VOLUME_COUNT        (12)
 #define NAR_REGIONBUFFER_SIZE       (sizeof(*NarData.VolumeRegionBuffer)) //struct itself
 #define NAR_VOLUMEREGIONBUFFERSIZE  (NAR_MAX_VOLUME_COUNT)*(NAR_REGIONBUFFER_SIZE)
@@ -56,6 +56,10 @@ Environment:
 
 #define NAR_BOOTFILE_NAME  "NARBOOTFILE"
 #define NAR_BOOTFILE_W_NAME L"NARBOOTFILE"
+
+#define NAR_KERNEL_INVALID_FILE_ID 0
+#define NAR_KERNEL_MAX_FILE_ID 30
+#define NAR_KERNEL_GEN_FILE_ID(c) ((char)(c) - 'A' + 1)
 
 // force 1 byte aligment
 #pragma pack(push ,1)
@@ -78,7 +82,7 @@ struct nar_backup_id{
 
 struct nar_log_thread_params {
     void* Data;
-    size_t FileID;
+    unsigned char FileID;
     size_t FileSize;
     LONG InternalError; // NTSTATUS = LONG
     INT DataLen;
@@ -176,7 +180,6 @@ typedef _Return_type_success_(return >= 0) LONG NTSTATUS;
 #define RECORD_SIZE     4096
 
 
-#pragma warning(pop)
 
 
 

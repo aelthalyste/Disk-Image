@@ -2087,7 +2087,7 @@ SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, DotNetStreamInf* SI) {
     }
     
     // no overheat for attaching volume again and again
-    if(AttachVolume(VolInf->Letter)){
+    if(FALSE == AttachVolume(VolInf->Letter)){
         printf("Cant attach volume\n");
         return FALSE;
     }
@@ -2674,15 +2674,14 @@ ConnectDriver(PLOG_CONTEXT Ctx) {
     DWORD BytesWritten = 256;
     //GetUserNameW(&CTX.UserName[0], &BytesWritten) && BytesWritten != 0
     
-    if (TRUE) {
-        
+    {
         hResult = FilterConnectCommunicationPort(MINISPY_PORT_NAME,
                                                  0,
                                                  &CTX, sizeof(CTX),
                                                  NULL, &Ctx->Port);
         
         if (!IS_ERROR(hResult)) {
-            
+            Result = TRUE;
         }
         else {
             printf("Could not connect to filter: 0x%08x\n", hResult);
@@ -2690,10 +2689,6 @@ ConnectDriver(PLOG_CONTEXT Ctx) {
             DisplayError((DWORD)hResult);
         }
         
-    }
-    else {
-        printf("Cant query username from system\n");
-        printf("Bytes written %i, name => %S \n", BytesWritten, CTX.UserName);
     }
     
     
@@ -7947,7 +7942,7 @@ main(int argc, char* argv[]) {
     if(SetupVSS() && ConnectDriver(&C)){
         DotNetStreamInf inf = {0};
 #if 1        
-        SetupStream(&C, (wchar_t)'C', (BackupType)0, &inf);
+        SetupStream(&C, (wchar_t)'E', (BackupType)0, &inf);
         loop{
             Sleep(16);
         }

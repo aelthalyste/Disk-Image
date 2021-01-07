@@ -22,16 +22,20 @@ Environment:
 #pragma warning(push)
 #pragma warning(disable:4820) 
 
+
 #include <fltKernel.h>
-//#include <dontuse.h>
 #include <suppress.h>
 #include "minispy.h"
-#pragma warning(pop)
 
 #pragma prefast(disable:__WARNING_ENCODE_MEMBER_FUNCTION_POINTER, "Not valid for kernel mode drivers")
 
 #define NAR_LOOKASIDE_SIZE 1024LL*2LL
 #define NAR_TAG 'RAN'
+
+
+#ifndef _DEBUG
+//#define DbgPrint(v)
+#endif
 
 
 //
@@ -138,32 +142,18 @@ typedef struct _nar_kernel_data {
     
     PFLT_PORT ServerPort;
     
+
+    ULONG NameQueryMethod;
+
     //
     //  Client connection port: only one connection is allowed at a time.,
     //
     
     PFLT_PORT ClientPort;
     
-    
-    
-    
-    //
-    //  The name query method to use.  By default, it is set to
-    //  FLT_FILE_NAME_QUERY_ALWAYS_ALLOW_CACHE_LOOKUP, but it can be overridden
-    //  by a setting in the registery.
-    //
-    
-    ULONG NameQueryMethod;
-    
-    
-       
-    //
-    // In order to compare volume guid strings in list and preop strings, they MUST be allocated in non-paged pool. This nonpaged lookaside list handles this allocation
-    //
-    
-    //PAGED_LOOKASIDE_LIST GUIDComparePagedLookAsideList;
-    
-    // this struct's members lays on non-paged memory.
+    //NPAGED_LOOKASIDE_LIST LogAllocator;
+
+    // If VolFileID == 0, means that entry is invalid and we can skip flushing it's log at filterunload routine
     struct volume_region_buffer {
         FAST_MUTEX FastMutex; // used to provide exclusive access to MemoryBuffer
         UNICODE_STRING GUIDStrVol; //24 byte
@@ -177,16 +167,16 @@ typedef struct _nar_kernel_data {
         void *MemoryBuffer;
 
         char Letter;
-        unsigned char VolFileID; // usually (Letter - 'A')
+        unsigned char VolFileID; // usually (Letter - 'A' + 1), 0 means invalid
 
     } VolumeRegionBuffer[NAR_MAX_VOLUME_COUNT];
-    
+
+    HANDLE* FileHandles;
+
     
     HANDLE MetadataHandle;
-    UNICODE_STRING UserName;
     ULONG UserModePID;
     int OsDeviceID;
-    HANDLE FileHandles[30];
 } nar_data;
 
 
@@ -214,19 +204,10 @@ typedef struct _MINISPY_TRANSACTION_CONTEXT {
 
 extern nar_data NarData;
 
-#define DEFAULT_MAX_RECORDS_TO_ALLOCATE     1024 // NOTE(Batuhan): was 500
-#define MAX_RECORDS_TO_ALLOCATE             L"MaxRecords"
 
 #define DEFAULT_NAME_QUERY_METHOD           FLT_FILE_NAME_QUERY_ALWAYS_ALLOW_CACHE_LOOKUP
 #define NAME_QUERY_METHOD                   L"NameQueryMethod"
 
-//
-//  DebugFlag values
-//
-
-#define SPY_DEBUG_PARSE_NAMES   0x00000001
-
-//---------------------------------------------------------------------------
 //  Registration structure
 //---------------------------------------------------------------------------
 
