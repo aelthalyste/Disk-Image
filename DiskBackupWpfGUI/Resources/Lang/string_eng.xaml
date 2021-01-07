@@ -2,7 +2,7 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:system="clr-namespace:System;assembly=mscorlib">
 
-    <system:String x:Key="appFullName">Narbulut Disk Yedekleme Uygulaması</system:String>
+    <system:String x:Key="appFullName">Narbulut Disk Backup Application</system:String>
     <system:String x:Key="createTask">Create Task</system:String>
     <system:String x:Key="createNewTask">New Create Task</system:String>
     <system:String x:Key="disks">Disks</system:String>
@@ -294,5 +294,6 @@
     <system:String x:Key="fullBackupDeleteMB">Other backups connected to full backup files will be deleted. Do you confirm?</system:String>
     <system:String x:Key="deleteBackupPieceMB">Deleting the backup file may affect other backups. Do you confirm?</system:String>
     <system:String x:Key="deleteTaskPieceMB">Data will be deleted and you will have tasks affected. Do you confirm?</system:String>
+    <system:String x:Key="closeServiceErrorMB">The service appears to be down, please restart the service and try again.</system:String>
 
 </ResourceDictionary>

@@ -2084,7 +2084,13 @@ namespace DiskBackupWpfGUI
                 }
                 catch (Exception e)
                 {
-                    MessageBox.Show("Refresh: " + e.Message, Resources["MessageboxTitle"].ToString(), MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
+                    if (e.Message.Contains("System.ServiceModel.Channels.ServiceChannel"))
+                    {
+                        MessageBox.Show(Resources["closeServiceErrorMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error, MessageBoxResult.No);
+                        Close();
+                        return;
+                    }
+                    MessageBox.Show("Refresh: " + e.Message, Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error, MessageBoxResult.No);
                 }
 
             }
