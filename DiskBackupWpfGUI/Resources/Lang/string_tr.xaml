@@ -6,7 +6,7 @@
     <system:String x:Key="createTask">Görev Oluştur</system:String>
     <system:String x:Key="createNewTask">Yeni Görev Oluştur</system:String>
     <system:String x:Key="disks">Diskler</system:String>
-    <system:String x:Key="makeABackup">Yedek Alnıyor</system:String>
+    <system:String x:Key="makeABackup">Yedek Alınıyor</system:String>
     <system:String x:Key="backupRestore">Yedek Geri Yükleniyor</system:String>
     <system:String x:Key="backupStopped">Yedekleme Durduruldu</system:String>
     <system:String x:Key="volume">Volume</system:String>
@@ -46,9 +46,7 @@
     <system:String x:Key="domainName">Alan Adı</system:String>
     <system:String x:Key="totalSize">Toplam Alan B/Y</system:String>
     <system:String x:Key="usedSize">Kullanılan Alan</system:String>
-    <system:String x:Key="localPath">Yerel Yol</system:String>
     <system:String x:Key="folderPath">Klasör Yolu</system:String>
-    <system:String x:Key="cloudPath">Bulut Alan</system:String>
     <system:String x:Key="cloud">Bulut</system:String>
     <system:String x:Key="backupAreas">Yedekleme Alanları</system:String>
     <system:String x:Key="startDate">Başlangıç Tarihi</system:String>
@@ -65,9 +63,7 @@
     <system:String x:Key="lastBackup">Son Yedekleme :</system:String>
     <system:String x:Key="lastProcess">Son İşlem :</system:String>
     <system:String x:Key="name">İsim</system:String>
-    <system:String x:Key="nameWithDot">İsim :</system:String>
     <system:String x:Key="name2">Adı</system:String>
-    <system:String x:Key="tempFolder">Geçici Klasör</system:String>
     <system:String x:Key="scheduler">Zamanlama</system:String>
     <system:String x:Key="summary">Özet</system:String>
     <system:String x:Key="diff">Differential</system:String>
@@ -83,7 +79,6 @@
     <system:String x:Key="next">İleri</system:String>
     <system:String x:Key="cancel">İptal</system:String>
     <system:String x:Key="okay">Tamam</system:String>
-    <system:String x:Key="dbType">Veritabanı Türü</system:String>
     <system:String x:Key="space2Backup">Yedeklenecek Alan</system:String>
     <system:String x:Key="space2Backups">Yedeklenecek Alanlar</system:String>
     <system:String x:Key="fullSize">Dolu Alan</system:String>
@@ -153,7 +148,7 @@
     <system:String x:Key="notifications">Bildirimler</system:String>
     <system:String x:Key="unlimited">Sınırsız</system:String>
     <system:String x:Key="NCTNameContent">Yedekleme profili için bir isim ve açıklama giriniz</system:String>
-    <system:String x:Key="NCTBackupTypeContent">Yedekleme istediğiniz türü seçin</system:String>
+    <system:String x:Key="NCTBackupTypeContent">Yedeklemek istediğiniz türü seçin</system:String>
     <system:String x:Key="NCTTargetContent">Yedekleri kaydedeceğiniz alanı seçiniz</system:String>
     <system:String x:Key="NCTSchedulerContent">Yedeklemelerin zamanlamasını seçiniz</system:String>
     <system:String x:Key="NCTSettingsContent">Yedeklemelerin ayarlamasını seçiniz</system:String>
@@ -169,9 +164,9 @@
     <system:String x:Key="instantDataTransfer">Anlık Veri Aktarımı</system:String>
     <system:String x:Key="zip">Sıkıştırma</system:String>
     <system:String x:Key="sourceInfo">Kaynak Bilgisi</system:String>
-    <system:String x:Key="processedTotal">İşlenen Veri Toplam</system:String>
+    <system:String x:Key="processedTotal">İşlenen Toplam Veri</system:String>
     <system:String x:Key="narTransfer">Narbulut'a aktarım</system:String>
-    <system:String x:Key="settingsContent">Hesaplar alan yönetimi diğer tanımları bu alandan yönetin</system:String>
+    <system:String x:Key="settingsContent">Hesaplar, alan yönetimi ve diğer tanımları bu alandan yönetin</system:String>
     <system:String x:Key="appLicense">Uygulama Lisansı :</system:String>
     <system:String x:Key="endDateDot">Bitiş Tarihi :</system:String>
     <system:String x:Key="items">adet</system:String>
@@ -193,7 +188,6 @@
     <system:String x:Key="versionDot">Versiyon :</system:String>
     <system:String x:Key="error">Hata</system:String>
     <system:String x:Key="successful">Başarılı</system:String>
-    <system:String x:Key="firstBackupExpected">İlk yedek bekleniyor</system:String>
     <system:String x:Key="addBackupArea">Yedekleme Alanı Ekle</system:String>
     <system:String x:Key="backupAreaName">Yedekleme Alanı Adı</system:String>
     <system:String x:Key="NASorSharing">NAS veya Paylaşım</system:String>
@@ -259,5 +253,33 @@
     <system:String x:Key="MissingFile">Eksik Dosya</system:String>
     <system:String x:Key="ValidateNAS">NAS Doğrulama</system:String>
     <system:String x:Key="loading...">Yükleniyor...</system:String>
+    <!--MessageBox Info-->
+    <system:String x:Key="notNullMB">İlgili alanları lütfen boş geçmeyiniz.</system:String>
+    <system:String x:Key="validateDirectoryMB">Lütfen geçerli bir dizin giriniz.</system:String>
+    <system:String x:Key="sameNameInDirectoryMB">Girilen dizinde bu isimde dosya olduğu için aynı isimde klasör oluşturulamaz!</system:String>
+    <system:String x:Key="runningTaskAffectedMB">Çalışmakta olan görevleriniz etkileneceği için bu işlemi gerçekleştiremezsiniz!</system:String>
+    <system:String x:Key="restoreTaskAffectedMB">Restore görevleriniz bu değişiklikten etkilenecek. Onaylıyor musunuz?</system:String>
+    <system:String x:Key="updateSuccessMB">Güncelleme işlemi başarılı.</system:String>
+    <system:String x:Key="updateFailMB">Güncelleme işlemi başarısız.</system:String>
+    <system:String x:Key="incorrectNASMB">Girdiğiniz NAS bilgileri hatalıdır.</system:String>
+    <system:String x:Key="unexpectedUpdateMB">Beklenmedik hata oluştu. Güncelleme işlemi başarısız oldu.</system:String>
+    <system:String x:Key="addSuccessMB">Ekleme işlemi başarılı.</system:String>
+    <system:String x:Key="addFailMB">Ekleme işlemi başarısız.</system:String>
+    <system:String x:Key="unexpectedErrorMB">Beklenmedik bir hata ile karşılaşıldığından bu işleme devam edilemiyor.</system:String>
+    <system:String x:Key="deleteFailMB">Beklenmedik hata oluştu. Silme işlemi gerçekleştirilemedi.</system:String>
+    <system:String x:Key="notConnectNASMB">NAS'a bağlanamadınız.</system:String>
+    <system:String x:Key="taskAffectedMB">Etkilenecek olan görevleriniz var. Onaylıyor musunuz?</system:String>
+    <system:String x:Key="notSchedulePastDaysMB">Geçmiş tarih için geri yükleme işlemi gerçekleştirilemez.</system:String>
+    <system:String x:Key="notAvailableVolumeLetterMB">Restore gerçekleştirilecek, uygun volume harfiniz bulunmamaktadır.</system:String>
+    <system:String x:Key="unexpectedError1MB">Beklenmedik hata oluştu.</system:String>
+    <system:String x:Key="notChainCleanMB">zincir temizleme başarılı olamadı.</system:String>
+    <system:String x:Key="volumeAffectedMB">Seçili volumelarda çalışmakta olan görevleriniz etkisiz hale getirilecek. Onaylıyor musunuz?</system:String>
+    <system:String x:Key="driverNotInitializedMB">Driver initialize edilemedi!</system:String>
+    <system:String x:Key="deletePieceMB">adet veri silinecek. Onaylıyor musunuz?</system:String>
+    <system:String x:Key="cloneFailMB">Kopyalama işlemi başarısız.</system:String>
+    <system:String x:Key="sizeConflictMB">Dosya boyutu nedeniyle bu restore gerçekleştiremezsiniz.</system:String>
+    <system:String x:Key="fullBackupDeleteMB">Full backup dosyalarına bağlı olan diğer backuplarınız silinecektir. Onaylıyor musunuz?</system:String>
+    <system:String x:Key="deleteBackupPieceMB">adet backup dosyasının silinmesi diğer backuplarınızı etklileyebilir. Onaylıyor musunuz?</system:String>
+    <system:String x:Key="deleteTaskPieceMB">adet veri silinecek ve etkilenen görevleriniz olacak. Onaylıyor musunuz?</system:String>
 
 </ResourceDictionary>

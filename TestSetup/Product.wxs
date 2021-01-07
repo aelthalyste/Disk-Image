@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+	<?define TargetDir=$(var.WaitEventPoC.TargetDir)?>
+	<Product Id="*" Name="TestSetup" Language="1033" Version="1.0.0.0" Manufacturer="Narbulut" UpgradeCode="254d9f2a-3521-4c17-9ee0-a36cc9b7bd36">
+		<Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
+		<UI>
+			<UIRef Id="WixUI_Minimal" />
+			<!--<Publish Dialog="ExitDialog" Control="Finish" Event="DoAction" Value="LaunchApplication">WIXUI_EXITDIALOGOPTIONALCHECKBOX = 1 and NOT Installed</Publish>-->
+		</UI>
+		<MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
+		<MediaTemplate EmbedCab="yes"/>
+
+		<Feature Id="ProductFeature" Title="TestSetup" Level="1">
+			<ComponentGroupRef Id="ProductComponents" />
+		</Feature>
+	</Product>
+
+	<Fragment>
+		<Directory Id="TARGETDIR" Name="SourceDir">
+			<Directory Id="ProgramFilesFolder">
+				<Directory Id="INSTALLFOLDER" Name="TestSetup" />
+			</Directory>
+		</Directory>
+	</Fragment>
+
+	<Fragment>
+		<ComponentGroup Id="ProductComponents">
+			 <Component Id="ProductComponent" Guid="B95A03E7-FA20-42BF-9CF7-5979D5CA9B8E" Directory="INSTALLFOLDER">
+				 <File Id="Target.exe" Name="Target.exe" Source="$(var.TargetDir)WaitEventPoC.exe" KeyPath="yes" />
+			 </Component> 
+		</ComponentGroup>
+	</Fragment>
+</Wix>

@@ -56,7 +56,7 @@ namespace DiskBackupWpfGUI
             catch (Exception ex)
             {
                 _logger.Error(ex, "Beklenmedik hatadan dolayı file explorer açılamıyor.");
-                MessageBox.Show($"Beklenmedik bir hata ile karşılaşıldığından bu işleme devam edilemiyor.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show(Resources["unexpectedErrorMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
             
@@ -223,7 +223,7 @@ namespace DiskBackupWpfGUI
                     catch (Exception ex)
                     {
                         _logger.Error(ex, $"Dosya restore işlemi gerçekleştirilemedi. {"item.Id: " + item.Id + " txtFolderPath.Text: " + txtFolderPath.Text}");
-                        MessageBox.Show($"Beklenmedik bir hata ile karşılaşıldığından bu işleme devam edilemiyor.", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+                        MessageBox.Show(Resources["unexpectedErrorMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
                     }
                 }
             }

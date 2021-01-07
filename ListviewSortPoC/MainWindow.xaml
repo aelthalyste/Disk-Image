@@ -6,28 +6,31 @@
         xmlns:local="clr-namespace:ListviewSortPoC"
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="1000">
+    <!--<Window.Resources>
+        <ResourceDictionary Source="Resources\string_tr.xaml"/>
+    </Window.Resources>-->
     <Grid>
         <ListView Name="lvUsers" Width="400" HorizontalAlignment="Left" Margin="10">
             <ListView.View>
                 <GridView>
                     <GridViewColumn Width="120" DisplayMemberBinding="{Binding Name}">
                         <GridViewColumn.Header>
-                            <GridViewColumnHeader Tag="Name" Click="lvUsersColumnHeader_Click">Name</GridViewColumnHeader>
+                            <GridViewColumnHeader Content="{DynamicResource name}" Tag="Name" Click="lvUsersColumnHeader_Click"></GridViewColumnHeader>
                         </GridViewColumn.Header>
                     </GridViewColumn>
                     <GridViewColumn Width="80" DisplayMemberBinding="{Binding Age}">
                         <GridViewColumn.Header>
-                            <GridViewColumnHeader Tag="Age" Click="lvUsersColumnHeader_Click">Age</GridViewColumnHeader>
+                            <GridViewColumnHeader Content="{DynamicResource age}" Tag="Age" Click="lvUsersColumnHeader_Click"></GridViewColumnHeader>
                         </GridViewColumn.Header>
                     </GridViewColumn>
                     <GridViewColumn Width="80" DisplayMemberBinding="{Binding Sex}">
                         <GridViewColumn.Header>
-                            <GridViewColumnHeader Tag="Sex" Click="lvUsersColumnHeader_Click">Sex</GridViewColumnHeader>
+                            <GridViewColumnHeader Content="{DynamicResource sex}" Tag="Sex" Click="lvUsersColumnHeader_Click"></GridViewColumnHeader>
                         </GridViewColumn.Header>
                     </GridViewColumn>
                     <GridViewColumn Width="120" DisplayMemberBinding="{Binding Date}">
                         <GridViewColumn.Header>
-                            <GridViewColumnHeader Tag="Date" Click="lvUsersColumnHeader_Click">Date</GridViewColumnHeader>
+                            <GridViewColumnHeader Content="{DynamicResource date}" Tag="Date" Click="lvUsersColumnHeader_Click"></GridViewColumnHeader>
                         </GridViewColumn.Header>
                     </GridViewColumn>
                 </GridView>
@@ -62,6 +65,10 @@
         <StackPanel HorizontalAlignment="Center">
             <Button Height="30" Width="50" HorizontalAlignment="Right" Margin="0,20" Click="Button_Click">Listele</Button>
             <Button Height="30" Width="50" HorizontalAlignment="Right" Click="Button_Click_1">Listele 2</Button>
+            <!--<ComboBox Margin="30,20,0,0" Name="cbLang" Width="100" Height="24" SelectedIndex="0" FontSize="14" SelectionChanged="cbLang_SelectionChanged">
+                <ComboBoxItem Content="Türkçe"/>
+                <ComboBoxItem Content="İngilizce"/>
+            </ComboBox>-->
         </StackPanel>
     </Grid>
 </Window>

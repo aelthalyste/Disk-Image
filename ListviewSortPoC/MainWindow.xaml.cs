@@ -96,6 +96,24 @@ namespace ListviewSortPoC
             AdornerLayer.GetAdornerLayer(listViewSortCol2).Add(listViewSortAdorner2);
             lvUsers2.Items.SortDescriptions.Add(new SortDescription(sortBy, newDir));
         }
+
+        //private void cbLang_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        //{
+        //    if (cbLang.SelectedIndex != -1)
+        //    {
+        //        ResourceDictionary dict = new ResourceDictionary();
+        //        if (cbLang.SelectedIndex == 0) // Türkçe
+        //        {
+        //            dict.Source = new Uri("..\\Resources\\strings_tr.xaml", UriKind.Relative);
+        //            Resources.MergedDictionaries.Add(dict);
+        //        }
+        //        else if (cbLang.SelectedIndex == 1) // ingilizce
+        //        {
+        //            dict.Source = new Uri("..\\Resources\\strings_eng.xaml", UriKind.Relative);
+        //            Resources.MergedDictionaries.Add(dict);
+        //        }
+        //    }
+        //}
     }
 
     public enum SexType { Male, Female };
