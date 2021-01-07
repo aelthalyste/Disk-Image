@@ -17,9 +17,9 @@
         Height="450" 
         Width="800">
 
-    <Window.Resources>
+    <!--<Window.Resources>
         <ResourceDictionary Source="Resources\Lang\string_tr.xaml"/>
-    </Window.Resources>
+    </Window.Resources>-->
     <Grid Background="White">
         <Grid.RowDefinitions>
             <RowDefinition Height="30"/>

@@ -1,5 +1,6 @@
 ﻿using DiskBackup.Business.Abstract;
 using DiskBackup.Entities.Concrete;
+using DiskBackupWpfGUI.Utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -23,19 +24,23 @@ namespace DiskBackupWpfGUI
     {
         private IBackupStorageService _backupStorageService;
         private IBackupService _backupService;
+        private IConfigHelper _configHelper;
 
         private BackupStorageInfo _backupStorageInfo;
         private BackupInfo _backupInfo;
 
         public bool _validate = false;
 
-        public ValidateNASWindow(IBackupStorageService backupStorageService, IBackupService backupService, BackupInfo backupInfo)
+        public ValidateNASWindow(IBackupStorageService backupStorageService, IBackupService backupService, BackupInfo backupInfo, IConfigHelper configHelper)
         {
             InitializeComponent();
             _backupStorageService = backupStorageService;
             _backupService = backupService;
             _backupInfo = backupInfo;
             _backupStorageInfo = backupInfo.BackupStorageInfo;
+
+            _configHelper = configHelper;
+            SetApplicationLanguage(_configHelper.GetConfig("lang"));
 
             txtValidateNASFolderPath.Text = backupInfo.BackupStorageInfo.Path.Substring(0, backupInfo.BackupStorageInfo.Path.Length - 1);
             txtValidateNASDomain.Text = backupInfo.BackupStorageInfo.Domain;
@@ -91,6 +96,25 @@ namespace DiskBackupWpfGUI
         private void btnValidateNASClose_Click(object sender, RoutedEventArgs e)
         {
             Close();
+        }
+
+        public void SetApplicationLanguage(string option)
+        {
+            ResourceDictionary dict = new ResourceDictionary();
+
+            switch (option)
+            {
+                case "tr":
+                    dict.Source = new Uri("..\\Resources\\Lang\\string_tr.xaml", UriKind.Relative);
+                    break;
+                case "en":
+                    dict.Source = new Uri("..\\Resources\\Lang\\string_eng.xaml", UriKind.Relative);
+                    break;
+                default:
+                    dict.Source = new Uri("..\\Resources\\Lang\\string_tr.xaml", UriKind.Relative);
+                    break;
+            }
+            Resources.MergedDictionaries.Add(dict);
         }
     }
 }

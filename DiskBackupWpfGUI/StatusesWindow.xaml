@@ -14,9 +14,9 @@
         BorderThickness="1" 
         Icon="Resources/Icon/NarBulut_PNG_Icon_White_V3.png" 
         WindowStyle="None">
-    <Window.Resources>
+    <!--<Window.Resources>
         <ResourceDictionary Source="Resources\Lang\string_tr.xaml"/>
-    </Window.Resources>
+    </Window.Resources>-->
 
     <Grid
         Background="#F2F2F2">

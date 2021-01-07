@@ -4,6 +4,7 @@ using DiskBackup.DataAccess.Abstract;
 using DiskBackup.DataAccess.Concrete.EntityFramework;
 using DiskBackup.Entities.Concrete;
 using DiskBackup.TaskScheduler;
+using DiskBackupWpfGUI.Utils;
 using Serilog;
 using System;
 using System.Collections.Generic;
@@ -32,11 +33,14 @@ namespace DiskBackupWpfGUI
         private readonly ITaskInfoDal _taskInfoDal;
         private readonly ILogger _logger;
 
+        private IConfigHelper _configHelper;
+
         private bool _showSettings = false;
         private bool _updateControl = false;
         private int _updateId;
 
-        public AddBackupAreaWindow(IBackupStorageService backupStorageService, IBackupStorageDal backupStorageDal, ILogger logger, ITaskInfoDal taskInfoDal, ITaskSchedulerManager taskSchedulerManager)
+        public AddBackupAreaWindow(IBackupStorageService backupStorageService, IBackupStorageDal backupStorageDal, ILogger logger, ITaskInfoDal taskInfoDal, 
+            ITaskSchedulerManager taskSchedulerManager, IConfigHelper configHelper)
         {
             InitializeComponent();
             _updateControl = false;
@@ -45,9 +49,12 @@ namespace DiskBackupWpfGUI
             _taskInfoDal = taskInfoDal;
             _taskSchedulerManager = taskSchedulerManager;
             _logger = logger.ForContext<AddBackupAreaWindow>();
+            _configHelper = configHelper;
+            SetApplicationLanguage(_configHelper.GetConfig("lang"));
         }
 
-        public AddBackupAreaWindow(BackupStorageInfo backupStorageInfo, IBackupStorageService backupStorageService, IBackupStorageDal backupStorageDal, ILogger logger, ITaskInfoDal taskInfoDal, ITaskSchedulerManager taskSchedulerManager)
+        public AddBackupAreaWindow(BackupStorageInfo backupStorageInfo, IBackupStorageService backupStorageService, IBackupStorageDal backupStorageDal, ILogger logger, 
+            ITaskInfoDal taskInfoDal, ITaskSchedulerManager taskSchedulerManager, IConfigHelper configHelper)
         {
             InitializeComponent();
 
@@ -58,6 +65,10 @@ namespace DiskBackupWpfGUI
             _taskSchedulerManager = taskSchedulerManager;
             _backupStorageDal = backupStorageDal;
             _taskInfoDal = taskInfoDal;
+
+            _configHelper = configHelper;
+            SetApplicationLanguage(_configHelper.GetConfig("lang"));
+
             txtBackupAreaName.Text = backupStorageInfo.StorageName;
             txtBackupAreaDescription.Text = backupStorageInfo.Description;
             if (backupStorageInfo.IsCloud) //hibrit
@@ -550,6 +561,25 @@ namespace DiskBackupWpfGUI
                 imgValidateConnectionFalse.Visibility = Visibility.Visible;
                 imgValidateConnectionTrue.Visibility = Visibility.Collapsed;
             }
+        }
+
+        public void SetApplicationLanguage(string option)
+        {
+            ResourceDictionary dict = new ResourceDictionary();
+
+            switch (option)
+            {
+                case "tr":
+                    dict.Source = new Uri("..\\Resources\\Lang\\string_tr.xaml", UriKind.Relative);
+                    break;
+                case "en":
+                    dict.Source = new Uri("..\\Resources\\Lang\\string_eng.xaml", UriKind.Relative);
+                    break;
+                default:
+                    dict.Source = new Uri("..\\Resources\\Lang\\string_tr.xaml", UriKind.Relative);
+                    break;
+            }
+            Resources.MergedDictionaries.Add(dict);
         }
     }
 }

@@ -14,9 +14,9 @@
         BorderBrush="#194771" BorderThickness="1"
         Height="730" Width="1294"
         ResizeMode="CanMinimize">
-    <Window.Resources>
+    <!--<Window.Resources>
         <ResourceDictionary Source="Resources\Lang\string_tr.xaml"/>
-    </Window.Resources>
+    </Window.Resources>-->
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="30"/>
@@ -1451,10 +1451,7 @@
                             </Grid.ColumnDefinitions>
                             <StackPanel Orientation="Horizontal" Grid.Column="0" HorizontalAlignment="Left" Margin="0,30,0,0">
                                 <TextBlock VerticalAlignment="Center" Text="{DynamicResource languageDot}" FontSize="14" />
-                                <ComboBox Margin="30,0,0,0" Name="cbLang" Width="100" Height="24" SelectedIndex="0" FontSize="14" >
-                                    <ComboBoxItem Content="{DynamicResource turkish}"/>
-                                    <ComboBoxItem Content="{DynamicResource english}"/>
-                                </ComboBox>
+                                <ComboBox Margin="30,0,0,0" Name="cbLang" Width="100" Height="24" SelectedIndex="0" FontSize="14" DisplayMemberPath="Key" SelectedValuePath="Value" />
                             </StackPanel>
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,30,20,0" Grid.Column="1">
                                 <StackPanel VerticalAlignment="Center">

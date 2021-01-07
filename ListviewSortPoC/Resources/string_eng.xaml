@@ -6,5 +6,7 @@
     <system:String x:Key="age">Age</system:String>
     <system:String x:Key="sex">Sex</system:String>
     <system:String x:Key="date">Date</system:String>
-    
+    <system:String x:Key="turkish">Turkish</system:String>
+    <system:String x:Key="english">English</system:String>
+
 </ResourceDictionary>

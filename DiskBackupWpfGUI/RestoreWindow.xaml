@@ -17,9 +17,9 @@
         Width="800" 
         Icon="Resources/Icon/NarBulut_PNG_Icon_White_V3.png" >
 
-    <Window.Resources>
+    <!--<Window.Resources>
         <ResourceDictionary Source="Resources\Lang\string_tr.xaml"/>
-    </Window.Resources>
+    </Window.Resources>-->
     <Grid Background="White">
         <Grid.RowDefinitions>
             <RowDefinition Height="30"/>

@@ -26,27 +26,34 @@ namespace ListviewSortPoC
 
         private GridViewColumnHeader listViewSortCol2 = null;
         private SortAdorner listViewSortAdorner2 = null;
+        private Dictionary<string, string> languages = new Dictionary<string, string>();
+
 
         public MainWindow()
         {
             InitializeComponent();
             //SetApplicationLanguage("tr");
+
+
             denemeConfig denemeConfig = new denemeConfig();
-            if (denemeConfig.GetConfig("lang")== null)
-            {
+            if (denemeConfig.GetConfig("lang") == null)
                 denemeConfig.SetConfig("lang", "tr");
-                MessageBox.Show("Türkçe yaptım");
-            }
-            if (denemeConfig.GetConfig("lang") == "tr")
-            {
-                MessageBox.Show("tr geldi");
-                SetApplicationLanguage("tr");
-            }
-            else
-            {
-                MessageBox.Show("en geldi");
-                SetApplicationLanguage("en");
-            }
+            languageComboBox.SelectedValue = denemeConfig.GetConfig("lang");
+
+
+            //if (denemeConfig.GetConfig("lang") == "tr")
+            //{
+            //    MessageBox.Show("tr geldi");
+            //    SetApplicationLanguage("tr");
+            //}
+            //else
+            //{
+            //    MessageBox.Show("en geldi");
+            //    SetApplicationLanguage("en");
+            //}
+            ReloadLanguages();
+
+
             List<User> items = new List<User>();
             items.Add(new User() { Name = "21.12.2020 15:10", Age = 42, Sex = SexType.Male, Date = DateTime.Now-TimeSpan.FromDays(10) });
             items.Add(new User() { Name = "22.12.2019 15:10", Age = 39, Sex = SexType.Female, Date = DateTime.Now - TimeSpan.FromDays(5) });
@@ -79,6 +86,32 @@ namespace ListviewSortPoC
                     break;
             }
             Resources.MergedDictionaries.Add(dict);
+        }
+
+        private void ReloadLanguages()
+        {
+            languages.Clear();
+            languages[Resources["english"].ToString()] = "en";
+            languages[Resources["turkish"].ToString()] = "tr";
+            languageComboBox.ItemsSource = null;
+            languageComboBox.Items.Clear();
+            languageComboBox.ItemsSource = languages;
+        }
+
+        private void languageComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (languageComboBox.SelectedIndex != -1 && languageComboBox.SelectedItem is KeyValuePair<string, string> item)
+            {
+                MessageBox.Show("item geldi item.key: " + item.Key + " item.value: " + item.Value);
+                denemeConfig denemeConfig = new denemeConfig();
+                if (item.Value != denemeConfig.GetConfig("lang"))
+                {
+                    denemeConfig.SetConfig("lang", item.Value);
+                    SetApplicationLanguage(denemeConfig.GetConfig("lang"));
+                    ReloadLanguages();
+                    languageComboBox.SelectedValue = denemeConfig.GetConfig("lang");
+                }
+            }
         }
 
         private void lvUsersColumnHeader_Click(object sender, RoutedEventArgs e)
