@@ -69,6 +69,9 @@
                 <ComboBoxItem Content="Türkçe"/>
                 <ComboBoxItem Content="İngilizce"/>
             </ComboBox>-->
+            <Button Content="İngilizce" Name="eng" Click="eng_Click"/>
+            <Button Content="Türkçe" Name="tr" Click="tr_Click"/>
+
         </StackPanel>
     </Grid>
 </Window>

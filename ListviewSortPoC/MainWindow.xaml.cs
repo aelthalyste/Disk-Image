@@ -30,6 +30,23 @@ namespace ListviewSortPoC
         public MainWindow()
         {
             InitializeComponent();
+            //SetApplicationLanguage("tr");
+            denemeConfig denemeConfig = new denemeConfig();
+            if (denemeConfig.GetConfig("lang")== null)
+            {
+                denemeConfig.SetConfig("lang", "tr");
+                MessageBox.Show("Türkçe yaptım");
+            }
+            if (denemeConfig.GetConfig("lang") == "tr")
+            {
+                MessageBox.Show("tr geldi");
+                SetApplicationLanguage("tr");
+            }
+            else
+            {
+                MessageBox.Show("en geldi");
+                SetApplicationLanguage("en");
+            }
             List<User> items = new List<User>();
             items.Add(new User() { Name = "21.12.2020 15:10", Age = 42, Sex = SexType.Male, Date = DateTime.Now-TimeSpan.FromDays(10) });
             items.Add(new User() { Name = "22.12.2019 15:10", Age = 39, Sex = SexType.Female, Date = DateTime.Now - TimeSpan.FromDays(5) });
@@ -43,6 +60,25 @@ namespace ListviewSortPoC
             items2.Add(new User2() { Name = "20.12.2018 15:10", Age = 13, Sex = SexType.Male, Date = DateTime.Now - TimeSpan.FromDays(100) });
             items2.Add(new User2() { Name = "01.12.2025 15:10", Age = 13, Sex = SexType.Female, Date = DateTime.Now - TimeSpan.FromDays(1) });
             lvUsers2.ItemsSource = items2;
+        }
+
+        public void SetApplicationLanguage(string option)
+        {
+            ResourceDictionary dict = new ResourceDictionary();
+
+            switch (option)
+            {
+                case "tr":
+                    dict.Source = new Uri("..\\Resources\\string_tr.xaml", UriKind.Relative);
+                    break;
+                case "en":
+                    dict.Source = new Uri("..\\Resources\\string_eng.xaml", UriKind.Relative);
+                    break;
+                default:
+                    dict.Source = new Uri("..\\Resources\\string_tr.xaml", UriKind.Relative);
+                    break;
+            }
+            Resources.MergedDictionaries.Add(dict);
         }
 
         private void lvUsersColumnHeader_Click(object sender, RoutedEventArgs e)
@@ -95,6 +131,20 @@ namespace ListviewSortPoC
             listViewSortAdorner2 = new SortAdorner(listViewSortCol2, newDir);
             AdornerLayer.GetAdornerLayer(listViewSortCol2).Add(listViewSortAdorner2);
             lvUsers2.Items.SortDescriptions.Add(new SortDescription(sortBy, newDir));
+        }
+
+        private void eng_Click(object sender, RoutedEventArgs e)
+        {
+            denemeConfig denemeConfig = new denemeConfig();
+            denemeConfig.SetConfig("lang", "en");
+            SetApplicationLanguage("en");
+        }
+
+        private void tr_Click(object sender, RoutedEventArgs e)
+        {
+            denemeConfig denemeConfig = new denemeConfig();
+            denemeConfig.SetConfig("lang", "tr");
+            SetApplicationLanguage("tr");
         }
 
         //private void cbLang_SelectionChanged(object sender, SelectionChangedEventArgs e)

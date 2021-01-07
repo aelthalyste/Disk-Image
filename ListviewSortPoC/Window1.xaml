@@ -12,7 +12,7 @@
                 <GridView>
                     <GridViewColumn Width="120" DisplayMemberBinding="{Binding Name}">
                         <GridViewColumn.Header>
-                            <GridViewColumnHeader Tag="Name" Click="lvUsersColumnHeader_Click">Name</GridViewColumnHeader>
+                            <GridViewColumnHeader Content="{DynamicResource name}" Tag="Name" Click="lvUsersColumnHeader_Click"></GridViewColumnHeader>
                         </GridViewColumn.Header>
                     </GridViewColumn>
                     <GridViewColumn Width="80" DisplayMemberBinding="{Binding Price}">
