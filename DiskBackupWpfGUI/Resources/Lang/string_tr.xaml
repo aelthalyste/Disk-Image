@@ -253,6 +253,8 @@
     <system:String x:Key="MissingFile">Eksik Dosya</system:String>
     <system:String x:Key="ValidateNAS">NAS Doğrulama</system:String>
     <system:String x:Key="loading...">Yükleniyor...</system:String>
+    <system:String x:Key="healthy">Sağlıklı</system:String>
+    <system:String x:Key="unhealthy">Sağlıksız</system:String>
     <!--MessageBox Info-->
     <system:String x:Key="notNullMB">İlgili alanları lütfen boş geçmeyiniz.</system:String>
     <system:String x:Key="validateDirectoryMB">Lütfen geçerli bir dizin giriniz.</system:String>

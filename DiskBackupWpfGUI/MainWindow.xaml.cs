@@ -126,6 +126,11 @@ namespace DiskBackupWpfGUI
                 {
                     foreach (var volumeItem in diskItem.VolumeInfos)
                     {
+                        if (volumeItem.HealthStatu == HealthSituation.Healthy)
+                            volumeItem.Status = Resources["healthy"].ToString();
+                        else
+                            volumeItem.Status = Resources["unhealthy"].ToString();
+
                         _volumeList.Add(volumeItem);
                     }
                 }
@@ -2327,6 +2332,11 @@ namespace DiskBackupWpfGUI
                 {
                     foreach (var volumeItem in diskItem.VolumeInfos)
                     {
+                        if (volumeItem.HealthStatu == HealthSituation.Healthy)
+                            volumeItem.Status = Resources["healthy"].ToString();
+                        else
+                            volumeItem.Status = Resources["unhealthy"].ToString();
+
                         _volumeList.Add(volumeItem);
                     }
                 }

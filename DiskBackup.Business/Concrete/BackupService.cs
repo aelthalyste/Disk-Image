@@ -169,17 +169,17 @@ namespace DiskBackup.Business.Concrete
                         if (volumeItem.DiskType == 'R')
                         {
                             volumeInfo.DiskType = "RAW";
-                            volumeInfo.Status = "Sağlıksız";
+                            volumeInfo.HealthStatu = HealthSituation.Unhealthy;
                         }
                         else if (volumeItem.DiskType == 'M')
                         {
                             volumeInfo.DiskType = "MBR";
-                            volumeInfo.Status = "Sağlıklı";
+                            volumeInfo.HealthStatu = HealthSituation.Healthy;
                         }
                         else if (volumeItem.DiskType == 'G')
                         {
                             volumeInfo.DiskType = "GPT";
-                            volumeInfo.Status = "Sağlıklı";
+                            volumeInfo.HealthStatu = HealthSituation.Healthy;
                         }
                         diskList[index].VolumeInfos.Add(volumeInfo);
                     }

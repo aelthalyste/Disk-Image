@@ -16,7 +16,6 @@
         HorizontalAlignment="Center" 
         Height="450" 
         Width="800">
-
     <!--<Window.Resources>
         <ResourceDictionary Source="Resources\Lang\string_tr.xaml"/>
     </Window.Resources>-->
@@ -124,27 +123,34 @@
                 </TabItem.Header>
                 <Grid Background="White">
                     <StackPanel Margin="10,10,20,10">
-                        <StackPanel Orientation="Horizontal">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="100"/>
+                                <ColumnDefinition/>
+                            </Grid.ColumnDefinitions>
                             <TextBlock Text="{DynamicResource space2Backup}" VerticalAlignment="Center" />
-                            <ComboBox Name="cbTargetBackupArea" Width="350"  Height="26" Margin="25,0,0,0" SelectionChanged="cbTargetBackupArea_SelectionChanged" KeyDown="cbTargetBackupArea_KeyDown">
-                                <ComboBox.ItemTemplate>
-                                    <DataTemplate>
-                                        <TextBlock Text="{Binding StorageName}" />
-                                    </DataTemplate>
-                                </ComboBox.ItemTemplate>
-                            </ComboBox>
-                            <Button Name="btnTargetAdd" ToolTip="{DynamicResource add}" Click="btnTargetAdd_Click" HorizontalAlignment="Right" Margin="5,4,0,4" Style="{StaticResource ImageButton}" Width="32" Height="32" Grid.Column="1">
-                                <Button.Content>
-                                    <Image Height="22">
-                                        <Image.Style>
-                                            <Style TargetType="Image">
-                                                <Setter Property="Source" Value="Resources/Icon/icons8_plus.ico" />
-                                            </Style>
-                                        </Image.Style>
-                                    </Image>
-                                </Button.Content>
-                            </Button>
-                        </StackPanel>
+                            <StackPanel Orientation="Horizontal" Grid.Column="1">
+                                <ComboBox Name="cbTargetBackupArea" Width="360"  Height="26" Margin="25,0,0,0" SelectionChanged="cbTargetBackupArea_SelectionChanged" KeyDown="cbTargetBackupArea_KeyDown">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding StorageName}" />
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
+                                <Button Name="btnTargetAdd" ToolTip="{DynamicResource add}" Click="btnTargetAdd_Click" HorizontalAlignment="Right" Margin="5,4,0,4" Style="{StaticResource ImageButton}" Width="32" Height="32" Grid.Column="1">
+                                    <Button.Content>
+                                        <Image Height="22">
+                                            <Image.Style>
+                                                <Style TargetType="Image">
+                                                    <Setter Property="Source" Value="Resources/Icon/icons8_plus.ico" />
+                                                </Style>
+                                            </Image.Style>
+                                        </Image>
+                                    </Button.Content>
+                                </Button>
+                            </StackPanel>
+
+                        </Grid>
                         <Grid Margin="0,10,0,0">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="80"/>
@@ -170,29 +176,44 @@
                                 </StackPanel>
                             </StackPanel>
                             <StackPanel Margin="50,0,0,0" Grid.Column="2">
-                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                    <TextBlock Text="{DynamicResource retentionTime}" VerticalAlignment="Center"/>
-                                    <TextBox Name="txtRetentionTime" Text="14" Width="50" Height="28" FontSize="13" Margin="10,0,0,0" VerticalContentAlignment="Center" MaxLength="3"/>
-                                    <StackPanel Margin="-21,0,0,0" VerticalAlignment="Center">
-                                        <Button Name="btnRetentionUp" Style="{StaticResource ArrowUpButton}" Click="btnRetentionUp_Click" Content="▲" Width="20" Height="13" FontSize="8" />
-                                        <Button Name="btnRetentionDown" Style="{StaticResource ArrowDownButton}" Click="btnRetentionDown_Click" Content="▼" Width="20" Height="13" FontSize="8" />
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition/>
+                                        <RowDefinition/>
+                                        <RowDefinition/>
+                                    </Grid.RowDefinitions>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="100"/>
+                                        <ColumnDefinition/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="{DynamicResource retentionTime}" VerticalAlignment="Center" Margin="0,0,0,10"/>
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,10" Grid.Column="1">
+                                        <TextBox Name="txtRetentionTime" Text="14" Width="50" Height="28" FontSize="13" VerticalContentAlignment="Center" MaxLength="3"/>
+                                        <StackPanel Margin="-21,0,0,0" VerticalAlignment="Center">
+                                            <Button Name="btnRetentionUp" Style="{StaticResource ArrowUpButton}" Click="btnRetentionUp_Click" Content="▲" Width="20" Height="13" FontSize="8" />
+                                            <Button Name="btnRetentionDown" Style="{StaticResource ArrowDownButton}" Click="btnRetentionDown_Click" Content="▼" Width="20" Height="13" FontSize="8" />
+                                        </StackPanel>
+                                        <TextBlock Text="{DynamicResource day}" Margin="10,0,0,0" VerticalAlignment="Center"></TextBlock>
                                     </StackPanel>
-                                    <TextBlock Text="{DynamicResource day}" Margin="10,0,0,0" VerticalAlignment="Center"></TextBlock>
-                                </StackPanel>
-                                <CheckBox Name="chbFullOverwrite" Content="{DynamicResource fullOverwrite}" Margin="0,10" IsChecked="True"/>
-                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                    <TextBlock Text="{DynamicResource fullBackup}" VerticalAlignment="Center"/>
-                                    <TextBox Name="txtFullBackup" Text="2" Width="50" Height="28" FontSize="13" Margin="35,0,0,0" VerticalContentAlignment="Center" MaxLength="3"/>
-                                    <StackPanel Margin="-21,0,0,0" VerticalAlignment="Center">
-                                        <Button Name="btnFullBackupUp" Style="{StaticResource ArrowUpButton}" Click="btnFullBackupUp_Click" Content="▲" Width="20" Height="13" FontSize="8" />
-                                        <Button Name="btnFullBackupDown" Style="{StaticResource ArrowDownButton}" Click="btnFullBackupDown_Click" Content="▼" Width="20" Height="13" FontSize="8" />
+                                    <CheckBox Name="chbFullOverwrite" Content="{DynamicResource fullOverwrite}" Margin="0,0,0,10" IsChecked="True" Grid.ColumnSpan="2" Grid.Row="1"/>
+                                    <TextBlock Text="{DynamicResource fullBackup}" VerticalAlignment="Center" Grid.Row="2" Margin="0,0,0,10"/>
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,10" Grid.Column="1" Grid.Row="2">
+                                        <TextBox Name="txtFullBackup" Text="2" Width="50" Height="28" FontSize="13" VerticalContentAlignment="Center" MaxLength="3"/>
+                                        <StackPanel Margin="-21,0,0,0" VerticalAlignment="Center">
+                                            <Button Name="btnFullBackupUp" Style="{StaticResource ArrowUpButton}" Click="btnFullBackupUp_Click" Content="▲" Width="20" Height="13" FontSize="8" />
+                                            <Button Name="btnFullBackupDown" Style="{StaticResource ArrowDownButton}" Click="btnFullBackupDown_Click" Content="▼" Width="20" Height="13" FontSize="8" />
+                                        </StackPanel>
+                                        <TextBlock Text="{DynamicResource perWeek}" Margin="10,0,0,0" VerticalAlignment="Center"></TextBlock>
                                     </StackPanel>
-                                    <TextBlock Text="{DynamicResource perWeek}" Margin="10,0,0,0" VerticalAlignment="Center"></TextBlock>
+                                </Grid>
+
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+
                                 </StackPanel>
                             </StackPanel>
                         </Grid>
 
-                        <TextBlock Name="txtTargetLicence" Foreground="Red" Margin="0,10">Lisans Aktif Değil</TextBlock>
+                        <TextBlock Name="txtTargetLicence" Text="{DynamicResource licenseNotActive}" Foreground="Red" Margin="0,10"></TextBlock>
 
                         <Grid Name="gridIsCloud">
                             <Grid.RowDefinitions>
@@ -224,25 +245,37 @@
                                 </StackPanel>
                             </StackPanel>
                             <StackPanel Margin="50,0,0,0" Grid.Row="1" Grid.Column="2">
-                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                    <TextBlock Text="{DynamicResource retentionTime}" VerticalAlignment="Center"/>
-                                    <TextBox Name="txtNarRetentionTime" Text="14" Width="50" Height="28" FontSize="13" Margin="10,0,0,0" VerticalContentAlignment="Center" MaxLength="3"/>
-                                    <StackPanel Margin="-21,0,0,0" VerticalAlignment="Center">
-                                        <Button Name="btnNarRetentionUp" Style="{StaticResource ArrowUpButton}" Click="btnNarRetentionUp_Click" Content="▲" Width="20" Height="13" FontSize="8" />
-                                        <Button Name="btnNarRetentionDown" Style="{StaticResource ArrowDownButton}" Click="btnNarRetentionDown_Click" Content="▼" Width="20" Height="13" FontSize="8" />
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition/>
+                                        <RowDefinition/>
+                                        <RowDefinition/>
+                                    </Grid.RowDefinitions>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="100"/>
+                                        <ColumnDefinition/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="{DynamicResource retentionTime}" VerticalAlignment="Center" Margin="0,0,0,10"/>
+                                    <StackPanel Orientation="Horizontal" Grid.Column="1" Margin="0,0,0,10">
+                                        <TextBox Name="txtNarRetentionTime" Text="14" Width="50" Height="28" FontSize="13" VerticalContentAlignment="Center" MaxLength="3"/>
+                                        <StackPanel Margin="-21,0,0,0" VerticalAlignment="Center">
+                                            <Button Name="btnNarRetentionUp" Style="{StaticResource ArrowUpButton}" Click="btnNarRetentionUp_Click" Content="▲" Width="20" Height="13" FontSize="8" />
+                                            <Button Name="btnNarRetentionDown" Style="{StaticResource ArrowDownButton}" Click="btnNarRetentionDown_Click" Content="▼" Width="20" Height="13" FontSize="8" />
+                                        </StackPanel>
+                                        <TextBlock Text="{DynamicResource day}" Margin="10,0,0,0" VerticalAlignment="Center"></TextBlock>
                                     </StackPanel>
-                                    <TextBlock Text="{DynamicResource day}" Margin="10,0,0,0" VerticalAlignment="Center"></TextBlock>
-                                </StackPanel>
-                                <CheckBox Name="chbNarFullOverwrite" Content="{DynamicResource fullOverwrite}" Margin="0,10" IsChecked="True"/>
-                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                    <TextBlock Text="{DynamicResource fullBackup}" VerticalAlignment="Center"/>
-                                    <TextBox Name="txtNarFullBackup" Text="2" Width="50" Height="28" FontSize="13" Margin="35,0,0,0" VerticalContentAlignment="Center" MaxLength="3"/>
-                                    <StackPanel Margin="-21,0,0,0" VerticalAlignment="Center">
-                                        <Button Name="btnNarFullBackupUp" Style="{StaticResource ArrowUpButton}" Click="btnNarFullBackupUp_Click" Content="▲" Width="20" Height="13" FontSize="8" />
-                                        <Button Name="btnNarFullBackupDown" Style="{StaticResource ArrowDownButton}" Click="btnNarFullBackupDown_Click" Content="▼" Width="20" Height="13" FontSize="8" />
+                                    <CheckBox Name="chbNarFullOverwrite" Content="{DynamicResource fullOverwrite}" Margin="0,0,0,10" IsChecked="True" Grid.Row="1" Grid.ColumnSpan="2"/>
+
+                                    <TextBlock Text="{DynamicResource fullBackup}" VerticalAlignment="Center" Grid.Row="2" Margin="0,0,0,10"/>
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,10" Grid.Row="2" Grid.Column="1">
+                                        <TextBox Name="txtNarFullBackup" Text="2" Width="50" Height="28" FontSize="13" VerticalContentAlignment="Center" MaxLength="3"/>
+                                        <StackPanel Margin="-21,0,0,0" VerticalAlignment="Center">
+                                            <Button Name="btnNarFullBackupUp" Style="{StaticResource ArrowUpButton}" Click="btnNarFullBackupUp_Click" Content="▲" Width="20" Height="13" FontSize="8" />
+                                            <Button Name="btnNarFullBackupDown" Style="{StaticResource ArrowDownButton}" Click="btnNarFullBackupDown_Click" Content="▼" Width="20" Height="13" FontSize="8" />
+                                        </StackPanel>
+                                        <TextBlock Text="{DynamicResource perWeek}" Margin="10,0,0,0" VerticalAlignment="Center"></TextBlock>
                                     </StackPanel>
-                                    <TextBlock Text="{DynamicResource perWeek}" Margin="10,0,0,0" VerticalAlignment="Center"></TextBlock>
-                                </StackPanel>
+                                </Grid>
                             </StackPanel>
                         </Grid>
                     </StackPanel>
@@ -259,10 +292,20 @@
                     <StackPanel Margin="10,10,20,10">
                         <CheckBox Name="checkAutoRun" Content="{DynamicResource autoRun}" Checked="checkAutoRun_Checked" Unchecked="checkAutoRun_Unchecked"></CheckBox>
                         <StackPanel Name="stackAutoRun" IsEnabled="false">
-                            <StackPanel Orientation="Horizontal" Margin="0,20,0,10">
-                                <RadioButton Name="rbDaysTime" GroupName="rbtnSchedular" Content="{DynamicResource dailyTime}" Checked="rbDaysTime_Checked" Unchecked="rbDaysTime_Unchecked" VerticalContentAlignment="Center" Margin="5,0,0,0" />
-                                <StackPanel Name="stackDaysTime" Orientation="Horizontal" IsEnabled="False">
-                                    <xctk:TimePicker Name="tpDaysTime" Margin="50,0,0,0" MouseWheelActiveTrigger="Focused" Width="80" Height="26" Value="22:00"/>
+                            <Grid Margin="10,10,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="120"/>
+                                    <ColumnDefinition/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition/>
+                                    <RowDefinition/>
+                                    <RowDefinition/>
+                                </Grid.RowDefinitions>
+
+                                <RadioButton Name="rbDaysTime" GroupName="rbtnSchedular" Content="{DynamicResource dailyTime}" Checked="rbDaysTime_Checked" Unchecked="rbDaysTime_Unchecked" VerticalContentAlignment="Center" Margin="0,0,0,10" />
+                                <StackPanel Name="stackDaysTime" Orientation="Horizontal" IsEnabled="False" Grid.Column="1" Margin="0,0,0,10">
+                                    <xctk:TimePicker Name="tpDaysTime" MouseWheelActiveTrigger="Focused" Width="90" Height="26" Value="22:00"/>
                                     <ComboBox Name="cbDaysTime" Width="280" Margin="20,0,20,0" SelectedIndex="0" SelectionChanged="cbDaysTime_SelectionChanged">
                                         <ComboBoxItem Content="{DynamicResource everyday}"></ComboBoxItem>
                                         <ComboBoxItem Content="{DynamicResource weekdays}"></ComboBoxItem>
@@ -270,11 +313,10 @@
                                     </ComboBox>
                                     <Button Name="btnDaysTimeDays" Content="{DynamicResource days}" Style="{StaticResource WhiteButton}" Click="btnDaysTimeDays_Click" Width="60" IsEnabled="False"></Button>
                                 </StackPanel>
-                            </StackPanel>
-                            <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                                <RadioButton Name="rbWeeklyTime" GroupName="rbtnSchedular" Content="{DynamicResource weeklyTime}" Checked="rbWeeklyTime_Checked" Unchecked="rbWeeklyTime_Unchecked" VerticalContentAlignment="Center" Margin="5,0,0,0" />
-                                <StackPanel Name="stackWeeklyTime" Orientation="Horizontal" IsEnabled="False">
-                                    <xctk:TimePicker Name="tpWeeklyTime" Margin="47,0,0,0" MouseWheelActiveTrigger="Focused" Width="80" Height="26" Value="22:00" />
+
+                                <RadioButton Name="rbWeeklyTime" GroupName="rbtnSchedular" Content="{DynamicResource weeklyTime}" Grid.Row="1" Checked="rbWeeklyTime_Checked" Unchecked="rbWeeklyTime_Unchecked" VerticalContentAlignment="Center" Margin="0,0,0,10" />
+                                <StackPanel Name="stackWeeklyTime" Orientation="Horizontal" IsEnabled="False" Grid.Row="1" Grid.Column="1" Margin="0,0,0,10">
+                                    <xctk:TimePicker Name="tpWeeklyTime" MouseWheelActiveTrigger="Focused" Width="90" Height="26" Value="22:00" />
                                     <ComboBox Name="cbWeeklyTimeWeek" Width="110" Margin="20,0,20,0" SelectedIndex="0">
                                         <ComboBoxItem Content="{DynamicResource first}"></ComboBoxItem>
                                         <ComboBoxItem Content="{DynamicResource second}"></ComboBoxItem>
@@ -292,16 +334,14 @@
                                     </ComboBox>
                                     <Button Name="btnWeeklyTimeWeek" Content="{DynamicResource mounths}" Style="{StaticResource WhiteButton}" Click="btnWeeklyTimeWeek_Click" Width="60"></Button>
                                 </StackPanel>
-                            </StackPanel>
-                            <StackPanel Orientation="Horizontal">
-                                <RadioButton Name="rbPeriodic" GroupName="rbtnSchedular" Content="{DynamicResource periodic}" Checked="rbPeriodic_Checked" Unchecked="rbPeriodic_Unchecked" VerticalContentAlignment="Center" Margin="5,0,0,0" />
-                                <StackPanel Name="stackPeriodic" Orientation="Horizontal" IsEnabled="False">
-                                    <TextBox Name="txtPeriodic" Text="3" Width="80" Height="28" FontSize="13" Margin="79,0,0,0" VerticalContentAlignment="Center" MaxLength="3"/>
+
+                                <RadioButton Name="rbPeriodic" GroupName="rbtnSchedular" Content="{DynamicResource periodic}" Grid.Row="2" Checked="rbPeriodic_Checked" Unchecked="rbPeriodic_Unchecked" VerticalContentAlignment="Center" Margin="0,0,0,10" />
+                                <StackPanel Name="stackPeriodic" Orientation="Horizontal" IsEnabled="False" Grid.Row="2" Grid.Column="1" Margin="0,0,0,10">
+                                    <TextBox Name="txtPeriodic" Text="3" Width="90" Height="28" FontSize="13" VerticalContentAlignment="Center" MaxLength="3"/>
                                     <StackPanel Margin="-23,0,0,0" VerticalAlignment="Center">
                                         <Button Name="btnPeriodicUp" Style="{StaticResource ArrowUpButton}" Content="▲" Width="20" Height="13" FontSize="8" VerticalContentAlignment="Top" BorderThickness="0" Click="btnPeriodicUp_Click" />
                                         <Button Name="btnPeriodicDown" Style="{StaticResource ArrowDownButton}" Content="▼" Width="20" Height="13" FontSize="8" VerticalContentAlignment="Top" BorderThickness="0" Click="btnPeriodicDown_Click" />
                                     </StackPanel>
-
                                     <ComboBox Name="cbPeriodicTime" Width="280" Margin="20,0,20,0" SelectedIndex="0">
                                         <ComboBoxItem Content="{DynamicResource hour}"/>
                                         <ComboBoxItem Content="{DynamicResource Minute}"/>
@@ -309,31 +349,41 @@
                                     <!--Updown Buttonla değişecek-->
                                     <Button Name="btnPeriodicTime" Content="{DynamicResource time}" Style="{StaticResource WhiteButton}" Width="60" Visibility="Hidden"/>
                                 </StackPanel>
-                            </StackPanel>
+                            </Grid>
                         </StackPanel>
 
                         <TextBlock Text="{DynamicResource auto}" Margin="0,10,0,0" />
                         <TextBlock Text="{DynamicResource try}" Margin="0,0,0,10" />
-                        <StackPanel Orientation="Horizontal" Margin="20,0,0,15">
-                            <CheckBox Name="checkTimeFailDesc" Content="{DynamicResource timeFailDesc}" Checked="checkTimeFailDesc_Checked" Unchecked="checkTimeFailDesc_Unchecked" VerticalContentAlignment="Center" />
-                            <StackPanel Name="stackTimeFailDesc" Orientation="Horizontal" IsEnabled="False">
-                                <TextBox Name="txtTimeFailDesc" Text="3" Width="50" Height="28" FontSize="13" Margin="20,0,0,0" VerticalContentAlignment="Center" MaxLength="3"/>
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition/>
+                                <RowDefinition/>
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="200"/>
+                                <ColumnDefinition/>
+                            </Grid.ColumnDefinitions>
+
+                            <CheckBox Name="checkTimeFailDesc" Content="{DynamicResource timeFailDesc}" Checked="checkTimeFailDesc_Checked" Unchecked="checkTimeFailDesc_Unchecked" VerticalContentAlignment="Center" Margin="0,0,0,10"/>
+                            <StackPanel Name="stackTimeFailDesc" Orientation="Horizontal" IsEnabled="False" Grid.Column="1" Margin="0,0,0,10">
+                                <TextBox Name="txtTimeFailDesc" Text="3" Width="50" Height="28" FontSize="13" VerticalContentAlignment="Center" MaxLength="3"/>
                                 <StackPanel Margin="-21,0,0,0" VerticalAlignment="Center">
                                     <Button Name="btnTimeFailDescUp" Style="{StaticResource ArrowUpButton}" Content="▲" Width="20" Height="13" FontSize="8" VerticalContentAlignment="Top" BorderThickness="0" Click="btnTimeFailDescUp_Click" />
                                     <Button Name="btnTimeFailDescDown" Style="{StaticResource ArrowDownButton}" Content="▼" Width="20" Height="13" FontSize="8" VerticalContentAlignment="Top" BorderThickness="0" Click="btnTimeFailDescDown_Click" />
                                 </StackPanel>
+                                <TextBlock Text="{DynamicResource times}" VerticalAlignment="Center" Margin="10,0,0,0" />
                             </StackPanel>
-                            <TextBlock Text="{DynamicResource times}" VerticalAlignment="Center" Margin="10,0,0,0" />
-                        </StackPanel>
-                        <StackPanel Name="stackTimeWait" Orientation="Horizontal" IsEnabled="False" Margin="40,0">
-                            <TextBlock Text="{DynamicResource timeWait}" VerticalAlignment="Center" />
-                            <TextBox Name="txtTimeWait" Text="3" Width="50" Height="28" FontSize="13" Margin="45,0,0,0" VerticalContentAlignment="Center" MaxLength="3"/>
-                            <StackPanel Margin="-21,0,0,0" VerticalAlignment="Center">
-                                <Button Name="btnTimeWaitUp" Style="{StaticResource ArrowUpButton}" Click="btnTimeWaitUp_Click" Content="▲" Width="20" Height="13" FontSize="8" />
-                                <Button Name="btnTimeWaitDown" Style="{StaticResource ArrowDownButton}" Click="btnTimeWaitDown_Click" Content="▼" Width="20" Height="13" FontSize="8" />
+
+                            <TextBlock Text="{DynamicResource timeWait}" VerticalAlignment="Center" Grid.Row="1" Margin="20,0,0,0"/>
+                            <StackPanel Name="stackTimeWait" Orientation="Horizontal" IsEnabled="False" Grid.Row="1" Grid.Column="1">
+                                <TextBox Name="txtTimeWait" Text="3" Width="50" Height="28" FontSize="13" VerticalContentAlignment="Center" MaxLength="3"/>
+                                <StackPanel Margin="-21,0,0,0" VerticalAlignment="Center">
+                                    <Button Name="btnTimeWaitUp" Style="{StaticResource ArrowUpButton}" Click="btnTimeWaitUp_Click" Content="▲" Width="20" Height="13" FontSize="8" />
+                                    <Button Name="btnTimeWaitDown" Style="{StaticResource ArrowDownButton}" Click="btnTimeWaitDown_Click" Content="▼" Width="20" Height="13" FontSize="8" />
+                                </StackPanel>
+                                <TextBlock Text="{DynamicResource minute}" Margin="10,0,0,0" VerticalAlignment="Center"></TextBlock>
                             </StackPanel>
-                            <TextBlock Text="{DynamicResource minute}" Margin="10,0,0,0" VerticalAlignment="Center"></TextBlock>
-                        </StackPanel>
+                        </Grid>
                     </StackPanel>
                 </Grid>
             </TabItem>

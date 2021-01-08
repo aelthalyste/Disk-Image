@@ -23,7 +23,14 @@ namespace DiskBackup.Entities.Concrete
         public string StrFreeSize { get; set; }
         public string PrioritySection { get; set; } //Primary ??
         public char Letter { get; set; }
+        public HealthSituation HealthStatu { get; set; }
         public string Status { get; set; } // Sağlıklı
 
+    }
+
+    public enum HealthSituation
+    {
+        Healthy = 0,
+        Unhealthy = 1,
     }
 }
