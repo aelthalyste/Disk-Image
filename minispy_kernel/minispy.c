@@ -614,23 +614,27 @@ Return Value:
                 nar_log_thread_params* tp = (nar_log_thread_params*)ExAllocatePoolWithTag(NonPagedPool, sizeof(nar_log_thread_params), NAR_TAG);
 
                 if (tp != NULL) {
-                    tp->Data = NAR_MB_DATA(NarData.VolumeRegionBuffer[i].MemoryBuffer);
-                    tp->DataLen = NAR_MB_DATA_USED(NarData.VolumeRegionBuffer[i].MemoryBuffer);
-                    tp->FileID = NarData.VolumeRegionBuffer[i].VolFileID;
-                    tp->ShouldFlush = TRUE;
-                    tp->ShouldQueryFileSize = FALSE;
+                    memset(tp, 0, sizeof(*tp));
 
-                    HANDLE Thread = 0;
-                    NTSTATUS status = PsCreateSystemThread(&Thread, THREAD_ALL_ACCESS, 0, 0, 0, NarWriteLogtoFile, &tp);
+                    tp->Data                = NAR_MB_DATA(NarData.VolumeRegionBuffer[i].MemoryBuffer);
+                    tp->DataLen             = NAR_MB_DATA_USED(NarData.VolumeRegionBuffer[i].MemoryBuffer);
+                    tp->FileID              = NarData.VolumeRegionBuffer[i].VolFileID;
+                    tp->ShouldFlush         = TRUE;
+                    tp->ShouldQueryFileSize = FALSE;
+                    
+                    DbgPrint("Flush at filterunload with data length %u, file id : %u", tp->DataLen, tp->FileID);
+                    status = NarWriteLogsToFile(tp, 0);
+                    
                     if (NT_SUCCESS(status)) {
-                        ZwClose(Thread);
-                        NAR_INIT_MEMORYBUFFER(NarData.VolumeRegionBuffer[i].MemoryBuffer);
+                        
                     }
                     else {
-                        DbgPrint("failed to create thread\n");
+                        
                     }
-
+                    
+                    NAR_INIT_MEMORYBUFFER(NarData.VolumeRegionBuffer[i].MemoryBuffer);
                     ExFreePoolWithTag(tp, NAR_TAG);
+
                 }
                 else {
                     DbgPrint("Unable to allocate memory to flush logs at filterunload routine\n");
@@ -826,25 +830,19 @@ Return Value:
                             nar_log_thread_params* tp = (nar_log_thread_params*)ExAllocatePoolWithTag(NonPagedPool, sizeof(nar_log_thread_params), NAR_TAG);
                             
                             if (tp != NULL) {
+                                memset(tp, 0, sizeof(*tp));
                                 tp->Data = NAR_MB_DATA(NarData.VolumeRegionBuffer[i].MemoryBuffer);
                                 tp->DataLen = NAR_MB_DATA_USED(NarData.VolumeRegionBuffer[i].MemoryBuffer);
                                 tp->FileID = NarData.VolumeRegionBuffer[i].VolFileID;
                                 tp->ShouldFlush = TRUE;
                                 tp->ShouldQueryFileSize = TRUE;
+                                
+                                NarWriteLogsToFile(tp, 0);
+                                
+                                li->CurrentSize = tp->FileSize;
+                                li->ErrorOccured = NT_SUCCESS(tp->InternalError);
 
-                                HANDLE Thread = 0;
-                                NTSTATUS status = PsCreateSystemThread(&Thread, THREAD_ALL_ACCESS, 0, 0, 0, NarWriteLogtoFile, &tp);
-                                if (NT_SUCCESS(status)) {
-                                    ZwClose(Thread);
-
-                                    li->CurrentSize = tp->FileSize;
-                                    li->ErrorOccured = NT_SUCCESS(tp->InternalError);
-
-                                    NAR_INIT_MEMORYBUFFER(NarData.VolumeRegionBuffer[i].MemoryBuffer);
-                                }
-                                else {
-                                    DbgPrint("failed to create thread\n");
-                                }
+                                NAR_INIT_MEMORYBUFFER(NarData.VolumeRegionBuffer[i].MemoryBuffer);
 
                                 ExFreePoolWithTag(tp, NAR_TAG);
                             }
@@ -1060,15 +1058,75 @@ NarSubMemoryExists(void* mem1, void* mem2, int mem1len, int mem2len) {
 }
 
 
+/*
+tp MUST BE ALLOCATED FROM NON-PAGED area, otherwise blue screen is almost inevitable
+-- tp user initialized thread parameters to pass PsCreateSystemThread
 
-// DECLARE_CONST_UNICODE_STRING()
+-- if OutTObject is NULL, routine waits system thread's termination
+   
+-- if OutTObject is not NULL, routine returns referenced thread object, WITHOUT waiting associated thread. It's caller's responsibility to dereference that object
+Caller might use returned object to wait for thread.
+
+
+return : Returns lastly failed function's return value.
+*/
+inline NTSTATUS
+NarWriteLogsToFile(nar_log_thread_params* tp, PETHREAD *OutTObject) {
+
+    HANDLE Thread = 0;
+    PETHREAD ThreadObject = 0;
+    NTSTATUS status = PsCreateSystemThread(&Thread, THREAD_ALL_ACCESS, 0, 0, 0, NarLogThread, tp);
+    if (NT_SUCCESS(status)) {
+
+        status = ObReferenceObjectByHandle(Thread,
+            THREAD_ALL_ACCESS,
+            NULL,
+            KernelMode,
+            &ThreadObject,
+            NULL);
+
+        if (NT_SUCCESS(status)) {
+            ZwClose(Thread);
+        }
+        else {
+            DbgPrint("Obj reference failed with code %X", status);
+        }
+
+    }
+    else {
+        DbgPrint("failed to create thread, code %X\n", status);
+    }
+
+    if (NT_SUCCESS(status)) {
+        if (OutTObject == NULL) {
+            status = KeWaitForSingleObject(ThreadObject, Executive, KernelMode, FALSE, 0);
+            if (NT_SUCCESS(status)) {
+                ObDereferenceObject(ThreadObject);
+                //DbgPrint("Successfully logged");
+            }
+            else {
+                DbgPrint("Failed to wait termination of the thread, code : %X\n", status);
+            }
+        }
+        else {
+            *OutTObject = ThreadObject;
+        }
+    }
+
+    return status;
+
+}
+
+
 
 
 inline void
-NarWriteLogtoFile(PVOID param) {
+NarLogThread(PVOID param) {
     
+    NTSTATUS status = 0; // SUCCESS
+
     nar_log_thread_params* tp = (nar_log_thread_params*)param;
-    if (FALSE == (tp->FileID < NAR_KERNEL_MAX_FILE_ID)) {
+    if (tp->FileID >= NAR_KERNEL_MAX_FILE_ID || tp->FileID <= 0) {
         DbgPrint("Passed file id higher than 30, %u\n", tp->FileID);
         return;
     }
@@ -1077,16 +1135,24 @@ NarWriteLogtoFile(PVOID param) {
         return;
     }
 
-
     IO_STATUS_BLOCK iosb = { 0 };
-        
-    NTSTATUS status = ZwWriteFile(NarData.FileHandles[tp->FileID], 0, 0, 0, &iosb, (tp->Data), tp->DataLen, 0, 0);
-    if (NT_SUCCESS(status)) {
-            
-        if (tp->ShouldFlush == TRUE) {
-            ZwFlushBuffersFile(NarData.FileHandles[tp->FileID], &iosb);
+    
+    if (tp->DataLen > 0) {
+        status = ZwWriteFile(NarData.FileHandles[tp->FileID], 0, 0, 0, &iosb, (tp->Data), tp->DataLen, 0, 0);
+        if (NT_SUCCESS(status)) {
+
         }
-            
+        else {
+            DbgPrint("couldnt write to file, err id %i\n", status);
+        }
+    }
+
+    if (NT_SUCCESS(status)) {
+        if (tp->ShouldFlush == TRUE) {
+            status = ZwFlushBuffersFile(NarData.FileHandles[tp->FileID], &iosb);
+            DbgPrint("Flush status code %X, iosb status %X", status, iosb.Status);
+        }
+
         if (tp->ShouldQueryFileSize == TRUE) {
             FILE_STANDARD_INFORMATION standardInfo;
             status = NtQueryInformationFile(NarData.FileHandles[tp->FileID], &iosb, &standardInfo, sizeof(standardInfo), FileStandardInformation);
@@ -1097,12 +1163,7 @@ NarWriteLogtoFile(PVOID param) {
                 DbgPrint("File size query failed, error code %X", status);
             }
         }
-            
     }
-    else {
-        DbgPrint("couldnt write to file, err id %i\n", status);
-    }
-    
     
     return;
 }
@@ -1157,10 +1218,50 @@ Return Value:
     
     // If system shutdown requested, dont bother to log changes
     if (Data->Iopb->MajorFunction == IRP_MJ_SHUTDOWN) {
+        
+        for (int i = 0; i < NAR_MAX_VOLUME_COUNT; i++) {
+
+            ExAcquireFastMutex(&NarData.VolumeRegionBuffer[i].FastMutex);
+
+            if (NarData.VolumeRegionBuffer[i].VolFileID != NAR_KERNEL_INVALID_FILE_ID) {
+                
+                if (NAR_MB_DATA_USED(NarData.VolumeRegionBuffer[i].MemoryBuffer) > 0) {
+                    nar_log_thread_params* tp = (nar_log_thread_params*)ExAllocatePoolWithTag(NonPagedPool, sizeof(nar_log_thread_params), NAR_TAG);
+
+                    if (tp != NULL) {
+                        
+                        memset(tp, 0, sizeof(*tp));
+                        tp->Data                = NAR_MB_DATA(NarData.VolumeRegionBuffer[i].MemoryBuffer);
+                        tp->DataLen             = NAR_MB_DATA_USED(NarData.VolumeRegionBuffer[i].MemoryBuffer);
+                        tp->FileID              = NarData.VolumeRegionBuffer[i].VolFileID;
+                        tp->ShouldFlush         = TRUE;
+                        tp->ShouldQueryFileSize = FALSE;
+
+                        status = NarWriteLogsToFile(tp, 0);
+                        if (NT_SUCCESS(status)) {
+                            
+                        }
+                        else {
+                            
+                        }
+
+                        NAR_INIT_MEMORYBUFFER(NarData.VolumeRegionBuffer[i].MemoryBuffer);
+                        ExFreePoolWithTag(tp, NAR_TAG);
+
+                    }
+                    else {
+                        DbgPrint("Unable to allocate memory to flush logs at preoperation routine\n");
+                    }
+                }
+            }
+
+            ExReleaseFastMutex(&NarData.VolumeRegionBuffer[i].FastMutex);
+
+        }
+
         return FLT_PREOP_SUCCESS_NO_CALLBACK;
     }
     
-    //ULONG PID = FltGetRequestorProcessId(Data);
     // filter out temporary files and files that would be closed if last handle freed
     if ((Data->Iopb->TargetFileObject->Flags & FO_TEMPORARY_FILE) == FO_TEMPORARY_FILE) {
         return  FLT_PREOP_SUCCESS_NO_CALLBACK;
@@ -1183,14 +1284,6 @@ Return Value:
         DbgPrint("Failed to query information file\n");
     }
 
-    // status = NtQueryInformationFile(NarData.FileHandles[tp->FileID], &iosb, &standardInfo, sizeof(standardInfo), FileStandardInformation);
-    // if (NT_SUCCESS(status)) {
-    //     tp->FileSize = standardInfo.EndOfFile.QuadPart;
-    // }
-    // else {
-    //     // DbgPrint("File size query failed, error code %X", status);
-    // }
-    
     
     PFLT_FILE_NAME_INFORMATION nameInfo = NULL;
     
@@ -1519,22 +1612,15 @@ Return Value:
                                 
                                 nar_log_thread_params* tp = (nar_log_thread_params*)ExAllocatePoolWithTag(NonPagedPool, sizeof(nar_log_thread_params), NAR_TAG);
                                 if (tp != NULL) {
+                                    memset(tp, 0, sizeof(*tp));
                                     tp->Data = NAR_MB_DATA(NarData.VolumeRegionBuffer[i].MemoryBuffer);
                                     tp->DataLen = NAR_MB_DATA_USED(NarData.VolumeRegionBuffer[i].MemoryBuffer);
                                     tp->FileID = NarData.VolumeRegionBuffer[i].VolFileID;
                                     tp->ShouldFlush = FALSE;
                                     tp->ShouldQueryFileSize = FALSE;
 
-                                    HANDLE Thread = 0;
-                                    NTSTATUS status = PsCreateSystemThread(&Thread, THREAD_ALL_ACCESS, 0, 0, 0, NarWriteLogtoFile, tp);
-                                    if (NT_SUCCESS(status)) {
-                                        ZwClose(Thread);
-                                        NAR_INIT_MEMORYBUFFER(NarData.VolumeRegionBuffer[i].MemoryBuffer);
-                                        //DbgPrint("Succ flushed logs, file id %u, len %u\n", tp.FileID, tp.DataLen);
-                                    }
-                                    else {
-                                        DbgPrint("failed to create thread\n");
-                                    }
+                                    NarWriteLogsToFile(tp, 0);
+                                    NAR_INIT_MEMORYBUFFER(NarData.VolumeRegionBuffer[i].MemoryBuffer);
 
                                     ExFreePoolWithTag(tp, NAR_TAG);
                                 }

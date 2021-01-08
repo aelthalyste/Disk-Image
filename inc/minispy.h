@@ -38,7 +38,7 @@ Environment:
 
 #define NAR_GUID_STR_SIZE 96
 
-#define NAR_MEMORYBUFFER_SIZE       (2048*1) //
+#define NAR_MEMORYBUFFER_SIZE       (1024*16) //
 #define NAR_MAX_VOLUME_COUNT        (12)
 #define NAR_REGIONBUFFER_SIZE       (sizeof(*NarData.VolumeRegionBuffer)) //struct itself
 #define NAR_VOLUMEREGIONBUFFERSIZE  (NAR_MAX_VOLUME_COUNT)*(NAR_REGIONBUFFER_SIZE)
@@ -82,10 +82,10 @@ struct nar_backup_id{
 
 struct nar_log_thread_params {
     void* Data;
-    unsigned char FileID;
     size_t FileSize;
     LONG InternalError; // NTSTATUS = LONG
     INT DataLen;
+    int FileID;
     BOOLEAN ShouldFlush;
     BOOLEAN ShouldQueryFileSize;
 };
@@ -108,7 +108,10 @@ typedef struct nar_log_thread_params nar_log_thread_params;
 
 
 inline void
-NarWriteLogtoFile(PVOID param);
+NarLogThread(PVOID param);
+
+inline NTSTATUS
+NarWriteLogsToFile(nar_log_thread_params* tp, PETHREAD* OutTObject);
 
 /*
 APPENDS generated log file name to OUTPUT. 

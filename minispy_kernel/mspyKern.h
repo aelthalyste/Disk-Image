@@ -167,7 +167,7 @@ typedef struct _nar_kernel_data {
         void *MemoryBuffer;
 
         char Letter;
-        unsigned char VolFileID; // usually (Letter - 'A' + 1), 0 means invalid
+        int VolFileID; // usually (Letter - 'A' + 1), 0 means invalid
 
     } VolumeRegionBuffer[NAR_MAX_VOLUME_COUNT];
 
