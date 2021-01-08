@@ -4,6 +4,7 @@ using DiskBackup.Business.Concrete;
 using DiskBackup.DataAccess.Abstract;
 using DiskBackup.Entities.Concrete;
 using DiskBackup.TaskScheduler;
+using DiskBackupWpfGUI.Utils;
 using Serilog;
 using System;
 using System.Collections.Generic;
@@ -40,6 +41,8 @@ namespace DiskBackupWpfGUI
         private readonly ILifetimeScope _scope;
         private readonly ILogger _logger;
 
+        private IConfigHelper _configHelper;
+
         private List<BackupStorageInfo> _backupStorageInfoList = new List<BackupStorageInfo>();
         private List<VolumeInfo> _volumeInfoList = new List<VolumeInfo>();
 
@@ -50,7 +53,7 @@ namespace DiskBackupWpfGUI
 
         public NewCreateTaskWindow(List<BackupStorageInfo> backupStorageInfoList, IBackupService backupService, IBackupStorageService backupStorageService,
             Func<AddBackupAreaWindow> createAddBackupWindow, List<VolumeInfo> volumeInfoList, IBackupTaskDal backupTaskDal, IStatusInfoDal statusInfoDal,
-            ITaskInfoDal taskInfoDal, ITaskSchedulerManager schedulerManager, ILifetimeScope scope, ILogger logger, IRestoreTaskDal restoreTaskDal)
+            ITaskInfoDal taskInfoDal, ITaskSchedulerManager schedulerManager, ILifetimeScope scope, ILogger logger, IRestoreTaskDal restoreTaskDal, IConfigHelper configHelper)
         {
             InitializeComponent();
 
@@ -73,6 +76,9 @@ namespace DiskBackupWpfGUI
             _logger = logger.ForContext<NewCreateTaskWindow>();
             _schedulerManager.InitShedulerAsync();
 
+            _configHelper = configHelper;
+            SetApplicationLanguage(_configHelper.GetConfig("lang"));
+
             txtTaskName.Focus();
 
             _taskInfo.Obje = _volumeInfoList.Count();
@@ -89,7 +95,7 @@ namespace DiskBackupWpfGUI
         public NewCreateTaskWindow(List<BackupStorageInfo> backupStorageInfoList, IBackupService backupService, IBackupStorageService backupStorageService,
             Func<AddBackupAreaWindow> createAddBackupWindow, List<VolumeInfo> volumeInfoList, IBackupTaskDal backupTaskDal, IStatusInfoDal statusInfoDal,
             ITaskInfoDal taskInfoDal, ITaskSchedulerManager schedulerManager, ILifetimeScope scope, TaskInfo taskInfo, IBackupStorageDal backupStorageDal, ILogger logger,
-            IRestoreTaskDal restoreTaskDal)
+            IRestoreTaskDal restoreTaskDal, IConfigHelper configHelper)
         {
             InitializeComponent();
 
@@ -113,6 +119,9 @@ namespace DiskBackupWpfGUI
             _scope = scope;
             _logger = logger.ForContext<NewCreateTaskWindow>();
             _schedulerManager.InitShedulerAsync();
+
+            _configHelper = configHelper;
+            SetApplicationLanguage(_configHelper.GetConfig("lang"));
 
             txtTaskName.Text = _taskInfo.Name;
             txtTaskDescription.Text = _taskInfo.Descripiton;
@@ -984,14 +993,14 @@ namespace DiskBackupWpfGUI
             //chooseDays.ShowDialog();
             if (_taskInfo.BackupTaskInfo.Days == null)
             {
-                ChooseDayAndMounthsWindow chooseDays = new ChooseDayAndMounthsWindow(true);
+                ChooseDayAndMounthsWindow chooseDays = new ChooseDayAndMounthsWindow(true, _configHelper);
                 chooseDays.ShowDialog();
                 _taskInfo.BackupTaskInfo.Days = ChooseDayAndMounthsWindow._days;
             }
             else
             {
                 // doldurma yap
-                ChooseDayAndMounthsWindow chooseDays = new ChooseDayAndMounthsWindow(true, _taskInfo.BackupTaskInfo.Days, _updateControl);
+                ChooseDayAndMounthsWindow chooseDays = new ChooseDayAndMounthsWindow(true, _taskInfo.BackupTaskInfo.Days, _updateControl, _configHelper);
                 chooseDays.ShowDialog();
                 _taskInfo.BackupTaskInfo.Days = ChooseDayAndMounthsWindow._days;
             }
@@ -1003,13 +1012,13 @@ namespace DiskBackupWpfGUI
             //chooseMounths.ShowDialog();
             if (_taskInfo.BackupTaskInfo.Months == null)
             {
-                ChooseDayAndMounthsWindow chooseMounths = new ChooseDayAndMounthsWindow(false);
+                ChooseDayAndMounthsWindow chooseMounths = new ChooseDayAndMounthsWindow(false, _configHelper);
                 chooseMounths.ShowDialog();
                 _taskInfo.BackupTaskInfo.Months = ChooseDayAndMounthsWindow._months;
             }
             else
             {
-                ChooseDayAndMounthsWindow chooseDays = new ChooseDayAndMounthsWindow(false, _taskInfo.BackupTaskInfo.Months, _updateControl);
+                ChooseDayAndMounthsWindow chooseDays = new ChooseDayAndMounthsWindow(false, _taskInfo.BackupTaskInfo.Months, _updateControl, _configHelper);
                 chooseDays.ShowDialog();
                 _taskInfo.BackupTaskInfo.Months = ChooseDayAndMounthsWindow._months;
             }
@@ -1263,6 +1272,25 @@ namespace DiskBackupWpfGUI
             }
 
             return ($"{dblSByte:0.##} {Suffix[i]}");
+        }
+
+        public void SetApplicationLanguage(string option)
+        {
+            ResourceDictionary dict = new ResourceDictionary();
+
+            switch (option)
+            {
+                case "tr":
+                    dict.Source = new Uri("..\\Resources\\Lang\\string_tr.xaml", UriKind.Relative);
+                    break;
+                case "en":
+                    dict.Source = new Uri("..\\Resources\\Lang\\string_eng.xaml", UriKind.Relative);
+                    break;
+                default:
+                    dict.Source = new Uri("..\\Resources\\Lang\\string_tr.xaml", UriKind.Relative);
+                    break;
+            }
+            Resources.MergedDictionaries.Add(dict);
         }
 
         #region Focus Event

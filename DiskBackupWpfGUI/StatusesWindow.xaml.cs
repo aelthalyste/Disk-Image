@@ -1,5 +1,6 @@
 ﻿using DiskBackup.DataAccess.Abstract;
 using DiskBackup.Entities.Concrete;
+using DiskBackupWpfGUI.Utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -29,10 +30,11 @@ namespace DiskBackupWpfGUI
 
         private readonly IStatusInfoDal _statusInfoDal;
         private readonly ITaskInfoDal _taskInfoDal;
+        private IConfigHelper _configHelper;
 
         private int _taskId = 0;
 
-        public StatusesWindow(int chooseFlag, TaskInfo taskInfo, IStatusInfoDal statusInfoDal, ITaskInfoDal taskInfoDal)
+        public StatusesWindow(int chooseFlag, TaskInfo taskInfo, IStatusInfoDal statusInfoDal, ITaskInfoDal taskInfoDal, IConfigHelper configHelper)
         {
             InitializeComponent();
             _statusInfoDal = statusInfoDal;
@@ -42,6 +44,9 @@ namespace DiskBackupWpfGUI
             RefreshStatus(_cancellationTokenSource.Token);
             this.Closing += (sender, e) => _cancellationTokenSource.Cancel();
             txtLastStatus.Text = taskInfo.StrStatus;
+
+            _configHelper = configHelper;
+            SetApplicationLanguage(_configHelper.GetConfig("lang"));
 
             // 0 yedekleme durumu, 1 geri yükleme
             if (chooseFlag == 0)
@@ -87,7 +92,7 @@ namespace DiskBackupWpfGUI
             }
         }
 
-        public StatusesWindow(int chooseFlag, ActivityLog activityLog, IStatusInfoDal statusInfoDal)
+        public StatusesWindow(int chooseFlag, ActivityLog activityLog, IStatusInfoDal statusInfoDal, IConfigHelper configHelper)
         {
             InitializeComponent();
             _statusInfoDal = statusInfoDal;
@@ -97,6 +102,9 @@ namespace DiskBackupWpfGUI
             RefreshStatus(_cancellationTokenSource.Token);
             this.Closing += (sender, e) => _cancellationTokenSource.Cancel();
             txtLastStatus.Text = activityLog.StrStatus;
+
+            _configHelper = configHelper;
+            SetApplicationLanguage(_configHelper.GetConfig("lang"));
 
             // 0 yedekleme durumu, 1 geri yükleme
             if (chooseFlag == 0)
@@ -255,6 +263,25 @@ namespace DiskBackupWpfGUI
                 sb.Append("ms");
             }
             return sb.ToString();
+        }
+
+        public void SetApplicationLanguage(string option)
+        {
+            ResourceDictionary dict = new ResourceDictionary();
+
+            switch (option)
+            {
+                case "tr":
+                    dict.Source = new Uri("..\\Resources\\Lang\\string_tr.xaml", UriKind.Relative);
+                    break;
+                case "en":
+                    dict.Source = new Uri("..\\Resources\\Lang\\string_eng.xaml", UriKind.Relative);
+                    break;
+                default:
+                    dict.Source = new Uri("..\\Resources\\Lang\\string_tr.xaml", UriKind.Relative);
+                    break;
+            }
+            Resources.MergedDictionaries.Add(dict);
         }
 
     }

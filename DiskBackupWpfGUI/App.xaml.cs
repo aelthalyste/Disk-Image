@@ -6,6 +6,7 @@ using DiskBackup.DataAccess.Concrete.EntityFramework;
 using DiskBackup.TaskScheduler;
 using DiskBackup.TaskScheduler.Factory;
 using DiskBackup.TaskScheduler.Jobs;
+using DiskBackupWpfGUI.Utils;
 using Serilog;
 using System;
 using System.Collections.Generic;
@@ -47,6 +48,7 @@ namespace DiskBackupWpfGUI
             builder.RegisterType<EfBackupTaskDal>().As<IBackupTaskDal>();
             builder.RegisterType<EfStatusInfoDal>().As<IStatusInfoDal>();
             builder.RegisterType<EfTaskInfoDal>().As<ITaskInfoDal>();
+            builder.RegisterType<ConfigHelper>().As<IConfigHelper>();
             builder.Register(c => new BackupServiceClient().BackupService);
             builder.Register(c => new BackupStorageServiceClient().BackupStorageService);
             builder.Register(c => new LogServiceClient().LogService);

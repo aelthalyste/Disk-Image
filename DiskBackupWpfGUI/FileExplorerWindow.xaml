@@ -15,9 +15,9 @@
         Icon="Resources/Icon/NarBulut_PNG_Icon_White_V3.png" 
         ResizeMode="CanMinimize">
     
-    <Window.Resources>
+    <!--<Window.Resources>
         <ResourceDictionary Source="Resources\Lang\string_tr.xaml"/>
-    </Window.Resources>
+    </Window.Resources>-->
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="30"/>

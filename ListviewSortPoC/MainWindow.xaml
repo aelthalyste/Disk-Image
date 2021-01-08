@@ -69,6 +69,10 @@
                 <ComboBoxItem Content="Türkçe"/>
                 <ComboBoxItem Content="İngilizce"/>
             </ComboBox>-->
+            <Button Content="İngilizce" Name="eng" Click="eng_Click"/>
+            <Button Content="Türkçe" Name="tr" Click="tr_Click"/>
+            <ComboBox Name="languageComboBox" VerticalAlignment="Center" Width="120" Margin="5,0,0,0" DisplayMemberPath="Key" SelectedValuePath="Value" SelectionChanged="languageComboBox_SelectionChanged"/>
+
         </StackPanel>
     </Grid>
 </Window>

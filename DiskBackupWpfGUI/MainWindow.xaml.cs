@@ -60,6 +60,9 @@ namespace DiskBackupWpfGUI
         private CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         CollectionView _view;
 
+        private Dictionary<string, string> languages = new Dictionary<string, string>();
+        private IConfigHelper _configHelper;
+
         private readonly ITaskInfoDal _taskInfoDal;
         private readonly IBackupStorageDal _backupStorageDal;
         private readonly IBackupTaskDal _backupTaskDal;
@@ -71,7 +74,7 @@ namespace DiskBackupWpfGUI
         private readonly ILifetimeScope _scope;
         private readonly ILogger _logger;
 
-        public MainWindow(ILifetimeScope scope, ITaskInfoDal taskInfoDal, IBackupStorageDal backupStorageDal, IBackupTaskDal backupTaskDal, IStatusInfoDal statusInfoDal, IActivityLogDal activityLogDal, ILogger logger, IRestoreTaskDal restoreTaskDal)
+        public MainWindow(ILifetimeScope scope, ITaskInfoDal taskInfoDal, IBackupStorageDal backupStorageDal, IBackupTaskDal backupTaskDal, IStatusInfoDal statusInfoDal, IActivityLogDal activityLogDal, ILogger logger, IRestoreTaskDal restoreTaskDal, IConfigHelper configHelper)
         {
             InitializeComponent();
 
@@ -85,8 +88,19 @@ namespace DiskBackupWpfGUI
             _taskInfoDal = taskInfoDal;
             _restoreTaskDal = restoreTaskDal;
             _scope = scope;
+            _configHelper = configHelper;
+
             var backupService = _scope.Resolve<IBackupService>();
             var backupStorageService = _scope.Resolve<IBackupStorageService>();
+
+            if (_configHelper.GetConfig("lang") == null)
+                _configHelper.SetConfig("lang", "tr");
+            SetApplicationLanguage(_configHelper.GetConfig("lang"));
+
+            ReloadLanguages();
+
+            cbLang.SelectedValue = _configHelper.GetConfig("lang");
+            cbLang.SelectionChanged += cbLang_SelectionChanged;
 
             try
             {
@@ -112,6 +126,11 @@ namespace DiskBackupWpfGUI
                 {
                     foreach (var volumeItem in diskItem.VolumeInfos)
                     {
+                        if (volumeItem.HealthStatu == HealthSituation.Healthy)
+                            volumeItem.Status = Resources["healthy"].ToString();
+                        else
+                            volumeItem.Status = Resources["unhealthy"].ToString();
+
                         _volumeList.Add(volumeItem);
                     }
                 }
@@ -1969,6 +1988,30 @@ namespace DiskBackupWpfGUI
 
         #region Settings Tab
 
+        private void cbLang_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (cbLang.SelectedIndex != -1 && cbLang.SelectedItem is KeyValuePair<string, string> item)
+            {
+                if (item.Value != _configHelper.GetConfig("lang"))
+                {
+                    _configHelper.SetConfig("lang", item.Value);
+                    SetApplicationLanguage(_configHelper.GetConfig("lang"));
+                    ReloadLanguages();
+                    cbLang.SelectedValue = _configHelper.GetConfig("lang");
+                }
+            }
+        }
+
+        private void ReloadLanguages()
+        {
+            languages.Clear();
+            languages[Resources["english"].ToString()] = "en";
+            languages[Resources["turkish"].ToString()] = "tr";
+            cbLang.ItemsSource = null;
+            cbLang.Items.Clear();
+            cbLang.ItemsSource = languages;
+        }
+
         #region Upload
         private void btnUploadDown_Click(object sender, RoutedEventArgs e)
         {
@@ -2032,7 +2075,6 @@ namespace DiskBackupWpfGUI
         #endregion
 
 
-
         #endregion
 
 
@@ -2084,7 +2126,13 @@ namespace DiskBackupWpfGUI
                 }
                 catch (Exception e)
                 {
-                    MessageBox.Show("Refresh: " + e.Message, Resources["MessageboxTitle"].ToString(), MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
+                    if (e.Message.Contains("System.ServiceModel.Channels.ServiceChannel"))
+                    {
+                        MessageBox.Show(Resources["closeServiceErrorMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error, MessageBoxResult.No);
+                        Close();
+                        return;
+                    }
+                    MessageBox.Show("Refresh: " + e.Message, Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error, MessageBoxResult.No);
                 }
 
             }
@@ -2284,6 +2332,11 @@ namespace DiskBackupWpfGUI
                 {
                     foreach (var volumeItem in diskItem.VolumeInfos)
                     {
+                        if (volumeItem.HealthStatu == HealthSituation.Healthy)
+                            volumeItem.Status = Resources["healthy"].ToString();
+                        else
+                            volumeItem.Status = Resources["unhealthy"].ToString();
+
                         _volumeList.Add(volumeItem);
                     }
                 }
@@ -2335,6 +2388,25 @@ namespace DiskBackupWpfGUI
             }
 
             return ($"{dblSByte:0.##} {Suffix[i]}");
+        }
+
+        public void SetApplicationLanguage(string option)
+        {
+            ResourceDictionary dict = new ResourceDictionary();
+
+            switch (option)
+            {
+                case "tr":
+                    dict.Source = new Uri("..\\Resources\\Lang\\string_tr.xaml", UriKind.Relative);
+                    break;
+                case "en":
+                    dict.Source = new Uri("..\\Resources\\Lang\\string_eng.xaml", UriKind.Relative);
+                    break;
+                default:
+                    dict.Source = new Uri("..\\Resources\\Lang\\string_tr.xaml", UriKind.Relative);
+                    break;
+            }
+            Resources.MergedDictionaries.Add(dict);
         }
 
         #endregion
@@ -2462,8 +2534,9 @@ namespace DiskBackupWpfGUI
             listViewTasks.Items.SortDescriptions.Add(new SortDescription(sortBy, newDir));
         }
 
-        #endregion
 
+
+        #endregion
 
 
     }

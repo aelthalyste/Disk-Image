@@ -26,6 +26,16 @@ namespace ListviewSortPoC
         public Window1()
         {
             InitializeComponent();
+            denemeConfig denemeConfig = new denemeConfig();
+            if (denemeConfig.GetConfig("lang") == null)
+            {
+                denemeConfig.SetConfig("lang", "tr");
+                SetApplicationLanguage("tr");
+            }
+            else
+            {
+                SetApplicationLanguage(denemeConfig.GetConfig("lang"));
+            }
             List<Product> items = new List<Product>();
             items.Add(new Product() { Name = "!Pencil", Price = 42, Origin = "Turkey", ExpirationDate = DateTime.Now - TimeSpan.FromDays(10) });
             items.Add(new Product() { Name = "-Pencil", Price = 39, Origin = "France", ExpirationDate = DateTime.Now - TimeSpan.FromDays(5) });
@@ -53,7 +63,28 @@ namespace ListviewSortPoC
             AdornerLayer.GetAdornerLayer(listViewSortCol).Add(listViewSortAdorner);
             lvUsers.Items.SortDescriptions.Add(new SortDescription(sortBy, newDir));
         }
+
+        public void SetApplicationLanguage(string option)
+        {
+            ResourceDictionary dict = new ResourceDictionary();
+
+            switch (option)
+            {
+                case "tr":
+                    dict.Source = new Uri("..\\Resources\\string_tr.xaml", UriKind.Relative);
+                    break;
+                case "en":
+                    dict.Source = new Uri("..\\Resources\\string_eng.xaml", UriKind.Relative);
+                    break;
+                default:
+                    dict.Source = new Uri("..\\Resources\\string_tr.xaml", UriKind.Relative);
+                    break;
+            }
+            Resources.MergedDictionaries.Add(dict);
+        }
     }
+
+
 
     public class Product
     {

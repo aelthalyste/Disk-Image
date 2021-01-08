@@ -6,7 +6,10 @@
     <system:String x:Key="age">Yaş</system:String>
     <system:String x:Key="sex">Cinsiyet</system:String>
     <system:String x:Key="date">Tarih</system:String>
-    
+    <system:String x:Key="turkish">Türkçe</system:String>
+    <system:String x:Key="english">İngilizce</system:String>
+
+
 
 
 

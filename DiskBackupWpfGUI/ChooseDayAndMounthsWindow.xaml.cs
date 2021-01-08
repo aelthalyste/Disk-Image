@@ -1,4 +1,5 @@
-﻿using System;
+﻿using DiskBackupWpfGUI.Utils;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -21,16 +22,19 @@ namespace DiskBackupWpfGUI
         public static string _months = null;
         public string _daysOrMounths;
 
+        private IConfigHelper _configHelper;
+
         private bool _chooseFlag;
 
-        public ChooseDayAndMounthsWindow(bool chooseFlag)
+        public ChooseDayAndMounthsWindow(bool chooseFlag, IConfigHelper configHelper)
         {
             InitializeComponent();
 
             _chooseFlag = chooseFlag;
             _days = null;
             _months = null;
-
+            _configHelper = configHelper;
+            SetApplicationLanguage(_configHelper.GetConfig("lang"));
             //chooseFlag = true gün, false ise ay
             if (chooseFlag)
             {
@@ -44,7 +48,7 @@ namespace DiskBackupWpfGUI
             }
         }
 
-        public ChooseDayAndMounthsWindow(bool chooseFlag, string daysOrMounths, bool updateControl)
+        public ChooseDayAndMounthsWindow(bool chooseFlag, string daysOrMounths, bool updateControl, IConfigHelper configHelper)
         {
             InitializeComponent();
 
@@ -52,7 +56,8 @@ namespace DiskBackupWpfGUI
             _days = null;
             _months = null;
             _daysOrMounths = daysOrMounths;
-
+            _configHelper = configHelper;
+            SetApplicationLanguage(_configHelper.GetConfig("lang"));
             //chooseFlag = true gün, false ise ay
             if (chooseFlag)
             {
@@ -219,6 +224,25 @@ namespace DiskBackupWpfGUI
                 _months = _months.Substring(0, _months.Length - 1);
             }
             Close();
+        }
+
+        public void SetApplicationLanguage(string option)
+        {
+            ResourceDictionary dict = new ResourceDictionary();
+
+            switch (option)
+            {
+                case "tr":
+                    dict.Source = new Uri("..\\Resources\\Lang\\string_tr.xaml", UriKind.Relative);
+                    break;
+                case "en":
+                    dict.Source = new Uri("..\\Resources\\Lang\\string_eng.xaml", UriKind.Relative);
+                    break;
+                default:
+                    dict.Source = new Uri("..\\Resources\\Lang\\string_tr.xaml", UriKind.Relative);
+                    break;
+            }
+            Resources.MergedDictionaries.Add(dict);
         }
     }
 }

@@ -2,6 +2,7 @@
 using DiskBackup.DataAccess.Abstract;
 using DiskBackup.Entities.Concrete;
 using DiskBackup.TaskScheduler;
+using DiskBackupWpfGUI.Utils;
 using Serilog;
 using System;
 using System.Collections.Generic;
@@ -35,8 +36,9 @@ namespace DiskBackupWpfGUI
         private ITaskSchedulerManager _schedulerManager;
         private IBackupService _backupService;
         private ILogger _logger;
+        private IConfigHelper _configHelper;
 
-        public RestoreWindow(BackupInfo backupInfo, List<VolumeInfo> volumeInfoList, IRestoreTaskDal restoreTaskDal, IStatusInfoDal statusInfoDal, ITaskInfoDal taskInfoDal, ITaskSchedulerManager schedulerManager, IBackupService backupService, ILogger logger)
+        public RestoreWindow(BackupInfo backupInfo, List<VolumeInfo> volumeInfoList, IRestoreTaskDal restoreTaskDal, IStatusInfoDal statusInfoDal, ITaskInfoDal taskInfoDal, ITaskSchedulerManager schedulerManager, IBackupService backupService, ILogger logger, IConfigHelper configHelper)
         {
             InitializeComponent();
 
@@ -48,6 +50,9 @@ namespace DiskBackupWpfGUI
             _schedulerManager = schedulerManager;
             _backupService = backupService;
             _logger = logger.ForContext<RestoreWindow>();
+
+            _configHelper = configHelper;
+            SetApplicationLanguage(_configHelper.GetConfig("lang"));
 
             _taskInfo.RestoreTaskInfo = new RestoreTask();
             _taskInfo.BackupStorageInfo = new BackupStorageInfo();
@@ -390,6 +395,25 @@ namespace DiskBackupWpfGUI
             stackBootCheck.IsEnabled = false;
             rbBootGPT.IsChecked = true;
             rbBootGPT.IsChecked = false;
+        }
+
+        public void SetApplicationLanguage(string option)
+        {
+            ResourceDictionary dict = new ResourceDictionary();
+
+            switch (option)
+            {
+                case "tr":
+                    dict.Source = new Uri("..\\Resources\\Lang\\string_tr.xaml", UriKind.Relative);
+                    break;
+                case "en":
+                    dict.Source = new Uri("..\\Resources\\Lang\\string_eng.xaml", UriKind.Relative);
+                    break;
+                default:
+                    dict.Source = new Uri("..\\Resources\\Lang\\string_tr.xaml", UriKind.Relative);
+                    break;
+            }
+            Resources.MergedDictionaries.Add(dict);
         }
     }
 }

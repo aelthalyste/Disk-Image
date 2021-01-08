@@ -17,6 +17,7 @@ using DiskBackup.Business.Abstract;
 using DiskBackup.Business.Concrete;
 using DiskBackup.DataAccess.Abstract;
 using DiskBackup.Entities.Concrete;
+using DiskBackupWpfGUI.Utils;
 using NarDIWrapper;
 using Serilog;
 
@@ -31,18 +32,23 @@ namespace DiskBackupWpfGUI
         private readonly IBackupStorageDal _backupStorageDal;
         private readonly ILogger _logger;
 
+        private IConfigHelper _configHelper;
+
         private List<FilesInBackup> _filesInBackupList = new List<FilesInBackup>();
         private BackupInfo _backupInfo;
 
         private bool _fileAllControl;
 
-        public FileExplorerWindow(IBackupService backupManager, BackupInfo backupInfo, IBackupStorageDal backupStorageDal, ILogger logger)
+        public FileExplorerWindow(IBackupService backupManager, BackupInfo backupInfo, IBackupStorageDal backupStorageDal, ILogger logger, IConfigHelper configHelper)
         {
             InitializeComponent();
             _backupStorageDal = backupStorageDal;
             _backupManager = backupManager;
             _backupInfo = backupInfo;
             _logger = logger.ForContext<FileExplorerWindow>();
+
+            _configHelper = configHelper;
+            SetApplicationLanguage(_configHelper.GetConfig("lang"));
 
             try
             {
@@ -59,7 +65,6 @@ namespace DiskBackupWpfGUI
                 MessageBox.Show(Resources["unexpectedErrorMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
-            
         }
 
         #region Title Bar
@@ -252,6 +257,26 @@ namespace DiskBackupWpfGUI
             else
                 btnRestore.IsEnabled = false;
         }
+
+        public void SetApplicationLanguage(string option)
+        {
+            ResourceDictionary dict = new ResourceDictionary();
+
+            switch (option)
+            {
+                case "tr":
+                    dict.Source = new Uri("..\\Resources\\Lang\\string_tr.xaml", UriKind.Relative);
+                    break;
+                case "en":
+                    dict.Source = new Uri("..\\Resources\\Lang\\string_eng.xaml", UriKind.Relative);
+                    break;
+                default:
+                    dict.Source = new Uri("..\\Resources\\Lang\\string_tr.xaml", UriKind.Relative);
+                    break;
+            }
+            Resources.MergedDictionaries.Add(dict);
+        }
+
 
         //Seçilen değere gitmek için ise CW_SelectDirectory(seçilenID)
         //tekrardan getFilesInCurrentDirectory istenecek
