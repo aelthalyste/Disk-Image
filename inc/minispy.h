@@ -38,7 +38,7 @@ Environment:
 
 #define NAR_GUID_STR_SIZE 96
 
-#define NAR_MEMORYBUFFER_SIZE       (1024*16) //
+#define NAR_MEMORYBUFFER_SIZE       (1024*1024*2) //
 #define NAR_MAX_VOLUME_COUNT        (12)
 #define NAR_REGIONBUFFER_SIZE       (sizeof(*NarData.VolumeRegionBuffer)) //struct itself
 #define NAR_VOLUMEREGIONBUFFERSIZE  (NAR_MAX_VOLUME_COUNT)*(NAR_REGIONBUFFER_SIZE)
@@ -88,6 +88,7 @@ struct nar_log_thread_params {
     int FileID;
     BOOLEAN ShouldFlush;
     BOOLEAN ShouldQueryFileSize;
+    BOOLEAN ShouldDelete; // set's file size to 0
 };
 
 #ifndef __cplusplus
@@ -95,17 +96,9 @@ typedef struct nar_log_thread_params nar_log_thread_params;
 #endif
 
 
-
-
-
-
-// nar volume change log = nvcl
-#define NAR_LOG_FILE_EXTENSION L".nvcl"
-
 #if NAR_KERNEL
 
 #include <ntstrsafe.h>
-
 
 inline void
 NarLogThread(PVOID param);
@@ -113,38 +106,8 @@ NarLogThread(PVOID param);
 inline NTSTATUS
 NarWriteLogsToFile(nar_log_thread_params* tp, PETHREAD* OutTObject);
 
-/*
-APPENDS generated log file name to OUTPUT. 
-If you want it to just generate log file name, call it with empty OUTPUT buffer.
-*/
-inline void
-GenerateLogFileName(PUNICODE_STRING Output, PCUNICODE_STRING VolumeKernelName) {
-    
-    UNICODE_STRING prefix = { 0 };
-    RtlInitUnicodeString(&prefix, L"NAR_LOG_");
-    
-    UNICODE_STRING ext = { 0 };
-    RtlInitUnicodeString(&ext, NAR_LOG_FILE_EXTENSION);
-    
-    
-    RtlUnicodeStringCat(Output, &prefix);
-    RtlUnicodeStringCat(Output, VolumeKernelName);
-    RtlUnicodeStringCat(Output, &ext);
-    
-}
-
 #else
 
-
-//#include <string>
-//inline std::wstring
-//GenerateLogFileName(const wchar_t *VolumeKernelName) {
-//    std::wstring Result;
-//    Result += "NAR_LOG_";
-//    Result += std::wstring(VolumeKernelName);
-//    Result += std::wstinrg(NAR_LOG_FILE_EXTENSION);
-//    return Result;
-//}
 
 #endif
 

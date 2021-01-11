@@ -133,7 +133,7 @@ Return Value:
     try {
         
         memset(&NarData, 0, sizeof(NarData));
-
+        
         //
         // Initialize global data structures.
         //
@@ -201,7 +201,7 @@ Return Value:
             __leave;
         }
         
-
+        
         
         DbgPrint("Driver entry!\n");
         
@@ -329,7 +329,7 @@ Return Value:
         }
         
         
-
+        
         //
         //  We are now ready to start filtering
         //
@@ -372,7 +372,7 @@ Return Value:
                             DbgPrint("Successfully attached volume (%c) GUID : (%wZ)\n", TrackedVolumes[i].Letter, &NarData.VolumeRegionBuffer[i].GUIDStrVol);
                             DbgPrint("GUID len %i, max len %i\n", NarData.VolumeRegionBuffer[i].GUIDStrVol.Length, NarData.VolumeRegionBuffer[i].GUIDStrVol.MaximumLength);
                             NarData.VolumeRegionBuffer[i].VolFileID = NAR_KERNEL_GEN_FILE_ID(TrackedVolumes[i].Letter);
-
+                            
                         }
                         else {
                             DbgPrint("Couldnt attach volume volume %c, GUID: %wZ, status %i\n", TrackedVolumes[i].Letter, &NarData.VolumeRegionBuffer[i].GUIDStrVol, status);
@@ -399,8 +399,8 @@ Return Value:
             }
         }
         
-
-
+        
+        
         NarData.FileHandles = ExAllocatePoolWithTag(NonPagedPool, sizeof(HANDLE) * NAR_KERNEL_MAX_FILE_ID, NAR_TAG);
         for (char c = 'A'; c <= 'Z'; c++) {
             
@@ -456,10 +456,10 @@ Return Value:
                 
                 
             }// If nardata.volumeregionbuffer != NULL
-
+            
             ExFreePoolWithTag(NarData.FileHandles, NAR_TAG);
-
-               
+            
+            
         }
     }
     
@@ -612,10 +612,10 @@ Return Value:
             // If volume is active, flush it's logs
             if (NarData.VolumeRegionBuffer[i].VolFileID != NAR_KERNEL_INVALID_FILE_ID) {
                 nar_log_thread_params* tp = (nar_log_thread_params*)ExAllocatePoolWithTag(NonPagedPool, sizeof(nar_log_thread_params), NAR_TAG);
-
+                
                 if (tp != NULL) {
                     memset(tp, 0, sizeof(*tp));
-
+                    
                     tp->Data                = NAR_MB_DATA(NarData.VolumeRegionBuffer[i].MemoryBuffer);
                     tp->DataLen             = NAR_MB_DATA_USED(NarData.VolumeRegionBuffer[i].MemoryBuffer);
                     tp->FileID              = NarData.VolumeRegionBuffer[i].VolFileID;
@@ -634,13 +634,13 @@ Return Value:
                     
                     NAR_INIT_MEMORYBUFFER(NarData.VolumeRegionBuffer[i].MemoryBuffer);
                     ExFreePoolWithTag(tp, NAR_TAG);
-
+                    
                 }
                 else {
                     DbgPrint("Unable to allocate memory to flush logs at filterunload routine\n");
                 }
             }
-
+            
             
             // check if there are still logs that need to be flushed
             
@@ -666,7 +666,7 @@ Return Value:
     }
     
     ExFreePoolWithTag(NarData.FileHandles, NAR_TAG);
-
+    
     
     return STATUS_SUCCESS;
 }
@@ -840,13 +840,13 @@ Return Value:
                                 NarWriteLogsToFile(tp, 0);
                                 
                                 li->CurrentSize = tp->FileSize;
-                                li->ErrorOccured = NT_SUCCESS(tp->InternalError);
-
+                                li->ErrorOccured = !NT_SUCCESS(tp->InternalError);
+                                
                                 NAR_INIT_MEMORYBUFFER(NarData.VolumeRegionBuffer[i].MemoryBuffer);
-
+                                
                                 ExFreePoolWithTag(tp, NAR_TAG);
                             }
-
+                            
                             
                             ExReleaseFastMutex(&NarData.VolumeRegionBuffer[i].FastMutex);
                             break;
@@ -920,7 +920,7 @@ Return Value:
                                     NarData.VolumeRegionBuffer[i].Letter = Command->Letter;
                                     NarData.VolumeRegionBuffer[i].VolFileID = NAR_KERNEL_GEN_FILE_ID(Command->Letter);
                                     DbgPrint("Generated file ID %u", NarData.VolumeRegionBuffer[i].VolFileID);
-
+                                    
                                     ExReleaseFastMutex(&NarData.VolumeRegionBuffer[i].FastMutex);
                                     break;
                                     
@@ -969,6 +969,24 @@ Return Value:
                     ExAcquireFastMutex(&NarData.VolumeRegionBuffer[i].FastMutex);
                     
                     if (RtlCompareMemory(Command->VolumeGUIDStr, NarData.VolumeRegionBuffer[i].Reserved, NAR_GUID_STR_SIZE) == NAR_GUID_STR_SIZE) {
+                        
+                        
+                        // Reset file pointer to beginning of the file
+                        nar_log_thread_params* tp = (nar_log_thread_params*)ExAllocatePoolWithTag(NonPagedPool, sizeof(nar_log_thread_params), NAR_TAG);
+                        if (tp != NULL) {
+                            memset(tp, 0, sizeof(*tp));
+                            tp->Data    = NULL;
+                            tp->DataLen = 0;
+                            tp->FileID  = NarData.VolumeRegionBuffer[i].VolFileID;
+                            tp->ShouldFlush = FALSE;
+                            tp->ShouldQueryFileSize = FALSE;
+                            
+                            NarWriteLogsToFile(tp, 0);
+                            
+                            NAR_INIT_MEMORYBUFFER(NarData.VolumeRegionBuffer[i].MemoryBuffer);
+                            
+                            ExFreePoolWithTag(tp, NAR_TAG);
+                        }
                         
                         // found the volume
                         FoundVolume = TRUE;
@@ -1072,37 +1090,36 @@ return : Returns lastly failed function's return value.
 */
 inline NTSTATUS
 NarWriteLogsToFile(nar_log_thread_params* tp, PETHREAD *OutTObject) {
-
+    
     HANDLE Thread = 0;
     PETHREAD ThreadObject = 0;
     NTSTATUS status = PsCreateSystemThread(&Thread, THREAD_ALL_ACCESS, 0, 0, 0, NarLogThread, tp);
     if (NT_SUCCESS(status)) {
-
+        
         status = ObReferenceObjectByHandle(Thread,
-            THREAD_ALL_ACCESS,
-            NULL,
-            KernelMode,
-            &ThreadObject,
-            NULL);
-
+                                           THREAD_ALL_ACCESS,
+                                           NULL,
+                                           KernelMode,
+                                           &ThreadObject,
+                                           NULL);
+        
         if (NT_SUCCESS(status)) {
             ZwClose(Thread);
         }
         else {
             DbgPrint("Obj reference failed with code %X", status);
         }
-
+        
     }
     else {
         DbgPrint("failed to create thread, code %X\n", status);
     }
-
+    
     if (NT_SUCCESS(status)) {
         if (OutTObject == NULL) {
             status = KeWaitForSingleObject(ThreadObject, Executive, KernelMode, FALSE, 0);
             if (NT_SUCCESS(status)) {
                 ObDereferenceObject(ThreadObject);
-                //DbgPrint("Successfully logged");
             }
             else {
                 DbgPrint("Failed to wait termination of the thread, code : %X\n", status);
@@ -1112,9 +1129,9 @@ NarWriteLogsToFile(nar_log_thread_params* tp, PETHREAD *OutTObject) {
             *OutTObject = ThreadObject;
         }
     }
-
+    
     return status;
-
+    
 }
 
 
@@ -1123,36 +1140,54 @@ NarWriteLogsToFile(nar_log_thread_params* tp, PETHREAD *OutTObject) {
 inline void
 NarLogThread(PVOID param) {
     
+    if(param ==0)return;
+    
     NTSTATUS status = 0; // SUCCESS
-
     nar_log_thread_params* tp = (nar_log_thread_params*)param;
+    
     if (tp->FileID >= NAR_KERNEL_MAX_FILE_ID || tp->FileID <= 0) {
-        DbgPrint("Passed file id higher than 30, %u\n", tp->FileID);
+        DbgPrint("Filed id is not in bounds, %u\n", tp->FileID);
         return;
     }
-    if (tp->DataLen > NAR_MEMORYBUFFER_SIZE) {
-        DbgPrint("Data len exceeds max buffer size %u\n", tp->DataLen);
-        return;
-    }
-
+    
     IO_STATUS_BLOCK iosb = { 0 };
     
-    if (tp->DataLen > 0) {
-        status = ZwWriteFile(NarData.FileHandles[tp->FileID], 0, 0, 0, &iosb, (tp->Data), tp->DataLen, 0, 0);
-        if (NT_SUCCESS(status)) {
-
+    if(tp->ShouldDelete){
+        
+        FILE_END_OF_FILE_INFORMATION eofinf = {0};
+        status = ZwSetInformationFile(NarData.FileHandles[tp->FileID], &iosb, &eofinf, sizeof(eofinf), FileEndOfFileInformation);
+        
+        if(NT_SUCCESS(status)){
+            
         }
-        else {
-            DbgPrint("couldnt write to file, err id %i\n", status);
+        else{
+            DbgPrint("File truncation failed with code %X", status);
+        }
+        
+        goto END;
+    } 
+    
+    if (tp->DataLen > 0 && tp->Data != NULL) {
+        if (tp->DataLen < NAR_MEMORYBUFFER_SIZE) {
+            status = ZwWriteFile(NarData.FileHandles[tp->FileID], 0, 0, 0, &iosb, (tp->Data), tp->DataLen, 0, 0);
+            if (NT_SUCCESS(status)) {
+                
+            }
+            else {
+                DbgPrint("couldnt write to file, err id %i\n", status);
+            }
+        }
+        else{
+            
         }
     }
-
+    
     if (NT_SUCCESS(status)) {
         if (tp->ShouldFlush == TRUE) {
             status = ZwFlushBuffersFile(NarData.FileHandles[tp->FileID], &iosb);
             DbgPrint("Flush status code %X, iosb status %X", status, iosb.Status);
         }
-
+        
         if (tp->ShouldQueryFileSize == TRUE) {
             FILE_STANDARD_INFORMATION standardInfo;
             status = NtQueryInformationFile(NarData.FileHandles[tp->FileID], &iosb, &standardInfo, sizeof(standardInfo), FileStandardInformation);
@@ -1165,6 +1200,7 @@ NarLogThread(PVOID param) {
         }
     }
     
+    END:
     return;
 }
 
@@ -1220,14 +1256,14 @@ Return Value:
     if (Data->Iopb->MajorFunction == IRP_MJ_SHUTDOWN) {
         
         for (int i = 0; i < NAR_MAX_VOLUME_COUNT; i++) {
-
+            
             ExAcquireFastMutex(&NarData.VolumeRegionBuffer[i].FastMutex);
-
+            
             if (NarData.VolumeRegionBuffer[i].VolFileID != NAR_KERNEL_INVALID_FILE_ID) {
                 
                 if (NAR_MB_DATA_USED(NarData.VolumeRegionBuffer[i].MemoryBuffer) > 0) {
                     nar_log_thread_params* tp = (nar_log_thread_params*)ExAllocatePoolWithTag(NonPagedPool, sizeof(nar_log_thread_params), NAR_TAG);
-
+                    
                     if (tp != NULL) {
                         
                         memset(tp, 0, sizeof(*tp));
@@ -1236,7 +1272,7 @@ Return Value:
                         tp->FileID              = NarData.VolumeRegionBuffer[i].VolFileID;
                         tp->ShouldFlush         = TRUE;
                         tp->ShouldQueryFileSize = FALSE;
-
+                        
                         status = NarWriteLogsToFile(tp, 0);
                         if (NT_SUCCESS(status)) {
                             
@@ -1244,21 +1280,21 @@ Return Value:
                         else {
                             
                         }
-
+                        
                         NAR_INIT_MEMORYBUFFER(NarData.VolumeRegionBuffer[i].MemoryBuffer);
                         ExFreePoolWithTag(tp, NAR_TAG);
-
+                        
                     }
                     else {
                         DbgPrint("Unable to allocate memory to flush logs at preoperation routine\n");
                     }
                 }
             }
-
+            
             ExReleaseFastMutex(&NarData.VolumeRegionBuffer[i].FastMutex);
-
+            
         }
-
+        
         return FLT_PREOP_SUCCESS_NO_CALLBACK;
     }
     
@@ -1266,11 +1302,11 @@ Return Value:
     if ((Data->Iopb->TargetFileObject->Flags & FO_TEMPORARY_FILE) == FO_TEMPORARY_FILE) {
         return  FLT_PREOP_SUCCESS_NO_CALLBACK;
     }
-
+    
     if ((Data->Iopb->TargetFileObject->Flags & FO_DELETE_ON_CLOSE) == FO_DELETE_ON_CLOSE) {
         return  FLT_PREOP_SUCCESS_NO_CALLBACK;
     }
-
+    
     ULONG LenReturned = 0;
     // skip directories
     FILE_STANDARD_INFORMATION fsi = { 0 };
@@ -1283,7 +1319,7 @@ Return Value:
     else {
         DbgPrint("Failed to query information file\n");
     }
-
+    
     
     PFLT_FILE_NAME_INFORMATION nameInfo = NULL;
     
@@ -1309,39 +1345,6 @@ Return Value:
             }
             
             RtlInitEmptyUnicodeString(&UniStr, UnicodeStrBuffer, NAR_LOOKASIDE_SIZE);
-            
-            RtlUnicodeStringPrintf(&UniStr, L"\\AppData\\Local\\Temp");
-            if (NarSubMemoryExists(nameInfo->Name.Buffer, UniStr.Buffer, nameInfo->Name.Length, UniStr.Length)) {
-                goto NAR_PREOP_FAILED_END;
-            }
-            
-            RtlUnicodeStringPrintf(&UniStr, L"\\AppData\\Local\\Microsoft\\Windows\\Temporary Internet Files");
-            if (NarSubMemoryExists(nameInfo->Name.Buffer, UniStr.Buffer, nameInfo->Name.Length, UniStr.Length)) {
-                goto NAR_PREOP_FAILED_END;
-            }
-            
-            RtlUnicodeStringPrintf(&UniStr, L"\\AppData\\Local\\Google\\Chrome\\User Data\\Default\\Cache");
-            if (NarSubMemoryExists(nameInfo->Name.Buffer, UniStr.Buffer, nameInfo->Name.Length, UniStr.Length)) {
-                goto NAR_PREOP_FAILED_END;
-            }
-            
-            RtlUnicodeStringPrintf(&UniStr, L"\\AppData\\Local\\Opera Software");
-            if (NarSubMemoryExists(nameInfo->Name.Buffer, UniStr.Buffer, nameInfo->Name.Length, UniStr.Length)) {
-                goto NAR_PREOP_FAILED_END;
-            }
-            
-            RtlUnicodeStringPrintf(&UniStr, L"\\AppData\\Local\\Mozilla\\Firefox\\Profiles");
-            if (NarSubMemoryExists(nameInfo->Name.Buffer, UniStr.Buffer, nameInfo->Name.Length, UniStr.Length)) {
-                goto NAR_PREOP_FAILED_END;
-            }
-            
-            RtlUnicodeStringPrintf(&UniStr, L"\\AppData\\Local\\Microsoft\\Windows\\INetCache\\IE");
-            if (NarSubMemoryExists(nameInfo->Name.Buffer, UniStr.Buffer, nameInfo->Name.Length, UniStr.Length)) {
-                goto NAR_PREOP_FAILED_END;
-            }
-            
-            
-            
             
             
             //Suffix area
@@ -1381,6 +1384,44 @@ Return Value:
             if (RtlSuffixUnicodeString(&UniStr, &nameInfo->Name, FALSE)) {
                 goto NAR_PREOP_FAILED_END;
             }
+            
+            
+            
+            
+            RtlUnicodeStringPrintf(&UniStr, L"\\AppData\\Local\\Temp");
+            if (NarSubMemoryExists(nameInfo->Name.Buffer, UniStr.Buffer, nameInfo->Name.Length, UniStr.Length)) {
+                goto NAR_PREOP_FAILED_END;
+            }
+            
+            RtlUnicodeStringPrintf(&UniStr, L"\\AppData\\Local\\Microsoft\\Windows\\Temporary Internet Files");
+            if (NarSubMemoryExists(nameInfo->Name.Buffer, UniStr.Buffer, nameInfo->Name.Length, UniStr.Length)) {
+                goto NAR_PREOP_FAILED_END;
+            }
+            
+            RtlUnicodeStringPrintf(&UniStr, L"\\AppData\\Local\\Google\\Chrome\\User Data\\Default\\Cache");
+            if (NarSubMemoryExists(nameInfo->Name.Buffer, UniStr.Buffer, nameInfo->Name.Length, UniStr.Length)) {
+                goto NAR_PREOP_FAILED_END;
+            }
+            
+            RtlUnicodeStringPrintf(&UniStr, L"\\AppData\\Local\\Opera Software");
+            if (NarSubMemoryExists(nameInfo->Name.Buffer, UniStr.Buffer, nameInfo->Name.Length, UniStr.Length)) {
+                goto NAR_PREOP_FAILED_END;
+            }
+            
+            RtlUnicodeStringPrintf(&UniStr, L"\\AppData\\Local\\Mozilla\\Firefox\\Profiles");
+            if (NarSubMemoryExists(nameInfo->Name.Buffer, UniStr.Buffer, nameInfo->Name.Length, UniStr.Length)) {
+                goto NAR_PREOP_FAILED_END;
+            }
+            
+            RtlUnicodeStringPrintf(&UniStr, L"\\AppData\\Local\\Microsoft\\Windows\\INetCache\\IE");
+            if (NarSubMemoryExists(nameInfo->Name.Buffer, UniStr.Buffer, nameInfo->Name.Length, UniStr.Length)) {
+                goto NAR_PREOP_FAILED_END;
+            }
+            
+            
+            
+            
+            
             
             
 #if 1
@@ -1618,10 +1659,10 @@ Return Value:
                                     tp->FileID = NarData.VolumeRegionBuffer[i].VolFileID;
                                     tp->ShouldFlush = FALSE;
                                     tp->ShouldQueryFileSize = FALSE;
-
+                                    
                                     NarWriteLogsToFile(tp, 0);
                                     NAR_INIT_MEMORYBUFFER(NarData.VolumeRegionBuffer[i].MemoryBuffer);
-
+                                    
                                     ExFreePoolWithTag(tp, NAR_TAG);
                                 }
                                 else {
