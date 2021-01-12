@@ -22,7 +22,8 @@ namespace AESLicenseKeyPoC
     /// </summary>
     public partial class MainWindow : Window
     {
-        public string key = "jXn2r5u8x/A?D(G+";
+        public string key = "D*G-KaPdSgVkYp3s6v8y/B?E(H+MbQeT";
+
         public MainWindow()
         {
             InitializeComponent();
@@ -38,7 +39,8 @@ namespace AESLicenseKeyPoC
 
         public static string DecryptString(string key, string cipherText)
         {
-            byte[] iv = new byte[16];
+            //byte[] iv = new byte[16];
+            var iv = Convert.FromBase64String("EEXkANPr+5R9q+XyG7jR5w==");
             byte[] buffer = Convert.FromBase64String(cipherText);
 
             using (Aes aes = Aes.Create())
@@ -62,14 +64,14 @@ namespace AESLicenseKeyPoC
 
         public static string EncryptString(string key, string plainText)
         {
-            byte[] iv = new byte[16];
+            //byte[] iv = new byte[16];
+            var iv = Convert.FromBase64String("EEXkANPr+5R9q+XyG7jR5w==");
             byte[] array;
 
             using (Aes aes = Aes.Create())
             {
                 aes.Key = Encoding.UTF8.GetBytes(key);
                 aes.IV = iv;
-
                 ICryptoTransform encryptor = aes.CreateEncryptor(aes.Key, aes.IV);
 
                 using (MemoryStream memoryStream = new MemoryStream())
