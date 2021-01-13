@@ -20,18 +20,33 @@ namespace LicanseKeyAndDemo
     /// </summary>
     public partial class LicenseControllerWindow : Window
     {
-        // 0 demo - 1 lisanslı
-        public LicenseControllerWindow()
+        // 1505 demo - 2606 lisanslı
+        // windowType false standart, true lisans
+        private bool _windowType;
+
+        public LicenseControllerWindow(bool windowType)
         {
             InitializeComponent();
+
+            _windowType = windowType;
+
+            if (windowType)
+            {
+                rbDemo.Visibility = Visibility.Collapsed;
+                rbLicense.IsChecked = true;
+            }
         }
 
         private void save_Click(object sender, RoutedEventArgs e)
         {
-            var key = Registry.CurrentUser.OpenSubKey("SOFTWARE\\NarDiskBackup");
-            if (key == null)
+            var key = Registry.CurrentUser.OpenSubKey("SOFTWARE\\NarDiskBackup", true);
+
+            if (!_windowType)
             {
-                key = Registry.CurrentUser.CreateSubKey("SOFTWARE\\NarDiskBackup");
+                if (key == null)
+                {
+                    key = Registry.CurrentUser.CreateSubKey("SOFTWARE\\NarDiskBackup");
+                }
             }
 
             if (rbDemo.IsChecked == true)
@@ -39,7 +54,7 @@ namespace LicanseKeyAndDemo
                 key.SetValue("UploadDate", DateTime.Now);
                 key.SetValue("ExpireDate", DateTime.Now + TimeSpan.FromDays(30));
                 key.SetValue("DaysLeft", 30);
-                key.SetValue("Type", 0);
+                key.SetValue("Type", 1505);
             }
             else // lisans seçili
             {
@@ -48,7 +63,7 @@ namespace LicanseKeyAndDemo
                 key.SetValue("UploadDate", DateTime.Now);
                 key.SetValue("ExpireDate", "");
                 key.SetValue("DaysLeft", "");
-                key.SetValue("Type", 1);
+                key.SetValue("Type", 2606);
             }
             Close();
         }

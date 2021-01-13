@@ -32,31 +32,64 @@ namespace LicenseKeyAndDemo
             {
                 Console.WriteLine("Dosya yok");
 
-                LicenseControllerWindow licenseControllerWindow = new LicenseControllerWindow();
+                LicenseControllerWindow licenseControllerWindow = new LicenseControllerWindow(false);
                 licenseControllerWindow.ShowDialog();
             }
             else
             {
                 Console.WriteLine("Dosya var");
 
-                if (key.GetValue("Type").ToString() == "0") // gün kontrolleri yapılacak
+                if (key.GetValue("Type").ToString() == "1505") // gün kontrolleri yapılacak
                 {
-                    if (Convert.ToDateTime(key.GetValue("UploadDate").ToString()) <= DateTime.Now && Convert.ToDateTime(key.GetValue("ExpireDate").ToString()) >= DateTime.Now)
+                    try
                     {
-                        // uygulama çalışabilir
+                        if (Convert.ToDateTime(key.GetValue("UploadDate").ToString()) <= DateTime.Now && Convert.ToDateTime(key.GetValue("ExpireDate").ToString()) >= DateTime.Now)
+                        {
+                            // uygulama çalışabilir
+                        }
+                        else // deneme süresi doldu
+                        {
+                            LicenseControllerWindow licenseControllerWindow = new LicenseControllerWindow(true);
+                            licenseControllerWindow.ShowDialog(); // kontrol yolla demo seçeneğini kaldır
+                        }
                     }
-                    else // deneme süresi doldu
+                    catch (Exception ex)
                     {
-                        LicenseControllerWindow licenseControllerWindow = new LicenseControllerWindow();
-                        licenseControllerWindow.ShowDialog(); // kontrol yolla demo seçeneğini kaldır
+                        // aramız bozuk
+                        MessageBox.Show("Dosyalar bozulmuş\n" + ex);
+                        FixBrokenRegistry();
                     }
                 }
-                else // lisanslı
+                else if (key.GetValue("Type").ToString() == "2606") // lisanslı
                 {
                     // uygulama çalışabilir
                 }
+                else
+                {
+                    // aramız bozuk
+                    FixBrokenRegistry();
+                }
             }
 
+        }
+
+        private void FixBrokenRegistry()
+        {
+            var key = Registry.CurrentUser.OpenSubKey("SOFTWARE\\NarDiskBackup", true);
+
+            key.SetValue("UploadDate", DateTime.Now);
+            key.SetValue("ExpireDate", DateTime.Now - TimeSpan.FromDays(1));
+            key.SetValue("DaysLeft", 0);
+            key.SetValue("Type", 1505);
+
+            LicenseControllerWindow licenseControllerWindow = new LicenseControllerWindow(true);
+            licenseControllerWindow.ShowDialog(); // kontrol yolla demo seçeneğini kaldır
+        }
+
+        private void btnValidateLicense_Click(object sender, RoutedEventArgs e)
+        {
+            LicenseControllerWindow licenseControllerWindow = new LicenseControllerWindow(true);
+            licenseControllerWindow.ShowDialog();
         }
     }
 

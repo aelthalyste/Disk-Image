@@ -8,5 +8,6 @@
         Title="MainWindow" Height="450" Width="800">
     <Grid>
         <Label>ANA SAYFA</Label>
+        <Button Content="Lisans Anahtarı Gir" Height="25" Width="150" Name="btnValidateLicense" Click="btnValidateLicense_Click"/>
     </Grid>
 </Window>
