@@ -980,6 +980,7 @@ Return Value:
                             tp->FileID  = NarData.VolumeRegionBuffer[i].VolFileID;
                             tp->ShouldFlush = FALSE;
                             tp->ShouldQueryFileSize = FALSE;
+                            tp->ShouldDelete = TRUE;
                             
                             NarWriteLogsToFile(tp, 0);
                             
