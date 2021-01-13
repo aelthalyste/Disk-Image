@@ -167,6 +167,9 @@
     <Compile Include="FileExplorerWindow.xaml.cs">
       <DependentUpon>FileExplorerWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="LicenseControllerWindow.xaml.cs">
+      <DependentUpon>LicenseControllerWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Pages\DiskInfoPage.xaml.cs">
       <DependentUpon>DiskInfoPage.xaml</DependentUpon>
     </Compile>
@@ -194,6 +197,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="FileExplorerWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="LicenseControllerWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

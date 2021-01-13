@@ -268,6 +268,7 @@
     <system:String x:Key="loading...">Loading...</system:String>
     <system:String x:Key="healthy">Healthy</system:String>
     <system:String x:Key="unhealthy">Unhealthy</system:String>
+    <system:String x:Key="licenseController">Licence Controller</system:String>
     <!--MessageBox Info-->
     <system:String x:Key="notNullMB">Please do not leave the relevant fields blank.</system:String>
     <system:String x:Key="validateDirectoryMB">Please enter a valid directory.</system:String>
@@ -297,5 +298,6 @@
     <system:String x:Key="deleteBackupPieceMB">Deleting the backup file may affect other backups. Do you confirm?</system:String>
     <system:String x:Key="deleteTaskPieceMB">Data will be deleted and you will have tasks affected. Do you confirm?</system:String>
     <system:String x:Key="closeServiceErrorMB">The service appears to be down, please restart the service and try again.</system:String>
+    <system:String x:Key="LicenseKeyFailMB">Invalid license key.</system:String>
 
 </ResourceDictionary>

@@ -7,6 +7,7 @@ using DiskBackup.Entities.Concrete;
 using DiskBackup.TaskScheduler;
 using DiskBackup.TaskScheduler.Jobs;
 using DiskBackupWpfGUI.Utils;
+using Microsoft.Win32;
 using Serilog;
 using System;
 using System.Collections.Generic;
@@ -149,6 +150,8 @@ namespace DiskBackupWpfGUI
                 _logger.Error(e, "Disk bilgileri getirilemedi!");
             }
 
+            ValidateLicense();
+
             Initilaze();
 
             /*
@@ -161,6 +164,94 @@ namespace DiskBackupWpfGUI
             this.Closing += (sender, e) => _cancellationTokenSource.Cancel();
             Console.WriteLine("CTOR SON: " + DateTime.Now);
         }
+
+        #region Lisans Kontrolleri
+
+        private void ValidateLicense()
+        {
+            var key = Registry.CurrentUser.OpenSubKey("SOFTWARE\\NarDiskBackup");
+
+            if (key == null)
+            {
+                Console.WriteLine("Dosya yok");
+                LicenseControllerWindow licenseControllerWindow = _scope.Resolve<LicenseControllerWindow>(new NamedParameter("windowType", false));
+                licenseControllerWindow.ShowDialog();
+                key = Registry.CurrentUser.OpenSubKey("SOFTWARE\\NarDiskBackup");
+
+                if (!licenseControllerWindow._validate)
+                {
+                    Close();
+                }
+                else
+                {
+                    if (key.GetValue("Type").ToString() == "1505")
+                    {
+                        var result = Convert.ToDateTime(key.GetValue("ExpireDate").ToString()) - DateTime.Now;
+                        // lblDemoDaysLeft.Content = result.Days; -------- gün yazımı
+                    }
+                }
+            }
+            else // dosya var
+            {
+                Console.WriteLine("Dosya var");
+
+                if (key.GetValue("Type").ToString() == "1505") // gün kontrolleri yapılacak
+                {
+                    try
+                    {
+                        if (Convert.ToDateTime(key.GetValue("UploadDate").ToString()) <= DateTime.Now &&
+                            Convert.ToDateTime(key.GetValue("ExpireDate").ToString()) >= DateTime.Now &&
+                            Convert.ToDateTime(key.GetValue("LastDate").ToString()) <= DateTime.Now)
+                        {
+                            // uygulama çalışabilir
+                            var result = Convert.ToDateTime(key.GetValue("ExpireDate").ToString()) - DateTime.Now;
+                            // lblDemoDaysLeft.Content = result.Days; -------- gün yazımı
+
+                            //servise koyulacak
+                            key = Registry.CurrentUser.OpenSubKey("SOFTWARE\\NarDiskBackup", true);
+                            key.SetValue("LastDate", DateTime.Now);
+                        }
+                        else // deneme süresi doldu
+                        {
+                            FixBrokenRegistry();
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show("Dosyalar bozulmuş\n" + ex);
+                        FixBrokenRegistry(); // registry ile oynanmış
+                    }
+                }
+                else if (key.GetValue("Type").ToString() == "2606") // lisanslı
+                {
+                    // uygulama çalışabilir
+                    //btnValidateLicense.Visibility = Visibility.Collapsed; -------------------- button aktifliği
+                }
+                else
+                {
+                    FixBrokenRegistry(); // registry ile oynanmış
+                }
+            }
+        }
+
+        private void FixBrokenRegistry()
+        {
+            var key = Registry.CurrentUser.OpenSubKey("SOFTWARE\\NarDiskBackup", true);
+
+            key.SetValue("UploadDate", DateTime.Now);
+            key.SetValue("ExpireDate", DateTime.Now - TimeSpan.FromDays(1));
+            key.SetValue("DaysLeft", 0);
+            key.SetValue("Type", 1505);
+
+            LicenseControllerWindow licenseControllerWindow = _scope.Resolve<LicenseControllerWindow>(new NamedParameter("windowType", true));
+            licenseControllerWindow.ShowDialog(); // kontrol yolla demo seçeneğini kaldır
+            if (!licenseControllerWindow._validate)
+            {
+                Close();
+            }
+        }
+
+        #endregion
 
 
         #region Async Listviewleri Doldurma Fonksiyonları
