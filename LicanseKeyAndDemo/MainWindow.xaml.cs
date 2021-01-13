@@ -63,6 +63,7 @@ namespace LicenseKeyAndDemo
                 else if (key.GetValue("Type").ToString() == "2606") // lisanslı
                 {
                     // uygulama çalışabilir
+                    btnValidateLicense.Visibility = Visibility.Collapsed;
                 }
                 else
                 {

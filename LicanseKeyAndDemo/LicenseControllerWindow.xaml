@@ -11,7 +11,7 @@
             <RadioButton Name="rbDemo" Content="Demo" GroupName="licenseGroup" IsChecked="True"/>
             <StackPanel Margin="0,10">
                 <RadioButton Name="rbLicense" Content="Key" GroupName="licenseGroup"/>
-                <TextBox Margin="10"/>
+                <TextBox Name="txtLicenseKey" Margin="10"/>
             </StackPanel>
             <Button Name="save" Content="Kaydet" Width="100" Click="save_Click"/>
         </StackPanel>

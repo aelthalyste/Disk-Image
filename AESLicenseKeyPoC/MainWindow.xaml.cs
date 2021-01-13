@@ -37,58 +37,69 @@ namespace AESLicenseKeyPoC
             txtDecyrpt.Text = DecryptString(key, encryptedString);
         }
 
-        public static string DecryptString(string key, string cipherText)
+        public string DecryptString(string key, string cipherText)
         {
-            //byte[] iv = new byte[16];
-            var iv = Convert.FromBase64String("EEXkANPr+5R9q+XyG7jR5w==");
-            byte[] buffer = Convert.FromBase64String(cipherText);
-
-            using (Aes aes = Aes.Create())
+            try
             {
-                aes.Key = Encoding.UTF8.GetBytes(key);
-                aes.IV = iv;
-                ICryptoTransform decryptor = aes.CreateDecryptor(aes.Key, aes.IV);
+                var iv = Convert.FromBase64String("EEXkANPr+5R9q+XyG7jR5w==");
+                byte[] buffer = Convert.FromBase64String(cipherText);
 
-                using (MemoryStream memoryStream = new MemoryStream(buffer))
+                using (Aes aes = Aes.Create())
                 {
-                    using (CryptoStream cryptoStream = new CryptoStream((Stream)memoryStream, decryptor, CryptoStreamMode.Read))
+                    aes.Key = Encoding.UTF8.GetBytes(key);
+                    aes.IV = iv;
+                    ICryptoTransform decryptor = aes.CreateDecryptor(aes.Key, aes.IV);
+
+                    using (MemoryStream memoryStream = new MemoryStream(buffer))
                     {
-                        using (StreamReader streamReader = new StreamReader((Stream)cryptoStream))
+                        using (CryptoStream cryptoStream = new CryptoStream((Stream)memoryStream, decryptor, CryptoStreamMode.Read))
                         {
-                            return streamReader.ReadToEnd();
+                            using (StreamReader streamReader = new StreamReader((Stream)cryptoStream))
+                            {
+                                return streamReader.ReadToEnd();
+                            }
                         }
                     }
                 }
+            }
+            catch (Exception)
+            {
+                return "fail";
             }
         }
 
-        public static string EncryptString(string key, string plainText)
+        public string EncryptString(string key, string plainText)
         {
-            //byte[] iv = new byte[16];
-            var iv = Convert.FromBase64String("EEXkANPr+5R9q+XyG7jR5w==");
-            byte[] array;
-
-            using (Aes aes = Aes.Create())
+            try
             {
-                aes.Key = Encoding.UTF8.GetBytes(key);
-                aes.IV = iv;
-                ICryptoTransform encryptor = aes.CreateEncryptor(aes.Key, aes.IV);
+                var iv = Convert.FromBase64String("EEXkANPr+5R9q+XyG7jR5w==");
+                byte[] array;
 
-                using (MemoryStream memoryStream = new MemoryStream())
+                using (Aes aes = Aes.Create())
                 {
-                    using (CryptoStream cryptoStream = new CryptoStream((Stream)memoryStream, encryptor, CryptoStreamMode.Write))
-                    {
-                        using (StreamWriter streamWriter = new StreamWriter((Stream)cryptoStream))
-                        {
-                            streamWriter.Write(plainText);
-                        }
+                    aes.Key = Encoding.UTF8.GetBytes(key);
+                    aes.IV = iv;
+                    ICryptoTransform encryptor = aes.CreateEncryptor(aes.Key, aes.IV);
 
-                        array = memoryStream.ToArray();
+                    using (MemoryStream memoryStream = new MemoryStream())
+                    {
+                        using (CryptoStream cryptoStream = new CryptoStream((Stream)memoryStream, encryptor, CryptoStreamMode.Write))
+                        {
+                            using (StreamWriter streamWriter = new StreamWriter((Stream)cryptoStream))
+                            {
+                                streamWriter.Write(plainText);
+                            }
+
+                            array = memoryStream.ToArray();
+                            return Convert.ToBase64String(array);
+                        }
                     }
                 }
             }
-
-            return Convert.ToBase64String(array);
+            catch (Exception)
+            {
+                return "fail";
+            }
         }
 
     }

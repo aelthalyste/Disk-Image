@@ -1,7 +1,9 @@
 ﻿using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
@@ -55,17 +57,55 @@ namespace LicanseKeyAndDemo
                 key.SetValue("ExpireDate", DateTime.Now + TimeSpan.FromDays(30));
                 key.SetValue("DaysLeft", 30);
                 key.SetValue("Type", 1505);
+                Close();
             }
             else // lisans seçili
             {
-                // KEYE GEÇİNCE DÜŞÜNÜLECEK
-                // key kontrollerinden sonra bu gerçekleştirilecek
-                key.SetValue("UploadDate", DateTime.Now);
-                key.SetValue("ExpireDate", "");
-                key.SetValue("DaysLeft", "");
-                key.SetValue("Type", 2606);
+                if (DecryptLicenseKey("D*G-KaPdSgVkYp3s6v8y/B?E(H+MbQeT", txtLicenseKey.Text).Equals("fail"))
+                {
+                    MessageBox.Show("Geçersiz lisans anahtarı!");
+                }
+                else
+                {
+                    key.SetValue("UploadDate", DateTime.Now);
+                    key.SetValue("ExpireDate", "");
+                    key.SetValue("DaysLeft", "");
+                    key.SetValue("Type", 2606);
+                    key.SetValue("License", txtLicenseKey.Text);
+                    Close();
+                }
             }
-            Close();
+        }
+
+        private string DecryptLicenseKey(string key, string cipherLicenseKey)
+        {
+            try
+            {
+                var iv = Convert.FromBase64String("EEXkANPr+5R9q+XyG7jR5w==");
+                byte[] buffer = Convert.FromBase64String(cipherLicenseKey);
+
+                using (Aes aes = Aes.Create())
+                {
+                    aes.Key = Encoding.UTF8.GetBytes(key);
+                    aes.IV = iv;
+                    ICryptoTransform decryptor = aes.CreateDecryptor(aes.Key, aes.IV);
+
+                    using (MemoryStream memoryStream = new MemoryStream(buffer))
+                    {
+                        using (CryptoStream cryptoStream = new CryptoStream((Stream)memoryStream, decryptor, CryptoStreamMode.Read))
+                        {
+                            using (StreamReader streamReader = new StreamReader((Stream)cryptoStream))
+                            {
+                                return streamReader.ReadToEnd();
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                return "fail";
+            }
         }
     }
 }
