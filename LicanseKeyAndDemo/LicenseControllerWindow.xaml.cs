@@ -25,6 +25,7 @@ namespace LicanseKeyAndDemo
         // 1505 demo - 2606 lisanslı
         // windowType false standart, true lisans
         private bool _windowType;
+        public bool _validate = false;
 
         public LicenseControllerWindow(bool windowType)
         {
@@ -57,6 +58,7 @@ namespace LicanseKeyAndDemo
                 key.SetValue("ExpireDate", DateTime.Now + TimeSpan.FromDays(30));
                 key.SetValue("DaysLeft", 30);
                 key.SetValue("Type", 1505);
+                _validate = true;
                 Close();
             }
             else // lisans seçili
@@ -72,6 +74,7 @@ namespace LicanseKeyAndDemo
                     key.SetValue("DaysLeft", "");
                     key.SetValue("Type", 2606);
                     key.SetValue("License", txtLicenseKey.Text);
+                    _validate = true;
                     Close();
                 }
             }
@@ -79,6 +82,9 @@ namespace LicanseKeyAndDemo
 
         private string DecryptLicenseKey(string key, string cipherLicenseKey)
         {
+            if (cipherLicenseKey == null || cipherLicenseKey == "" || cipherLicenseKey.Contains(' '))
+                return "fail";
+
             try
             {
                 var iv = Convert.FromBase64String("EEXkANPr+5R9q+XyG7jR5w==");

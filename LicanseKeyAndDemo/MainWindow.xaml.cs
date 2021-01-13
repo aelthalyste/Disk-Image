@@ -30,15 +30,15 @@ namespace LicenseKeyAndDemo
 
             if (key == null)
             {
-                Console.WriteLine("Dosya yok");
-
                 LicenseControllerWindow licenseControllerWindow = new LicenseControllerWindow(false);
                 licenseControllerWindow.ShowDialog();
+                if (!licenseControllerWindow._validate)
+                {
+                    Close();
+                }
             }
-            else
+            else // dosya var
             {
-                Console.WriteLine("Dosya var");
-
                 if (key.GetValue("Type").ToString() == "1505") // gün kontrolleri yapılacak
                 {
                     try
@@ -51,13 +51,16 @@ namespace LicenseKeyAndDemo
                         {
                             LicenseControllerWindow licenseControllerWindow = new LicenseControllerWindow(true);
                             licenseControllerWindow.ShowDialog(); // kontrol yolla demo seçeneğini kaldır
+                            if (!licenseControllerWindow._validate)
+                            {
+                                Close();
+                            }
                         }
                     }
                     catch (Exception ex)
                     {
-                        // aramız bozuk
                         MessageBox.Show("Dosyalar bozulmuş\n" + ex);
-                        FixBrokenRegistry();
+                        FixBrokenRegistry(); // registry ile oynanmış
                     }
                 }
                 else if (key.GetValue("Type").ToString() == "2606") // lisanslı
@@ -67,8 +70,7 @@ namespace LicenseKeyAndDemo
                 }
                 else
                 {
-                    // aramız bozuk
-                    FixBrokenRegistry();
+                    FixBrokenRegistry(); // registry ile oynanmış
                 }
             }
 
@@ -85,12 +87,20 @@ namespace LicenseKeyAndDemo
 
             LicenseControllerWindow licenseControllerWindow = new LicenseControllerWindow(true);
             licenseControllerWindow.ShowDialog(); // kontrol yolla demo seçeneğini kaldır
+            if (!licenseControllerWindow._validate)
+            {
+                Close();
+            }
         }
 
         private void btnValidateLicense_Click(object sender, RoutedEventArgs e)
         {
             LicenseControllerWindow licenseControllerWindow = new LicenseControllerWindow(true);
             licenseControllerWindow.ShowDialog();
+            if (!licenseControllerWindow._validate)
+            {
+                Close();
+            }
         }
     }
 
