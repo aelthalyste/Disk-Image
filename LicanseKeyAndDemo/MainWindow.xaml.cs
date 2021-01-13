@@ -53,14 +53,21 @@ namespace LicenseKeyAndDemo
                 {
                     try
                     {
-                        if (Convert.ToDateTime(key.GetValue("UploadDate").ToString()) <= DateTime.Now && Convert.ToDateTime(key.GetValue("ExpireDate").ToString()) >= DateTime.Now)
+                        if (Convert.ToDateTime(key.GetValue("UploadDate").ToString()) <= DateTime.Now && 
+                            Convert.ToDateTime(key.GetValue("ExpireDate").ToString()) >= DateTime.Now && 
+                            Convert.ToDateTime(key.GetValue("LastDate").ToString()) <= DateTime.Now)
                         {
                             // uygulama çalışabilir
                             var result = Convert.ToDateTime(key.GetValue("ExpireDate").ToString()) - DateTime.Now;
                             lblDemoDaysLeft.Content = result.Days;
+
+                            //servise koyulacak
+                            key = Registry.CurrentUser.OpenSubKey("SOFTWARE\\NarDiskBackup", true);
+                            key.SetValue("LastDate", DateTime.Now);
                         }
                         else // deneme süresi doldu
                         {
+                            FixBrokenRegistry();
                             LicenseControllerWindow licenseControllerWindow = new LicenseControllerWindow(true);
                             licenseControllerWindow.ShowDialog(); // kontrol yolla demo seçeneğini kaldır
                             if (!licenseControllerWindow._validate)

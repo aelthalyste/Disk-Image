@@ -56,6 +56,7 @@ namespace LicanseKeyAndDemo
             {
                 key.SetValue("UploadDate", DateTime.Now);
                 key.SetValue("ExpireDate", DateTime.Now + TimeSpan.FromDays(31));
+                key.SetValue("LastDate", DateTime.Now);
                 key.SetValue("Type", 1505);
                 _validate = true;
                 Close();
