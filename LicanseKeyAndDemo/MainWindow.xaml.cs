@@ -32,9 +32,19 @@ namespace LicenseKeyAndDemo
             {
                 LicenseControllerWindow licenseControllerWindow = new LicenseControllerWindow(false);
                 licenseControllerWindow.ShowDialog();
+                key = Registry.CurrentUser.OpenSubKey("SOFTWARE\\NarDiskBackup");
+
                 if (!licenseControllerWindow._validate)
                 {
                     Close();
+                }
+                else
+                {
+                    if (key.GetValue("Type").ToString() == "1505")
+                    {
+                        var result = Convert.ToDateTime(key.GetValue("ExpireDate").ToString()) - DateTime.Now;
+                        lblDemoDaysLeft.Content = result.Days;
+                    }
                 }
             }
             else // dosya var
@@ -46,6 +56,8 @@ namespace LicenseKeyAndDemo
                         if (Convert.ToDateTime(key.GetValue("UploadDate").ToString()) <= DateTime.Now && Convert.ToDateTime(key.GetValue("ExpireDate").ToString()) >= DateTime.Now)
                         {
                             // uygulama çalışabilir
+                            var result = Convert.ToDateTime(key.GetValue("ExpireDate").ToString()) - DateTime.Now;
+                            lblDemoDaysLeft.Content = result.Days;
                         }
                         else // deneme süresi doldu
                         {

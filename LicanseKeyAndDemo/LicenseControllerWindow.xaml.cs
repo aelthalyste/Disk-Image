@@ -55,8 +55,7 @@ namespace LicanseKeyAndDemo
             if (rbDemo.IsChecked == true)
             {
                 key.SetValue("UploadDate", DateTime.Now);
-                key.SetValue("ExpireDate", DateTime.Now + TimeSpan.FromDays(30));
-                key.SetValue("DaysLeft", 30);
+                key.SetValue("ExpireDate", DateTime.Now + TimeSpan.FromDays(31));
                 key.SetValue("Type", 1505);
                 _validate = true;
                 Close();
@@ -71,7 +70,6 @@ namespace LicanseKeyAndDemo
                 {
                     key.SetValue("UploadDate", DateTime.Now);
                     key.SetValue("ExpireDate", "");
-                    key.SetValue("DaysLeft", "");
                     key.SetValue("Type", 2606);
                     key.SetValue("License", txtLicenseKey.Text);
                     _validate = true;
