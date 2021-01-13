@@ -592,7 +592,6 @@ RemoveDuplicates(region_chain** Metadatas,
 
 
 
-
 BOOLEAN
 CopyData(HANDLE S, HANDLE D, ULONGLONG Len) {
     BOOLEAN Return = TRUE;
@@ -1844,6 +1843,7 @@ GetVolumeID(PLOG_CONTEXT C, wchar_t Letter) {
 
 UINT32
 ReadStream(volume_backup_inf* VolInf, void* Buffer, unsigned int TotalSize) {
+    
     //TotalSize MUST be multiple of cluster size
     UINT32 Result = 0;
     BOOLEAN ErrorOccured = FALSE;
@@ -1979,7 +1979,7 @@ TerminateBackup(volume_backup_inf* V, BOOLEAN Succeeded) {
         //Termination of diff-inc backup
         printf("Termination of diff-inc backup\n");
         
-        if (Succeeded) {
+        if(Succeeded) {
             
             // NOTE(Batuhan):
             printf("Will save metadata to working directory, Version : %i\n", V->Version);
@@ -2024,7 +2024,6 @@ TerminateBackup(volume_backup_inf* V, BOOLEAN Succeeded) {
 }
 
 /*
-Type is optional, after first backup
 */
 BOOLEAN
 SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, DotNetStreamInf* SI) {
@@ -2529,7 +2528,7 @@ SetDiffRecords(HANDLE CommPort ,volume_backup_inf* V) {
         DisplayError(GetLastError());
     }
     
-    printf("logname : %S\n", logfilepath.c_str());
+    printf("Logname : %S\n", logfilepath.c_str());
     
     // NOTE (Batuhan): IMPORTANT, so if total log size exceeds 4GB, we cant backup succcessfully, since reading file larger than 4GB is 
     // problem by itself, one can do partially load file and continuously compress it via qsort & mergeregions. then final log size drastically
@@ -6302,12 +6301,11 @@ NarRestoreFileFromBackups(const wchar_t *RootDir, const wchar_t *FileName, const
     
     // NOTE(Batuhan): for each version, restore a part of the file that exists in that particular backup, skip version if none of the regions 
     // exists in the region. Be careful regions that are not existing in backup doesnt mean error, rather means file hasnt changed in that backup.
-    for (
-         int VersionID = FileStack.StartingVersion;
+    for (int VersionID = FileStack.StartingVersion;
          VersionID < VersionUpTo;  
          VersionID++) {
         
-        memset(&FEHandle, 0, sizeof(FEHandle));
+        FEHandle = {0};
         
         std::wstring metadatapath = GenerateMetadataName(ID, VersionID);
         
@@ -6340,8 +6338,23 @@ NarRestoreFileFromBackups(const wchar_t *RootDir, const wchar_t *FileName, const
             NarGetRegionIntersection(FEHandle.BMEX->RegionsMetadata.Data, QResult.Records, &IntersectionRegions, FEHandle.BMEX->RegionsMetadata.Count, QResult.RecordCount, &ISectionCount);
             
             if(ISectionCount != 0){
+                
                 // IMPORTANT TODO(Batuhan): special code for data in 
                 // copy intersections
+                if(QResult.DataLen != 0){
+                    printf("Found resident data in file, offset %i, size %i\n", QResult.DataOffset, QResult.DataLen);
+                    
+                    DWORD BytesWritten = 0;
+                    if(WriteFile(RestoreFileHandle, (char*)MemoryBuffer + QResult.DataOffset, QResult.DataLen, &BytesWritten, 0) && BytesWritten == QResult.DataLen){
+                        
+                    }
+                    else{
+                        printf("Unable to write resident file data, bytes written %l\n", BytesWritten);
+                        DisplayError(GetLastError());
+                    }
+                    
+                    
+                }
                 
                 // NOTE(Batuhan): copy intersections of backup regions and file regions
                 for (INT32 RegIndex = 0; RegIndex < ISectionCount; RegIndex++) {
@@ -6645,7 +6658,6 @@ ReadFileDataFromMFT(void *RecordStart, lcn_from_mft_query_result QueryResult, vo
     
     
     if(RecordStart == NULL || OutData == NULL ||  DataLen == NULL){
-        assert(FALSE);
         return;
     }
     
@@ -7420,17 +7432,13 @@ NarInitFEVolumeHandle(nar_fe_volume_handle *FEV, INT32 HandleOptions, char Lette
 
 inline void 
 NarFreeFEVolumeHandle(nar_fe_volume_handle FEV) {
+    CloseHandle(FEV.VolumeHandle);
+    FEV.VolumeHandle = INVALID_HANDLE_VALUE;
     
-    {
-        CloseHandle(FEV.VolumeHandle);
-        FEV.VolumeHandle = INVALID_HANDLE_VALUE;
-        
-        if(FEV.BMEX != NULL){
-            FreeBackupMetadataEx(FEV.BMEX);
-            FEV.BMEX = 0;
-        }
+    if(FEV.BMEX != NULL){
+        FreeBackupMetadataEx(FEV.BMEX);
+        FEV.BMEX = 0;
     }
-    
 }
 
 
@@ -7809,51 +7817,53 @@ MFTID to extract neccecary data. For INDX_ROOT that is the file entry list, for 
 }
 #include<iostream>
 
-int
-main(int argc, char* argv[]) {
+void
+DEBUG_Restore(){
+    printf("enter path: ");
+    wchar_t rootdir[512];
+    scanf("%S", rootdir);
+    int bindex =0;
+    backup_metadata *B = new backup_metadata[20];
+    INT32 Out;
+    NarGetBackupsInDirectory(rootdir, B, 20*sizeof(backup_metadata), &Out);
+    for(int i = 0; i < Out; i++){
+        printf("%i->Let:%i Ver:%i\n",i, B[i].Letter, B[i].Version);
+    }
     
+    printf("SELECT BACKUP : ");
+    scanf("%i", &bindex);
+    restore_inf R = {0};
+    R.TargetLetter = 'E';
+    R.BackupID = B[bindex].ID;
+    R.Version = B[bindex].Version;
+    R.RootDir = rootdir;
+    OfflineRestoreToVolume(&R, TRUE);
     
+    nar_backup_id id = B[bindex].ID;
+}
+
+void
+DEBUG_FileExplorer(){
     
+    printf("enter path: ");
+    wchar_t rootdir[512];
+    scanf("%S", rootdir);
+    nar_backup_file_explorer_context ctx = {0};
     
-#if 0
-    {
-        nar_backup_file_explorer_context ctx = {0};
-        
-        NarInitFileExplorerContextFromVolume(&ctx, 'C');
-        //NarInitFileExplorerContextFromVolume(&ctx, 'E');
-        INT32 bindex =0 ;
-        
-        if(1){
-            
-#if 0            
-            backup_metadata *B = new backup_metadata[20];
-            INT32 Out;
-            NarGetBackupsInDirectory(L"F:\\", B, 20*sizeof(backup_metadata), &Out);
-            for(int i = 0; i < Out; i++){
-                printf("%i->Let:%i Ver:%i\n",i, B->Letter, B->Version);
-            }
-            
-            scanf("%i", &bindex);
-            nar_backup_id id = B[bindex].ID;
-            
-#endif
-            
-#if 0            
-            std::wstring name;
-            std::wstring path;
-            
-            std::wcin>>path;
-            std::wcin>>name;
-#endif
-            
-            //NarInitFileExplorerContext(&ctx, path.c_str(), name.c_str());
-            
-            //NarRestoreFileFromBackups(L"F:\\",L"E:\\Release\\minispy.inf", L"F:\\", id, NAR_FULLBACKUP_VERSION);
-            
-            //return 0;
-            
-        }
-        
+    int bindex = 0;
+    backup_metadata *B = new backup_metadata[20];
+    INT32 Out;
+    NarGetBackupsInDirectory(rootdir, B, 20*sizeof(backup_metadata), &Out);
+    for(int i = 0; i < Out; i++){
+        printf("%i->Let:%i Ver:%i\n",i, B[i].Letter, B[i].Version);
+    }
+    
+    printf("SELECT BACKUP : ");
+    scanf("%d", &bindex);
+    nar_backup_id id = B[bindex].ID;
+    std::wstring mdpath = GenerateMetadataName(B[bindex].ID, B[bindex].Version);
+    
+    if(NarInitFileExplorerContext(&ctx, rootdir, mdpath.c_str())){
         
         NarFileExplorerPrint(&ctx);
         
@@ -7879,46 +7889,58 @@ main(int argc, char* argv[]) {
         
         NarReleaseFileExplorerContext(&ctx);
         printf("program ended, press a button to close cmd\n");
-        
     }
     
-    {
-        int a = 0;
-        scanf("%i", &a);
-        printf("%i\n", a);
+    return;
+}
+
+
+void
+DEBUG_FileRestore(){
+    
+    std::wstring rootdir;
+    std::wstring fname;
+    std::wstring resttargetpath;
+    
+    printf("enter rootdir: ");
+    std::getline(std::wcin, rootdir);
+    
+    printf("enter file name: ");
+    std::getline(std::wcin, fname);
+    
+    printf("enter resttargetpath: ");
+    std::getline(std::wcin, resttargetpath);
+    
+    nar_backup_file_explorer_context ctx = {0};
+    
+    int bindex = 0;
+    backup_metadata *B = new backup_metadata[20];
+    INT32 Out;
+    NarGetBackupsInDirectory(rootdir.c_str(), B, 20*sizeof(backup_metadata), &Out);
+    for(int i = 0; i < Out; i++){
+        printf("%i->Let:%i Ver:%i\n",i, B[i].Letter, B[i].Version);
     }
     
-    return 0;
+    printf("SELECT BACKUP : ");
+    scanf("%d", &bindex);
     
-#endif
-    
-#if 0
-    
-    NarFileExplorerPrint(&ctx);
-    
-    int ListID = 0;
-    while (1) {
-        scanf("%i", &ListID);
+    if(NarRestoreFileFromBackups(rootdir.c_str(), fname.c_str(), resttargetpath.c_str(), B[bindex].ID, B[bindex].Version)){
         
-        if (ListID == -42) {
-            break;
-        }
-        
-        if (ListID < 0) {
-            NarFileExplorerPopDirectory(&ctx);
-        }
-        else {
-            NarFileExplorerPushDirectory(&ctx, ListID);
-        }
-        
-        NarFileExplorerPrint(&ctx);
-        
-        Sleep(10);
+    }
+    else{
+        printf("unable to restore file %S\n", fname);
     }
     
-    return 0;
     
-#endif
+}
+
+
+int
+main(int argc, char* argv[]) {
+    
+    //DEBUG_FileRestore();
+    //DEBUG_Restore();
+    //DEBUG_FileExplorer();
     
     size_t bsize = 64*1024*1024;
     void *MemBuf = malloc(bsize);
@@ -7930,20 +7952,19 @@ main(int argc, char* argv[]) {
     if(SetupVSS() && ConnectDriver(&C)){
         DotNetStreamInf inf = {0};
         
-#if 0        
+#if 1        
         SetupStream(&C, (wchar_t)'E', (BackupType)0, &inf);
         loop{
+            char temp;
+            std::cin>>temp;
+            NarRemoveVolumeFromKernelList('E', C.Port);
             Sleep(16);
         }
 #endif
         
-        
         char Volume = 0;
         int Type = 0;
         loop{
-            
-            
-            
             
             memset(&inf, 0, sizeof(inf));
             
@@ -8016,27 +8037,8 @@ main(int argc, char* argv[]) {
     
     return 0;
     
-    
-    NarTestPool();
-    NarTestScratch();
-    return 0;
-    
     UNREFERENCED_PARAMETER(argc);
     UNREFERENCED_PARAMETER(argv);
-    
-    void *Mem = malloc(sizeof(backup_metadata)*100);
-    int asdfasfd;
-    NarGetBackupsInDirectory(L"C:\\Users\\Batuhan\\Desktop\\yedeklertest", (backup_metadata*)Mem, 100, &asdfasfd);
-    
-    
-    
-#if 0   
-    
-    
-#endif
-    
-    
-    //NarReleaseFileExplorerContext(&ctx);
     
     return 0;
 }

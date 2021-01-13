@@ -143,25 +143,6 @@ struct nar_log{
 int GlobalLogCount = 0;
 HANDLE GlobalLogMutex = 0;
 
-#if 0
-void
-NarGetLogs(nar_log *Logs, int Max, int *Count){
-    
-    if(WaitForSingleObject(GlobalLogMutex, 100) == WAIT_OBJECT_0){
-        if(GlobalLogCount > Max){
-            
-        }
-        else{
-            
-        }
-    }
-    else{
-        printf("Couldnt lock for the log mutex\n");
-    }
-    
-}
-#endif
-
 
 /*
 CAUTION, THIS IS NOT THREAD SAFE, DO NOT USE IN MULTIPLE THREDS
