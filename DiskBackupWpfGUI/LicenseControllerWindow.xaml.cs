@@ -1,4 +1,6 @@
-﻿using Microsoft.Win32;
+﻿using DiskBackupWpfGUI.Utils;
+using Microsoft.Win32;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -15,23 +17,30 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 
-namespace LicanseKeyAndDemo
+namespace DiskBackupWpfGUI
 {
     /// <summary>
     /// Interaction logic for LicenseControllerWindow.xaml
     /// </summary>
     public partial class LicenseControllerWindow : Window
     {
-        // 1505 demo - 2606 lisanslı
-        // windowType false standart, true lisans
         private bool _windowType;
         public bool _validate = false;
+        private IConfigHelper _configHelper;
+        private readonly ILogger _logger;
 
-        public LicenseControllerWindow(bool windowType)
+        public LicenseControllerWindow(bool windowType, IConfigHelper configHelper, ILogger logger)
         {
             InitializeComponent();
 
             _windowType = windowType;
+            _configHelper = configHelper;
+            _logger = logger.ForContext<LicenseControllerWindow>();
+
+            SetApplicationLanguage(_configHelper.GetConfig("lang"));
+
+            rbDemo.Checked += rbDemo_Checked;
+            rbLicense.Checked += rbLicense_Checked;
 
             if (windowType)
             {
@@ -40,22 +49,49 @@ namespace LicanseKeyAndDemo
             }
         }
 
-        private void save_Click(object sender, RoutedEventArgs e)
+        #region Title Bar
+        private void btnChooseDayAndMounthsClose_Click(object sender, RoutedEventArgs e)
         {
-            var key = Registry.CurrentUser.OpenSubKey("SOFTWARE\\NarDiskBackup", true);
+            Close();
+        }
+
+        private void MyTitleBar_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            if (e.ChangedButton == MouseButton.Left)
+            {
+                DragMove();
+            }
+        }
+        #endregion
+
+        private void rbDemo_Checked(object sender, RoutedEventArgs e)
+        {
+            txtLicenseKey.IsEnabled = false;
+        }
+
+        private void rbLicense_Checked(object sender, RoutedEventArgs e)
+        {
+            txtLicenseKey.IsEnabled = true;
+        }
+
+        private void btnSave_Click(object sender, RoutedEventArgs e)
+        {
+            var key = Registry.LocalMachine.OpenSubKey("SOFTWARE\\NarDiskBackup", true);
 
             if (!_windowType)
             {
                 if (key == null)
                 {
-                    key = Registry.CurrentUser.CreateSubKey("SOFTWARE\\NarDiskBackup");
+                    _logger.Information("Lisans dosyası oluşturuldu.");
+                    key = Registry.LocalMachine.CreateSubKey("SOFTWARE\\NarDiskBackup");
                 }
             }
 
             if (rbDemo.IsChecked == true)
             {
+                _logger.Information("Demo lisans aktifleştirildi.");
                 key.SetValue("UploadDate", DateTime.Now);
-                key.SetValue("ExpireDate", DateTime.Now + TimeSpan.FromDays(31));
+                key.SetValue("ExpireDate", DateTime.Now + TimeSpan.FromDays(30));
                 key.SetValue("LastDate", DateTime.Now);
                 key.SetValue("Type", 1505);
                 _validate = true;
@@ -65,10 +101,11 @@ namespace LicanseKeyAndDemo
             {
                 if (DecryptLicenseKey("D*G-KaPdSgVkYp3s6v8y/B?E(H+MbQeT", txtLicenseKey.Text).Equals("fail"))
                 {
-                    MessageBox.Show("Geçersiz lisans anahtarı!");
+                    MessageBox.Show(Resources["LicenseKeyFailMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
                 }
                 else
                 {
+                    _logger.Information("Lisans aktifleştirildi. Lisans Anahtarı: " + txtLicenseKey.Text);
                     key.SetValue("UploadDate", DateTime.Now);
                     key.SetValue("ExpireDate", "");
                     key.SetValue("Type", 2606);
@@ -111,6 +148,25 @@ namespace LicanseKeyAndDemo
             {
                 return "fail";
             }
+        }
+
+        public void SetApplicationLanguage(string option)
+        {
+            ResourceDictionary dict = new ResourceDictionary();
+
+            switch (option)
+            {
+                case "tr":
+                    dict.Source = new Uri("..\\Resources\\Lang\\string_tr.xaml", UriKind.Relative);
+                    break;
+                case "en":
+                    dict.Source = new Uri("..\\Resources\\Lang\\string_eng.xaml", UriKind.Relative);
+                    break;
+                default:
+                    dict.Source = new Uri("..\\Resources\\Lang\\string_tr.xaml", UriKind.Relative);
+                    break;
+            }
+            Resources.MergedDictionaries.Add(dict);
         }
     }
 }

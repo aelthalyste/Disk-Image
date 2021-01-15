@@ -7,13 +7,16 @@ using DiskBackup.Entities.Concrete;
 using DiskBackup.TaskScheduler;
 using DiskBackup.TaskScheduler.Jobs;
 using DiskBackupWpfGUI.Utils;
+using Microsoft.Win32;
 using Serilog;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
+using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -119,7 +122,7 @@ namespace DiskBackupWpfGUI
 
             try
             {
-                _logger.Information("GetDiskList metoduna istekte bulunuldu");
+                _logger.Verbose("GetDiskList metoduna istekte bulunuldu");
                 _diskList = backupService.GetDiskList();
 
                 foreach (var diskItem in _diskList)
@@ -162,6 +165,139 @@ namespace DiskBackupWpfGUI
             Console.WriteLine("CTOR SON: " + DateTime.Now);
         }
 
+        #region Lisans Kontrolleri
+
+        private void ValidateLicense()
+        {
+            var key = Registry.LocalMachine.OpenSubKey("SOFTWARE\\NarDiskBackup");
+
+            if (key == null)
+            {
+                _logger.Information("Lisans dosyası bulunamadı.");
+                txtLicenseNotActive.Visibility = Visibility.Visible;
+                txtLicenseStatu.Text = Resources["inactive"].ToString();
+
+                LicenseControllerWindow licenseControllerWindow = _scope.Resolve<LicenseControllerWindow>(new NamedParameter("windowType", false));
+                licenseControllerWindow.ShowDialog();
+                key = Registry.LocalMachine.OpenSubKey("SOFTWARE\\NarDiskBackup");
+
+                if (!licenseControllerWindow._validate)
+                {
+                    Close();
+                }
+                else
+                {
+                    if (key.GetValue("Type").ToString() == "1505")
+                    {
+                        var result = Convert.ToDateTime(key.GetValue("ExpireDate").ToString()) - DateTime.Now;
+                        txtLicenseNotActive.Visibility = Visibility.Collapsed;
+                        LicenseDemoTextWrite(key, result);
+                    }
+                    else
+                    {
+                        txtLicenseNotActive.Visibility = Visibility.Collapsed;
+                        txtLicenseStatu.Text = Resources["active"].ToString();
+                        txtExpireDate.Text = "∞";
+                    }
+                    //servise koyulacak
+                    key = Registry.LocalMachine.OpenSubKey("SOFTWARE\\NarDiskBackup", true);
+                    key.SetValue("LastDate", DateTime.Now);
+                }
+            }
+            else // dosya var
+            {
+                try
+                {
+                    if (key.GetValue("Type").ToString() == "1505") // gün kontrolleri yapılacak
+                    {
+
+                            if (Convert.ToDateTime(key.GetValue("UploadDate").ToString()) <= DateTime.Now &&
+                                Convert.ToDateTime(key.GetValue("ExpireDate").ToString()) >= DateTime.Now &&
+                                Convert.ToDateTime(key.GetValue("LastDate").ToString()) <= DateTime.Now &&
+                                (Convert.ToDateTime(key.GetValue("ExpireDate").ToString()) - Convert.ToDateTime(key.GetValue("UploadDate").ToString())).Days < 31)
+                            {
+                                // uygulama çalışabilir
+                                var result = Convert.ToDateTime(key.GetValue("ExpireDate").ToString()) - DateTime.Now;
+                                LicenseDemoTextWrite(key, result);
+
+                                //servise koyulacak
+                                key = Registry.LocalMachine.OpenSubKey("SOFTWARE\\NarDiskBackup", true);
+                                key.SetValue("LastDate", DateTime.Now);
+                            }
+                            else // deneme süresi doldu
+                            {
+                                _logger.Information("Demo lisans süresi doldu.");
+                                LicenseNotActiveTextWrite(key);
+                            }
+
+                    }
+                    else if (key.GetValue("Type").ToString() == "2606") // lisanslı
+                    {
+                        // uygulama çalışabilir
+                        txtLicenseStatu.Text = Resources["active"].ToString();
+                        txtExpireDate.Text = "∞";
+                    }
+                    else
+                    {
+                        LicenseNotActiveTextWrite(key);
+                    }
+                }
+                catch (Exception)
+                {
+                    MessageBox.Show(Resources["unexpectedError1MB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+                    Registry.LocalMachine.DeleteSubKey("SOFTWARE\\NarDiskBackup");
+                    key = Registry.LocalMachine.CreateSubKey("SOFTWARE\\NarDiskBackup", true);
+                    key.SetValue("UploadDate", DateTime.Now);
+                    key.SetValue("ExpireDate", DateTime.Now + TimeSpan.FromDays(30));
+                    key.SetValue("LastDate", DateTime.Now);
+                    key.SetValue("Type", 1505);
+                    LicenseNotActiveTextWrite(key);
+                }
+            }
+        }
+
+        private void LicenseDemoTextWrite(RegistryKey key, TimeSpan result)
+        {
+            txtDemoDays.Text = result.Days.ToString();
+            stackDemo.Visibility = Visibility.Visible;
+            stackLicenseController.Visibility = Visibility.Visible;
+            txtLicenseStatu.Text = Resources["demo"].ToString();
+            txtExpireDate.Text = key.GetValue("ExpireDate").ToString();
+        }
+
+        private void LicenseNotActiveTextWrite(RegistryKey key)
+        {
+            txtLicenseNotActive.Visibility = Visibility.Visible;
+            txtLicenseStatu.Text = Resources["inactive"].ToString();
+            txtExpireDate.Text = key.GetValue("ExpireDate").ToString();
+            FixBrokenRegistry(); // registry ile oynanmış
+        }
+
+        private void FixBrokenRegistry()
+        {
+            _logger.Information("Lisans bilgileri değiştiriliyor.");
+            var key = Registry.LocalMachine.OpenSubKey("SOFTWARE\\NarDiskBackup", true);
+
+            key.SetValue("UploadDate", DateTime.Now);
+            key.SetValue("ExpireDate", DateTime.Now - TimeSpan.FromDays(1));
+            key.SetValue("Type", 1505);
+
+            LicenseControllerWindow licenseControllerWindow = _scope.Resolve<LicenseControllerWindow>(new NamedParameter("windowType", true));
+            licenseControllerWindow.ShowDialog(); // kontrol yolla demo seçeneğini kaldır
+            if (!licenseControllerWindow._validate)
+            {
+                Close();
+            }
+            else
+            {
+                txtLicenseNotActive.Visibility = Visibility.Collapsed;
+                txtLicenseStatu.Text = Resources["active"].ToString();
+                txtExpireDate.Text = "∞";
+            }
+        }
+
+        #endregion
+
 
         #region Async Listviewleri Doldurma Fonksiyonları
 
@@ -186,6 +322,7 @@ namespace DiskBackupWpfGUI
             pbLoading.IsIndeterminate = false;
             RefreshTasks(_cancellationTokenSource.Token, backupService);
             Console.WriteLine("Initilaze son: " + DateTime.Now);
+            ValidateLicense();
         }
 
         public async Task GetBackupStoragesAsync(List<VolumeInfo> volumeList)
@@ -1998,6 +2135,9 @@ namespace DiskBackupWpfGUI
                     SetApplicationLanguage(_configHelper.GetConfig("lang"));
                     ReloadLanguages();
                     cbLang.SelectedValue = _configHelper.GetConfig("lang");
+
+                    //aktivity log güncelle
+                    ShowActivityLog();
                 }
             }
         }
@@ -2011,6 +2151,62 @@ namespace DiskBackupWpfGUI
             cbLang.Items.Clear();
             cbLang.ItemsSource = languages;
         }
+
+        private void btnValidateLicense_Click(object sender, RoutedEventArgs e)
+        {
+            if (DecryptLicenseKey("D*G-KaPdSgVkYp3s6v8y/B?E(H+MbQeT", txtLicenseKey.Text).Equals("fail"))
+            {
+                MessageBox.Show(Resources["LicenseKeyFailMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            else
+            {
+                _logger.Information("Lisans aktifleştirildi. Lisans Anahtarı: " + txtLicenseKey.Text);
+                var key = Registry.LocalMachine.OpenSubKey("SOFTWARE\\NarDiskBackup", true);
+                key.SetValue("UploadDate", DateTime.Now);
+                key.SetValue("ExpireDate", "");
+                key.SetValue("Type", 2606);
+                key.SetValue("License", txtLicenseKey.Text);
+                stackLicenseController.Visibility = Visibility.Collapsed;
+                stackDemo.Visibility = Visibility.Collapsed;
+                txtLicenseStatu.Text = Resources["active"].ToString();
+                txtExpireDate.Text = "∞";
+            }
+        }
+
+        private string DecryptLicenseKey(string key, string cipherLicenseKey)
+        {
+            if (cipherLicenseKey == null || cipherLicenseKey == "" || cipherLicenseKey.Contains(' '))
+                return "fail";
+
+            try
+            {
+                var iv = Convert.FromBase64String("EEXkANPr+5R9q+XyG7jR5w==");
+                byte[] buffer = Convert.FromBase64String(cipherLicenseKey);
+
+                using (Aes aes = Aes.Create())
+                {
+                    aes.Key = Encoding.UTF8.GetBytes(key);
+                    aes.IV = iv;
+                    ICryptoTransform decryptor = aes.CreateDecryptor(aes.Key, aes.IV);
+
+                    using (MemoryStream memoryStream = new MemoryStream(buffer))
+                    {
+                        using (CryptoStream cryptoStream = new CryptoStream((Stream)memoryStream, decryptor, CryptoStreamMode.Read))
+                        {
+                            using (StreamReader streamReader = new StreamReader((Stream)cryptoStream))
+                            {
+                                return streamReader.ReadToEnd();
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                return "fail";
+            }
+        }
+
 
         #region Upload
         private void btnUploadDown_Click(object sender, RoutedEventArgs e)
@@ -2111,7 +2307,7 @@ namespace DiskBackupWpfGUI
                     // Ortadaki statu
                     RefreshMiddleTaskStatuAsync();
 
-                    // --- ASYNC DEGİLLER BAKILACAK
+                    // TO DO --- ASYNC DEGİLLER BAKILACAK
                     //backupları yeniliyor
                     if (backupService.GetRefreshIncDiffTaskFlag())
                     {
@@ -2126,13 +2322,15 @@ namespace DiskBackupWpfGUI
                 }
                 catch (Exception e)
                 {
-                    if (e.Message.Contains("System.ServiceModel.Channels.ServiceChannel"))
+                    if (!cancellationToken.IsCancellationRequested) // lisans doğrulama yapılmazsa cancel ediliyor, refresh çalıştığından hata veriyordu onun kontrolü
                     {
-                        MessageBox.Show(Resources["closeServiceErrorMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error, MessageBoxResult.No);
+                        //if (e.Message.Contains("System.ServiceModel.Channels.ServiceChannel")) // TO DO servis kapanma kontrolü yapılırsa hoş olur
+                        //{
+                        MessageBox.Show(Resources["closeServiceErrorMB"].ToString() + "\n" + e.ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error, MessageBoxResult.No);
                         Close();
                         return;
+                        //}
                     }
-                    MessageBox.Show("Refresh: " + e.Message, Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error, MessageBoxResult.No);
                 }
 
             }
@@ -2536,8 +2734,8 @@ namespace DiskBackupWpfGUI
 
 
 
-        #endregion
 
+        #endregion
 
     }
 }

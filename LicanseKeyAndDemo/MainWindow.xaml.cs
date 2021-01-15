@@ -30,34 +30,56 @@ namespace LicenseKeyAndDemo
 
             if (key == null)
             {
-                Console.WriteLine("Dosya yok");
-
                 LicenseControllerWindow licenseControllerWindow = new LicenseControllerWindow(false);
                 licenseControllerWindow.ShowDialog();
-            }
-            else
-            {
-                Console.WriteLine("Dosya var");
+                key = Registry.CurrentUser.OpenSubKey("SOFTWARE\\NarDiskBackup");
 
+                if (!licenseControllerWindow._validate)
+                {
+                    Close();
+                }
+                else
+                {
+                    if (key.GetValue("Type").ToString() == "1505")
+                    {
+                        var result = Convert.ToDateTime(key.GetValue("ExpireDate").ToString()) - DateTime.Now;
+                        lblDemoDaysLeft.Content = result.Days;
+                    }
+                }
+            }
+            else // dosya var
+            {
                 if (key.GetValue("Type").ToString() == "1505") // gün kontrolleri yapılacak
                 {
                     try
                     {
-                        if (Convert.ToDateTime(key.GetValue("UploadDate").ToString()) <= DateTime.Now && Convert.ToDateTime(key.GetValue("ExpireDate").ToString()) >= DateTime.Now)
+                        if (Convert.ToDateTime(key.GetValue("UploadDate").ToString()) <= DateTime.Now && 
+                            Convert.ToDateTime(key.GetValue("ExpireDate").ToString()) >= DateTime.Now && 
+                            Convert.ToDateTime(key.GetValue("LastDate").ToString()) <= DateTime.Now)
                         {
                             // uygulama çalışabilir
+                            var result = Convert.ToDateTime(key.GetValue("ExpireDate").ToString()) - DateTime.Now;
+                            lblDemoDaysLeft.Content = result.Days;
+
+                            //servise koyulacak
+                            key = Registry.CurrentUser.OpenSubKey("SOFTWARE\\NarDiskBackup", true);
+                            key.SetValue("LastDate", DateTime.Now);
                         }
                         else // deneme süresi doldu
                         {
+                            FixBrokenRegistry();
                             LicenseControllerWindow licenseControllerWindow = new LicenseControllerWindow(true);
                             licenseControllerWindow.ShowDialog(); // kontrol yolla demo seçeneğini kaldır
+                            if (!licenseControllerWindow._validate)
+                            {
+                                Close();
+                            }
                         }
                     }
                     catch (Exception ex)
                     {
-                        // aramız bozuk
                         MessageBox.Show("Dosyalar bozulmuş\n" + ex);
-                        FixBrokenRegistry();
+                        FixBrokenRegistry(); // registry ile oynanmış
                     }
                 }
                 else if (key.GetValue("Type").ToString() == "2606") // lisanslı
@@ -67,8 +89,7 @@ namespace LicenseKeyAndDemo
                 }
                 else
                 {
-                    // aramız bozuk
-                    FixBrokenRegistry();
+                    FixBrokenRegistry(); // registry ile oynanmış
                 }
             }
 
@@ -85,12 +106,20 @@ namespace LicenseKeyAndDemo
 
             LicenseControllerWindow licenseControllerWindow = new LicenseControllerWindow(true);
             licenseControllerWindow.ShowDialog(); // kontrol yolla demo seçeneğini kaldır
+            if (!licenseControllerWindow._validate)
+            {
+                Close();
+            }
         }
 
         private void btnValidateLicense_Click(object sender, RoutedEventArgs e)
         {
             LicenseControllerWindow licenseControllerWindow = new LicenseControllerWindow(true);
             licenseControllerWindow.ShowDialog();
+            if (!licenseControllerWindow._validate)
+            {
+                Close();
+            }
         }
     }
 
