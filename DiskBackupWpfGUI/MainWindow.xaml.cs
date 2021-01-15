@@ -210,8 +210,7 @@ namespace DiskBackupWpfGUI
                 {
                     if (key.GetValue("Type").ToString() == "1505") // gün kontrolleri yapılacak
                     {
-                        try
-                        {
+
                             if (Convert.ToDateTime(key.GetValue("UploadDate").ToString()) <= DateTime.Now &&
                                 Convert.ToDateTime(key.GetValue("ExpireDate").ToString()) >= DateTime.Now &&
                                 Convert.ToDateTime(key.GetValue("LastDate").ToString()) <= DateTime.Now &&
@@ -230,11 +229,7 @@ namespace DiskBackupWpfGUI
                                 _logger.Information("Demo lisans süresi doldu.");
                                 LicenseNotActiveTextWrite(key);
                             }
-                        }
-                        catch (Exception)
-                        {
-                            LicenseNotActiveTextWrite(key);
-                        }
+
                     }
                     else if (key.GetValue("Type").ToString() == "2606") // lisanslı
                     {
@@ -247,12 +242,16 @@ namespace DiskBackupWpfGUI
                         LicenseNotActiveTextWrite(key);
                     }
                 }
-                catch (NullReferenceException)
+                catch (Exception)
                 {
                     MessageBox.Show(Resources["unexpectedError1MB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
                     Registry.LocalMachine.DeleteSubKey("SOFTWARE\\NarDiskBackup");
+                    key = Registry.LocalMachine.CreateSubKey("SOFTWARE\\NarDiskBackup", true);
+                    key.SetValue("UploadDate", DateTime.Now);
+                    key.SetValue("ExpireDate", DateTime.Now + TimeSpan.FromDays(30));
+                    key.SetValue("LastDate", DateTime.Now);
+                    key.SetValue("Type", 1505);
                     LicenseNotActiveTextWrite(key);
-                    Close();
                 }
             }
         }
