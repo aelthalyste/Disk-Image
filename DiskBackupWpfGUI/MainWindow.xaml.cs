@@ -173,8 +173,6 @@ namespace DiskBackupWpfGUI
 
             if (key == null)
             {
-                Console.WriteLine("Dosya yok");
-
                 _logger.Information("Lisans dosyası bulunamadı.");
                 txtLicenseNotActive.Visibility = Visibility.Visible;
                 txtLicenseStatu.Text = Resources["inactive"].ToString();
@@ -192,9 +190,9 @@ namespace DiskBackupWpfGUI
                     if (key.GetValue("Type").ToString() == "1505")
                     {
                         var result = Convert.ToDateTime(key.GetValue("ExpireDate").ToString()) - DateTime.Now;
-                        txtDemo.Text = Resources["demo"].ToString() + " / " + result.Days + " " + Resources["daysLeft"].ToString();
+                        txtDemoDays.Text = result.Days.ToString();
                         txtLicenseNotActive.Visibility = Visibility.Collapsed;
-                        txtDemo.Visibility = Visibility.Visible;
+                        stackDemo.Visibility = Visibility.Visible;
                         stackLicenseController.Visibility = Visibility.Visible;
                         txtLicenseStatu.Text = Resources["demo"].ToString();
                         txtExpireDate.Text = key.GetValue("ExpireDate").ToString();
@@ -204,13 +202,14 @@ namespace DiskBackupWpfGUI
                         txtLicenseNotActive.Visibility = Visibility.Collapsed;
                         txtLicenseStatu.Text = Resources["active"].ToString();
                         txtExpireDate.Text = "∞";
-
                     }
+                    //servise koyulacak
+                    key = Registry.LocalMachine.OpenSubKey("SOFTWARE\\NarDiskBackup", true);
+                    key.SetValue("LastDate", DateTime.Now);
                 }
             }
             else // dosya var
             {
-                Console.WriteLine("Dosya var");
                 try
                 {
                     if (key.GetValue("Type").ToString() == "1505") // gün kontrolleri yapılacak
@@ -224,8 +223,8 @@ namespace DiskBackupWpfGUI
                             {
                                 // uygulama çalışabilir
                                 var result = Convert.ToDateTime(key.GetValue("ExpireDate").ToString()) - DateTime.Now;
-                                txtDemo.Text = Resources["demo"].ToString() + " / " + result.Days + " " + Resources["daysLeft"].ToString();
-                                txtDemo.Visibility = Visibility.Visible;
+                                txtDemoDays.Text = result.Days.ToString();
+                                stackDemo.Visibility = Visibility.Visible;
                                 stackLicenseController.Visibility = Visibility.Visible;
                                 txtLicenseStatu.Text = Resources["demo"].ToString();
                                 txtExpireDate.Text = key.GetValue("ExpireDate").ToString();
@@ -2138,6 +2137,9 @@ namespace DiskBackupWpfGUI
                     SetApplicationLanguage(_configHelper.GetConfig("lang"));
                     ReloadLanguages();
                     cbLang.SelectedValue = _configHelper.GetConfig("lang");
+
+                    //aktivity log güncelle
+                    ShowActivityLog();
                 }
             }
         }
@@ -2151,6 +2153,62 @@ namespace DiskBackupWpfGUI
             cbLang.Items.Clear();
             cbLang.ItemsSource = languages;
         }
+
+        private void btnValidateLicense_Click(object sender, RoutedEventArgs e)
+        {
+            if (DecryptLicenseKey("D*G-KaPdSgVkYp3s6v8y/B?E(H+MbQeT", txtLicenseKey.Text).Equals("fail"))
+            {
+                MessageBox.Show(Resources["LicenseKeyFailMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            else
+            {
+                _logger.Information("Lisans aktifleştirildi. Lisans Anahtarı: " + txtLicenseKey.Text);
+                var key = Registry.LocalMachine.OpenSubKey("SOFTWARE\\NarDiskBackup", true);
+                key.SetValue("UploadDate", DateTime.Now);
+                key.SetValue("ExpireDate", "");
+                key.SetValue("Type", 2606);
+                key.SetValue("License", txtLicenseKey.Text);
+                stackLicenseController.Visibility = Visibility.Collapsed;
+                stackDemo.Visibility = Visibility.Collapsed;
+                txtLicenseStatu.Text = Resources["active"].ToString();
+                txtExpireDate.Text = "∞";
+            }
+        }
+
+        private string DecryptLicenseKey(string key, string cipherLicenseKey)
+        {
+            if (cipherLicenseKey == null || cipherLicenseKey == "" || cipherLicenseKey.Contains(' '))
+                return "fail";
+
+            try
+            {
+                var iv = Convert.FromBase64String("EEXkANPr+5R9q+XyG7jR5w==");
+                byte[] buffer = Convert.FromBase64String(cipherLicenseKey);
+
+                using (Aes aes = Aes.Create())
+                {
+                    aes.Key = Encoding.UTF8.GetBytes(key);
+                    aes.IV = iv;
+                    ICryptoTransform decryptor = aes.CreateDecryptor(aes.Key, aes.IV);
+
+                    using (MemoryStream memoryStream = new MemoryStream(buffer))
+                    {
+                        using (CryptoStream cryptoStream = new CryptoStream((Stream)memoryStream, decryptor, CryptoStreamMode.Read))
+                        {
+                            using (StreamReader streamReader = new StreamReader((Stream)cryptoStream))
+                            {
+                                return streamReader.ReadToEnd();
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                return "fail";
+            }
+        }
+
 
         #region Upload
         private void btnUploadDown_Click(object sender, RoutedEventArgs e)
@@ -2681,59 +2739,5 @@ namespace DiskBackupWpfGUI
 
         #endregion
 
-        private void btnValidateLicense_Click(object sender, RoutedEventArgs e)
-        {
-            if (DecryptLicenseKey("D*G-KaPdSgVkYp3s6v8y/B?E(H+MbQeT", txtLicenseKey.Text).Equals("fail"))
-            {
-                MessageBox.Show(Resources["LicenseKeyFailMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-            else
-            {
-                _logger.Information("Lisans aktifleştirildi. Lisans Anahtarı: " + txtLicenseKey.Text);
-                var key = Registry.LocalMachine.OpenSubKey("SOFTWARE\\NarDiskBackup", true);
-                key.SetValue("UploadDate", DateTime.Now);
-                key.SetValue("ExpireDate", "");
-                key.SetValue("Type", 2606);
-                key.SetValue("License", txtLicenseKey.Text);
-                stackLicenseController.Visibility = Visibility.Collapsed;
-                txtDemo.Visibility = Visibility.Collapsed;
-                txtLicenseStatu.Text = Resources["active"].ToString();
-                txtExpireDate.Text = "∞";
-            }
-        }
-
-        private string DecryptLicenseKey(string key, string cipherLicenseKey)
-        {
-            if (cipherLicenseKey == null || cipherLicenseKey == "" || cipherLicenseKey.Contains(' '))
-                return "fail";
-
-            try
-            {
-                var iv = Convert.FromBase64String("EEXkANPr+5R9q+XyG7jR5w==");
-                byte[] buffer = Convert.FromBase64String(cipherLicenseKey);
-
-                using (Aes aes = Aes.Create())
-                {
-                    aes.Key = Encoding.UTF8.GetBytes(key);
-                    aes.IV = iv;
-                    ICryptoTransform decryptor = aes.CreateDecryptor(aes.Key, aes.IV);
-
-                    using (MemoryStream memoryStream = new MemoryStream(buffer))
-                    {
-                        using (CryptoStream cryptoStream = new CryptoStream((Stream)memoryStream, decryptor, CryptoStreamMode.Read))
-                        {
-                            using (StreamReader streamReader = new StreamReader((Stream)cryptoStream))
-                            {
-                                return streamReader.ReadToEnd();
-                            }
-                        }
-                    }
-                }
-            }
-            catch (Exception)
-            {
-                return "fail";
-            }
-        }
     }
 }

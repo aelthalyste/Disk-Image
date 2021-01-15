@@ -217,7 +217,7 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border Name="Border" BorderThickness="1,1,1,1" BorderBrush="#27527B" CornerRadius="5" Background="#2679C4">
+                        <Border Name="Border" BorderThickness="1,1,1,1" BorderBrush="#BCE4FF" CornerRadius="5" Background="#2679C4">
                             <ContentPresenter x:Name="ContentSite"                                            
                                                         VerticalAlignment="Center"
                                                         HorizontalAlignment="Center"

@@ -14,9 +14,9 @@
         BorderBrush="#194771" BorderThickness="1"
         Height="730" Width="1294"
         ResizeMode="CanMinimize">
-    <Window.Resources>
+    <!--<Window.Resources>
         <ResourceDictionary Source="Resources\Lang\string_tr.xaml"/>
-    </Window.Resources>
+    </Window.Resources>-->
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="30"/>
@@ -55,7 +55,12 @@
         <Rectangle Height="1" Fill="#428BCA" VerticalAlignment="Bottom" Grid.Row="1" Grid.ColumnSpan="2" />
         <StackPanel Orientation="Horizontal" Grid.Row="1" HorizontalAlignment="Right" Grid.Column="1">
             <TextBlock Name="txtLicenseNotActive" Text="{DynamicResource licenseNotActive}" Foreground="#FF0000" FontSize="14" FontWeight="Bold" VerticalAlignment="Center" Margin="0,0,15,0" Visibility="Collapsed"/>
-            <TextBlock Name="txtDemo" Text="{DynamicResource demo}" Foreground="#3A80BB" FontSize="14" FontWeight="Bold" VerticalAlignment="Center" Margin="0,0,15,0" Visibility="Collapsed"/>
+            <DockPanel Name="stackDemo" Visibility="Collapsed">
+                <TextBlock Text="{DynamicResource demo}" Foreground="#3A80BB" FontSize="14" FontWeight="Bold" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                <TextBlock Text="/" Foreground="#3A80BB" FontSize="14" FontWeight="Bold" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                <TextBlock Name="txtDemoDays" Text="30" Foreground="#3A80BB" FontSize="14" FontWeight="Bold" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                <TextBlock Text="{DynamicResource daysLeft}" Foreground="#3A80BB" FontSize="14" FontWeight="Bold" VerticalAlignment="Center" Margin="0,0,15,0"/>
+            </DockPanel>
             <!--<StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                 <Button Name="btnPlayButton" ToolTip="{DynamicResource start}" HorizontalAlignment="Right" Margin="5,4,0,4" Style="{StaticResource ImageButton}" Width="32" Height="32" Grid.Column="1">
                     <Button.Content>
