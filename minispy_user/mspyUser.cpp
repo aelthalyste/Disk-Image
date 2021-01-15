@@ -388,7 +388,7 @@ RemoveDuplicates(region_chain** Metadatas,
                         break;
                         /*
                         Shadow completelty overruns the region
-
+            
                         From this moment MReg->Next->Back != MReg, since we removed
                         it from the region, but keep it's pointer to iterate one more time
                         */
@@ -457,10 +457,10 @@ RemoveDuplicates(region_chain** Metadatas,
                               ^             ^
                               |             | this is next region queued up
                               this is region we are checking
-
+            
                         new status   |-------|
                         shadow               |----------|  |--------|
-
+            
                         Since MReg->Next is region we just created, and we know it is non-colliding, we should
                         iterate one more.
                         SReg may be colliding with next region, better keep it unchanged.
@@ -1376,7 +1376,7 @@ GetMFTandINDXLCN(char VolumeLetter, HANDLE VolumeHandle) {
                                             second data run will be lets say 0x11 04 43
                                             and first one                    0x11 10 10
                                             starting lcn is 0x10, but second data run does not start from 0x43, it starts from 0x10 + 0x43
-
+                      
                                             LCN[n] = LCN[n-1] + datarun cluster
                                             */
                                             
@@ -2357,6 +2357,7 @@ SetIncRecords(HANDLE CommPort, volume_backup_inf* V) {
     else{
         V->Stream.Records.Data = 0;
         V->Stream.Records.Count = 0;
+        Result = TRUE;
     }
     
     return Result;
@@ -2571,6 +2572,7 @@ SetDiffRecords(HANDLE CommPort ,volume_backup_inf* V) {
     else{
         V->Stream.Records.Data = 0;
         V->Stream.Records.Count = 0;
+        Result = TRUE;
     }
     
     CloseHandle(LogHandle);
@@ -4723,23 +4725,23 @@ SaveMetadata(char Letter, int Version, int ClusterSize, BackupType BT,
     
     
     /*
-layout of disks (fundamental level, gpt might contain extra data partitions)
-for extra information visit:
-MBR https://docs.microsoft.com/en-us/windows-hardware/manufacture/desktop/configure-biosmbr-based-hard-drive-partitions  
-GPT https://docs.microsoft.com/en-us/windows-hardware/manufacture/desktop/configure-uefigpt-based-hard-drive-partitions
-
+  layout of disks (fundamental level, gpt might contain extra data partitions)
+  for extra information visit:
+  MBR https://docs.microsoft.com/en-us/windows-hardware/manufacture/desktop/configure-biosmbr-based-hard-drive-partitions  
+  GPT https://docs.microsoft.com/en-us/windows-hardware/manufacture/desktop/configure-uefigpt-based-hard-drive-partitions
+  
     GPT
-System
-Msr
-windows
-recovery
-
-
-MBR
-system
-windows
-recovery
-
+  System
+  Msr
+  windows
+  recovery
+  
+  
+  MBR
+  system
+  windows
+  recovery
+  
     */
     // NOTE(Batuhan): Recovery partition's data is stored on metadata only if it's both full and OS volume backup
     
@@ -5120,7 +5122,7 @@ NarGetBackupsInDirectory(const wchar_t* Directory, backup_metadata* B, int Buffe
                             //NOTE(Batuhan): File name indicated from metadata and actual file name matches
                             //Even though metadatas match, actual binary data may not exist at all or even, metadata itself might be corrupted too, or missing. Check it
                             
-                            printf("Backup found %S, ver %i\n", FDATA.cFileName, B[BackupFound].Version);
+                            //printf("Backup found %S, ver %i\n", FDATA.cFileName, B[BackupFound].Version);
                             
 #if 0
                             //NOTE(Batuhan): check if actual binary data exists in path and valid in size
@@ -5723,12 +5725,12 @@ NarResolveAttributeList(nar_backup_file_explorer_context *Ctx, void *Attribute, 
     }
     
     /*
-// NOTE(Batuhan): About BITMAP and INDEX_ALLOCATION attributes
+  // NOTE(Batuhan): About BITMAP and INDEX_ALLOCATION attributes
     i'th bit of BITMAP represents if INDEX_ALLOCATION's i'th cluster is in use, so lets say 
-636'th bit of the BITMAP data is not set(zero, 0), that means 636'th cluster of the INDEX_ALLOCATION needs to be removed from region array.
-
-What I assume right now, that unsused cluster id will be trimming point for rest of the region, meaning I can safely iterate next region without worrying if there are used regions after the unused cluster indx and if I have to insert new region for used ones etc etc.
-*/
+  636'th bit of the BITMAP data is not set(zero, 0), that means 636'th cluster of the INDEX_ALLOCATION needs to be removed from region array.
+  
+  What I assume right now, that unsused cluster id will be trimming point for rest of the region, meaning I can safely iterate next region without worrying if there are used regions after the unused cluster indx and if I have to insert new region for used ones etc etc.
+  */
     
     // NOTE(Batuhan): Sane way of handling BITMAP stuff is, first parse INDX_ALLOCATION, then check if BITMAP is present(it usually is if its a hot directory), then remove(trim, as stated above) unused clusters from that region, then parse remaining clusters!
     
@@ -5826,8 +5828,8 @@ NarGetFileEntriesFromIndxClusters(nar_backup_file_explorer_context *Ctx, nar_rec
     
     
     /*
-Each bitmap BIT represents availablity of that virtual cluster number of the indx_allocation clusters
-*/
+  Each bitmap BIT represents availablity of that virtual cluster number of the indx_allocation clusters
+  */
     
     for(int _i_ = 0; 
         NarFileExplorerSetFilePointer(Ctx->FEHandle, (UINT64)Clusters[_i_].StartPos*Ctx->ClusterSize) && _i_ < Count;
@@ -5935,7 +5937,7 @@ NarParseIndexAllocationAttribute(void *IndexAttribute, nar_record *OutRegions, I
     second data run will be lets say 0x11 04 43
     and first one                    0x11 10 10
     starting lcn is 0x10, but second data run does not start from 0x43, it starts from 0x10 + 0x43
-
+  
     LCN[n] = LCN[n-1] + datarun cluster
     */
     
@@ -6078,8 +6080,8 @@ NarGetFileListFromMFTID(nar_backup_file_explorer_context *Ctx, size_t TargetMFTI
             
             // NOTE(Batuhan): ntfs madness : if file has too many information, it cant fit into the single 1KB entry.
             /*
-so some smart ass decided it would be wise to split some attributes into different disk locations, so i have to check if any file attribute is non-resident, if so, should check if that one is INDEX_ALLOCATION attribute, and again if so, should go read that disk offset and parse it. pretty trivial but also boring
-*/
+      so some smart ass decided it would be wise to split some attributes into different disk locations, so i have to check if any file attribute is non-resident, if so, should check if that one is INDEX_ALLOCATION attribute, and again if so, should go read that disk offset and parse it. pretty trivial but also boring
+      */
             // NOTE(Batuhan): Not sure If a record can contain both attribute list and indx_allocation stuff
             NarResolveAttributeList(Ctx, AttrListAttr, TargetMFTID);
             
@@ -6112,9 +6114,9 @@ so some smart ass decided it would be wise to split some attributes into differe
         }
         
         /*
-$ROOT file has very very very unique special case when parsing a normal file record, it turns out
-i can't use general file record parsing function just for that very special case, so here, _almost_ same version of NarGetFileEntriesFromIndxClusters
-*/
+    $ROOT file has very very very unique special case when parsing a normal file record, it turns out
+    i can't use general file record parsing function just for that very special case, so here, _almost_ same version of NarGetFileEntriesFromIndxClusters
+    */
         
         if(TargetMFTID == 5){
             
@@ -6467,20 +6469,20 @@ NarGetRegionIntersection(nar_record* r1, nar_record* r2, nar_record** intersecti
         condition 1:
             --------------
         -------                             MUST ITERATE THAT ONE
-
+    
         condition 2:
             -----------------               MUST ITERATE THAT ONE
                         ------------
-
+    
         condition 3:
             ------------------
                 --------                    MUST ITERATE THAT ONE
-
+    
         condition 4:
             -----------------
             -----------------
                 doesnt really matter which one you iterate, fits in algorithm below
-
+    
         as you can see, if we would like to spot continuous colliding blocks, we must ALWAYS ITERATE THAT HAS LOWER END POINT, and their intersection WILL ALWAYS BE REPRESENTED AS
         HIGH_START - LOW_END of both of them.
         */
@@ -6565,7 +6567,7 @@ ReadLCNFromMFTRecord(void* RecordStart) {
             second data run will be lets say 0x11 04 43
             and first one                    0x11 10 10
             starting lcn is 0x10, but second data run does not start from 0x43, it starts from 0x10 + 0x43
-
+    
             LCN[n] = LCN[n-1] + datarun cluster
         */
         
@@ -7773,9 +7775,9 @@ NARDEBUG_AttributeListTest(){
     //UINT16 AttributeID  = *(UINT16*)NAR_OFFSET(Attribute, 0x18);
     
     /*
-have to find INDX_ROOT, INDX_ALLOCATION, BITMAP from the attribute list and their associated MFT ID's. Then for each of them, I have to parse that specific
-MFTID to extract neccecary data. For INDX_ROOT that is the file entry list, for INDX_ALLOC, that MUST be LCN regions, not file entries because file record might contain BITMAP that might be telling us to invalidate some of the clusters that are extracted directly from INDX_ALLOCATION attribute
-*/
+  have to find INDX_ROOT, INDX_ALLOCATION, BITMAP from the attribute list and their associated MFT ID's. Then for each of them, I have to parse that specific
+  MFTID to extract neccecary data. For INDX_ROOT that is the file entry list, for INDX_ALLOC, that MUST be LCN regions, not file entries because file record might contain BITMAP that might be telling us to invalidate some of the clusters that are extracted directly from INDX_ALLOCATION attribute
+  */
     
     Attribute = NAR_OFFSET(Attribute, FirstAttributeOffset);
     
@@ -7952,7 +7954,7 @@ main(int argc, char* argv[]) {
     if(SetupVSS() && ConnectDriver(&C)){
         DotNetStreamInf inf = {0};
         
-#if 1        
+#if 0        
         SetupStream(&C, (wchar_t)'E', (BackupType)0, &inf);
         loop{
             char temp;
