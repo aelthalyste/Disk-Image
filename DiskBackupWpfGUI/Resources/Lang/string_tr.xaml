@@ -256,6 +256,10 @@
     <system:String x:Key="healthy">Sağlıklı</system:String>
     <system:String x:Key="unhealthy">Sağlıksız</system:String>
     <system:String x:Key="licenseController">Lisans Kontrol</system:String>
+    <system:String x:Key="demo">Demo</system:String>
+    <system:String x:Key="daysLeft">gün kaldı</system:String>
+    <system:String x:Key="licenseKey">Lisans Anahtarı</system:String>
+
     <!--MessageBox Info-->
     <system:String x:Key="notNullMB">İlgili alanları lütfen boş geçmeyiniz.</system:String>
     <system:String x:Key="validateDirectoryMB">Lütfen geçerli bir dizin giriniz.</system:String>

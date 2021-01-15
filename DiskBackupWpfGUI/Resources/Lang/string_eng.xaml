@@ -269,6 +269,10 @@
     <system:String x:Key="healthy">Healthy</system:String>
     <system:String x:Key="unhealthy">Unhealthy</system:String>
     <system:String x:Key="licenseController">Licence Controller</system:String>
+    <system:String x:Key="demo">Demo</system:String>
+    <system:String x:Key="daysLeft">days left</system:String>
+    <system:String x:Key="licenseKey">License Key</system:String>
+
     <!--MessageBox Info-->
     <system:String x:Key="notNullMB">Please do not leave the relevant fields blank.</system:String>
     <system:String x:Key="validateDirectoryMB">Please enter a valid directory.</system:String>
