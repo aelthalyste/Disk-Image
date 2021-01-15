@@ -436,6 +436,7 @@
     <Content Include="image_disk.db">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Resource Include="Resources\Icon\icons8_add_key_2.ico" />
     <Resource Include="Resources\Icon\icons8-delete-file-24.png" />
     <Resource Include="Resources\Icon\icons8-undo-96-disable.png" />
     <Resource Include="Resources\Icon\icons8-undo-96.png" />

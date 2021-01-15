@@ -260,6 +260,7 @@
     <system:String x:Key="daysLeft">gün kaldı</system:String>
     <system:String x:Key="licenseKey">Lisans Anahtarı</system:String>
     <system:String x:Key="validateLicense">Lisans Doğrulama</system:String>
+    <system:String x:Key="enterTheKey">Anahtarı Gir</system:String>
 
     <!--MessageBox Info-->
     <system:String x:Key="notNullMB">İlgili alanları lütfen boş geçmeyiniz.</system:String>

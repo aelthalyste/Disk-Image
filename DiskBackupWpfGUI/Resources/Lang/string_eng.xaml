@@ -273,6 +273,7 @@
     <system:String x:Key="daysLeft">days left</system:String>
     <system:String x:Key="licenseKey">License Key</system:String>
     <system:String x:Key="validateLicense">Validate License</system:String>
+    <system:String x:Key="enterTheKey">Enter The Key</system:String>
 
     <!--MessageBox Info-->
     <system:String x:Key="notNullMB">Please do not leave the relevant fields blank.</system:String>

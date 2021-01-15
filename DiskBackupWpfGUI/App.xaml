@@ -213,6 +213,32 @@
             </Setter>
         </Style>
 
+        <Style x:Key="BlueButton" TargetType="{x:Type Button}">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Name="Border" BorderThickness="1,1,1,1" BorderBrush="#27527B" CornerRadius="5" Background="#2679C4">
+                            <ContentPresenter x:Name="ContentSite"                                            
+                                                        VerticalAlignment="Center"
+                                                        HorizontalAlignment="Center"
+                                                        ContentSource="Content"          
+                                                        Margin="0,0"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Border" Property="Background" Value="#0095D5"/>
+                                <Setter Property="Foreground" Value="White" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Border" Property="Background" Value="#27527B"/>
+                                <Setter Property="Foreground" Value="#FF4D4D4D" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <Style x:Key="TitleButton" TargetType="{x:Type Button}">
             <Setter Property="FontFamily" Value="Calibri"/>
             <Setter Property="FontSize" Value="20"/>

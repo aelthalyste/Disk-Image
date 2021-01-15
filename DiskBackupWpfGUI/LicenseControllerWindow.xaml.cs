@@ -91,7 +91,7 @@ namespace DiskBackupWpfGUI
             {
                 _logger.Information("Demo lisans aktifleştirildi.");
                 key.SetValue("UploadDate", DateTime.Now);
-                key.SetValue("ExpireDate", DateTime.Now + TimeSpan.FromDays(31));
+                key.SetValue("ExpireDate", DateTime.Now + TimeSpan.FromDays(30));
                 key.SetValue("LastDate", DateTime.Now);
                 key.SetValue("Type", 1505);
                 _validate = true;
