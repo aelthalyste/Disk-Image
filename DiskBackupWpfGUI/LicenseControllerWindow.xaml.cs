@@ -1,5 +1,6 @@
 ﻿using DiskBackupWpfGUI.Utils;
 using Microsoft.Win32;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -26,13 +27,15 @@ namespace DiskBackupWpfGUI
         private bool _windowType;
         public bool _validate = false;
         private IConfigHelper _configHelper;
+        private readonly ILogger _logger;
 
-        public LicenseControllerWindow(bool windowType, IConfigHelper configHelper)
+        public LicenseControllerWindow(bool windowType, IConfigHelper configHelper, ILogger logger)
         {
             InitializeComponent();
 
             _windowType = windowType;
             _configHelper = configHelper;
+            _logger = logger.ForContext<LicenseControllerWindow>();
 
             SetApplicationLanguage(_configHelper.GetConfig("lang"));
 
@@ -73,18 +76,20 @@ namespace DiskBackupWpfGUI
 
         private void btnSave_Click(object sender, RoutedEventArgs e)
         {
-            var key = Registry.CurrentUser.OpenSubKey("SOFTWARE\\NarDiskBackup", true);
+            var key = Registry.LocalMachine.OpenSubKey("SOFTWARE\\NarDiskBackup", true);
 
             if (!_windowType)
             {
                 if (key == null)
                 {
-                    key = Registry.CurrentUser.CreateSubKey("SOFTWARE\\NarDiskBackup");
+                    _logger.Information("Lisans dosyası oluşturuldu.");
+                    key = Registry.LocalMachine.CreateSubKey("SOFTWARE\\NarDiskBackup");
                 }
             }
 
             if (rbDemo.IsChecked == true)
             {
+                _logger.Information("Demo lisans aktifleştirildi.");
                 key.SetValue("UploadDate", DateTime.Now);
                 key.SetValue("ExpireDate", DateTime.Now + TimeSpan.FromDays(31));
                 key.SetValue("LastDate", DateTime.Now);
@@ -100,6 +105,7 @@ namespace DiskBackupWpfGUI
                 }
                 else
                 {
+                    _logger.Information("Lisans aktifleştirildi. Lisans Anahtarı: " + txtLicenseKey.Text);
                     key.SetValue("UploadDate", DateTime.Now);
                     key.SetValue("ExpireDate", "");
                     key.SetValue("Type", 2606);

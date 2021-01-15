@@ -120,7 +120,7 @@ namespace DiskBackupWpfGUI
 
             try
             {
-                _logger.Information("GetDiskList metoduna istekte bulunuldu");
+                _logger.Verbose("GetDiskList metoduna istekte bulunuldu");
                 _diskList = backupService.GetDiskList();
 
                 foreach (var diskItem in _diskList)
@@ -167,15 +167,17 @@ namespace DiskBackupWpfGUI
 
         private void ValidateLicense()
         {
-            var key = Registry.CurrentUser.OpenSubKey("SOFTWARE\\NarDiskBackup");
+            var key = Registry.LocalMachine.OpenSubKey("SOFTWARE\\NarDiskBackup");
 
             if (key == null)
             {
                 Console.WriteLine("Dosya yok");
+
+                _logger.Information("Lisans dosyası bulunamadı.");
                 txtLicenseNotActive.Visibility = Visibility.Visible;
                 LicenseControllerWindow licenseControllerWindow = _scope.Resolve<LicenseControllerWindow>(new NamedParameter("windowType", false));
                 licenseControllerWindow.ShowDialog();
-                key = Registry.CurrentUser.OpenSubKey("SOFTWARE\\NarDiskBackup");
+                key = Registry.LocalMachine.OpenSubKey("SOFTWARE\\NarDiskBackup");
 
                 if (!licenseControllerWindow._validate)
                 {
@@ -197,54 +199,65 @@ namespace DiskBackupWpfGUI
             else // dosya var
             {
                 Console.WriteLine("Dosya var");
-
-                if (key.GetValue("Type").ToString() == "1505") // gün kontrolleri yapılacak
+                try
                 {
-                    try
+                    if (key.GetValue("Type").ToString() == "1505") // gün kontrolleri yapılacak
                     {
-                        if (Convert.ToDateTime(key.GetValue("UploadDate").ToString()) <= DateTime.Now &&
-                            Convert.ToDateTime(key.GetValue("ExpireDate").ToString()) >= DateTime.Now &&
-                            Convert.ToDateTime(key.GetValue("LastDate").ToString()) <= DateTime.Now &&
-                            (Convert.ToDateTime(key.GetValue("ExpireDate").ToString()) - Convert.ToDateTime(key.GetValue("UploadDate").ToString())).Days < 31)
+                        try
                         {
-                            // uygulama çalışabilir
-                            var result = Convert.ToDateTime(key.GetValue("ExpireDate").ToString()) - DateTime.Now;
-                            txtDemo.Text = Resources["demo"].ToString() + " / " + result.Days + " " + Resources["daysLeft"].ToString();
-                            txtDemo.Visibility = Visibility.Visible;
+                            if (Convert.ToDateTime(key.GetValue("UploadDate").ToString()) <= DateTime.Now &&
+                                Convert.ToDateTime(key.GetValue("ExpireDate").ToString()) >= DateTime.Now &&
+                                Convert.ToDateTime(key.GetValue("LastDate").ToString()) <= DateTime.Now &&
+                                (Convert.ToDateTime(key.GetValue("ExpireDate").ToString()) - Convert.ToDateTime(key.GetValue("UploadDate").ToString())).Days < 31)
+                            {
+                                // uygulama çalışabilir
+                                var result = Convert.ToDateTime(key.GetValue("ExpireDate").ToString()) - DateTime.Now;
+                                txtDemo.Text = Resources["demo"].ToString() + " / " + result.Days + " " + Resources["daysLeft"].ToString();
+                                txtDemo.Visibility = Visibility.Visible;
 
-                            //servise koyulacak
-                            key = Registry.CurrentUser.OpenSubKey("SOFTWARE\\NarDiskBackup", true);
-                            key.SetValue("LastDate", DateTime.Now);
+                                //servise koyulacak
+                                key = Registry.LocalMachine.OpenSubKey("SOFTWARE\\NarDiskBackup", true);
+                                key.SetValue("LastDate", DateTime.Now);
+                            }
+                            else // deneme süresi doldu
+                            {
+                                _logger.Information("Demo lisans süresi doldu.");
+                                txtLicenseNotActive.Visibility = Visibility.Visible;
+                                FixBrokenRegistry();
+                            }
                         }
-                        else // deneme süresi doldu
+                        catch (Exception)
                         {
                             txtLicenseNotActive.Visibility = Visibility.Visible;
-                            FixBrokenRegistry();
+                            FixBrokenRegistry(); // registry ile oynanmış
                         }
                     }
-                    catch (Exception ex)
+                    else if (key.GetValue("Type").ToString() == "2606") // lisanslı
                     {
-                        MessageBox.Show("Dosyalar bozulmuş\n" + ex);
+                        // uygulama çalışabilir
+                        // btnValidateLicense.Visibility = Visibility.Collapsed; -------------------- button aktifliği
+                    }
+                    else
+                    {
                         txtLicenseNotActive.Visibility = Visibility.Visible;
                         FixBrokenRegistry(); // registry ile oynanmış
                     }
                 }
-                else if (key.GetValue("Type").ToString() == "2606") // lisanslı
+                catch (NullReferenceException)
                 {
-                    // uygulama çalışabilir
-                    //btnValidateLicense.Visibility = Visibility.Collapsed; -------------------- button aktifliği
-                }
-                else
-                {
+                    MessageBox.Show(Resources["unexpectedError1MB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+                    Registry.LocalMachine.DeleteSubKey("SOFTWARE\\NarDiskBackup");
                     txtLicenseNotActive.Visibility = Visibility.Visible;
                     FixBrokenRegistry(); // registry ile oynanmış
+                    Close();
                 }
             }
         }
 
         private void FixBrokenRegistry()
         {
-            var key = Registry.CurrentUser.OpenSubKey("SOFTWARE\\NarDiskBackup", true);
+            _logger.Information("Lisans bilgileri değiştiriliyor.");
+            var key = Registry.LocalMachine.OpenSubKey("SOFTWARE\\NarDiskBackup", true);
 
             key.SetValue("UploadDate", DateTime.Now);
             key.SetValue("ExpireDate", DateTime.Now - TimeSpan.FromDays(1));
