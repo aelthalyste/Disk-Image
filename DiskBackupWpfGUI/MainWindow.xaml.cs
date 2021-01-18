@@ -199,7 +199,7 @@ namespace DiskBackupWpfGUI
                         txtLicenseStatu.Text = Resources["active"].ToString();
                         txtExpireDate.Text = "∞";
                     }
-                    //servise koyulacak
+                    //servisde de var
                     key = Registry.LocalMachine.OpenSubKey("SOFTWARE\\NarDiskBackup", true);
                     key.SetValue("LastDate", DateTime.Now);
                 }
@@ -211,24 +211,24 @@ namespace DiskBackupWpfGUI
                     if (key.GetValue("Type").ToString() == "1505") // gün kontrolleri yapılacak
                     {
 
-                            if (Convert.ToDateTime(key.GetValue("UploadDate").ToString()) <= DateTime.Now &&
-                                Convert.ToDateTime(key.GetValue("ExpireDate").ToString()) >= DateTime.Now &&
-                                Convert.ToDateTime(key.GetValue("LastDate").ToString()) <= DateTime.Now &&
-                                (Convert.ToDateTime(key.GetValue("ExpireDate").ToString()) - Convert.ToDateTime(key.GetValue("UploadDate").ToString())).Days < 31)
-                            {
-                                // uygulama çalışabilir
-                                var result = Convert.ToDateTime(key.GetValue("ExpireDate").ToString()) - DateTime.Now;
-                                LicenseDemoTextWrite(key, result);
+                        if (Convert.ToDateTime(key.GetValue("UploadDate").ToString()) <= DateTime.Now &&
+                            Convert.ToDateTime(key.GetValue("ExpireDate").ToString()) >= DateTime.Now &&
+                            Convert.ToDateTime(key.GetValue("LastDate").ToString()) <= DateTime.Now &&
+                            (Convert.ToDateTime(key.GetValue("ExpireDate").ToString()) - Convert.ToDateTime(key.GetValue("UploadDate").ToString())).Days < 31)
+                        {
+                            // uygulama çalışabilir
+                            var result = Convert.ToDateTime(key.GetValue("ExpireDate").ToString()) - DateTime.Now;
+                            LicenseDemoTextWrite(key, result);
 
-                                //servise koyulacak
-                                key = Registry.LocalMachine.OpenSubKey("SOFTWARE\\NarDiskBackup", true);
-                                key.SetValue("LastDate", DateTime.Now);
-                            }
-                            else // deneme süresi doldu
-                            {
-                                _logger.Information("Demo lisans süresi doldu.");
-                                LicenseNotActiveTextWrite(key);
-                            }
+                            //servisde de var
+                            key = Registry.LocalMachine.OpenSubKey("SOFTWARE\\NarDiskBackup", true);
+                            key.SetValue("LastDate", DateTime.Now);
+                        }
+                        else // deneme süresi doldu
+                        {
+                            _logger.Information("Demo lisans süresi doldu.");
+                            LicenseNotActiveTextWrite(key);
+                        }
 
                     }
                     else if (key.GetValue("Type").ToString() == "2606") // lisanslı
