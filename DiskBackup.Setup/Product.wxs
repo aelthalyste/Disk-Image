@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"
-	xmlns:difxapp="http://schemas.microsoft.com/wix/DifxAppExtension">
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+	<!--xmlns:difxapp="http://schemas.microsoft.com/wix/DifxAppExtension">-->
 	<?define Service_TargetDir=$(var.DiskBackup.Service.TargetDir)?>
 	<?define UI_TargetDir=$(var.DiskBackupWpfGUI.TargetDir)?>
 	<Product Id="*" Name="Narbulut DiskBackup" Language="1033" Version="1.0.0.0" Manufacturer="Narbulut Bilgi Teknolojileri San. ve Tic. A.Ş." UpgradeCode="b5acc323-9d6f-4beb-a666-8633cbff7a5b">
@@ -80,11 +80,11 @@
 				<File Id="disk_image_quartz.db" Name="disk_image_quartz.db" Source="$(var.UI_TargetDir)disk_image_quartz.db" KeyPath="yes" />
 				<File Id="image_disk.db" Name="image_disk.db" Source="$(var.UI_TargetDir)image_disk.db"/>
 			</Component>
-			<Component Id="Driver" Guid="D7CF9890-12EC-4577-98E2-B22BC802CF13" Directory="INSTALLFOLDER">
+			<!--<Component Id="Driver" Guid="D7CF9890-12EC-4577-98E2-B22BC802CF13" Directory="INSTALLFOLDER">
 				<File Id="minispy.sys" Name="minispy.sys" Source="minispy.sys" KeyPath="yes" />
 				<File Id="minispy.inf" Name="minispy.inf" Source="minispy.inf"/>
 				<difxapp:Driver ForceInstall="yes"/>
-			</Component>
+			</Component>-->
 		</ComponentGroup>
 	</Fragment>
 </Wix>
