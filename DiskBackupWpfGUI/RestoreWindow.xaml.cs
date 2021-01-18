@@ -33,12 +33,12 @@ namespace DiskBackupWpfGUI
         private readonly ITaskInfoDal _taskInfoDal;
         private readonly IRestoreTaskDal _restoreTaskDal;
         private readonly IStatusInfoDal _statusInfoDal;
+        private readonly IConfigurationDataDal _configurationDataDal;
         private ITaskSchedulerManager _schedulerManager;
         private IBackupService _backupService;
         private ILogger _logger;
-        private IConfigHelper _configHelper;
 
-        public RestoreWindow(BackupInfo backupInfo, List<VolumeInfo> volumeInfoList, IRestoreTaskDal restoreTaskDal, IStatusInfoDal statusInfoDal, ITaskInfoDal taskInfoDal, ITaskSchedulerManager schedulerManager, IBackupService backupService, ILogger logger, IConfigHelper configHelper)
+        public RestoreWindow(BackupInfo backupInfo, List<VolumeInfo> volumeInfoList, IRestoreTaskDal restoreTaskDal, IStatusInfoDal statusInfoDal, ITaskInfoDal taskInfoDal, ITaskSchedulerManager schedulerManager, IBackupService backupService, ILogger logger, IConfigurationDataDal configurationDataDal)
         {
             InitializeComponent();
 
@@ -51,8 +51,8 @@ namespace DiskBackupWpfGUI
             _backupService = backupService;
             _logger = logger.ForContext<RestoreWindow>();
 
-            _configHelper = configHelper;
-            SetApplicationLanguage(_configHelper.GetConfig("lang"));
+            _configurationDataDal = configurationDataDal;
+            SetApplicationLanguage(_configurationDataDal.Get(x => x.Key == "lang").Value);
 
             _taskInfo.RestoreTaskInfo = new RestoreTask();
             _taskInfo.BackupStorageInfo = new BackupStorageInfo();

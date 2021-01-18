@@ -182,8 +182,6 @@
     <Compile Include="StatusesWindow.xaml.cs">
       <DependentUpon>StatusesWindow.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Utils\ConfigHelper.cs" />
-    <Compile Include="Utils\IConfigHelper.cs" />
     <Compile Include="Utils\SortAdorner.cs" />
     <Compile Include="ValidateNASWindow.xaml.cs">
       <DependentUpon>ValidateNASWindow.xaml</DependentUpon>

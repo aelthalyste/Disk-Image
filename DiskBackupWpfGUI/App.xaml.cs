@@ -48,7 +48,7 @@ namespace DiskBackupWpfGUI
             builder.RegisterType<EfBackupTaskDal>().As<IBackupTaskDal>();
             builder.RegisterType<EfStatusInfoDal>().As<IStatusInfoDal>();
             builder.RegisterType<EfTaskInfoDal>().As<ITaskInfoDal>();
-            builder.RegisterType<ConfigHelper>().As<IConfigHelper>();
+            builder.RegisterType<EfConfigurationDataDal>().As<IConfigurationDataDal>();
             builder.Register(c => new BackupServiceClient().BackupService);
             builder.Register(c => new BackupStorageServiceClient().BackupStorageService);
             builder.Register(c => new LogServiceClient().LogService);

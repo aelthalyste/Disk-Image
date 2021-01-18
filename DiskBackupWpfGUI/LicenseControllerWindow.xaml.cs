@@ -1,4 +1,5 @@
-﻿using DiskBackupWpfGUI.Utils;
+﻿using DiskBackup.DataAccess.Abstract;
+using DiskBackupWpfGUI.Utils;
 using Microsoft.Win32;
 using Serilog;
 using System;
@@ -26,18 +27,18 @@ namespace DiskBackupWpfGUI
     {
         private bool _windowType;
         public bool _validate = false;
-        private IConfigHelper _configHelper;
+        private readonly IConfigurationDataDal _configurationDataDal;
         private readonly ILogger _logger;
 
-        public LicenseControllerWindow(bool windowType, IConfigHelper configHelper, ILogger logger)
+        public LicenseControllerWindow(bool windowType, ILogger logger, IConfigurationDataDal configurationDataDal)
         {
             InitializeComponent();
 
             _windowType = windowType;
-            _configHelper = configHelper;
+            _configurationDataDal = configurationDataDal;
             _logger = logger.ForContext<LicenseControllerWindow>();
 
-            SetApplicationLanguage(_configHelper.GetConfig("lang"));
+            SetApplicationLanguage(_configurationDataDal.Get(x => x.Key == "lang").Value);
 
             rbDemo.Checked += rbDemo_Checked;
             rbLicense.Checked += rbLicense_Checked;

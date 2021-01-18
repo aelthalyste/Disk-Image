@@ -45,6 +45,7 @@
     <Compile Include="Concrete\BackupInfo.cs" />
     <Compile Include="Concrete\BackupStorageInfo.cs" />
     <Compile Include="Concrete\BackupTask.cs" />
+    <Compile Include="Concrete\ConfigurationData.cs" />
     <Compile Include="Concrete\DiskInformation.cs" />
     <Compile Include="Concrete\FilesInBackup.cs" />
     <Compile Include="Concrete\Log.cs" />
