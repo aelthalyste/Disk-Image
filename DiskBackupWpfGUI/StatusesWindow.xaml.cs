@@ -25,8 +25,8 @@ namespace DiskBackupWpfGUI
     {
         private CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
 
-        private StatusInfo _statusInfo = new StatusInfo();
-        private ActivityLog _activityLog = new ActivityLog();
+        private StatusInfo _statusInfo;
+        private ActivityLog _activityLog;
 
         private readonly IStatusInfoDal _statusInfoDal;
         private readonly ITaskInfoDal _taskInfoDal;

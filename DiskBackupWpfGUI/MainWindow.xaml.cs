@@ -165,6 +165,7 @@ namespace DiskBackupWpfGUI
             Console.WriteLine("CTOR SON: " + DateTime.Now);
         }
 
+
         #region Lisans Kontrolleri
 
         private void ValidateLicense()

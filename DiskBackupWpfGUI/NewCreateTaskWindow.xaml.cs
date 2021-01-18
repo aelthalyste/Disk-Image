@@ -346,7 +346,7 @@ namespace DiskBackupWpfGUI
                 // Zincir kontrolü
                 if (!ChainCheck())
                 {
-                    Close(); // Kullanıcı reddettiğinde görev oluşturma ekranının tamamen kapanmasını engellemek için kaldır
+                    //Close(); // Kullanıcı reddettiğinde görev oluşturma ekranının tamamen kapanmasını engellemek için kaldır
                     return;
                 }
 
@@ -354,7 +354,7 @@ namespace DiskBackupWpfGUI
                 var result = CheckAndBreakAffectedTask(_taskInfo);
                 if (!result)
                 {
-                    Close();
+                    //Close(); // Kullanıcı reddettiğinde görev oluşturma ekranının tamamen kapanmasını engellemek için kaldır
                     return;
                 }
 
