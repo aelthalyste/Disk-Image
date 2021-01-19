@@ -2627,10 +2627,16 @@ namespace DiskBackupWpfGUI
                 AdornerLayer.GetAdornerLayer(listViewLogCol).Remove(listViewLogAdorner);
                 listViewLog.Items.SortDescriptions.Clear();
             }
+            else
+            {
+                listViewLog.Items.SortDescriptions.Clear();
+            }
 
             ListSortDirection newDir = ListSortDirection.Ascending;
             if (listViewLogCol == column && listViewLogAdorner.Direction == newDir)
+            { 
                 newDir = ListSortDirection.Descending;
+            }
 
             listViewLogCol = column;
             listViewLogAdorner = new SortAdorner(listViewLogCol, newDir);

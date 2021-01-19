@@ -31,10 +31,10 @@ namespace DiskBackupWpfGUI.Utils
 
             TranslateTransform transform = new TranslateTransform (AdornedElement.RenderSize.Width - 15, (AdornedElement.RenderSize.Height - 5) / 2 );
             drawingContext.PushTransform(transform);
-            Geometry geometry = ascGeometry;
+            Geometry geometry = descGeometry;
 
             if (this.Direction == ListSortDirection.Descending)
-                geometry = descGeometry;
+                geometry = ascGeometry;
 
             drawingContext.DrawGeometry(Brushes.Black, null, geometry);
             drawingContext.Pop();
