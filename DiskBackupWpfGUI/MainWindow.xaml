@@ -14,9 +14,9 @@
         BorderBrush="#194771" BorderThickness="1"
         Height="730" Width="1294"
         ResizeMode="CanMinimize">
-    <!--<Window.Resources>
+    <Window.Resources>
         <ResourceDictionary Source="Resources\Lang\string_tr.xaml"/>
-    </Window.Resources>-->
+    </Window.Resources>
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="30"/>
@@ -181,21 +181,24 @@
                     </Grid.RowDefinitions>
                     <DockPanel>
                         <StackPanel>
-                            <Button Name="btnCreateTask" HorizontalAlignment="Left" Margin="10,4,85,4" Style="{StaticResource CreateTaskButton}" 
-                                    Width="110" Height="32" Grid.Column="0" Click="btnCreateTask_Click" IsEnabled="False">
-                                <Button.Content>
-                                    <StackPanel Orientation="Horizontal">
-                                        <Image Height="26">
-                                            <Image.Style>
-                                                <Style TargetType="Image">
-                                                    <Setter Property="Source" Value="Resources/Icon/u58.png" />
-                                                </Style>
-                                            </Image.Style>
-                                        </Image>
-                                        <TextBlock Text="{DynamicResource createTask}" VerticalAlignment="Center" Margin="2,2" Style="{StaticResource CreateTaskButtonText}"/>
-                                    </StackPanel>
-                                </Button.Content>
-                            </Button>
+                            <StackPanel Orientation="Horizontal" Margin="-5,0" Grid.Column="0">
+                                <Button Name="btnCreateTask" HorizontalAlignment="Left" Margin="10,4,85,4" Style="{StaticResource BlueButton}" 
+                                    Width="110" Height="32" Click="btnCreateTask_Click" IsEnabled="False" Cursor="Hand">
+                                    <Button.Content>
+                                        <StackPanel Orientation="Horizontal">
+                                            <Image Height="26">
+                                                <Image.Style>
+                                                    <Style TargetType="Image">
+                                                        <Setter Property="Source" Value="Resources/Icon/u58.png" />
+                                                    </Style>
+                                                </Image.Style>
+                                            </Image>
+                                            <TextBlock Text="{DynamicResource createTask}" VerticalAlignment="Center" Margin="2,2" Style="{StaticResource CreateTaskButtonText}"/>
+                                        </StackPanel>
+                                    </Button.Content>
+                                </Button>
+                            </StackPanel>
+
                             <ListView Name="listViewDisk" Height="370" Margin="5" SelectionChanged="listViewDisk_SelectionChanged">
                                 <ListView.View>
                                     <GridView>
@@ -636,15 +639,15 @@
                     <Rectangle VerticalAlignment="Center" Stroke="#D7D7D7" StrokeThickness="1" HorizontalAlignment="Right" Height="420"/>
                     <DockPanel>
                         <StackPanel>
-                            <StackPanel Orientation="Horizontal">
-                                <Button Name="btnRestore" HorizontalAlignment="Left" Margin="10,4,30,4" Style="{StaticResource CreateTaskButton}" Width="110" Height="32" 
-                                        Grid.Column="0" Click="btnRestore_Click" IsEnabled="False">
+                            <StackPanel Orientation="Horizontal" Margin="-5,0">
+                                <Button Name="btnRestore" HorizontalAlignment="Left" Margin="10,4,30,4" Style="{StaticResource BlueButton}" Width="110" Height="32" 
+                                        Grid.Column="0" Click="btnRestore_Click" IsEnabled="False" Cursor="Hand">
                                     <Button.Content>
-                                        <StackPanel Orientation="Horizontal">
-                                            <Image Height="26">
+                                        <StackPanel Orientation="Horizontal" Margin="-25,0,0,0">
+                                            <Image Height="22" Margin="5,0">
                                                 <Image.Style>
                                                     <Style TargetType="Image">
-                                                        <Setter Property="Source" Value="Resources/Icon/u58.png" />
+                                                        <Setter Property="Source" Value="Resources/Icon/icons8_data_backup.ico" />
                                                     </Style>
                                                 </Image.Style>
                                             </Image>

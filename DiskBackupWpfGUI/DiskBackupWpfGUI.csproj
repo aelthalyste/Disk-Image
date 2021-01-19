@@ -434,6 +434,7 @@
     <Resource Include="Resources\Icon\Icon_White_V32.png" />
   </ItemGroup>
   <ItemGroup>
+    <Resource Include="Resources\Icon\icons8_data_backup.ico" />
     <Resource Include="favicon_mavi.ico" />
     <Content Include="image_disk.db">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
