@@ -14,9 +14,9 @@
         BorderBrush="#194771" BorderThickness="1"
         Height="730" Width="1294"
         ResizeMode="CanMinimize">
-    <Window.Resources>
+    <!--<Window.Resources>
         <ResourceDictionary Source="Resources\Lang\string_tr.xaml"/>
-    </Window.Resources>
+    </Window.Resources>-->
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="30"/>
@@ -24,7 +24,7 @@
             <RowDefinition/>
         </Grid.RowDefinitions>
 
-        <StackPanel Panel.ZIndex="2" Orientation="Horizontal" HorizontalAlignment="Center" Grid.ColumnSpan="2" Margin="418,0" MouseDown="MyTitleBar_MouseDown">
+        <StackPanel Panel.ZIndex="2" Orientation="Horizontal" Grid.ColumnSpan="2" MouseDown="MyTitleBar_MouseDown" Margin="10,0">
             <Image Source="Resources/Icon/NarBulut_PNG_Icon_White_V3.png" Margin="0,0,5,0"/>
             <TextBlock Text="{DynamicResource appFullName}" Panel.ZIndex="2" Style="{StaticResource TitleBarText}"/>
         </StackPanel>

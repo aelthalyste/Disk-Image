@@ -31,7 +31,11 @@
             <ColumnDefinition />
         </Grid.ColumnDefinitions>
 
-        <TextBlock Name="txtTitleBar" Style="{StaticResource TitleBarText}" Panel.ZIndex="1" Grid.Row="0" Grid.ColumnSpan="2" MouseDown="MyTitleBar_MouseDown"/>
+
+        <StackPanel Panel.ZIndex="1" Orientation="Horizontal" MouseDown="MyTitleBar_MouseDown" Grid.ColumnSpan="2" Margin="10,0">
+            <Image Source="Resources/Icon/NarBulut_PNG_Icon_White_V3.png" Margin="0,0,5,0"/>
+            <TextBlock Name="txtTitleBar" Style="{StaticResource TitleBarText}"  MouseDown="MyTitleBar_MouseDown"/>
+        </StackPanel>
 
         <StackPanel Name="MyTitleBar" VerticalAlignment="Top" MouseDown="MyTitleBar_MouseDown" Grid.Row="0" Grid.ColumnSpan="2">
             <Border Background="#27527B" Height="30">

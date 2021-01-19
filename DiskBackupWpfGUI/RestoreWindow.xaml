@@ -27,7 +27,7 @@
             <RowDefinition/>
         </Grid.RowDefinitions>
 
-        <StackPanel Panel.ZIndex="1" Orientation="Horizontal" HorizontalAlignment="Center" MouseDown="MyTitleBar_MouseDown">
+        <StackPanel Panel.ZIndex="1" Orientation="Horizontal" MouseDown="MyTitleBar_MouseDown" Margin="10,0">
             <Image Source="Resources/Icon/NarBulut_PNG_Icon_White_V3.png" Margin="0,0,5,0"/>
             <TextBlock Text="{DynamicResource restoreAppName}" Style="{StaticResource TitleBarText}"></TextBlock>
         </StackPanel>
