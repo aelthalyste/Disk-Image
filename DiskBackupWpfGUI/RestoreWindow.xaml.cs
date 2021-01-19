@@ -109,7 +109,7 @@ namespace DiskBackupWpfGUI
 
         private void btnRestoreNext_Click(object sender, RoutedEventArgs e)
         {
-            if (RTabControl.SelectedIndex != 3)
+            if (RTabControl.SelectedIndex != 2)
             {
                 RTabControl.SelectedIndex += 1;
             }
@@ -355,14 +355,15 @@ namespace DiskBackupWpfGUI
                 lblTabHeader.Text = Resources["scheduler"].ToString();
                 lblTabContent.Text = Resources["RSchedulerContent"].ToString();
                 btnRestoreBack.IsEnabled = true;
-            }
-            else if (RTabControl.SelectedIndex == 2)
-            {
-                lblTabHeader.Text = Resources["advancedOptions"].ToString();
-                lblTabContent.Text = Resources["restoreDiskContent1"].ToString();
                 btnRestoreNext.IsEnabled = true;
             }
-            else if (RTabControl.SelectedIndex == 3)
+            //else if (RTabControl.SelectedIndex == 2)
+            //{
+            //    lblTabHeader.Text = Resources["advancedOptions"].ToString();
+            //    lblTabContent.Text = Resources["restoreDiskContent1"].ToString();
+            //    btnRestoreNext.IsEnabled = true;
+            //}
+            else if (RTabControl.SelectedIndex == 2)
             {
                 lblTabHeader.Text = Resources["summary"].ToString();
                 lblTabContent.Text = Resources["RSummaryContent"].ToString();
@@ -385,17 +386,17 @@ namespace DiskBackupWpfGUI
 
         }
 
-        private void checkBootPartition_Checked(object sender, RoutedEventArgs e)
-        {
-            stackBootCheck.IsEnabled = true;
-        }
+        //private void checkBootPartition_Checked(object sender, RoutedEventArgs e)
+        //{
+        //    stackBootCheck.IsEnabled = true;
+        //}
 
-        private void checkBootPartition_Unchecked(object sender, RoutedEventArgs e)
-        {
-            stackBootCheck.IsEnabled = false;
-            rbBootGPT.IsChecked = true;
-            rbBootGPT.IsChecked = false;
-        }
+        //private void checkBootPartition_Unchecked(object sender, RoutedEventArgs e)
+        //{
+        //    stackBootCheck.IsEnabled = false;
+        //    rbBootGPT.IsChecked = true;
+        //    rbBootGPT.IsChecked = false;
+        //}
 
         public void SetApplicationLanguage(string option)
         {

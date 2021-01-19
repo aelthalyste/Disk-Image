@@ -260,7 +260,7 @@ namespace DiskBackupWpfGUI
         {
             txtDemoDays.Text = result.Days.ToString();
             stackDemo.Visibility = Visibility.Visible;
-            stackLicenseController.Visibility = Visibility.Visible;
+            //stackLicenseController.Visibility = Visibility.Visible;
             txtLicenseStatu.Text = Resources["demo"].ToString();
             txtExpireDate.Text = key.GetValue("ExpireDate").ToString();
         }
@@ -2168,7 +2168,7 @@ namespace DiskBackupWpfGUI
                 key.SetValue("ExpireDate", "");
                 key.SetValue("Type", 2606);
                 key.SetValue("License", txtLicenseKey.Text);
-                stackLicenseController.Visibility = Visibility.Collapsed;
+                //stackLicenseController.Visibility = Visibility.Collapsed;
                 stackDemo.Visibility = Visibility.Collapsed;
                 txtLicenseStatu.Text = Resources["active"].ToString();
                 txtExpireDate.Text = "∞";

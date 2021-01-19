@@ -1480,7 +1480,7 @@
                             </StackPanel>
                         </Grid>
                     </StackPanel>
-                    <StackPanel Grid.Row="1" Grid.Column="0" Height="200" Orientation="Horizontal" Margin="15,0,3,0">
+                    <StackPanel Grid.Row="1" Grid.Column="0" Height="200" Orientation="Horizontal" Margin="15,0,3,0" Visibility="Collapsed">
                         <Border BorderBrush="#9ACFEA" Width="500"  BorderThickness="2" CornerRadius="3">
                             <StackPanel>
                                 <StackPanel Orientation="Horizontal" Margin="10,5,0,0" >
@@ -1532,10 +1532,13 @@
                         </Border>
                     </StackPanel>
                     
-                    <StackPanel Name="stackLicenseController" Grid.Row="1" Grid.Column="1" Height="200" Orientation="Horizontal" Margin="15,0,15,0" HorizontalAlignment="Right" Visibility="Collapsed">
+                    <StackPanel Name="stackLicenseController" Grid.Row="1" Grid.Column="0" Height="200" Orientation="Horizontal" Margin="15,0,15,0" HorizontalAlignment="Left">
                         <Border BorderBrush="#9ACFEA" Width="500" BorderThickness="2" CornerRadius="3">
                             <StackPanel Margin="10,10,0,0">
-                                <TextBlock Text="Lisans Anahtarı:" FontSize="14" Margin="3,0"/>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="{DynamicResource licenseKey}" FontSize="14" Margin="3,0"/>
+                                    <TextBlock Text=":" FontSize="14" Margin="3,0"/>
+                                </StackPanel>
                                 <TextBox Name="txtLicenseKey" VerticalContentAlignment="Center" Height="30" Margin="20,25" FontSize="14"/>
                                 <Button Name="btnValidateLicense" Width="160" Height="30" Style="{StaticResource BlueButton}" Cursor="Hand" Click="btnValidateLicense_Click">
                                     <Button.Content>

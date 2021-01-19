@@ -113,7 +113,7 @@
                                 <StackPanel Name="stackSetTime" Orientation="Horizontal" IsEnabled="False">
                                     <TextBlock Text="{DynamicResource dateSelection}" VerticalAlignment="Center" Margin="40,0,0,0"/>
                                     <TextBlock Text=":" VerticalAlignment="Center" Margin="3,0,10,0"/>
-                                    <xctk:DateTimePicker Name="dtpSetTime" Width="220" Height="26" MouseWheelActiveTrigger="Focused" />
+                                    <xctk:DateTimePicker Name="dtpSetTime" Width="250" Height="26" MouseWheelActiveTrigger="Focused" />
                                 </StackPanel>
                             </StackPanel>
                         </StackPanel>
@@ -121,7 +121,7 @@
                 </Grid>
             </TabItem>
 
-            <TabItem Name="advancedOptionsTab" IsEnabled="False">
+            <!--<TabItem Name="advancedOptionsTab" IsEnabled="False" >
                 <TabItem.Header>
                     <StackPanel Height="35" Width="130" Orientation="Horizontal">
                         <TextBlock Text="{DynamicResource advancedOptions}" Margin="5,0" VerticalAlignment="Center" HorizontalAlignment="Center" Style="{StaticResource NCTTabItemText}"/>
@@ -139,7 +139,7 @@
                         </StackPanel>
                     </StackPanel>
                 </Grid>
-            </TabItem>
+            </TabItem>-->
 
             <TabItem Name="summaryTab" IsEnabled="False">
                 <TabItem.Header>
