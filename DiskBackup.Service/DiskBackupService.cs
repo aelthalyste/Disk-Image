@@ -7,6 +7,7 @@ using DiskBackup.Entities.Concrete;
 using DiskBackup.TaskScheduler;
 using DiskBackup.TaskScheduler.Factory;
 using DiskBackup.TaskScheduler.Jobs;
+using Microsoft.Win32;
 using Quartz.Spi;
 using Serilog;
 using System;
@@ -53,6 +54,7 @@ namespace DiskBackup.Service
             builder.RegisterType<EfBackupTaskDal>().As<IBackupTaskDal>();
             builder.RegisterType<EfStatusInfoDal>().As<IStatusInfoDal>();
             builder.RegisterType<EfTaskInfoDal>().As<ITaskInfoDal>();
+            builder.RegisterType<EfConfigurationDataDal>().As<IConfigurationDataDal>();
             builder.RegisterType<BackupService>().As<IBackupService>().SingleInstance();
             builder.RegisterType<BackupStorageService>().As<IBackupStorageService>();
             builder.RegisterType<LogService>().As<ILogService>();
@@ -71,6 +73,17 @@ namespace DiskBackup.Service
             CreateContainer();
             CleanUp();
             StartHost();
+            RegistryLastDateWriter();
+        }
+
+        private static void RegistryLastDateWriter()
+        {
+            var key = Registry.LocalMachine.OpenSubKey("SOFTWARE\\NarDiskBackup", true);
+            if (key != null)
+            {
+                if (key.GetValue("Type").ToString() == "1505") // gün kontrolleri yapılacak
+                    key.SetValue("LastDate", DateTime.Now);
+            }
         }
 
         private void CleanUp()
@@ -79,7 +92,7 @@ namespace DiskBackup.Service
             var taskInfoDal = _container.Resolve<ITaskInfoDal>();
             var statusInfoDal = _container.Resolve<IStatusInfoDal>();
 
-            var taskList = taskInfoDal.GetList();     
+            var taskList = taskInfoDal.GetList();
             foreach (var taskItem in taskList)
             {
                 if (taskItem.Status != TaskStatusType.FirstMissionExpected && taskItem.Status != TaskStatusType.Ready)

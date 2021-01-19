@@ -64,7 +64,6 @@ namespace DiskBackupWpfGUI
         CollectionView _view;
 
         private Dictionary<string, string> languages = new Dictionary<string, string>();
-        private IConfigHelper _configHelper;
 
         private readonly ITaskInfoDal _taskInfoDal;
         private readonly IBackupStorageDal _backupStorageDal;
@@ -72,12 +71,13 @@ namespace DiskBackupWpfGUI
         private readonly IStatusInfoDal _statusInfoDal;
         private readonly IActivityLogDal _activityLogDal;
         private readonly IRestoreTaskDal _restoreTaskDal;
+        private IConfigurationDataDal _configurationDataDal;
         //private IBackupService _backupService;
 
         private readonly ILifetimeScope _scope;
         private readonly ILogger _logger;
 
-        public MainWindow(ILifetimeScope scope, ITaskInfoDal taskInfoDal, IBackupStorageDal backupStorageDal, IBackupTaskDal backupTaskDal, IStatusInfoDal statusInfoDal, IActivityLogDal activityLogDal, ILogger logger, IRestoreTaskDal restoreTaskDal, IConfigHelper configHelper)
+        public MainWindow(ILifetimeScope scope, ITaskInfoDal taskInfoDal, IBackupStorageDal backupStorageDal, IBackupTaskDal backupTaskDal, IStatusInfoDal statusInfoDal, IActivityLogDal activityLogDal, ILogger logger, IRestoreTaskDal restoreTaskDal, IConfigurationDataDal configurationDataDal)
         {
             InitializeComponent();
 
@@ -90,19 +90,18 @@ namespace DiskBackupWpfGUI
             _statusInfoDal = statusInfoDal;
             _taskInfoDal = taskInfoDal;
             _restoreTaskDal = restoreTaskDal;
+            _configurationDataDal = configurationDataDal;
             _scope = scope;
-            _configHelper = configHelper;
 
             var backupService = _scope.Resolve<IBackupService>();
             var backupStorageService = _scope.Resolve<IBackupStorageService>();
 
-            if (_configHelper.GetConfig("lang") == null)
-                _configHelper.SetConfig("lang", "tr");
-            SetApplicationLanguage(_configHelper.GetConfig("lang"));
+            var languageConfiguration = _configurationDataDal.Get(x => x.Key == "lang");
+            SetApplicationLanguage(languageConfiguration.Value);
 
             ReloadLanguages();
 
-            cbLang.SelectedValue = _configHelper.GetConfig("lang");
+            cbLang.SelectedValue = languageConfiguration.Value;
             cbLang.SelectionChanged += cbLang_SelectionChanged;
 
             try
@@ -165,6 +164,7 @@ namespace DiskBackupWpfGUI
             Console.WriteLine("CTOR SON: " + DateTime.Now);
         }
 
+
         #region Lisans Kontrolleri
 
         private void ValidateLicense()
@@ -199,7 +199,7 @@ namespace DiskBackupWpfGUI
                         txtLicenseStatu.Text = Resources["active"].ToString();
                         txtExpireDate.Text = "∞";
                     }
-                    //servise koyulacak
+                    //servisde de var
                     key = Registry.LocalMachine.OpenSubKey("SOFTWARE\\NarDiskBackup", true);
                     key.SetValue("LastDate", DateTime.Now);
                 }
@@ -211,24 +211,24 @@ namespace DiskBackupWpfGUI
                     if (key.GetValue("Type").ToString() == "1505") // gün kontrolleri yapılacak
                     {
 
-                            if (Convert.ToDateTime(key.GetValue("UploadDate").ToString()) <= DateTime.Now &&
-                                Convert.ToDateTime(key.GetValue("ExpireDate").ToString()) >= DateTime.Now &&
-                                Convert.ToDateTime(key.GetValue("LastDate").ToString()) <= DateTime.Now &&
-                                (Convert.ToDateTime(key.GetValue("ExpireDate").ToString()) - Convert.ToDateTime(key.GetValue("UploadDate").ToString())).Days < 31)
-                            {
-                                // uygulama çalışabilir
-                                var result = Convert.ToDateTime(key.GetValue("ExpireDate").ToString()) - DateTime.Now;
-                                LicenseDemoTextWrite(key, result);
+                        if (Convert.ToDateTime(key.GetValue("UploadDate").ToString()) <= DateTime.Now &&
+                            Convert.ToDateTime(key.GetValue("ExpireDate").ToString()) >= DateTime.Now &&
+                            Convert.ToDateTime(key.GetValue("LastDate").ToString()) <= DateTime.Now &&
+                            (Convert.ToDateTime(key.GetValue("ExpireDate").ToString()) - Convert.ToDateTime(key.GetValue("UploadDate").ToString())).Days < 31)
+                        {
+                            // uygulama çalışabilir
+                            var result = Convert.ToDateTime(key.GetValue("ExpireDate").ToString()) - DateTime.Now;
+                            LicenseDemoTextWrite(key, result);
 
-                                //servise koyulacak
-                                key = Registry.LocalMachine.OpenSubKey("SOFTWARE\\NarDiskBackup", true);
-                                key.SetValue("LastDate", DateTime.Now);
-                            }
-                            else // deneme süresi doldu
-                            {
-                                _logger.Information("Demo lisans süresi doldu.");
-                                LicenseNotActiveTextWrite(key);
-                            }
+                            //servisde de var
+                            key = Registry.LocalMachine.OpenSubKey("SOFTWARE\\NarDiskBackup", true);
+                            key.SetValue("LastDate", DateTime.Now);
+                        }
+                        else // deneme süresi doldu
+                        {
+                            _logger.Information("Demo lisans süresi doldu.");
+                            LicenseNotActiveTextWrite(key);
+                        }
 
                     }
                     else if (key.GetValue("Type").ToString() == "2606") // lisanslı
@@ -2129,14 +2129,16 @@ namespace DiskBackupWpfGUI
         {
             if (cbLang.SelectedIndex != -1 && cbLang.SelectedItem is KeyValuePair<string, string> item)
             {
-                if (item.Value != _configHelper.GetConfig("lang"))
+                var languageConfiguration = _configurationDataDal.Get(x => x.Key == "lang");
+                if (item.Value != languageConfiguration.Value)
                 {
-                    _configHelper.SetConfig("lang", item.Value);
-                    SetApplicationLanguage(_configHelper.GetConfig("lang"));
+                    languageConfiguration.Value = item.Value;
+                    _configurationDataDal.Update(languageConfiguration);
+                    SetApplicationLanguage(item.Value);
                     ReloadLanguages();
-                    cbLang.SelectedValue = _configHelper.GetConfig("lang");
+                    cbLang.SelectedValue = item.Value;
 
-                    //aktivity log güncelle
+                    //aktivity log güncelleniyor çünkü statuler önceki dil ayarı olarak kalıyordu
                     ShowActivityLog();
                 }
             }

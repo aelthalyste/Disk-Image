@@ -24,7 +24,7 @@
             <RowDefinition Height="40"/>
         </Grid.RowDefinitions>
 
-        <StackPanel Panel.ZIndex="1" Orientation="Horizontal" HorizontalAlignment="Center" MouseDown="MyTitleBar_MouseDown">
+        <StackPanel Panel.ZIndex="1" Orientation="Horizontal" MouseDown="MyTitleBar_MouseDown">
             <Image Source="Resources/Icon/NarBulut_PNG_Icon_White_V3.png" Margin="0,0,5,0"/>
             <TextBlock Name="txtTitleBar" Text="{DynamicResource ValidateNAS}" Style="{StaticResource TitleBarText}"></TextBlock>
         </StackPanel>
@@ -58,7 +58,7 @@
             <PasswordBox Name="txtValidateNASPassword" Grid.Row="3" Grid.Column="1" Width="250" Height="22" Margin="0,0,0,10" HorizontalAlignment="Left" VerticalContentAlignment="Center"/>
         </Grid>                   
 
-        <Button Name="btnValidateNAS" ToolTip="{DynamicResource ValidateConnection}" Click="btnValidateNAS_Click" Grid.Row="2" Width="115" Height="25" HorizontalAlignment="Right"  Margin="30,0"  Style="{StaticResource WhiteButton}" Grid.Column="1">
+        <Button Name="btnValidateNAS" ToolTip="{DynamicResource ValidateConnection}" Click="btnValidateNAS_Click" Grid.Row="2" Width="115" Height="25" HorizontalAlignment="Right" Margin="30,0" Style="{StaticResource WhiteButton}" Grid.Column="1">
             <Button.Content>
                 <StackPanel Orientation="Horizontal">
                     <TextBlock Text="{DynamicResource ValidateConnection}" VerticalAlignment="Center" Margin="5,0"/>

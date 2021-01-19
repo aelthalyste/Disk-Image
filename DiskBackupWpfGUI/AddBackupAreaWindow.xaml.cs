@@ -29,32 +29,30 @@ namespace DiskBackupWpfGUI
     {
         private IBackupStorageService _backupStorageService;
         private ITaskSchedulerManager _taskSchedulerManager;
-        private readonly IBackupStorageDal _backupStorageDal;
         private readonly ITaskInfoDal _taskInfoDal;
         private readonly ILogger _logger;
-
-        private IConfigHelper _configHelper;
+        private readonly IConfigurationDataDal _configurationDataDal;
 
         private bool _showSettings = false;
         private bool _updateControl = false;
         private int _updateId;
 
-        public AddBackupAreaWindow(IBackupStorageService backupStorageService, IBackupStorageDal backupStorageDal, ILogger logger, ITaskInfoDal taskInfoDal, 
-            ITaskSchedulerManager taskSchedulerManager, IConfigHelper configHelper)
+        public AddBackupAreaWindow(IBackupStorageService backupStorageService, ILogger logger, ITaskInfoDal taskInfoDal, 
+            ITaskSchedulerManager taskSchedulerManager, IConfigurationDataDal configurationDataDal)
         {
             InitializeComponent();
             _updateControl = false;
             _backupStorageService = backupStorageService;
-            _backupStorageDal = backupStorageDal;
             _taskInfoDal = taskInfoDal;
             _taskSchedulerManager = taskSchedulerManager;
+            _configurationDataDal = configurationDataDal;
             _logger = logger.ForContext<AddBackupAreaWindow>();
-            _configHelper = configHelper;
-            SetApplicationLanguage(_configHelper.GetConfig("lang"));
+
+            SetApplicationLanguage(_configurationDataDal.Get(x => x.Key == "lang").Value);
         }
 
-        public AddBackupAreaWindow(BackupStorageInfo backupStorageInfo, IBackupStorageService backupStorageService, IBackupStorageDal backupStorageDal, ILogger logger, 
-            ITaskInfoDal taskInfoDal, ITaskSchedulerManager taskSchedulerManager, IConfigHelper configHelper)
+        public AddBackupAreaWindow(BackupStorageInfo backupStorageInfo, IBackupStorageService backupStorageService, ILogger logger, 
+            ITaskInfoDal taskInfoDal, ITaskSchedulerManager taskSchedulerManager, IConfigurationDataDal configurationDataDal)
         {
             InitializeComponent();
 
@@ -62,12 +60,11 @@ namespace DiskBackupWpfGUI
             _updateId = backupStorageInfo.Id;
             _updateControl = true;
             _backupStorageService = backupStorageService;
-            _taskSchedulerManager = taskSchedulerManager;
-            _backupStorageDal = backupStorageDal;
+            _taskSchedulerManager = taskSchedulerManager;;
             _taskInfoDal = taskInfoDal;
+            _configurationDataDal = configurationDataDal;
 
-            _configHelper = configHelper;
-            SetApplicationLanguage(_configHelper.GetConfig("lang"));
+            SetApplicationLanguage(_configurationDataDal.Get(x => x.Key == "lang").Value);
 
             txtBackupAreaName.Text = backupStorageInfo.StorageName;
             txtBackupAreaDescription.Text = backupStorageInfo.Description;

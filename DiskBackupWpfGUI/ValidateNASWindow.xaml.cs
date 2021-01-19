@@ -1,4 +1,5 @@
 ﻿using DiskBackup.Business.Abstract;
+using DiskBackup.DataAccess.Abstract;
 using DiskBackup.Entities.Concrete;
 using DiskBackupWpfGUI.Utils;
 using System;
@@ -24,14 +25,14 @@ namespace DiskBackupWpfGUI
     {
         private IBackupStorageService _backupStorageService;
         private IBackupService _backupService;
-        private IConfigHelper _configHelper;
+        private readonly IConfigurationDataDal _configurationDataDal;
 
         private BackupStorageInfo _backupStorageInfo;
         private BackupInfo _backupInfo;
 
         public bool _validate = false;
 
-        public ValidateNASWindow(IBackupStorageService backupStorageService, IBackupService backupService, BackupInfo backupInfo, IConfigHelper configHelper)
+        public ValidateNASWindow(IBackupStorageService backupStorageService, IBackupService backupService, BackupInfo backupInfo, IConfigurationDataDal configurationDataDal)
         {
             InitializeComponent();
             _backupStorageService = backupStorageService;
@@ -39,8 +40,8 @@ namespace DiskBackupWpfGUI
             _backupInfo = backupInfo;
             _backupStorageInfo = backupInfo.BackupStorageInfo;
 
-            _configHelper = configHelper;
-            SetApplicationLanguage(_configHelper.GetConfig("lang"));
+            _configurationDataDal = configurationDataDal;
+            SetApplicationLanguage(_configurationDataDal.Get(x => x.Key == "lang").Value);
 
             txtValidateNASFolderPath.Text = backupInfo.BackupStorageInfo.Path.Substring(0, backupInfo.BackupStorageInfo.Path.Length - 1);
             txtValidateNASDomain.Text = backupInfo.BackupStorageInfo.Domain;

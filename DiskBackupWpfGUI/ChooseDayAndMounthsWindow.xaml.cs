@@ -1,4 +1,5 @@
-﻿using DiskBackupWpfGUI.Utils;
+﻿using DiskBackup.DataAccess.Abstract;
+using DiskBackupWpfGUI.Utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -22,19 +23,20 @@ namespace DiskBackupWpfGUI
         public static string _months = null;
         public string _daysOrMounths;
 
-        private IConfigHelper _configHelper;
+        private readonly IConfigurationDataDal _configurationDataDal;
 
         private bool _chooseFlag;
 
-        public ChooseDayAndMounthsWindow(bool chooseFlag, IConfigHelper configHelper)
+        public ChooseDayAndMounthsWindow(bool chooseFlag, IConfigurationDataDal configurationDataDal)
         {
             InitializeComponent();
 
             _chooseFlag = chooseFlag;
             _days = null;
             _months = null;
-            _configHelper = configHelper;
-            SetApplicationLanguage(_configHelper.GetConfig("lang"));
+            _configurationDataDal = configurationDataDal;
+            SetApplicationLanguage(_configurationDataDal.Get(x => x.Key == "lang").Value);
+
             //chooseFlag = true gün, false ise ay
             if (chooseFlag)
             {
@@ -48,7 +50,7 @@ namespace DiskBackupWpfGUI
             }
         }
 
-        public ChooseDayAndMounthsWindow(bool chooseFlag, string daysOrMounths, bool updateControl, IConfigHelper configHelper)
+        public ChooseDayAndMounthsWindow(bool chooseFlag, string daysOrMounths, bool updateControl, IConfigurationDataDal configurationDataDal)
         {
             InitializeComponent();
 
@@ -56,8 +58,9 @@ namespace DiskBackupWpfGUI
             _days = null;
             _months = null;
             _daysOrMounths = daysOrMounths;
-            _configHelper = configHelper;
-            SetApplicationLanguage(_configHelper.GetConfig("lang"));
+            _configurationDataDal = configurationDataDal;
+            SetApplicationLanguage(_configurationDataDal.Get(x => x.Key == "lang").Value);
+
             //chooseFlag = true gün, false ise ay
             if (chooseFlag)
             {

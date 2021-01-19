@@ -225,8 +225,8 @@
     <system:String x:Key="RSchedulerContent">Choose the schedule of backups</system:String>
     <system:String x:Key="RSummaryContent">Summary information of the task created</system:String>
     <system:String x:Key="bootableArea">Bootable area</system:String>
-    <system:String x:Key="folderSize2Restore">Volume size to restore</system:String>
-    <system:String x:Key="volumeSize2Restore">Geri yÃ¼klenecek volume boyutu</system:String>
+    <system:String x:Key="folderSize2Restore">File size to restore</system:String>
+    <system:String x:Key="volumeSize2Restore">Volume size to restore</system:String>
     <system:String x:Key="areaSize2Restore">Space size to restore</system:String>
     <system:String x:Key="suggestion">Suggestion</system:String>
     <system:String x:Key="bugReport">Error Reporting</system:String>

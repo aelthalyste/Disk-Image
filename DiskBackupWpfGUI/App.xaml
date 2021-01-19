@@ -233,6 +233,10 @@
                                 <Setter TargetName="Border" Property="Background" Value="#27527B"/>
                                 <Setter Property="Foreground" Value="#FF4D4D4D" />
                             </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Border" Property="Background" Value="LightSlateGray"/>
+                                <Setter Property="Foreground" Value="Black" />
+                            </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
@@ -406,7 +410,7 @@
             <Style.Triggers>
                 <!-- -->
                 <DataTrigger Binding="{Binding IsEnabled, RelativeSource={RelativeSource AncestorType=Button}}" Value="True">
-                    <Setter Property="Foreground" Value="Black"/>
+                    <Setter Property="Foreground" Value="White"/>
                 </DataTrigger>
                 <DataTrigger Binding="{Binding IsEnabled, RelativeSource={RelativeSource AncestorType=Button}}" Value="False">
                     <Setter Property="Foreground" Value="WhiteSmoke"/>

@@ -23,6 +23,7 @@ namespace AESLicenseKeyPoC
     public partial class MainWindow : Window
     {
         public string key = "D*G-KaPdSgVkYp3s6v8y/B?E(H+MbQeT";
+        private Random random = new Random();
 
         public MainWindow()
         {
@@ -31,10 +32,21 @@ namespace AESLicenseKeyPoC
 
         private void btnEncryptt_Click(object sender, RoutedEventArgs e)
         {
-            var str = txtEncryptText.Text;
+            string str = "";
+            if (txtEncryptText.Text == "")
+                str = RandomString(8) + "_" + DateTime.Now + "_" + RandomString(8);
+            else
+                str = txtEncryptText.Text;
             var encryptedString = EncryptString(key, str);
             txtResult.Text = encryptedString;
             txtDecyrpt.Text = DecryptString(key, encryptedString);
+        }
+
+        public string RandomString(int length)
+        {
+            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+            return new string(Enumerable.Repeat(chars, length)
+              .Select(s => s[random.Next(s.Length)]).ToArray());
         }
 
         public string DecryptString(string key, string cipherText)

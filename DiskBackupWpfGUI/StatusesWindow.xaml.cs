@@ -25,16 +25,16 @@ namespace DiskBackupWpfGUI
     {
         private CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
 
-        private StatusInfo _statusInfo = new StatusInfo();
-        private ActivityLog _activityLog = new ActivityLog();
+        private StatusInfo _statusInfo;
+        private ActivityLog _activityLog;
 
         private readonly IStatusInfoDal _statusInfoDal;
         private readonly ITaskInfoDal _taskInfoDal;
-        private IConfigHelper _configHelper;
+        private readonly IConfigurationDataDal _configurationDataDal;
 
         private int _taskId = 0;
 
-        public StatusesWindow(int chooseFlag, TaskInfo taskInfo, IStatusInfoDal statusInfoDal, ITaskInfoDal taskInfoDal, IConfigHelper configHelper)
+        public StatusesWindow(int chooseFlag, TaskInfo taskInfo, IStatusInfoDal statusInfoDal, ITaskInfoDal taskInfoDal, IConfigurationDataDal configurationDataDal)
         {
             InitializeComponent();
             _statusInfoDal = statusInfoDal;
@@ -45,8 +45,8 @@ namespace DiskBackupWpfGUI
             this.Closing += (sender, e) => _cancellationTokenSource.Cancel();
             txtLastStatus.Text = taskInfo.StrStatus;
 
-            _configHelper = configHelper;
-            SetApplicationLanguage(_configHelper.GetConfig("lang"));
+            _configurationDataDal = configurationDataDal;
+            SetApplicationLanguage(_configurationDataDal.Get(x => x.Key == "lang").Value);
 
             // 0 yedekleme durumu, 1 geri yükleme
             if (chooseFlag == 0)
@@ -92,7 +92,7 @@ namespace DiskBackupWpfGUI
             }
         }
 
-        public StatusesWindow(int chooseFlag, ActivityLog activityLog, IStatusInfoDal statusInfoDal, IConfigHelper configHelper)
+        public StatusesWindow(int chooseFlag, ActivityLog activityLog, IStatusInfoDal statusInfoDal, IConfigurationDataDal configurationDataDal)
         {
             InitializeComponent();
             _statusInfoDal = statusInfoDal;
@@ -103,8 +103,8 @@ namespace DiskBackupWpfGUI
             this.Closing += (sender, e) => _cancellationTokenSource.Cancel();
             txtLastStatus.Text = activityLog.StrStatus;
 
-            _configHelper = configHelper;
-            SetApplicationLanguage(_configHelper.GetConfig("lang"));
+            _configurationDataDal = configurationDataDal;
+            SetApplicationLanguage(_configurationDataDal.Get(x => x.Key == "lang").Value);
 
             // 0 yedekleme durumu, 1 geri yükleme
             if (chooseFlag == 0)

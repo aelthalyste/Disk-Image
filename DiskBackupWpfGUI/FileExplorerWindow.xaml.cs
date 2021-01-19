@@ -31,24 +31,23 @@ namespace DiskBackupWpfGUI
         private IBackupService _backupManager;
         private readonly IBackupStorageDal _backupStorageDal;
         private readonly ILogger _logger;
-
-        private IConfigHelper _configHelper;
+        private readonly IConfigurationDataDal _configurationDataDal;
 
         private List<FilesInBackup> _filesInBackupList = new List<FilesInBackup>();
         private BackupInfo _backupInfo;
 
         private bool _fileAllControl;
 
-        public FileExplorerWindow(IBackupService backupManager, BackupInfo backupInfo, IBackupStorageDal backupStorageDal, ILogger logger, IConfigHelper configHelper)
+        public FileExplorerWindow(IBackupService backupManager, BackupInfo backupInfo, IBackupStorageDal backupStorageDal, ILogger logger, IConfigurationDataDal configurationDataDal)
         {
             InitializeComponent();
             _backupStorageDal = backupStorageDal;
             _backupManager = backupManager;
             _backupInfo = backupInfo;
+            _configurationDataDal = configurationDataDal;
             _logger = logger.ForContext<FileExplorerWindow>();
 
-            _configHelper = configHelper;
-            SetApplicationLanguage(_configHelper.GetConfig("lang"));
+            SetApplicationLanguage(_configurationDataDal.Get(x => x.Key == "lang").Value);
 
             try
             {
