@@ -4593,10 +4593,9 @@ SaveMetadata(char Letter, int Version, int ClusterSize, BackupType BT,
         goto Exit;
     }
     
-    // NOTE(Batuhan): Reserve first bytes for metadata struct
-    WriteFile(MetadataFile, StringBuffer, sizeof(BM), &BytesWritten, 0);
-    if (BytesWritten != sizeof(BM)) {
-        printf("Couldn't reserve bytes for metadata struct, written %i instead of %i\n", BytesWritten, (int)sizeof(BM));
+    
+    if(FALSE==NarSetFilePointer(MetadataFile, sizeof(BM))){
+        printf("Couldnt reserve bytes for metadata struct!\n");
         goto Exit;
     }
     
@@ -7941,7 +7940,9 @@ int
 main(int argc, char* argv[]) {
     
     //DEBUG_FileRestore();
-    //DEBUG_Restore();
+    DEBUG_Restore();
+    return 0;
+    
     //DEBUG_FileExplorer();
     
     size_t bsize = 64*1024*1024;
