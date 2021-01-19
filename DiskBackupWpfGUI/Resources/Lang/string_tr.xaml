@@ -202,6 +202,7 @@
     <system:String x:Key="ABASettingsContent">Yedek alanının ayarlamasını yapınız</system:String>
     <system:String x:Key="ABASummaryContent">Oluşturulan yedekleme alanının özet bilgisi</system:String>
     <system:String x:Key="restoreContent">Yedeği geri yükleyeceğiniz dosyayı ve geri yükleyeceğiniz diski veya volume seçiniz</system:String>
+    <system:String x:Key="createTaskContent">Bir görev oluşturabilmek için disk veya volume seçiniz</system:String>
     <system:String x:Key="forHelp">Yardım için</system:String>
     <system:String x:Key="plsContact">üzerinden iletişime geçebilirsiniz.</system:String>
     <system:String x:Key="contactUs">Bize Ulaşın</system:String>

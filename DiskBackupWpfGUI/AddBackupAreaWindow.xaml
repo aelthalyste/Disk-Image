@@ -112,10 +112,10 @@
                         <RadioButton Content="{DynamicResource NASorSharing}" Name="rbNAS" GroupName="rbTarget" Checked="rbNAS_Checked"/>
                         <TextBlock Text="{DynamicResource NASorSharindDesc}" Margin="40,10,0,20" />
                     </StackPanel>
-                    <StackPanel Grid.Column="1" Margin="5,20,10,0" HorizontalAlignment="Center">
-                        <CheckBox Content="{DynamicResource backupToCloud}" Name="cbBackupToCloud" IsChecked="True" HorizontalAlignment="Center" Margin="0,0,0,10"/>
-                        <TextBlock Text="{DynamicResource backupToCloudDesc}" TextWrapping="WrapWithOverflow" Margin="0,0,0,10"/>
-                        <TextBlock Text="{DynamicResource licenseNotActive}" Name="NotLisance" Margin="0,0,0,10"/>
+                    <StackPanel Grid.Column="1" Margin="5,20,10,0" HorizontalAlignment="Center" IsEnabled="False">
+                        <CheckBox Content="{DynamicResource backupToCloud}" Name="cbBackupToCloud" IsChecked="False" HorizontalAlignment="Center" Margin="0,0,0,10" Foreground="LightSlateGray"/>
+                        <TextBlock Text="{DynamicResource backupToCloudDesc}" TextWrapping="WrapWithOverflow" Margin="0,0,0,10" Foreground="LightSlateGray"/>
+                        <TextBlock Text="{DynamicResource licenseNotActive}" Name="NotLisance" Margin="0,0,0,10" Foreground="LightSlateGray"/>
                         <Image Source="Resources/Icon/blue_icon.png" Height="100"/>
                         <Grid Margin="0,10">
                             <Grid.ColumnDefinitions>
@@ -123,14 +123,14 @@
                                 <ColumnDefinition />
                             </Grid.ColumnDefinitions>
                             <StackPanel>
-                                <TextBlock Text="{DynamicResource area}" Margin="0,0,0,5"/>
-                                <TextBlock Text="{DynamicResource usedSize}" Margin="0,0,0,5"/>
-                                <TextBlock Text="{DynamicResource freeSize}"/>
+                                <TextBlock Text="{DynamicResource area}" Margin="0,0,0,5" Foreground="LightSlateGray"/>
+                                <TextBlock Text="{DynamicResource usedSize}" Margin="0,0,0,5" Foreground="LightSlateGray"/>
+                                <TextBlock Text="{DynamicResource freeSize}" Foreground="LightSlateGray"/>
                             </StackPanel>
                             <StackPanel Grid.Column="1">
-                                <TextBlock Name="txtArea" Text="100 GB" Margin="0,0,0,5"/>
-                                <TextBlock Name="txtUsedArea" Text="20 GB" Margin="0,0,0,5"/>
-                                <TextBlock Name="txtFreeArea" Text="80 GB"/>
+                                <TextBlock Name="txtArea" Text="100 GB" Margin="0,0,0,5" Foreground="LightSlateGray"/>
+                                <TextBlock Name="txtUsedArea" Text="0 GB" Margin="0,0,0,5" Foreground="LightSlateGray"/>
+                                <TextBlock Name="txtFreeArea" Text="100 GB" Foreground="LightSlateGray"/>
                             </StackPanel>
                         </Grid>
                     </StackPanel>
@@ -265,10 +265,10 @@
         <Rectangle Fill="White" Grid.Row="2" Height="60" VerticalAlignment="Bottom"/>
         <Rectangle Height="1" Fill="#AAAAAA" Grid.Row="2" VerticalAlignment="Bottom" Margin="0,0,0,60" />
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Grid.Row="2" >
-            <Button Name="btnBackupAreaBack" Content="{DynamicResource back}" Click="btnBackupAreaBack_Click" Style="{StaticResource WhiteButton}" Width="70" Height="20" VerticalAlignment="Bottom" Margin="0,0,0,20" IsEnabled="False"></Button>
-            <Button Name="btnBackupAreaNext" Content="{DynamicResource next}" Click="btnBackupAreaNext_Click" Style="{StaticResource WhiteButton}" Width="70" Height="20" VerticalAlignment="Bottom" Margin="10,0,0,20"></Button>
-            <Button Name="btnBackupAreaOk" Content="{DynamicResource okay}" Click="btnBackupAreaOk_Click" Style="{StaticResource WhiteButton}" Width="70" Height="20" VerticalAlignment="Bottom" Margin="10,0,0,20"></Button>
-            <Button Name="btnBackupAreaCancel" Content="{DynamicResource cancel}" Click="btnBackupAreaCancel_Click" Style="{StaticResource WhiteButton}" Width="70" Height="20" VerticalAlignment="Bottom" Margin="10,0,30,20"></Button>
+            <Button Name="btnBackupAreaBack" Content="{DynamicResource back}" Click="btnBackupAreaBack_Click" Style="{StaticResource WhiteButton}" Width="70" Height="26" VerticalAlignment="Bottom" Margin="0,0,0,20" IsEnabled="False"></Button>
+            <Button Name="btnBackupAreaNext" Content="{DynamicResource next}" Click="btnBackupAreaNext_Click" Style="{StaticResource WhiteButton}" Width="70" Height="26" VerticalAlignment="Bottom" Margin="10,0,0,20"></Button>
+            <Button Name="btnBackupAreaOk" Content="{DynamicResource okay}" Click="btnBackupAreaOk_Click" Style="{StaticResource WhiteButton}" Width="70" Height="26" VerticalAlignment="Bottom" Margin="10,0,0,20"></Button>
+            <Button Name="btnBackupAreaCancel" Content="{DynamicResource cancel}" Click="btnBackupAreaCancel_Click" Style="{StaticResource WhiteButton}" Width="70" Height="26" VerticalAlignment="Bottom" Margin="10,0,30,20"></Button>
         </StackPanel>
     </Grid>
 </Window>

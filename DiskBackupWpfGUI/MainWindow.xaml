@@ -14,9 +14,9 @@
         BorderBrush="#194771" BorderThickness="1"
         Height="730" Width="1294"
         ResizeMode="CanMinimize">
-    <!--<Window.Resources>
+    <Window.Resources>
         <ResourceDictionary Source="Resources\Lang\string_tr.xaml"/>
-    </Window.Resources>-->
+    </Window.Resources>
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="30"/>
@@ -182,7 +182,7 @@
                     <DockPanel>
                         <StackPanel>
                             <StackPanel Orientation="Horizontal" Margin="-5,0" Grid.Column="0">
-                                <Button Name="btnCreateTask" HorizontalAlignment="Left" Margin="10,4,85,4" Style="{StaticResource BlueButton}" 
+                                <Button Name="btnCreateTask" HorizontalAlignment="Left" Margin="10,4,15,4" Style="{StaticResource BlueButton}" 
                                     Width="110" Height="32" Click="btnCreateTask_Click" IsEnabled="False" Cursor="Hand">
                                     <Button.Content>
                                         <StackPanel Orientation="Horizontal">
@@ -197,6 +197,7 @@
                                         </StackPanel>
                                     </Button.Content>
                                 </Button>
+                                <TextBlock Name="lblCreateTaskWarning" Text="{DynamicResource createTaskContent}" VerticalAlignment="Center" />
                             </StackPanel>
 
                             <ListView Name="listViewDisk" Height="370" Margin="5" SelectionChanged="listViewDisk_SelectionChanged">
@@ -640,7 +641,7 @@
                     <DockPanel>
                         <StackPanel>
                             <StackPanel Orientation="Horizontal" Margin="-5,0">
-                                <Button Name="btnRestore" HorizontalAlignment="Left" Margin="10,4,30,4" Style="{StaticResource BlueButton}" Width="110" Height="32" 
+                                <Button Name="btnRestore" HorizontalAlignment="Left" Margin="10,4,15,4" Style="{StaticResource BlueButton}" Width="110" Height="32" 
                                         Grid.Column="0" Click="btnRestore_Click" IsEnabled="False" Cursor="Hand">
                                     <Button.Content>
                                         <StackPanel Orientation="Horizontal" Margin="-25,0,0,0">
@@ -845,7 +846,7 @@
                                 <TextBlock Text="{DynamicResource folderSize}" Margin="0,0,0,5" />
                                 <TextBlock Text="{DynamicResource createdDate}" Margin="0,0,0,5" />
                                 <TextBlock Text="{DynamicResource bootablePartition}" Margin="0,0,0,5" />
-                                <TextBlock Text="{DynamicResource zip}" Margin="0,0,0,5" />
+                                <TextBlock Text="{DynamicResource zip}" Margin="0,0,0,5" Visibility="Collapsed"/>
                                 <TextBlock Text="{DynamicResource OS}" Margin="0,0,0,5" />
                                 <TextBlock Text="{DynamicResource pcName}" Margin="0,0,0,5" />
                                 <TextBlock Text="{DynamicResource ipAddress}" Margin="0,0,0,5" />
@@ -858,7 +859,7 @@
                                 <TextBlock Text=":" Margin="0,0,0,5" />
                                 <TextBlock Text=":" Margin="0,0,0,5" />
                                 <TextBlock Text=":" Margin="0,0,0,5" />
-                                <TextBlock Text=":" Margin="0,0,0,5" />
+                                <TextBlock Text=":" Margin="0,0,0,5" Visibility="Collapsed"/>
                                 <TextBlock Text=":" Margin="0,0,0,5" />
                                 <TextBlock Text=":" Margin="0,0,0,5" />
                                 <TextBlock Text=":" Margin="0,0,0,5" />
@@ -871,7 +872,7 @@
                                 <TextBlock Name="txtRFolderSize" Margin="0,0,0,5" />
                                 <TextBlock Name="txtRCreatedDate" Margin="0,0,0,5" />
                                 <TextBlock Name="txtRBootablePartition" Margin="0,0,0,5" />
-                                <TextBlock Name="txtRzip" Text="--Evet (Standart)" Margin="0,0,0,5" />
+                                <TextBlock Name="txtRzip" Text="--Evet (Standart)" Margin="0,0,0,5" Visibility="Collapsed"/>
                                 <TextBlock Name="txtROS" Margin="0,0,0,5" />
                                 <TextBlock Name="txtRPcName" Margin="0,0,0,5" />
                                 <TextBlock Name="txtRIpAddress" Margin="0,0,0,5" />

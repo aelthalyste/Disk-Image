@@ -16,9 +16,9 @@
         HorizontalAlignment="Center" 
         Height="450" 
         Width="800">
-    <!--<Window.Resources>
+    <Window.Resources>
         <ResourceDictionary Source="Resources\Lang\string_tr.xaml"/>
-    </Window.Resources>-->
+    </Window.Resources>
     <Grid Background="White">
         <Grid.RowDefinitions>
             <RowDefinition Height="30"/>
@@ -108,8 +108,8 @@
                         <TextBlock Text="{DynamicResource diffDescription}" Margin="40,10,0,20" />
                         <RadioButton Name="rbBTIncremental" GroupName="rbBackupType" Content="{DynamicResource inc}"/>
                         <TextBlock Text="{DynamicResource incDescription}" Margin="40,10,0,20" />
-                        <RadioButton Name="rbBTFull" GroupName="rbBackupType" Content="{DynamicResource full}" />
-                        <TextBlock Text="{DynamicResource fullDescription}" Margin="40,10,0,20" />
+                        <RadioButton Name="rbBTFull" GroupName="rbBackupType" Content="{DynamicResource full}" Visibility="Collapsed"/>
+                        <TextBlock Text="{DynamicResource fullDescription}" Margin="40,10,0,20" Visibility="Collapsed"/>
                     </StackPanel>
                     <!--Full backup radio button gelicek-->
                 </Grid>
@@ -175,7 +175,7 @@
                                     <TextBlock Text="{DynamicResource fullSize}" Margin="3,0,0,0"></TextBlock>
                                 </StackPanel>
                             </StackPanel>
-                            <StackPanel Margin="50,0,0,0" Grid.Column="2">
+                            <StackPanel Margin="50,0,0,0" Grid.Column="2" Visibility="Collapsed">
                                 <Grid>
                                     <Grid.RowDefinitions>
                                         <RowDefinition/>
@@ -213,7 +213,8 @@
                             </StackPanel>
                         </Grid>
 
-                        <TextBlock Name="txtTargetLicence" Text="{DynamicResource licenseNotActive}" Foreground="Red" Margin="0,10"></TextBlock>
+                        <TextBlock Name="txtTargetLicence" Text="{DynamicResource licenseNotActive}" Foreground="Red" Margin="0,10" Visibility="Collapsed"/>
+                        <TextBlock Foreground="Red" Margin="0,10"/>
 
                         <Grid Name="gridIsCloud">
                             <Grid.RowDefinitions>
@@ -228,23 +229,23 @@
                             <TextBlock>Narbulut</TextBlock>
                             <Grid Height="70" Width="70" Margin="10,0,0,0" Grid.Row="1">
                                 <xctk:Pie StartAngle="0" EndAngle="360" Height="64" Width="64" Fill="#B8DABC" Stroke="#7A917D"/>
-                                <xctk:Pie Name="pieCloudSize" StartAngle="-90" EndAngle="150" Height="64" Width="64" Fill="#87B5F2" Stroke="#5A78A1"/>
+                                <xctk:Pie Name="pieCloudSize" StartAngle="-90" EndAngle="-1" Height="64" Width="64" Fill="#87B5F2" Stroke="#5A78A1"/>
                             </Grid>
                             <StackPanel Margin="45,10,0,0" Grid.Row="1" Grid.Column="1">
                                 <StackPanel Orientation="Horizontal">
-                                    <TextBlock Name="lblTargetNarbulutTotalSize">3 TB</TextBlock>
+                                    <TextBlock Name="lblTargetNarbulutTotalSize">100 GB</TextBlock>
                                     <TextBlock Text="{DynamicResource area}" Margin="3,0,0,0"></TextBlock>
                                 </StackPanel>
                                 <StackPanel Orientation="Horizontal">
-                                    <TextBlock Name="lblTargetNarbulutFreeSize">350 GB</TextBlock>
+                                    <TextBlock Name="lblTargetNarbulutFreeSize">100 GB</TextBlock>
                                     <TextBlock Text="{DynamicResource freeSize}" Margin="3,0,0,0"></TextBlock>
                                 </StackPanel>
                                 <StackPanel Orientation="Horizontal">
-                                    <TextBlock Name="lblTargetNarbulutFullSize">2.2 TB</TextBlock>
+                                    <TextBlock Name="lblTargetNarbulutFullSize">0 GB</TextBlock>
                                     <TextBlock Text="{DynamicResource fullSize}" Margin="3,0,0,0"></TextBlock>
                                 </StackPanel>
                             </StackPanel>
-                            <StackPanel Margin="50,0,0,0" Grid.Row="1" Grid.Column="2">
+                            <StackPanel Margin="50,0,0,0" Grid.Row="1" Grid.Column="2" Visibility="Collapsed">
                                 <Grid>
                                     <Grid.RowDefinitions>
                                         <RowDefinition/>
@@ -469,10 +470,10 @@
         <Rectangle Fill="White" Grid.Row="2" Height="60" VerticalAlignment="Bottom"/>
         <Rectangle Height="1" Fill="#AAAAAA" Grid.Row="2" VerticalAlignment="Bottom" Margin="0,0,0,60" />
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Grid.Row="2" >
-            <Button Name="btnCreateTaskBack" Content="{DynamicResource back}" Click="btnCreateTaskBack_Click" Style="{StaticResource WhiteButton}" Width="70" Height="20" VerticalAlignment="Bottom" Margin="0,0,0,20" IsEnabled="False"></Button>
-            <Button Name="btnCreateTaskNext" Content="{DynamicResource next}" Click="btnCreateTaskNext_Click" Style="{StaticResource WhiteButton}" Width="70" Height="20" VerticalAlignment="Bottom" Margin="10,0,0,20" IsEnabled="True"></Button>
-            <Button Name="btnCreateTaskOk" Content="{DynamicResource okay}" Click="btnCreateTaskOk_Click" Style="{StaticResource WhiteButton}" Width="70" Height="20" VerticalAlignment="Bottom" Margin="10,0,0,20"></Button>
-            <Button Name="btnCreateTaskCancel" Content="{DynamicResource cancel}" Click="btnCreateTaskCancel_Click" Style="{StaticResource WhiteButton}" Width="70" Height="20" VerticalAlignment="Bottom" Margin="10,0,30,20"></Button>
+            <Button Name="btnCreateTaskBack" Content="{DynamicResource back}" Click="btnCreateTaskBack_Click" Style="{StaticResource WhiteButton}" Width="70" Height="26" VerticalAlignment="Bottom" Margin="0,0,0,20" IsEnabled="False"></Button>
+            <Button Name="btnCreateTaskNext" Content="{DynamicResource next}" Click="btnCreateTaskNext_Click" Style="{StaticResource WhiteButton}" Width="70" Height="26" VerticalAlignment="Bottom" Margin="10,0,0,20" IsEnabled="True"></Button>
+            <Button Name="btnCreateTaskOk" Content="{DynamicResource okay}" Click="btnCreateTaskOk_Click" Style="{StaticResource WhiteButton}" Width="70" Height="26" VerticalAlignment="Bottom" Margin="10,0,0,20"></Button>
+            <Button Name="btnCreateTaskCancel" Content="{DynamicResource cancel}" Click="btnCreateTaskCancel_Click" Style="{StaticResource WhiteButton}" Width="70" Height="26" VerticalAlignment="Bottom" Margin="10,0,30,20"></Button>
         </StackPanel>
     </Grid>
 </Window>
