@@ -698,9 +698,18 @@ namespace DiskBackupWpfGUI
                     if (((BackupStorageInfo)cbTargetBackupArea.SelectedItem).Id == item.Id)
                     {
                         //yerel disk - nas
-                        lblTargetTotalSize.Text = item.StrCapacity;
-                        lblTargetFreeSize.Text = item.StrFreeSize;
-                        lblTargetFullSize.Text = item.StrUsedSize;
+                        var totalSize = item.StrCapacity.Split(' ');
+                        lblTargetTotalSize.Text = totalSize.First();
+                        lblTargetTotalSizeType.Text = totalSize.Last();
+
+                        var freeSize = item.StrFreeSize.Split(' ');
+                        lblTargetFreeSize.Text = freeSize.First();
+                        lblTargetFreeSizeType.Text = freeSize.Last();
+
+                        var fullSize = item.StrUsedSize.Split(' ');
+                        lblTargetFullSize.Text = fullSize.First(); ;
+                        lblTargetFullSizeType.Text = fullSize.Last(); ;
+
                         // pasta işlemleri
                         double Capacity = item.Capacity;
                         double UsedSize = item.UsedSize;
@@ -720,9 +729,17 @@ namespace DiskBackupWpfGUI
                         if (item.IsCloud)
                         {
                             gridIsCloud.Visibility = Visibility.Visible;
-                            lblTargetNarbulutTotalSize.Text = item.StrCloudCapacity;
-                            lblTargetNarbulutFreeSize.Text = item.StrCloudFreeSize;
-                            lblTargetNarbulutFullSize.Text = item.StrCloudUsedSize;
+
+                            var narbulutTotalSize = item.StrCloudCapacity.Split(' ');
+                            lblTargetNarbulutTotalSize.Text = narbulutTotalSize.First();
+                            lblTargetNarbulutTotalSizeType.Text = narbulutTotalSize.Last();
+                            var narbulutFreeSize = item.StrCloudFreeSize.Split(' ');
+                            lblTargetNarbulutFreeSize.Text = narbulutFreeSize.First();
+                            lblTargetNarbulutFreeSizeType.Text = narbulutFreeSize.Last();
+                            var narbulutFullSize = item.StrCloudUsedSize.Split(' ');
+                            lblTargetNarbulutFullSize.Text = narbulutFullSize.First(); ;
+                            lblTargetNarbulutFullSizeType.Text = narbulutFullSize.Last(); ;
+
                             // pasta işlemleri
                             double cloudCapacity = item.CloudCapacity;
                             double cloudUsedSize = item.CloudUsedSize;

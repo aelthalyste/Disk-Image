@@ -162,18 +162,33 @@
                                 <xctk:Pie Name="pieDiskSize" StartAngle="-90" EndAngle="150" Height="64" Width="64" Fill="#87B5F2" Stroke="#5A78A1"/>
                             </Grid>
                             <StackPanel Margin="45,10,0,0" Grid.Column="1">
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock Name="lblTargetTotalSize">3 TB</TextBlock>
-                                    <TextBlock Text="{DynamicResource area}" Margin="3,0,0,0"></TextBlock>
-                                </StackPanel>
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock Name="lblTargetFreeSize">350 GB</TextBlock>
-                                    <TextBlock Text="{DynamicResource freeSize}" Margin="3,0,0,0"></TextBlock>
-                                </StackPanel>
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock Name="lblTargetFullSize">2.2 TB</TextBlock>
-                                    <TextBlock Text="{DynamicResource fullSize}" Margin="3,0,0,0"></TextBlock>
-                                </StackPanel>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="40"/>
+                                        <ColumnDefinition/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel>
+                                        <TextBlock Name="lblTargetTotalSize">3</TextBlock>
+                                        <TextBlock Name="lblTargetFreeSize">350</TextBlock>
+                                        <TextBlock Name="lblTargetFullSize">2.2</TextBlock>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Name="lblTargetTotalSizeType">TB</TextBlock>
+                                            <TextBlock Text="{DynamicResource area}" Margin="3,0,0,0"></TextBlock>
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Name="lblTargetFreeSizeType">GB</TextBlock>
+                                            <TextBlock Text="{DynamicResource freeSize}" Margin="3,0,0,0"></TextBlock>
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Name="lblTargetFullSizeType">TB</TextBlock>
+                                            <TextBlock Text="{DynamicResource fullSize}" Margin="3,0,0,0"></TextBlock>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Grid>
+                                
+                                
                             </StackPanel>
                             <StackPanel Margin="50,0,0,0" Grid.Column="2" Visibility="Collapsed">
                                 <Grid>
@@ -229,21 +244,34 @@
                             <TextBlock>Narbulut</TextBlock>
                             <Grid Height="70" Width="70" Margin="10,0,0,0" Grid.Row="1">
                                 <xctk:Pie StartAngle="0" EndAngle="360" Height="64" Width="64" Fill="#B8DABC" Stroke="#7A917D"/>
-                                <xctk:Pie Name="pieCloudSize" StartAngle="-90" EndAngle="-1" Height="64" Width="64" Fill="#87B5F2" Stroke="#5A78A1"/>
+                                <xctk:Pie Name="pieCloudSize" StartAngle="-90" EndAngle="-89" Height="64" Width="64" Fill="#87B5F2" Stroke="#5A78A1"/>
                             </Grid>
                             <StackPanel Margin="45,10,0,0" Grid.Row="1" Grid.Column="1">
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock Name="lblTargetNarbulutTotalSize">100 GB</TextBlock>
-                                    <TextBlock Text="{DynamicResource area}" Margin="3,0,0,0"></TextBlock>
-                                </StackPanel>
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock Name="lblTargetNarbulutFreeSize">100 GB</TextBlock>
-                                    <TextBlock Text="{DynamicResource freeSize}" Margin="3,0,0,0"></TextBlock>
-                                </StackPanel>
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock Name="lblTargetNarbulutFullSize">0 GB</TextBlock>
-                                    <TextBlock Text="{DynamicResource fullSize}" Margin="3,0,0,0"></TextBlock>
-                                </StackPanel>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="40"/>
+                                        <ColumnDefinition/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel>
+                                        <TextBlock Name="lblTargetNarbulutTotalSize">100</TextBlock>
+                                        <TextBlock Name="lblTargetNarbulutFreeSize">100</TextBlock>
+                                        <TextBlock Name="lblTargetNarbulutFullSize">0</TextBlock>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Name="lblTargetNarbulutTotalSizeType">GB</TextBlock>
+                                            <TextBlock Text="{DynamicResource area}" Margin="3,0,0,0"></TextBlock>
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Name="lblTargetNarbulutFreeSizeType">GB</TextBlock>
+                                            <TextBlock Text="{DynamicResource freeSize}" Margin="3,0,0,0"></TextBlock>
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Name="lblTargetNarbulutFullSizeType">GB</TextBlock>
+                                            <TextBlock Text="{DynamicResource fullSize}" Margin="3,0,0,0"></TextBlock>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Grid>
                             </StackPanel>
                             <StackPanel Margin="50,0,0,0" Grid.Row="1" Grid.Column="2" Visibility="Collapsed">
                                 <Grid>
