@@ -3,7 +3,7 @@
 	<!--xmlns:difxapp="http://schemas.microsoft.com/wix/DifxAppExtension">-->
 	<?define Service_TargetDir=$(var.DiskBackup.Service.TargetDir)?>
 	<?define UI_TargetDir=$(var.DiskBackupWpfGUI.TargetDir)?>
-	<Product Id="*" Name="Narbulut DiskBackup" Language="1033" Version="1.0.0.0" Manufacturer="Narbulut Bilgi Teknolojileri San. ve Tic. A.Ş." UpgradeCode="b5acc323-9d6f-4beb-a666-8633cbff7a5b">
+	<Product Id="*" Name="Narbulut Disk Backup" Language="1033" Version="1.0.0.0" Manufacturer="Narbulut Bilgi Teknolojileri San. ve Tic. A.Ş." UpgradeCode="b5acc323-9d6f-4beb-a666-8633cbff7a5b">
 		<Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
 		<UI>
 			<UIRef Id="WixUI_Minimal" />
@@ -34,7 +34,7 @@
 			</Directory>
 			<Directory Id="DesktopFolder" Name="Desktop">
 				<Component Id="ApplicationShortcutDesktop" Guid="F6D7635F-0407-4186-B11C-A72ABE14F168">
-					<Shortcut Id="NarBulutDesktopShortcut" Name="NarBulut Disk Backup" Description="NarBulut Disk Backup arayuz uygulamasi kısayolu" Target="[INSTALLFOLDER]DiskBackupWpfGUI.exe" WorkingDirectory="INSTALLFOLDER" />
+					<Shortcut Id="NarbulutDesktopShortcut" Name="Narbulut Disk Backup" Description="Narbulut Disk Backup arayuz uygulamasi kısayolu" Target="[INSTALLFOLDER]DiskBackupWpfGUI.exe" WorkingDirectory="INSTALLFOLDER" />
 					<RemoveFolder Id="DesktopFolder" On="uninstall" />
 					<RegistryValue Root="HKCU" Key="Software/Narbulut" Name="installed" Type="integer" Value="1" KeyPath="yes" />
 				</Component>
@@ -43,7 +43,7 @@
 		</Directory>
 		<DirectoryRef Id="ProgramMenuFolder">
 			<Component Id="ApplicationShortcut" Guid="F4C4BDD0-26F3-412A-B98E-AFAD74FBC902">
-				<Shortcut Id="ApplicationStartMenuShortcut" Name="NarBulut Disk Backup" Description="NarBulut Disk Backup arayuz uygulamasi kısayolu" Target="[INSTALLFOLDER]DiskBackupWpfGUI.exe" WorkingDirectory="INSTALLFOLDER" />
+				<Shortcut Id="ApplicationStartMenuShortcut" Name="Narbulut Disk Backup" Description="Narbulut Disk Backup arayuz uygulamasi kısayolu" Target="[INSTALLFOLDER]DiskBackupWpfGUI.exe" WorkingDirectory="INSTALLFOLDER" />
 				<RemoveFolder Id="ProgramMenuFolder" On="uninstall" />
 				<RegistryValue Root="HKCU" Key="Software/Narbulut" Name="installed" Type="integer" Value="1" KeyPath="yes" />
 			</Component>
@@ -87,7 +87,7 @@
 				<File Id="Xceed.Wpf.AvalonDock.Themes.Aero.dll" Name="Xceed.Wpf.AvalonDock.Themes.Aero.dll" Source="$(var.UI_TargetDir)Xceed.Wpf.AvalonDock.Themes.Aero.dll"/>
 				<File Id="Xceed.Wpf.AvalonDock.dll" Name="Xceed.Wpf.AvalonDock.dll" Source="$(var.UI_TargetDir)Xceed.Wpf.AvalonDock.dll"/>
 				<File Id="Newtonsoft.Json.dll" Name="Newtonsoft.Json.dll" Source="$(var.UI_TargetDir)Newtonsoft.Json.dll"/>
-				<ServiceInstall Id="ServiceInstaller" Type="ownProcess" Vital="yes" Name="NarDiskBackupService" Description="NarBulut Disk Yedekleme Uygulaması" DisplayName="NarDiskBackupService" Start="auto" ErrorControl="ignore" Account="LocalSystem" Interactive="no"></ServiceInstall>
+				<ServiceInstall Id="ServiceInstaller" Type="ownProcess" Vital="yes" Name="NarDiskBackupService" Description="Narbulut Disk Yedekleme Uygulaması" DisplayName="NarDiskBackupService" Start="auto" ErrorControl="ignore" Account="LocalSystem" Interactive="no"></ServiceInstall>
 				<ServiceControl Id="ServiceControl" Name="NarDiskBackupService" Start="install" Wait="yes" Stop="both" Remove="uninstall" />
 			</Component>
 			<Component Id="InteropDll" Guid="685A18FE-4C44-43DF-B6BF-EBDB3D6DA398" Directory="X_86">

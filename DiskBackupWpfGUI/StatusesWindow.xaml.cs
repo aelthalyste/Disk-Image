@@ -158,7 +158,10 @@ namespace DiskBackupWpfGUI
                 _statusInfo = _statusInfoDal.Get(x => x.Id == _statusInfo.Id);
                 pbTotalDataProcessed.Maximum = _statusInfo.TotalDataProcessed;
                 pbTotalDataProcessed.Value = _statusInfo.DataProcessed;
-                txtLocalPercentage.Text = Math.Round((_statusInfo.DataProcessed * 100.0) / (_statusInfo.TotalDataProcessed), 2).ToString() + "%";
+                if (double.IsNaN(Math.Round((_statusInfo.DataProcessed * 100.0) / (_statusInfo.TotalDataProcessed), 2))) 
+                    txtLocalPercentage.Text = "0%"; //TO DO NaN yakalandığında buraya 0 dışında bir şey girilmek istenir mi?
+                else
+                    txtLocalPercentage.Text = Math.Round((_statusInfo.DataProcessed * 100.0) / (_statusInfo.TotalDataProcessed), 2).ToString() + "%";
                 txtLocalFileName.Text = _statusInfo.FileName;
                 txtLocalTime.Text = FormatMilliseconds(TimeSpan.FromMilliseconds(_statusInfo.TimeElapsed)); // milisaniye
                 txtLocalAverageDataRate.Text = Math.Round(_statusInfo.AverageDataRate, 2).ToString() + " MB/s";
