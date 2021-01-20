@@ -65,8 +65,14 @@
     </WixLibrary>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Images\narbulut_setup_mini.png" />
+    <Content Include="Images\Narbulut_v3_setup.png" />
     <Content Include="minispy.inf" />
     <Content Include="minispy.sys" />
+    <Content Include="son_kullanici_lisans_sozlesmesi.rtf" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Images" />
   </ItemGroup>
   <Import Project="$(WixTargetsPath)" Condition=" '$(WixTargetsPath)' != '' " />
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\WiX\v3.x\Wix.targets" Condition=" '$(WixTargetsPath)' == '' AND Exists('$(MSBuildExtensionsPath32)\Microsoft\WiX\v3.x\Wix.targets') " />

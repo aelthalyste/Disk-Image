@@ -8,6 +8,9 @@
 		<UI>
 			<UIRef Id="WixUI_Minimal" />
 		</UI>
+		<WixVariable Id="WixUILicenseRtf" Value="$(var.ProjectDir)\son_kullanici_lisans_sozlesmesi.rtf" />
+		<WixVariable Id="WixUIBannerBmp" Value="Images\narbulut_setup_mini.png" />
+		<WixVariable Id="WixUIDialogBmp" Value="Images\Narbulut_v3_setup.png" />
 		<MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
 		<MediaTemplate EmbedCab="yes"/>
 
