@@ -262,6 +262,10 @@
     <system:String x:Key="licenseKey">Lisans Anahtarı</system:String>
     <system:String x:Key="validateLicense">Lisans Doğrulama</system:String>
     <system:String x:Key="enterTheKey">Anahtarı Gir</system:String>
+    <system:String x:Key="h">s</system:String>
+    <system:String x:Key="min">dk</system:String>
+    <system:String x:Key="sec">sn</system:String>
+    <system:String x:Key="ms">ms</system:String>
 
     <!--MessageBox Info-->
     <system:String x:Key="notNullMB">İlgili alanları lütfen boş geçmeyiniz.</system:String>

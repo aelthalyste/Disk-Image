@@ -487,6 +487,8 @@ namespace DiskBackupWpfGUI
                 NewCreateTaskWindow newCreateTask = scope.Resolve<NewCreateTaskWindow>(new TypedParameter(backupStorageInfoList.GetType(), backupStorageInfoList),
                     new TypedParameter(volumeInfoList.GetType(), volumeInfoList));
                 newCreateTask.ShowDialog();
+                if (newCreateTask._showTaskTab)
+                    mainTabControl.SelectedIndex = 1;
             }
             GetTasks();
             var _backupStorageService = _scope.Resolve<IBackupStorageService>();
@@ -1368,6 +1370,8 @@ namespace DiskBackupWpfGUI
                     RestoreWindow restore = scope.Resolve<RestoreWindow>(new TypedParameter(backupInfo.GetType(), backupInfo),
                         new TypedParameter(volumeInfoList.GetType(), volumeInfoList));
                     restore.ShowDialog();
+                    if (restore._showTaskTab)
+                        mainTabControl.SelectedIndex = 1;
                 }
             }
             GetTasks();
@@ -1590,7 +1594,7 @@ namespace DiskBackupWpfGUI
             var backupService = _scope.Resolve<IBackupService>();
             //var backupInfo = (BackupInfo)listViewBackups.SelectedItem;
             MessageBoxResult result = MessageBoxResult.No;
-            if (listViewBackups.SelectedItems.Count > 1)
+            if (listViewBackups.SelectedItems.Count >= 1)
             {
                 bool controlFlag = false;
                 foreach (BackupInfo backupInfo in listViewBackups.SelectedItems)

@@ -228,42 +228,42 @@ namespace DiskBackupWpfGUI
             return ($"{dblSByte:0.##} {Suffix[i]}");
         }
 
-        public static string FormatMilliseconds(TimeSpan obj)
+        public string FormatMilliseconds(TimeSpan obj)
         {
             StringBuilder sb = new StringBuilder();
             if (obj.Hours != 0)
             {
                 sb.Append(obj.Hours);
                 sb.Append(" ");
-                sb.Append("s");
+                sb.Append(Resources["h"].ToString());
                 sb.Append(" ");
             }
             if (obj.Minutes != 0 || sb.Length != 0)
             {
                 sb.Append(obj.Minutes);
                 sb.Append(" ");
-                sb.Append("dk");
+                sb.Append(Resources["min"].ToString());
                 sb.Append(" ");
             }
             if (obj.Seconds != 0 || sb.Length != 0)
             {
                 sb.Append(obj.Seconds);
                 sb.Append(" ");
-                sb.Append("sn");
+                sb.Append(Resources["sec"].ToString());
                 sb.Append(" ");
             }
             if (obj.Milliseconds != 0 || sb.Length != 0)
             {
                 sb.Append(obj.Milliseconds);
                 sb.Append(" ");
-                sb.Append("ms");
+                sb.Append(Resources["ms"].ToString());
                 sb.Append(" ");
             }
             if (sb.Length == 0)
             {
                 sb.Append(0);
                 sb.Append(" ");
-                sb.Append("ms");
+                sb.Append(Resources["ms"].ToString());
             }
             return sb.ToString();
         }

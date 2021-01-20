@@ -25,6 +25,7 @@ namespace DiskBackupWpfGUI
     /// </summary>
     public partial class RestoreWindow : Window
     {
+        public bool _showTaskTab = false;
         private BackupInfo _backupInfo;
         private List<VolumeInfo> _volumeInfoList = new List<VolumeInfo>();
         //volume ise true, disk ise false
@@ -241,7 +242,8 @@ namespace DiskBackupWpfGUI
 
                         if (resultTaskInfo != null)
                         {
-                            MessageBox.Show(Resources["addSuccessMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Information);
+                            _showTaskTab = true;
+                            //MessageBox.Show(Resources["addSuccessMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Information);
                             if (_taskInfo.NextDate == Convert.ToDateTime("01/01/0002")) // hemen çalıştır
                             {
                                 _taskInfo.LastWorkingDate = DateTime.Now;
@@ -284,7 +286,8 @@ namespace DiskBackupWpfGUI
 
                             if (resultTaskInfo != null)
                             {
-                                MessageBox.Show(Resources["addSuccessMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Information);
+                                _showTaskTab = true;
+                                //MessageBox.Show(Resources["addSuccessMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Information);
                                 if (_taskInfo.NextDate == Convert.ToDateTime("01/01/0002")) // hemen çalıştır
                                 {
                                     _taskInfo.LastWorkingDate = DateTime.Now;

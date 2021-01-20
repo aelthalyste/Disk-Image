@@ -50,6 +50,7 @@ namespace DiskBackupWpfGUI
 
         private readonly Func<AddBackupAreaWindow> _createAddBackupWindow;
         private bool _updateControl = false;
+        public bool _showTaskTab = false;
 
         public NewCreateTaskWindow(List<BackupStorageInfo> backupStorageInfoList, IBackupService backupService, IBackupStorageService backupStorageService,
             Func<AddBackupAreaWindow> createAddBackupWindow, List<VolumeInfo> volumeInfoList, IBackupTaskDal backupTaskDal, IStatusInfoDal statusInfoDal,
@@ -449,7 +450,11 @@ namespace DiskBackupWpfGUI
                     if (_updateControl)
                         MessageBox.Show(Resources["updateSuccessMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Information);
                     else
-                        MessageBox.Show(Resources["addSuccessMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Information);
+                    {
+                        _showTaskTab = true;
+                        //MessageBox.Show(Resources["addSuccessMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Information);
+                    }
+
                 }
                 else
                 {
