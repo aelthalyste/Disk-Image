@@ -96,7 +96,12 @@ namespace DiskBackupWpfGUI
             var backupService = _scope.Resolve<IBackupService>();
             var backupStorageService = _scope.Resolve<IBackupStorageService>();
 
-            var languageConfiguration = _configurationDataDal.Get(x => x.Key == "lang");
+            var languageConfiguration = _configurationDataDal.Get(x => x.Key == "lang"); // TO DO dil desteği null gelirse veritabanına dil yaz
+            if (languageConfiguration == null)
+            {
+                languageConfiguration = new ConfigurationData{ Key="lang", Value="tr"};
+                _configurationDataDal.Add(languageConfiguration);
+            }
             SetApplicationLanguage(languageConfiguration.Value);
 
             ReloadLanguages();
