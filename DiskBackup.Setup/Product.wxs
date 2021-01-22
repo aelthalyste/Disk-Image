@@ -3,6 +3,7 @@
 	<!--xmlns:difxapp="http://schemas.microsoft.com/wix/DifxAppExtension">-->
 	<?define Service_TargetDir=$(var.DiskBackup.Service.TargetDir)?>
 	<?define UI_TargetDir=$(var.DiskBackupWpfGUI.TargetDir)?>
+	<?define NetFx472MinRelease = 461808 ?>
 	<Product Id="*" Name="Narbulut Disk Backup" Language="1033" Version="1.0.0.0" Manufacturer="Narbulut Bilgi Teknolojileri San. ve Tic. A.Ş." UpgradeCode="b5acc323-9d6f-4beb-a666-8633cbff7a5b">
 		<Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
 		<UI>
@@ -13,17 +14,30 @@
 		<WixVariable Id="WixUIDialogBmp" Value="Images\Narbulut_v3_setup.png" />
 		<MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
 		<MediaTemplate EmbedCab="yes"/>
-
+		<!--<PropertyRef Id="WIX_IS_NETFRAMEWORK_47_OR_LATER_INSTALLED" />
+		<Condition Message="Bu uygulama .NET Framework 4.7.2 ile çalışmaktadır.Lütfen uygun .NET sürümünü kurduktan sonra tekrar deneyin. Destek için destek@narbulut.com ile irtibata geçiniz.">
+			--><!--<Condition Message="Bu application requires .NET Framework 4.5.2. Please install .NET with proper version and try again. For support,contact destek@narbulut.com.">--><!--
+			<![CDATA[Installed OR WIX_IS_NETFRAMEWORK_47_OR_LATER_INSTALLED]]>
+		</Condition>-->
 		<Feature Id="ProductFeature" Title="DiskBackup.Setup" Level="1">
 			<ComponentGroupRef Id="ProductComponents" />
 			<ComponentRef Id="ApplicationShortcutDesktop" />
 			<ComponentRef Id="ApplicationShortcut" />
 		</Feature>
+		<Icon Id="favicon_mavi.ico" SourceFile="Images\favicon_mavi.ico"/>
+		<Property Id="ARPPRODUCTICON" Value="favicon_mavi.ico" />
 	</Product>
 
 	<Fragment>
+		<PropertyRef Id="WIXNETFX4RELEASEINSTALLED" />
+		<Property Id="WIX_IS_NETFRAMEWORK_472_OR_LATER_INSTALLED" Secure="yes" />
+		<SetProperty Id="WIX_IS_NETFRAMEWORK_472_OR_LATER_INSTALLED" Value="1" After="AppSearch">
+			WIXNETFX4RELEASEINSTALLED >= "#$(var.NetFx472MinRelease)"
+		</SetProperty>
+	</Fragment>
+	<Fragment>
 		<Directory Id="TARGETDIR" Name="SourceDir">
-			<Directory Id="ProgramFilesFolder">
+			<Directory Id="ProgramFiles64Folder">
 				<Directory Id="INSTALLFOLDER" Name="NarDiskBackup">
 					<Directory Id="X_86" Name="x86" />
 					<Directory Id="X_64" Name="x64" />
@@ -34,7 +48,7 @@
 			</Directory>
 			<Directory Id="DesktopFolder" Name="Desktop">
 				<Component Id="ApplicationShortcutDesktop" Guid="F6D7635F-0407-4186-B11C-A72ABE14F168">
-					<Shortcut Id="NarbulutDesktopShortcut" Name="Narbulut Disk Backup" Description="Narbulut Disk Backup arayuz uygulamasi kısayolu" Target="[INSTALLFOLDER]DiskBackupWpfGUI.exe" WorkingDirectory="INSTALLFOLDER" />
+					<Shortcut Id="NarbulutDesktopShortcut" Name="Narbulut Disk Backup" Description="Narbulut Disk Backup arayüz uygulaması kısayolu" Target="[INSTALLFOLDER]DiskBackupWpfGUI.exe" WorkingDirectory="INSTALLFOLDER" />
 					<RemoveFolder Id="DesktopFolder" On="uninstall" />
 					<RegistryValue Root="HKCU" Key="Software/Narbulut" Name="installed" Type="integer" Value="1" KeyPath="yes" />
 				</Component>
@@ -43,11 +57,19 @@
 		</Directory>
 		<DirectoryRef Id="ProgramMenuFolder">
 			<Component Id="ApplicationShortcut" Guid="F4C4BDD0-26F3-412A-B98E-AFAD74FBC902">
-				<Shortcut Id="ApplicationStartMenuShortcut" Name="Narbulut Disk Backup" Description="Narbulut Disk Backup arayuz uygulamasi kısayolu" Target="[INSTALLFOLDER]DiskBackupWpfGUI.exe" WorkingDirectory="INSTALLFOLDER" />
+				<Shortcut Id="ApplicationStartMenuShortcut" Name="Narbulut Disk Backup" Description="Narbulut Disk Backup arayüz uygulaması kısayolu" Target="[INSTALLFOLDER]DiskBackupWpfGUI.exe" WorkingDirectory="INSTALLFOLDER" />
 				<RemoveFolder Id="ProgramMenuFolder" On="uninstall" />
 				<RegistryValue Root="HKCU" Key="Software/Narbulut" Name="installed" Type="integer" Value="1" KeyPath="yes" />
 			</Component>
 		</DirectoryRef>
+		<DirectoryRef Id="TARGETDIR">
+			<Merge Id="VCRedist64" SourceFile="C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Redist\MSVC\14.16.27012\MergeModules\Microsoft_VC141_CRT_x64.msm" DiskId="1" Language="0" />
+			<!--<Merge Id="VCRedist64" SourceFile="C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Redist\MSVC\14.16.27012\MergeModules\Microsoft_VC141_CRT_x64.msm" DiskId="1" Language="0" />-->
+		</DirectoryRef>
+		<Feature Id="VCRedist" Title="VS 2019 C++ Runtime" AllowAdvertise="no" Display="hidden" Level="1">
+			<MergeRef Id="VCRedist64" />
+			<!--<MergeRef Id="VCRedist64" />-->
+		</Feature>
 	</Fragment>
 
 	<Fragment>
