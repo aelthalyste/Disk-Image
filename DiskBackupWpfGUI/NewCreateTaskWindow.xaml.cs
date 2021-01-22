@@ -698,17 +698,32 @@ namespace DiskBackupWpfGUI
                     if (((BackupStorageInfo)cbTargetBackupArea.SelectedItem).Id == item.Id)
                     {
                         //yerel disk - nas
-                        var totalSize = item.StrCapacity.Split(' ');
-                        lblTargetTotalSize.Text = totalSize.First();
-                        lblTargetTotalSizeType.Text = totalSize.Last();
+                        if (item.Type == BackupStorageType.Windows)
+                        {
+                            var totalSize = item.StrCapacity.Split(' ');
+                            lblTargetTotalSize.Text = totalSize.First();
+                            lblTargetTotalSizeType.Text = totalSize.Last();
 
-                        var freeSize = item.StrFreeSize.Split(' ');
-                        lblTargetFreeSize.Text = freeSize.First();
-                        lblTargetFreeSizeType.Text = freeSize.Last();
+                            var freeSize = item.StrFreeSize.Split(' ');
+                            lblTargetFreeSize.Text = freeSize.First();
+                            lblTargetFreeSizeType.Text = freeSize.Last();
 
-                        var fullSize = item.StrUsedSize.Split(' ');
-                        lblTargetFullSize.Text = fullSize.First(); ;
-                        lblTargetFullSizeType.Text = fullSize.Last(); ;
+                            var fullSize = item.StrUsedSize.Split(' ');
+                            lblTargetFullSize.Text = fullSize.First(); ;
+                            lblTargetFullSizeType.Text = fullSize.Last();
+                        }
+                        else
+                        {
+                            lblTargetTotalSize.Text = "-";
+                            lblTargetTotalSizeType.Text = "GB";
+
+                            lblTargetFreeSize.Text = "-";
+                            lblTargetFreeSizeType.Text = "GB";
+
+                            lblTargetFullSize.Text = "-";
+                            lblTargetFullSizeType.Text = "GB";
+                        }
+
 
                         // pasta işlemleri
                         double Capacity = item.Capacity;
