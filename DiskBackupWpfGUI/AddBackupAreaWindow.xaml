@@ -185,39 +185,51 @@
                                 <RowDefinition/>
                                 <RowDefinition/>
                                 <RowDefinition/>
-                                <RowDefinition/>
-                                <RowDefinition/>
                             </Grid.RowDefinitions>
-                            <TextBlock Text="{DynamicResource folderPath}" Grid.Row="1" Grid.Column="0"/>
-                            <TextBlock Text="{DynamicResource domainIP}" Grid.Row="2" Grid.Column="0"/>
-                            <TextBlock Text="{DynamicResource userName}" Grid.Row="3" Grid.Column="0"/>
-                            <TextBlock Text="{DynamicResource password}" Grid.Row="4" Grid.Column="0"/>
-
-                            <TextBox Name="txtSettingsNASFolderPath" Grid.Row="1" Grid.Column="1" Width="250" Height="22" Margin="0,0,0,10" Padding="0,0,22,0" HorizontalAlignment="Left" VerticalContentAlignment="Center"/>
-                            <StackPanel Grid.Row="1" Grid.Column="1" HorizontalAlignment="Left" Margin="229,1,0,0">
+                            <TextBlock Text="{DynamicResource folderPath}" Grid.Row="0" Grid.Column="0"/>
+                            <TextBox Name="txtSettingsNASFolderPath" Grid.Row="0" Grid.Column="1" Width="250" Height="22" Margin="0,0,0,10" Padding="0,0,22,0" HorizontalAlignment="Left" VerticalContentAlignment="Center"/>
+                            <StackPanel Grid.Row="0" Grid.Column="1" HorizontalAlignment="Left" Margin="229,1,0,0">
                                 <Button Name="btnSettingsNASFolder" Style="{StaticResource ArrowUpButton}" Click="btnSettingsNASFolder_Click" Content="..." Width="20" Height="20" FontSize="15" />
                             </StackPanel>
-                            <TextBox Name="txtSettingsNASDomain" Grid.Row="2" Grid.Column="1" Width="250" Height="22" Margin="0,0,0,10" HorizontalAlignment="Left" VerticalContentAlignment="Center"/>
-                            <TextBox Name="txtSettingsNASUserName" Grid.Row="3" Grid.Column="1" Width="250" Height="22" Margin="0,0,0,10" HorizontalAlignment="Left" VerticalContentAlignment="Center"/>
-                            <PasswordBox Name="txtSettingsNASPassword" Grid.Row="4" Grid.Column="1" Width="250" Height="22" Margin="0,0,0,10" HorizontalAlignment="Left" VerticalContentAlignment="Center"/>
-                            <Image Name="imgValidateConnectionTrue" Height="25" Width="25" Grid.Row="5" Grid.ColumnSpan="2" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="250,0,0,0" Visibility="Hidden">
+                            <CheckBox Name="checkAuthentication" Checked="checkAuthentication_Checked" Unchecked="checkAuthentication_Unchecked" Grid.Row="1" Content="{DynamicResource authentication}" Margin="-22,0,0,15"/>
+
+                            <Grid Grid.Row="2" Grid.ColumnSpan="2" Name="gridNAS" IsEnabled="False">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="150"/>
+                                    <ColumnDefinition/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition/>
+                                    <RowDefinition/>
+                                    <RowDefinition/>
+                                    <RowDefinition/>
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Text="{DynamicResource domainIP}" Grid.Row="0" Grid.Column="0"/>
+                                <TextBlock Text="{DynamicResource userName}" Grid.Row="1" Grid.Column="0"/>
+                                <TextBlock Text="{DynamicResource password}" Grid.Row="2" Grid.Column="0"/>
+
+                                <TextBox Name="txtSettingsNASDomain" Grid.Row="0" Grid.Column="1" Width="250" Height="22" Margin="0,0,0,10" HorizontalAlignment="Left" VerticalContentAlignment="Center"/>
+                                <TextBox Name="txtSettingsNASUserName" Grid.Row="1" Grid.Column="1" Width="250" Height="22" Margin="0,0,0,10" HorizontalAlignment="Left" VerticalContentAlignment="Center"/>
+                                <PasswordBox Name="txtSettingsNASPassword" Grid.Row="2" Grid.Column="1" Width="250" Height="22" Margin="0,0,0,10" HorizontalAlignment="Left" VerticalContentAlignment="Center"/>
+                            </Grid>
+
+                            <Image Name="imgValidateConnectionTrue" Height="25" Width="25" Grid.Row="3" Grid.ColumnSpan="2" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="250,0,0,0" Visibility="Hidden">
                                 <Image.Style>
                                     <Style TargetType="Image">
                                         <Setter Property="Source" Value="Resources/Icon/icons8_ok_3.ico"/>
                                     </Style>
                                 </Image.Style>
                             </Image>
-                            <Image Name="imgValidateConnectionFalse" Height="25" Width="25" Grid.Row="5" Grid.ColumnSpan="2" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="250,0,0,0">
+                            <Image Name="imgValidateConnectionFalse" Height="25" Width="25" Grid.Row="3" Grid.ColumnSpan="2" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="250,0,0,0">
                                 <Image.Style>
                                     <Style TargetType="Image">
                                         <Setter Property="Source" Value="Resources/Icon/icons8_cancel.ico"/>
                                     </Style>
                                 </Image.Style>
                             </Image>
-                            <Button Name="btnValidateConnection" Content="{DynamicResource ValidateConnection}" Click="btnValidateConnection_Click" Grid.Row="5" Grid.ColumnSpan="2" Style="{StaticResource WhiteButton}" Margin="100,0,0,0" Width="110" Height="25"/>
-
+                            <Button Name="btnValidateConnection" Content="{DynamicResource ValidateConnection}" Click="btnValidateConnection_Click" Grid.Row="3" Grid.ColumnSpan="2" Style="{StaticResource WhiteButton}" Margin="100,0,0,0" Width="110" Height="25"/>
                         </Grid>
-
                     </StackPanel>
                 </Grid>
             </TabItem>

@@ -181,7 +181,7 @@
                     </Grid.RowDefinitions>
                     <DockPanel>
                         <StackPanel>
-                            <StackPanel Orientation="Horizontal" Margin="-5,0" Grid.Column="0">
+                            <DockPanel Margin="-5,0" Grid.Column="0">
                                 <Button Name="btnCreateTask" HorizontalAlignment="Left" Margin="10,4,15,4" Style="{StaticResource BlueButton}" 
                                     Width="110" Height="32" Click="btnCreateTask_Click" IsEnabled="False" Cursor="Hand">
                                     <Button.Content>
@@ -198,7 +198,23 @@
                                     </Button.Content>
                                 </Button>
                                 <TextBlock Name="lblCreateTaskWarning" Text="{DynamicResource createTaskContent}" VerticalAlignment="Center" />
-                            </StackPanel>
+                                <Button Name="btnTaskRefreshDisk" ToolTip="{DynamicResource refreshDisks}" Click="btnTaskRefreshDisk_Click" Width="32" Height="32" HorizontalAlignment="Right" Margin="5,4,10,4" Style="{StaticResource ImageButton}">
+                                    <Button.Content>
+                                        <Image Height="28">
+                                            <Image.Style>
+                                                <Style TargetType="Image">
+                                                    <Setter Property="Source" Value="Resources/Icon/icons8_refresh.ico" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsEnabled, RelativeSource={RelativeSource AncestorType=Button}}" Value="False">
+                                                            <Setter Property="Source" Value="Resources/Icon/icons8_synchronize_disable.ico"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Image.Style>
+                                        </Image>
+                                    </Button.Content>
+                                </Button>
+                            </DockPanel>
 
                             <ListView Name="listViewDisk" Height="370" Margin="5" SelectionChanged="listViewDisk_SelectionChanged">
                                 <ListView.View>
@@ -640,7 +656,7 @@
                     <Rectangle VerticalAlignment="Center" Stroke="#D7D7D7" StrokeThickness="1" HorizontalAlignment="Right" Height="420"/>
                     <DockPanel>
                         <StackPanel>
-                            <StackPanel Orientation="Horizontal" Margin="-5,0">
+                            <DockPanel Margin="-5,0">
                                 <Button Name="btnRestore" HorizontalAlignment="Left" Margin="10,4,15,4" Style="{StaticResource BlueButton}" Width="110" Height="32" 
                                         Grid.Column="0" Click="btnRestore_Click" IsEnabled="False" Cursor="Hand">
                                     <Button.Content>
@@ -657,7 +673,23 @@
                                     </Button.Content>
                                 </Button>
                                 <TextBlock Name="lblRestoreWarning" Text="{DynamicResource restoreContent}" VerticalAlignment="Center" />
-                            </StackPanel>
+                                <Button Name="btnRestoreRefreshDisk" ToolTip="{DynamicResource refreshDisks}" Click="btnRestoreRefreshDisk_Click" Width="32" Height="32" HorizontalAlignment="Right" Margin="5,4,10,4" Style="{StaticResource ImageButton}">
+                                    <Button.Content>
+                                        <Image Height="28">
+                                            <Image.Style>
+                                                <Style TargetType="Image">
+                                                    <Setter Property="Source" Value="Resources/Icon/icons8_refresh.ico" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsEnabled, RelativeSource={RelativeSource AncestorType=Button}}" Value="False">
+                                                            <Setter Property="Source" Value="Resources/Icon/icons8_synchronize_disable.ico"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Image.Style>
+                                        </Image>
+                                    </Button.Content>
+                                </Button>
+                            </DockPanel>
 
                             <ListView Name="listViewRestore" Height="370" Margin="5" SelectionChanged="listViewRestore_SelectionChanged" Grid.Row="0">
                                 <ListView.View>
@@ -1480,9 +1512,10 @@
                             </StackPanel>
                         </Grid>
                     </StackPanel>
-                    <StackPanel Grid.Row="1" Grid.Column="0" Height="200" Orientation="Horizontal" Margin="15,0,3,0" Visibility="Collapsed">
-                        <Border BorderBrush="#9ACFEA" Width="500"  BorderThickness="2" CornerRadius="3">
-                            <StackPanel>
+
+                    <StackPanel Grid.Row="1" Grid.Column="0" Height="200" Orientation="Horizontal" Margin="15,0,3,0">
+                        <Border BorderBrush="#9ACFEA" Width="500" BorderThickness="2" CornerRadius="3">
+                            <StackPanel Background="LightGray" Opacity="0.6"> <!--grilik buradan verildi--> 
                                 <StackPanel Orientation="Horizontal" Margin="10,5,0,0" >
                                     <Image Height="50" Margin="0,5,15,0" >
                                         <Image.Style>
@@ -1508,14 +1541,14 @@
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal">
                                             <TextBlock Text="{DynamicResource endDateDot}" FontSize="14"/>
-                                            <TextBlock Text="12.12.2020" FontSize="14" Margin="3,0"/>
+                                            <TextBlock Text="01.01.2022" FontSize="14" Margin="3,0"/>
                                         </StackPanel>
                                     </StackPanel>
                                 </StackPanel>
                                 <StackPanel Orientation="Horizontal" Margin="10,10,0,10" >
                                     <Grid Height="50" Width="42">
                                         <xctk:Pie StartAngle="0" EndAngle="360" Height="42" Width="42" Fill="#B8DABC" Stroke="#7A917D"/>
-                                        <xctk:Pie Name="pieSize" StartAngle="-90" EndAngle="0" Height="42" Width="42" Fill="#87B5F2" Stroke="#5A78A1"/>
+                                        <xctk:Pie Name="pieSize" StartAngle="-90" EndAngle="-89" Height="42" Width="42" Fill="#87B5F2" Stroke="#5A78A1"/>
                                     </Grid>
                                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="22,0,0,0">
                                         <StackPanel>
@@ -1523,16 +1556,16 @@
                                             <TextBlock Text="{DynamicResource usedCapacity}" FontSize="14"/>
                                         </StackPanel>
                                         <StackPanel Margin="20,0">
-                                            <TextBlock Text="200 GB" Name="txtTotalCapacity" FontSize="14"/>
-                                            <TextBlock Text="50 GB" Name="txtUsedCapacity" FontSize="14"/>
+                                            <TextBlock Text="100 GB" Name="txtTotalCapacity" FontSize="14"/>
+                                            <TextBlock Text="0 GB" Name="txtUsedCapacity" FontSize="14"/>
                                         </StackPanel>
                                     </StackPanel>
                                 </StackPanel>
                             </StackPanel>
                         </Border>
                     </StackPanel>
-                    
-                    <StackPanel Name="stackLicenseController" Grid.Row="1" Grid.Column="0" Height="200" Orientation="Horizontal" Margin="15,0,15,0" HorizontalAlignment="Left">
+
+                    <StackPanel Name="stackLicenseController" Grid.Row="1" Grid.Column="1" Height="200" Orientation="Horizontal" Margin="25,0,15,0" HorizontalAlignment="Left">
                         <Border BorderBrush="#9ACFEA" Width="500" BorderThickness="2" CornerRadius="3">
                             <StackPanel Margin="10,10,0,0">
                                 <StackPanel Orientation="Horizontal">
@@ -1557,9 +1590,9 @@
                             </StackPanel>
                         </Border>
                     </StackPanel>
-                    
+
                     <Image Source="Resources/Icon/logo_big.png" Grid.ColumnSpan="2" Grid.Row="2"></Image>
-                    
+
                     <GroupBox Grid.Row="2" Grid.ColumnSpan="2" Margin="10" BorderBrush="#9ACFEA" BorderThickness="2" FontSize="14" Visibility="Collapsed">
                         <GroupBox.Header>
                             <TextBlock Text="{DynamicResource bandwithSetting}" Foreground="Black" FontWeight="Bold"/>

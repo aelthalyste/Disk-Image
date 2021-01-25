@@ -2181,6 +2181,7 @@ namespace DiskBackupWpfGUI
                 stackDemo.Visibility = Visibility.Collapsed;
                 txtLicenseStatu.Text = Resources["active"].ToString();
                 txtExpireDate.Text = "∞";
+                txtLicenseKey.Text = "";
             }
         }
 
@@ -2754,5 +2755,14 @@ namespace DiskBackupWpfGUI
 
         #endregion
 
+        private void btnRestoreRefreshDisk_Click(object sender, RoutedEventArgs e)
+        {
+            RefreshDisk();
+        }
+
+        private void btnTaskRefreshDisk_Click(object sender, RoutedEventArgs e)
+        {
+            RefreshDisk();
+        }
     }
 }

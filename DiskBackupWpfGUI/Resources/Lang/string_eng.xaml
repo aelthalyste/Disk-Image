@@ -41,6 +41,7 @@
     <system:String x:Key="paste">Paste</system:String>
     <system:String x:Key="delete">Delete</system:String>
     <system:String x:Key="refresh">Refresh</system:String>
+    <system:String x:Key="refreshDisks">Refresh Disks</system:String>
     <system:String x:Key="browse">Browse</system:String>
     <system:String x:Key="filesName">Files Name</system:String>
     <system:String x:Key="createdDate">Created Date</system:String>
@@ -279,19 +280,20 @@
     <system:String x:Key="min">min</system:String>
     <system:String x:Key="sec">sec</system:String>
     <system:String x:Key="ms">ms</system:String>
-    
+    <system:String x:Key="authentication">Authentication</system:String>
+
     <!--MessageBox Info-->
     <system:String x:Key="notNullMB">Please do not leave the relevant fields blank.</system:String>
     <system:String x:Key="validateDirectoryMB">Please enter a valid directory.</system:String>
     <system:String x:Key="sameNameInDirectoryMB">A folder with the same name cannot be created because there is a file with this name in the directory entered!</system:String>
     <system:String x:Key="runningTaskAffectedMB">You cannot do this because your running tasks will be affected!</system:String>
     <system:String x:Key="restoreTaskAffectedMB">Your restore tasks will be affected by this change. Do you confirm?</system:String>
-    <system:String x:Key="updateSuccessMB">Update successful</system:String>
-    <system:String x:Key="updateFailMB">Update failed</system:String>
-    <system:String x:Key="incorrectNASMB">Girdiğiniz NAS bilgileri yanlış</system:String>
-    <system:String x:Key="unexpectedUpdateMB">An unexpected error has occurred. Update failed</system:String>
-    <system:String x:Key="addSuccessMB">Adding is successful</system:String>    <!--sıkıntı çıkabilir-->
-    <system:String x:Key="addFailMB">Adding is failed</system:String>    <!--sıkıntı çıkabilir-->
+    <system:String x:Key="updateSuccessMB">Update successful.</system:String>
+    <system:String x:Key="updateFailMB">Update failed.</system:String>
+    <system:String x:Key="incorrectNASMB">The NAS information you entered is incorrect.</system:String>
+    <system:String x:Key="unexpectedUpdateMB">An unexpected error has occurred. Update failed.</system:String>
+    <system:String x:Key="addSuccessMB">Adding is successful.</system:String>    <!--sıkıntı çıkabilir-->
+    <system:String x:Key="addFailMB">Adding is failed.</system:String>    <!--sıkıntı çıkabilir-->
     <system:String x:Key="unexpectedErrorMB">This operation cannot be continued because an unexpected error has been encountered.</system:String>
     <system:String x:Key="deleteFailMB">An unexpected error has occurred. Deletion could not be performed.</system:String>
     <system:String x:Key="notConnectNASMB">You could not connect to NAS.</system:String>

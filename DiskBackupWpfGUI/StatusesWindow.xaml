@@ -15,7 +15,7 @@
         Icon="Resources/Icon/NarBulut_PNG_Icon_White_V3.png" 
         WindowStyle="None">
     <!--<Window.Resources>
-        <ResourceDictionary Source="Resources\Lang\string_tr.xaml"/>
+        <ResourceDictionary Source="Resources\Lang\string_eng.xaml"/>
     </Window.Resources>-->
 
     <Grid
@@ -50,11 +50,11 @@
             <TextBlock Text="{DynamicResource localArea}" Margin="0,30,0,10" FontSize="16" HorizontalAlignment="Center"></TextBlock>
             <Grid>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="190"/>
+                    <ColumnDefinition Width="180"/>
                     <ColumnDefinition/>
                 </Grid.ColumnDefinitions>
                 <Rectangle Grid.Column="1" VerticalAlignment="Center" Stroke="#B5ADAD" StrokeThickness="2" HorizontalAlignment="Right" Height="250"/>
-                <StackPanel Grid.Column="0">
+                <StackPanel Grid.Column="0" Margin="10,0,0,0">
                     <StackPanel Name="stackLocalTaskName" Orientation="Horizontal" Visibility="Collapsed">
                         <Image Height="25" Margin="8,0">
                             <Image.Style>
@@ -138,7 +138,7 @@
                 </StackPanel>
                 <StackPanel Grid.Column="1">
                     <TextBlock Name="txtLocalTaskName" Height="20" Margin="0,2,0,4" Visibility="Collapsed">C'yi restore et</TextBlock>
-                    <TextBlock Name="txtLocalFileName" Height="20" Margin="0,0,0,4">\\10.0.0.145\backup1.nb</TextBlock>
+                    <TextBlock Name="txtLocalFileName" Height="20" Margin="0,0,0,4" TextTrimming="CharacterEllipsis">\\10.0.0.145\backup1.nb</TextBlock>
                     <TextBlock Name="txtLocalTime" Height="20" Margin="0,0,0,4">01:20</TextBlock>
                     <TextBlock Name="txtLocalAverageDataRate" Height="20" Margin="0,0,0,4">74 MB/s</TextBlock>
                     <TextBlock Name="txtLocalDataProcessed" Height="20" Margin="0,0,0,4">12 GB</TextBlock>
@@ -154,10 +154,10 @@
             <StackPanel Orientation="Horizontal">
                 <Grid>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="190"/>
+                        <ColumnDefinition Width="180"/>
                         <ColumnDefinition/>
                     </Grid.ColumnDefinitions>
-                    <StackPanel Grid.Column="0">
+                    <StackPanel Grid.Column="0" Margin="10,0,0,0">
                         <StackPanel Name="stackCloudTaskName" Orientation="Horizontal" Visibility="Collapsed">
                             <Image Height="25" Margin="8,0">
                                 <Image.Style>
@@ -262,13 +262,13 @@
                     <ColumnDefinition/>
                 </Grid.ColumnDefinitions>
                 <StackPanel Orientation="Horizontal">
-                    <TextBlock Text="{DynamicResource processedTotal}" Margin="30,8"/>
-                    <TextBlock Name="txtSourceSingle" Text="C:" Margin="-15,8"/>
+                    <TextBlock Text="{DynamicResource processedTotal}" Margin="20,8"/>
+                    <TextBlock Name="txtSourceSingle" Text="C:" Margin="0,8"/>
                 </StackPanel>
-                <TextBlock Name="txtLastStatus" HorizontalAlignment="Right" Text="Başarılı" Margin="30,8" Grid.Column="1"/>
+                <TextBlock Name="txtLastStatus" HorizontalAlignment="Right" Text="Başarılı" Margin="20,8" Grid.Column="1"/>
             </Grid>
 
-            <ProgressBar Name="pbTotalDataProcessed" Minimum="0" Maximum="100" Value="0" Height="30" Margin="30,0">
+            <ProgressBar Name="pbTotalDataProcessed" Minimum="0" Maximum="100" Value="0" Height="30" Margin="20,0">
                 <ProgressBar.Foreground>
                     <LinearGradientBrush EndPoint="0,1" StartPoint="1,0">
                         <GradientStop Color="#093C59" Offset="0.2"/>
