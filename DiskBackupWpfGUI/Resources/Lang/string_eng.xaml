@@ -100,7 +100,7 @@
     <system:String x:Key="startNow">Start Now</system:String>
     <system:String x:Key="dailyTime">Daily Time</system:String>
     <system:String x:Key="weeklyTime">Weekly Time</system:String>
-    <system:String x:Key="periodic">Periyodic</system:String>
+    <system:String x:Key="periodic">Periodic</system:String>
     <system:String x:Key="day">Day</system:String>
     <system:String x:Key="days">Days</system:String>
     <system:String x:Key="mounths">Mounths</system:String>

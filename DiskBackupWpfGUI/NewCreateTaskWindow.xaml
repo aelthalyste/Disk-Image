@@ -334,7 +334,7 @@
 
                                 <RadioButton Name="rbDaysTime" GroupName="rbtnSchedular" Content="{DynamicResource dailyTime}" Checked="rbDaysTime_Checked" Unchecked="rbDaysTime_Unchecked" VerticalContentAlignment="Center" Margin="0,0,0,10" />
                                 <StackPanel Name="stackDaysTime" Orientation="Horizontal" IsEnabled="False" Grid.Column="1" Margin="0,0,0,10">
-                                    <xctk:TimePicker Name="tpDaysTime" MouseWheelActiveTrigger="Focused" Width="90" Height="26" Value="22:00"/>
+                                    <xctk:TimePicker Name="tpDaysTime" MouseWheelActiveTrigger="Focused" Width="100" Height="26" Value="22:00" TextAlignment="Left"/>
                                     <ComboBox Name="cbDaysTime" Width="280" Margin="20,0,20,0" SelectedIndex="0" SelectionChanged="cbDaysTime_SelectionChanged">
                                         <ComboBoxItem Content="{DynamicResource everyday}"></ComboBoxItem>
                                         <ComboBoxItem Content="{DynamicResource weekdays}"></ComboBoxItem>
@@ -345,7 +345,7 @@
 
                                 <RadioButton Name="rbWeeklyTime" GroupName="rbtnSchedular" Content="{DynamicResource weeklyTime}" Grid.Row="1" Checked="rbWeeklyTime_Checked" Unchecked="rbWeeklyTime_Unchecked" VerticalContentAlignment="Center" Margin="0,0,0,10" />
                                 <StackPanel Name="stackWeeklyTime" Orientation="Horizontal" IsEnabled="False" Grid.Row="1" Grid.Column="1" Margin="0,0,0,10">
-                                    <xctk:TimePicker Name="tpWeeklyTime" MouseWheelActiveTrigger="Focused" Width="90" Height="26" Value="22:00" />
+                                    <xctk:TimePicker Name="tpWeeklyTime" MouseWheelActiveTrigger="Focused" Width="100" Height="26" Value="22:00" TextAlignment="Left"/>
                                     <ComboBox Name="cbWeeklyTimeWeek" Width="110" Margin="20,0,20,0" SelectedIndex="0">
                                         <ComboBoxItem Content="{DynamicResource first}"></ComboBoxItem>
                                         <ComboBoxItem Content="{DynamicResource second}"></ComboBoxItem>
@@ -366,12 +366,9 @@
 
                                 <RadioButton Name="rbPeriodic" GroupName="rbtnSchedular" Content="{DynamicResource periodic}" Grid.Row="2" Checked="rbPeriodic_Checked" Unchecked="rbPeriodic_Unchecked" VerticalContentAlignment="Center" Margin="0,0,0,10" />
                                 <StackPanel Name="stackPeriodic" Orientation="Horizontal" IsEnabled="False" Grid.Row="2" Grid.Column="1" Margin="0,0,0,10">
-                                    <TextBox Name="txtPeriodic" Text="3" Width="90" Height="28" FontSize="13" VerticalContentAlignment="Center" MaxLength="3"/>
-                                    <StackPanel Margin="-23,0,0,0" VerticalAlignment="Center">
-                                        <Button Name="btnPeriodicUp" Style="{StaticResource ArrowUpButton}" Content="▲" Width="20" Height="13" FontSize="8" VerticalContentAlignment="Top" BorderThickness="0" Click="btnPeriodicUp_Click" />
-                                        <Button Name="btnPeriodicDown" Style="{StaticResource ArrowDownButton}" Content="▼" Width="20" Height="13" FontSize="8" VerticalContentAlignment="Top" BorderThickness="0" Click="btnPeriodicDown_Click" />
-                                    </StackPanel>
-                                    <ComboBox Name="cbPeriodicTime" Width="280" Margin="20,0,20,0" SelectedIndex="0">
+                                    <ComboBox Name="cbPeriodic" Width="100" Height="26"/>
+
+                                    <ComboBox Name="cbPeriodicTime" Width="280" Margin="20,0,20,0" SelectedIndex="0" SelectionChanged="cbPeriodicTime_SelectionChanged">
                                         <ComboBoxItem Content="{DynamicResource hour}"/>
                                         <ComboBoxItem Content="{DynamicResource Minute}"/>
                                     </ComboBox>
