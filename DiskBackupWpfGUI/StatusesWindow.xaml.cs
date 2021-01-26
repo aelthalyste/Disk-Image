@@ -101,7 +101,7 @@ namespace DiskBackupWpfGUI
             _activityLog = activityLog;
             RefreshStatus(_cancellationTokenSource.Token);
             this.Closing += (sender, e) => _cancellationTokenSource.Cancel();
-            txtLastStatus.Text = activityLog.StrStatus;
+            txtLastStatus.Text = activityLog.StatusInfo.StrStatus;
 
             _configurationDataDal = configurationDataDal;
             SetApplicationLanguage(_configurationDataDal.Get(x => x.Key == "lang").Value);
@@ -182,11 +182,18 @@ namespace DiskBackupWpfGUI
                 if (_taskId != 0)
                 {
                     var resultTask = _taskInfoDal.Get(x => x.Id == _taskId);
-                    txtLastStatus.Text = Resources[resultTask.Status.ToString()].ToString();
+                    if (resultTask.Status == TaskStatusType.Ready)
+                    {
+                        //status infodan alınacak
+                        var statusInfo = _statusInfoDal.Get(x => x.Id == resultTask.StatusInfoId);
+                        txtLastStatus.Text = Resources[statusInfo.Status.ToString()].ToString();
+                    }
+                    else
+                        txtLastStatus.Text = Resources[resultTask.Status.ToString()].ToString();
                 }
                 else 
                 { 
-                    if (_activityLog.Status == StatusType.Fail && txtLocalPercentage.Text.Equals("100%"))
+                    if (_activityLog.StatusInfo.Status == StatusType.Fail && txtLocalPercentage.Text.Equals("100%"))
                     {
                         txtLocalPercentage.Text = "99.98%";
                     }

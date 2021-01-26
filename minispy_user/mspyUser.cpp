@@ -3866,8 +3866,8 @@ C:\Windows\Log....
 */
 inline std::wstring
 GenerateLogFilePath(char Letter) {
-    wchar_t NameTemp[] = L"NAR_LOG_FILE__";
-    NameTemp[sizeof(NameTemp) / 2 - 2] = Letter;
+    wchar_t NameTemp[] = L"NAR_LOG_FILE__.nlfx";
+    NameTemp[54 / 2 - 2] = Letter;
     
     std::wstring Result = L"C:\\Windows\\";
     Result += std::wstring(NameTemp);
@@ -4580,6 +4580,14 @@ SaveMetadata(char Letter, int Version, int ClusterSize, BackupType BT,
         return FALSE;
     }
     
+    {
+        DWORD Len = 128;
+        wchar_t bf[128];
+        memset(bf, 0, 128);
+        GetCurrentDirectoryW(Len, &bf[0]);
+        printf("Current working directory is %S\n", bf);
+    }
+    
     DWORD BytesWritten = 0;
     backup_metadata BM = { 0 };
     ULONGLONG BaseOffset = sizeof(BM);
@@ -4593,8 +4601,9 @@ SaveMetadata(char Letter, int Version, int ClusterSize, BackupType BT,
         goto Exit;
     }
     
+    printf("Metadata name generated %S\n", MetadataFilePath.c_str());
     
-    if(FALSE==NarSetFilePointer(MetadataFile, sizeof(BM))){
+    if(FALSE == NarSetFilePointer(MetadataFile, sizeof(BM))){
         printf("Couldnt reserve bytes for metadata struct!\n");
         goto Exit;
     }
@@ -4619,11 +4628,12 @@ SaveMetadata(char Letter, int Version, int ClusterSize, BackupType BT,
         printf("Unable to query computer name\n");
     }
     
-    
-    GetLocalTime(&BM.BackupDate);
-    memset(&BM.Size, 0, sizeof(BM.Size));
-    memset(&BM.Offset, 0, sizeof(BM.Offset));
-    memset(&BM.Errors, 0, sizeof(BM.Errors));
+    {
+        GetLocalTime(&BM.BackupDate);
+        memset(&BM.Size, 0, sizeof(BM.Size));
+        memset(&BM.Offset, 0, sizeof(BM.Offset));
+        memset(&BM.Errors, 0, sizeof(BM.Errors));
+    }
     
     // NOTE(Batuhan): fill BM.Size struct
     // NOTE(Batuhan): Backup regions and it's metadata sizes
@@ -4762,6 +4772,7 @@ SaveMetadata(char Letter, int Version, int ClusterSize, BackupType BT,
             ULONGLONG CurrentFilePointer = NarGetFilePointer(MetadataFile);
             BM.Size.Recovery = CurrentFilePointer - OldFilePointer;
             BM.Errors.Recovery = TRUE;
+            Result = FALSE;
         }
         
     }
@@ -5191,8 +5202,6 @@ AppendMFTFile(HANDLE File, HANDLE VSSHandle, data_array<nar_record> MFTLCN, int 
                 goto Exit;
             }
             
-            //printf("Will copy %I64u bytes to append MFT to file\n", (ULONGLONG)MFTLCN.Data[i].Len * (ULONGLONG)ClusterSize);
-            
             if (!CopyData(VSSHandle, File, (ULONGLONG)MFTLCN.Data[i].Len * (ULONGLONG)ClusterSize)) {
                 printf("Error occured while copying MFT file\n");
                 goto Exit;
@@ -5212,7 +5221,6 @@ AppendMFTFile(HANDLE File, HANDLE VSSHandle, data_array<nar_record> MFTLCN, int 
     }
     
     Exit:
-    FreeDataArray(&MFTLCN);
     return Return;
     
 }
@@ -6245,6 +6253,7 @@ NarGetFileNameFromPath(const wchar_t *path, wchar_t* Out, size_t MaxOut){
         wcscpy(Out, &path[it]);
     }
     
+    
 }
 
 
@@ -6338,24 +6347,23 @@ NarRestoreFileFromBackups(const wchar_t *RootDir, const wchar_t *FileName, const
             nar_record* IntersectionRegions = 0;
             NarGetRegionIntersection(FEHandle.BMEX->RegionsMetadata.Data, QResult.Records, &IntersectionRegions, FEHandle.BMEX->RegionsMetadata.Count, QResult.RecordCount, &ISectionCount);
             
-            if(ISectionCount != 0){
+            // IMPORTANT TODO(Batuhan): special code for data in 
+            // copy intersections
+            if(QResult.DataLen != 0){
+                printf("Found resident data in file, offset %i, size %i\n", QResult.DataOffset, QResult.DataLen);
                 
-                // IMPORTANT TODO(Batuhan): special code for data in 
-                // copy intersections
-                if(QResult.DataLen != 0){
-                    printf("Found resident data in file, offset %i, size %i\n", QResult.DataOffset, QResult.DataLen);
-                    
-                    DWORD BytesWritten = 0;
-                    if(WriteFile(RestoreFileHandle, (char*)MemoryBuffer + QResult.DataOffset, QResult.DataLen, &BytesWritten, 0) && BytesWritten == QResult.DataLen){
-                        
-                    }
-                    else{
-                        printf("Unable to write resident file data, bytes written %l\n", BytesWritten);
-                        DisplayError(GetLastError());
-                    }
-                    
+                DWORD BytesWritten = 0;
+                if(WriteFile(RestoreFileHandle, (char*)MemoryBuffer + QResult.DataOffset, QResult.DataLen, &BytesWritten, 0) && BytesWritten == QResult.DataLen){
                     
                 }
+                else{
+                    printf("Unable to write resident file data, bytes written %l\n", BytesWritten);
+                    DisplayError(GetLastError());
+                }
+            }
+            
+            
+            if(ISectionCount != 0){
                 
                 // NOTE(Batuhan): copy intersections of backup regions and file regions
                 for (INT32 RegIndex = 0; RegIndex < ISectionCount; RegIndex++) {
@@ -6541,16 +6549,12 @@ ReadLCNFromMFTRecord(void* RecordStart) {
     FileAttribute = NarFindFileAttributeFromFileRecord(RecordStart, NAR_DATA_FLAG);
     if(FileAttribute != NULL){
         
-        // skip if data attribute is smt like Zone.Identifier or another alternate stream.
         UINT8 AttributeNameLen = *((UINT8*)FileAttribute + 9);
-        
-        // skip if attribute represents resident data. this means file has some data in it's record itself. 
         UINT8 AttributeNonResident = *((UINT8*)FileAttribute + 8);
         if(!AttributeNonResident){
             // IMPORTANT TODO(Batuhan): Find and append these data points to result structure, restore operation depends on it
             Result.Flags |= Result.HAS_DATA_IN_MFT;
         }
-        
         
         INT32 DataRunsOffset = *(INT32*)((BYTE*)FileAttribute + 32);
         void* DataRuns = (char*)FileAttribute + DataRunsOffset;
@@ -6574,12 +6578,10 @@ ReadLCNFromMFTRecord(void* RecordStart) {
         INT8 ClusterCountSize = (Size & 0x0F);
         INT8 FirstClusterSize = (Size & 0xF0) >> 4;
         
-        // Swipe to left to clear extra bits, then swap back to get correct result.
-        INT64 ClusterCount = *(INT64*)((char*)DataRuns + 1); // 1 byte for size variable
+        INT64 ClusterCount = *(INT64*)((char*)DataRuns + 1);
         ClusterCount = ClusterCount & ~(0xFFFFFFFFFFFFFFFFULL << (ClusterCountSize * 8));
-        // cluster count must be > 0, no need to do 2s complement on it
         
-        //same operation
+        
         INT64 FirstCluster = *(INT64*)((char*)DataRuns + 1 + ClusterCountSize);
         FirstCluster = FirstCluster & ~(0xFFFFFFFFFFFFFFFFULL << (FirstClusterSize * 8));
         
@@ -6605,21 +6607,14 @@ ReadLCNFromMFTRecord(void* RecordStart) {
             // bytes to aligment border, we can break early.
             if (Size == 0) break;  
             
-            
-            // extract 4bit nibbles from size
             ClusterCountSize = (Size & 0x0F);
             FirstClusterSize = (Size & 0xF0) >> 4;
             
-            // Sparse files may cause that, but not sure about what is sparse and if it effects directories. 
-            // If not, nothing to worry about, branch predictor should take care of that
             if (ClusterCountSize == 0 || FirstClusterSize == 0)break;
             
-            // Swipe to left to clear extra bits, then swap back to get correct result.
             ClusterCount = *(INT64*)((BYTE*)D + 1);
             ClusterCount = ClusterCount & ~(0xFFFFFFFFFFFFFFFFULL << (ClusterCountSize * 8));
             
-            // same dumbness
-            //same operation
             FirstCluster = *(INT64*)((BYTE*)D + 1 + ClusterCountSize);
             FirstCluster = FirstCluster & ~(0xFFFFFFFFFFFFFFFFULL << (FirstClusterSize * 8));
             if ((FirstCluster >> ((FirstClusterSize - 1) * 8 + 7)) & 1U) {
@@ -6628,51 +6623,16 @@ ReadLCNFromMFTRecord(void* RecordStart) {
             
             
             FirstCluster += OldClusterStart;
-            // Update tail
             OldClusterStart = FirstCluster;
             
             D = (BYTE*)D + (FirstClusterSize + ClusterCountSize + 1);
             
-            InsertToResult((UINT32)FirstCluster, (UINT32)ClusterCount); // this isnt actually a narrowing at all. nothing to worry about(hope so)
-            
+            InsertToResult((UINT32)FirstCluster, (UINT32)ClusterCount);
         }
         
-    }
-    
-    if(Result.RecordCount == 0 
-       && Result.Flags != Result.FAIL 
-       && (Result.Flags & Result.HAS_DATA_IN_MFT) == Result.HAS_DATA_IN_MFT
-       ){
-        Result.Flags |= Result.FILE_FITS_MFT;
     }
     
     return Result;
-    
-}
-
-
-
-// reads file's data in mft record and writes it to OutData, and sets DataLen to how many bytes written
-// files that have exceeded 1KB limit after os file flush(since OS does NOT instantly writes to disk it rather flushes requests and flushes after some period) may have contain their first 1KB info at mft.
-inline void
-ReadFileDataFromMFT(void *RecordStart, lcn_from_mft_query_result QueryResult, void *OutData, INT32 *DataLen){
-    
-    
-    if(RecordStart == NULL || OutData == NULL ||  DataLen == NULL){
-        return;
-    }
-    
-    if(QueryResult.Flags != QueryResult.FAIL){
-        
-        if(QueryResult.DataOffset + QueryResult.DataLen < 1024){            
-            void *Data = (char*)RecordStart + QueryResult.DataOffset;
-            INT32 DLen = QueryResult.DataLen;
-            
-            memcpy(OutData, Data, DLen);
-            *DataLen = DLen;
-        }
-        
-    }
     
 }
 
@@ -6759,13 +6719,9 @@ NarSearchFileInVolume(const wchar_t* arg_RootDir, const wchar_t *arg_FileName, n
             
             INT32 EntryCount = Ctx.EList.EntryCount;
             
-            // TODO(Batuhan) prefetch entry list
             for(int i =0; i< EntryCount; i++){
                 
                 TIMED_NAMED_BLOCK("File entry iteration");
-                
-                // TODO(Batuhan): Im not sure about if files name are in alphabetical order, if so we can early terminate searching
-                // but since N < 10000 for most cases, that shouldnt be bottleneck. Most bottleneck will come from cache misses probably
                 if(wcscmp(Ctx.EList.Entries[i].Name, Token) == 0){
                     FileFound = TRUE;
                     FoundFileListID = i;
@@ -7390,7 +7346,7 @@ NarInitFEVolumeHandleFromBackup(nar_fe_volume_handle *FEV, const wchar_t *RootDi
         printf("Couldnt initialize backup metadata from path %S\n", MetadataFilePath);
     }
     
-    // failed
+    
     if(!Result){
         if(FEV != 0){
             CloseHandle(FEV->VolumeHandle);
@@ -7939,11 +7895,54 @@ DEBUG_FileRestore(){
 int
 main(int argc, char* argv[]) {
     
-    //DEBUG_FileRestore();
-    DEBUG_Restore();
-    return 0;
+    if(0){
+        BOOLEAN Result = FALSE;
+        char StringBuffer[1024];
+        nar_backup_id ID = {0};
+        ID.Year = 2020;
+        ID.Month = 1;
+        ID.Day = 5;
+        ID.Hour  = 21;
+        ID.Min = 25;
+        ID.Letter = 'C';
+        
+        unsigned Version = -1;
+        std::wstring MetadataFilePath = GenerateMetadataName(ID, Version);
+        HANDLE MetadataFile = CreateFileW(MetadataFilePath.c_str(), GENERIC_WRITE | GENERIC_READ, 0, 0, CREATE_ALWAYS, 0, 0);
+        if (MetadataFile == INVALID_HANDLE_VALUE) {
+            printf("Couldn't create metadata file : %s\n", MetadataFilePath.c_str());
+        }
+        if(NarSetFilePointer(MetadataFile, sizeof(backup_metadata))){
+            char randombf[512];
+            DWORD BytesWritten = 0;
+            if(WriteFile(MetadataFile, randombf, 512, &BytesWritten, 0) && BytesWritten == 512){
+                
+            }
+            else{
+                printf("Writefile failed\n");
+                DisplayError(GetLastError());
+            }
+        }
+        else{
+            printf("setfilepointer failed\n");
+        }
+        
+        
+    }
     
-    //DEBUG_FileExplorer();
+#if 0    
+    printf("skip debug?");
+    char c = 0;
+    std::cin>>c;
+    if(!!(c)){
+        //DEBUG_FileRestore();
+        printf("restore = 1, file explorer = 2 ");
+        
+        DEBUG_Restore();
+        DEBUG_FileExplorer();
+        
+    }
+#endif
     
     size_t bsize = 64*1024*1024;
     void *MemBuf = malloc(bsize);
@@ -7987,6 +7986,7 @@ main(int argc, char* argv[]) {
                 HANDLE file = CreateFileW(inf.FileName.c_str(), GENERIC_WRITE | GENERIC_READ, FILE_SHARE_READ, 0, CREATE_ALWAYS, 0, 0);
                 if(file != INVALID_HANDLE_VALUE){
                     
+#if 0                    
                     loop{
                         int Read = ReadStream(v, MemBuf, bsize);
                         TotalRead += Read;
@@ -8006,6 +8006,11 @@ main(int argc, char* argv[]) {
                             }
                         }
                     }
+#else
+                    
+                    TotalRead = TargetWrite;
+                    TotalWritten = TargetWrite;
+#endif
                     
                     if((TotalRead != TargetWrite || TotalWritten != TargetWrite)){
                         BREAK_CODE;

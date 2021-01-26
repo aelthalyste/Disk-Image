@@ -1083,8 +1083,7 @@ struct lcn_from_mft_query_result {
     enum {
         FAIL = 0x0,
         SUCCESS = 0x1,
-        HAS_DATA_IN_MFT = 0x2,
-        FILE_FITS_MFT = 0x4
+        HAS_DATA_IN_MFT = 0x2
     };
     
     INT8 Flags;

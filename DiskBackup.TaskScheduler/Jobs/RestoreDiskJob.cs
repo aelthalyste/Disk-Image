@@ -98,37 +98,34 @@ namespace DiskBackup.TaskScheduler.Jobs
             if (result == 1 || availableResult)
             {
                 _logger.Verbose("{@task} disk job'ın result true ifindeyim", task);
-                activityLog.Status = StatusType.Success;
-                UpdateActivityAndTask(activityLog, task);
+                UpdateActivityAndTask(activityLog, task, StatusType.Success);
             }
             else if (result == 0)
             {
                 _logger.Verbose("{@task} disk job'ın result false ifindeyim", task);
-                activityLog.Status = StatusType.Fail;
-                UpdateActivityAndTask(activityLog, task);
+                UpdateActivityAndTask(activityLog, task, StatusType.Fail);
             }
             else if (result == 2)
             {
                 _logger.Verbose("{@task} disk job'ın result bağlantı hatası ifindeyim", task);
-                activityLog.Status = StatusType.ConnectionError;
-                UpdateActivityAndTask(activityLog, task);
+                UpdateActivityAndTask(activityLog, task, StatusType.ConnectionError);
             }
             else if (result == 3)
             {
                 _logger.Verbose("{@task} disk job'ın result result eksik dosyalar var", task);
-                activityLog.Status = StatusType.MissingFile;
-                UpdateActivityAndTask(activityLog, task);
+                UpdateActivityAndTask(activityLog, task, StatusType.MissingFile);
             }
 
             _logger.Information("{@task} restore disk görevi bitirildi. Sonuç: {@result}.", task, result);
             return Task.CompletedTask; // return değeri kaldırılacak ve async'e çevirilecek burası
         }
 
-        private void UpdateActivityAndTask(ActivityLog activityLog, TaskInfo taskInfo)
+        private void UpdateActivityAndTask(ActivityLog activityLog, TaskInfo taskInfo, StatusType status)
         {
             activityLog.EndDate = DateTime.Now;
-            activityLog.StrStatus = activityLog.Status.ToString();
             activityLog.StatusInfo = _statusInfoDal.Get(x => x.Id == taskInfo.StatusInfoId);
+            activityLog.StatusInfo.Status = status;
+            activityLog.StatusInfo.StrStatus = status.ToString();
             var resultStatusInfo = _statusInfoDal.Add(activityLog.StatusInfo);
             activityLog.StatusInfoId = resultStatusInfo.Id;
             _activityLogDal.Add(activityLog);

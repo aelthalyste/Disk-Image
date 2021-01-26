@@ -22,7 +22,7 @@ Environment:
 #include <stdio.h>
 #include <Ntstrsafe.h>
 #include <string.h>
-
+#define DbgPrint
 //
 //  Global variables
 //
@@ -404,8 +404,8 @@ Return Value:
         NarData.FileHandles = ExAllocatePoolWithTag(NonPagedPool, sizeof(HANDLE) * NAR_KERNEL_MAX_FILE_ID, NAR_TAG);
         for (char c = 'A'; c <= 'Z'; c++) {
             
-            wchar_t NameTemp[] = L"\\SystemRoot\\NAR_LOG_FILE__";
-            NameTemp[sizeof(NameTemp) / 2 - 2] = (wchar_t)c;
+            wchar_t NameTemp[] = L"\\SystemRoot\\NAR_LOG_FILE__.nlfx";
+            NameTemp[54 / 2 - 2] = (wchar_t)c;
             
             UNICODE_STRING Fn = { 0 };
             RtlInitUnicodeString(&Fn, NameTemp);
@@ -1034,10 +1034,10 @@ Return Value:
 
 // Intented usage: strings, not optimized for big buffers, used only in kernel mode to detect some special directory activity
 BOOLEAN
-NarSubMemoryExists(void* mem1, void* mem2, int mem1len, int mem2len) {
+NarSubMemoryExists(const void* mem1, const void* mem2, unsigned int mem1len, unsigned int mem2len) {
     
-    char* S1 = (char*)mem1;
-    char* S2 = (char*)mem2;
+    unsigned char* S1 = (unsigned char*)mem1;
+    unsigned char* S2 = (unsigned char*)mem2;
     
     
     int k = 0;
@@ -1175,13 +1175,18 @@ NarLogThread(PVOID param) {
                 
             }
             else {
-                DbgPrint("couldnt write to file, err id %i\n", status);
+                DbgPrint("couldnt write to file, err id %X\n", status);
             }
         }
         else{
             
         }
     }
+    else {
+        if(tp->DataLen == 0) DbgPrint("datalen was zero");
+        if (tp->Data == 0) DbgPrint("data was zero");
+    }
+
     
     if (NT_SUCCESS(status)) {
         if (tp->ShouldFlush == TRUE) {
@@ -1204,6 +1209,31 @@ NarLogThread(PVOID param) {
     END:
     return;
 }
+
+
+const UNICODE_STRING IgnorePrefixTable[] = {
+    RTL_CONSTANT_STRING(L"$Mft"),
+    RTL_CONSTANT_STRING(L"$LogFile"),
+    RTL_CONSTANT_STRING(L"$BitMap"),
+    RTL_CONSTANT_STRING(L".tmp"),
+    RTL_CONSTANT_STRING(L"~"),
+    RTL_CONSTANT_STRING(L".tib.metadata"),
+    RTL_CONSTANT_STRING(L".tib"),
+    RTL_CONSTANT_STRING(L".pf"),
+    RTL_CONSTANT_STRING(L".cookie")
+};
+
+
+const UNICODE_STRING IgnoreMidStringTable[] = {
+    RTL_CONSTANT_STRING(L"\\AppData\\Local\\Temp"),
+    RTL_CONSTANT_STRING(L"\\AppData\\Local\\Microsoft\\Windows\\Temporary Internet Files"),
+    RTL_CONSTANT_STRING(L"\\AppData\\Google\\Chrome\\User Data\\Default\\Cache"),
+    RTL_CONSTANT_STRING(L"\\AppData\\Local\\Opera Software"),
+    RTL_CONSTANT_STRING(L"\\AppData\\Local\\Mozilla\\Firefox\\Profiles"),
+    RTL_CONSTANT_STRING(L"\\AppData\\Local\\Microsoft\\Windows\\INetCache\\IE"),
+    RTL_CONSTANT_STRING(L"NAR_LOG_FILE_")
+};
+
 
 //---------------------------------------------------------------------------
 //              Operation filtering routines
@@ -1253,6 +1283,8 @@ Return Value:
     UNREFERENCED_PARAMETER(nameToUse);
     UNREFERENCED_PARAMETER(CompletionContext);
     
+   
+
     // If system shutdown requested, dont bother to log changes
     if (Data->Iopb->MajorFunction == IRP_MJ_SHUTDOWN) {
         
@@ -1320,6 +1352,10 @@ Return Value:
     else {
         DbgPrint("Failed to query information file\n");
     }
+
+    if (Data->Iopb->MajorFunction != IRP_MJ_WRITE) {
+        return FLT_PREOP_SUCCESS_NO_CALLBACK;
+    }
     
     
     PFLT_FILE_NAME_INFORMATION nameInfo = NULL;
@@ -1337,17 +1373,52 @@ Return Value:
         if (NT_SUCCESS(status)) {
             
             
+#if 0
+            {
+                size_t len = 0;
+
+                len = sizeof(IgnorePrefixTable) / sizeof(IgnorePrefixTable[0]);
+                for (size_t i = 0; i < len; i++) {
+                    if (RtlSuffixUnicodeString(&IgnorePrefixTable[i], &nameInfo->Name, FALSE)) {
+                        goto NAR_PREOP_FAILED_END;
+                    }
+                }
+
+                len = sizeof(IgnoreMidStringTable) / sizeof(IgnoreMidStringTable[0]);
+                for (size_t i = 0; i < len; i++) {
+                    if (NarSubMemoryExists(nameInfo->Name.Buffer, &IgnoreMidStringTable[i].Buffer, nameInfo->Name.Length, IgnoreMidStringTable[i].Length)) {
+                        goto NAR_PREOP_FAILED_END;
+                    }
+                }
+
+
+                if(0){
+                    char UnicodeStrBuffer[256];
+                    UNICODE_STRING UniStr = { 0 };
+                    RtlInitEmptyUnicodeString(&UniStr, UnicodeStrBuffer, 256);
+                    
+                    RtlUnicodeStringPrintf(&UniStr, L"NAR_LOG_FILE");
+                    if (NarSubMemoryExists(nameInfo->Name.Buffer, UniStr.Buffer, nameInfo->Name.Length, UniStr.Length)) {
+                        goto NAR_PREOP_FAILED_END;
+                    }
+
+                }
+
+
+            }
+#endif
+
             UNICODE_STRING UniStr;
-            
+
             UnicodeStrBuffer = ExAllocatePoolWithTag(PagedPool, NAR_LOOKASIDE_SIZE, NAR_TAG);
             if (UnicodeStrBuffer == NULL) {
                 DbgPrint("Couldnt allocate memory for unicode string\n");
                 return FLT_PREOP_SUCCESS_NO_CALLBACK;
             }
-            
+
             RtlInitEmptyUnicodeString(&UniStr, UnicodeStrBuffer, NAR_LOOKASIDE_SIZE);
-            
-            
+
+
             //Suffix area
             RtlUnicodeStringPrintf(&UniStr, L"$Mft");
             if (RtlSuffixUnicodeString(&UniStr, &nameInfo->Name, FALSE)) {
@@ -1385,46 +1456,51 @@ Return Value:
             if (RtlSuffixUnicodeString(&UniStr, &nameInfo->Name, FALSE)) {
                 goto NAR_PREOP_FAILED_END;
             }
-            
-            
-            
-            
+            RtlUnicodeStringPrintf(&UniStr, L".nlfx");
+            if (RtlSuffixUnicodeString(&UniStr, &nameInfo->Name, FALSE)) {
+                goto NAR_PREOP_FAILED_END;
+            }
+
+
+
             RtlUnicodeStringPrintf(&UniStr, L"\\AppData\\Local\\Temp");
             if (NarSubMemoryExists(nameInfo->Name.Buffer, UniStr.Buffer, nameInfo->Name.Length, UniStr.Length)) {
                 goto NAR_PREOP_FAILED_END;
             }
-            
+
             RtlUnicodeStringPrintf(&UniStr, L"\\AppData\\Local\\Microsoft\\Windows\\Temporary Internet Files");
             if (NarSubMemoryExists(nameInfo->Name.Buffer, UniStr.Buffer, nameInfo->Name.Length, UniStr.Length)) {
                 goto NAR_PREOP_FAILED_END;
             }
-            
+
             RtlUnicodeStringPrintf(&UniStr, L"\\AppData\\Local\\Google\\Chrome\\User Data\\Default\\Cache");
             if (NarSubMemoryExists(nameInfo->Name.Buffer, UniStr.Buffer, nameInfo->Name.Length, UniStr.Length)) {
                 goto NAR_PREOP_FAILED_END;
             }
-            
+
             RtlUnicodeStringPrintf(&UniStr, L"\\AppData\\Local\\Opera Software");
             if (NarSubMemoryExists(nameInfo->Name.Buffer, UniStr.Buffer, nameInfo->Name.Length, UniStr.Length)) {
                 goto NAR_PREOP_FAILED_END;
             }
-            
+
             RtlUnicodeStringPrintf(&UniStr, L"\\AppData\\Local\\Mozilla\\Firefox\\Profiles");
             if (NarSubMemoryExists(nameInfo->Name.Buffer, UniStr.Buffer, nameInfo->Name.Length, UniStr.Length)) {
                 goto NAR_PREOP_FAILED_END;
             }
-            
+
             RtlUnicodeStringPrintf(&UniStr, L"\\AppData\\Local\\Microsoft\\Windows\\INetCache\\IE");
             if (NarSubMemoryExists(nameInfo->Name.Buffer, UniStr.Buffer, nameInfo->Name.Length, UniStr.Length)) {
                 goto NAR_PREOP_FAILED_END;
             }
+
+            RtlUnicodeStringPrintf(&UniStr, L"NAR_LOG_FILE_");
+            if (NarSubMemoryExists(nameInfo->Name.Buffer, UniStr.Buffer, nameInfo->Name.Length, UniStr.Length)) {
+                goto NAR_PREOP_FAILED_END;
+            }
             
-            
-            
-            
-            
-            
-            
+
+
+
 #if 1
             ULONG BytesReturned = 0;
 #pragma warning(push)
@@ -1502,23 +1578,19 @@ Return Value:
                 }
                 
                 
-                if (status != STATUS_BUFFER_OVERFLOW
-                    && status != STATUS_SUCCESS
-                    && status != STATUS_END_OF_FILE) {
-                    Error |= NAR_ERR_TRINITY;
-                    break;
-                }
-                
                 /*
                 It is unlikely, but we should check overflows
                 */
                 
+                /*
                 if (ClusterMapBuffer.Extents[0].Lcn.QuadPart > MAXUINT32 || ClusterMapBuffer.Extents[0].NextVcn.QuadPart > MAXUINT32 || ClusterMapBuffer.StartingVcn.QuadPart > MAXUINT32) {
                     DbgPrint("OVERFLOW OCCURED lcn :%X, nextvcn : %X, starting vcn : %X, index %i, name %wZ\n", ClusterMapBuffer.Extents[0].Lcn.QuadPart, ClusterMapBuffer.Extents[0].NextVcn.QuadPart, ClusterMapBuffer.Extents[0].NextVcn.QuadPart, RecCount, &nameInfo->Name);
                     Error |= NAR_ERR_REG_OVERFLOW;
                     break;
                 }
-                
+                */
+
+                /*
                 if (ClusterMapBuffer.Extents[0].NextVcn.QuadPart - ClusterMapBuffer.StartingVcn.QuadPart < (UINT64)0) {
                     DbgPrint("Region was lower than 0, reg len :%X, extents %X, StartingVcn : %X, name : %wZ\n",
                              ClusterMapBuffer.Extents[0].NextVcn.QuadPart - ClusterMapBuffer.StartingVcn.QuadPart,
@@ -1528,7 +1600,8 @@ Return Value:
                     Error |= NAR_ERR_REG_BELOW_ZERO;
                     break;
                 }
-                
+                */
+
                 if (!HeadFound) {
                     CeilTest = ((LONGLONG)ClusterWriteStartOffset < ClusterMapBuffer.Extents[0].NextVcn.QuadPart);
                 }
@@ -1704,18 +1777,18 @@ Return Value:
     }
     
 #endif
-    
+
     if (UnicodeStrBuffer != 0) {
         ExFreePoolWithTag(UnicodeStrBuffer, NAR_TAG);
     }
-    
+
     return FLT_PREOP_SUCCESS_NO_CALLBACK;
-    
-    NAR_PREOP_FAILED_END:
+
+NAR_PREOP_FAILED_END:
     if (UnicodeStrBuffer != 0) {
         ExFreePoolWithTag(UnicodeStrBuffer, NAR_TAG);
     }
-    
+
     return FLT_PREOP_SUCCESS_NO_CALLBACK;
     
 }

@@ -328,6 +328,7 @@ namespace NarDIWrapper {
     }
     
     bool DiskTracker::CW_TerminateBackup(bool Succeeded, wchar_t VolumeLetter) {
+        
         INT32 VolID = GetVolumeID(C, VolumeLetter);
         
         if(VolID != NAR_INVALID_VOLUME_TRACK_ID){
