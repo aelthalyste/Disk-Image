@@ -1363,7 +1363,7 @@
                                         </GridViewColumn.Header>
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
-                                                <TextBlock Text="{Binding StrStatus}" TextAlignment="Center"/>
+                                                <TextBlock Text="{Binding StatusInfo.StrStatus}" TextAlignment="Center"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>

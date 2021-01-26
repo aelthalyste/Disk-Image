@@ -401,7 +401,8 @@ namespace DiskBackupWpfGUI
 
             foreach (var item in _activityLogList)
             {
-                item.StrStatus = Resources[$"{item.StrStatus}"].ToString();
+                item.StatusInfo = _statusInfoDal.Get(x => x.Id == item.StatusInfoId);
+                item.StatusInfo.StrStatus = Resources[$"{item.StatusInfo.StrStatus}"].ToString();
             }
 
             listViewLog.ItemsSource = _activityLogList;
@@ -2121,7 +2122,8 @@ namespace DiskBackupWpfGUI
             _activityLogList = _activityLogDal.GetList();
             foreach (var item in _activityLogList)
             {
-                item.StrStatus = Resources[$"{item.StrStatus}"].ToString();
+                item.StatusInfo = _statusInfoDal.Get(x => x.Id == item.StatusInfoId); 
+                item.StatusInfo.StrStatus = Resources[$"{item.StatusInfo.StrStatus}"].ToString();
             }
 
             listViewLog.ItemsSource = _activityLogList;
@@ -2389,9 +2391,10 @@ namespace DiskBackupWpfGUI
                 {
                     return _activityLogDal.GetList().LastOrDefault();
                 });
+                lastLog.StatusInfo = _statusInfoDal.Get(x => x.Id == lastLog.StatusInfoId);
                 //ActivityLog lastLog = ((ActivityLog)listViewLog.Items[0]);
                 txtRunningStateBlock.Text = lastLog.EndDate.ToString();
-                if (lastLog.Status == StatusType.Success)
+                if (lastLog.StatusInfo.Status == StatusType.Success)
                     txtRunningStateBlock.Foreground = Brushes.Green;
                 else
                     txtRunningStateBlock.Foreground = Brushes.Red;

@@ -120,8 +120,7 @@ namespace DiskBackup.TaskScheduler.Jobs
             if (exception != null) // başarısız
             {
                 //now görevi sona erdi sil
-                activityLog.Status = StatusType.Fail;
-                UpdateActivityAndTask(activityLog, task);
+                UpdateActivityAndTask(activityLog, task, StatusType.Fail);
                 await Task.Delay(TimeSpan.FromMinutes(task.BackupTaskInfo.WaitNumberTryAgain));
                 throw exception;
             }
@@ -129,35 +128,32 @@ namespace DiskBackup.TaskScheduler.Jobs
             if (result == 1) // başarılı
             {
                 _logger.Information("{@task} için Incremental-Differantial görevi bitirildi. Sonuç: Başarılı.", task);
-                activityLog.Status = StatusType.Success;
-                UpdateActivityAndTask(activityLog, task);
+                UpdateActivityAndTask(activityLog, task, StatusType.Success);
             }
             else if (result == 2) // durduruldu
             {
                 _logger.Information("{@task} için Incremental-Differantial görevi durduruldu.", task);
-                activityLog.Status = StatusType.Cancel;
-                UpdateActivityAndTask(activityLog, task);
+                UpdateActivityAndTask(activityLog, task, StatusType.Cancel);
             }
             else if (result == 3)
             {
                 _logger.Information("{@task} için Incremental-Differantial görevi yetersiz alandan dolayı başlatılamadı. Sonuç: Başarısız.", task);
-                activityLog.Status = StatusType.NotEnoughDiskSpace;
-                UpdateActivityAndTask(activityLog, task);
+                UpdateActivityAndTask(activityLog, task, StatusType.NotEnoughDiskSpace);
             }
             else if (result == 4)
             {
                 _logger.Information("{@task} için Incremental-Differantial görevi NAS'a bağlanılamadığı için başlatılamadı. Sonuç: Başarısız.", task);
-                activityLog.Status = StatusType.ConnectionError;
-                UpdateActivityAndTask(activityLog, task);
+                UpdateActivityAndTask(activityLog, task, StatusType.ConnectionError);
             }
 
         }
 
-        private void UpdateActivityAndTask(ActivityLog activityLog, TaskInfo taskInfo)
+        private void UpdateActivityAndTask(ActivityLog activityLog, TaskInfo taskInfo, StatusType status)
         {
             activityLog.EndDate = DateTime.Now;
-            activityLog.StrStatus = activityLog.Status.ToString();
             activityLog.StatusInfo = _statusInfoDal.Get(x => x.Id == taskInfo.StatusInfoId);
+            activityLog.StatusInfo.Status = status;
+            activityLog.StatusInfo.StrStatus = status.ToString();
             var resultStatusInfo = _statusInfoDal.Add(activityLog.StatusInfo);
             activityLog.StatusInfoId = resultStatusInfo.Id;
             _activityLogDal.Add(activityLog);
