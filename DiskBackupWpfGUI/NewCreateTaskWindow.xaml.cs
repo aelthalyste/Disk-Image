@@ -50,6 +50,7 @@ namespace DiskBackupWpfGUI
 
         private readonly Func<AddBackupAreaWindow> _createAddBackupWindow;
         private bool _updateControl = false;
+        public bool _showTaskTab = false;
 
         public NewCreateTaskWindow(List<BackupStorageInfo> backupStorageInfoList, IBackupService backupService, IBackupStorageService backupStorageService,
             Func<AddBackupAreaWindow> createAddBackupWindow, List<VolumeInfo> volumeInfoList, IBackupTaskDal backupTaskDal, IStatusInfoDal statusInfoDal,
@@ -165,11 +166,25 @@ namespace DiskBackupWpfGUI
                 else if (_taskInfo.BackupTaskInfo.AutoType == AutoRunType.Periodic)
                 {
                     rbPeriodic.IsChecked = true;
-                    txtPeriodic.Text = _taskInfo.BackupTaskInfo.PeriodicTime.ToString();
+
                     if (_taskInfo.BackupTaskInfo.PeriodicTimeType == PeriodicType.Minute)
+                    {
                         cbPeriodicTime.SelectedIndex = 1;
+                        for (int i = 0; i < cbPeriodic.Items.Count; i++)
+                        {
+                            if (Convert.ToInt32(cbPeriodic.Items[i]) == _taskInfo.BackupTaskInfo.PeriodicTime)
+                                cbPeriodic.SelectedIndex = i;
+                        }
+                    }
                     else
+                    {
                         cbPeriodicTime.SelectedIndex = 0;
+                        for (int i = 0; i < cbPeriodic.Items.Count; i++)
+                        {
+                            if (Convert.ToInt32(cbPeriodic.Items[i]) == _taskInfo.BackupTaskInfo.PeriodicTime)
+                                cbPeriodic.SelectedIndex = i;
+                        }
+                    }
                 }
                 else
                 {
@@ -315,7 +330,7 @@ namespace DiskBackupWpfGUI
                     else if (rbPeriodic.IsChecked.Value)
                     {
                         _taskInfo.BackupTaskInfo.AutoType = AutoRunType.Periodic;
-                        _taskInfo.BackupTaskInfo.PeriodicTime = Convert.ToInt32(txtPeriodic.Text);
+                        _taskInfo.BackupTaskInfo.PeriodicTime = Convert.ToInt32(cbPeriodic.SelectedItem);
                         if (cbPeriodicTime.SelectedIndex == 0)
                         {
                             _taskInfo.BackupTaskInfo.PeriodicTimeType = PeriodicType.Hour;
@@ -449,7 +464,11 @@ namespace DiskBackupWpfGUI
                     if (_updateControl)
                         MessageBox.Show(Resources["updateSuccessMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Information);
                     else
-                        MessageBox.Show(Resources["addSuccessMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Information);
+                    {
+                        _showTaskTab = true;
+                        //MessageBox.Show(Resources["addSuccessMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Information);
+                    }
+
                 }
                 else
                 {
@@ -693,9 +712,33 @@ namespace DiskBackupWpfGUI
                     if (((BackupStorageInfo)cbTargetBackupArea.SelectedItem).Id == item.Id)
                     {
                         //yerel disk - nas
-                        lblTargetTotalSize.Text = item.StrCapacity;
-                        lblTargetFreeSize.Text = item.StrFreeSize;
-                        lblTargetFullSize.Text = item.StrUsedSize;
+                        if (item.Type == BackupStorageType.Windows)
+                        {
+                            var totalSize = item.StrCapacity.Split(' ');
+                            lblTargetTotalSize.Text = totalSize.First();
+                            lblTargetTotalSizeType.Text = totalSize.Last();
+
+                            var freeSize = item.StrFreeSize.Split(' ');
+                            lblTargetFreeSize.Text = freeSize.First();
+                            lblTargetFreeSizeType.Text = freeSize.Last();
+
+                            var fullSize = item.StrUsedSize.Split(' ');
+                            lblTargetFullSize.Text = fullSize.First(); ;
+                            lblTargetFullSizeType.Text = fullSize.Last();
+                        }
+                        else
+                        {
+                            lblTargetTotalSize.Text = "-";
+                            lblTargetTotalSizeType.Text = "GB";
+
+                            lblTargetFreeSize.Text = "-";
+                            lblTargetFreeSizeType.Text = "GB";
+
+                            lblTargetFullSize.Text = "-";
+                            lblTargetFullSizeType.Text = "GB";
+                        }
+
+
                         // pasta işlemleri
                         double Capacity = item.Capacity;
                         double UsedSize = item.UsedSize;
@@ -715,9 +758,17 @@ namespace DiskBackupWpfGUI
                         if (item.IsCloud)
                         {
                             gridIsCloud.Visibility = Visibility.Visible;
-                            lblTargetNarbulutTotalSize.Text = item.StrCloudCapacity;
-                            lblTargetNarbulutFreeSize.Text = item.StrCloudFreeSize;
-                            lblTargetNarbulutFullSize.Text = item.StrCloudUsedSize;
+
+                            var narbulutTotalSize = item.StrCloudCapacity.Split(' ');
+                            lblTargetNarbulutTotalSize.Text = narbulutTotalSize.First();
+                            lblTargetNarbulutTotalSizeType.Text = narbulutTotalSize.Last();
+                            var narbulutFreeSize = item.StrCloudFreeSize.Split(' ');
+                            lblTargetNarbulutFreeSize.Text = narbulutFreeSize.First();
+                            lblTargetNarbulutFreeSizeType.Text = narbulutFreeSize.Last();
+                            var narbulutFullSize = item.StrCloudUsedSize.Split(' ');
+                            lblTargetNarbulutFullSize.Text = narbulutFullSize.First(); ;
+                            lblTargetNarbulutFullSizeType.Text = narbulutFullSize.Last(); ;
+
                             // pasta işlemleri
                             double cloudCapacity = item.CloudCapacity;
                             double cloudUsedSize = item.CloudUsedSize;
@@ -965,26 +1016,6 @@ namespace DiskBackupWpfGUI
                 txtTimeWait.Text = count.ToString();
             }
         }
-
-        private void btnPeriodicDown_Click(object sender, RoutedEventArgs e)
-        {
-            var count = Convert.ToInt32(txtPeriodic.Text);
-            if (count != 0)
-            {
-                count -= 1;
-                txtPeriodic.Text = count.ToString();
-            }
-        }
-
-        private void btnPeriodicUp_Click(object sender, RoutedEventArgs e)
-        {
-            var count = Convert.ToInt32(txtPeriodic.Text);
-            if (count != 999)
-            {
-                count += 1;
-                txtPeriodic.Text = count.ToString();
-            }
-        }
         #endregion
 
         private void btnDaysTimeDays_Click(object sender, RoutedEventArgs e)
@@ -1135,7 +1166,7 @@ namespace DiskBackupWpfGUI
                 }
                 else if (rbPeriodic.IsChecked.Value)
                 {
-                    if (txtPeriodic.Text.Equals(""))
+                    if (cbPeriodic.SelectedIndex == -1 && cbPeriodicTime.SelectedIndex == -1)
                     {
                         errorFlag = true;
                     }
@@ -1310,5 +1341,21 @@ namespace DiskBackupWpfGUI
             }
         }
         #endregion
+
+        private void cbPeriodicTime_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (cbPeriodicTime.SelectedIndex == 0) // saat
+            {
+                List<int> hourList = new List<int> { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24 };
+                cbPeriodic.ItemsSource = hourList;
+                cbPeriodic.SelectedIndex = 0;
+            }
+            else // dakika
+            {
+                List<int> minuteList = new List<int> { 15, 30, 45, 60, 75, 90, 105, 120 };
+                cbPeriodic.ItemsSource = minuteList;
+                cbPeriodic.SelectedIndex = 0;
+            }
+        }
     }
 }

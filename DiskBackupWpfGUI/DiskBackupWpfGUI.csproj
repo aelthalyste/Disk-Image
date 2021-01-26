@@ -63,6 +63,15 @@
   <PropertyGroup>
     <ApplicationIcon>favicon_mavi.ico</ApplicationIcon>
   </PropertyGroup>
+  <PropertyGroup>
+    <TargetZone>LocalIntranet</TargetZone>
+  </PropertyGroup>
+  <PropertyGroup>
+    <GenerateManifests>false</GenerateManifests>
+  </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationManifest>Properties\app.manifest</ApplicationManifest>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="Autofac, Version=6.1.0.0, Culture=neutral, PublicKeyToken=17863af14b0044da, processorArchitecture=MSIL">
       <HintPath>..\packages\Autofac.6.1.0\lib\netstandard2.0\Autofac.dll</HintPath>
@@ -272,6 +281,7 @@
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <None Include="packages.config" />
+    <None Include="Properties\app.manifest" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
@@ -434,6 +444,7 @@
     <Resource Include="Resources\Icon\Icon_White_V32.png" />
   </ItemGroup>
   <ItemGroup>
+    <Resource Include="Resources\Icon\logo_big.png" />
     <Resource Include="Resources\Icon\icons8_data_backup.ico" />
     <Resource Include="favicon_mavi.ico" />
     <Content Include="image_disk.db">

@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:DiskBackupWpfGUI"
         mc:Ignorable="d"
         Title="LicenseControllerWindow" 
-        Height="200" Width="700"
+        Height="200" Width="550"
         ResizeMode="CanMinimize" 
         WindowStartupLocation="CenterScreen" 
         Icon="Resources/Icon/NarBulut_PNG_Icon_White_V3.png" 
@@ -46,7 +46,7 @@
         <Button Name="btnSave" ToolTip="{DynamicResource save}" Click="btnSave_Click" Grid.Row="2" Width="80" Height="30" HorizontalAlignment="Center" Style="{StaticResource ImageButton}" Grid.Column="1" Cursor="Hand">
             <Button.Content>
                 <StackPanel Orientation="Horizontal">
-                    <TextBlock Text="{DynamicResource save}" VerticalAlignment="Center" Margin="5,0"/>
+                    <TextBlock Text="{DynamicResource okay}" VerticalAlignment="Center" Margin="5,0"/>
                     <Image Height="25" Width="25" HorizontalAlignment="Center" VerticalAlignment="Center">
                         <Image.Style>
                             <Style TargetType="Image">

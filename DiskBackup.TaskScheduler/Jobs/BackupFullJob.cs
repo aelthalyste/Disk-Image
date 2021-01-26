@@ -76,9 +76,9 @@ namespace DiskBackup.TaskScheduler.Jobs
             if (exception != null)
             {
                 activityLog.EndDate = DateTime.Now;
-                activityLog.Status = StatusType.Fail;
-                activityLog.StrStatus = StatusType.Fail.ToString();
                 activityLog.StatusInfo = _statusInfoDal.Get(x => x.Id == task.StatusInfoId);
+                activityLog.StatusInfo.Status = StatusType.Fail;
+                activityLog.StatusInfo.StrStatus = StatusType.Fail.ToString();
                 var resultStatusInfo = _statusInfoDal.Add(activityLog.StatusInfo);
                 activityLog.StatusInfoId = resultStatusInfo.Id;
                 _activityLogDal.Add(activityLog);
@@ -99,9 +99,9 @@ namespace DiskBackup.TaskScheduler.Jobs
             }
 
             activityLog.EndDate = DateTime.Now;
-            activityLog.Status = StatusType.Success;
-            activityLog.StrStatus = StatusType.Success.ToString();
             activityLog.StatusInfo = _statusInfoDal.Get(x => x.Id == task.StatusInfoId);
+            activityLog.StatusInfo.Status = StatusType.Success;
+            activityLog.StatusInfo.StrStatus = StatusType.Success.ToString();
             var resultStatusInfo2 = _statusInfoDal.Add(activityLog.StatusInfo);
             activityLog.StatusInfoId = resultStatusInfo2.Id;
             _activityLogDal.Add(activityLog);

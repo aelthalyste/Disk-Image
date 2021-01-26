@@ -96,7 +96,12 @@ namespace DiskBackupWpfGUI
             var backupService = _scope.Resolve<IBackupService>();
             var backupStorageService = _scope.Resolve<IBackupStorageService>();
 
-            var languageConfiguration = _configurationDataDal.Get(x => x.Key == "lang");
+            var languageConfiguration = _configurationDataDal.Get(x => x.Key == "lang"); // TO DO dil desteği null gelirse veritabanına dil yaz
+            if (languageConfiguration == null)
+            {
+                languageConfiguration = new ConfigurationData{ Key="lang", Value="tr"};
+                _configurationDataDal.Add(languageConfiguration);
+            }
             SetApplicationLanguage(languageConfiguration.Value);
 
             ReloadLanguages();
@@ -260,7 +265,7 @@ namespace DiskBackupWpfGUI
         {
             txtDemoDays.Text = result.Days.ToString();
             stackDemo.Visibility = Visibility.Visible;
-            stackLicenseController.Visibility = Visibility.Visible;
+            //stackLicenseController.Visibility = Visibility.Visible;
             txtLicenseStatu.Text = Resources["demo"].ToString();
             txtExpireDate.Text = key.GetValue("ExpireDate").ToString();
         }
@@ -396,7 +401,8 @@ namespace DiskBackupWpfGUI
 
             foreach (var item in _activityLogList)
             {
-                item.StrStatus = Resources[$"{item.StrStatus}"].ToString();
+                item.StatusInfo = _statusInfoDal.Get(x => x.Id == item.StatusInfoId);
+                item.StatusInfo.StrStatus = Resources[$"{item.StatusInfo.StrStatus}"].ToString();
             }
 
             listViewLog.ItemsSource = _activityLogList;
@@ -487,6 +493,8 @@ namespace DiskBackupWpfGUI
                 NewCreateTaskWindow newCreateTask = scope.Resolve<NewCreateTaskWindow>(new TypedParameter(backupStorageInfoList.GetType(), backupStorageInfoList),
                     new TypedParameter(volumeInfoList.GetType(), volumeInfoList));
                 newCreateTask.ShowDialog();
+                if (newCreateTask._showTaskTab)
+                    mainTabControl.SelectedIndex = 1;
             }
             GetTasks();
             var _backupStorageService = _scope.Resolve<IBackupStorageService>();
@@ -1368,6 +1376,8 @@ namespace DiskBackupWpfGUI
                     RestoreWindow restore = scope.Resolve<RestoreWindow>(new TypedParameter(backupInfo.GetType(), backupInfo),
                         new TypedParameter(volumeInfoList.GetType(), volumeInfoList));
                     restore.ShowDialog();
+                    if (restore._showTaskTab)
+                        mainTabControl.SelectedIndex = 1;
                 }
             }
             GetTasks();
@@ -1590,7 +1600,7 @@ namespace DiskBackupWpfGUI
             var backupService = _scope.Resolve<IBackupService>();
             //var backupInfo = (BackupInfo)listViewBackups.SelectedItem;
             MessageBoxResult result = MessageBoxResult.No;
-            if (listViewBackups.SelectedItems.Count > 1)
+            if (listViewBackups.SelectedItems.Count >= 1)
             {
                 bool controlFlag = false;
                 foreach (BackupInfo backupInfo in listViewBackups.SelectedItems)
@@ -2112,7 +2122,8 @@ namespace DiskBackupWpfGUI
             _activityLogList = _activityLogDal.GetList();
             foreach (var item in _activityLogList)
             {
-                item.StrStatus = Resources[$"{item.StrStatus}"].ToString();
+                item.StatusInfo = _statusInfoDal.Get(x => x.Id == item.StatusInfoId); 
+                item.StatusInfo.StrStatus = Resources[$"{item.StatusInfo.StrStatus}"].ToString();
             }
 
             listViewLog.ItemsSource = _activityLogList;
@@ -2168,10 +2179,11 @@ namespace DiskBackupWpfGUI
                 key.SetValue("ExpireDate", "");
                 key.SetValue("Type", 2606);
                 key.SetValue("License", txtLicenseKey.Text);
-                stackLicenseController.Visibility = Visibility.Collapsed;
+                //stackLicenseController.Visibility = Visibility.Collapsed;
                 stackDemo.Visibility = Visibility.Collapsed;
                 txtLicenseStatu.Text = Resources["active"].ToString();
                 txtExpireDate.Text = "∞";
+                txtLicenseKey.Text = "";
             }
         }
 
@@ -2379,9 +2391,10 @@ namespace DiskBackupWpfGUI
                 {
                     return _activityLogDal.GetList().LastOrDefault();
                 });
+                lastLog.StatusInfo = _statusInfoDal.Get(x => x.Id == lastLog.StatusInfoId);
                 //ActivityLog lastLog = ((ActivityLog)listViewLog.Items[0]);
                 txtRunningStateBlock.Text = lastLog.EndDate.ToString();
-                if (lastLog.Status == StatusType.Success)
+                if (lastLog.StatusInfo.Status == StatusType.Success)
                     txtRunningStateBlock.Foreground = Brushes.Green;
                 else
                     txtRunningStateBlock.Foreground = Brushes.Red;
@@ -2627,10 +2640,16 @@ namespace DiskBackupWpfGUI
                 AdornerLayer.GetAdornerLayer(listViewLogCol).Remove(listViewLogAdorner);
                 listViewLog.Items.SortDescriptions.Clear();
             }
+            else
+            {
+                listViewLog.Items.SortDescriptions.Clear();
+            }
 
             ListSortDirection newDir = ListSortDirection.Ascending;
             if (listViewLogCol == column && listViewLogAdorner.Direction == newDir)
+            { 
                 newDir = ListSortDirection.Descending;
+            }
 
             listViewLogCol = column;
             listViewLogAdorner = new SortAdorner(listViewLogCol, newDir);
@@ -2739,5 +2758,14 @@ namespace DiskBackupWpfGUI
 
         #endregion
 
+        private void btnRestoreRefreshDisk_Click(object sender, RoutedEventArgs e)
+        {
+            RefreshDisk();
+        }
+
+        private void btnTaskRefreshDisk_Click(object sender, RoutedEventArgs e)
+        {
+            RefreshDisk();
+        }
     }
 }

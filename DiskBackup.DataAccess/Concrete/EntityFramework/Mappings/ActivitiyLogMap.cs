@@ -21,8 +21,6 @@ namespace DiskBackup.DataAccess.Concrete.EntityFramework.Mappings
             Property(x => x.TaskInfoName).HasColumnName("task_info_name");
             Property(x => x.StartDate).HasColumnName("start_date");
             Property(x => x.EndDate).HasColumnName("end_date");
-            Property(x => x.Status).HasColumnName("status");
-            Property(x => x.StrStatus).HasColumnName("str_status");
             Property(x => x.Type).HasColumnName("task_type");
             Ignore(x => x.StatusInfo);
 

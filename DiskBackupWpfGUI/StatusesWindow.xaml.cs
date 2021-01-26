@@ -101,7 +101,7 @@ namespace DiskBackupWpfGUI
             _activityLog = activityLog;
             RefreshStatus(_cancellationTokenSource.Token);
             this.Closing += (sender, e) => _cancellationTokenSource.Cancel();
-            txtLastStatus.Text = activityLog.StrStatus;
+            txtLastStatus.Text = activityLog.StatusInfo.StrStatus;
 
             _configurationDataDal = configurationDataDal;
             SetApplicationLanguage(_configurationDataDal.Get(x => x.Key == "lang").Value);
@@ -158,7 +158,10 @@ namespace DiskBackupWpfGUI
                 _statusInfo = _statusInfoDal.Get(x => x.Id == _statusInfo.Id);
                 pbTotalDataProcessed.Maximum = _statusInfo.TotalDataProcessed;
                 pbTotalDataProcessed.Value = _statusInfo.DataProcessed;
-                txtLocalPercentage.Text = Math.Round((_statusInfo.DataProcessed * 100.0) / (_statusInfo.TotalDataProcessed), 2).ToString() + "%";
+                if (double.IsNaN(Math.Round((_statusInfo.DataProcessed * 100.0) / (_statusInfo.TotalDataProcessed), 2))) 
+                    txtLocalPercentage.Text = "0%"; //TO DO NaN yakalandığında buraya 0 dışında bir şey girilmek istenir mi?
+                else
+                    txtLocalPercentage.Text = Math.Round((_statusInfo.DataProcessed * 100.0) / (_statusInfo.TotalDataProcessed), 2).ToString() + "%";
                 txtLocalFileName.Text = _statusInfo.FileName;
                 txtLocalTime.Text = FormatMilliseconds(TimeSpan.FromMilliseconds(_statusInfo.TimeElapsed)); // milisaniye
                 txtLocalAverageDataRate.Text = Math.Round(_statusInfo.AverageDataRate, 2).ToString() + " MB/s";
@@ -179,11 +182,18 @@ namespace DiskBackupWpfGUI
                 if (_taskId != 0)
                 {
                     var resultTask = _taskInfoDal.Get(x => x.Id == _taskId);
-                    txtLastStatus.Text = Resources[resultTask.Status.ToString()].ToString();
+                    if (resultTask.Status == TaskStatusType.Ready)
+                    {
+                        //status infodan alınacak
+                        var statusInfo = _statusInfoDal.Get(x => x.Id == resultTask.StatusInfoId);
+                        txtLastStatus.Text = Resources[statusInfo.Status.ToString()].ToString();
+                    }
+                    else
+                        txtLastStatus.Text = Resources[resultTask.Status.ToString()].ToString();
                 }
                 else 
                 { 
-                    if (_activityLog.Status == StatusType.Fail && txtLocalPercentage.Text.Equals("100%"))
+                    if (_activityLog.StatusInfo.Status == StatusType.Fail && txtLocalPercentage.Text.Equals("100%"))
                     {
                         txtLocalPercentage.Text = "99.98%";
                     }
@@ -225,42 +235,42 @@ namespace DiskBackupWpfGUI
             return ($"{dblSByte:0.##} {Suffix[i]}");
         }
 
-        public static string FormatMilliseconds(TimeSpan obj)
+        public string FormatMilliseconds(TimeSpan obj)
         {
             StringBuilder sb = new StringBuilder();
             if (obj.Hours != 0)
             {
                 sb.Append(obj.Hours);
                 sb.Append(" ");
-                sb.Append("s");
+                sb.Append(Resources["h"].ToString());
                 sb.Append(" ");
             }
             if (obj.Minutes != 0 || sb.Length != 0)
             {
                 sb.Append(obj.Minutes);
                 sb.Append(" ");
-                sb.Append("dk");
+                sb.Append(Resources["min"].ToString());
                 sb.Append(" ");
             }
             if (obj.Seconds != 0 || sb.Length != 0)
             {
                 sb.Append(obj.Seconds);
                 sb.Append(" ");
-                sb.Append("sn");
+                sb.Append(Resources["sec"].ToString());
                 sb.Append(" ");
             }
             if (obj.Milliseconds != 0 || sb.Length != 0)
             {
                 sb.Append(obj.Milliseconds);
                 sb.Append(" ");
-                sb.Append("ms");
+                sb.Append(Resources["ms"].ToString());
                 sb.Append(" ");
             }
             if (sb.Length == 0)
             {
                 sb.Append(0);
                 sb.Append(" ");
-                sb.Append("ms");
+                sb.Append(Resources["ms"].ToString());
             }
             return sb.ToString();
         }

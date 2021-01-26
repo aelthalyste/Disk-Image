@@ -37,7 +37,7 @@ namespace DiskBackupWpfGUI
         private bool _updateControl = false;
         private int _updateId;
 
-        public AddBackupAreaWindow(IBackupStorageService backupStorageService, ILogger logger, ITaskInfoDal taskInfoDal, 
+        public AddBackupAreaWindow(IBackupStorageService backupStorageService, ILogger logger, ITaskInfoDal taskInfoDal,
             ITaskSchedulerManager taskSchedulerManager, IConfigurationDataDal configurationDataDal)
         {
             InitializeComponent();
@@ -51,7 +51,7 @@ namespace DiskBackupWpfGUI
             SetApplicationLanguage(_configurationDataDal.Get(x => x.Key == "lang").Value);
         }
 
-        public AddBackupAreaWindow(BackupStorageInfo backupStorageInfo, IBackupStorageService backupStorageService, ILogger logger, 
+        public AddBackupAreaWindow(BackupStorageInfo backupStorageInfo, IBackupStorageService backupStorageService, ILogger logger,
             ITaskInfoDal taskInfoDal, ITaskSchedulerManager taskSchedulerManager, IConfigurationDataDal configurationDataDal)
         {
             InitializeComponent();
@@ -60,7 +60,7 @@ namespace DiskBackupWpfGUI
             _updateId = backupStorageInfo.Id;
             _updateControl = true;
             _backupStorageService = backupStorageService;
-            _taskSchedulerManager = taskSchedulerManager;;
+            _taskSchedulerManager = taskSchedulerManager; ;
             _taskInfoDal = taskInfoDal;
             _configurationDataDal = configurationDataDal;
 
@@ -78,6 +78,8 @@ namespace DiskBackupWpfGUI
                     txtSettingsNASDomain.Text = backupStorageInfo.Domain;
                     txtSettingsNASUserName.Text = backupStorageInfo.Username;
                     //txtSettingsNASPassword.Password = backupStorageInfo.Password;
+                    if (backupStorageInfo.Username != "" || backupStorageInfo.Username != null)
+                        checkAuthentication.IsChecked = true;
                 }
                 else // yerel disktir
                 {
@@ -95,6 +97,8 @@ namespace DiskBackupWpfGUI
                     txtSettingsNASDomain.Text = backupStorageInfo.Domain;
                     txtSettingsNASUserName.Text = backupStorageInfo.Username;
                     //txtSettingsNASPassword.Password = backupStorageInfo.Password;
+                    if (backupStorageInfo.Username != "" || backupStorageInfo.Username != null)
+                        checkAuthentication.IsChecked = true;
                 }
                 else // yerel disktir
                 {
@@ -206,10 +210,21 @@ namespace DiskBackupWpfGUI
             }
             else if (rbNAS.IsChecked.Value) // nas
             {
-                if (txtBackupAreaName.Text.Equals("") || txtSettingsNASFolderPath.Text.Equals("") || txtSettingsNASUserName.Text.Equals("") || txtSettingsNASPassword.Password.Equals("") || txtSettingsNASDomain.Text.Equals(""))
+                if (checkAuthentication.IsChecked.Value)
                 {
-                    MessageBox.Show(Resources["notNullMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
-                    controlFlag = false;
+                    if (txtBackupAreaName.Text.Equals("") || txtSettingsNASFolderPath.Text.Equals("") || txtSettingsNASUserName.Text.Equals("") || txtSettingsNASPassword.Password.Equals("") || txtSettingsNASDomain.Text.Equals(""))
+                    {
+                        MessageBox.Show(Resources["notNullMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+                        controlFlag = false;
+                    }
+                }
+                else
+                {
+                    if (txtBackupAreaName.Text.Equals("") || txtSettingsNASFolderPath.Text.Equals(""))
+                    {
+                        MessageBox.Show(Resources["notNullMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+                        controlFlag = false;
+                    }
                 }
             }
 
@@ -410,7 +425,7 @@ namespace DiskBackupWpfGUI
         {
             using (var dialog = new System.Windows.Forms.OpenFileDialog())
             {
-                dialog.Filter = "Folders|\n";
+                dialog.Filter = "Folders|";
                 dialog.ValidateNames = false;
                 dialog.CheckFileExists = false;
                 dialog.CheckPathExists = true;
@@ -495,7 +510,7 @@ namespace DiskBackupWpfGUI
                         if (result)
                         {
                             Close();
-                            MessageBox.Show(Resources["addSuccessMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Information);
+                            //MessageBox.Show(Resources["addSuccessMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Information);
                         }
                         else
                             MessageBox.Show(Resources["addFailMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
@@ -512,8 +527,7 @@ namespace DiskBackupWpfGUI
                     if (result)
                     {
                         Close();
-                        MessageBox.Show(Resources["addSuccessMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Information);
-
+                        //MessageBox.Show(Resources["addSuccessMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Information);
                     }
                     else
                         MessageBox.Show(Resources["addFailMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
@@ -577,6 +591,16 @@ namespace DiskBackupWpfGUI
                     break;
             }
             Resources.MergedDictionaries.Add(dict);
+        }
+
+        private void checkAuthentication_Checked(object sender, RoutedEventArgs e)
+        {
+            gridNAS.IsEnabled = true;
+        }
+
+        private void checkAuthentication_Unchecked(object sender, RoutedEventArgs e)
+        {
+            gridNAS.IsEnabled = false;
         }
     }
 }

@@ -5,10 +5,11 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:AESLicenseKeyPoC"
         mc:Ignorable="d"
-        Title="MainWindow" Height="351.308" Width="545.573">
+        Title="MainWindow" Height="350" Width="700">
     <Grid  Grid.Row="1">
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="100"/>
+            <ColumnDefinition Width="140"/>
+            <ColumnDefinition Width="10"/>
             <ColumnDefinition/>
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
@@ -18,14 +19,19 @@
             <RowDefinition Height="65*"/>
         </Grid.RowDefinitions>
 
-        <Button Name="btnEncryptt" Background="Gray" Foreground="White" FontSize="25" FontWeight="Bold" Grid.ColumnSpan ="2" Grid.Row="3" Content="Şifrele" Click="btnEncryptt_Click"/>
+        <TextBlock Text="Şifrelenecek Metin" VerticalAlignment="Center" FontSize="14" Grid.Row="0" Grid.Column="0" Margin="20,28,5,28"/>
+        <TextBlock Text="Lisans Anahtarı" VerticalAlignment="Center" FontSize="14" Grid.Row="1" Grid.Column="0" Margin="20,28,5,28"/>
+        <TextBlock Text="Çözülmüş Metin" VerticalAlignment="Center" FontSize="14" Grid.Row="2" Grid.Column="0" Margin="20,28,5,28"/>
 
-        <TextBlock Text="Encrypt Text" VerticalAlignment="Center" HorizontalAlignment="Center" Grid.Row="0" Grid.Column="0" Height="24" Width="64"/>
-        <TextBlock Text="Result" HorizontalAlignment="Center" VerticalAlignment="Center" Grid.Row="1" Grid.Column="0" Height="26"  Width="32"/>
-        <TextBlock Text="Decypt" HorizontalAlignment="Center" VerticalAlignment="Center" Grid.Row="2" Grid.Column="0" Height="26"  Width="48" Margin="49,27,33,27"/>
-        
-        <TextBox Name="txtEncryptText" Grid.Row="0" Grid.Column="1" Width="400" Height="22"  HorizontalAlignment="Left" VerticalContentAlignment="Center" />
-        <TextBox Name="txtResult" Grid.Row="1" Grid.Column="1" Width="400" Height="22" HorizontalAlignment="Left" VerticalContentAlignment="Center" />
-        <TextBox Name="txtDecyrpt" Grid.Row="2" Grid.Column="1" Width="400" Height="22" HorizontalAlignment="Left" VerticalContentAlignment="Center" />
+        <TextBlock Text=":" VerticalAlignment="Center" HorizontalAlignment="Center" FontSize="14" Grid.Row="0" Grid.Column="1" />
+        <TextBlock Text=":" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="14" Grid.Row="1" Grid.Column="1" />
+        <TextBlock Text=":" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="14" Grid.Row="2" Grid.Column="1" />
+
+        <TextBox Name="txtEncryptText" Grid.Row="0" Grid.Column="2" Width="490" Height="24"  HorizontalAlignment="Center" VerticalContentAlignment="Center" FontSize="14" />
+        <TextBox Name="txtResult" Grid.Row="1" Grid.Column="2" Width="490" Height="24" HorizontalAlignment="Center" VerticalContentAlignment="Center" FontSize="14" />
+        <TextBox Name="txtDecyrpt" Grid.Row="2" Grid.Column="2" Width="490" Height="24" HorizontalAlignment="Center" VerticalContentAlignment="Center" FontSize="14" />
+
+        <Button Name="btnEncryptt" Background="Gray" Foreground="White" FontSize="25" FontWeight="Bold" Grid.ColumnSpan ="3" Grid.Row="3" Content="Şifrele" Click="btnEncryptt_Click"/>
+
     </Grid>
 </Window>

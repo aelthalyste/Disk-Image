@@ -38,6 +38,7 @@
     <system:String x:Key="paste">Yapıştır</system:String>
     <system:String x:Key="delete">Sil</system:String>
     <system:String x:Key="refresh">Yenile</system:String>
+    <system:String x:Key="refreshDisks">Diskleri Yenile</system:String>
     <system:String x:Key="browse">Gözat</system:String>
     <system:String x:Key="filesName">Dosya Adı</system:String>
     <system:String x:Key="createdDate">Oluşturma Tarihi</system:String>
@@ -202,6 +203,7 @@
     <system:String x:Key="ABASettingsContent">Yedek alanının ayarlamasını yapınız</system:String>
     <system:String x:Key="ABASummaryContent">Oluşturulan yedekleme alanının özet bilgisi</system:String>
     <system:String x:Key="restoreContent">Yedeği geri yükleyeceğiniz dosyayı ve geri yükleyeceğiniz diski veya volume seçiniz</system:String>
+    <system:String x:Key="createTaskContent">Bir görev oluşturabilmek için disk veya volume seçiniz</system:String>
     <system:String x:Key="forHelp">Yardım için</system:String>
     <system:String x:Key="plsContact">üzerinden iletişime geçebilirsiniz.</system:String>
     <system:String x:Key="contactUs">Bize Ulaşın</system:String>
@@ -261,6 +263,11 @@
     <system:String x:Key="licenseKey">Lisans Anahtarı</system:String>
     <system:String x:Key="validateLicense">Lisans Doğrulama</system:String>
     <system:String x:Key="enterTheKey">Anahtarı Gir</system:String>
+    <system:String x:Key="h">s</system:String>
+    <system:String x:Key="min">dk</system:String>
+    <system:String x:Key="sec">sn</system:String>
+    <system:String x:Key="ms">ms</system:String>
+    <system:String x:Key="authentication">Doğrulama</system:String>
 
     <!--MessageBox Info-->
     <system:String x:Key="notNullMB">İlgili alanları lütfen boş geçmeyiniz.</system:String>

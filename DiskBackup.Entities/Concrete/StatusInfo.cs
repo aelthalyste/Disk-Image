@@ -18,5 +18,7 @@ namespace DiskBackup.Entities.Concrete
         public double InstantDataRate { get; set; }
         public string SourceObje { get; set; }
         public long TotalDataProcessed { get; set; } // işlenmesi gereken toplam
+        public StatusType Status { get; set; }  // Enum yapıp app.xaml'da gösterim anı için dictionary kullanımından vazgeçilebilir....
+        public string StrStatus { get; set; }
     }
 }
