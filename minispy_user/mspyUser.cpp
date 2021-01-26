@@ -596,7 +596,7 @@ BOOLEAN
 CopyData(HANDLE S, HANDLE D, ULONGLONG Len) {
     BOOLEAN Return = TRUE;
     
-    UINT32 BufSize = 64 * 1024 * 1024; //64 MB
+    UINT32 BufSize = 8*1024*1024; //8 MB
     ULONGLONG TotalCopied = 0;
     
     void* Buffer = malloc(BufSize);
@@ -608,8 +608,9 @@ CopyData(HANDLE S, HANDLE D, ULONGLONG Len) {
             
             while (BytesRemaining > BufSize) {
                 if (ReadFile(S, Buffer, BufSize, &BytesOperated, 0)) {
-                    if (!WriteFile(D, Buffer, BufSize, &BytesOperated, 0) || BytesOperated != BufSize) {
-                        printf("COPY_DATA: Writefile failed\n");
+                    BOOL bResult = WriteFile(D, Buffer, BufSize, &BytesOperated, 0);
+                    if (!bResult || BytesOperated != BufSize) {
+                        printf("COPY_DATA: Writefile failed with code %X\n", bResult);
                         printf("Tried to write -> %I64d, Bytes written -> %d\n", Len, BytesOperated);
                         DisplayError(GetLastError());
                         Return = FALSE;
@@ -2096,7 +2097,7 @@ SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, DotNetStreamInf* SI) {
         return FALSE;
     }
     
-    VolInf->Stream.Handle = CreateFileW(ShadowPath, GENERIC_READ, 0, NULL, OPEN_EXISTING, NULL, NULL);
+    VolInf->Stream.Handle = CreateFileW(ShadowPath, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, NULL, NULL);
     if (VolInf->Stream.Handle == INVALID_HANDLE_VALUE) {
         printf("Can not open shadow path %S..\n", ShadowPath);
         DisplayError(GetLastError());
