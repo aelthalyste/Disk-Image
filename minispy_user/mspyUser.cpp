@@ -2077,8 +2077,6 @@ SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, DotNetStreamInf* SI) {
     };
     
     
-    VolInf->VSSPTR.Release();
-    
     WCHAR Temp[] = L"!:\\";
     Temp[0] = VolInf->Letter;
     wchar_t ShadowPath[256];
@@ -3867,8 +3865,8 @@ C:\Windows\Log....
 */
 inline std::wstring
 GenerateLogFilePath(char Letter) {
-    wchar_t NameTemp[] = L"NAR_LOG_FILE__.nlfx";
-    NameTemp[54 / 2 - 2] = Letter;
+    wchar_t NameTemp[]= L"NAR_LOG_FILE__.nlfx";
+    NameTemp[13] = (wchar_t)Letter;
     
     std::wstring Result = L"C:\\Windows\\";
     Result += std::wstring(NameTemp);
