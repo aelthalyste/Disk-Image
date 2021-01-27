@@ -15,8 +15,6 @@ namespace DiskBackup.Entities.Concrete
         public string TaskInfoName { get; set; }
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
-        //public StatusType Status { get; set; }  // Enum yapıp app.xaml'da gösterim anı için dictionary kullanımından vazgeçilebilir....
-        //public string StrStatus { get; set; }
         public string BackupStoragePath { get; set; }
         public DetailedMissionType Type { get; set; }
 
