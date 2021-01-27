@@ -154,6 +154,7 @@ namespace DiskBackup.TaskScheduler.Jobs
             activityLog.StatusInfo = _statusInfoDal.Get(x => x.Id == taskInfo.StatusInfoId);
             activityLog.StatusInfo.Status = status;
             activityLog.StatusInfo.StrStatus = status.ToString();
+            var resultTaskStatusInfo = _statusInfoDal.Update(activityLog.StatusInfo);
             var resultStatusInfo = _statusInfoDal.Add(activityLog.StatusInfo);
             activityLog.StatusInfoId = resultStatusInfo.Id;
             _activityLogDal.Add(activityLog);
