@@ -1451,14 +1451,13 @@
                     </StackPanel>
                 </TabItem.Header>
                 <Grid Background="White">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition/>
-                    </Grid.ColumnDefinitions>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="65"/>
                         <RowDefinition/>
                     </Grid.RowDefinitions>
-                    <Rectangle VerticalAlignment="Bottom" Stroke="#D7D7D7" StrokeThickness="1" HorizontalAlignment="Left" Width="1100"/>
+                    <DockPanel Grid.Row="0" VerticalAlignment="Bottom" Width="auto">
+                        <Border BorderBrush="#D7D7D7" Width="auto" BorderThickness="0,1,0,0" />
+                    </DockPanel>
 
                     <StackPanel Grid.Row="0">
                         <TextBlock Text="{DynamicResource settings}" FontSize="22" Margin="10,0,0,5" TextAlignment="Left" FontWeight="Bold"/>
@@ -1518,8 +1517,8 @@
                                 <RowDefinition/>
                             </Grid.RowDefinitions>
                             <StackPanel Orientation="Horizontal" Grid.Column="0">
-                                <TextBlock VerticalAlignment="Center" Text="{DynamicResource languageDot}" FontSize="14" Margin="12,0,0,0"/>
-                                <ComboBox Margin="10,0" Name="cbLang" Width="100" Height="24" SelectedIndex="0" FontSize="14" DisplayMemberPath="Key" SelectedValuePath="Value" />
+                                <TextBlock VerticalAlignment="Center" Text="{DynamicResource languageDot}" FontSize="14" Margin="24,0,0,0"/>
+                                <ComboBox Margin="15,0" Name="cbLang" Width="100" Height="24" SelectedIndex="0" FontSize="14" DisplayMemberPath="Key" SelectedValuePath="Value" />
                             </StackPanel>
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Grid.Column="1" Margin="17,0">
                                 <StackPanel VerticalAlignment="Center">
@@ -1537,7 +1536,7 @@
                                 </Image>
                             </StackPanel>
 
-                            <GroupBox Grid.Row="1" Grid.ColumnSpan="2" Margin="3,10,17,10" BorderBrush="#9ACFEA" BorderThickness="2" FontSize="14">
+                            <GroupBox Grid.Row="1" Grid.ColumnSpan="2" Margin="15,10" BorderBrush="#9ACFEA" BorderThickness="2" FontSize="14">
                                 <GroupBox.Header>
                                     <TextBlock Text="{DynamicResource licenseKey}" Foreground="Black" FontWeight="Bold"/>
                                 </GroupBox.Header>
@@ -1579,8 +1578,8 @@
                         </Grid>
 
 
-                        <StackPanel Grid.Row="1" Grid.Column="0" Orientation="Horizontal" Margin="17,0">
-                            <Border BorderBrush="#9ACFEA" Width="500" BorderThickness="2" CornerRadius="3">
+                        <DockPanel Grid.Row="1" Grid.Column="0" Margin="17,0">
+                            <Border BorderBrush="#9ACFEA" Width="auto" BorderThickness="2" CornerRadius="3">
                                 <StackPanel Background="LightGray" Opacity="0.6">
                                     <!--grilik buradan verildi-->
                                     <StackPanel Orientation="Horizontal" Margin="10,0" >
@@ -1630,10 +1629,10 @@
                                     </StackPanel>
                                 </StackPanel>
                             </Border>
-                        </StackPanel>
+                        </DockPanel>
 
-                        <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" Margin="0,0,16,0" HorizontalAlignment="Center">
-                            <Border BorderBrush="#9ACFEA" Width="520" BorderThickness="2" CornerRadius="3">
+                        <DockPanel Grid.Row="1" Grid.Column="1" Margin="17,0">
+                            <Border BorderBrush="#9ACFEA" Width="auto" BorderThickness="2" CornerRadius="3">
                                 <Grid Margin="20,10" HorizontalAlignment="Center">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition/>
@@ -1688,11 +1687,11 @@
 
                                 </Grid>
                             </Border>
-                        </StackPanel>
+                        </DockPanel>
 
                         <Image Source="Resources/Icon/logo_big.png" Grid.ColumnSpan="2" Grid.Row="2"></Image>
                         
-                        <GroupBox Grid.Row="2" Grid.ColumnSpan="2" Margin="15,10,17,10" BorderBrush="#9ACFEA" BorderThickness="2" FontSize="14" Visibility="Collapsed">
+                        <GroupBox Grid.Row="2" Grid.ColumnSpan="2" Margin="15,10,15,10" BorderBrush="#9ACFEA" BorderThickness="2" FontSize="14" Visibility="Collapsed">
                             <GroupBox.Header>
                                 <TextBlock Text="{DynamicResource bandwithSetting}" Foreground="Black" FontWeight="Bold"/>
                             </GroupBox.Header>
@@ -1753,10 +1752,12 @@
                 </TabItem.Header>
                 <Grid Background="White">
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="80"/>
+                        <RowDefinition Height="65"/>
                         <RowDefinition/>
                     </Grid.RowDefinitions>
-                    <Rectangle VerticalAlignment="Bottom" Stroke="#D7D7D7" Margin="0,0,0,15" StrokeThickness="1" HorizontalAlignment="Left" Width="1100"/>
+                    <DockPanel Grid.Row="0" VerticalAlignment="Bottom" Width="auto">
+                        <Border BorderBrush="#D7D7D7" Width="auto" BorderThickness="0,1,0,0" />
+                    </DockPanel>
                     <StackPanel>
                         <TextBlock Text="{DynamicResource help}" FontSize="22" Margin="10,0,0,5" FontWeight="Bold"/>
                         <StackPanel  Orientation="Horizontal" >
