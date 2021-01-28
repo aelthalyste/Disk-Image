@@ -50,7 +50,7 @@
             <TextBlock Text="{DynamicResource localArea}" Margin="0,30,0,10" FontSize="16" HorizontalAlignment="Center"></TextBlock>
             <Grid>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="180"/>
+                    <ColumnDefinition Width="190"/>
                     <ColumnDefinition/>
                 </Grid.ColumnDefinitions>
                 <Rectangle Grid.Column="1" VerticalAlignment="Center" Stroke="#B5ADAD" StrokeThickness="2" HorizontalAlignment="Right" Height="250"/>
@@ -136,7 +136,7 @@
                         <TextBlock Text="{DynamicResource sourceInfo}" VerticalAlignment="Center"></TextBlock>
                     </StackPanel>
                 </StackPanel>
-                <StackPanel Grid.Column="1">
+                <StackPanel Grid.Column="1" Margin="0,0,10,0">
                     <TextBlock Name="txtLocalTaskName" Height="20" Margin="0,2,0,4" Visibility="Collapsed">C'yi restore et</TextBlock>
                     <TextBlock Name="txtLocalFileName" Height="20" Margin="0,0,0,4" TextTrimming="CharacterEllipsis">\\10.0.0.145\backup1.nb</TextBlock>
                     <TextBlock Name="txtLocalTime" Height="20" Margin="0,0,0,4">01:20</TextBlock>

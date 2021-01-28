@@ -232,6 +232,8 @@ namespace DiskBackupWpfGUI
                         else // deneme süresi doldu
                         {
                             _logger.Information("Demo lisans süresi doldu.");
+                            if (stackDemo.Visibility == Visibility.Visible)
+                                stackDemo.Visibility = Visibility.Collapsed;
                             LicenseNotActiveTextWrite(key);
                         }
 
@@ -326,6 +328,7 @@ namespace DiskBackupWpfGUI
             pbLoading.Visibility = Visibility.Collapsed;
             pbLoading.IsIndeterminate = false;
             RefreshTasks(_cancellationTokenSource.Token, backupService);
+            RefreshDemoDays(_cancellationTokenSource.Token);
             Console.WriteLine("Initilaze son: " + DateTime.Now);
             ValidateLicense();
         }
@@ -2301,6 +2304,33 @@ namespace DiskBackupWpfGUI
 
 
         #region Refresh function
+
+        public async void RefreshDemoDays(CancellationToken cancellationToken)
+        {
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                try
+                {
+                    await Task.Delay(60000, cancellationToken);
+                    _logger.Verbose("RefreshDemoDays istekte bulunuldu");
+
+                    ValidateLicense();
+                }
+                catch (Exception e)
+                {
+                    if (!cancellationToken.IsCancellationRequested) // lisans doğrulama yapılmazsa cancel ediliyor, refresh çalıştığından hata veriyordu onun kontrolü
+                    {
+                        //if (e.Message.Contains("System.ServiceModel.Channels.ServiceChannel")) // TO DO servis kapanma kontrolü yapılırsa hoş olur
+                        //{
+                        MessageBox.Show(Resources["closeServiceErrorMB"].ToString() + "\n" + e.ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error, MessageBoxResult.No);
+                        Close();
+                        return;
+                        //}
+                    }
+                }
+
+            }
+        }
 
         public async void RefreshTasks(CancellationToken cancellationToken, IBackupService backupService)
         {

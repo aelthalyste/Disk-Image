@@ -282,6 +282,21 @@
     <system:String x:Key="ms">ms</system:String>
     <system:String x:Key="authentication">Authentication</system:String>
 
+    <system:String x:Key="licenseStatus">License Status</system:String>
+    <system:String x:Key="dealerName">Dealer Name</system:String>
+    <system:String x:Key="customerName">Customer Name</system:String>
+    <system:String x:Key="authorizedPerson">Authorized Person</system:String>
+    <system:String x:Key="version">Version</system:String>
+    <system:String x:Key="supportEndDate">Support End Date</system:String>
+    <system:String x:Key="verificationKey">Verification Key</system:String>
+    <system:String x:Key="addFile">Add File</system:String>
+    <system:String x:Key="emailNotification">E-Mail Notification</system:String>
+    <system:String x:Key="notificationTypes">Notification Types</system:String>
+    <system:String x:Key="critical">Critical</system:String>
+    <system:String x:Key="emailSettings">E-Mail Settings</system:String>
+
+
+
     <!--MessageBox Info-->
     <system:String x:Key="notNullMB">Please do not leave the relevant fields blank.</system:String>
     <system:String x:Key="validateDirectoryMB">Please enter a valid directory.</system:String>
