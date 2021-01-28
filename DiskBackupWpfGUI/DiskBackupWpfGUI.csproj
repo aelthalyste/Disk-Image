@@ -176,6 +176,9 @@
     <Compile Include="ChooseDayAndMounthsWindow.xaml.cs">
       <DependentUpon>ChooseDayAndMounthsWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="EMailSettingsWindow.xaml.cs">
+      <DependentUpon>EMailSettingsWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="FileExplorerWindow.xaml.cs">
       <DependentUpon>FileExplorerWindow.xaml</DependentUpon>
     </Compile>
@@ -203,6 +206,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="ChooseDayAndMounthsWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="EMailSettingsWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -444,6 +451,7 @@
     <Resource Include="Resources\Icon\Icon_White_V32.png" />
   </ItemGroup>
   <ItemGroup>
+    <Resource Include="Resources\Icon\minus.ico" />
     <Resource Include="Resources\Icon\icons8_save.ico" />
     <Resource Include="Resources\Icon\icons8_add_file.ico" />
     <Resource Include="Resources\Icon\logo_big.png" />

@@ -535,6 +535,11 @@ namespace DiskBackupWpfGUI
             }
         }
 
+        private void btnTaskRefreshDisk_Click(object sender, RoutedEventArgs e)
+        {
+            RefreshDisk();
+        }
+
         #region Checkbox Operations
         private void chbDiskSelectDiskAll_Checked(object sender, RoutedEventArgs e)
         {
@@ -1457,6 +1462,10 @@ namespace DiskBackupWpfGUI
             size.Text = FormatBytes(_diskList[_diskExpenderIndex++].Size);
         }
 
+        private void btnRestoreRefreshDisk_Click(object sender, RoutedEventArgs e)
+        {
+            RefreshDisk();
+        }
 
         #region Checkbox Operations
 
@@ -2224,6 +2233,31 @@ namespace DiskBackupWpfGUI
             }
         }
 
+        #region E-Mail Ayarlar kutusu
+
+        private void checkEMailNotification_Checked(object sender, RoutedEventArgs e)
+        {
+            stackEMailNotification.IsEnabled = true;
+        }
+
+        private void checkEMailNotification_Unchecked(object sender, RoutedEventArgs e)
+        {
+            stackEMailNotification.IsEnabled = false;
+            checkEMailNotificationFail.IsChecked = false;
+            checkEMailNotificationSuccess.IsChecked = false;
+            checkEMailNotificationCritical.IsChecked = false;
+        }
+
+        private void btnEMailAdvancedOptions_Click(object sender, RoutedEventArgs e)
+        {
+            using (var scope = _scope.BeginLifetimeScope())
+            {
+                EMailSettingsWindow emailSettingsWindow = scope.Resolve<EMailSettingsWindow>();
+                emailSettingsWindow.ShowDialog();
+            }
+        }
+
+        #endregion
 
         #region Upload
         private void btnUploadDown_Click(object sender, RoutedEventArgs e)
@@ -2788,14 +2822,5 @@ namespace DiskBackupWpfGUI
 
         #endregion
 
-        private void btnRestoreRefreshDisk_Click(object sender, RoutedEventArgs e)
-        {
-            RefreshDisk();
-        }
-
-        private void btnTaskRefreshDisk_Click(object sender, RoutedEventArgs e)
-        {
-            RefreshDisk();
-        }
     }
 }

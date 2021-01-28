@@ -62,6 +62,7 @@ namespace DiskBackupWpfGUI
             builder.RegisterType<ChooseDayAndMounthsWindow>();
             builder.RegisterType<ValidateNASWindow>();
             builder.RegisterType<LicenseControllerWindow>();
+            builder.RegisterType<EMailSettingsWindow>();
             _container = builder.Build();
         }
     }

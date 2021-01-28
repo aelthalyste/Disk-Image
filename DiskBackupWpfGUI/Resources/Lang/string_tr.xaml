@@ -268,7 +268,6 @@
     <system:String x:Key="sec">sn</system:String>
     <system:String x:Key="ms">ms</system:String>
     <system:String x:Key="authentication">Doğrulama</system:String>
-
     <system:String x:Key="licenseStatus">Lisans Durumu</system:String>
     <system:String x:Key="dealerName">Bayi Adı</system:String>
     <system:String x:Key="customerName">Müşteri Adı</system:String>
@@ -281,7 +280,9 @@
     <system:String x:Key="notificationTypes">Bildirim Türleri</system:String>
     <system:String x:Key="critical">Kritik</system:String>
     <system:String x:Key="emailSettings">E-Posta Ayarları</system:String>
-
+    <system:String x:Key="senderName">Gönderici Adı</system:String>
+    <system:String x:Key="newEmailAddress">Yeni E-Posta Adresi</system:String>
+    <system:String x:Key="emailAddresses">E-Mail Adresleri</system:String>
 
     <!--MessageBox Info-->
     <system:String x:Key="notNullMB">İlgili alanları lütfen boş geçmeyiniz.</system:String>
