@@ -168,5 +168,16 @@ namespace LicenseKeyGenerator
         {
 
         }
+
+        private void btnShowMore_Click(object sender, RoutedEventArgs e)
+        {
+            KeyInfoWindow keyInfoWindow = new KeyInfoWindow();
+            keyInfoWindow.Show();
+        }
+
+        private void Window_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+
+        }
     }
 }

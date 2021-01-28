@@ -10,15 +10,18 @@
         WindowStyle="None" 
         BorderBrush="#194771" 
         BorderThickness="1" 
+        ResizeMode="CanResizeWithGrip"
         HorizontalAlignment="Center" 
-        Height="480" Width="820"
-        Icon="Images/NarBulut_PNG_Icon_White_V3.png" MinWidth="823" MinHeight="483">
-    <Grid Background="White" MinHeight="358" MinWidth="705">
+        Height="510" Width="820"
+        Icon="Images/NarBulut_PNG_Icon_White_V3.png" MinWidth="803" MinHeight="483">
+    <WindowChrome.WindowChrome>
+        <WindowChrome CaptionHeight="0"/>
+    </WindowChrome.WindowChrome>
+    <Grid Background="White">
         <Grid.RowDefinitions>
             <RowDefinition Height="30"/>
             <RowDefinition/>
         </Grid.RowDefinitions>
-
         <StackPanel Panel.ZIndex="1" Orientation="Horizontal" MouseDown="MyTitleBar_MouseDown" Margin="10,0">
             <Image Source="Images/NarBulut_PNG_Icon_White_V3.png" Margin="0,0,5,0"/>
             <TextBlock Text="Narbulut Disk Backup Lisans Anahtarı Oluşturucusu" FontSize="13" Foreground="White" VerticalAlignment="Center" HorizontalAlignment="Center"></TextBlock>
@@ -73,7 +76,7 @@
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="140"/>
-                                    <ColumnDefinition/>
+                                    <ColumnDefinition />
                                 </Grid.ColumnDefinitions>
                                 <Grid.RowDefinitions>
                                     <RowDefinition/>
@@ -86,7 +89,7 @@
                                     <RowDefinition/>
                                     <RowDefinition/>
                                 </Grid.RowDefinitions>
-                                <!--Row1-->     
+                                <!--Row1-->
                                 <TextBlock Text="Bayi Adı" VerticalAlignment="Center" FontSize="14" Grid.Row="1" Grid.Column="0" Margin="0,10"/>
                                 <TextBox Name="txtDealerName" Grid.Row="1" Grid.Column="2" Width="540" Height="24" HorizontalAlignment="Center" VerticalContentAlignment="Center" FontSize="14" />
                                 <!--Row2-->
@@ -198,47 +201,36 @@
             <TabItem Name="listKeyTab" >
                 <TabItem.Header>
                     <DockPanel Height="40" Width="160">
-                        <TextBlock Text="Lisans Anahtarları" Margin="5,0" VerticalAlignment="Center" HorizontalAlignment="Center" Style="{StaticResource TabItemText}"/>
+                        <TextBlock Text="Lisans Anahtarları" Margin="5,0,5,10" VerticalAlignment="Bottom" HorizontalAlignment="Center" Style="{StaticResource TabItemText}"/>
                     </DockPanel>
                 </TabItem.Header>
                 <Grid Background="White">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="0.75*"/>
-                        <ColumnDefinition Width="0.25*"/>
-                    </Grid.ColumnDefinitions>
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="50"/>
+                        <RowDefinition Height="0.1*"/>
                         <RowDefinition/>
                     </Grid.RowDefinitions>
-                    <ListView Grid.Row="1">
+
+                    <Button Name="btnShowMore" Content="ClickTest" Click="btnShowMore_Click">
+                    </Button>
+
+                    <ListView Grid.Row="1" Margin="5">
                         <ListView.View>
                             <GridView>
                                 <GridViewColumn Header="Eyüp" Width="220">
-                                <GridViewColumn.CellTemplate>
-                                    <DataTemplate>
+                                    <GridViewColumn.CellTemplate>
+                                        <DataTemplate>
                                             <StackPanel Orientation="Horizontal">
                                                 <TextBlock Text="EWYYYYYYYYYYYYüppppppp" TextAlignment="Left" VerticalAlignment="Center" Margin="4,0"/>
-                                        </StackPanel>
-                                    </DataTemplate>
-                                </GridViewColumn.CellTemplate>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </GridViewColumn.CellTemplate>
                                 </GridViewColumn>
                             </GridView>
                         </ListView.View>
                     </ListView>
-                    <StackPanel Grid.Column="1" Grid.Row="1" Margin="3,0,0,0">
-                        <TextBlock Text="EYÜP "/>
-                        <TextBlock Text="Ebru "/>
-                        <TextBlock Text="EYÜP "/>
-                        <TextBlock Text="ebru "/>
-                        <TextBlock Text="EYÜP "/>
-                        <TextBlock Text="Ebru "/>
-                        <TextBlock Text="EYÜP "/>
-                        <TextBlock Text="Ebru "/>
-                        <TextBlock Text="EYÜP "/>
-                    </StackPanel>
                 </Grid>
             </TabItem>
-
+            
         </TabControl>
     </Grid>
 </Window>
