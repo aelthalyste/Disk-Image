@@ -86,32 +86,26 @@
                                     <RowDefinition/>
                                     <RowDefinition/>
                                 </Grid.RowDefinitions>
-
+                                <!--Row1-->     
                                 <TextBlock Text="Bayi Adı" VerticalAlignment="Center" FontSize="14" Grid.Row="1" Grid.Column="0" Margin="0,10"/>
                                 <TextBox Name="txtDealerName" Grid.Row="1" Grid.Column="2" Width="540" Height="24" HorizontalAlignment="Center" VerticalContentAlignment="Center" FontSize="14" />
-
+                                <!--Row2-->
                                 <TextBlock Text="Müşteri Adı" VerticalAlignment="Center" FontSize="14" Grid.Row="2" Grid.Column="0" Margin="0,10"/>
                                 <TextBox Name="txtCustomerName" Grid.Row="2" Grid.Column="2" Width="540" Height="24" HorizontalAlignment="Center" VerticalContentAlignment="Center" FontSize="14" />
-
+                                <!--Row3-->
                                 <TextBlock Text="Yetkili Kişi" VerticalAlignment="Center" FontSize="14" Grid.Row="3" Grid.Column="0" Margin="0,10" />
                                 <TextBox Name="txtAuthorizedPerson" Grid.Row="3" Grid.Column="2" Width="540" Height="24" HorizontalAlignment="Center" VerticalContentAlignment="Center" FontSize="14" />
-
+                                <!--Row4-->
                                 <TextBlock Text="Bitiş Tarihi" VerticalAlignment="Center" FontSize="14" Grid.Row="4" Grid.Column="0" Margin="0,10"/>
                                 <TextBox Name="txtEndDate" Grid.Row="4" Grid.Column="2" Width="540" Height="24" HorizontalAlignment="Center" VerticalContentAlignment="Center" FontSize="14" />
-
+                                <!--Row5-->
                                 <TextBlock Text="Versiyon" VerticalAlignment="Center" FontSize="14" Grid.Row="5" Grid.Column="0" Margin="0,10"/>
                                 <StackPanel Grid.Row="5" Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
                                     <RadioButton Name="rbServer" Content="Server" GroupName="rbVersions" Margin="0,0,90,0"/>
                                     <RadioButton Name="rbWorkStation"  Content="Workstation" GroupName="rbVersions" Margin="0,0,90,0"/>
                                     <RadioButton Name="rbSBS" Content="SBS" GroupName="rbVersions" IsChecked="True"/>
                                 </StackPanel>
-
-                                <TextBlock Text="Lisans Key" VerticalAlignment="Center" FontSize="14" Grid.Row="7" Grid.Column="0" Margin="0,10"/>
-                                <TextBox Name="txtLicenceKey" Grid.Row="7" Grid.Column="2" Width="540" Height="24" HorizontalAlignment="Center" VerticalContentAlignment="Center" FontSize="14" />
-
-                                <TextBlock Text="Doğrulama Anahtarı" VerticalAlignment="Center" FontSize="14" Grid.Row="8" Grid.Column="0" Margin="0,10"/>
-                                <TextBox Name="txtVerificationKey" Grid.Row="8" Grid.Column="2" Width="540" Height="24" HorizontalAlignment="Center" VerticalContentAlignment="Center" FontSize="14" />
-
+                                <!--Row6-->
                                 <Button Name="btnEncrypt" Width="200" Height="30" Grid.Row="6" Grid.Column="2" Style="{StaticResource BlueButton}" Cursor="Hand" Click="btnEncrypt_Click" HorizontalAlignment="Left" >
                                     <Button.Content>
                                         <StackPanel Orientation="Horizontal">
@@ -126,7 +120,6 @@
                                         </StackPanel>
                                     </Button.Content>
                                 </Button>
-
                                 <Button Name="btnExportFile" Width="200" Margin="0,20" Height="30" Grid.Row="6" Grid.Column="2" Style="{StaticResource BlueButton}" Cursor="Hand" Click="btnExportFile_Click" HorizontalAlignment="Right">
                                     <Button.Content>
                                         <StackPanel Orientation="Horizontal">
@@ -141,7 +134,12 @@
                                         </StackPanel>
                                     </Button.Content>
                                 </Button>
-
+                                <!--Row7-->
+                                <TextBlock Text="Lisans Key" VerticalAlignment="Center" FontSize="14" Grid.Row="7" Grid.Column="0" Margin="0,10"/>
+                                <TextBox Name="txtLicenceKey" Grid.Row="7" Grid.Column="2" Width="540" Height="24" HorizontalAlignment="Center" VerticalContentAlignment="Center" FontSize="14" />
+                                <!--Row8-->
+                                <TextBlock Text="Doğrulama Anahtarı" VerticalAlignment="Center" FontSize="14" Grid.Row="8" Grid.Column="0" Margin="0,10"/>
+                                <TextBox Name="txtVerificationKey" Grid.Row="8" Grid.Column="2" Width="540" Height="24" HorizontalAlignment="Center" VerticalContentAlignment="Center" FontSize="14" />
                             </Grid>
                         </Border>
                     </StackPanel>
@@ -204,7 +202,15 @@
                     </DockPanel>
                 </TabItem.Header>
                 <Grid Background="White">
-                    <ListView>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="0.75*"/>
+                        <ColumnDefinition Width="0.25*"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="50"/>
+                        <RowDefinition/>
+                    </Grid.RowDefinitions>
+                    <ListView Grid.Row="1">
                         <ListView.View>
                             <GridView>
                                 <GridViewColumn Header="Eyüp" Width="220">
@@ -219,6 +225,17 @@
                             </GridView>
                         </ListView.View>
                     </ListView>
+                    <StackPanel Grid.Column="1" Grid.Row="1" Margin="3,0,0,0">
+                        <TextBlock Text="EYÜP "/>
+                        <TextBlock Text="Ebru "/>
+                        <TextBlock Text="EYÜP "/>
+                        <TextBlock Text="ebru "/>
+                        <TextBlock Text="EYÜP "/>
+                        <TextBlock Text="Ebru "/>
+                        <TextBlock Text="EYÜP "/>
+                        <TextBlock Text="Ebru "/>
+                        <TextBlock Text="EYÜP "/>
+                    </StackPanel>
                 </Grid>
             </TabItem>
 
