@@ -109,5 +109,8 @@
   <ItemGroup>
     <Resource Include="narbulut_kareicon.ico" />
   </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Images\icons8_new_copy_3.ico" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

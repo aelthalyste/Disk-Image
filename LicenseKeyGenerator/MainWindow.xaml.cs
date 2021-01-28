@@ -33,14 +33,14 @@ namespace LicenseKeyGenerator
 
         private void licenseKeyTabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (licenseKeyTabControl.SelectedIndex == 2)
-            {
-                txtLicenses.Document.Blocks.Clear();
-                StreamReader streamReader = new StreamReader(licenceKeyFile);
-                var text = streamReader.ReadToEnd();
-                streamReader.Close();
-                txtLicenses.AppendText(text);
-            }
+            //if (licenseKeyTabControl.SelectedIndex == 2)
+            //{
+            //    txtLicenses.Document.Blocks.Clear();
+            //    StreamReader streamReader = new StreamReader(licenceKeyFile);
+            //    var text = streamReader.ReadToEnd();
+            //    streamReader.Close();
+            //    txtLicenses.AppendText(text);
+            //}
         }
 
         #region Title Bar
@@ -63,16 +63,24 @@ namespace LicenseKeyGenerator
             }
         }
 
+        private void btnNormal_Click(object sender, RoutedEventArgs e)
+        {
+            if (WindowState == WindowState.Maximized)
+                WindowState = WindowState.Normal;
+            else
+                WindowState = WindowState.Maximized;
+        }
+
         #endregion
 
-        private void btnEncryptt_Click(object sender, RoutedEventArgs e)
+        private void btnEncrypt_Click(object sender, RoutedEventArgs e)
         {
             string str = "";
             DateTime dateTime = DateTime.Now;
             str = RandomString(8) + "_" + dateTime + "_" + RandomString(8);
             var encryptedString = EncryptString(key, str);
-            txtResult.Text = encryptedString;
-            txtDecyrpt.Text = DecryptString(key, encryptedString);
+            txtLicenceKey.Text = encryptedString;
+            txtVerificationKey.Text = DecryptString(key, encryptedString);
             StreamWriter sw = new StreamWriter(licenceKeyFile, true);
             sw.WriteLine(dateTime + "\t" + encryptedString);
             sw.Flush();
@@ -154,6 +162,11 @@ namespace LicenseKeyGenerator
         private void btnDecrypt_Click(object sender, RoutedEventArgs e)
         {
             txtDecyrpt2.Text = DecryptString(key, txtEncryptText2.Text);
+        }
+
+        private void btnExportFile_Click(object sender, RoutedEventArgs e)
+        {
+
         }
     }
 }
