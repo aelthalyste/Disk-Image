@@ -280,6 +280,8 @@
     <system:String x:Key="emailNotification">E-Posta Bildirimi</system:String>
     <system:String x:Key="notificationTypes">Bildirim Türleri</system:String>
     <system:String x:Key="critical">Kritik</system:String>
+    <system:String x:Key="emailSettings">E-Posta Ayarları</system:String>
+
 
     <!--MessageBox Info-->
     <system:String x:Key="notNullMB">İlgili alanları lütfen boş geçmeyiniz.</system:String>

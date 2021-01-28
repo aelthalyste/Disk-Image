@@ -293,6 +293,8 @@
     <system:String x:Key="emailNotification">E-Mail Notification</system:String>
     <system:String x:Key="notificationTypes">Notification Types</system:String>
     <system:String x:Key="critical">Critical</system:String>
+    <system:String x:Key="emailSettings">E-Mail Settings</system:String>
+
 
 
     <!--MessageBox Info-->

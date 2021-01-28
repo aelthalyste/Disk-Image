@@ -1537,47 +1537,44 @@
                                 </Image>
                             </StackPanel>
 
-                            <StackPanel Name="stackLicenseController" Grid.Row="1" Grid.ColumnSpan="2" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,15,0,10">
-                                <Border BorderBrush="#9ACFEA" Width="520" BorderThickness="2" CornerRadius="3">
-                                    <StackPanel Margin="10,10,0,0">
-                                        <StackPanel Orientation="Horizontal">
-                                            <TextBlock Text="{DynamicResource licenseKey}" FontSize="14" Margin="3,0"/>
-                                            <TextBlock Text=":" FontSize="14" Margin="3,0"/>
-                                        </StackPanel>
-                                        <TextBox Name="txtLicenseKey" VerticalContentAlignment="Center" Height="30" Margin="20,10" FontSize="14"/>
-                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                            <Button Name="btnValidateLicense" Width="160" Height="30" Style="{StaticResource BlueButton}" Cursor="Hand" Click="btnValidateLicense_Click">
-                                                <Button.Content>
-                                                    <StackPanel Orientation="Horizontal">
-                                                        <Image Height="20" Width="20" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="2,0">
-                                                            <Image.Style>
-                                                                <Style TargetType="Image">
-                                                                    <Setter Property="Source" Value="Resources/Icon/icons8_add_key_2.ico"/>
-                                                                </Style>
-                                                            </Image.Style>
-                                                        </Image>
-                                                        <TextBlock Text="{DynamicResource validateLicense}" VerticalAlignment="Center" FontSize="14" Margin="5,0" Foreground="White"/>
-                                                    </StackPanel>
-                                                </Button.Content>
-                                            </Button>
-                                            <Button Name="btnAddLicenseFile" Width="160" Height="30" Style="{StaticResource BlueButton}" Cursor="Hand" Margin="20,0,0,0">
-                                                <Button.Content>
-                                                    <StackPanel Orientation="Horizontal">
-                                                        <Image Height="20" Width="20" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="2,0">
-                                                            <Image.Style>
-                                                                <Style TargetType="Image">
-                                                                    <Setter Property="Source" Value="Resources/Icon/icons8_add_file.ico"/>
-                                                                </Style>
-                                                            </Image.Style>
-                                                        </Image>
-                                                        <TextBlock Text="{DynamicResource addFile}" VerticalAlignment="Center" FontSize="14" Margin="5,0" Foreground="White"/>
-                                                    </StackPanel>
-                                                </Button.Content>
-                                            </Button>
-                                        </StackPanel>
+                            <GroupBox Grid.Row="1" Grid.ColumnSpan="2" Margin="10,15,10,10" BorderBrush="#9ACFEA" BorderThickness="2" FontSize="14">
+                                <GroupBox.Header>
+                                    <TextBlock Text="{DynamicResource licenseKey}" Foreground="Black" FontWeight="Bold"/>
+                                </GroupBox.Header>
+                                <StackPanel>
+                                    <TextBox Name="txtLicenseKey" VerticalContentAlignment="Center" Height="30" Margin="20,10" FontSize="14"/>
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                        <Button Name="btnValidateLicense" Width="160" Height="30" Style="{StaticResource BlueButton}" Cursor="Hand" Click="btnValidateLicense_Click">
+                                            <Button.Content>
+                                                <StackPanel Orientation="Horizontal">
+                                                    <Image Height="20" Width="20" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="2,0">
+                                                        <Image.Style>
+                                                            <Style TargetType="Image">
+                                                                <Setter Property="Source" Value="Resources/Icon/icons8_add_key_2.ico"/>
+                                                            </Style>
+                                                        </Image.Style>
+                                                    </Image>
+                                                    <TextBlock Text="{DynamicResource validateLicense}" VerticalAlignment="Center" FontSize="14" Margin="5,0" Foreground="White"/>
+                                                </StackPanel>
+                                            </Button.Content>
+                                        </Button>
+                                        <Button Name="btnAddLicenseFile" Width="160" Height="30" Style="{StaticResource BlueButton}" Cursor="Hand" Margin="20,0,0,0">
+                                            <Button.Content>
+                                                <StackPanel Orientation="Horizontal">
+                                                    <Image Height="20" Width="20" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="2,0">
+                                                        <Image.Style>
+                                                            <Style TargetType="Image">
+                                                                <Setter Property="Source" Value="Resources/Icon/icons8_add_file.ico"/>
+                                                            </Style>
+                                                        </Image.Style>
+                                                    </Image>
+                                                    <TextBlock Text="{DynamicResource addFile}" VerticalAlignment="Center" FontSize="14" Margin="5,0" Foreground="White"/>
+                                                </StackPanel>
+                                            </Button.Content>
+                                        </Button>
                                     </StackPanel>
-                                </Border>
-                            </StackPanel>
+                                </StackPanel>
+                            </GroupBox>
 
                         </Grid>
 
@@ -1637,55 +1634,57 @@
 
                         <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" Margin="12,0" HorizontalAlignment="Center">
                             <Border BorderBrush="#9ACFEA" Width="520" BorderThickness="2" CornerRadius="3">
-                                <Grid>
+                                <Grid Margin="20,10">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition/>
                                         <ColumnDefinition/>
                                     </Grid.ColumnDefinitions>
                                     <Grid.RowDefinitions>
+                                        <RowDefinition Height="40"/>
                                         <RowDefinition/>
-                                        <RowDefinition/>
-                                        <RowDefinition/>
+                                        <RowDefinition Height="50"/>
                                     </Grid.RowDefinitions>
-                                    
+
                                     <TextBlock Text="{DynamicResource emailNotification}" FontSize="14" Grid.Column="0" Grid.Row="0" VerticalAlignment="Center"/>
-                                    <TextBlock Text="{DynamicResource notificationTypes}" FontSize="14" Grid.Column="0" Grid.Row="1" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{DynamicResource notificationTypes}" FontSize="14" Grid.Column="0" Grid.Row="1" />
 
                                     <CheckBox Name="checkEMailNotification" Content="{DynamicResource active}" FontSize="14" Grid.Column="1" Grid.Row="0" VerticalContentAlignment="Center"/>
-                                    <StackPanel Grid.Column="1" Grid.Row="1">
+                                    <StackPanel Grid.Column="1" Grid.Row="1" VerticalAlignment="Center">
                                         <CheckBox Name="checkEMailNotificationFail" Content="{DynamicResource Fail}" FontSize="14" VerticalContentAlignment="Center" Margin="0,0,0,5"/>
                                         <CheckBox Name="checkEMailNotificationSuccess" Content="{DynamicResource Success}" FontSize="14" VerticalContentAlignment="Center" Margin="0,0,0,5"/>
                                         <CheckBox Name="checkEMailNotificationCritical" Content="{DynamicResource critical}" FontSize="14" VerticalContentAlignment="Center"/>
                                     </StackPanel>
 
-                                    <Button Name="btnEMailAdvancedOptions" Width="160" Height="30" Style="{StaticResource BlueButton}" Cursor="Hand" Grid.Column="0" Grid.Row="2">
-                                        <Button.Content>
-                                            <StackPanel Orientation="Horizontal">
-                                                <Image Height="20" Width="20" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="2,0">
-                                                    <Image.Style>
-                                                        <Style TargetType="Image">
-                                                            <Setter Property="Source" Value="Resources/Icon/icons8_add_key_2.ico"/>
-                                                        </Style>
-                                                    </Image.Style>
-                                                </Image>
-                                                <TextBlock Text="{DynamicResource advancedOptions}" VerticalAlignment="Center" FontSize="14" Margin="5,0" Foreground="White"/>
-                                            </StackPanel>
-                                        </Button.Content>
-                                    </Button>
-                                    <Button Name="btnEMailNotificationSave" Width="160" Height="30" Style="{StaticResource BlueButton}" Cursor="Hand" Grid.Column="1" Grid.Row="2">
-                                        <Button.Content>
-                                            <StackPanel Orientation="Horizontal">
-                                                <Image Height="20" Width="20" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="2,0">
-                                                    <Image.Style>
-                                                        <Style TargetType="Image">
-                                                            <Setter Property="Source" Value="Resources/Icon/icons8_add_key_2.ico"/>
-                                                        </Style>
-                                                    </Image.Style>
-                                                </Image>
-                                                <TextBlock Text="{DynamicResource save}" VerticalAlignment="Center" FontSize="14" Margin="5,0" Foreground="White"/>
-                                            </StackPanel>
-                                        </Button.Content>
-                                    </Button>
+                                    <StackPanel Grid.Row="2" Grid.ColumnSpan="2" Orientation="Horizontal" HorizontalAlignment="Center">
+                                        <Button Name="btnEMailAdvancedOptions" Width="160" Height="30" Style="{StaticResource BlueButton}" Cursor="Hand">
+                                            <Button.Content>
+                                                <StackPanel Orientation="Horizontal">
+                                                    <Image Height="20" Width="20" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="2,0">
+                                                        <Image.Style>
+                                                            <Style TargetType="Image">
+                                                                <Setter Property="Source" Value="Resources/Icon/icons8_add_key_2.ico"/>
+                                                            </Style>
+                                                        </Image.Style>
+                                                    </Image>
+                                                    <TextBlock Text="{DynamicResource advancedOptions}" VerticalAlignment="Center" FontSize="14" Margin="5,0" Foreground="White"/>
+                                                </StackPanel>
+                                            </Button.Content>
+                                        </Button>
+                                        <Button Name="btnEMailNotificationSave" Width="160" Height="30" Style="{StaticResource BlueButton}" Cursor="Hand" Margin="20,0,0,0">
+                                            <Button.Content>
+                                                <StackPanel Orientation="Horizontal">
+                                                    <Image Height="20" Width="20" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="2,0">
+                                                        <Image.Style>
+                                                            <Style TargetType="Image">
+                                                                <Setter Property="Source" Value="Resources/Icon/icons8_add_key_2.ico"/>
+                                                            </Style>
+                                                        </Image.Style>
+                                                    </Image>
+                                                    <TextBlock Text="{DynamicResource save}" VerticalAlignment="Center" FontSize="14" Margin="5,0" Foreground="White"/>
+                                                </StackPanel>
+                                            </Button.Content>
+                                        </Button>
+                                    </StackPanel>
 
                                 </Grid>
                             </Border>
