@@ -444,6 +444,7 @@
     <Resource Include="Resources\Icon\Icon_White_V32.png" />
   </ItemGroup>
   <ItemGroup>
+    <Resource Include="Resources\Icon\icons8_add_file.ico" />
     <Resource Include="Resources\Icon\logo_big.png" />
     <Resource Include="Resources\Icon\icons8_data_backup.ico" />
     <Resource Include="favicon_mavi.ico" />

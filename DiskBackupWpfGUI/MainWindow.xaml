@@ -14,9 +14,9 @@
         BorderBrush="#194771" BorderThickness="1"
         Height="730" Width="1294"
         ResizeMode="CanMinimize">
-    <!--<Window.Resources>
+    <Window.Resources>
         <ResourceDictionary Source="Resources\Lang\string_tr.xaml"/>
-    </Window.Resources>-->
+    </Window.Resources>
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="30"/>
@@ -1453,49 +1453,75 @@
                 <Grid Background="White">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition/>
-                        <ColumnDefinition/>
                     </Grid.ColumnDefinitions>
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="150"/>
-                        <RowDefinition/>
+                        <RowDefinition Height="65"/>
                         <RowDefinition/>
                     </Grid.RowDefinitions>
-                    <Rectangle VerticalAlignment="Center" Grid.ColumnSpan="2" Stroke="#D7D7D7" StrokeThickness="1" Margin="0,-20,0,0" HorizontalAlignment="Left" Width="1100"/>
+                    <Rectangle VerticalAlignment="Bottom" Stroke="#D7D7D7" StrokeThickness="1" HorizontalAlignment="Left" Width="1100"/>
 
-                    <StackPanel Grid.Row="0" HorizontalAlignment="Stretch">
+                    <StackPanel Grid.Row="0">
                         <TextBlock Text="{DynamicResource settings}" FontSize="22" Margin="10,0,0,5" TextAlignment="Left" FontWeight="Bold"/>
                         <TextBlock Text="{DynamicResource settingsContent}" FontSize="14" Foreground="#A1A1A1" Margin="20,0,0,0" TextAlignment="Left"/>
-                        <StackPanel Orientation="Horizontal" Margin="20,25,0,0">
-                            <Image Height="50" Margin="0,0,15,0" >
-                                <Image.Style>
-                                    <Style TargetType="Image">
-                                        <Setter Property="Source" Value="Resources/Icon/icons8_licence_4.ico" />
-                                    </Style>
-                                </Image.Style>
-                            </Image>
-                            <StackPanel VerticalAlignment="Center">
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="{DynamicResource appLicense}" FontSize="14"/>
-                                    <TextBlock Name="txtLicenseStatu" Text="{DynamicResource active}" FontSize="14" Margin="3,0"/>
-                                </StackPanel>
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="{DynamicResource endDateDot}" FontSize="14"/>
-                                    <TextBlock Name="txtExpireDate" Text="∞" FontSize="14" Margin="3,0"/>
-                                </StackPanel>
-                            </StackPanel>
-                        </StackPanel>
                     </StackPanel>
-                    <StackPanel Grid.Row="0" Grid.Column="1" Margin="0,50,0,0">
-                        <Grid>
+
+                    <Grid Background="White" Grid.Row="1">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition/>
+                            <ColumnDefinition/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                        </Grid.RowDefinitions>
+
+                        <Grid Margin="15,10,30,15">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="180"/>
+                                <ColumnDefinition/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition/>
+                                <RowDefinition/>
+                                <RowDefinition/>
+                                <RowDefinition/>
+                                <RowDefinition/>
+                                <RowDefinition/>
+                                <RowDefinition/>
+                            </Grid.RowDefinitions>
+
+                            <TextBlock Text="{DynamicResource licenseStatus}" FontSize="14" Grid.Column="0" Grid.Row="0"/>
+                            <TextBlock Text="{DynamicResource dealerName}" FontSize="14" Grid.Column="0" Grid.Row="1"/>
+                            <TextBlock Text="{DynamicResource customerName}" FontSize="14" Grid.Column="0" Grid.Row="2"/>
+                            <TextBlock Text="{DynamicResource authorizedPerson}" FontSize="14" Grid.Column="0" Grid.Row="3"/>
+                            <TextBlock Text="{DynamicResource version}" FontSize="14" Grid.Column="0" Grid.Row="4"/>
+                            <TextBlock Text="{DynamicResource supportEndDate}" FontSize="14" Grid.Column="0" Grid.Row="5"/>
+                            <TextBlock Text="{DynamicResource verificationKey}" FontSize="14" Grid.Column="0" Grid.Row="6"/>
+
+                            <TextBlock Name="txtLicenseStatu" Text="{DynamicResource active}" FontSize="14" Grid.Column="1" Grid.Row="0"/>
+                            <TextBlock Name="txtdealerName" Text="Demo / A Bayisi" FontSize="14" Grid.Column="1" Grid.Row="1"/>
+                            <TextBlock Name="txtcustomerName" Text="Demo / A Firması" FontSize="14" Grid.Column="1" Grid.Row="2"/>
+                            <TextBlock Name="txtauthorizedPerson" Text="demo@demo.com / X Kişisi" FontSize="14" Grid.Column="1" Grid.Row="3"/>
+                            <TextBlock Name="txtVersionType" Text="Demo / Workstation or Server or SBS" FontSize="14" Grid.Column="1" Grid.Row="4"/>
+                            <TextBlock Name="txtExpireDate" Text="∞" FontSize="14" Grid.Column="1" Grid.Row="5"/>
+                            <TextBlock Name="txtverificationKey" Text="Demo / A124456B" FontSize="14" Grid.Column="1" Grid.Row="6"/>
+                        </Grid>
+
+                        <Grid Grid.Row="0" Grid.Column="1" Margin="0,10">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition/>
                                 <ColumnDefinition/>
                             </Grid.ColumnDefinitions>
-                            <StackPanel Orientation="Horizontal" Grid.Column="0" HorizontalAlignment="Left" Margin="0,30,0,0">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="30"/>
+                                <RowDefinition/>
+                            </Grid.RowDefinitions>
+                            <StackPanel Orientation="Horizontal" Grid.Column="0" HorizontalAlignment="Left" Margin="15,0">
                                 <TextBlock VerticalAlignment="Center" Text="{DynamicResource languageDot}" FontSize="14" />
                                 <ComboBox Margin="30,0,0,0" Name="cbLang" Width="100" Height="24" SelectedIndex="0" FontSize="14" DisplayMemberPath="Key" SelectedValuePath="Value" />
                             </StackPanel>
-                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,30,20,0" Grid.Column="1">
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Grid.Column="1" Margin="15,0">
                                 <StackPanel VerticalAlignment="Center">
                                     <StackPanel Orientation="Horizontal">
                                         <TextBlock Text="{DynamicResource versionDot}" FontSize="14" />
@@ -1510,130 +1536,204 @@
                                     </Image.Style>
                                 </Image>
                             </StackPanel>
+
+                            <StackPanel Name="stackLicenseController" Grid.Row="1" Grid.ColumnSpan="2" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,15,0,10">
+                                <Border BorderBrush="#9ACFEA" Width="520" BorderThickness="2" CornerRadius="3">
+                                    <StackPanel Margin="10,10,0,0">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="{DynamicResource licenseKey}" FontSize="14" Margin="3,0"/>
+                                            <TextBlock Text=":" FontSize="14" Margin="3,0"/>
+                                        </StackPanel>
+                                        <TextBox Name="txtLicenseKey" VerticalContentAlignment="Center" Height="30" Margin="20,10" FontSize="14"/>
+                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                            <Button Name="btnValidateLicense" Width="160" Height="30" Style="{StaticResource BlueButton}" Cursor="Hand" Click="btnValidateLicense_Click">
+                                                <Button.Content>
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <Image Height="20" Width="20" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="2,0">
+                                                            <Image.Style>
+                                                                <Style TargetType="Image">
+                                                                    <Setter Property="Source" Value="Resources/Icon/icons8_add_key_2.ico"/>
+                                                                </Style>
+                                                            </Image.Style>
+                                                        </Image>
+                                                        <TextBlock Text="{DynamicResource validateLicense}" VerticalAlignment="Center" FontSize="14" Margin="5,0" Foreground="White"/>
+                                                    </StackPanel>
+                                                </Button.Content>
+                                            </Button>
+                                            <Button Name="btnAddLicenseFile" Width="160" Height="30" Style="{StaticResource BlueButton}" Cursor="Hand" Margin="20,0,0,0">
+                                                <Button.Content>
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <Image Height="20" Width="20" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="2,0">
+                                                            <Image.Style>
+                                                                <Style TargetType="Image">
+                                                                    <Setter Property="Source" Value="Resources/Icon/icons8_add_file.ico"/>
+                                                                </Style>
+                                                            </Image.Style>
+                                                        </Image>
+                                                        <TextBlock Text="{DynamicResource addFile}" VerticalAlignment="Center" FontSize="14" Margin="5,0" Foreground="White"/>
+                                                    </StackPanel>
+                                                </Button.Content>
+                                            </Button>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+
                         </Grid>
-                    </StackPanel>
 
-                    <StackPanel Grid.Row="1" Grid.Column="0" Height="200" Orientation="Horizontal" Margin="15,0,3,0">
-                        <Border BorderBrush="#9ACFEA" Width="500" BorderThickness="2" CornerRadius="3">
-                            <StackPanel Background="LightGray" Opacity="0.6"> <!--grilik buradan verildi--> 
-                                <StackPanel Orientation="Horizontal" Margin="10,5,0,0" >
-                                    <Image Height="50" Margin="0,5,15,0" >
-                                        <Image.Style>
-                                            <Style TargetType="Image">
-                                                <Setter Property="Source" Value="Resources/Icon/icons8_user_2.ico" />
-                                            </Style>
-                                        </Image.Style>
-                                    </Image>
-                                    <TextBlock VerticalAlignment="Center" FontSize="17" Text="demo@narbulut.com"/>
-                                </StackPanel>
-                                <StackPanel Orientation="Horizontal" Margin="10,10,0,10" >
-                                    <Image Height="50" Margin="0,0,15,0" >
-                                        <Image.Style>
-                                            <Style TargetType="Image">
-                                                <Setter Property="Source" Value="Resources/Icon/favicon_mavi.ico" />
-                                            </Style>
-                                        </Image.Style>
-                                    </Image>
-                                    <StackPanel VerticalAlignment="Center">
-                                        <StackPanel Orientation="Horizontal">
-                                            <TextBlock Text="{DynamicResource cloudLicenseDot}" FontSize="14"/>
-                                            <TextBlock Text="{DynamicResource active}" FontSize="14" Margin="3,0"/>
-                                        </StackPanel>
-                                        <StackPanel Orientation="Horizontal">
-                                            <TextBlock Text="{DynamicResource endDateDot}" FontSize="14"/>
-                                            <TextBlock Text="01.01.2022" FontSize="14" Margin="3,0"/>
+
+                        <StackPanel Grid.Row="1" Grid.Column="0" Orientation="Horizontal" Margin="12,0">
+                            <Border BorderBrush="#9ACFEA" Width="500" BorderThickness="2" CornerRadius="3">
+                                <StackPanel Background="LightGray" Opacity="0.6">
+                                    <!--grilik buradan verildi-->
+                                    <StackPanel Orientation="Horizontal" Margin="10,0" >
+                                        <Image Height="50" Margin="0,5,15,0" >
+                                            <Image.Style>
+                                                <Style TargetType="Image">
+                                                    <Setter Property="Source" Value="Resources/Icon/icons8_user_2.ico" />
+                                                </Style>
+                                            </Image.Style>
+                                        </Image>
+                                        <TextBlock VerticalAlignment="Center" FontSize="17" Text="demo@narbulut.com"/>
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="10,15" >
+                                        <Image Height="50" Margin="0,0,15,0" >
+                                            <Image.Style>
+                                                <Style TargetType="Image">
+                                                    <Setter Property="Source" Value="Resources/Icon/favicon_mavi.ico" />
+                                                </Style>
+                                            </Image.Style>
+                                        </Image>
+                                        <StackPanel VerticalAlignment="Center">
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="{DynamicResource cloudLicenseDot}" FontSize="14"/>
+                                                <TextBlock Text="{DynamicResource active}" FontSize="14" Margin="3,0"/>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="{DynamicResource endDateDot}" FontSize="14"/>
+                                                <TextBlock Text="01.01.2022" FontSize="14" Margin="3,0"/>
+                                            </StackPanel>
                                         </StackPanel>
                                     </StackPanel>
-                                </StackPanel>
-                                <StackPanel Orientation="Horizontal" Margin="10,10,0,10" >
-                                    <Grid Height="50" Width="42">
-                                        <xctk:Pie StartAngle="0" EndAngle="360" Height="42" Width="42" Fill="#B8DABC" Stroke="#7A917D"/>
-                                        <xctk:Pie Name="pieSize" StartAngle="-90" EndAngle="-89" Height="42" Width="42" Fill="#87B5F2" Stroke="#5A78A1"/>
-                                    </Grid>
-                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="22,0,0,0">
-                                        <StackPanel>
-                                            <TextBlock Text="{DynamicResource totalCapacity}" FontSize="14"/>
-                                            <TextBlock Text="{DynamicResource usedCapacity}" FontSize="14"/>
-                                        </StackPanel>
-                                        <StackPanel Margin="20,0">
-                                            <TextBlock Text="100 GB" Name="txtTotalCapacity" FontSize="14"/>
-                                            <TextBlock Text="0 GB" Name="txtUsedCapacity" FontSize="14"/>
-                                        </StackPanel>
-                                    </StackPanel>
-                                </StackPanel>
-                            </StackPanel>
-                        </Border>
-                    </StackPanel>
-
-                    <StackPanel Name="stackLicenseController" Grid.Row="1" Grid.Column="1" Height="200" Orientation="Horizontal" Margin="25,0,15,0" HorizontalAlignment="Left">
-                        <Border BorderBrush="#9ACFEA" Width="500" BorderThickness="2" CornerRadius="3">
-                            <StackPanel Margin="10,10,0,0">
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="{DynamicResource licenseKey}" FontSize="14" Margin="3,0"/>
-                                    <TextBlock Text=":" FontSize="14" Margin="3,0"/>
-                                </StackPanel>
-                                <TextBox Name="txtLicenseKey" VerticalContentAlignment="Center" Height="30" Margin="20,25" FontSize="14"/>
-                                <Button Name="btnValidateLicense" Width="160" Height="30" Style="{StaticResource BlueButton}" Cursor="Hand" Click="btnValidateLicense_Click">
-                                    <Button.Content>
-                                        <StackPanel Orientation="Horizontal">
-                                            <Image Height="20" Width="20" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="2,0">
-                                                <Image.Style>
-                                                    <Style TargetType="Image">
-                                                        <Setter Property="Source" Value="Resources/Icon/icons8_add_key_2.ico"/>
-                                                    </Style>
-                                                </Image.Style>
-                                            </Image>
-                                            <TextBlock Text="{DynamicResource validateLicense}" VerticalAlignment="Center" FontSize="14" Margin="5,0" Foreground="White"/>
-                                        </StackPanel>
-                                    </Button.Content>
-                                </Button>
-                            </StackPanel>
-                        </Border>
-                    </StackPanel>
-
-                    <Image Source="Resources/Icon/logo_big.png" Grid.ColumnSpan="2" Grid.Row="2"></Image>
-
-                    <GroupBox Grid.Row="2" Grid.ColumnSpan="2" Margin="10" BorderBrush="#9ACFEA" BorderThickness="2" FontSize="14" Visibility="Collapsed">
-                        <GroupBox.Header>
-                            <TextBlock Text="{DynamicResource bandwithSetting}" Foreground="Black" FontWeight="Bold"/>
-                        </GroupBox.Header>
-                        <StackPanel Margin="10,20,0,0">
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition/>
-                                    <ColumnDefinition/>
-                                </Grid.ColumnDefinitions>
-                                <StackPanel Grid.Column="0">
-                                    <TextBlock Text="{DynamicResource downloadSpeed}" ></TextBlock>
-                                    <RadioButton Content="{DynamicResource delimitation}" Name="rbtnDownloadDelimitation" GroupName="download" IsChecked="True" Margin="20,15,0,10" />
-                                    <StackPanel Orientation="Horizontal">
-                                        <RadioButton Content="{DynamicResource limit}" Name="rbtnDownload" GroupName="download" Checked="rbtnDownload_Checked" Unchecked="rbtnDownload_Unchecked" Margin="20,5,0,0" />
-                                        <StackPanel Name="stackDownload" Orientation="Horizontal" IsEnabled="False">
-                                            <TextBox Name="txtDownload" Text="100" Width="50" Height="28" FontSize="13" Margin="20,0,0,0" VerticalContentAlignment="Center" MaxLength="3"/>
-                                            <StackPanel Margin="-21,0,0,0" VerticalAlignment="Center">
-                                                <Button Name="btnDownloadUp" Style="{StaticResource ArrowUpButton}" Content="▲" Width="20" Height="13" FontSize="8" VerticalContentAlignment="Top" BorderThickness="0" Click="btnDownloadUp_Click" />
-                                                <Button Name="btnDownloadDown" Style="{StaticResource ArrowDownButton}" Content="▼" Width="20" Height="13" FontSize="8" VerticalContentAlignment="Top" BorderThickness="0" Click="btnDownloadDown_Click" />
+                                    <StackPanel Orientation="Horizontal" Margin="10,0" >
+                                        <Grid Height="50" Width="42">
+                                            <xctk:Pie StartAngle="0" EndAngle="360" Height="42" Width="42" Fill="#B8DABC" Stroke="#7A917D"/>
+                                            <xctk:Pie Name="pieSize" StartAngle="-90" EndAngle="-89" Height="42" Width="42" Fill="#87B5F2" Stroke="#5A78A1"/>
+                                        </Grid>
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="22,0,0,0">
+                                            <StackPanel>
+                                                <TextBlock Text="{DynamicResource totalCapacity}" FontSize="14"/>
+                                                <TextBlock Text="{DynamicResource usedCapacity}" FontSize="14"/>
+                                            </StackPanel>
+                                            <StackPanel Margin="20,0">
+                                                <TextBlock Text="100 GB" Name="txtTotalCapacity" FontSize="14"/>
+                                                <TextBlock Text="0 GB" Name="txtUsedCapacity" FontSize="14"/>
                                             </StackPanel>
                                         </StackPanel>
                                     </StackPanel>
                                 </StackPanel>
-                                <StackPanel Grid.Column="1">
-                                    <TextBlock Text="{DynamicResource uploadSpeed}" ></TextBlock>
-                                    <RadioButton Content="{DynamicResource delimitation}" Name="rbtnUploadDelimitation" GroupName="upload" Margin="20,15,0,10" IsChecked="True" />
-                                    <StackPanel Orientation="Horizontal">
-                                        <RadioButton Content="{DynamicResource limit}" Name="rbtnUpload" GroupName="upload" Checked="rbtnUpload_Checked" Unchecked="rbtnUpload_Unchecked" Margin="20,5,0,0"  />
-                                        <StackPanel Name="stackUpload" Orientation="Horizontal" IsEnabled="False">
-                                            <TextBox Name="txtUpload" Text="100" Width="50" Height="28" FontSize="13" Margin="20,0,0,0" VerticalContentAlignment="Center" MaxLength="3"/>
-                                            <StackPanel Margin="-21,0,0,0" VerticalAlignment="Center">
-                                                <Button Name="btnUploadUp" Style="{StaticResource ArrowUpButton}" Content="▲" Width="20" Height="13" FontSize="8" VerticalContentAlignment="Top" BorderThickness="0" Click="btnUploadUp_Click" />
-                                                <Button Name="btnUploadDown" Style="{StaticResource ArrowDownButton}" Content="▼" Width="20" Height="13" FontSize="8" VerticalContentAlignment="Top" BorderThickness="0" Click="btnUploadDown_Click" />
-                                            </StackPanel>
-                                        </StackPanel>
-                                    </StackPanel>
-                                </StackPanel>
-                            </Grid>
+                            </Border>
                         </StackPanel>
-                    </GroupBox>
+
+                        <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" Margin="12,0" HorizontalAlignment="Center">
+                            <Border BorderBrush="#9ACFEA" Width="520" BorderThickness="2" CornerRadius="3">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition/>
+                                        <ColumnDefinition/>
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition/>
+                                        <RowDefinition/>
+                                        <RowDefinition/>
+                                    </Grid.RowDefinitions>
+                                    
+                                    <TextBlock Text="{DynamicResource emailNotification}" FontSize="14" Grid.Column="0" Grid.Row="0" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{DynamicResource notificationTypes}" FontSize="14" Grid.Column="0" Grid.Row="1" VerticalAlignment="Center"/>
+
+                                    <CheckBox Name="checkEMailNotification" Content="{DynamicResource active}" FontSize="14" Grid.Column="1" Grid.Row="0" VerticalContentAlignment="Center"/>
+                                    <StackPanel Grid.Column="1" Grid.Row="1">
+                                        <CheckBox Name="checkEMailNotificationFail" Content="{DynamicResource Fail}" FontSize="14" VerticalContentAlignment="Center" Margin="0,0,0,5"/>
+                                        <CheckBox Name="checkEMailNotificationSuccess" Content="{DynamicResource Success}" FontSize="14" VerticalContentAlignment="Center" Margin="0,0,0,5"/>
+                                        <CheckBox Name="checkEMailNotificationCritical" Content="{DynamicResource critical}" FontSize="14" VerticalContentAlignment="Center"/>
+                                    </StackPanel>
+
+                                    <Button Name="btnEMailAdvancedOptions" Width="160" Height="30" Style="{StaticResource BlueButton}" Cursor="Hand" Grid.Column="0" Grid.Row="2">
+                                        <Button.Content>
+                                            <StackPanel Orientation="Horizontal">
+                                                <Image Height="20" Width="20" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="2,0">
+                                                    <Image.Style>
+                                                        <Style TargetType="Image">
+                                                            <Setter Property="Source" Value="Resources/Icon/icons8_add_key_2.ico"/>
+                                                        </Style>
+                                                    </Image.Style>
+                                                </Image>
+                                                <TextBlock Text="{DynamicResource advancedOptions}" VerticalAlignment="Center" FontSize="14" Margin="5,0" Foreground="White"/>
+                                            </StackPanel>
+                                        </Button.Content>
+                                    </Button>
+                                    <Button Name="btnEMailNotificationSave" Width="160" Height="30" Style="{StaticResource BlueButton}" Cursor="Hand" Grid.Column="1" Grid.Row="2">
+                                        <Button.Content>
+                                            <StackPanel Orientation="Horizontal">
+                                                <Image Height="20" Width="20" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="2,0">
+                                                    <Image.Style>
+                                                        <Style TargetType="Image">
+                                                            <Setter Property="Source" Value="Resources/Icon/icons8_add_key_2.ico"/>
+                                                        </Style>
+                                                    </Image.Style>
+                                                </Image>
+                                                <TextBlock Text="{DynamicResource save}" VerticalAlignment="Center" FontSize="14" Margin="5,0" Foreground="White"/>
+                                            </StackPanel>
+                                        </Button.Content>
+                                    </Button>
+
+                                </Grid>
+                            </Border>
+                        </StackPanel>
+
+                        <GroupBox Grid.Row="2" Grid.ColumnSpan="2" Margin="10" BorderBrush="#9ACFEA" BorderThickness="2" FontSize="14">
+                            <GroupBox.Header>
+                                <TextBlock Text="{DynamicResource bandwithSetting}" Foreground="Black" FontWeight="Bold"/>
+                            </GroupBox.Header>
+                            <StackPanel Margin="10,20,0,0">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition/>
+                                        <ColumnDefinition/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="{DynamicResource downloadSpeed}" ></TextBlock>
+                                        <RadioButton Content="{DynamicResource delimitation}" Name="rbtnDownloadDelimitation" GroupName="download" IsChecked="True" Margin="20,15,0,10" />
+                                        <StackPanel Orientation="Horizontal">
+                                            <RadioButton Content="{DynamicResource limit}" Name="rbtnDownload" GroupName="download" Checked="rbtnDownload_Checked" Unchecked="rbtnDownload_Unchecked" Margin="20,5,0,0" />
+                                            <StackPanel Name="stackDownload" Orientation="Horizontal" IsEnabled="False">
+                                                <TextBox Name="txtDownload" Text="100" Width="50" Height="28" FontSize="13" Margin="20,0,0,0" VerticalContentAlignment="Center" MaxLength="3"/>
+                                                <StackPanel Margin="-21,0,0,0" VerticalAlignment="Center">
+                                                    <Button Name="btnDownloadUp" Style="{StaticResource ArrowUpButton}" Content="▲" Width="20" Height="13" FontSize="8" VerticalContentAlignment="Top" BorderThickness="0" Click="btnDownloadUp_Click" />
+                                                    <Button Name="btnDownloadDown" Style="{StaticResource ArrowDownButton}" Content="▼" Width="20" Height="13" FontSize="8" VerticalContentAlignment="Top" BorderThickness="0" Click="btnDownloadDown_Click" />
+                                                </StackPanel>
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1">
+                                        <TextBlock Text="{DynamicResource uploadSpeed}" ></TextBlock>
+                                        <RadioButton Content="{DynamicResource delimitation}" Name="rbtnUploadDelimitation" GroupName="upload" Margin="20,15,0,10" IsChecked="True" />
+                                        <StackPanel Orientation="Horizontal">
+                                            <RadioButton Content="{DynamicResource limit}" Name="rbtnUpload" GroupName="upload" Checked="rbtnUpload_Checked" Unchecked="rbtnUpload_Unchecked" Margin="20,5,0,0"  />
+                                            <StackPanel Name="stackUpload" Orientation="Horizontal" IsEnabled="False">
+                                                <TextBox Name="txtUpload" Text="100" Width="50" Height="28" FontSize="13" Margin="20,0,0,0" VerticalContentAlignment="Center" MaxLength="3"/>
+                                                <StackPanel Margin="-21,0,0,0" VerticalAlignment="Center">
+                                                    <Button Name="btnUploadUp" Style="{StaticResource ArrowUpButton}" Content="▲" Width="20" Height="13" FontSize="8" VerticalContentAlignment="Top" BorderThickness="0" Click="btnUploadUp_Click" />
+                                                    <Button Name="btnUploadDown" Style="{StaticResource ArrowDownButton}" Content="▼" Width="20" Height="13" FontSize="8" VerticalContentAlignment="Top" BorderThickness="0" Click="btnUploadDown_Click" />
+                                                </StackPanel>
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Grid>
+                            </StackPanel>
+                        </GroupBox>
+
+                    </Grid>
                 </Grid>
             </TabItem>
 
