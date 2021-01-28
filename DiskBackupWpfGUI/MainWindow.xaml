@@ -14,9 +14,9 @@
         BorderBrush="#194771" BorderThickness="1"
         Height="730" Width="1294"
         ResizeMode="CanMinimize">
-    <Window.Resources>
+    <!--<Window.Resources>
         <ResourceDictionary Source="Resources\Lang\string_tr.xaml"/>
-    </Window.Resources>
+    </Window.Resources>-->
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="30"/>
@@ -1558,7 +1558,7 @@
                                                 </StackPanel>
                                             </Button.Content>
                                         </Button>
-                                        <Button Name="btnAddLicenseFile" Width="160" Height="30" Style="{StaticResource BlueButton}" Cursor="Hand" Margin="20,0,0,0">
+                                        <Button Name="btnAddLicenseFile" Width="160" Height="30" Style="{StaticResource BlueButton}" Cursor="Hand" Margin="40,0,0,0">
                                             <Button.Content>
                                                 <StackPanel Orientation="Horizontal">
                                                     <Image Height="20" Width="20" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="2,0">
@@ -1634,7 +1634,7 @@
 
                         <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" Margin="12,0" HorizontalAlignment="Center">
                             <Border BorderBrush="#9ACFEA" Width="520" BorderThickness="2" CornerRadius="3">
-                                <Grid Margin="20,10">
+                                <Grid Margin="20,10" HorizontalAlignment="Center">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition/>
                                         <ColumnDefinition/>
@@ -1645,11 +1645,11 @@
                                         <RowDefinition Height="50"/>
                                     </Grid.RowDefinitions>
 
-                                    <TextBlock Text="{DynamicResource emailNotification}" FontSize="14" Grid.Column="0" Grid.Row="0" VerticalAlignment="Center"/>
-                                    <TextBlock Text="{DynamicResource notificationTypes}" FontSize="14" Grid.Column="0" Grid.Row="1" />
+                                    <TextBlock Text="{DynamicResource emailNotification}" FontSize="14" Grid.Column="0" Grid.Row="0" Margin="2,0" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{DynamicResource notificationTypes}" FontSize="14" Grid.Column="0" Grid.Row="1" Margin="2,7,0,0"/>
 
                                     <CheckBox Name="checkEMailNotification" Content="{DynamicResource active}" FontSize="14" Grid.Column="1" Grid.Row="0" VerticalContentAlignment="Center"/>
-                                    <StackPanel Grid.Column="1" Grid.Row="1" VerticalAlignment="Center">
+                                    <StackPanel Grid.Column="1" Grid.Row="1" VerticalAlignment="Center" IsEnabled="False">
                                         <CheckBox Name="checkEMailNotificationFail" Content="{DynamicResource Fail}" FontSize="14" VerticalContentAlignment="Center" Margin="0,0,0,5"/>
                                         <CheckBox Name="checkEMailNotificationSuccess" Content="{DynamicResource Success}" FontSize="14" VerticalContentAlignment="Center" Margin="0,0,0,5"/>
                                         <CheckBox Name="checkEMailNotificationCritical" Content="{DynamicResource critical}" FontSize="14" VerticalContentAlignment="Center"/>
@@ -1662,7 +1662,7 @@
                                                     <Image Height="20" Width="20" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="2,0">
                                                         <Image.Style>
                                                             <Style TargetType="Image">
-                                                                <Setter Property="Source" Value="Resources/Icon/icons8_add_key_2.ico"/>
+                                                                <Setter Property="Source" Value="Resources/Icon/icons8_settings_4.ico"/>
                                                             </Style>
                                                         </Image.Style>
                                                     </Image>
@@ -1670,13 +1670,13 @@
                                                 </StackPanel>
                                             </Button.Content>
                                         </Button>
-                                        <Button Name="btnEMailNotificationSave" Width="160" Height="30" Style="{StaticResource BlueButton}" Cursor="Hand" Margin="20,0,0,0">
+                                        <Button Name="btnEMailNotificationSave" Width="160" Height="30" Style="{StaticResource BlueButton}" Cursor="Hand" Margin="40,0,0,0">
                                             <Button.Content>
                                                 <StackPanel Orientation="Horizontal">
-                                                    <Image Height="20" Width="20" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="2,0">
+                                                    <Image Height="24" Width="24" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="2,0">
                                                         <Image.Style>
                                                             <Style TargetType="Image">
-                                                                <Setter Property="Source" Value="Resources/Icon/icons8_add_key_2.ico"/>
+                                                                <Setter Property="Source" Value="Resources/Icon/icons8_save.ico"/>
                                                             </Style>
                                                         </Image.Style>
                                                     </Image>
@@ -1690,7 +1690,9 @@
                             </Border>
                         </StackPanel>
 
-                        <GroupBox Grid.Row="2" Grid.ColumnSpan="2" Margin="10" BorderBrush="#9ACFEA" BorderThickness="2" FontSize="14">
+                        <Image Source="Resources/Icon/logo_big.png" Grid.ColumnSpan="2" Grid.Row="2"></Image>
+                        
+                        <GroupBox Grid.Row="2" Grid.ColumnSpan="2" Margin="10" BorderBrush="#9ACFEA" BorderThickness="2" FontSize="14" Visibility="Collapsed">
                             <GroupBox.Header>
                                 <TextBlock Text="{DynamicResource bandwithSetting}" Foreground="Black" FontWeight="Bold"/>
                             </GroupBox.Header>
