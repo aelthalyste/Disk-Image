@@ -1,9 +1,13 @@
-﻿using System;
+﻿using LicenseKeyGenerator.DataAccess.Abstract;
+using LicenseKeyGenerator.DataAccess.Concrete.EntityFramework;
+using LicenseKeyGenerator.Entities;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -25,10 +29,11 @@ namespace LicenseKeyGenerator
         public string key = "D*G-KaPdSgVkYp3s6v8y/B?E(H+MbQeT";
         private Random random = new Random();
         private string licenceKeyFile = "Lisans Anahtarları.txt";
-
+        private ILicenseDal _licenseDal;
         public MainWindow()
         {
             InitializeComponent();
+            _licenseDal = new EfLicenseDal();
         }
 
         private void licenseKeyTabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -75,24 +80,62 @@ namespace LicenseKeyGenerator
 
         private void btnEncrypt_Click(object sender, RoutedEventArgs e)
         {
-            string str = "";
-            DateTime dateTime = DateTime.Now;
-            str = RandomString(8) + "_" + dateTime + "_" + RandomString(8);
-            var encryptedString = EncryptString(key, str);
-            txtLicenceKey.Text = encryptedString;
-            txtVerificationKey.Text = DecryptString(key, encryptedString);
-            StreamWriter sw = new StreamWriter(licenceKeyFile, true);
-            sw.WriteLine(dateTime + "\t" + encryptedString);
-            sw.Flush();
-            sw.Close();
+            if (IsNullCheck())
+            {
+                License license = new License();
+                if (rbServer.IsChecked.Value)
+                    license.LicenseVersion = VersionType.Server;
+                else if (rbWorkStation.IsChecked.Value)
+                    license.LicenseVersion = VersionType.Workstation;
+                else if (rbSBS.IsChecked.Value)
+                    license.LicenseVersion = VersionType.SBS;
+
+                license.DealerName = txtDealerName.Text;
+                license.CustomerName = txtCustomerName.Text;
+                license.AuthorizedPerson = txtAuthorizedPerson.Text;
+                license.CreatedDate = DateTime.Now;
+                license.SupportEndDate = license.CreatedDate.AddDays(Convert.ToDouble(txtEndDate.Text));
+                license.UniqKey = UniqKeyGenerator();
+
+                var str = license.DealerName + "_" + license.CustomerName + "_" + license.AuthorizedPerson + "_" + license.SupportEndDate + "_" + license.LicenseVersion.ToString() + "_" + license.UniqKey;
+                license.Key = EncryptString(key, str);
+                txtLicenceKey.Text = license.Key;
+                txtVerificationKey.Text = license.UniqKey;
+                _licenseDal.Add(license);
+                MessageBox.Show("Lisans Anahtarı Oluşturuldu");
+            }
+            else
+            {
+                MessageBox.Show("LÜTFEN BOŞ ALANLARI DOLDURUNUZ");
+            }
         }
 
-        public string RandomString(int length)
+        private bool IsNullCheck()
         {
-            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-            return new string(Enumerable.Repeat(chars, length)
+            if (txtDealerName.Text == "" || txtCustomerName.Text == "" || txtAuthorizedPerson.Text == "" || txtEndDate.Text == "")
+                return false;
+            return true;
+        }
+
+        public string RandomString()
+        {
+            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+            return new string(Enumerable.Repeat(chars, 10)
               .Select(s => s[random.Next(s.Length)]).ToArray());
         }
+
+        public string UniqKeyGenerator()
+        {
+            string uniqKey = "";
+            while (true)
+            {
+                uniqKey = RandomString();
+                var licenseList = _licenseDal.Get(x => x.UniqKey == uniqKey);
+                if (licenseList == null)
+                    return uniqKey;
+            }
+        }
+            
 
         public string DecryptString(string key, string cipherText)
         {
@@ -175,9 +218,27 @@ namespace LicenseKeyGenerator
             keyInfoWindow.Show();
         }
 
-        private void Window_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        private void txtEndDate_TextChanged(object sender, TextChangedEventArgs e)
         {
+            txtEndDate.Text = Regex.Replace(txtEndDate.Text, "[^0-9]+", "");
+        }
 
+        private void btnClear_Click(object sender, RoutedEventArgs e)
+        {
+            //List<string> konuşma = new List<string>();
+            //konuşma.Add("Eyüp: Ebru Temizlenmesi istiyorlarmış \nEbru:Offff!");
+            //konuşma.Add("Ebru: Eyüp Temizlenmesi istiyorlarmış \nEyüp:Offff!");
+            //konuşma.Add("Ebru: Eyüp sen temizler misin \nEyüp:Offff!");
+            //konuşma.Add("Ebru: Eyüp temizlenmesi gerekliymiş ben sana demiştim şuraya buton koyalım diye  \nEyüp:Offff!");
+            //Random random = new Random(); 
+            //MessageBox.Show(konuşma[Convert.ToInt32(random.Next(0, konuşma.Count - 1))]);
+            txtDealerName.Text = "";
+            txtCustomerName.Text = "";
+            txtAuthorizedPerson.Text = "" ;
+            txtEndDate.Text = "";
+            txtVerificationKey.Text = "";
+            txtLicenceKey.Text = "";
+            rbWorkStation.IsChecked = true;
         }
     }
 }
