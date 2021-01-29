@@ -69,6 +69,8 @@ HKR,"Instances\"%Instance2.Name%,"Flags",0x00010001,%Instance2.Flags%
 HKR,"Instances\"%Instance3.Name%,"Altitude",0x00000000,%Instance3.Altitude%
 HKR,"Instances\"%Instance3.Name%,"Flags",0x00010001,%Instance3.Flags%
 
+
+
 ;
 ; Copy Files
 ;
