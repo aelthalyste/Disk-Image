@@ -1,5 +1,7 @@
-﻿using System;
+﻿using LicenseKeyGenerator.Entities;
+using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -19,9 +21,23 @@ namespace LicenseKeyGenerator
     /// </summary>
     public partial class KeyInfoWindow : Window
     {
-        public KeyInfoWindow()
+        public KeyInfoWindow(License license)
         {
             InitializeComponent();
+            
+            txtCustomerName.Text = license.CustomerName;
+            txtAuthorizedPerson.Text = license.AuthorizedPerson;
+            txtDealerName.Text = license.DealerName;
+            txtEndDate.Text = license.SupportEndDate.ToString();
+            txtVerificationKey.Text = license.UniqKey;
+            txtLicenceKey.Text = license.Key;
+
+            if (license.LicenseVersion == VersionType.SBS)
+                txtVersion.Text = "SBS";
+            else if(license.LicenseVersion == VersionType.Server)
+                txtVersion.Text = "Server";
+            else
+                txtVersion.Text = "Workstation";
         }
 
         #region Title Bar
@@ -56,7 +72,25 @@ namespace LicenseKeyGenerator
 
         private void btnExportFile_Click(object sender, RoutedEventArgs e)
         {
+            using (var dialog = new System.Windows.Forms.FolderBrowserDialog())
+            {
+                var result = dialog.ShowDialog();
+                if (result == System.Windows.Forms.DialogResult.OK)
+                {
+                    ExportFile(dialog.SelectedPath, txtVerificationKey.Text, txtLicenceKey.Text);
+                }
+            }
+        }
 
+        private void ExportFile(string path, string uniqKey, string key)
+        {
+            string filePath = path + @"\" + uniqKey + ".nbkey";
+            FileStream fileStream = new FileStream(filePath, FileMode.OpenOrCreate, FileAccess.Write);
+            StreamWriter streamWriter = new StreamWriter(fileStream);
+            streamWriter.Write(key);
+            streamWriter.Flush();
+            streamWriter.Close();
+            fileStream.Close();
         }
     }
 }

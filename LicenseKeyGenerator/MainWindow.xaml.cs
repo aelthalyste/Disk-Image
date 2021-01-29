@@ -37,11 +37,6 @@ namespace LicenseKeyGenerator
             RefreshLicenses();
         }
 
-        private void RefreshLicenses()
-        {
-            listViewLicenses.ItemsSource = _licenseDal.GetList();
-        }
-
         #region Title Bar
 
         private void btnMin_Click(object sender, RoutedEventArgs e)
@@ -73,7 +68,7 @@ namespace LicenseKeyGenerator
         #endregion
 
         #region Key Oluşturma
-        
+
         private void btnEncrypt_Click(object sender, RoutedEventArgs e)
         {
             if (IsNullCheck())
@@ -267,16 +262,108 @@ namespace LicenseKeyGenerator
 
         #region Lisans Anahtarları
 
-        private void btnShowMore_Click(object sender, RoutedEventArgs e)
-        {
-            KeyInfoWindow keyInfoWindow = new KeyInfoWindow();
-            keyInfoWindow.Show();
-        }
-        #endregion
-
         private void txtSearchBox_TextChanged(object sender, TextChangedEventArgs e)
         {
+            CollectionViewSource.GetDefaultView(listViewLicenses.ItemsSource).Refresh();
+        }
+
+        private bool LicenseFilter(object item)
+        {
+            if (cbLicensesColumn.SelectedIndex == 0)
+            {
+                if (String.IsNullOrEmpty(txtSearchBox.Text))
+                    return true;
+                else
+                    return ((item as License).UniqKey.IndexOf(txtSearchBox.Text, StringComparison.OrdinalIgnoreCase) >= 0);
+            }
+            else if (cbLicensesColumn.SelectedIndex == 1)
+            {
+                if (String.IsNullOrEmpty(txtSearchBox.Text))
+                    return true;
+                else
+                    return ((item as License).DealerName.IndexOf(txtSearchBox.Text, StringComparison.OrdinalIgnoreCase) >= 0);
+            }
+            else if (cbLicensesColumn.SelectedIndex == 2)
+            {
+                if (String.IsNullOrEmpty(txtSearchBox.Text))
+                    return true;
+                else
+                    return ((item as License).CustomerName.IndexOf(txtSearchBox.Text, StringComparison.OrdinalIgnoreCase) >= 0);
+            }
+            else if (cbLicensesColumn.SelectedIndex == 3)
+            {
+                if (String.IsNullOrEmpty(txtSearchBox.Text))
+                    return true;
+                else
+                    return ((item as License).AuthorizedPerson.IndexOf(txtSearchBox.Text, StringComparison.OrdinalIgnoreCase) >= 0);
+            }
+            else if (cbLicensesColumn.SelectedIndex == 4)
+            {
+                if (String.IsNullOrEmpty(txtSearchBox.Text))
+                    return true;
+                else
+                    return ((item as License).CreatedDate.ToString().IndexOf(txtSearchBox.Text, StringComparison.OrdinalIgnoreCase) >= 0);
+            }
+            else if (cbLicensesColumn.SelectedIndex == 5)
+            {
+                if (String.IsNullOrEmpty(txtSearchBox.Text))
+                    return true;
+                else
+                    return ((item as License).SupportEndDate.ToString().IndexOf(txtSearchBox.Text, StringComparison.OrdinalIgnoreCase) >= 0);
+            }
+            else if (cbLicensesColumn.SelectedIndex == 6)
+            {
+                if (String.IsNullOrEmpty(txtSearchBox.Text))
+                    return true;
+                else
+                    return ((item as License).LicenseVersion.ToString().IndexOf(txtSearchBox.Text, StringComparison.OrdinalIgnoreCase) >= 0);
+            }
+            else
+            {
+                if (String.IsNullOrEmpty(txtSearchBox.Text))
+                    return true;
+                else
+                    return ((item as License).Key.IndexOf(txtSearchBox.Text, StringComparison.OrdinalIgnoreCase) >= 0);
+            }
 
         }
+
+        private void cbLicensesColumn_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter)
+            {
+                txtSearchBox.Focus();
+            }
+        }
+
+        private void RefreshLicenses()
+        {
+            listViewLicenses.ItemsSource = _licenseDal.GetList();
+            CollectionView view = (CollectionView)CollectionViewSource.GetDefaultView(listViewLicenses.ItemsSource);
+            view.Filter = LicenseFilter;
+        }
+
+        private void listViewLicenses_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            if (listViewLicenses.SelectedIndex != -1)
+            {
+                var licenses = (License)listViewLicenses.SelectedItem;
+                KeyInfoWindow keyInfoWindow = new KeyInfoWindow(licenses);
+                keyInfoWindow.ShowDialog();
+            }
+        }
+
+        private void btnShowMore_Click(object sender, RoutedEventArgs e)
+        {
+            if (listViewLicenses.SelectedIndex != -1)
+            {
+                var licenses = (License)listViewLicenses.SelectedItem;
+                KeyInfoWindow keyInfoWindow = new KeyInfoWindow(licenses);
+                keyInfoWindow.ShowDialog();
+            }
+        }
+
+        #endregion
+
     }
 }

@@ -51,25 +51,25 @@
             </Grid.RowDefinitions>
             <!--Row1-->
             <TextBlock Text="Bayi Adı" VerticalAlignment="Center" FontSize="14" Grid.Row="1" Grid.Column="0" Margin="0,7"/>
-            <TextBox Name="txtDealerName" Grid.Row="1" Grid.Column="2" Width="540" Height="20" HorizontalAlignment="Center" VerticalContentAlignment="Center" FontSize="14" />
+            <TextBox Name="txtDealerName" Grid.Row="1" Grid.Column="2" Width="540" Height="20" HorizontalAlignment="Center" IsReadOnly="True" VerticalContentAlignment="Center" FontSize="14" />
             <!--Row2-->
             <TextBlock Text="Müşteri Adı" VerticalAlignment="Center" FontSize="14" Grid.Row="2" Grid.Column="0" Margin="0,7"/>
-            <TextBox Name="txtCustomerName" Grid.Row="2" Grid.Column="2" Width="540" Height="24" HorizontalAlignment="Center" VerticalContentAlignment="Center" FontSize="14" />
+            <TextBox Name="txtCustomerName" Grid.Row="2" Grid.Column="2" Width="540" Height="24" HorizontalAlignment="Center" IsReadOnly="True" VerticalContentAlignment="Center" FontSize="14" />
             <!--Row3-->
             <TextBlock Text="Yetkili Kişi" VerticalAlignment="Center" FontSize="14" Grid.Row="3" Grid.Column="0" Margin="0,7" />
-            <TextBox Name="txtAuthorizedPerson" Grid.Row="3" Grid.Column="2" Width="540" Height="24" HorizontalAlignment="Center" VerticalContentAlignment="Center" FontSize="14" />
+            <TextBox Name="txtAuthorizedPerson" Grid.Row="3" Grid.Column="2" Width="540" Height="24" HorizontalAlignment="Center" IsReadOnly="True" VerticalContentAlignment="Center" FontSize="14" />
             <!--Row4-->
             <TextBlock Text="Bitiş Tarihi" VerticalAlignment="Center" FontSize="14" Grid.Row="4" Grid.Column="0" Margin="0,7"/>
-            <TextBox Name="txtEndDate" Grid.Row="4" Grid.Column="2" Width="540" Height="24" HorizontalAlignment="Center" VerticalContentAlignment="Center" FontSize="14" />
+            <TextBox Name="txtEndDate" Grid.Row="4" Grid.Column="2" Width="540" Height="24" HorizontalAlignment="Center" IsReadOnly="True" VerticalContentAlignment="Center" FontSize="14" />
             <!--Row5-->
             <TextBlock Text="Versiyon" VerticalAlignment="Center" FontSize="14" Grid.Row="5" Grid.Column="0" Margin="0,7"/>
-            <TextBox Name="txtVersion" Grid.Row="5" Grid.Column="2" Width="540" Height="24" HorizontalAlignment="Center" VerticalContentAlignment="Center" FontSize="14" />
+            <TextBox Name="txtVersion" Grid.Row="5" Grid.Column="2" Width="540" Height="24" HorizontalAlignment="Center" IsReadOnly="True" VerticalContentAlignment="Center" FontSize="14" />
             <!--Row6-->
             <TextBlock Text="Doğrulama Anahtarı" VerticalAlignment="Center" FontSize="14" Grid.Row="6" Grid.Column="0" Margin="0,7"/>
-            <TextBox Name="txtVerificationKey" Grid.Row="6" Grid.Column="2" Width="540" Height="24" HorizontalAlignment="Center" VerticalContentAlignment="Center" FontSize="14" />
+            <TextBox Name="txtVerificationKey" Grid.Row="6" Grid.Column="2" Width="540" Height="24" HorizontalAlignment="Center" IsReadOnly="True" VerticalContentAlignment="Center" FontSize="14" />
             <!--Row7-->
             <TextBlock Text="Lisans Key" FontSize="14" Grid.Row="7" Grid.Column="0" Margin="0,7"/>
-            <RichTextBox Name="txtLicenceKey" Grid.Row="7" Grid.Column="2" Width="540" Height="100"  HorizontalAlignment="Center" VerticalContentAlignment="Center" FontSize="14" VerticalScrollBarVisibility="Auto"/>
+            <TextBox Name="txtLicenceKey" Grid.Row="7" Grid.Column="2" Width="540" Height="100"  HorizontalAlignment="Center" IsReadOnly="True" TextWrapping="Wrap" FontSize="14" VerticalScrollBarVisibility="Auto"/>
             <!--Row8-->
             <Button Name="btnExportFile" Width="200" Margin="0,20" Height="30" Grid.Row="8" Grid.Column="2" Style="{StaticResource BlueButton}" Cursor="Hand" Click="btnExportFile_Click" HorizontalAlignment="Right">
                 <Button.Content>
