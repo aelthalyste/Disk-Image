@@ -280,9 +280,9 @@
     <system:String x:Key="notificationTypes">Bildirim Türleri</system:String>
     <system:String x:Key="critical">Kritik</system:String>
     <system:String x:Key="emailSettings">E-Posta Ayarları</system:String>
-    <system:String x:Key="senderName">Gönderici Adı</system:String>
     <system:String x:Key="newEmailAddress">Yeni E-Posta Adresi</system:String>
     <system:String x:Key="emailAddresses">E-Mail Adresleri</system:String>
+    <system:String x:Key="testing">Test Et</system:String>
 
     <!--MessageBox Info-->
     <system:String x:Key="notNullMB">İlgili alanları lütfen boş geçmeyiniz.</system:String>
