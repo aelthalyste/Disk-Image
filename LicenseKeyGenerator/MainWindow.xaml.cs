@@ -1,9 +1,13 @@
-﻿using System;
+﻿using LicenseKeyGenerator.DataAccess.Abstract;
+using LicenseKeyGenerator.DataAccess.Concrete.EntityFramework;
+using LicenseKeyGenerator.Entities;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -24,23 +28,13 @@ namespace LicenseKeyGenerator
     {
         public string key = "D*G-KaPdSgVkYp3s6v8y/B?E(H+MbQeT";
         private Random random = new Random();
-        private string licenceKeyFile = "Lisans Anahtarları.txt";
+        private ILicenseDal _licenseDal;
 
         public MainWindow()
         {
             InitializeComponent();
-        }
-
-        private void licenseKeyTabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            if (licenseKeyTabControl.SelectedIndex == 2)
-            {
-                txtLicenses.Document.Blocks.Clear();
-                StreamReader streamReader = new StreamReader(licenceKeyFile);
-                var text = streamReader.ReadToEnd();
-                streamReader.Close();
-                txtLicenses.AppendText(text);
-            }
+            _licenseDal = new EfLicenseDal();
+            RefreshLicenses();
         }
 
         #region Title Bar
@@ -63,58 +57,133 @@ namespace LicenseKeyGenerator
             }
         }
 
-        #endregion
-
-        private void btnEncryptt_Click(object sender, RoutedEventArgs e)
+        private void btnNormal_Click(object sender, RoutedEventArgs e)
         {
-            string str = "";
-            DateTime dateTime = DateTime.Now;
-            str = RandomString(8) + "_" + dateTime + "_" + RandomString(8);
-            var encryptedString = EncryptString(key, str);
-            txtResult.Text = encryptedString;
-            txtDecyrpt.Text = DecryptString(key, encryptedString);
-            StreamWriter sw = new StreamWriter(licenceKeyFile, true);
-            sw.WriteLine(dateTime + "\t" + encryptedString);
-            sw.Flush();
-            sw.Close();
+            if (WindowState == WindowState.Maximized)
+                WindowState = WindowState.Normal;
+            else
+                WindowState = WindowState.Maximized;
         }
 
-        public string RandomString(int length)
+        #endregion
+
+        #region Key Oluşturma
+
+        private void btnEncrypt_Click(object sender, RoutedEventArgs e)
         {
-            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-            return new string(Enumerable.Repeat(chars, length)
+            if (IsNullCheck())
+            {
+                License license = new License();
+                if (rbServer.IsChecked.Value)
+                    license.LicenseVersion = VersionType.Server;
+                else if (rbWorkStation.IsChecked.Value)
+                    license.LicenseVersion = VersionType.Workstation;
+                else if (rbSBS.IsChecked.Value)
+                    license.LicenseVersion = VersionType.SBS;
+
+                license.DealerName = txtDealerName.Text;
+                license.CustomerName = txtCustomerName.Text;
+                license.AuthorizedPerson = txtAuthorizedPerson.Text;
+                license.CreatedDate = DateTime.Now;
+                license.SupportEndDate = license.CreatedDate.AddDays(Convert.ToDouble(txtEndDate.Text));
+                license.UniqKey = UniqKeyGenerator();
+
+                var str = license.DealerName + "_" + license.CustomerName + "_" + license.AuthorizedPerson + "_" + license.SupportEndDate + "_" + license.LicenseVersion.ToString() + "_" + license.UniqKey;
+                license.Key = EncryptString(key, str);
+                txtLicenceKey.Text = license.Key;
+                txtVerificationKey.Text = license.UniqKey;
+                _licenseDal.Add(license);
+                RefreshLicenses();
+            }
+            else
+            {
+                MessageBox.Show("LÜTFEN BOŞ ALANLARI DOLDURUNUZ");
+            }
+        }
+
+        private bool IsNullCheck()
+        {
+            if (txtDealerName.Text == "" || txtCustomerName.Text == "" || txtAuthorizedPerson.Text == "" || txtEndDate.Text == "")
+                return false;
+            return true;
+        }
+
+        public string RandomString()
+        {
+            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+            return new string(Enumerable.Repeat(chars, 10)
               .Select(s => s[random.Next(s.Length)]).ToArray());
         }
 
-        public string DecryptString(string key, string cipherText)
+        public string UniqKeyGenerator()
         {
-            try
+            string uniqKey = "";
+            while (true)
             {
-                var iv = Convert.FromBase64String("EEXkANPr+5R9q+XyG7jR5w==");
-                byte[] buffer = Convert.FromBase64String(cipherText);
+                uniqKey = RandomString();
+                var licenseList = _licenseDal.Get(x => x.UniqKey == uniqKey);
+                if (licenseList == null)
+                    return uniqKey;
+            }
+        }
 
-                using (Aes aes = Aes.Create())
+        private void btnExportFile_Click(object sender, RoutedEventArgs e)
+        {
+            using (var dialog = new System.Windows.Forms.FolderBrowserDialog())
+            {
+                var result = dialog.ShowDialog();
+                if (result == System.Windows.Forms.DialogResult.OK)
                 {
-                    aes.Key = Encoding.UTF8.GetBytes(key);
-                    aes.IV = iv;
-                    ICryptoTransform decryptor = aes.CreateDecryptor(aes.Key, aes.IV);
-
-                    using (MemoryStream memoryStream = new MemoryStream(buffer))
-                    {
-                        using (CryptoStream cryptoStream = new CryptoStream((Stream)memoryStream, decryptor, CryptoStreamMode.Read))
-                        {
-                            using (StreamReader streamReader = new StreamReader((Stream)cryptoStream))
-                            {
-                                return streamReader.ReadToEnd();
-                            }
-                        }
-                    }
+                    ExportFile(dialog.SelectedPath, txtVerificationKey.Text, txtLicenceKey.Text);
                 }
             }
-            catch (Exception)
-            {
-                return "fail";
-            }
+        }
+
+        private void ExportFile(string path, string uniqKey, string key)
+        {
+            string filePath = path + @"\" + uniqKey + ".nbkey";
+            FileStream fileStream = new FileStream(filePath, FileMode.OpenOrCreate, FileAccess.Write);
+            StreamWriter streamWriter = new StreamWriter(fileStream);
+            streamWriter.Write(key);
+            streamWriter.Flush();
+            streamWriter.Close();
+            fileStream.Close();
+        }
+
+
+        private void txtEndDate_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            txtEndDate.Text = Regex.Replace(txtEndDate.Text, "[^0-9]+", "");
+            if (txtDealerName.Text == "" || txtCustomerName.Text == "" || txtAuthorizedPerson.Text == "" || txtEndDate.Text == "")
+                btnEncrypt.IsEnabled = false;
+            else
+                btnEncrypt.IsEnabled = true;
+        }
+
+        private void btnClear_Click(object sender, RoutedEventArgs e)
+        {
+            //List<string> konuşma = new List<string>();
+            //konuşma.Add("Eyüp: Ebru Temizlenmesi istiyorlarmış \nEbru:Offff!");
+            //konuşma.Add("Ebru: Eyüp Temizlenmesi istiyorlarmış \nEyüp:Offff!");
+            //konuşma.Add("Ebru: Eyüp sen temizler misin \nEyüp:Offff!");
+            //konuşma.Add("Ebru: Eyüp temizlenmesi gerekliymiş ben sana demiştim şuraya buton koyalım diye  \nEyüp:Offff!");
+            //Random random = new Random(); 
+            //MessageBox.Show(konuşma[Convert.ToInt32(random.Next(0, konuşma.Count - 1))]);
+            txtDealerName.Text = "";
+            txtCustomerName.Text = "";
+            txtAuthorizedPerson.Text = "";
+            txtEndDate.Text = "";
+            txtVerificationKey.Text = "";
+            txtLicenceKey.Text = "";
+            rbWorkStation.IsChecked = true;
+        }
+
+        private void ExportFile_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (txtVerificationKey.Text == "" || txtLicenceKey.Text == "")
+                btnExportFile.IsEnabled = false;
+            else
+                btnExportFile.IsEnabled = true;
         }
 
         public string EncryptString(string key, string plainText)
@@ -151,9 +220,150 @@ namespace LicenseKeyGenerator
             }
         }
 
+        #endregion
+
+        #region Lisans Anahtarı Çöz
+        public string DecryptString(string key, string cipherText)
+        {
+            try
+            {
+                var iv = Convert.FromBase64String("EEXkANPr+5R9q+XyG7jR5w==");
+                byte[] buffer = Convert.FromBase64String(cipherText);
+
+                using (Aes aes = Aes.Create())
+                {
+                    aes.Key = Encoding.UTF8.GetBytes(key);
+                    aes.IV = iv;
+                    ICryptoTransform decryptor = aes.CreateDecryptor(aes.Key, aes.IV);
+
+                    using (MemoryStream memoryStream = new MemoryStream(buffer))
+                    {
+                        using (CryptoStream cryptoStream = new CryptoStream((Stream)memoryStream, decryptor, CryptoStreamMode.Read))
+                        {
+                            using (StreamReader streamReader = new StreamReader((Stream)cryptoStream))
+                            {
+                                return streamReader.ReadToEnd();
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                return "fail";
+            }
+        }
+
         private void btnDecrypt_Click(object sender, RoutedEventArgs e)
         {
             txtDecyrpt2.Text = DecryptString(key, txtEncryptText2.Text);
         }
+        #endregion
+
+        #region Lisans Anahtarları
+
+        private void txtSearchBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            CollectionViewSource.GetDefaultView(listViewLicenses.ItemsSource).Refresh();
+        }
+
+        private bool LicenseFilter(object item)
+        {
+            if (cbLicensesColumn.SelectedIndex == 0)
+            {
+                if (String.IsNullOrEmpty(txtSearchBox.Text))
+                    return true;
+                else
+                    return ((item as License).UniqKey.IndexOf(txtSearchBox.Text, StringComparison.OrdinalIgnoreCase) >= 0);
+            }
+            else if (cbLicensesColumn.SelectedIndex == 1)
+            {
+                if (String.IsNullOrEmpty(txtSearchBox.Text))
+                    return true;
+                else
+                    return ((item as License).DealerName.IndexOf(txtSearchBox.Text, StringComparison.OrdinalIgnoreCase) >= 0);
+            }
+            else if (cbLicensesColumn.SelectedIndex == 2)
+            {
+                if (String.IsNullOrEmpty(txtSearchBox.Text))
+                    return true;
+                else
+                    return ((item as License).CustomerName.IndexOf(txtSearchBox.Text, StringComparison.OrdinalIgnoreCase) >= 0);
+            }
+            else if (cbLicensesColumn.SelectedIndex == 3)
+            {
+                if (String.IsNullOrEmpty(txtSearchBox.Text))
+                    return true;
+                else
+                    return ((item as License).AuthorizedPerson.IndexOf(txtSearchBox.Text, StringComparison.OrdinalIgnoreCase) >= 0);
+            }
+            else if (cbLicensesColumn.SelectedIndex == 4)
+            {
+                if (String.IsNullOrEmpty(txtSearchBox.Text))
+                    return true;
+                else
+                    return ((item as License).CreatedDate.ToString().IndexOf(txtSearchBox.Text, StringComparison.OrdinalIgnoreCase) >= 0);
+            }
+            else if (cbLicensesColumn.SelectedIndex == 5)
+            {
+                if (String.IsNullOrEmpty(txtSearchBox.Text))
+                    return true;
+                else
+                    return ((item as License).SupportEndDate.ToString().IndexOf(txtSearchBox.Text, StringComparison.OrdinalIgnoreCase) >= 0);
+            }
+            else if (cbLicensesColumn.SelectedIndex == 6)
+            {
+                if (String.IsNullOrEmpty(txtSearchBox.Text))
+                    return true;
+                else
+                    return ((item as License).LicenseVersion.ToString().IndexOf(txtSearchBox.Text, StringComparison.OrdinalIgnoreCase) >= 0);
+            }
+            else
+            {
+                if (String.IsNullOrEmpty(txtSearchBox.Text))
+                    return true;
+                else
+                    return ((item as License).Key.IndexOf(txtSearchBox.Text, StringComparison.OrdinalIgnoreCase) >= 0);
+            }
+
+        }
+
+        private void cbLicensesColumn_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter)
+            {
+                txtSearchBox.Focus();
+            }
+        }
+
+        private void RefreshLicenses()
+        {
+            listViewLicenses.ItemsSource = _licenseDal.GetList();
+            CollectionView view = (CollectionView)CollectionViewSource.GetDefaultView(listViewLicenses.ItemsSource);
+            view.Filter = LicenseFilter;
+        }
+
+        private void listViewLicenses_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            if (listViewLicenses.SelectedIndex != -1)
+            {
+                var licenses = (License)listViewLicenses.SelectedItem;
+                KeyInfoWindow keyInfoWindow = new KeyInfoWindow(licenses);
+                keyInfoWindow.ShowDialog();
+            }
+        }
+
+        private void btnShowMore_Click(object sender, RoutedEventArgs e)
+        {
+            if (listViewLicenses.SelectedIndex != -1)
+            {
+                var licenses = (License)listViewLicenses.SelectedItem;
+                KeyInfoWindow keyInfoWindow = new KeyInfoWindow(licenses);
+                keyInfoWindow.ShowDialog();
+            }
+        }
+
+        #endregion
+
     }
 }

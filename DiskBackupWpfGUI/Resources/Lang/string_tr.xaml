@@ -268,6 +268,21 @@
     <system:String x:Key="sec">sn</system:String>
     <system:String x:Key="ms">ms</system:String>
     <system:String x:Key="authentication">Doğrulama</system:String>
+    <system:String x:Key="licenseStatus">Lisans Durumu</system:String>
+    <system:String x:Key="dealerName">Bayi Adı</system:String>
+    <system:String x:Key="customerName">Müşteri Adı</system:String>
+    <system:String x:Key="authorizedPerson">Yetkili Kişi</system:String>
+    <system:String x:Key="version">Versiyon</system:String>
+    <system:String x:Key="supportEndDate">Destek Bitiş Tarihi</system:String>
+    <system:String x:Key="verificationKey">Doğrulama Anahtarı</system:String>
+    <system:String x:Key="addFile">Dosya Ekle</system:String>
+    <system:String x:Key="emailNotification">E-Posta Bildirimi</system:String>
+    <system:String x:Key="notificationTypes">Bildirim Türleri</system:String>
+    <system:String x:Key="critical">Kritik</system:String>
+    <system:String x:Key="emailSettings">E-Posta Ayarları</system:String>
+    <system:String x:Key="newEmailAddress">Yeni E-Posta Adresi</system:String>
+    <system:String x:Key="emailAddresses">E-Mail Adresleri</system:String>
+    <system:String x:Key="testing">Test Et</system:String>
 
     <!--MessageBox Info-->
     <system:String x:Key="notNullMB">İlgili alanları lütfen boş geçmeyiniz.</system:String>

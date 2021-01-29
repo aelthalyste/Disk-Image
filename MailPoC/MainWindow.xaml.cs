@@ -47,6 +47,7 @@ namespace MailPoC
 
             using (var message = new MailMessage("diskbackup@narbulut.com", txtTo.Text)
             {
+                IsBodyHtml = true,
                 Subject = txtSubject.Text,
                 Body = txtContent.Text
             })
