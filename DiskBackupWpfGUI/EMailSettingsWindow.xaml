@@ -77,7 +77,7 @@
                 </Button.Content>
             </Button>
 
-            <Button Name="btnTesting" ToolTip="{DynamicResource testing}" Click="btnValidateNAS_Click" Grid.Row="2" Width="100" Height="25" HorizontalAlignment="Right" Style="{StaticResource WhiteButton}" Grid.Column="1">
+            <Button Name="btnTesting" ToolTip="{DynamicResource testing}" Grid.Row="2" Width="100" Height="25" HorizontalAlignment="Right" Style="{StaticResource WhiteButton}" Grid.Column="1">
                 <Button.Content>
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="{DynamicResource testing}" VerticalAlignment="Center" Margin="5,0"/>

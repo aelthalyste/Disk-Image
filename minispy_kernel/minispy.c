@@ -23,6 +23,7 @@ Environment:
 #include <Ntstrsafe.h>
 #include <string.h>
 #define DbgPrint
+
 //
 //  Global variables
 //
@@ -1036,6 +1037,9 @@ Return Value:
 BOOLEAN
 NarSubMemoryExists(const void* mem1, const void* mem2, unsigned int mem1len, unsigned int mem2len) {
     
+    if (mem1 == 0 || mem2 == 0) return FALSE;
+    if (mem2len > mem1len)      return FALSE;
+
     unsigned char* S1 = (unsigned char*)mem1;
     unsigned char* S2 = (unsigned char*)mem2;
     
@@ -1043,7 +1047,7 @@ NarSubMemoryExists(const void* mem1, const void* mem2, unsigned int mem1len, uns
     int k = 0;
     int j = 0;
     
-    while (k < mem1len && j < mem2len) {
+    while (k < mem1len - mem2len && j < mem2len) {
         
         if (S1[k] == S2[j]) {
             
@@ -1220,7 +1224,8 @@ const UNICODE_STRING IgnorePrefixTable[] = {
     RTL_CONSTANT_STRING(L".tib.metadata"),
     RTL_CONSTANT_STRING(L".tib"),
     RTL_CONSTANT_STRING(L".pf"),
-    RTL_CONSTANT_STRING(L".cookie")
+    RTL_CONSTANT_STRING(L".cookie"),
+    RTL_CONSTANT_STRING(L".nlfx")
 };
 
 
@@ -1231,7 +1236,6 @@ const UNICODE_STRING IgnoreMidStringTable[] = {
     RTL_CONSTANT_STRING(L"\\AppData\\Local\\Opera Software"),
     RTL_CONSTANT_STRING(L"\\AppData\\Local\\Mozilla\\Firefox\\Profiles"),
     RTL_CONSTANT_STRING(L"\\AppData\\Local\\Microsoft\\Windows\\INetCache\\IE"),
-    RTL_CONSTANT_STRING(L"NAR_LOG_FILE_")
 };
 
 
@@ -1283,7 +1287,7 @@ Return Value:
     UNREFERENCED_PARAMETER(nameToUse);
     UNREFERENCED_PARAMETER(CompletionContext);
     
-   
+
 
     // If system shutdown requested, dont bother to log changes
     if (Data->Iopb->MajorFunction == IRP_MJ_SHUTDOWN) {
@@ -1362,7 +1366,7 @@ Return Value:
     
 #if 1
     
-    void *UnicodeStrBuffer = 0;
+    unsigned char UnicodeStrBuffer[NAR_LOOKASIDE_SIZE];
     
     if (FltObjects->FileObject != NULL) {
         
@@ -1408,16 +1412,24 @@ Return Value:
             }
 #endif
 
-            UNICODE_STRING UniStr;
-
-            UnicodeStrBuffer = ExAllocatePoolWithTag(PagedPool, NAR_LOOKASIDE_SIZE, NAR_TAG);
-            if (UnicodeStrBuffer == NULL) {
-                DbgPrint("Couldnt allocate memory for unicode string\n");
-                return FLT_PREOP_SUCCESS_NO_CALLBACK;
+            for (size_t i = 0; i < sizeof(IgnorePrefixTable) / sizeof(IgnorePrefixTable[0]); i++) {
+                if (RtlSuffixUnicodeString(&IgnorePrefixTable[i], &nameInfo->Name, FALSE)) {
+                    goto NAR_PREOP_FAILED_END;
+                }
             }
 
-            RtlInitEmptyUnicodeString(&UniStr, UnicodeStrBuffer, NAR_LOOKASIDE_SIZE);
+            for (size_t i = 0; i < sizeof(IgnoreMidStringTable) / sizeof(IgnoreMidStringTable[0]); i++) {
+                if (NarSubMemoryExists(nameInfo->Name.Buffer, IgnoreMidStringTable[i].Buffer, nameInfo->Name.Length, IgnoreMidStringTable[i].Length)) {
+                    goto NAR_PREOP_FAILED_END;
+                }
+            }
 
+           
+
+            UNICODE_STRING UniStr;
+
+#if 0
+            RtlInitEmptyUnicodeString(&UniStr, UnicodeStrBuffer, NAR_LOOKASIDE_SIZE);
 
             //Suffix area
             RtlUnicodeStringPrintf(&UniStr, L"$Mft");
@@ -1497,7 +1509,7 @@ Return Value:
             if (NarSubMemoryExists(nameInfo->Name.Buffer, UniStr.Buffer, nameInfo->Name.Length, UniStr.Length)) {
                 goto NAR_PREOP_FAILED_END;
             }
-            
+#endif
 
 
 
@@ -1509,8 +1521,8 @@ Return Value:
             STARTING_VCN_INPUT_BUFFER StartingInputVCNBuffer;
             RETRIEVAL_POINTERS_BUFFER ClusterMapBuffer;
             
-            DWORD WholeFileMapBufferSize = sizeof(RETRIEVAL_POINTERS_BUFFER) * 128;
-            RETRIEVAL_POINTERS_BUFFER* WholeFileMapBuffer = (RETRIEVAL_POINTERS_BUFFER*)ExAllocatePoolWithTag(PagedPool, WholeFileMapBufferSize, NAR_TAG);
+            DWORD WholeFileMapBufferSize = sizeof(UnicodeStrBuffer);// sizeof(RETRIEVAL_POINTERS_BUFFER) * 128;
+            RETRIEVAL_POINTERS_BUFFER* WholeFileMapBuffer = &UnicodeStrBuffer[0]; // (RETRIEVAL_POINTERS_BUFFER*)ExAllocatePoolWithTag(PagedPool, WholeFileMapBufferSize, NAR_TAG);
             
             
             ClusterMapBuffer.StartingVcn.QuadPart = 0;
@@ -1562,7 +1574,7 @@ Return Value:
             if (status != STATUS_END_OF_FILE && !NT_SUCCESS(status)) {
                 DbgPrint("FltFsControl failed with code %i,  file name %wZ\n", status, &nameInfo->Name);
                 
-                ExFreePoolWithTag(WholeFileMapBuffer, NAR_TAG);
+                //ExFreePoolWithTag(WholeFileMapBuffer, NAR_TAG);
                 
                 goto NAR_PREOP_FAILED_END;
             }
@@ -1679,7 +1691,7 @@ Return Value:
                 
             }
             
-            ExFreePoolWithTag(WholeFileMapBuffer, NAR_TAG);
+            //ExFreePoolWithTag(WholeFileMapBuffer, NAR_TAG);
             
             
             // TODO(BATUHAN): try one loop via KeTestSpinLock, to fast check if volume is available for fast access, if it is available and matches GUID, immidiately flush all regions and return, if not available test higher elements in list.
@@ -1778,16 +1790,10 @@ Return Value:
     
 #endif
 
-    if (UnicodeStrBuffer != 0) {
-        ExFreePoolWithTag(UnicodeStrBuffer, NAR_TAG);
-    }
 
     return FLT_PREOP_SUCCESS_NO_CALLBACK;
 
 NAR_PREOP_FAILED_END:
-    if (UnicodeStrBuffer != 0) {
-        ExFreePoolWithTag(UnicodeStrBuffer, NAR_TAG);
-    }
 
     return FLT_PREOP_SUCCESS_NO_CALLBACK;
     
