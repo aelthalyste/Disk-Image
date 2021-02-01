@@ -1,8 +1,10 @@
 ﻿using LicenseKeyGenerator.DataAccess.Abstract;
 using LicenseKeyGenerator.DataAccess.Concrete.EntityFramework;
 using LicenseKeyGenerator.Entities;
+using LicenseKeyGenerator.Utils;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
@@ -18,6 +20,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using License = LicenseKeyGenerator.Entities.License; //Column sort işlemini yapmak için gerekli olan "using System.ComponentModel;" eklenince ComponentModel'in altında da license sınıfı olduğu için eklememiz gerekti 
 
 namespace LicenseKeyGenerator
 {
@@ -256,7 +259,7 @@ namespace LicenseKeyGenerator
 
         private void btnDecrypt_Click(object sender, RoutedEventArgs e)
         {
-            txtDecyrpt2.Text = DecryptString(key, txtEncryptText2.Text);
+            txtDecyrptedLicenseKey.Text = DecryptString(key, txtLicenseKeyDec.Text);
         }
         #endregion
 
@@ -365,5 +368,28 @@ namespace LicenseKeyGenerator
 
         #endregion
 
+        private GridViewColumnHeader listViewLicensesCol = null;
+        private SortAdorner listViewLicensesAdorner = null;
+
+        private void listviewLicensesColumnSort_Click(object sender, RoutedEventArgs e)
+        {
+            GridViewColumnHeader column = (sender as GridViewColumnHeader);
+            string sortBy = column.Tag.ToString();
+            if (listViewLicensesCol != null)
+            {
+                AdornerLayer.GetAdornerLayer(listViewLicensesCol).Remove(listViewLicensesAdorner);
+                listViewLicenses.Items.SortDescriptions.Clear();
+            }
+
+            ListSortDirection newDir = ListSortDirection.Ascending;
+            if (listViewLicensesCol == column && listViewLicensesAdorner.Direction == newDir)
+                newDir = ListSortDirection.Descending;
+
+            listViewLicensesCol = column;
+            listViewLicensesAdorner = new SortAdorner(listViewLicensesCol, newDir);
+            AdornerLayer.GetAdornerLayer(listViewLicensesCol).Add(listViewLicensesAdorner);
+            listViewLicenses.Items.SortDescriptions.Add(new SortDescription(sortBy, newDir));
+
+        }
     }
 }

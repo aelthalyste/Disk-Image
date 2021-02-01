@@ -192,8 +192,8 @@
                                 <TextBlock Text=":" VerticalAlignment="Center" HorizontalAlignment="Center" FontSize="14" Grid.Row="0" Grid.Column="1" />
                                 <TextBlock Text=":" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="14" Grid.Row="2" Grid.Column="1" />
 
-                                <TextBox Name="txtEncryptText2" Grid.Row="0" Grid.Column="2" Width="540" Height="24"  HorizontalAlignment="Center" VerticalContentAlignment="Center" FontSize="14" />
-                                <TextBox Name="txtDecyrpt2" Grid.Row="2" Grid.Column="2" Width="540" Height="24" HorizontalAlignment="Center" VerticalContentAlignment="Center" FontSize="14" />
+                                <TextBox Name="txtLicenseKeyDec" Grid.Row="0" Grid.Column="2" Width="540" Height="24"  HorizontalAlignment="Center" VerticalContentAlignment="Center" FontSize="14" />
+                                <TextBox Name="txtDecyrptedLicenseKey" Grid.Row="2" Grid.Column="2" Width="540" Height="24" HorizontalAlignment="Center" VerticalContentAlignment="Center" FontSize="14" />
 
                                 <Button Name="btnDecrypt" Width="200" Height="30" Grid.Row="3" Grid.Column="2" Style="{StaticResource BlueButton}" Cursor="Hand" Click="btnDecrypt_Click">
                                     <Button.Content>
@@ -243,6 +243,7 @@
                             <ComboBoxItem Content="Lisans Versiyonu"/>
                             <ComboBoxItem Content="Key :D"/>
                         </ComboBox>
+                        
                         <Button Name="btnShowMore" Width="200" HorizontalAlignment="Right" Height="30"  Style="{StaticResource BlueButton}" Cursor="Hand" Margin="0,0,5,0" Click="btnShowMore_Click">
                             <Button.Content>
                                 <StackPanel Orientation="Horizontal">
@@ -258,12 +259,14 @@
                             </Button.Content>
                         </Button>
                     </DockPanel>
-                    
 
                     <ListView Name="listViewLicenses" Grid.Row="1" Margin="5" Grid.ColumnSpan="2" MouseDoubleClick="listViewLicenses_MouseDoubleClick">
                         <ListView.View>
                             <GridView>
-                                <GridViewColumn Header="Uniq Key" Width="100">
+                                <GridViewColumn Width="100">
+                                    <GridViewColumn.Header>
+                                        <GridViewColumnHeader Content="Uniq Key" Tag="UniqKey" Click="listviewLicensesColumnSort_Click"/>
+                                    </GridViewColumn.Header>
                                     <GridViewColumn.CellTemplate>
                                         <DataTemplate>
                                             <StackPanel Orientation="Horizontal">
@@ -272,7 +275,10 @@
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>
                                 </GridViewColumn>
-                                <GridViewColumn Header="Bayi Adı" Width="110">
+                                <GridViewColumn Width="110">
+                                    <GridViewColumn.Header>
+                                        <GridViewColumnHeader Content="Bayi Adı" Tag="DealerName" Click="listviewLicensesColumnSort_Click"/>
+                                    </GridViewColumn.Header>
                                     <GridViewColumn.CellTemplate>
                                         <DataTemplate>
                                             <StackPanel Orientation="Horizontal">
@@ -281,7 +287,10 @@
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>
                                 </GridViewColumn>
-                                <GridViewColumn Header="Müşteri Adı" Width="110">
+                                <GridViewColumn Width="110">
+                                    <GridViewColumn.Header>
+                                        <GridViewColumnHeader Content="Müşteri Adı" Tag="CustomerName" Click="listviewLicensesColumnSort_Click"/>
+                                    </GridViewColumn.Header>
                                     <GridViewColumn.CellTemplate>
                                         <DataTemplate>
                                             <StackPanel Orientation="Horizontal">
@@ -290,7 +299,10 @@
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>
                                 </GridViewColumn>
-                                <GridViewColumn Header="Yetkili Kişi" Width="110">
+                                <GridViewColumn Width="110">
+                                    <GridViewColumn.Header>
+                                        <GridViewColumnHeader Content="Yetkili Kişi" Tag="AuthorizedPerson" Click="listviewLicensesColumnSort_Click"/>
+                                    </GridViewColumn.Header>
                                     <GridViewColumn.CellTemplate>
                                         <DataTemplate>
                                             <StackPanel Orientation="Horizontal">
@@ -299,7 +311,10 @@
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>
                                 </GridViewColumn>
-                                <GridViewColumn Header="Başlangıç Tarihi" Width="110">
+                                <GridViewColumn Width="110">
+                                    <GridViewColumn.Header>
+                                        <GridViewColumnHeader Content="Başlangıç Tarihi" Tag="CreatedDate" Click="listviewLicensesColumnSort_Click"/>
+                                    </GridViewColumn.Header>
                                     <GridViewColumn.CellTemplate>
                                         <DataTemplate>
                                             <StackPanel Orientation="Horizontal">
@@ -308,7 +323,10 @@
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>
                                 </GridViewColumn>
-                                <GridViewColumn Header="Bitiş Tarihi" Width="110">
+                                <GridViewColumn Width="110">
+                                    <GridViewColumn.Header>
+                                        <GridViewColumnHeader Content="Bitiş Tarihi" Tag="SupportEndDate" Click="listviewLicensesColumnSort_Click"/>
+                                    </GridViewColumn.Header>
                                     <GridViewColumn.CellTemplate>
                                         <DataTemplate>
                                             <StackPanel Orientation="Horizontal">
@@ -317,7 +335,10 @@
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>
                                 </GridViewColumn>
-                                <GridViewColumn Header="Lisans Versiyonu" Width="90">
+                                <GridViewColumn Width="90">
+                                    <GridViewColumn.Header>
+                                        <GridViewColumnHeader Content="Lisans Versiyonu" Tag="LicenseVersion" Click="listviewLicensesColumnSort_Click"/>
+                                    </GridViewColumn.Header>
                                     <GridViewColumn.CellTemplate>
                                         <DataTemplate>
                                             <StackPanel Orientation="Horizontal">
@@ -326,7 +347,10 @@
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>
                                 </GridViewColumn>
-                                <GridViewColumn Header="Key" Width="220">
+                                <GridViewColumn Width="220">
+                                    <GridViewColumn.Header>
+                                        <GridViewColumnHeader Content="Key" Tag="Key" Click="listviewLicensesColumnSort_Click"/>
+                                    </GridViewColumn.Header>
                                     <GridViewColumn.CellTemplate>
                                         <DataTemplate>
                                             <StackPanel Orientation="Horizontal">

@@ -2817,9 +2817,6 @@ namespace DiskBackupWpfGUI
             listViewTasks.Items.SortDescriptions.Add(new SortDescription(sortBy, newDir));
         }
 
-
-
-
         #endregion
 
     }
