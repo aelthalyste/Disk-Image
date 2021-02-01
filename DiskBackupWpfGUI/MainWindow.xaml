@@ -14,9 +14,9 @@
         BorderBrush="#194771" BorderThickness="1"
         Height="730" Width="1294"
         ResizeMode="CanMinimize">
-    <Window.Resources>
+    <!--<Window.Resources>
         <ResourceDictionary Source="Resources\Lang\string_tr.xaml"/>
-    </Window.Resources>
+    </Window.Resources>-->
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="30"/>
@@ -1429,12 +1429,12 @@
                             <TextBlock Text="{DynamicResource verificationKey}" FontSize="14" Grid.Column="0" Grid.Row="6"/>
 
                             <TextBlock Name="txtLicenseStatu" Text="{DynamicResource active}" FontSize="14" Grid.Column="1" Grid.Row="0"/>
-                            <TextBlock Name="txtdealerName" Text="Demo" FontSize="14" Grid.Column="1" Grid.Row="1"/>
-                            <TextBlock Name="txtcustomerName" Text="Demo" FontSize="14" Grid.Column="1" Grid.Row="2"/>
-                            <TextBlock Name="txtauthorizedPerson" Text="demo@demo.com" FontSize="14" Grid.Column="1" Grid.Row="3"/>
+                            <TextBlock Name="txtDealerName" Text="Demo" FontSize="14" Grid.Column="1" Grid.Row="1"/>
+                            <TextBlock Name="txtCustomerName" Text="Demo" FontSize="14" Grid.Column="1" Grid.Row="2"/>
+                            <TextBlock Name="txtAuthorizedPerson" Text="demo@demo.com" FontSize="14" Grid.Column="1" Grid.Row="3"/>
                             <TextBlock Name="txtVersionType" Text="Demo" FontSize="14" Grid.Column="1" Grid.Row="4"/>
                             <TextBlock Name="txtExpireDate" Text="Demo" FontSize="14" Grid.Column="1" Grid.Row="5"/> <!--Düşünücez-->
-                            <TextBlock Name="txtverificationKey" Text="Demo" FontSize="14" Grid.Column="1" Grid.Row="6"/>
+                            <TextBlock Name="txtVerificationKey" Text="Demo" FontSize="14" Grid.Column="1" Grid.Row="6"/>
                         </Grid>
 
                         <Grid Grid.Row="0" Grid.Column="1" Margin="0,10">
@@ -1619,13 +1619,12 @@
                             </Border>
                         </DockPanel>
 
-                        <Image Source="Resources/Icon/logo_big.png" Grid.ColumnSpan="2" Grid.Row="2"></Image>
-                        
-                        <GroupBox Grid.Row="2" Grid.ColumnSpan="2" Margin="15,10,15,10" BorderBrush="#9ACFEA" BorderThickness="2" FontSize="14" Visibility="Collapsed">
+                        <StackPanel Background="LightGray" Opacity="0.6" Grid.Row="2" Grid.ColumnSpan="2" Margin="17,22,17,12"/>
+                        <GroupBox Grid.Row="2" Grid.ColumnSpan="2" Margin="15,10,15,10" BorderBrush="#9ACFEA" BorderThickness="2" FontSize="14" IsEnabled="False">
                             <GroupBox.Header>
                                 <TextBlock Text="{DynamicResource bandwithSetting}" Foreground="Black" FontWeight="Bold"/>
                             </GroupBox.Header>
-                            <StackPanel Margin="10,20,0,0">
+                            <StackPanel Margin="10,20,0,0" >
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition/>

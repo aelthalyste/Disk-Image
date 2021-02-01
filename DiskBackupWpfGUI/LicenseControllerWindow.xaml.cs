@@ -27,6 +27,9 @@ namespace DiskBackupWpfGUI
     {
         private bool _windowType;
         public bool _validate = false;
+
+        private string _key = "D*G-KaPdSgVkYp3s6v8y/B?E(H+MbQeT";
+
         private readonly IConfigurationDataDal _configurationDataDal;
         private readonly ILogger _logger;
 
@@ -100,21 +103,51 @@ namespace DiskBackupWpfGUI
             }
             else // lisans seçili
             {
-                if (DecryptLicenseKey("D*G-KaPdSgVkYp3s6v8y/B?E(H+MbQeT", txtLicenseKey.Text).Equals("fail"))
+                var resultDecryptLicenseKey = DecryptLicenseKey(_key, txtLicenseKey.Text);
+                if (resultDecryptLicenseKey.Equals("fail"))
                 {
                     MessageBox.Show(Resources["LicenseKeyFailMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
                 }
                 else
                 {
-                    _logger.Information("Lisans aktifleştirildi. Lisans Anahtarı: " + txtLicenseKey.Text);
-                    key.SetValue("UploadDate", DateTime.Now);
-                    key.SetValue("ExpireDate", "");
-                    key.SetValue("Type", 2606);
-                    key.SetValue("License", txtLicenseKey.Text);
-                    _validate = true;
-                    Close();
+                    if (CheckOSVersion(resultDecryptLicenseKey))
+                    {
+                        _logger.Information("Lisans aktifleştirildi. Lisans Anahtarı: " + txtLicenseKey.Text);
+                        key.SetValue("UploadDate", DateTime.Now);
+                        key.SetValue("ExpireDate", "");
+                        key.SetValue("Type", 2606);
+                        key.SetValue("License", txtLicenseKey.Text);
+                        _validate = true;
+                        Close();
+                    }
+                    else
+                    {
+                        MessageBox.Show(Resources["LicenseKeyOSFailMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+                    }
                 }
             }
+        }
+
+        private bool CheckOSVersion(string resultDecryptLicenseKey)
+        {
+            RegistryKey registryKey = Registry.LocalMachine.OpenSubKey("Software\\Microsoft\\Windows NT\\CurrentVersion");
+            var OSName = (string)registryKey.GetValue("ProductName");
+            var splitLicenseKey = resultDecryptLicenseKey.Split('_');
+
+            if (splitLicenseKey[5].Equals("SBS") && OSName.Contains("Small Business Server"))
+            {
+                return true;
+            }
+            else if (splitLicenseKey[5].Equals("Server") && OSName.Contains("Server"))
+            {
+                return true;
+            }
+            else if (splitLicenseKey[5].Equals("Workstation") && OSName.Contains("Windows"))
+            {
+                return true;
+            }
+
+            return false;
         }
 
         private string DecryptLicenseKey(string key, string cipherLicenseKey)
