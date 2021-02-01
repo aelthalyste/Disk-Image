@@ -302,6 +302,8 @@ namespace DiskBackupWpfGUI
             txtAuthorizedPerson.Text = splitLicenseKey[2];
             txtVersionType.Text = splitLicenseKey[5];
             txtExpireDate.Text = Convert.ToDateTime(splitLicenseKey[4], CultureInfo.CreateSpecificCulture("tr-TR")).ToString();
+            txtExpireDateDays.Text = (Convert.ToDateTime(splitLicenseKey[4], CultureInfo.CreateSpecificCulture("tr-TR")) - DateTime.Now).Days.ToString();
+            stackSupportDate.Visibility = Visibility.Visible;
             txtVerificationKey.Text = splitLicenseKey[6];
         }
 
@@ -2268,7 +2270,32 @@ namespace DiskBackupWpfGUI
 
         private void btnValidateLicense_Click(object sender, RoutedEventArgs e)
         {
-            var resultDecryptLicenseKey = DecryptLicenseKey(_key, txtLicenseKey.Text);
+            ValidateLicenseKey(txtLicenseKey.Text);
+        }
+
+        private void btnAddLicenseFile_Click(object sender, RoutedEventArgs e)
+        {
+            using (var dialog = new System.Windows.Forms.OpenFileDialog())
+            {
+                dialog.Filter = "Narbulut Key Dosyası |*.nbkey";
+                dialog.ValidateNames = false;
+                dialog.CheckFileExists = false;
+                dialog.CheckPathExists = true;
+                dialog.Multiselect = false;
+
+                var result = dialog.ShowDialog();
+                if (result == System.Windows.Forms.DialogResult.OK)
+                {
+                    string nbkeyPath = dialog.FileName;
+                    StreamReader sr = new StreamReader(nbkeyPath);
+                    ValidateLicenseKey(sr.ReadToEnd());
+                }
+            }
+        }
+
+        private void ValidateLicenseKey(string licenseKey)
+        {
+            var resultDecryptLicenseKey = DecryptLicenseKey(_key, licenseKey);
 
             if (resultDecryptLicenseKey.Equals("fail"))
             {
@@ -2280,12 +2307,12 @@ namespace DiskBackupWpfGUI
 
                 if (CheckOSVersion(splitLicenseKey[5]))
                 {
-                    _logger.Information("Lisans aktifleştirildi. Lisans Anahtarı: " + txtLicenseKey.Text);
+                    _logger.Information("Lisans aktifleştirildi. Lisans Anahtarı: " + licenseKey);
                     var key = Registry.LocalMachine.OpenSubKey("SOFTWARE\\NarDiskBackup", true);
                     key.SetValue("UploadDate", DateTime.Now);
                     key.SetValue("ExpireDate", "");
                     key.SetValue("Type", 2606);
-                    key.SetValue("License", txtLicenseKey.Text);
+                    key.SetValue("License", licenseKey);
                     stackDemo.Visibility = Visibility.Collapsed;
                     txtLicenseKey.Text = "";
                     LicenseInformationWrite(splitLicenseKey);
@@ -2296,7 +2323,6 @@ namespace DiskBackupWpfGUI
                 }
             }
         }
-
 
         #region E-Mail Ayarlar kutusu
 
@@ -2883,6 +2909,7 @@ namespace DiskBackupWpfGUI
         }
 
         #endregion
+
 
     }
 }
