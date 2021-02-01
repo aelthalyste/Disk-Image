@@ -54,6 +54,14 @@ namespace LicenseKeyGenerator
 
         private void MyTitleBar_MouseDown(object sender, MouseButtonEventArgs e)
         {
+            if (e.ClickCount >= 2)
+            {
+                if (WindowState == WindowState.Maximized)
+                    WindowState = WindowState.Normal;
+                else
+                    WindowState = WindowState.Maximized;
+            }
+
             if (e.ChangedButton == MouseButton.Left)
             {
                 DragMove();
@@ -91,7 +99,7 @@ namespace LicenseKeyGenerator
                 license.SupportEndDate = license.CreatedDate.AddDays(Convert.ToDouble(txtEndDate.Text));
                 license.UniqKey = UniqKeyGenerator();
 
-                var str = license.DealerName + "_" + license.CustomerName + "_" + license.AuthorizedPerson + "_" + license.SupportEndDate + "_" + license.LicenseVersion.ToString() + "_" + license.UniqKey;
+                var str = license.DealerName + "_" + license.CustomerName + "_" + license.AuthorizedPerson + "_" + license.CreatedDate + "_" + license.SupportEndDate + "_" + license.LicenseVersion.ToString() + "_" + license.UniqKey;
                 license.Key = EncryptString(key, str);
                 txtLicenceKey.Text = license.Key;
                 txtVerificationKey.Text = license.UniqKey;
