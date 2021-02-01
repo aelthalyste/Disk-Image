@@ -198,7 +198,7 @@ namespace DiskBackupWpfGUI
                         txtLicenseNotActive.Visibility = Visibility.Collapsed;
                         LicenseDemoTextWrite(key, result);
                     }
-                    else
+                    else // lisans
                     {
                         txtLicenseNotActive.Visibility = Visibility.Collapsed;
                         txtLicenseStatu.Text = Resources["active"].ToString();
@@ -269,14 +269,12 @@ namespace DiskBackupWpfGUI
             stackDemo.Visibility = Visibility.Visible;
             //stackLicenseController.Visibility = Visibility.Visible;
             txtLicenseStatu.Text = Resources["demo"].ToString();
-            txtExpireDate.Text = key.GetValue("ExpireDate").ToString();
         }
 
         private void LicenseNotActiveTextWrite(RegistryKey key)
         {
             txtLicenseNotActive.Visibility = Visibility.Visible;
             txtLicenseStatu.Text = Resources["inactive"].ToString();
-            txtExpireDate.Text = key.GetValue("ExpireDate").ToString();
             FixBrokenRegistry(); // registry ile oynanmış
         }
 
