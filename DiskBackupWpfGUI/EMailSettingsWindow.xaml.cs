@@ -1,8 +1,10 @@
 ﻿using DiskBackup.DataAccess.Abstract;
+using DiskBackup.Entities.Concrete;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -21,12 +23,16 @@ namespace DiskBackupWpfGUI
     public partial class EMailSettingsWindow : Window
     {
         private readonly IConfigurationDataDal _configurationDataDal;
+        private IEmailInfoDal _emailInfoDal;
 
-        public EMailSettingsWindow(IConfigurationDataDal configurationDataDal)
+        public EMailSettingsWindow(IConfigurationDataDal configurationDataDal, IEmailInfoDal emailInfoDal)
         {
             InitializeComponent();
+            _emailInfoDal = emailInfoDal;
             _configurationDataDal = configurationDataDal;
             SetApplicationLanguage(_configurationDataDal.Get(x => x.Key == "lang").Value);
+
+            listBoxEmailAddresses.ItemsSource = _emailInfoDal.GetList();
         }
 
         #region Title Bar
@@ -48,6 +54,50 @@ namespace DiskBackupWpfGUI
             }
         }
         #endregion
+
+
+        private void btnEmailAdd_Click(object sender, RoutedEventArgs e)
+        {
+            AddEmail();
+        }
+
+        private void btnEmailDelete_Click(object sender, RoutedEventArgs e)
+        {
+            if (listBoxEmailAddresses.SelectedIndex > -1)
+            {
+                _emailInfoDal.Delete(_emailInfoDal.Get(x => x.EmailAddress == ((EmailInfo)listBoxEmailAddresses.SelectedItem).EmailAddress));
+                listBoxEmailAddresses.ItemsSource = _emailInfoDal.GetList();
+            }
+        }
+
+        private void AddEmail()
+        {
+            if (Regex.IsMatch(txtNewEmailAddress.Text, @"^[a-zA-Z][\w\.-]*[a-zA-Z0-9]@[a-zA-Z0-9][\w\.-]*[a-zA-Z0-9]\.[a-zA-Z][a-zA-Z\.]*[a-zA-Z]$"))
+            {
+                var resultEmailInfo = _emailInfoDal.Add(new EmailInfo { EmailAddress = txtNewEmailAddress.Text });
+                if (resultEmailInfo != null)
+                {
+                    txtNewEmailAddress.Text = "";
+                    listBoxEmailAddresses.ItemsSource = _emailInfoDal.GetList();
+                }
+                else
+                {
+                    MessageBox.Show(Resources["addFailMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+            else
+            {
+                MessageBox.Show(Resources["EmailFailMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void txtNewEmailAddress_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter)
+            {
+                AddEmail();
+            }
+        }
 
         public void SetApplicationLanguage(string option)
         {

@@ -329,5 +329,6 @@
     <system:String x:Key="closeServiceErrorMB">The service appears to be down, please restart the service and try again.</system:String>
     <system:String x:Key="LicenseKeyFailMB">Invalid license key.</system:String>
     <system:String x:Key="LicenseKeyOSFailMB">Your license and operating system version do not match.</system:String>
+    <system:String x:Key="EmailFailMB">Please enter a valid email address.</system:String>
 
 </ResourceDictionary>

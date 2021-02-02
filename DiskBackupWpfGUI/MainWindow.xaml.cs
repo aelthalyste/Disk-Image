@@ -302,7 +302,11 @@ namespace DiskBackupWpfGUI
             txtAuthorizedPerson.Text = splitLicenseKey[2];
             txtVersionType.Text = splitLicenseKey[5];
             txtExpireDate.Text = Convert.ToDateTime(splitLicenseKey[4], CultureInfo.CreateSpecificCulture("tr-TR")).ToString();
-            txtExpireDateDays.Text = (Convert.ToDateTime(splitLicenseKey[4], CultureInfo.CreateSpecificCulture("tr-TR")) - DateTime.Now).Days.ToString();
+            var supportDays = (Convert.ToDateTime(splitLicenseKey[4], CultureInfo.CreateSpecificCulture("tr-TR")) - DateTime.Now).Days;
+            if (supportDays < 0)
+                txtExpireDateDays.Text = "0";
+            else
+                txtExpireDateDays.Text = supportDays.ToString();
             stackSupportDate.Visibility = Visibility.Visible;
             txtVerificationKey.Text = splitLicenseKey[6];
         }

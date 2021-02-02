@@ -23,6 +23,7 @@ namespace DiskBackup.DataAccess.Concrete.EntityFramework
         public DbSet<TaskInfo> TaskInfos { get; set; }
         public DbSet<StatusInfo> StatusInfos { get; set; }
         public DbSet<ConfigurationData> ConfigurationDatas { get; set; }
+        public DbSet<EmailInfo> EmailInfos { get; set; }
 
         protected override void OnModelCreating(DbModelBuilder modelBuilder)
         {
@@ -33,6 +34,7 @@ namespace DiskBackup.DataAccess.Concrete.EntityFramework
             modelBuilder.Configurations.Add(new TaskInfoMap());
             modelBuilder.Configurations.Add(new StatusInfoMap());
             modelBuilder.Configurations.Add(new ConfigurationDataMap());
+            modelBuilder.Configurations.Add(new EmailInfoMap());
         }
     }
 }

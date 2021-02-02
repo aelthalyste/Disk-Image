@@ -315,5 +315,6 @@
     <system:String x:Key="closeServiceErrorMB">Servis kapanmış görünüyor, lütfen servisi yeniden başlatıp tekrar deneyin.</system:String>
     <system:String x:Key="LicenseKeyFailMB">Geçersiz lisans anahtarı.</system:String>
     <system:String x:Key="LicenseKeyOSFailMB">Lisans ve işletim sistemi versiyonunuz uyuşmamaktadır.</system:String>
+    <system:String x:Key="EmailFailMB">Lütfen geçerli bir email adresi giriniz.</system:String>
 
 </ResourceDictionary>
