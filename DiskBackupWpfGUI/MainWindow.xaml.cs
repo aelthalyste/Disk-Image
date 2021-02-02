@@ -209,10 +209,6 @@ namespace DiskBackupWpfGUI
                             txtLicenseNotActive.Visibility = Visibility.Collapsed;
                             LicenseInformationWrite(splitLicenseKey);
                         }
-                        else
-                        {
-                            MessageBox.Show("Lisanslı ama sorun var");
-                        }
                     }
                     //servisde de var
                     key = Registry.LocalMachine.OpenSubKey("SOFTWARE\\NarDiskBackup", true);
@@ -249,16 +245,20 @@ namespace DiskBackupWpfGUI
                     }
                     else if (key.GetValue("Type").ToString() == "2606") // lisanslı
                     {
-                        var licenseKey = (string)key.GetValue("License");
-                        var resultDecryptLicenseKey = DecryptLicenseKey(_key, licenseKey);
-                        var splitLicenseKey = resultDecryptLicenseKey.Split('_');
-                        if (CheckOSVersion(splitLicenseKey[5]))
+                        try
                         {
-                            LicenseInformationWrite(splitLicenseKey);
+                            var licenseKey = (string)key.GetValue("License");
+                            var resultDecryptLicenseKey = DecryptLicenseKey(_key, licenseKey);
+                            var splitLicenseKey = resultDecryptLicenseKey.Split('_');
+                            if (CheckOSVersion(splitLicenseKey[5]))
+                            {
+                                LicenseInformationWrite(splitLicenseKey);
+                            }
                         }
-                        else
+                        catch(Exception)
                         {
-                            MessageBox.Show("Lisanslı ama sorun var");
+                            _logger.Error("Lisans bilgileri bozulmuş, tekrardan lisans girişi istenecek!");
+                            FixBrokenRegistry();
                         }
                     }
                     else
@@ -331,10 +331,6 @@ namespace DiskBackupWpfGUI
                 if (CheckOSVersion(splitLicenseKey[5]))
                 {
                     LicenseInformationWrite(splitLicenseKey);
-                }
-                else
-                {
-                    MessageBox.Show("Lisanslı ama sorun var");
                 }
             }
         }

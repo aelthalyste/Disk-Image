@@ -451,6 +451,8 @@
     <Resource Include="Resources\Icon\Icon_White_V32.png" />
   </ItemGroup>
   <ItemGroup>
+    <Resource Include="Resources\Icon\icons8_add_file_gray.ico" />
+    <Resource Include="Resources\Icon\icons8_add_file_blue.ico" />
     <Resource Include="Resources\Icon\minus.ico" />
     <Resource Include="Resources\Icon\icons8_save.ico" />
     <Resource Include="Resources\Icon\icons8_add_file.ico" />
