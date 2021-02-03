@@ -14,6 +14,7 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.Net.Mail;
 using System.Net;
+using System.IO;
 
 namespace MailPoC
 {
@@ -34,6 +35,19 @@ namespace MailPoC
             txtSubject.Text = "";
         }
 
+        private string ChangeBody(string userName, string title, string url, string description)
+        {
+            string body = string.Empty;
+            using (StreamReader reader = new StreamReader(@".\EmailTemplate.html"))
+            {
+                body = reader.ReadToEnd();
+            }
+            body = body.Replace("{Title}", Resources["disk"].ToString());
+            body = body.Replace("{Url}", url);
+            body = body.Replace("{Description}", description);
+            return body;
+        }
+
         private void btnSend_Click(object sender, RoutedEventArgs e)
         {
             var smtp = new SmtpClient
@@ -49,7 +63,7 @@ namespace MailPoC
             {
                 IsBodyHtml = true,
                 Subject = txtSubject.Text,
-                Body = txtContent.Text
+                Body = MailDenemeClass.ChangeBody()
             })
 
                 try
