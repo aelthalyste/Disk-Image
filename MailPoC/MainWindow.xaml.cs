@@ -63,7 +63,8 @@ namespace MailPoC
             {
                 IsBodyHtml = true,
                 Subject = txtSubject.Text,
-                Body = MailDenemeClass.ChangeBody()
+                Body = MailDenemeClass.ChangeBody(),
+                From = new MailAddress("diskbackup@narbulut.com", "Narbulut Bilgilendirme")
             })
 
                 try
