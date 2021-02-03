@@ -1103,7 +1103,20 @@ Since these tasks are disk IO bounded, I can totally neglect cache behavior(that
     
 };
 
-
+struct nar_ext_query{
+    std::vector<std::wstring> Files;
+    
+#if 0    
+    wchar_t **Files; // list of zero terminated strings
+    void *Mem;
+    size_t FileCount;
+    size_t Used;
+    size_t Capacity;
+#endif
+    
+    wchar_t Extension[32];
+    wchar_t bf[512];
+};
 
 inline lcn_from_mft_query_result
 ReadLCNFromMFTRecord(void* RecordStart);

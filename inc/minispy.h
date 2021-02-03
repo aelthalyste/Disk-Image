@@ -64,7 +64,6 @@ Environment:
 // force 1 byte aligment
 #pragma pack(push ,1)
 
-
 struct nar_backup_id{
     union{
         unsigned long long Q;
@@ -155,7 +154,6 @@ typedef _Return_type_success_(return >= 0) LONG NTSTATUS;
 
 #pragma warning(push)
 #pragma warning(disable:4200) // disable warnings for structures with zero length arrays.
-
 typedef enum NAR_COMMAND_TYPE {
     NarCommandType_GetVolumeLog,
     NarCommandType_DeleteVolume,
@@ -187,34 +185,6 @@ typedef struct _NAR_CONNECTION_CONTEXT {
     WCHAR* UserName;      // Null terminated USERname that is currently active
 }NAR_CONNECTION_CONTEXT;
 
-
-
-//
-//  The maximum number of BYTES that can be used to store the file name in the
-//  RECORD_LIST structure
-//
-
-#define MAX_NAME_SPACE ROUND_TO_SIZE( (RECORD_SIZE - sizeof(RECORD_LIST)), sizeof( PVOID ))
-
-//
-//  The maximum space, in bytes and WCHARs, available for the name (and ECP
-//  if present) string, not including the space that must be reserved for a NULL
-//
-
-#define MAX_NAME_SPACE_LESS_NULL (MAX_NAME_SPACE - sizeof(UNICODE_NULL))
-#define MAX_NAME_WCHARS_LESS_NULL MAX_NAME_SPACE_LESS_NULL / sizeof(WCHAR)
-
-//
-//  Returns the number of BYTES unused in the RECORD_LIST structure.  Note that
-//  LogRecord->Length already contains the size of LOG_RECORD which is why we
-//  have to remove it.
-//
-
-#define REMAINING_NAME_SPACE(LogRecord) \
-(FLT_ASSERT((LogRecord)->Length >= sizeof(LOG_RECORD)), \
-(USHORT)(MAX_NAME_SPACE - ((LogRecord)->Length - sizeof(LOG_RECORD))))
-
-#define MAX_LOG_RECORD_LENGTH  (RECORD_SIZE - FIELD_OFFSET( RECORD_LIST, LogRecord ))
 
 
 //

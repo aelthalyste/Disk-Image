@@ -315,7 +315,7 @@ Return Value:
             
             NarData.VolumeRegionBuffer[i].GUIDStrVol.Length = 0;
             NarData.VolumeRegionBuffer[i].GUIDStrVol.MaximumLength = sizeof(NarData.VolumeRegionBuffer[i].Reserved);
-            NarData.VolumeRegionBuffer[i].GUIDStrVol.Buffer = (PWCH)NarData.VolumeRegionBuffer[i].Reserved;
+            NarData.VolumeRegionBuffer[i].GUIDStrVol.Buffer = NarData.VolumeRegionBuffer[i].Reserved;
             memset(&NarData.VolumeRegionBuffer[i].Reserved[0], 0, sizeof(NarData.VolumeRegionBuffer[i].Reserved));
             
             if (NarData.VolumeRegionBuffer[i].MemoryBuffer == NULL) {
@@ -340,7 +340,6 @@ Return Value:
         
         char UniBuffer[32];
         DbgPrint("Found %i volumes at boot file, will initialize accordingly\n", TrackedVolumesCount);
-        int AddedVolumeIndex = 0;
         
         for (int i = 0; i < TrackedVolumesCount; i++) {
             
@@ -412,11 +411,11 @@ Return Value:
             RtlInitUnicodeString(&Fn, NameTemp);
             
             IO_STATUS_BLOCK iosb;
-            OBJECT_ATTRIBUTES objAttr;
+            OBJECT_ATTRIBUTES tobjAttr;
             
-            InitializeObjectAttributes(&objAttr, &Fn, OBJ_KERNEL_HANDLE | OBJ_CASE_INSENSITIVE, NULL, NULL);
+            InitializeObjectAttributes(&tobjAttr, &Fn, OBJ_KERNEL_HANDLE | OBJ_CASE_INSENSITIVE, NULL, NULL);
             
-            NTSTATUS status = ZwCreateFile(&NarData.FileHandles[NAR_KERNEL_GEN_FILE_ID(c)], FILE_APPEND_DATA | SYNCHRONIZE, &objAttr, &iosb, NULL,
+            status = ZwCreateFile(&NarData.FileHandles[NAR_KERNEL_GEN_FILE_ID(c)], FILE_APPEND_DATA | SYNCHRONIZE, &tobjAttr, &iosb, NULL,
                                            FILE_ATTRIBUTE_NORMAL,
                                            FILE_SHARE_READ | FILE_SHARE_WRITE, FILE_OPEN_IF,
                                            FILE_SEQUENTIAL_ONLY | FILE_WRITE_THROUGH | FILE_SYNCHRONOUS_IO_NONALERT,
@@ -424,6 +423,9 @@ Return Value:
             
             if (!NT_SUCCESS(status)) {
                 DbgPrint("Unable to create file\n");
+            }
+            else {
+                DbgPrint("Log file opened for volume %c", c);
             }
             
         }
@@ -580,7 +582,7 @@ Return Value:
     
     PAGED_CODE();
     
-    if(Flags == NULL){
+    if(Flags == 0){
         DbgPrint("Unload called with NULL Flags parameter\n");
     }
     
@@ -597,7 +599,7 @@ Return Value:
     FltCloseCommunicationPort(NarData.ServerPort);
     DbgPrint("Communication port closed\n");
     
-    NTSTATUS status;
+    //NTSTATUS status;
     
     FltUnregisterFilter(NarData.Filter);
     DbgPrint("Filter unregistered\n");
@@ -610,7 +612,9 @@ Return Value:
             
             ExAcquireFastMutex(&NarData.VolumeRegionBuffer[i].FastMutex);
             
+            
             // If volume is active, flush it's logs
+/*
             if (NarData.VolumeRegionBuffer[i].VolFileID != NAR_KERNEL_INVALID_FILE_ID) {
                 nar_log_thread_params* tp = (nar_log_thread_params*)ExAllocatePoolWithTag(NonPagedPool, sizeof(nar_log_thread_params), NAR_TAG);
                 
@@ -642,6 +646,7 @@ Return Value:
                 }
             }
             
+            */
             
             // check if there are still logs that need to be flushed
             
@@ -1044,8 +1049,8 @@ NarSubMemoryExists(const void* mem1, const void* mem2, unsigned int mem1len, uns
     unsigned char* S2 = (unsigned char*)mem2;
     
     
-    int k = 0;
-    int j = 0;
+    unsigned int k = 0;
+    unsigned int j = 0;
     
     while (k < mem1len - mem2len && j < mem2len) {
         
@@ -1344,6 +1349,10 @@ Return Value:
         return  FLT_PREOP_SUCCESS_NO_CALLBACK;
     }
     
+    if (Data->Iopb->MajorFunction != IRP_MJ_WRITE) {
+        return FLT_PREOP_SUCCESS_NO_CALLBACK;
+    }
+
     ULONG LenReturned = 0;
     // skip directories
     FILE_STANDARD_INFORMATION fsi = { 0 };
@@ -1357,9 +1366,7 @@ Return Value:
         DbgPrint("Failed to query information file\n");
     }
 
-    if (Data->Iopb->MajorFunction != IRP_MJ_WRITE) {
-        return FLT_PREOP_SUCCESS_NO_CALLBACK;
-    }
+
     
     
     PFLT_FILE_NAME_INFORMATION nameInfo = NULL;
@@ -1426,7 +1433,6 @@ Return Value:
 
            
 
-            UNICODE_STRING UniStr;
 
 #if 0
             RtlInitEmptyUnicodeString(&UniStr, UnicodeStrBuffer, NAR_LOOKASIDE_SIZE);
@@ -1522,7 +1528,7 @@ Return Value:
             RETRIEVAL_POINTERS_BUFFER ClusterMapBuffer;
             
             DWORD WholeFileMapBufferSize = sizeof(UnicodeStrBuffer);// sizeof(RETRIEVAL_POINTERS_BUFFER) * 128;
-            RETRIEVAL_POINTERS_BUFFER* WholeFileMapBuffer = &UnicodeStrBuffer[0]; // (RETRIEVAL_POINTERS_BUFFER*)ExAllocatePoolWithTag(PagedPool, WholeFileMapBufferSize, NAR_TAG);
+            RETRIEVAL_POINTERS_BUFFER* WholeFileMapBuffer = (RETRIEVAL_POINTERS_BUFFER*)&UnicodeStrBuffer[0]; // (RETRIEVAL_POINTERS_BUFFER*)ExAllocatePoolWithTag(PagedPool, WholeFileMapBufferSize, NAR_TAG);
             
             
             ClusterMapBuffer.StartingVcn.QuadPart = 0;
@@ -1574,7 +1580,6 @@ Return Value:
             if (status != STATUS_END_OF_FILE && !NT_SUCCESS(status)) {
                 DbgPrint("FltFsControl failed with code %i,  file name %wZ\n", status, &nameInfo->Name);
                 
-                //ExFreePoolWithTag(WholeFileMapBuffer, NAR_TAG);
                 
                 goto NAR_PREOP_FAILED_END;
             }
@@ -1691,7 +1696,6 @@ Return Value:
                 
             }
             
-            //ExFreePoolWithTag(WholeFileMapBuffer, NAR_TAG);
             
             
             // TODO(BATUHAN): try one loop via KeTestSpinLock, to fast check if volume is available for fast access, if it is available and matches GUID, immidiately flush all regions and return, if not available test higher elements in list.

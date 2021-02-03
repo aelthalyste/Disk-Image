@@ -58,6 +58,23 @@ _Analysis_mode_(_Analysis_code_type_user_code_)
 #include "mspyLog.h"
 #include "mspyLog.cpp"
 
+#if 0
+inline void* 
+narmalloc(size_t len){
+    TIMED_BLOCK();
+    return malloc(len);
+}
+inline void
+narfree(void* m){
+    TIMED_BLOCK();
+    free(m);
+}
+#define malloc narmalloc
+#define free narfree
+
+#endif
+
+
 
 /*
     ASSUMES RECORDS ARE SORTED
@@ -3745,7 +3762,7 @@ NarOpenVolume(char Letter) {
     if (Volume != INVALID_HANDLE_VALUE) {
         
         
-#if 1        
+#if 0        
         if (DeviceIoControl(Volume, FSCTL_LOCK_VOLUME, 0, 0, 0, 0, 0, 0)) {
             
         }
@@ -5070,6 +5087,7 @@ AppendRecoveryToFile(HANDLE File, char Letter) {
 
 inline BOOLEAN
 NarFileNameExtensionCheck(const wchar_t *Path, const wchar_t *Extension){
+    TIMED_BLOCK();
     size_t pl = wcslen(Path);
     size_t el = wcslen(Extension);
     if(pl <= el) return FALSE;
@@ -5466,7 +5484,7 @@ NarSubMemoryExists(void *mem1, void* mem2, int mem1len, int mem2len){
         }
         
     }
-
+    
     
     
     return FALSE;
@@ -5631,6 +5649,8 @@ NarFindFileAttributeFromFileRecord(void *FileRecord, INT32 AttributeID){
     
     if(!FileRecord) return 0;
     
+    TIMED_BLOCK();
+    
     void *Start = FileRecord;
     
     INT16 FirstAttributeOffset = (*(INT16*)((BYTE*)FileRecord + 20));
@@ -5676,6 +5696,8 @@ NarResolveAttributeList(nar_backup_file_explorer_context *Ctx, void *Attribute, 
     
     
     if(Ctx == 0  || Attribute == 0) return;
+    
+    TIMED_BLOCK();
     
     char FileEntry[1024];
     BYTE BitmapBuffer[512];
@@ -5830,6 +5852,8 @@ NarGetFileEntriesFromIndxClusters(nar_backup_file_explorer_context *Ctx, nar_rec
     
     if(Ctx == NULL || Clusters == NULL) return;
     
+    TIMED_BLOCK();
+    
     size_t ParsedClusterIndex = 0;
     size_t ByteIndex = 0;
     size_t BitIndex = 0;
@@ -5848,7 +5872,10 @@ NarGetFileEntriesFromIndxClusters(nar_backup_file_explorer_context *Ctx, nar_rec
         DWORD BytesRead = 0;
         
         if(NarFileExplorerReadVolume(Ctx->FEHandle, IndxBuffer, IndxBufferSize, &BytesRead)){
-            for(size_t _j_ =0; _j_ < Clusters[_i_].Len ; _j_++){
+            
+            size_t ceil = Clusters[_i_].Len;
+            
+            for(size_t _j_ =0; _j_ < ceil ; _j_++){
                 
 #if 1           
                 ByteIndex = ParsedClusterIndex / 8;
@@ -5894,6 +5921,8 @@ NarParseIndxRegion(void *Data, nar_file_entries_list *EList){
     
     if(Data == NULL || EList == NULL) return;
     
+    TIMED_BLOCK();
+    
     Data= (char*)Data + 64;
     
     INT EntryParseResult = NAR_FEXP_END_MARK;
@@ -5904,6 +5933,7 @@ NarParseIndxRegion(void *Data, nar_file_entries_list *EList){
             
             // do not accept posix files as FILE_ENTRY at all
             if (EntryParseResult == NAR_FEXP_SUCCEEDED) {
+                TIMED_NAMED_BLOCK("Extending entry list");
                 EList->EntryCount++;
                 if(EList->EntryCount == EList->MaxEntryCount){
                     NarExtentFileEntryList(EList, EList->MaxEntryCount * 2);
@@ -6072,6 +6102,8 @@ NarGetFileListFromMFTID(nar_backup_file_explorer_context *Ctx, size_t TargetMFTI
     
     if (NarFileExplorerReadMFTID(Ctx, TargetMFTID, Buffer)) {
         
+        TIMED_NAMED_BLOCK("After reading mftid");
+        
         // do parsing stuff
         void* FileRecord = &Buffer[0];
         INT16 FlagOffset = 22;
@@ -6118,7 +6150,6 @@ NarGetFileListFromMFTID(nar_backup_file_explorer_context *Ctx, size_t TargetMFTI
             }
             
             
-            
         }
         
         /*
@@ -6159,7 +6190,7 @@ NarGetFileListFromMFTID(nar_backup_file_explorer_context *Ctx, size_t TargetMFTI
                         if(ShouldParse){
                             void *IC = (char*)IndxBuffer + (UINT64)_j_ * Ctx->ClusterSize;
                             if(TargetMFTID == 5 && _i_ == 0 && _j_ == 0) IC = (char*)IC + 24;
-                            NarParseIndxRegion(IC, &Ctx->EList);
+                            NarParseIndxRegion(IC, EList);
                         }
                         
                         ParsedClusterIndex++;
@@ -6185,26 +6216,6 @@ NarGetFileListFromMFTID(nar_backup_file_explorer_context *Ctx, size_t TargetMFTI
     
 }
 
-
-inline void
-NarFileExplorerRestoreFolder(nar_backup_file_explorer_context *ctx, UINT32 SelectedListID, const wchar_t *RootDir){
-    
-    NarFileExplorerPushDirectory(ctx, SelectedListID);
-    
-    for(size_t i = 0; i < ctx->EList.EntryCount; i++){
-        
-        // check if directory
-        if(ctx->EList.Entries[i].IsDirectory){
-            
-        }
-        else{
-            
-        }
-        
-        
-    }
-    
-}
 
 
 
@@ -6879,6 +6890,8 @@ NarFileExplorerGetFileEntryFromData(void *IndxCluster, nar_file_entry *OutFileEn
 inline void 
 NarFileExplorerPushDirectory(nar_backup_file_explorer_context* Ctx, UINT32 SelectedListID) {
     
+    TIMED_BLOCK();
+    
     if (!Ctx) {
         printf("Context was null\n");
         return;
@@ -6894,9 +6907,6 @@ NarFileExplorerPushDirectory(nar_backup_file_explorer_context* Ctx, UINT32 Selec
     }
     
     UINT64 NewMFTID = Ctx->EList.Entries[SelectedListID].MFTFileIndex;
-    
-    printf("Pushing %I64u to stack\n", NewMFTID);
-    
     
     Ctx->EList.MFTIndex = NewMFTID;
     wcscat(Ctx->CurrentDirectory, Ctx->EList.Entries[SelectedListID].Name);
@@ -7889,12 +7899,135 @@ DEBUG_FileRestore(){
         printf("unable to restore file %S\n", fname);
     }
     
+}
+
+
+inline nar_ext_query
+InitExtensionQuery(void* Mem, size_t Memlen, const wchar_t *Extension){
+    nar_ext_query Result;
+    
+#if 0    
+    Result.Mem = Mem;
+    Result.Used = 0;
+    Result.Capacity = Memlen;
+    Result.FileCount = 0;
+#endif
+    
+    wcscpy(Result.Extension, Extension);
+    Result.Files.reserve(100000);
+    return Result;
+}
+
+inline void
+NarAddFile(nar_ext_query *exq, const wchar_t *FileName){
+    
+    exq->Files.push_back(FileName);
+    
+#if 0    
+    size_t l = wcslen(FileName);
+    if(exq->Used + l < exq->Capacity){
+        exq->Files[exq->FileCount] = (wchar_t*)((char*)exq->Mem + exq->Used);
+        wcscpy(exq->Files[exq->FileCount], FileName);
+        exq->Used += (l + 1);
+        exq->FileCount++;
+    }
+#endif
     
 }
 
 
+
+size_t total_files_scanned = 0;
+
+inline void
+FindExtensions(nar_backup_file_explorer_context *Ctx, nar_ext_query* qr, const wchar_t *Extension){
+    
+    std::vector<size_t> folderids;
+    {
+        TIMED_BLOCK();
+        
+        
+        folderids.reserve(Ctx->EList.EntryCount);
+        total_files_scanned += Ctx->EList.EntryCount;
+        
+        for(size_t i =0; i<Ctx->EList.EntryCount; i++){
+            TIMED_NAMED_BLOCK("for loop");
+            if(Ctx->EList.Entries[i].IsDirectory == FALSE){
+                if(TRUE==NarFileNameExtensionCheck(Ctx->EList.Entries[i].Name, Extension)){
+                    TIMED_NAMED_BLOCK("Add file");
+                    
+                    qr->bf[0] = L'\0';
+                    wcscat(qr->bf, Ctx->CurrentDirectory);
+                    wcscat(qr->bf, Ctx->EList.Entries[i].Name);
+                    NarAddFile(qr, qr->bf);
+                }
+            }
+            else{
+                TIMED_NAMED_BLOCK("else dir");
+                if(NULL==wcsstr(L"$", Ctx->EList.Entries[i].Name) 
+                   && Ctx->EList.Entries[i].Name[0] != L'.'
+                   && Ctx->EList.Entries[i].MFTFileIndex != 5){
+                    folderids.emplace_back(i);
+                }
+            }
+        }
+    }
+    
+    folderids.shrink_to_fit();
+    for(size_t i =0; i<folderids.size();i++){
+        //std::wcout<<std::wstring(Ctx->CurrentDirectory) + std::wstring(Ctx->EList.Entries[folderids[i]].Name)<<"\n";
+        NarFileExplorerPushDirectory(Ctx, folderids[i]);
+        FindExtensions(Ctx, qr, Extension);
+    }
+    
+    NarFileExplorerPopDirectory(Ctx);
+    
+}
+
+void
+DEBUG_FileExplorerQuery(){
+    
+    wchar_t Letter;
+    std::wstring Extension;
+    
+    printf("enter volume letter: ");
+    
+    std::wcin>>Letter;
+    printf("Enter extension(without dot and asterisk): ");
+    std::wcin>>Extension;
+    std::wcout<<Extension;
+    nar_backup_file_explorer_context ctx = {0};
+    
+    if(NarInitFileExplorerContextFromVolume(&ctx, Letter)){
+        
+        size_t bfsize = Megabyte(512);
+        void *Mem = malloc(bfsize);
+        
+        nar_ext_query qr = InitExtensionQuery(Mem, bfsize, Extension.c_str());
+        
+        clock_t start = clock();
+        
+        FindExtensions(&ctx, &qr, Extension.c_str());
+        for(size_t i =0; i<qr.Files.size(); i++){
+            //printf("%S\n", qr.Files[i].c_str());
+        }
+        
+        clock_t end = clock();
+        
+        printf("Done! total files scanned  %I64u, found %I64u\n", total_files_scanned, qr.Files.size());
+        printf("Time elapsed %.3f\n", (end-start)/1000.0);
+        PrintDebugRecords();
+        NarReleaseFileExplorerContext(&ctx);
+        
+    }
+    
+}
+
 int
 main(int argc, char* argv[]) {
+    
+    DEBUG_FileExplorerQuery();
+    return 0;
     
     if(0){
         BOOLEAN Result = FALSE;
