@@ -100,7 +100,7 @@ namespace DiskBackupWpfGUI
             var languageConfiguration = _configurationDataDal.Get(x => x.Key == "lang");
             if (languageConfiguration == null)
             {
-                languageConfiguration = new ConfigurationData{ Key="lang", Value="tr"};
+                languageConfiguration = new ConfigurationData { Key = "lang", Value = "tr" };
                 _configurationDataDal.Add(languageConfiguration);
             }
             SetApplicationLanguage(languageConfiguration.Value);
@@ -255,7 +255,7 @@ namespace DiskBackupWpfGUI
                                 LicenseInformationWrite(splitLicenseKey);
                             }
                         }
-                        catch(Exception)
+                        catch (Exception)
                         {
                             _logger.Error("Lisans bilgileri bozulmuş, tekrardan lisans girişi istenecek!");
                             FixBrokenRegistry();
@@ -414,6 +414,8 @@ namespace DiskBackupWpfGUI
             await ShowActivityLogDownAsync(backupService);
             Console.WriteLine("Backup Dosyaları getirilmeden önce: " + DateTime.Now);
             await ShowBackupsFilesAsync(backupService);
+            Console.WriteLine("Email Ayarları getirilmeden önce: " + DateTime.Now);
+            await GetEmailSettings();
             Console.WriteLine("Refresh: " + DateTime.Now);
             mainTabControl.IsEnabled = true;
             pbLoading.Visibility = Visibility.Collapsed;
@@ -538,6 +540,54 @@ namespace DiskBackupWpfGUI
             {
                 _logger.Error(e, "Backup dosyaları getirilemedi!");
             }
+        }
+
+        public async Task GetEmailSettings()
+        {
+            _logger.Verbose("GetEmailSettings metoduna istekte bulunuldu");
+            var emailActive = await Task.Run(() =>
+            {
+                return _configurationDataDal.Get(x => x.Key == "emailActive");
+            });
+            var emailSuccessful = await Task.Run(() =>
+            {
+                return _configurationDataDal.Get(x => x.Key == "emailSuccessful");
+            });
+            var emailFail = await Task.Run(() =>
+            {
+                return _configurationDataDal.Get(x => x.Key == "emailFail");
+            });
+            var emailCritical = await Task.Run(() =>
+            {
+                return _configurationDataDal.Get(x => x.Key == "emailCritical");
+            });
+
+            if (emailActive == null)
+            {
+                emailActive = new ConfigurationData { Key = "emailActive", Value = "False" };
+                _configurationDataDal.Add(emailActive);
+            }
+            if (emailSuccessful == null)
+            {
+                emailSuccessful = new ConfigurationData { Key = "emailSuccessful", Value = "False" };
+                _configurationDataDal.Add(emailSuccessful);
+            }
+            if (emailFail == null)
+            {
+                emailFail = new ConfigurationData { Key = "emailFail", Value = "False" };
+                _configurationDataDal.Add(emailFail);
+            }
+            if (emailCritical == null)
+            {
+                emailCritical = new ConfigurationData { Key = "emailCritical", Value = "False" };
+                _configurationDataDal.Add(emailCritical);
+            }
+
+            checkEMailNotification.IsChecked = Convert.ToBoolean(emailActive.Value);
+            checkEMailNotificationSuccess.IsChecked = Convert.ToBoolean(emailSuccessful.Value);
+            checkEMailNotificationFail.IsChecked = Convert.ToBoolean(emailFail.Value);
+            checkEMailNotificationCritical.IsChecked = Convert.ToBoolean(emailFail.Value);
+
         }
 
         #endregion
@@ -2225,7 +2275,7 @@ namespace DiskBackupWpfGUI
             _activityLogList = _activityLogDal.GetList();
             foreach (var item in _activityLogList)
             {
-                item.StatusInfo = _statusInfoDal.Get(x => x.Id == item.StatusInfoId); 
+                item.StatusInfo = _statusInfoDal.Get(x => x.Id == item.StatusInfoId);
                 item.StatusInfo.StrStatus = Resources[$"{item.StatusInfo.StrStatus}"].ToString();
             }
 
@@ -2346,6 +2396,25 @@ namespace DiskBackupWpfGUI
                 EMailSettingsWindow emailSettingsWindow = scope.Resolve<EMailSettingsWindow>();
                 emailSettingsWindow.ShowDialog();
             }
+        }
+
+        private void btnEMailNotificationSave_Click(object sender, RoutedEventArgs e)
+        {
+            var emailActive = _configurationDataDal.Get(x => x.Key == "emailActive");
+            emailActive.Value = checkEMailNotification.IsChecked.ToString();
+            _configurationDataDal.Update(emailActive);
+
+            var emailSuccessful = _configurationDataDal.Get(x => x.Key == "emailSuccessful");
+            emailSuccessful.Value = checkEMailNotificationSuccess.IsChecked.ToString();
+            _configurationDataDal.Update(emailSuccessful);
+
+            var emailFail = _configurationDataDal.Get(x => x.Key == "emailFail");
+            emailFail.Value = checkEMailNotificationFail.IsChecked.ToString();
+            _configurationDataDal.Update(emailFail);
+
+            var emailCritical = _configurationDataDal.Get(x => x.Key == "emailCritical");
+            emailCritical.Value = checkEMailNotificationCritical.IsChecked.ToString();
+            _configurationDataDal.Update(emailCritical);
         }
 
         #endregion
@@ -2802,7 +2871,7 @@ namespace DiskBackupWpfGUI
 
             ListSortDirection newDir = ListSortDirection.Ascending;
             if (listViewLogCol == column && listViewLogAdorner.Direction == newDir)
-            { 
+            {
                 newDir = ListSortDirection.Descending;
             }
 
@@ -2907,6 +2976,7 @@ namespace DiskBackupWpfGUI
             AdornerLayer.GetAdornerLayer(listViewTasksCol).Add(listViewTasksAdorner);
             listViewTasks.Items.SortDescriptions.Add(new SortDescription(sortBy, newDir));
         }
+
 
         #endregion
 

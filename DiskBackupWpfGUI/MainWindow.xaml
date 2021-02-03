@@ -1588,8 +1588,8 @@
 
                                     <CheckBox Name="checkEMailNotification" Content="{DynamicResource active}" FontSize="14" Grid.Column="1" Grid.Row="0" VerticalContentAlignment="Center" Checked="checkEMailNotification_Checked" Unchecked="checkEMailNotification_Unchecked"/>
                                     <StackPanel Name="stackEMailNotification" Grid.Column="1" Grid.Row="1" VerticalAlignment="Center" IsEnabled="False">
-                                        <CheckBox Name="checkEMailNotificationFail" Content="{DynamicResource Fail}" FontSize="14" VerticalContentAlignment="Center" Margin="0,0,0,5"/>
                                         <CheckBox Name="checkEMailNotificationSuccess" Content="{DynamicResource Success}" FontSize="14" VerticalContentAlignment="Center" Margin="0,0,0,5"/>
+                                        <CheckBox Name="checkEMailNotificationFail" Content="{DynamicResource Fail}" FontSize="14" VerticalContentAlignment="Center" Margin="0,0,0,5"/>
                                         <CheckBox Name="checkEMailNotificationCritical" Content="{DynamicResource critical}" FontSize="14" VerticalContentAlignment="Center"/>
                                     </StackPanel>
 
@@ -1608,7 +1608,7 @@
                                                 </StackPanel>
                                             </Button.Content>
                                         </Button>
-                                        <Button Name="btnEMailNotificationSave" Width="160" Height="30" Style="{StaticResource BlueButton}" Cursor="Hand" Margin="40,0,0,0">
+                                        <Button Name="btnEMailNotificationSave" Width="160" Height="30" Style="{StaticResource BlueButton}" Cursor="Hand" Margin="40,0,0,0" Click="btnEMailNotificationSave_Click">
                                             <Button.Content>
                                                 <StackPanel Orientation="Horizontal">
                                                     <Image Height="24" Width="24" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="2,0">
