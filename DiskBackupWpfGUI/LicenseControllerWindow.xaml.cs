@@ -27,6 +27,10 @@ namespace DiskBackupWpfGUI
     {
         private bool _windowType;
         public bool _validate = false;
+
+        private string _key = "D*G-KaPdSgVkYp3s6v8y/B?E(H+MbQeT";
+        private string _licenseKeyFile = "";
+
         private readonly IConfigurationDataDal _configurationDataDal;
         private readonly ILogger _logger;
 
@@ -67,12 +71,14 @@ namespace DiskBackupWpfGUI
 
         private void rbDemo_Checked(object sender, RoutedEventArgs e)
         {
-            txtLicenseKey.IsEnabled = false;
+            stackLicense.IsEnabled = false;
+            btnAddLicenseFile.IsEnabled = false;
         }
 
         private void rbLicense_Checked(object sender, RoutedEventArgs e)
         {
-            txtLicenseKey.IsEnabled = true;
+            stackLicense.IsEnabled = true;
+            btnAddLicenseFile.IsEnabled = true;
         }
 
         private void btnSave_Click(object sender, RoutedEventArgs e)
@@ -100,21 +106,61 @@ namespace DiskBackupWpfGUI
             }
             else // lisans seçili
             {
-                if (DecryptLicenseKey("D*G-KaPdSgVkYp3s6v8y/B?E(H+MbQeT", txtLicenseKey.Text).Equals("fail"))
-                {
-                    MessageBox.Show(Resources["LicenseKeyFailMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
-                }
+                if (txtLicenseKey.Text != "")
+                    ValidateLicenseKey(key, txtLicenseKey.Text);
                 else
                 {
-                    _logger.Information("Lisans aktifleştirildi. Lisans Anahtarı: " + txtLicenseKey.Text);
+                    ValidateLicenseKey(key, _licenseKeyFile);
+                }
+            }
+        }
+
+        private void ValidateLicenseKey(RegistryKey key, string licenseKey)
+        {
+            var resultDecryptLicenseKey = DecryptLicenseKey(_key, licenseKey);
+            if (resultDecryptLicenseKey.Equals("fail"))
+            {
+                MessageBox.Show(Resources["LicenseKeyFailMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            else
+            {
+                if (CheckOSVersion(resultDecryptLicenseKey))
+                {
+                    _logger.Information("Lisans aktifleştirildi. Lisans Anahtarı: " + licenseKey);
                     key.SetValue("UploadDate", DateTime.Now);
                     key.SetValue("ExpireDate", "");
                     key.SetValue("Type", 2606);
-                    key.SetValue("License", txtLicenseKey.Text);
+                    key.SetValue("License", licenseKey);
                     _validate = true;
                     Close();
                 }
+                else
+                {
+                    MessageBox.Show(Resources["LicenseKeyOSFailMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+                }
             }
+        }
+
+        private bool CheckOSVersion(string resultDecryptLicenseKey)
+        {
+            RegistryKey registryKey = Registry.LocalMachine.OpenSubKey("Software\\Microsoft\\Windows NT\\CurrentVersion");
+            var OSName = (string)registryKey.GetValue("ProductName");
+            var splitLicenseKey = resultDecryptLicenseKey.Split('_');
+
+            if (splitLicenseKey[5].Equals("SBS") && OSName.Contains("Small Business Server"))
+            {
+                return true;
+            }
+            else if (splitLicenseKey[5].Equals("Server") && OSName.Contains("Server"))
+            {
+                return true;
+            }
+            else if (splitLicenseKey[5].Equals("Workstation") && OSName.Contains("Windows"))
+            {
+                return true;
+            }
+
+            return false;
         }
 
         private string DecryptLicenseKey(string key, string cipherLicenseKey)
@@ -169,5 +215,26 @@ namespace DiskBackupWpfGUI
             }
             Resources.MergedDictionaries.Add(dict);
         }
+
+        private void btnAddLicenseFile_Click(object sender, RoutedEventArgs e)
+        {
+            using (var dialog = new System.Windows.Forms.OpenFileDialog())
+            {
+                dialog.Filter = "Narbulut Key Dosyası |*.nbkey";
+                dialog.ValidateNames = false;
+                dialog.CheckFileExists = false;
+                dialog.CheckPathExists = true;
+                dialog.Multiselect = false;
+
+                var result = dialog.ShowDialog();
+                if (result == System.Windows.Forms.DialogResult.OK)
+                {
+                    string nbkeyPath = dialog.FileName;
+                    StreamReader sr = new StreamReader(nbkeyPath);
+                    _licenseKeyFile = sr.ReadToEnd();
+                }
+            }
+        }
+
     }
 }

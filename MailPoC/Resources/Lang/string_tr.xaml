@@ -1,0 +1,18 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:system="clr-namespace:System;assembly=mscorlib">
+    <!--Mail-->
+    <system:String x:Key="hello">Merhaba</system:String>
+    <system:String x:Key="listTextLang">Aşağıdaki listede görevle ilgili detaylar gösterilmektedir;</system:String>
+    <system:String x:Key="respectLang">Saygılarımızla</system:String>
+    <system:String x:Key="allRightReserved">Tüm Hakları Saklıdır</system:String>
+    <system:String x:Key="statusInfo">Status Information</system:String>
+    <system:String x:Key="processedData">İşlenen Veri</system:String>
+    <system:String x:Key="taskName">Görev Adı</system:String>
+    <system:String x:Key="fileName">Dosya Adı</system:String>
+    <system:String x:Key="duration">Süre</system:String>
+    <system:String x:Key="averageDataTransfer">Ortalama Veri Aktarımı</system:String>
+    <system:String x:Key="instantDataTransfer">Anlık Veri Aktarımı</system:String>
+    <system:String x:Key="sourceInfo">Kaynak Bilgisi</system:String>
+
+</ResourceDictionary>

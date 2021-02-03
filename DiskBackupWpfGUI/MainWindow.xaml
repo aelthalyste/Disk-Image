@@ -61,76 +61,6 @@
                 <TextBlock Name="txtDemoDays" Text="30" Foreground="#3A80BB" FontSize="14" FontWeight="Bold" VerticalAlignment="Center" Margin="0,0,5,0"/>
                 <TextBlock Text="{DynamicResource daysLeft}" Foreground="#3A80BB" FontSize="14" FontWeight="Bold" VerticalAlignment="Center" Margin="0,0,15,0"/>
             </DockPanel>
-            <!--<StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                <Button Name="btnPlayButton" ToolTip="{DynamicResource start}" HorizontalAlignment="Right" Margin="5,4,0,4" Style="{StaticResource ImageButton}" Width="32" Height="32" Grid.Column="1">
-                    <Button.Content>
-                        <Image Height="22">
-                            <Image.Style>
-                                <Style TargetType="Image">
-                                    <Setter Property="Source" Value="Resources/Icon/icons8_play.ico" />
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding IsEnabled, RelativeSource={RelativeSource AncestorType=Button}}" Value="False">
-                                            <Setter Property="Source" Value="Resources/Icon/icons8_circled_play.ico"/>
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Image.Style>
-                        </Image>
-                    </Button.Content>
-                </Button>
-                <Button Name="btnPauseButton" ToolTip="{DynamicResource pause}" HorizontalAlignment="Right" Margin="5,4,0,4" Style="{StaticResource ImageButton}" Width="32" Height="32" Grid.Column="1">
-                    <Button.Content>
-                        <Image Height="28">
-                            <Image.Style>
-                                <Style TargetType="Image">
-                                    <Setter Property="Source" Value="Resources/Icon/icons8-pause-button-96.png" />
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding IsEnabled, RelativeSource={RelativeSource AncestorType=Button}}" Value="False">
-                                            <Setter Property="Source" Value="Resources/Icon/icons8-pause-button-96_disable.png"/>
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Image.Style>
-                        </Image>
-                    </Button.Content>
-                </Button>
-                <Button Name="btnStopButton" ToolTip="{DynamicResource stop}" Width="32" Height="32" HorizontalAlignment="Right" Margin="5,4,0,4" Style="{StaticResource ImageButton}" Grid.Column="1">
-                    <Button.Content>
-                        <Image HorizontalAlignment="Center" VerticalAlignment="Center">
-                            <Image.Style>
-                                <Style TargetType="Image">
-                                    <Setter Property="Source" Value="Resources/Icon/icons8_stop_8.ico" />
-                                    <Setter Property="Height" Value="40"/>
-                                    <Setter Property="Width" Value="40"/>
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding IsEnabled, RelativeSource={RelativeSource AncestorType=Button}}" Value="False">
-                                            <Setter Property="Source" Value="Resources/Icon/icons8_stop_disable.ico"/>
-                                            <Setter Property="Height" Value="31"/>
-                                            <Setter Property="Width" Value="31"/>
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Image.Style>
-                        </Image>
-                    </Button.Content>
-                </Button>
-                <Button Name="btnRefreshButton" ToolTip="{DynamicResource refresh}" Width="32" Height="32" HorizontalAlignment="Right" Margin="5,4,10,4" Style="{StaticResource ImageButton}" Grid.Column="1">
-                    <Button.Content>
-                        <Image Height="28">
-                            <Image.Style>
-                                <Style TargetType="Image">
-                                    <Setter Property="Source" Value="Resources/Icon/icons8_refresh.ico" />
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding IsEnabled, RelativeSource={RelativeSource AncestorType=Button}}" Value="False">
-                                            <Setter Property="Source" Value="Resources/Icon/icons8_synchronize_disable.ico"/>
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Image.Style>
-                        </Image>
-                    </Button.Content>
-                </Button>
-            </StackPanel>-->
         </StackPanel>
 
         <TabControl Name="mainTabControl" TabStripPlacement="Left" BorderThickness="1,0,0,0" Grid.Row="2" BorderBrush="#428BCA" Grid.ColumnSpan="2" SelectionChanged="mainTabControl_SelectionChanged">
@@ -1499,12 +1429,21 @@
                             <TextBlock Text="{DynamicResource verificationKey}" FontSize="14" Grid.Column="0" Grid.Row="6"/>
 
                             <TextBlock Name="txtLicenseStatu" Text="{DynamicResource active}" FontSize="14" Grid.Column="1" Grid.Row="0"/>
-                            <TextBlock Name="txtdealerName" Text="Demo / A Bayisi" FontSize="14" Grid.Column="1" Grid.Row="1"/>
-                            <TextBlock Name="txtcustomerName" Text="Demo / A Firması" FontSize="14" Grid.Column="1" Grid.Row="2"/>
-                            <TextBlock Name="txtauthorizedPerson" Text="demo@demo.com / X Kişisi" FontSize="14" Grid.Column="1" Grid.Row="3"/>
-                            <TextBlock Name="txtVersionType" Text="Demo / Workstation or Server or SBS" FontSize="14" Grid.Column="1" Grid.Row="4"/>
-                            <TextBlock Name="txtExpireDate" Text="∞" FontSize="14" Grid.Column="1" Grid.Row="5"/>
-                            <TextBlock Name="txtverificationKey" Text="Demo / A124456B" FontSize="14" Grid.Column="1" Grid.Row="6"/>
+                            <TextBlock Name="txtDealerName" Text="Demo" FontSize="14" Grid.Column="1" Grid.Row="1"/>
+                            <TextBlock Name="txtCustomerName" Text="Demo" FontSize="14" Grid.Column="1" Grid.Row="2"/>
+                            <TextBlock Name="txtAuthorizedPerson" Text="demo@demo.com" FontSize="14" Grid.Column="1" Grid.Row="3"/>
+                            <TextBlock Name="txtVersionType" Text="Demo" FontSize="14" Grid.Column="1" Grid.Row="4"/>
+                            <StackPanel Orientation="Horizontal" Grid.Column="1" Grid.Row="5">
+                                <TextBlock Name="txtExpireDate" Text="Demo" FontSize="14" />
+                                <StackPanel Name="stackSupportDate" Orientation="Horizontal" Visibility="Collapsed">
+                                    <TextBlock Text=" (" FontSize="14"/>
+                                    <TextBlock Name="txtExpireDateDays" Text="" FontSize="14" />
+                                    <TextBlock Text=" " FontSize="14"/>
+                                    <TextBlock Name="txtExpireDateDaysStr" Text="{DynamicResource daysLeft}" FontSize="14" />
+                                    <TextBlock Text=")" FontSize="14"/>
+                                </StackPanel>
+                            </StackPanel>
+                            <TextBlock Name="txtVerificationKey" Text="Demo" FontSize="14" Grid.Column="1" Grid.Row="6"/>
                         </Grid>
 
                         <Grid Grid.Row="0" Grid.Column="1" Margin="0,10">
@@ -1557,7 +1496,7 @@
                                                 </StackPanel>
                                             </Button.Content>
                                         </Button>
-                                        <Button Name="btnAddLicenseFile" Width="160" Height="30" Style="{StaticResource BlueButton}" Cursor="Hand" Margin="40,0,0,0">
+                                        <Button Name="btnAddLicenseFile" Width="160" Height="30" Style="{StaticResource BlueButton}" Cursor="Hand" Margin="40,0,0,0" Click="btnAddLicenseFile_Click">
                                             <Button.Content>
                                                 <StackPanel Orientation="Horizontal">
                                                     <Image Height="20" Width="20" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="2,0">
@@ -1649,8 +1588,8 @@
 
                                     <CheckBox Name="checkEMailNotification" Content="{DynamicResource active}" FontSize="14" Grid.Column="1" Grid.Row="0" VerticalContentAlignment="Center" Checked="checkEMailNotification_Checked" Unchecked="checkEMailNotification_Unchecked"/>
                                     <StackPanel Name="stackEMailNotification" Grid.Column="1" Grid.Row="1" VerticalAlignment="Center" IsEnabled="False">
-                                        <CheckBox Name="checkEMailNotificationFail" Content="{DynamicResource Fail}" FontSize="14" VerticalContentAlignment="Center" Margin="0,0,0,5"/>
                                         <CheckBox Name="checkEMailNotificationSuccess" Content="{DynamicResource Success}" FontSize="14" VerticalContentAlignment="Center" Margin="0,0,0,5"/>
+                                        <CheckBox Name="checkEMailNotificationFail" Content="{DynamicResource Fail}" FontSize="14" VerticalContentAlignment="Center" Margin="0,0,0,5"/>
                                         <CheckBox Name="checkEMailNotificationCritical" Content="{DynamicResource critical}" FontSize="14" VerticalContentAlignment="Center"/>
                                     </StackPanel>
 
@@ -1669,7 +1608,7 @@
                                                 </StackPanel>
                                             </Button.Content>
                                         </Button>
-                                        <Button Name="btnEMailNotificationSave" Width="160" Height="30" Style="{StaticResource BlueButton}" Cursor="Hand" Margin="40,0,0,0">
+                                        <Button Name="btnEMailNotificationSave" Width="160" Height="30" Style="{StaticResource BlueButton}" Cursor="Hand" Margin="40,0,0,0" Click="btnEMailNotificationSave_Click">
                                             <Button.Content>
                                                 <StackPanel Orientation="Horizontal">
                                                     <Image Height="24" Width="24" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="2,0">
@@ -1689,13 +1628,11 @@
                             </Border>
                         </DockPanel>
 
-                        <Image Source="Resources/Icon/logo_big.png" Grid.ColumnSpan="2" Grid.Row="2"></Image>
-                        
-                        <GroupBox Grid.Row="2" Grid.ColumnSpan="2" Margin="15,10,15,10" BorderBrush="#9ACFEA" BorderThickness="2" FontSize="14" Visibility="Collapsed">
+                        <GroupBox Grid.Row="2" Grid.ColumnSpan="2" Margin="15,10,15,10" BorderBrush="#9ACFEA" BorderThickness="2" FontSize="14" IsEnabled="False" Background="LightGray" Opacity="0.6">
                             <GroupBox.Header>
                                 <TextBlock Text="{DynamicResource bandwithSetting}" Foreground="Black" FontWeight="Bold"/>
                             </GroupBox.Header>
-                            <StackPanel Margin="10,20,0,0">
+                            <StackPanel Margin="10,20,0,0" >
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition/>

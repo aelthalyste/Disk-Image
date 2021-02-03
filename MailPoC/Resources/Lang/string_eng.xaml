@@ -1,0 +1,18 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:system="clr-namespace:System;assembly=mscorlib">
+    <!--Mail-->
+    <system:String x:Key="hello">Hello</system:String>
+    <system:String x:Key="listTextLang">The list below shows details of the task;</system:String>
+    <system:String x:Key="respectLang">Best Regards</system:String>
+    <system:String x:Key="allRightReserved">All Right Reserved</system:String>
+    <system:String x:Key="statusInfo">Status Information</system:String>
+    <system:String x:Key="taskName">Task Name</system:String>
+    <system:String x:Key="fileName">File Name</system:String>
+    <system:String x:Key="duration">Duration</system:String>
+    <system:String x:Key="processedData">Processed Data</system:String>
+    <system:String x:Key="averageDataTransfer">Average Data Transfer</system:String>
+    <system:String x:Key="instantDataTransfer">Instant Data Transfer</system:String>
+    <system:String x:Key="sourceInfo">Source Info</system:String>
+
+</ResourceDictionary>
