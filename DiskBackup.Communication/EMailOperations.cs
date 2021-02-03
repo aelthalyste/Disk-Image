@@ -114,7 +114,6 @@ namespace DiskBackup.Communication
                 body = body.Replace("{AllRightReservedLang}", "All Right Reserved");
                 #endregion
             }
-
             else
             {
                 #region TR

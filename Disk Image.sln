@@ -80,7 +80,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LicenseKeyGenerator", "Lice
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MailPoC", "MailPoC\MailPoC.csproj", "{CB34B771-A24C-4CD8-943C-1331BB3654E7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DiskBackup.Communication", "..\..\..\..\Desktop\DiskBackup.Communication\DiskBackup.Communication.csproj", "{258921DE-2586-4E54-B545-D304615FB6B1}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DiskBackup.Communication", "DiskBackup.Communication\DiskBackup.Communication.csproj", "{258921DE-2586-4E54-B545-D304615FB6B1}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

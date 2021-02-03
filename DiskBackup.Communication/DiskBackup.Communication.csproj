@@ -45,38 +45,31 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="EMailOperations.cs" />
+    <Compile Include="IEmailOperations.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Resources\stringEN.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>stringEN.resx</DependentUpon>
-    </Compile>
-    <Compile Include="Resources\stringTR.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>stringTR.resx</DependentUpon>
-    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Content Include="HTML\EmailTemplate.html">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="Resources\stringEN.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>stringEN.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Resources\stringTR.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>stringTR.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Lang\" />
-  </ItemGroup>
+  <ItemGroup />
   <ItemGroup>
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\DiskBackup.Core\DiskBackup.Core.csproj">
+      <Project>{ca2a0627-7997-4b4e-8be3-c1ca9e516f66}</Project>
+      <Name>DiskBackup.Core</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\DiskBackup.DataAccess\DiskBackup.DataAccess.csproj">
+      <Project>{d7b5ebaf-801c-48a9-b1a4-c21ed315fea1}</Project>
+      <Name>DiskBackup.DataAccess</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\DiskBackup.Entities\DiskBackup.Entities.csproj">
+      <Project>{08189feb-3e7a-4c10-8088-3732bc8ac883}</Project>
+      <Name>DiskBackup.Entities</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
