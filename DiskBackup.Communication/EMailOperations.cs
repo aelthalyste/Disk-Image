@@ -41,7 +41,7 @@ namespace DiskBackup.Communication
         {
             ConfigurationData lang = GetLang();
             if (lang == null)
-                lang = new ConfigurationData{ Key = "lang", Value = "tr" };
+                lang = new ConfigurationData { Key = "lang", Value = "tr" };
 
             using (var message = new MailMessage("diskbackup@narbulut.com", "diskbackup@narbulut.com")
             {
@@ -93,6 +93,37 @@ namespace DiskBackup.Communication
             }
         }
 
+        public void SendTestEMail()
+        {
+            var emailList = _emailInfoDal.GetList();
+            ConfigurationData lang = GetLang();
+            if (lang == null)
+                lang = new ConfigurationData { Key = "lang", Value = "tr" };
+
+            using (var message = new MailMessage("diskbackup@narbulut.com", "diskbackup@narbulut.com")
+            {
+                IsBodyHtml = true,
+                Subject = lang.Value == "tr" ? "Narbulut Bilgilendirme - Test Email" : "Narbulut Information - Test Email",
+                Body = ChangeTestBody(lang.Value),
+                From = lang.Value == "tr" ? new MailAddress("diskbackup@narbulut.com", "Narbulut Bilgilendirme") : new MailAddress("diskbackup@narbulut.com", "Narbulut Information")
+            })
+
+                try
+                {
+                    foreach (var item in emailList)
+                    {
+                        message.To.Add(item.EmailAddress);
+                    }
+
+                    smtp.Send(message);
+                    _logger.Information("Test e-mail gönderimi başarılı.");
+                }
+                catch (SmtpException ex)
+                {
+                    _logger.Error(ex, "Test e-mail gönderimi başarısız.");
+                }
+        }
+
         private ConfigurationData GetLang()
         {
             var lang = _configurationDataDal.Get(x => x.Key == "lang");
@@ -122,6 +153,34 @@ namespace DiskBackup.Communication
                 body = body.Replace("{BackgroundStatus}", "red");
             else if (taskInfo.StatusInfo.Status == StatusType.ConnectionError || taskInfo.StatusInfo.Status == StatusType.MissingFile || taskInfo.StatusInfo.Status == StatusType.NotEnoughDiskSpace)
                 body = body.Replace("{BackgroundStatus}", "orange");
+
+            return body;
+        }
+
+        private string ChangeTestBody(string lang)
+        {
+            string body = string.Empty;
+
+            body = GetHTMLTestBody();
+
+            if (lang == "en")
+            {
+                #region En 
+                body = body.Replace("{Hello}", "Hello");
+                body = body.Replace("{txtWelcomeTest}", "This is a test email.");
+                body = body.Replace("{RespectLang}", "Best Regards");
+                body = body.Replace("{AllRightReservedLang}", "All Right Reserved");
+                #endregion
+            }
+            else
+            {
+                #region TR
+                body = body.Replace("{Hello}", "Merhaba");
+                body = body.Replace("{txtWelcomeTest}", "Bu bir test emailidir.");
+                body = body.Replace("{RespectLang}", "Saygılarımızla");
+                body = body.Replace("{AllRightReservedLang}", "Tüm Hakları Saklıdır");
+                #endregion
+            }
 
             return body;
         }
@@ -284,6 +343,44 @@ namespace DiskBackup.Communication
                         </div >
                     </body >
                     </html >";
+        }
+
+        private string GetHTMLTestBody()
+        {
+            return @"<!DOCTYPE html>
+                    <head>
+                        <meta charset=""utf-8"" />
+                    </head>
+                    <body>
+                        <div style=""padding: 0px 10% 0px 10%;"">
+                            <p style=""text-align: center;"">
+                                <span>
+                                    <a href=""http://panel.narbulut.com"" target=""_blank"" rel=""noopener noreferrer"" data-auth=""NotApplicable"">
+                                        <img src=""https://panel.narbulut.com/img/slider/Logoü.png"" alt=""Örnek Resim"" />
+                                    </a>
+                                </span>
+                            </p>
+                            <h2>{Hello},</h2>
+                            <div style=""padding: 0px; border: 0px solid #ffff; margin: 0px 0px 30px 0px;"">
+                                <p style=""font-family: Trebuchet MS, sans-serif, serif, EmojiFont;"">
+                                    {txtWelcomeTest}
+                                </p>
+                            </div>
+                            <p style=""font-family: Trebuchet MS, sans-serif, serif, EmojiFont;"">
+                                {RespectLang}, Narbulut
+                            </p>
+                            <div style=""padding:18.75pt 0;"">
+                                <p align=""center"" style=""text-align:center;margin-top:0;line-height:18.0pt;"">
+                                    <span style=""color:#74787E;font-size:9pt;"">
+                                        <a href=""http://panel.narbulut.com"" target=""_blank"" rel=""noopener noreferrer"" data-auth=""NotApplicable"">
+                                            <span style=""color:#3869D4;"">Copyright Narbulut © 2017</span>
+                                        </a>| {AllRightReservedLang}
+                                    </span>
+                                </p>
+                            </div>
+                        </div>
+                    </body>
+                    </html>";
         }
     }
 }

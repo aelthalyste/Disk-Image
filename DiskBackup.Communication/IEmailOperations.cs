@@ -10,5 +10,6 @@ namespace DiskBackup.Communication
     public interface IEMailOperations
     {
         void SendEMail(TaskInfo taskInfo);
+        void SendTestEMail();
     }
 }

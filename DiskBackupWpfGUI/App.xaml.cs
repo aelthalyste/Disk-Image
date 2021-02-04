@@ -1,6 +1,7 @@
 ﻿using Autofac;
 using DiskBackup.Business.Abstract;
 using DiskBackup.Business.Concrete;
+using DiskBackup.Communication;
 using DiskBackup.DataAccess.Abstract;
 using DiskBackup.DataAccess.Concrete.EntityFramework;
 using DiskBackup.TaskScheduler;
@@ -64,6 +65,7 @@ namespace DiskBackupWpfGUI
             builder.RegisterType<ValidateNASWindow>();
             builder.RegisterType<LicenseControllerWindow>();
             builder.RegisterType<EMailSettingsWindow>();
+            builder.RegisterType<EMailOperations>().As<IEMailOperations>();
             _container = builder.Build();
         }
     }
