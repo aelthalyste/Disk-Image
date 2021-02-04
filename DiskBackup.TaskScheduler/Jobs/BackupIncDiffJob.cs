@@ -1,5 +1,6 @@
 ﻿using DiskBackup.Business.Abstract;
 using DiskBackup.Business.Concrete;
+using DiskBackup.Communication;
 using DiskBackup.DataAccess.Abstract;
 using DiskBackup.DataAccess.Core;
 using DiskBackup.Entities.Concrete;
@@ -23,8 +24,9 @@ namespace DiskBackup.TaskScheduler.Jobs
         private readonly IActivityLogDal _activityLogDal;
         private readonly IBackupTaskDal _backupTaskDal;
         private readonly ILogger _logger;
+        private IEMailOperations _emailOperations;
 
-        public BackupIncDiffJob(ITaskInfoDal taskInfoDal, IBackupStorageDal backupStorageDal, IStatusInfoDal statusInfoDal, IBackupService backupService, IActivityLogDal activityLogDal, IBackupTaskDal backupTaskDal, ILogger logger)
+        public BackupIncDiffJob(ITaskInfoDal taskInfoDal, IBackupStorageDal backupStorageDal, IStatusInfoDal statusInfoDal, IBackupService backupService, IActivityLogDal activityLogDal, IBackupTaskDal backupTaskDal, ILogger logger, IEMailOperations emailOperations)
         {
             _taskInfoDal = taskInfoDal;
             _backupStorageDal = backupStorageDal;
@@ -33,6 +35,7 @@ namespace DiskBackup.TaskScheduler.Jobs
             _activityLogDal = activityLogDal;
             _backupTaskDal = backupTaskDal;
             _logger = logger.ForContext<BackupIncDiffJob>();
+            _emailOperations = emailOperations;
         }
 
         public async Task Execute(IJobExecutionContext context)
@@ -165,6 +168,10 @@ namespace DiskBackup.TaskScheduler.Jobs
             _taskInfoDal.Update(taskInfo);
             _backupService.RefreshIncDiffTaskFlag(true);
             _backupService.RefreshIncDiffLogFlag(true);
+
+            _logger.Information("SendEmail çağırılıyor");
+            _emailOperations.SendEMail(resultTaskStatusInfo);
+            _logger.Information("SendEmail çağırıldı");
         }
     }
 }

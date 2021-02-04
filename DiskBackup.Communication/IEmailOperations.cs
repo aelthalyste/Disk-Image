@@ -7,10 +7,8 @@ using System.Threading.Tasks;
 
 namespace DiskBackup.Communication
 {
-    public interface IEmailOperations
+    public interface IEMailOperations
     {
-        void SendMail(List<EmailInfo> emailAddresses, StatusInfo statusInfo);
-        string ChangeBody(string lang, StatusInfo statusInfo);
-        string ChangeLang(string lang);
+        void SendEMail(StatusInfo statusInfo);
     }
 }
