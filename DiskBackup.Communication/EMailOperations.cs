@@ -46,13 +46,13 @@ namespace DiskBackup.Communication
             using (var message = new MailMessage("diskbackup@narbulut.com", "diskbackup@narbulut.com")
             {
                 IsBodyHtml = true,
-                Subject = taskInfo.Name, //status + uniq key
                 Body = ChangeBody(lang.Value, taskInfo),
                 From = lang.Value == "tr" ? new MailAddress("diskbackup@narbulut.com", "Narbulut Bilgilendirme") : new MailAddress("diskbackup@narbulut.com", "Narbulut Information")
             })
 
                 try
                 {
+                    SetSubjecj(taskInfo, lang, message);
                     foreach (var item in emailAddresses)
                     {
                         message.To.Add(item.EmailAddress);
@@ -65,6 +65,46 @@ namespace DiskBackup.Communication
                 {
                     _logger.Error(ex, "E-Mail gönderimi başarısız.");
                 }
+        }
+
+        private void SetSubjecj(TaskInfo taskInfo, ConfigurationData lang, MailMessage message) // Görev adı, Durumu (Uniq Key)
+        {
+            if (lang.Value == "tr")
+            {
+                var uniqKey = _configurationDataDal.Get(x => x.Key == "uniqKey");
+                if (uniqKey == null)
+                    uniqKey.Value = "Demo";
+                if (taskInfo.StatusInfo.Status == StatusType.Success)
+                {
+                    message.Subject = taskInfo.Name + ", Başarılı (" + uniqKey.Value + ")";
+                }
+                else if (taskInfo.StatusInfo.Status == StatusType.Fail)
+                {
+                    message.Subject = taskInfo.Name + ", Başarısız (" + uniqKey.Value + ")";
+                }
+                else if ((taskInfo.StatusInfo.Status == StatusType.ConnectionError || taskInfo.StatusInfo.Status == StatusType.NotEnoughDiskSpace || taskInfo.StatusInfo.Status == StatusType.MissingFile))
+                {
+                    message.Subject = taskInfo.Name + ", Kritik Hata (" + uniqKey.Value + ")";
+                }
+            }
+            else
+            {
+                var uniqKey = _configurationDataDal.Get(x => x.Key == "uniqKey");
+                if (uniqKey == null)
+                    uniqKey.Value = "Demo";
+                if (taskInfo.StatusInfo.Status == StatusType.Success)
+                {
+                    message.Subject = taskInfo.Name + ", Successful (" + uniqKey.Value + ")";
+                }
+                else if (taskInfo.StatusInfo.Status == StatusType.Fail)
+                {
+                    message.Subject = taskInfo.Name + ", Fail (" + uniqKey.Value + ")";
+                }
+                else if ((taskInfo.StatusInfo.Status == StatusType.ConnectionError || taskInfo.StatusInfo.Status == StatusType.NotEnoughDiskSpace || taskInfo.StatusInfo.Status == StatusType.MissingFile))
+                {
+                    message.Subject = taskInfo.Name + ", Critical Error (" + uniqKey.Value + ")";
+                }
+            }
         }
 
         public void SendEMail(TaskInfo taskInfo)
@@ -163,10 +203,15 @@ namespace DiskBackup.Communication
 
             body = GetHTMLTestBody();
 
+            var customerName = _configurationDataDal.Get(x => x.Key == "customerName");
+            if (customerName == null)
+                customerName.Value = "Demo";
+            body = body.Replace("{customerName}", customerName.Value);
+
             if (lang == "en")
             {
                 #region En 
-                body = body.Replace("{Hello}", "Hello");
+                body = body.Replace("{Dear}", "Dear");
                 body = body.Replace("{txtWelcomeTest}", "This is a test email.");
                 body = body.Replace("{RespectLang}", "Best Regards");
                 body = body.Replace("{AllRightReservedLang}", "All Right Reserved");
@@ -175,7 +220,7 @@ namespace DiskBackup.Communication
             else
             {
                 #region TR
-                body = body.Replace("{Hello}", "Merhaba");
+                body = body.Replace("{Dear}", "Sayın");
                 body = body.Replace("{txtWelcomeTest}", "Bu bir test emailidir.");
                 body = body.Replace("{RespectLang}", "Saygılarımızla");
                 body = body.Replace("{AllRightReservedLang}", "Tüm Hakları Saklıdır");
@@ -201,13 +246,17 @@ namespace DiskBackup.Communication
                 _logger.Information("E-Mail hata: " + ex);
             }*/
 
-
             string body = GetHTMLBackupBody();
+
+            var customerName = _configurationDataDal.Get(x => x.Key == "customerName");
+            if (customerName == null)
+                customerName.Value = "Demo";
+            body = body.Replace("{customerName}", customerName.Value);
 
             if (lang == "en")
             {
                 #region En 
-                body = body.Replace("{Hello}", "Hello");
+                body = body.Replace("{Dear}", "Dear");
                 body = body.Replace("{ListTextLang}", "The list below shows details of the task;");
                 body = body.Replace("{StatusInfoLang}", "Status Information");
                 body = body.Replace("{TaskNameLang}", "Task Name");
@@ -235,7 +284,7 @@ namespace DiskBackup.Communication
             else
             {
                 #region TR
-                body = body.Replace("{Hello}", "Merhaba");
+                body = body.Replace("{Dear}", "Sayın");
                 body = body.Replace("{ListTextLang}", "Aşağıdaki listede görevle ilgili detaylar gösterilmektedir;");
                 body = body.Replace("{StatusInfoLang}", "Durum Bilgisi");
                 body = body.Replace("{TaskNameLang}", "Görev Adı");
@@ -286,13 +335,10 @@ namespace DiskBackup.Communication
                                 </a>
                             </span>
                         </p>
-                        <h2>{Hello},</h2>
+                        <h2>{Dear}, {customerName}</h2>
                         <div style=""padding: 0px; border: 0px solid #ffff; margin: 0px 0px 30px 0px;"">
                             <p style=""font-family: Trebuchet MS, sans-serif, serif, EmojiFont;""> 
-                                {txtWelcome}
-                            </p>
-                            <p style=""font-family: Trebuchet MS, sans-serif, serif, EmojiFont;"">
-                                {ListTextLang}
+                                {txtWelcome} {ListTextLang}
                             </p>
                         </div>
                         <table style=""font-family: Trebuchet MS, sans-serif, serif, EmojiFont; border-collapse: collapse; width: 100%;"">
@@ -360,7 +406,7 @@ namespace DiskBackup.Communication
                                     </a>
                                 </span>
                             </p>
-                            <h2>{Hello},</h2>
+                            <h2>{Dear}, {customerName}</h2>
                             <div style=""padding: 0px; border: 0px solid #ffff; margin: 0px 0px 30px 0px;"">
                                 <p style=""font-family: Trebuchet MS, sans-serif, serif, EmojiFont;"">
                                     {txtWelcomeTest}
