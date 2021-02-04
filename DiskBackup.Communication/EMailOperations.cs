@@ -37,7 +37,7 @@ namespace DiskBackup.Communication
             _emailInfoDal = emailInfoDal;
         }
 
-        private void EMailSender(List<EmailInfo> emailAddresses, StatusInfo statusInfo)
+        private void EMailSender(List<EmailInfo> emailAddresses, TaskInfo taskInfo)
         {
             ConfigurationData lang = GetLang();
             if (lang == null)
@@ -46,8 +46,8 @@ namespace DiskBackup.Communication
             using (var message = new MailMessage("diskbackup@narbulut.com", "diskbackup@narbulut.com")
             {
                 IsBodyHtml = true,
-                Subject = statusInfo.TaskName, //status
-                Body = ChangeBody(lang.Value, statusInfo),
+                Subject = taskInfo.Name, //status + uniq key
+                Body = ChangeBody(lang.Value, taskInfo),
                 From = lang.Value == "tr" ? new MailAddress("diskbackup@narbulut.com", "Narbulut Bilgilendirme") : new MailAddress("diskbackup@narbulut.com", "Narbulut Information")
             })
 
@@ -67,7 +67,7 @@ namespace DiskBackup.Communication
                 }
         }
 
-        public void SendEMail(StatusInfo statusInfo)
+        public void SendEMail(TaskInfo taskInfo)
         {
             var emailList = _emailInfoDal.GetList();
 
@@ -78,17 +78,17 @@ namespace DiskBackup.Communication
 
             if (emailActive.Value == "True")
             {
-                if (statusInfo.Status == StatusType.Success && emailSuccessful.Value == "True")
+                if (taskInfo.StatusInfo.Status == StatusType.Success && emailSuccessful.Value == "True")
                 {
-                    EMailSender(emailList, statusInfo);
+                    EMailSender(emailList, taskInfo);
                 }
-                else if (statusInfo.Status == StatusType.Fail && emailFail.Value == "True")
+                else if (taskInfo.StatusInfo.Status == StatusType.Fail && emailFail.Value == "True")
                 {
-                    EMailSender(emailList, statusInfo);
+                    EMailSender(emailList, taskInfo);
                 }
-                else if ((statusInfo.Status == StatusType.ConnectionError || statusInfo.Status == StatusType.NotEnoughDiskSpace || statusInfo.Status == StatusType.MissingFile) && emailCritical.Value == "True")
+                else if ((taskInfo.StatusInfo.Status == StatusType.ConnectionError || taskInfo.StatusInfo.Status == StatusType.NotEnoughDiskSpace || taskInfo.StatusInfo.Status == StatusType.MissingFile) && emailCritical.Value == "True")
                 {
-                    EMailSender(emailList, statusInfo);
+                    EMailSender(emailList, taskInfo);
                 }
             }
         }
@@ -102,25 +102,31 @@ namespace DiskBackup.Communication
             return lang;
         }
 
-        private string ChangeBody(string lang, StatusInfo statusInfo)
+        private string ChangeBody(string lang, TaskInfo taskInfo)
         {
             string body = string.Empty;
 
-            body = ChangeLang(lang);
+            body = ChangeLang(lang, taskInfo);
 
-            body = body.Replace("{FileName}", statusInfo.FileName);
-            body = body.Replace("{Duration}", statusInfo.TimeElapsed.ToString()); //hesaplama
-            body = body.Replace("{SourceInfo}", statusInfo.SourceObje);
-            body = body.Replace("{TaskName}", statusInfo.TaskName);
-            body = body.Replace("{AverageDataTransfer}", Math.Round(statusInfo.AverageDataRate, 2).ToString() + " MB/s");
-            body = body.Replace("{ProcessedData}", statusInfo.DataProcessed.ToString()); //HESAPLAMA
-            body = body.Replace("{InstantDataTransfer}", Math.Round(statusInfo.InstantDataRate, 2).ToString() + " MB/s");
-            body = body.Replace("{txtWelcome}", DateTime.Now.ToString() + " Tarihli blabla"); // biz yazıcaz
+            body = body.Replace("{FileName}", taskInfo.StatusInfo.FileName);
+            body = body.Replace("{Duration}", taskInfo.StatusInfo.TimeElapsed.ToString()); //hesaplama
+            body = body.Replace("{SourceInfo}", taskInfo.StatusInfo.SourceObje);
+            body = body.Replace("{TaskName}", taskInfo.StatusInfo.TaskName);
+            body = body.Replace("{AverageDataTransfer}", Math.Round(taskInfo.StatusInfo.AverageDataRate, 2).ToString() + " MB/s");
+            body = body.Replace("{ProcessedData}", taskInfo.StatusInfo.DataProcessed.ToString()); //HESAPLAMA
+            body = body.Replace("{InstantDataTransfer}", Math.Round(taskInfo.StatusInfo.InstantDataRate, 2).ToString() + " MB/s");
+
+            if (taskInfo.StatusInfo.Status == StatusType.Success)
+                body = body.Replace("{BackgroundStatus}", "green");
+            else if (taskInfo.StatusInfo.Status == StatusType.Fail)
+                body = body.Replace("{BackgroundStatus}", "red");
+            else if (taskInfo.StatusInfo.Status == StatusType.ConnectionError || taskInfo.StatusInfo.Status == StatusType.MissingFile || taskInfo.StatusInfo.Status == StatusType.NotEnoughDiskSpace)
+                body = body.Replace("{BackgroundStatus}", "orange");
 
             return body;
         }
 
-        private string ChangeLang(string lang)
+        private string ChangeLang(string lang, TaskInfo taskInfo)
         {
             /*string body = string.Empty;
 
@@ -129,7 +135,6 @@ namespace DiskBackup.Communication
                 using (StreamReader reader = new StreamReader(@"HTML\EMailTemplate.html"))
                 {
                     body = reader.ReadToEnd();
-                    _logger.Information("4-2-1");
                 }
             }
             catch (Exception ex)
@@ -144,7 +149,7 @@ namespace DiskBackup.Communication
             {
                 #region En 
                 body = body.Replace("{Hello}", "Hello");
-                body = body.Replace("{ListTextLang}", "The list below shows details of the task");
+                body = body.Replace("{ListTextLang}", "The list below shows details of the task;");
                 body = body.Replace("{StatusInfoLang}", "Status Information");
                 body = body.Replace("{TaskNameLang}", "Task Name");
                 body = body.Replace("{FileNameLang}", "File Name");
@@ -155,6 +160,17 @@ namespace DiskBackup.Communication
                 body = body.Replace("{SourceInfoLang}", "Source Info");
                 body = body.Replace("{RespectLang}", "Best Regards");
                 body = body.Replace("{AllRightReservedLang}", "All Right Reserved");
+
+                if (taskInfo.StatusInfo.Status == StatusType.Success)
+                    body = body.Replace("{txtWelcome}", taskInfo.StatusInfo.TaskName + " task dated " + taskInfo.LastWorkingDate.ToString() + " was successful.");
+                else if (taskInfo.StatusInfo.Status == StatusType.Fail)
+                    body = body.Replace("{txtWelcome}", taskInfo.StatusInfo.TaskName + " task dated " + taskInfo.LastWorkingDate.ToString() + " failed.");
+                else if (taskInfo.StatusInfo.Status == StatusType.ConnectionError)
+                    body = body.Replace("{txtWelcome}", taskInfo.StatusInfo.TaskName + " task dated " + taskInfo.LastWorkingDate.ToString() + " failed due to connection error.");
+                else if (taskInfo.StatusInfo.Status == StatusType.MissingFile)
+                    body = body.Replace("{txtWelcome}", taskInfo.StatusInfo.TaskName + " task dated " + taskInfo.LastWorkingDate.ToString() + " failed due to missing file error.");
+                else if (taskInfo.StatusInfo.Status == StatusType.NotEnoughDiskSpace)
+                    body = body.Replace("{txtWelcome}", taskInfo.StatusInfo.TaskName + " task dated " + taskInfo.LastWorkingDate.ToString() + " failed due to not enough disk space error.");
                 #endregion
             }
             else
@@ -172,6 +188,17 @@ namespace DiskBackup.Communication
                 body = body.Replace("{SourceInfoLang}", "Kaynak Bilgisi");
                 body = body.Replace("{RespectLang}", "Saygılarımızla");
                 body = body.Replace("{AllRightReservedLang}", "Tüm Hakları Saklıdır");
+
+                if (taskInfo.StatusInfo.Status == StatusType.Success)
+                    body = body.Replace("{txtWelcome}", taskInfo.LastWorkingDate.ToString() + " tarihli " + taskInfo.StatusInfo.TaskName + " görevi başarılı olmuştur.");
+                else if (taskInfo.StatusInfo.Status == StatusType.Fail)
+                    body = body.Replace("{txtWelcome}", taskInfo.LastWorkingDate.ToString() + " tarihli " + taskInfo.StatusInfo.TaskName + " görevi başarısız olmuştur.");
+                else if (taskInfo.StatusInfo.Status == StatusType.ConnectionError)
+                    body = body.Replace("{txtWelcome}", taskInfo.LastWorkingDate.ToString() + " tarihli " + taskInfo.StatusInfo.TaskName + " görevi bağlantı hatasından dolayı başarısız olmuştur.");
+                else if (taskInfo.StatusInfo.Status == StatusType.MissingFile)
+                    body = body.Replace("{txtWelcome}", taskInfo.LastWorkingDate.ToString() + " tarihli " + taskInfo.StatusInfo.TaskName + " görevi eksik dosya hatasından dolayı başarısız olmuştur.");
+                else if (taskInfo.StatusInfo.Status == StatusType.NotEnoughDiskSpace)
+                    body = body.Replace("{txtWelcome}", taskInfo.LastWorkingDate.ToString() + " tarihli " + taskInfo.StatusInfo.TaskName + " görevi yetersiz disk alanı hatasından dolayı başarısız olmuştur.");
                 #endregion
             }
 
@@ -210,7 +237,7 @@ namespace DiskBackup.Communication
                             </p>
                         </div>
                         <table style=""font-family: Trebuchet MS, sans-serif, serif, EmojiFont; border-collapse: collapse; width: 100%;"">
-                            <tr style=""background-color:#4CAF50; border:1pt solid #DDDDDD; color: white;"">
+                            <tr style=""background-color:{BackgroundStatus}; border:1pt solid #DDDDDD; color: white;"">
                                 <th colspan=""2"" style=""padding: 8px; text-align:center; border: 1px solid #f2f2f2;"">{StatusInfoLang}</th>
                             </tr>
                             <tr>
