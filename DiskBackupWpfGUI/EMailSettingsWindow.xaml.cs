@@ -123,7 +123,14 @@ namespace DiskBackupWpfGUI
 
         private void btnTesting_Click(object sender, RoutedEventArgs e)
         {
-            _eMailOperations.SendTestEMail();
+            try
+            {
+                _eMailOperations.SendTestEMail();
+            }
+            catch (Exception)
+            {
+                MessageBox.Show(Resources["unexpectedError1MB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
     }
 }

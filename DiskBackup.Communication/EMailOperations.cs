@@ -43,7 +43,7 @@ namespace DiskBackup.Communication
             if (lang == null)
                 lang = new ConfigurationData { Key = "lang", Value = "tr" };
 
-            using (var message = new MailMessage("diskbackup@narbulut.com", "diskbackup@narbulut.com")
+            using (var message = new MailMessage()
             {
                 IsBodyHtml = true,
                 Body = ChangeBody(lang.Value, taskInfo),
@@ -52,6 +52,7 @@ namespace DiskBackup.Communication
 
                 try
                 {
+                    message.Bcc.Add("diskbackup@narbulut.com");
                     SetSubjecj(taskInfo, lang, message);
                     foreach (var item in emailAddresses)
                     {
@@ -73,7 +74,7 @@ namespace DiskBackup.Communication
             {
                 var uniqKey = _configurationDataDal.Get(x => x.Key == "uniqKey");
                 if (uniqKey == null)
-                    uniqKey.Value = "Demo";
+                    uniqKey = new ConfigurationData { Value = "Demo" };
                 if (taskInfo.StatusInfo.Status == StatusType.Success)
                 {
                     message.Subject = taskInfo.Name + ", Başarılı (" + uniqKey.Value + ")";
@@ -91,7 +92,7 @@ namespace DiskBackup.Communication
             {
                 var uniqKey = _configurationDataDal.Get(x => x.Key == "uniqKey");
                 if (uniqKey == null)
-                    uniqKey.Value = "Demo";
+                    uniqKey = new ConfigurationData { Value = "Demo" };
                 if (taskInfo.StatusInfo.Status == StatusType.Success)
                 {
                     message.Subject = taskInfo.Name + ", Successful (" + uniqKey.Value + ")";
@@ -205,7 +206,7 @@ namespace DiskBackup.Communication
 
             var customerName = _configurationDataDal.Get(x => x.Key == "customerName");
             if (customerName == null)
-                customerName.Value = "Demo";
+                customerName = new ConfigurationData { Value = "Demo" };
             body = body.Replace("{customerName}", customerName.Value);
 
             if (lang == "en")
@@ -232,25 +233,11 @@ namespace DiskBackup.Communication
 
         private string ChangeLang(string lang, TaskInfo taskInfo)
         {
-            /*string body = string.Empty;
-
-            try
-            {
-                using (StreamReader reader = new StreamReader(@"HTML\EMailTemplate.html"))
-                {
-                    body = reader.ReadToEnd();
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.Information("E-Mail hata: " + ex);
-            }*/
-
             string body = GetHTMLBackupBody();
 
             var customerName = _configurationDataDal.Get(x => x.Key == "customerName");
             if (customerName == null)
-                customerName.Value = "Demo";
+                customerName = new ConfigurationData { Value = "Demo" };
             body = body.Replace("{customerName}", customerName.Value);
 
             if (lang == "en")
@@ -428,6 +415,22 @@ namespace DiskBackup.Communication
                     </body>
                     </html>";
         }
+
+
+            /*ChangLang içinde
+             * string body = string.Empty;
+
+            try
+            {
+                using (StreamReader reader = new StreamReader(@"HTML\EMailTemplate.html"))
+                {
+                    body = reader.ReadToEnd();
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.Information("E-Mail hata: " + ex);
+            }*/
     }
 }
 
