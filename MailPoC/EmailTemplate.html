@@ -2,10 +2,34 @@
 <html>
 <head>
     <style>
-        .tableData {
-            text-align: left; 
-            padding: 8px; 
+        #statusInfo {
+            font-family: Trebuchet MS, sans-serif, serif, EmojiFont;
+            border-collapse: collapse;
+            width: 100%;
+        }
+        #statusInfo td, #statusInfo th {
+            text-align: left;
+            padding: 8px;
             border: 1px solid #f2f2f2;
+        }
+        #statusInfo tr:nth-child(even) {
+            font:bold 24px;
+        }
+        #statusInfo tr:hover {
+            background-color: #ddd;
+        }
+        #statusInfo th {
+            background-color: green;
+            color: white;
+            padding: 8px;
+            text-align: center;
+            border: 1pt solid #f2f2f2;
+        }
+        .leftColumn {
+            background-color: green; 
+            color: white; 
+            font-weight:bold; 
+            width: 25%;
         }
     </style>
 </head>
@@ -27,37 +51,37 @@
             {ListTextLang}
         </p>
     </div>
-    <table style="font-family: Trebuchet MS, sans-serif, serif, EmojiFont; border-collapse: collapse; width: 100%;">
-        <tr style="background-color:#4CAF50; border:1pt solid #DDDDDD; color: white;">
-            <th colspan="2" style="padding: 8px; text-align:center; border: 1px solid #f2f2f2;">{StatusInfoLang}</th>
+    <table id="statusInfo">
+        <tr class="colorTable">
+            <th colspan="2">{StatusInfoLang}</th>
         </tr>
         <tr>
-            <td class="tableData">{TaskNameLang}</td>
-            <td class="tableData">{TaskName}</td>
+            <td class="leftColumn">{TaskNameLang}</td>
+            <td style="width:67%">{TaskName}</td>
         </tr>
         <tr>
-            <td class="tableData">{FileNameLang}</td>
-            <td class="tableData">{FileName}</td>
+            <td class="leftColumn">{FileNameLang}</td>
+            <td>{FileName}</td>
         </tr>
         <tr>
-            <td class="tableData">{DurationLang}</td>
-            <td class="tableData">{Duration}</td>
+            <td class="leftColumn">{DurationLang}</td>
+            <td>{Duration}</td>
         </tr>
         <tr>
-            <td class="tableData">{AverageDataTransferLang}</td>
-            <td class="tableData">{AverageDataTransfer}</td>
+            <td class="leftColumn">{AverageDataTransferLang}</td>
+            <td>{AverageDataTransfer}</td>
         </tr>
         <tr>
-            <td class="tableData">{ProcessedDataLang}</td>
-            <td class="tableData">{ProcessedData}</td>
+            <td class="leftColumn">{ProcessedDataLang}</td>
+            <td>{ProcessedData}</td>
         </tr>
         <tr>
-            <td class="tableData">{InstantDataTransferLang}</td>
-            <td class="tableData">{InstantDataTransfer}</td>
+            <td class="leftColumn">{InstantDataTransferLang}</td>
+            <td>{InstantDataTransfer}</td>
         </tr>
         <tr>
-            <td class="tableData">{SourceInfoLang}</td>
-            <td class="tableData">{SourceInfo}</td>
+            <td class="leftColumn">{SourceInfoLang}</td>
+            <td>{SourceInfo}</td>
         </tr>
     </table>
     <p style="font-family: Trebuchet MS, sans-serif, serif, EmojiFont;">
