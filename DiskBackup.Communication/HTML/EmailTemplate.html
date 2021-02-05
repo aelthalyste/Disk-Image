@@ -1,13 +1,26 @@
 ﻿<!DOCTYPE html>
-
-<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<html>
 <head>
-    <meta charset="utf-8" />
     <style>
-        .tableData {
+        #statusInfo {
+            font-family: Trebuchet MS, sans-serif, serif, EmojiFont;
+            border-collapse: collapse;
+            width: 100%;
+        }
+        #statusInfo td, #statusInfo th {
             text-align: left;
             padding: 8px;
-            border: 1px solid #f2f2f2;
+            border: solid 1px #f2f2f2;
+        }
+
+        #statusInfo th {
+            background-color: green;
+            color: white;
+            text-align: center;
+        }
+        .leftColumn {
+            font-weight: bold;
+            width: 25%;
         }
     </style>
 </head>
@@ -16,48 +29,55 @@
         <p style="text-align: center;">
             <span>
                 <a href="http://panel.narbulut.com" target="_blank" rel="noopener noreferrer" data-auth="NotApplicable">
-                    <img src="https://panel.narbulut.com/img/slider/Logoü.png" alt="Örnek Resim" />
+                    <img src="https://panel.narbulut.com/img/slider/Logoü.png" alt="Narbulut Logo" />
                 </a>
             </span>
         </p>
-        <h2>{Dear}, {customerName}</h2>
-        <div style="padding: 0px; border: 0px solid #ffff; margin: 0px 0px 30px 0px;">
+        <h2>{Hello},</h2>
+        <div style="padding: 0px; margin: 0px 0px 30px 0px;">
             <p style="font-family: Trebuchet MS, sans-serif, serif, EmojiFont;">
-                {txtWelcome} {ListTextLang}
+                {txtWelcome}
+            </p>
+            <p style="font-family: Trebuchet MS, sans-serif, serif, EmojiFont;">
+                {ListTextLang}
             </p>
         </div>
-        <table style="font-family: Trebuchet MS, sans-serif, serif, EmojiFont; border-collapse: collapse; width: 100%;">
-            <tr style="background-color:#4CAF50; border:1pt solid #DDDDDD; color: white;">
-                <th colspan="2" style="padding: 8px; text-align:center; border: 1px solid #f2f2f2;">{StatusInfoLang}</th>
-            </tr>
-            <tr>
-                <td class="tableData">{TaskNameLang}</td>
-                <td class="tableData">{TaskName}</td>
-            </tr>
-            <tr>
-                <td class="tableData">{FileNameLang}</td>
-                <td class="tableData">{FileName}</td>
-            </tr>
-            <tr>
-                <td class="tableData">{DurationLang}</td>
-                <td class="tableData">{Duration}</td>
-            </tr>
-            <tr>
-                <td class="tableData">{AverageDataTransferLang}</td>
-                <td class="tableData">{AverageDataTransfer}</td>
-            </tr>
-            <tr>
-                <td class="tableData">{ProcessedDataLang}</td>
-                <td class="tableData">{ProcessedData}</td>
-            </tr>
-            <tr>
-                <td class="tableData">{InstantDataTransferLang}</td>
-                <td class="tableData">{InstantDataTransfer}</td>
-            </tr>
-            <tr>
-                <td class="tableData">{SourceInfoLang}</td>
-                <td class="tableData">{SourceInfo}</td>
-            </tr>
+        <table id="statusInfo">
+            <thead>
+                <tr>
+                    <th colspan="2">{StatusInfoLang}</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="leftColumn">{TaskNameLang}</td>
+                    <td style="width:75%">{TaskName}</td>
+                </tr>
+                <tr>
+                    <td class="leftColumn">{FileNameLang}</td>
+                    <td>{FileName}</td>
+                </tr>
+                <tr>
+                    <td class="leftColumn">{DurationLang}</td>
+                    <td>{Duration}</td>
+                </tr>
+                <tr>
+                    <td class="leftColumn">{AverageDataTransferLang}</td>
+                    <td>{AverageDataTransfer}</td>
+                </tr>
+                <tr>
+                    <td class="leftColumn">{ProcessedDataLang}</td>
+                    <td>{ProcessedData}</td>
+                </tr>
+                <tr>
+                    <td class="leftColumn">{InstantDataTransferLang}</td>
+                    <td>{InstantDataTransfer}</td>
+                </tr>
+                <tr>
+                    <td class="leftColumn">{SourceInfoLang}</td>
+                    <td>{SourceInfo}</td>
+                </tr>
+            </tbody>
         </table>
         <p style="font-family: Trebuchet MS, sans-serif, serif, EmojiFont;">
             {RespectLang}, Narbulut

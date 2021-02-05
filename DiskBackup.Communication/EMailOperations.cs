@@ -60,7 +60,6 @@ namespace DiskBackup.Communication
                     }
 
                     smtp.Send(message);
-                    _logger.Information("E-Mail gönderimi başarılı.");
                 }
                 catch (SmtpException ex)
                 {
@@ -157,7 +156,6 @@ namespace DiskBackup.Communication
                     }
 
                     smtp.Send(message);
-                    _logger.Information("Test e-mail gönderimi başarılı.");
                 }
                 catch (SmtpException ex)
                 {
@@ -181,11 +179,11 @@ namespace DiskBackup.Communication
             body = ChangeLang(lang, taskInfo);
 
             body = body.Replace("{FileName}", taskInfo.StatusInfo.FileName);
-            body = body.Replace("{Duration}", taskInfo.StatusInfo.TimeElapsed.ToString()); //hesaplama
+            body = body.Replace("{Duration}", FormatMilliseconds(TimeSpan.FromMilliseconds(taskInfo.StatusInfo.TimeElapsed), lang)); // ---
             body = body.Replace("{SourceInfo}", taskInfo.StatusInfo.SourceObje);
             body = body.Replace("{TaskName}", taskInfo.StatusInfo.TaskName);
             body = body.Replace("{AverageDataTransfer}", Math.Round(taskInfo.StatusInfo.AverageDataRate, 2).ToString() + " MB/s");
-            body = body.Replace("{ProcessedData}", taskInfo.StatusInfo.DataProcessed.ToString()); //HESAPLAMA
+            body = body.Replace("{ProcessedData}", FormatBytes(taskInfo.StatusInfo.DataProcessed)); //---
             body = body.Replace("{InstantDataTransfer}", Math.Round(taskInfo.StatusInfo.InstantDataRate, 2).ToString() + " MB/s");
 
             if (taskInfo.StatusInfo.Status == StatusType.Success)
@@ -306,10 +304,24 @@ namespace DiskBackup.Communication
                     <html>
                     <head>
                         <style>
-                            .tableData {
-                                text-align: left; 
-                                padding: 8px; 
+                            #statusInfo {
+                                font-family: Trebuchet MS, sans-serif, serif, EmojiFont;
+                                border-collapse: collapse;
+                                width: 100%;
+                            }
+                            #statusInfo td, #statusInfo th {
+                                text-align: left;
+                                padding: 8px;
                                 border: 1px solid #f2f2f2;
+                            }
+                            #statusInfo th {
+                                background-color: {BackgroundStatus};
+                                color: white;
+                                text-align: center;
+                            }
+                            .leftColumn {
+                                font-weight: bold;
+                                width: 25%;
                             }
                         </style>
                     </head>
@@ -323,43 +335,47 @@ namespace DiskBackup.Communication
                             </span>
                         </p>
                         <h2>{Dear}, {customerName}</h2>
-                        <div style=""padding: 0px; border: 0px solid #ffff; margin: 0px 0px 30px 0px;"">
+                        <div style=""padding: 0px; margin: 0px 0px 30px 0px;"">
                             <p style=""font-family: Trebuchet MS, sans-serif, serif, EmojiFont;""> 
                                 {txtWelcome} {ListTextLang}
                             </p>
                         </div>
-                        <table style=""font-family: Trebuchet MS, sans-serif, serif, EmojiFont; border-collapse: collapse; width: 100%;"">
-                            <tr style=""background-color:{BackgroundStatus}; border:1pt solid #DDDDDD; color: white;"">
-                                <th colspan=""2"" style=""padding: 8px; text-align:center; border: 1px solid #f2f2f2;"">{StatusInfoLang}</th>
-                            </tr>
-                            <tr>
-                                <td class=""tableData"">{TaskNameLang}</td>
-                                <td class=""tableData"">{TaskName}</td>
-                            </tr>
-                            <tr>
-                                <td class=""tableData"">{FileNameLang}</td>
-                                <td class=""tableData"">{FileName}</td>
-                            </tr>
-                            <tr>
-                                <td class=""tableData"">{DurationLang}</td>
-                                <td class=""tableData"">{Duration}</td>
-                            </tr>
-                            <tr>
-                                <td class=""tableData"">{AverageDataTransferLang}</td>
-                                <td class=""tableData"">{AverageDataTransfer}</td>
-                            </tr>
-                            <tr>
-                                <td class=""tableData"">{ProcessedDataLang}</td>
-                                <td class=""tableData"">{ProcessedData}</td>
-                            </tr>
-                            <tr>
-                                <td class=""tableData"">{InstantDataTransferLang}</td>
-                                <td class=""tableData"">{InstantDataTransfer}</td>
-                            </tr>
-                            <tr>
-                                <td class=""tableData"">{SourceInfoLang}</td>
-                                <td class=""tableData"">{SourceInfo}</td>
-                            </tr>
+                        <table id=""statusInfo"">
+                            <thead>
+                                <tr class=""colorTable"" >
+                                    <th colspan=""2"">{StatusInfoLang}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class=""leftColumn"">{TaskNameLang}</td>
+                                    <td style=""width: 75%"">{TaskName}</td>
+                                </tr>
+                                <tr>
+                                    <td class=""leftColumn"">{FileNameLang}</td>
+                                    <td>{FileName}</td>
+                                </tr>
+                                <tr>
+                                    <td class=""leftColumn"">{DurationLang}</td>
+                                    <td>{Duration}</td>
+                                </tr>
+                                <tr>
+                                    <td class=""leftColumn"">{AverageDataTransferLang}</td>
+                                    <td>{AverageDataTransfer}</td>
+                                </tr>
+                                <tr>
+                                    <td class=""leftColumn"">{ProcessedDataLang}</td>
+                                    <td>{ProcessedData}</td>
+                                </tr>
+                                <tr>
+                                    <td class=""leftColumn"">{InstantDataTransferLang}</td>
+                                    <td>{InstantDataTransfer}</td>
+                                </tr>
+                                <tr>
+                                    <td class=""leftColumn"">{SourceInfoLang}</td>
+                                    <td>{SourceInfo}</td>
+                                </tr>
+                            </tbody>
                         </table>
                         <p style=""font-family: Trebuchet MS, sans-serif, serif, EmojiFont;"">
                             {RespectLang}, Narbulut
@@ -416,21 +432,85 @@ namespace DiskBackup.Communication
                     </html>";
         }
 
-
-            /*ChangLang içinde
-             * string body = string.Empty;
-
-            try
+        #region dönüştürücü methodlar
+        public string FormatMilliseconds(TimeSpan obj, string lang)
+        {
+            StringBuilder sb = new StringBuilder();
+            if (obj.Hours != 0)
             {
-                using (StreamReader reader = new StreamReader(@"HTML\EMailTemplate.html"))
-                {
-                    body = reader.ReadToEnd();
-                }
+                sb.Append(obj.Hours);
+                sb.Append(" ");
+                if (lang == "en")
+                    sb.Append("h");
+                else
+                    sb.Append("s");
+                sb.Append(" ");
             }
-            catch (Exception ex)
+            if (obj.Minutes != 0 || sb.Length != 0)
             {
-                _logger.Information("E-Mail hata: " + ex);
-            }*/
+                sb.Append(obj.Minutes);
+                sb.Append(" ");
+                if (lang == "en")
+                    sb.Append("min");
+                else
+                    sb.Append("dk");
+                sb.Append(" ");
+            }
+            if (obj.Seconds != 0 || sb.Length != 0)
+            {
+                sb.Append(obj.Seconds);
+                sb.Append(" ");
+                if (lang == "en")
+                    sb.Append("sec");
+                else
+                    sb.Append("sn");
+                sb.Append(" ");
+            }
+            if (obj.Milliseconds != 0 || sb.Length != 0)
+            {
+                sb.Append(obj.Milliseconds);
+                sb.Append(" ");
+                sb.Append("ms");
+                sb.Append(" ");
+            }
+            if (sb.Length == 0)
+            {
+                sb.Append(0);
+                sb.Append(" ");
+                sb.Append("ms");
+            }
+            return sb.ToString();
+        }
+
+        private static string FormatBytes(long bytes)
+        {
+            string[] Suffix = { "B", "KB", "MB", "GB", "TB" };
+            int i;
+            double dblSByte = bytes;
+            for (i = 0; i < Suffix.Length && bytes >= 1024; i++, bytes /= 1024)
+            {
+                dblSByte = bytes / 1024.0;
+            }
+
+            return ($"{dblSByte:0.##} {Suffix[i]}");
+        }
+        #endregion
+
+
+        /*ChangLang içinde
+         * string body = string.Empty;
+
+        try
+        {
+            using (StreamReader reader = new StreamReader(@"HTML\EMailTemplate.html"))
+            {
+                body = reader.ReadToEnd();
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.Information("E-Mail hata: " + ex);
+        }*/
     }
 }
 

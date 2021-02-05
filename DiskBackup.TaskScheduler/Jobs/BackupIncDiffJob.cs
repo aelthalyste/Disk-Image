@@ -169,10 +169,16 @@ namespace DiskBackup.TaskScheduler.Jobs
             _backupService.RefreshIncDiffTaskFlag(true);
             _backupService.RefreshIncDiffLogFlag(true);
 
-            _logger.Information("SendEmail çağırılıyor");
-            taskInfo.StatusInfo = resultTaskStatusInfo;
-            _emailOperations.SendEMail(taskInfo);
-            _logger.Information("SendEmail çağırıldı");
+            _logger.Verbose("SendEmail çağırılıyor");
+            try
+            {
+                taskInfo.StatusInfo = resultTaskStatusInfo;
+                _emailOperations.SendEMail(taskInfo);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex + "Email gönderilemedi");
+            }
         }
     }
 }
