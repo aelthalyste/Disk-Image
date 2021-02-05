@@ -309,6 +309,34 @@ namespace DiskBackupWpfGUI
                 txtExpireDateDays.Text = supportDays.ToString();
             stackSupportDate.Visibility = Visibility.Visible;
             txtVerificationKey.Text = splitLicenseKey[6];
+
+            AddDBCustomerNameAndUniqKey(splitLicenseKey);
+        }
+
+        private void AddDBCustomerNameAndUniqKey(string[] splitLicenseKey)
+        {
+            var customerConfiguration = _configurationDataDal.Get(x => x.Key == "customerName");
+            if (customerConfiguration == null)
+            {
+                customerConfiguration = new ConfigurationData { Key = "customerName", Value = splitLicenseKey[1] };
+                _configurationDataDal.Add(customerConfiguration);
+            }
+            else if (customerConfiguration.Value != splitLicenseKey[1])
+            {
+                customerConfiguration.Value = splitLicenseKey[1];
+                _configurationDataDal.Update(customerConfiguration);
+            }
+            var uniqKeyConfiguration = _configurationDataDal.Get(x => x.Key == "uniqKey");
+            if (uniqKeyConfiguration == null)
+            {
+                uniqKeyConfiguration = new ConfigurationData { Key = "uniqKey", Value = splitLicenseKey[6] };
+                _configurationDataDal.Add(uniqKeyConfiguration);
+            }
+            else if (uniqKeyConfiguration.Value != splitLicenseKey[6])
+            {
+                uniqKeyConfiguration.Value = splitLicenseKey[6];
+                _configurationDataDal.Update(uniqKeyConfiguration);
+            }
         }
 
         private void FixBrokenRegistry()

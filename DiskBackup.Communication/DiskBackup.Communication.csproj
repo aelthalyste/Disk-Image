@@ -45,15 +45,12 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="EMailOperations.cs" />
-    <Compile Include="IEmailOperations.cs" />
+    <Compile Include="IEMailOperations.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="HTML\EmailTemplate.html">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
+    <Resource Include="HTML\EMailTemplate.html" />
   </ItemGroup>
-  <ItemGroup />
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
@@ -70,6 +67,9 @@
       <Project>{08189feb-3e7a-4c10-8088-3732bc8ac883}</Project>
       <Name>DiskBackup.Entities</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="HTML\TestEMailTemplate.html" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
