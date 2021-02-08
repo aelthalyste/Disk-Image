@@ -316,6 +316,7 @@ namespace DiskBackupWpfGUI
 
             //backupTask kaydetme
             _taskInfo.StatusInfo.TaskName = _taskInfo.Name;
+            _taskInfo.StatusInfo.FileName = resultRestoreTask.RootDir;
             _taskInfo.StatusInfo.SourceObje = _taskInfo.StrObje;
             var resultStatusInfo = _statusInfoDal.Add(_taskInfo.StatusInfo);
             if (resultStatusInfo == null)

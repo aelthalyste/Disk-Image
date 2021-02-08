@@ -1,6 +1,7 @@
 ﻿using Autofac;
 using DiskBackup.Business.Abstract;
 using DiskBackup.Business.Concrete;
+using DiskBackup.Communication;
 using DiskBackup.DataAccess.Abstract;
 using DiskBackup.DataAccess.Concrete.EntityFramework;
 using DiskBackup.Entities.Concrete;
@@ -65,6 +66,7 @@ namespace DiskBackup.Service
             builder.RegisterType<RestoreDiskJob>();
             builder.RegisterType<RestoreVolumeJob>();
             builder.RegisterType<DiskBackupJobFactory>().As<IJobFactory>();
+            builder.RegisterType<EMailOperations>().As<IEMailOperations>();
             _container = builder.Build();
 
         }

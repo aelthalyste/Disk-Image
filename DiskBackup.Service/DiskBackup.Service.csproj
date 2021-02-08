@@ -125,6 +125,10 @@
       <Project>{3f48e57c-71b2-4978-8361-345fa514e77a}</Project>
       <Name>DiskBackup.Business</Name>
     </ProjectReference>
+    <ProjectReference Include="..\DiskBackup.Communication\DiskBackup.Communication.csproj">
+      <Project>{258921de-2586-4e54-b545-d304615fb6b1}</Project>
+      <Name>DiskBackup.Communication</Name>
+    </ProjectReference>
     <ProjectReference Include="..\DiskBackup.Core\DiskBackup.Core.csproj">
       <Project>{ca2a0627-7997-4b4e-8be3-c1ca9e516f66}</Project>
       <Name>DiskBackup.Core</Name>

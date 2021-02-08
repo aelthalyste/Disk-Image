@@ -51,14 +51,12 @@ namespace DiskBackupWpfGUI
             // 0 yedekleme durumu, 1 geri yükleme
             if (chooseFlag == 0)
             {
-                stackLocalTaskName.Visibility = Visibility.Visible;
-                txtLocalTaskName.Visibility = Visibility.Visible;
-                stackCloudTaskName.Visibility = Visibility.Visible;
-                txtCloudTaskName.Visibility = Visibility.Visible;
                 txtTitleBar.Text = Resources["backupStatus"].ToString();
 
                 txtLocalTaskName.Text = _statusInfo.TaskName;
+                txtCloudTaskName.Text = _statusInfo.TaskName;
                 txtLocalFileName.Text = _statusInfo.FileName;
+                txtCloudFileName.Text = _statusInfo.FileName;
                 txtLocalTime.Text = FormatMilliseconds(TimeSpan.FromMilliseconds(_statusInfo.TimeElapsed)); // milisaniye
                 txtLocalAverageDataRate.Text = _statusInfo.AverageDataRate.ToString() + " MB/s";
                 txtLocalDataProcessed.Text = FormatBytes(_statusInfo.DataProcessed).ToString(); //dönüş değerine bakılmalı byte, kb, mb, gb...
@@ -67,11 +65,13 @@ namespace DiskBackupWpfGUI
                 {
                     var source = _statusInfo.SourceObje.Split('-');
                     txtLocalSourceObje.Text = source[0];
+                    txtCloudSourceObje.Text = source[0];
                     txtSourceSingle.Text = source[1];
                 }
                 else
                 {
                     txtLocalSourceObje.Text = _statusInfo.SourceObje;
+                    txtCloudSourceObje.Text = _statusInfo.SourceObje;
                     txtSourceSingle.Text = _statusInfo.SourceObje;
                 }
 
@@ -80,14 +80,10 @@ namespace DiskBackupWpfGUI
             }
             else
             {
-                stackLocalTaskName.Visibility = Visibility.Visible;
-                txtLocalTaskName.Visibility = Visibility.Visible;
-                stackCloudTaskName.Visibility = Visibility.Visible;
-                txtCloudTaskName.Visibility = Visibility.Visible;
                 //stackLocalZip.Visibility = Visibility.Collapsed;
                 //txtLocalZip.Visibility = Visibility.Collapsed;
-                stackCloudZip.Visibility = Visibility.Collapsed;
-                txtCloudZip.Visibility = Visibility.Collapsed;
+                //stackCloudZip.Visibility = Visibility.Collapsed;
+                //txtCloudZip.Visibility = Visibility.Collapsed;
                 txtTitleBar.Text = Resources["restoreStatus"].ToString();
             }
         }
@@ -109,14 +105,12 @@ namespace DiskBackupWpfGUI
             // 0 yedekleme durumu, 1 geri yükleme
             if (chooseFlag == 0)
             {
-                stackLocalTaskName.Visibility = Visibility.Visible;
-                txtLocalTaskName.Visibility = Visibility.Visible;
-                stackCloudTaskName.Visibility = Visibility.Visible;
-                txtCloudTaskName.Visibility = Visibility.Visible;
                 txtTitleBar.Text = Resources["backupStatus"].ToString();
 
                 txtLocalTaskName.Text = statusInfo.TaskName;
+                txtCloudTaskName.Text = statusInfo.TaskName;
                 txtLocalFileName.Text = statusInfo.FileName;
+                txtCloudFileName.Text = statusInfo.FileName;
                 txtLocalTime.Text = FormatMilliseconds(TimeSpan.FromMilliseconds(statusInfo.TimeElapsed)); // milisaniye
                 txtLocalAverageDataRate.Text = statusInfo.AverageDataRate.ToString() + " MB/s";
                 txtLocalDataProcessed.Text = FormatBytes(statusInfo.DataProcessed).ToString(); //dönüş değerine bakılmalı byte, kb, mb, gb...
@@ -125,11 +119,13 @@ namespace DiskBackupWpfGUI
                 {
                     var source = statusInfo.SourceObje.Split('-');
                     txtLocalSourceObje.Text = source[0];
+                    txtCloudSourceObje.Text = source[0];
                     txtSourceSingle.Text = source[1];
                 }
                 else
                 {
                     txtLocalSourceObje.Text = statusInfo.SourceObje;
+                    txtCloudSourceObje.Text = statusInfo.SourceObje;
                     txtSourceSingle.Text = statusInfo.SourceObje;
                 }
 
@@ -138,14 +134,10 @@ namespace DiskBackupWpfGUI
             }
             else
             {
-                stackLocalTaskName.Visibility = Visibility.Visible;
-                txtLocalTaskName.Visibility = Visibility.Visible;
-                stackCloudTaskName.Visibility = Visibility.Visible;
-                txtCloudTaskName.Visibility = Visibility.Visible;
                 //stackLocalZip.Visibility = Visibility.Collapsed;
                 //txtLocalZip.Visibility = Visibility.Collapsed;
-                stackCloudZip.Visibility = Visibility.Collapsed;
-                txtCloudZip.Visibility = Visibility.Collapsed;
+                //stackCloudZip.Visibility = Visibility.Collapsed;
+                //txtCloudZip.Visibility = Visibility.Collapsed;
                 txtTitleBar.Text = Resources["restoreStatus"].ToString();
             }            
         }
@@ -171,11 +163,13 @@ namespace DiskBackupWpfGUI
                 {
                     var source = _statusInfo.SourceObje.Split('-');
                     txtLocalSourceObje.Text = source[0];
+                    txtCloudSourceObje.Text = source[0];
                     txtSourceSingle.Text = source[1];
                 }
                 else
                 {
                     txtLocalSourceObje.Text = _statusInfo.SourceObje;
+                    txtCloudSourceObje.Text = _statusInfo.SourceObje;
                     txtSourceSingle.Text = _statusInfo.SourceObje;
                 }
 

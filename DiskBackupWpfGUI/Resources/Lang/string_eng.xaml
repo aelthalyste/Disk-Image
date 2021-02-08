@@ -330,5 +330,6 @@
     <system:String x:Key="LicenseKeyFailMB">Invalid license key.</system:String>
     <system:String x:Key="LicenseKeyOSFailMB">Your license and operating system version do not match.</system:String>
     <system:String x:Key="EmailFailMB">Please enter a valid email address.</system:String>
+    <system:String x:Key="EmailSentMB">Email has been sent.</system:String>
 
 </ResourceDictionary>

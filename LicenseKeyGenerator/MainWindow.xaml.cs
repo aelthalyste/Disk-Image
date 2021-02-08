@@ -173,13 +173,13 @@ namespace LicenseKeyGenerator
 
         private void btnClear_Click(object sender, RoutedEventArgs e)
         {
-            //List<string> konuşma = new List<string>();
-            //konuşma.Add("Eyüp: Ebru Temizlenmesi istiyorlarmış \nEbru:Offff!");
-            //konuşma.Add("Ebru: Eyüp Temizlenmesi istiyorlarmış \nEyüp:Offff!");
-            //konuşma.Add("Ebru: Eyüp sen temizler misin \nEyüp:Offff!");
-            //konuşma.Add("Ebru: Eyüp temizlenmesi gerekliymiş ben sana demiştim şuraya buton koyalım diye  \nEyüp:Offff!");
-            //Random random = new Random(); 
-            //MessageBox.Show(konuşma[Convert.ToInt32(random.Next(0, konuşma.Count - 1))]);
+            List<string> konuşma = new List<string>();
+            konuşma.Add("Eyüp: Ebru Temizlenmesi istiyorlarmış \nEbru: Hadi yapalım şu işi!");
+            konuşma.Add("Ebru: Eyüp Temizlenmesi istiyorlarmış \nEyüp: Hadi yapalım şu işi!");
+            konuşma.Add("Ebru: Eyüp sen temizler misin \nEyüp: Offff!");
+            konuşma.Add("Ebru: Eyüp temizlenmesi gerekliymiş ben sana demiştim şuraya buton koyalım diye  \nEyüp: Offff!");
+            Random random = new Random();
+            MessageBox.Show(konuşma[Convert.ToInt32(random.Next(0, konuşma.Count))]);
             txtDealerName.Text = "";
             txtCustomerName.Text = "";
             txtAuthorizedPerson.Text = "";
