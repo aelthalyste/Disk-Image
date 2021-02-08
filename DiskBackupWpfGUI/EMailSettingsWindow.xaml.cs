@@ -126,6 +126,7 @@ namespace DiskBackupWpfGUI
             try
             {
                 _eMailOperations.SendTestEMail();
+                MessageBox.Show(Resources["EmailSentMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception)
             {

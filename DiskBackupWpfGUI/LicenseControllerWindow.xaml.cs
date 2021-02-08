@@ -29,7 +29,6 @@ namespace DiskBackupWpfGUI
         public bool _validate = false;
 
         private string _key = "D*G-KaPdSgVkYp3s6v8y/B?E(H+MbQeT";
-        private string _licenseKeyFile = "";
 
         private readonly IConfigurationDataDal _configurationDataDal;
         private readonly ILogger _logger;
@@ -83,6 +82,25 @@ namespace DiskBackupWpfGUI
 
         private void btnSave_Click(object sender, RoutedEventArgs e)
         {
+            if (rbDemo.IsChecked == true)
+            {
+                _logger.Information("Demo lisans aktifleştirildi.");
+                RegistryKey key = CreateRegistryKeyFile();
+                key.SetValue("UploadDate", DateTime.Now);
+                key.SetValue("ExpireDate", DateTime.Now + TimeSpan.FromDays(30));
+                key.SetValue("LastDate", DateTime.Now);
+                key.SetValue("Type", 1505);
+                _validate = true;
+                Close();
+            }
+            else // lisans seçili
+            {
+                ValidateLicenseKey(txtLicenseKey.Text);
+            }
+        }
+
+        private RegistryKey CreateRegistryKeyFile()
+        {
             var key = Registry.LocalMachine.OpenSubKey("SOFTWARE\\NarDiskBackup", true);
 
             if (!_windowType)
@@ -94,28 +112,10 @@ namespace DiskBackupWpfGUI
                 }
             }
 
-            if (rbDemo.IsChecked == true)
-            {
-                _logger.Information("Demo lisans aktifleştirildi.");
-                key.SetValue("UploadDate", DateTime.Now);
-                key.SetValue("ExpireDate", DateTime.Now + TimeSpan.FromDays(30));
-                key.SetValue("LastDate", DateTime.Now);
-                key.SetValue("Type", 1505);
-                _validate = true;
-                Close();
-            }
-            else // lisans seçili
-            {
-                if (txtLicenseKey.Text != "")
-                    ValidateLicenseKey(key, txtLicenseKey.Text);
-                else
-                {
-                    ValidateLicenseKey(key, _licenseKeyFile);
-                }
-            }
+            return key;
         }
 
-        private void ValidateLicenseKey(RegistryKey key, string licenseKey)
+        private void ValidateLicenseKey(string licenseKey)
         {
             var resultDecryptLicenseKey = DecryptLicenseKey(_key, licenseKey);
             if (resultDecryptLicenseKey.Equals("fail"))
@@ -127,6 +127,7 @@ namespace DiskBackupWpfGUI
                 if (CheckOSVersion(resultDecryptLicenseKey))
                 {
                     _logger.Information("Lisans aktifleştirildi. Lisans Anahtarı: " + licenseKey);
+                    RegistryKey key = CreateRegistryKeyFile();
                     key.SetValue("UploadDate", DateTime.Now);
                     key.SetValue("ExpireDate", "");
                     key.SetValue("Type", 2606);
@@ -229,9 +230,11 @@ namespace DiskBackupWpfGUI
                 var result = dialog.ShowDialog();
                 if (result == System.Windows.Forms.DialogResult.OK)
                 {
+                    var key = Registry.LocalMachine.OpenSubKey("SOFTWARE\\NarDiskBackup", true);
                     string nbkeyPath = dialog.FileName;
                     StreamReader sr = new StreamReader(nbkeyPath);
-                    _licenseKeyFile = sr.ReadToEnd();
+                    var licenseKeyFile = sr.ReadToEnd();
+                    ValidateLicenseKey(licenseKeyFile);
                 }
             }
         }
