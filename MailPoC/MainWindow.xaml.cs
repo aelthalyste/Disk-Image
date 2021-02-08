@@ -59,6 +59,7 @@ namespace MailPoC
                 Timeout = 20000
             };
 
+            // "eyup.katirci@bilisimcenter.com -> txtTo.Text
             using (var message = new MailMessage("diskbackup@narbulut.com", txtTo.Text)
             {
                 IsBodyHtml = true,
@@ -69,6 +70,7 @@ namespace MailPoC
 
                 try
                 {
+                    //message.To.Add("ebru.vural@bilisimcenter.com");
                     smtp.Send(message);
                     MessageBox.Show("eposta gönderimi başarılı");
                 }

@@ -69,6 +69,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="HTML\RestoreEMailTemplate.html" />
     <Content Include="HTML\TestEMailTemplate.html" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

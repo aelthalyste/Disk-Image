@@ -1,5 +1,6 @@
 ﻿using DiskBackup.Business.Abstract;
 using DiskBackup.Business.Concrete;
+using DiskBackup.Communication;
 using DiskBackup.DataAccess.Abstract;
 using DiskBackup.DataAccess.Core;
 using DiskBackup.Entities.Concrete;
@@ -22,8 +23,9 @@ namespace DiskBackup.TaskScheduler.Jobs
         private readonly IStatusInfoDal _statusInfoDal;
         private readonly IActivityLogDal _activityLogDal;
         private readonly ILogger _logger;
+        private IEMailOperations _emailOperations;
 
-        public RestoreVolumeJob(IBackupService backupService, ITaskInfoDal taskInfoDal, IBackupStorageDal backupStorageDal, IRestoreTaskDal restoreTaskDal, IStatusInfoDal statusInfoDal, IActivityLogDal activityLogDal, ILogger logger)
+        public RestoreVolumeJob(IBackupService backupService, ITaskInfoDal taskInfoDal, IBackupStorageDal backupStorageDal, IRestoreTaskDal restoreTaskDal, IStatusInfoDal statusInfoDal, IActivityLogDal activityLogDal, ILogger logger, IEMailOperations emailOperations)
         {
             _backupService = backupService;
             _taskInfoDal = taskInfoDal;
@@ -32,6 +34,7 @@ namespace DiskBackup.TaskScheduler.Jobs
             _statusInfoDal = statusInfoDal;
             _activityLogDal = activityLogDal;
             _logger = logger.ForContext<RestoreVolumeJob>();
+            _emailOperations = emailOperations;
         }
 
         public Task Execute(IJobExecutionContext context) // async ekleyeceğiz
@@ -136,6 +139,17 @@ namespace DiskBackup.TaskScheduler.Jobs
             _taskInfoDal.Update(taskInfo);
             _backupService.RefreshIncDiffTaskFlag(true);
             _backupService.RefreshIncDiffLogFlag(true);
+
+            _logger.Verbose("SendEmail çağırılıyor");
+            try
+            {
+                taskInfo.StatusInfo = resultTaskStatusInfo;
+                _emailOperations.SendEMail(taskInfo);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex + "Email gönderilemedi");
+            }
         }
     }
 }
