@@ -14,9 +14,9 @@
         BorderThickness="1" 
         Icon="Resources/Icon/NarBulut_PNG_Icon_White_V3.png" 
         WindowStyle="None">
-    <Window.Resources>
+    <!--<Window.Resources>
         <ResourceDictionary Source="Resources\Lang\string_eng.xaml"/>
-    </Window.Resources>
+    </Window.Resources>-->
 
     <Grid
         Background="#F2F2F2">
@@ -48,74 +48,90 @@
 
         <StackPanel Grid.Row="1" Grid.Column="0">
             <TextBlock Text="{DynamicResource localArea}" Margin="0,30,0,10" FontSize="16" HorizontalAlignment="Center"></TextBlock>
-            <Grid>
+            <Grid Margin="10,0">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="190"/>
+                    <ColumnDefinition Width="25"/>
+                    <ColumnDefinition Width="150"/>
                     <ColumnDefinition/>
                 </Grid.ColumnDefinitions>
-                <Rectangle Grid.Column="1" VerticalAlignment="Center" Stroke="#B5ADAD" StrokeThickness="2" HorizontalAlignment="Right" Height="250"/>
-                <StackPanel Grid.Column="0" Margin="10,0,0,0">
-                    <StackPanel Name="stackLocalTaskName" Orientation="Horizontal">
-                        <Image Height="25" Margin="8,0">
-                            <Image.Style>
-                                <Style TargetType="Image">
-                                    <Setter Property="Source" Value="Resources/Icon/u58.png" />
-                                </Style>
-                            </Image.Style>
-                        </Image>
-                        <TextBlock Text="{DynamicResource taskName}" VerticalAlignment="Center"/>
-                    </StackPanel>
-                    <StackPanel Orientation="Horizontal">
-                        <Image Height="20" Margin="10,0">
-                            <Image.Style>
-                                <Style TargetType="Image">
-                                    <Setter Property="Source" Value="Resources/Icon/icons8_info.ico" />
-                                </Style>
-                            </Image.Style>
-                        </Image>
-                        <TextBlock Text="{DynamicResource fileName}" VerticalAlignment="Center"/>
-                    </StackPanel>
-                    <StackPanel Orientation="Horizontal" Margin="0,4,0,4">
-                        <Image Height="20" Margin="10,0">
-                            <Image.Style>
-                                <Style TargetType="Image">
-                                    <Setter Property="Source" Value="Resources/Icon/icons8_time_machine.ico" />
-                                </Style>
-                            </Image.Style>
-                        </Image>
-                        <TextBlock Text="{DynamicResource duration}" VerticalAlignment="Center"></TextBlock>
-                    </StackPanel>
-                    <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                        <Image Height="20" Margin="10,0">
-                            <Image.Style>
-                                <Style TargetType="Image">
-                                    <Setter Property="Source" Value="Resources/Icon/icons8_up_down_arrow.ico" />
-                                </Style>
-                            </Image.Style>
-                        </Image>
-                        <TextBlock Text="{DynamicResource averageDataTransfer}" VerticalAlignment="Center"></TextBlock>
-                    </StackPanel>
-                    <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                        <Image Height="20" Margin="10,0">
-                            <Image.Style>
-                                <Style TargetType="Image">
-                                    <Setter Property="Source" Value="Resources/Icon/icons8_services_2.ico" />
-                                </Style>
-                            </Image.Style>
-                        </Image>
-                        <TextBlock Text="{DynamicResource processedData}" VerticalAlignment="Center"></TextBlock>
-                    </StackPanel>
-                    <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                        <Image Height="22" Margin="8,0,10,0">
-                            <Image.Style>
-                                <Style TargetType="Image">
-                                    <Setter Property="Source" Value="Resources/Icon/icons8_forward_button.ico" />
-                                </Style>
-                            </Image.Style>
-                        </Image>
-                        <TextBlock Text="{DynamicResource instantDataTransfer}" VerticalAlignment="Center"></TextBlock>
-                    </StackPanel>
-                    <!--<StackPanel Name="stackLocalZip" Orientation="Horizontal" Margin="0,0,0,4">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="25"/>
+                    <RowDefinition Height="25"/>
+                    <RowDefinition Height="25"/>
+                    <RowDefinition Height="25"/>
+                    <RowDefinition Height="25"/>
+                    <RowDefinition Height="25"/>
+                    <RowDefinition Height="25"/>
+                    <RowDefinition Height="25"/>
+                </Grid.RowDefinitions>
+                <Rectangle Grid.Column="2" Grid.RowSpan="8" VerticalAlignment="Center" Stroke="#B5ADAD" StrokeThickness="2" HorizontalAlignment="Right" Height="250" Margin="-10,0"/>
+                <!--Row 0-->
+                <Image Height="25" Grid.Column="0" Grid.Row="0">
+                    <Image.Style>
+                        <Style TargetType="Image">
+                            <Setter Property="Source" Value="Resources/Icon/u58.png" />
+                        </Style>
+                    </Image.Style>
+                </Image>
+                <TextBlock Text="{DynamicResource taskName}" VerticalAlignment="Center" Grid.Column="1" Grid.Row="0" Margin="10,0"/>
+                <TextBlock Name="txtLocalTaskName" VerticalAlignment="Center" Grid.Column="2" Grid.Row="0">C'yi restore et</TextBlock>
+                
+                <!--Row 1-->
+                <Image Height="20" Grid.Column="0" Grid.Row="1">
+                    <Image.Style>
+                        <Style TargetType="Image">
+                            <Setter Property="Source" Value="Resources/Icon/icons8_info.ico" />
+                        </Style>
+                    </Image.Style>
+                </Image>
+                <TextBlock Text="{DynamicResource fileName}" VerticalAlignment="Center" Grid.Column="1" Grid.Row="1" Margin="10,0"/>
+                <TextBlock Name="txtLocalFileName" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" Grid.Column="2" Grid.Row="1">\\10.0.0.145\backup1.nb</TextBlock>
+                
+                <!--Row 2-->
+                <Image Height="20" Grid.Column="0" Grid.Row="2">
+                    <Image.Style>
+                        <Style TargetType="Image">
+                            <Setter Property="Source" Value="Resources/Icon/icons8_time_machine.ico" />
+                        </Style>
+                    </Image.Style>
+                </Image>
+                <TextBlock Text="{DynamicResource duration}" VerticalAlignment="Center" Grid.Column="1" Grid.Row="2" Margin="10,0"/>
+                <TextBlock Name="txtLocalTime" VerticalAlignment="Center" Grid.Column="2" Grid.Row="2">01:20</TextBlock>
+                
+                <!--Row 3-->
+                <Image Height="20" Grid.Column="0" Grid.Row="3">
+                    <Image.Style>
+                        <Style TargetType="Image">
+                            <Setter Property="Source" Value="Resources/Icon/icons8_up_down_arrow.ico" />
+                        </Style>
+                    </Image.Style>
+                </Image>
+                <TextBlock Text="{DynamicResource averageDataTransfer}" VerticalAlignment="Center" Grid.Column="1" Grid.Row="3" Margin="10,0"/>
+                <TextBlock Name="txtLocalAverageDataRate" VerticalAlignment="Center" Grid.Column="2" Grid.Row="3">74 MB/s</TextBlock>
+                
+                <!--Row 4-->
+                <Image Height="20" Grid.Column="0" Grid.Row="4">
+                    <Image.Style>
+                        <Style TargetType="Image">
+                            <Setter Property="Source" Value="Resources/Icon/icons8_services_2.ico" />
+                        </Style>
+                    </Image.Style>
+                </Image>
+                <TextBlock Text="{DynamicResource processedData}" VerticalAlignment="Center" Grid.Column="1" Grid.Row="4" Margin="10,0"/>
+                <TextBlock Name="txtLocalDataProcessed" VerticalAlignment="Center" Grid.Column="2" Grid.Row="4">12 GB</TextBlock>
+                
+                <!--Row 5-->
+                <Image Height="22" Grid.Column="0" Grid.Row="5">
+                    <Image.Style>
+                        <Style TargetType="Image">
+                            <Setter Property="Source" Value="Resources/Icon/icons8_forward_button.ico" />
+                        </Style>
+                    </Image.Style>
+                </Image>
+                <TextBlock Text="{DynamicResource instantDataTransfer}" VerticalAlignment="Center" Grid.Column="1" Grid.Row="5" Margin="10,0"/>
+                <TextBlock Name="txtLocalInstantDataRate" VerticalAlignment="Center" Grid.Column="2" Grid.Row="5">74 MB/s</TextBlock>
+
+                <!--<StackPanel Name="stackLocalZip" Orientation="Horizontal" Margin="0,0,0,4"> ROW 6'YA DENK GELECEK ZİP GELDİĞİNDE
                             <Image Height="20" Margin="10,0">
                                 <Image.Style>
                                     <Style TargetType="Image">
@@ -125,131 +141,128 @@
                             </Image>
                             <TextBlock Text="{DynamicResource zip}" VerticalAlignment="Center"></TextBlock>
                         </StackPanel>-->
-                    <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                        <Image Height="22" Margin="9,0">
-                            <Image.Style>
-                                <Style TargetType="Image">
-                                    <Setter Property="Source" Value="Resources/Icon/icons8_google_code_1.ico" />
-                                </Style>
-                            </Image.Style>
-                        </Image>
-                        <TextBlock Text="{DynamicResource sourceInfo}" VerticalAlignment="Center"></TextBlock>
-                    </StackPanel>
-                </StackPanel>
-                <StackPanel Grid.Column="1" Margin="0,0,10,0">
-                    <TextBlock Name="txtLocalTaskName" Height="20" Margin="0,2,0,4">C'yi restore et</TextBlock>
-                    <TextBlock Name="txtLocalFileName" Height="20" Margin="0,0,0,4" TextTrimming="CharacterEllipsis">\\10.0.0.145\backup1.nb</TextBlock>
-                    <TextBlock Name="txtLocalTime" Height="20" Margin="0,0,0,4">01:20</TextBlock>
-                    <TextBlock Name="txtLocalAverageDataRate" Height="20" Margin="0,0,0,4">74 MB/s</TextBlock>
-                    <TextBlock Name="txtLocalDataProcessed" Height="20" Margin="0,0,0,4">12 GB</TextBlock>
-                    <TextBlock Name="txtLocalInstantDataRate" Height="22" Margin="0,0,0,4">74 MB/s</TextBlock>
-                    <!--<TextBlock Name="txtLocalZip" Height="20" Margin="0,0,0,4">Standart</TextBlock>-->
-                    <TextBlock Name="txtLocalSourceObje" Height="22" Margin="0,0,0,4">C:</TextBlock>
-                </StackPanel>
+                <!--<TextBlock Name="txtLocalZip" Grid.Column="2" Grid.Row="6">Standart</TextBlock>-->
+                
+                <!--Row 6-->
+                <Image Height="22" Grid.Column="0" Grid.Row="6">
+                    <Image.Style>
+                        <Style TargetType="Image">
+                            <Setter Property="Source" Value="Resources/Icon/icons8_google_code_1.ico" />
+                        </Style>
+                    </Image.Style>
+                </Image>
+                <TextBlock Text="{DynamicResource sourceInfo}" VerticalAlignment="Center" Grid.Column="1" Grid.Row="6" Margin="10,0"/>
+                <TextBlock Name="txtLocalSourceObje" VerticalAlignment="Center" Grid.Column="2" Grid.Row="6">C:</TextBlock>
             </Grid>
         </StackPanel>
 
-        <StackPanel Grid.Row="1" Grid.Column="1" Background="LightGray" Opacity="0.6">
-            <TextBlock Text="{DynamicResource sendingToCloud}" FontSize="16" Margin="0,30,0,10" HorizontalAlignment="Center"></TextBlock>
+        <StackPanel Grid.Row="1" Grid.Column="1" Background="LightGray" Opacity="0.6" Margin="10,30,10,0">
+            <TextBlock Text="{DynamicResource sendingToCloud}" FontSize="16" Margin="0,0,0,10" HorizontalAlignment="Center"></TextBlock>
             <Grid>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="180"/>
+                    <ColumnDefinition Width="25"/>
+                    <ColumnDefinition Width="150"/>
                     <ColumnDefinition/>
                 </Grid.ColumnDefinitions>
-                <StackPanel Grid.Column="0" Margin="10,0,0,0">
-                    <StackPanel Name="stackCloudTaskName" Orientation="Horizontal">
-                        <Image Height="25" Margin="8,0">
-                            <Image.Style>
-                                <Style TargetType="Image">
-                                    <Setter Property="Source" Value="Resources/Icon/u58.png" />
-                                </Style>
-                            </Image.Style>
-                        </Image>
-                        <TextBlock Text="{DynamicResource taskName}" VerticalAlignment="Center"/>
-                    </StackPanel>
-                    <StackPanel Orientation="Horizontal">
-                        <Image Height="20" Margin="10,0">
-                            <Image.Style>
-                                <Style TargetType="Image">
-                                    <Setter Property="Source" Value="Resources/Icon/icons8_info.ico" />
-                                </Style>
-                            </Image.Style>
-                        </Image>
-                        <TextBlock Text="{DynamicResource fileName}" VerticalAlignment="Center"/>
-                    </StackPanel>
-                    <StackPanel Orientation="Horizontal" Margin="0,4,0,4">
-                        <Image Height="20" Margin="10,0">
-                            <Image.Style>
-                                <Style TargetType="Image">
-                                    <Setter Property="Source" Value="Resources/Icon/icons8_time_machine.ico" />
-                                </Style>
-                            </Image.Style>
-                        </Image>
-                        <TextBlock Text="{DynamicResource duration}" VerticalAlignment="Center"></TextBlock>
-                    </StackPanel>
-                    <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                        <Image Height="20" Margin="10,0">
-                            <Image.Style>
-                                <Style TargetType="Image">
-                                    <Setter Property="Source" Value="Resources/Icon/icons8_up_down_arrow.ico" />
-                                </Style>
-                            </Image.Style>
-                        </Image>
-                        <TextBlock Text="{DynamicResource averageDataTransfer}" VerticalAlignment="Center"></TextBlock>
-                    </StackPanel>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="25"/>
+                    <RowDefinition Height="25"/>
+                    <RowDefinition Height="25"/>
+                    <RowDefinition Height="25"/>
+                    <RowDefinition Height="25"/>
+                    <RowDefinition Height="25"/>
+                    <RowDefinition Height="25"/>
+                    <RowDefinition Height="25"/>
+                </Grid.RowDefinitions>
+                
+                <!--Row 0-->
+                <Image Height="25" Grid.Column="0" Grid.Row="0">
+                    <Image.Style>
+                        <Style TargetType="Image">
+                            <Setter Property="Source" Value="Resources/Icon/u58.png" />
+                        </Style>
+                    </Image.Style>
+                </Image>
+                <TextBlock Text="{DynamicResource taskName}" VerticalAlignment="Center" Grid.Column="1" Grid.Row="0" Margin="10,0"/>
+                <TextBlock Name="txtCloudTaskName" VerticalAlignment="Center" Grid.Column="2" Grid.Row="0">C'yi restore et</TextBlock>
 
-                    <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                        <Image Height="20" Margin="10,0">
-                            <Image.Style>
-                                <Style TargetType="Image">
-                                    <Setter Property="Source" Value="Resources/Icon/icons8_services_2.ico" />
-                                </Style>
-                            </Image.Style>
-                        </Image>
-                        <TextBlock Text="{DynamicResource processedData}" VerticalAlignment="Center"></TextBlock>
-                    </StackPanel>
-                    <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                        <Image Height="22" Margin="8,0,10,0">
-                            <Image.Style>
-                                <Style TargetType="Image">
-                                    <Setter Property="Source" Value="Resources/Icon/icons8_forward_button.ico" />
-                                </Style>
-                            </Image.Style>
-                        </Image>
-                        <TextBlock Text="{DynamicResource instantDataTransfer}" VerticalAlignment="Center"></TextBlock>
-                    </StackPanel>
-                    <StackPanel Name="stackCloudZip" Orientation="Horizontal" Margin="0,0,0,4" Visibility="Collapsed">
-                        <Image Height="20" Margin="10,0">
-                            <Image.Style>
-                                <Style TargetType="Image">
-                                    <Setter Property="Source" Value="Resources/Icon/icons8_winrar.ico" />
-                                </Style>
-                            </Image.Style>
-                        </Image>
-                        <TextBlock Text="{DynamicResource zip}" VerticalAlignment="Center"></TextBlock>
-                    </StackPanel>
-                    <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                        <Image Height="22" Margin="9,0">
-                            <Image.Style>
-                                <Style TargetType="Image">
-                                    <Setter Property="Source" Value="Resources/Icon/icons8_google_code_1.ico" />
-                                </Style>
-                            </Image.Style>
-                        </Image>
-                        <TextBlock Text="{DynamicResource sourceInfo}" VerticalAlignment="Center"></TextBlock>
-                    </StackPanel>
-                </StackPanel>
-                <StackPanel Grid.Column="1" Margin="0,0,10,0">
-                    <TextBlock Name="txtCloudTaskName" Height="20" Margin="0,2,0,4">C'yi restore et</TextBlock>
-                    <TextBlock Name="txtCloudFileName" Height="20" Margin="0,0,0,4" TextTrimming="CharacterEllipsis">\\10.0.0.145\backup1.nb</TextBlock>
-                    <TextBlock Height="20" Margin="0,0,0,4">0 ms</TextBlock>
-                    <TextBlock Height="20" Margin="0,0,0,4">0 MB/s</TextBlock>
-                    <TextBlock Height="20" Margin="0,0,0,4">0 GB</TextBlock>
-                    <TextBlock Height="22" Margin="0,0,0,4">0 MB/s</TextBlock>
-                    <TextBlock Name="txtCloudZip" Height="20" Margin="0,0,0,4" Visibility="Collapsed">Standart</TextBlock>
-                    <TextBlock Name="txtCloudSourceObje" Height="22" Margin="0,0,0,4">C:</TextBlock>
-                </StackPanel>
+                <!--Row 1-->
+                <Image Height="20" Grid.Column="0" Grid.Row="1">
+                    <Image.Style>
+                        <Style TargetType="Image">
+                            <Setter Property="Source" Value="Resources/Icon/icons8_info.ico" />
+                        </Style>
+                    </Image.Style>
+                </Image>
+                <TextBlock Text="{DynamicResource fileName}" VerticalAlignment="Center" Grid.Column="1" Grid.Row="1" Margin="10,0"/>
+                <TextBlock Name="txtCloudFileName" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" Grid.Column="2" Grid.Row="1">\\10.0.0.145\backup1.nb</TextBlock>
 
+                <!--Row 2-->
+                <Image Height="20" Grid.Column="0" Grid.Row="2">
+                    <Image.Style>
+                        <Style TargetType="Image">
+                            <Setter Property="Source" Value="Resources/Icon/icons8_time_machine.ico" />
+                        </Style>
+                    </Image.Style>
+                </Image>
+                <TextBlock Text="{DynamicResource duration}" VerticalAlignment="Center" Grid.Column="1" Grid.Row="2" Margin="10,0"/>
+                <TextBlock Name="txtCloudTime" VerticalAlignment="Center" Grid.Column="2" Grid.Row="2">0 ms</TextBlock>
+
+                <!--Row 3-->
+                <Image Height="20" Grid.Column="0" Grid.Row="3">
+                    <Image.Style>
+                        <Style TargetType="Image">
+                            <Setter Property="Source" Value="Resources/Icon/icons8_up_down_arrow.ico" />
+                        </Style>
+                    </Image.Style>
+                </Image>
+                <TextBlock Text="{DynamicResource averageDataTransfer}" VerticalAlignment="Center" Grid.Column="1" Grid.Row="3" Margin="10,0"/>
+                <TextBlock Name="txtCloudAverageDataRate" VerticalAlignment="Center" Grid.Column="2" Grid.Row="3">0 MB/s</TextBlock>
+
+                <!--Row 4-->
+                <Image Height="20" Grid.Column="0" Grid.Row="4">
+                    <Image.Style>
+                        <Style TargetType="Image">
+                            <Setter Property="Source" Value="Resources/Icon/icons8_services_2.ico" />
+                        </Style>
+                    </Image.Style>
+                </Image>
+                <TextBlock Text="{DynamicResource processedData}" VerticalAlignment="Center" Grid.Column="1" Grid.Row="4" Margin="10,0"/>
+                <TextBlock Name="txtCloudDataProcessed" VerticalAlignment="Center" Grid.Column="2" Grid.Row="4">0 GB</TextBlock>
+
+                <!--Row 5-->
+                <Image Height="22" Grid.Column="0" Grid.Row="5">
+                    <Image.Style>
+                        <Style TargetType="Image">
+                            <Setter Property="Source" Value="Resources/Icon/icons8_forward_button.ico" />
+                        </Style>
+                    </Image.Style>
+                </Image>
+                <TextBlock Text="{DynamicResource instantDataTransfer}" VerticalAlignment="Center" Grid.Column="1" Grid.Row="5" Margin="10,0"/>
+                <TextBlock Name="txtCloudInstantDataRate" VerticalAlignment="Center" Grid.Column="2" Grid.Row="5">0 MB/s</TextBlock>
+
+                <!--<StackPanel Name="stackCloudZip" Orientation="Horizontal" Margin="0,0,0,4"> ROW 6'YA DENK GELECEK ZİP GELDİĞİNDE
+                            <Image Height="20" Margin="10,0">
+                                <Image.Style>
+                                    <Style TargetType="Image">
+                                        <Setter Property="Source" Value="Resources/Icon/icons8_winrar.ico" />
+                                    </Style>
+                                </Image.Style>
+                            </Image>
+                            <TextBlock Text="{DynamicResource zip}" VerticalAlignment="Center"></TextBlock>
+                        </StackPanel>-->
+                <!--<TextBlock Name="txtCloudZip" Grid.Column="2" Grid.Row="6">Standart</TextBlock>-->
+
+                <!--Row 6-->
+                <Image Height="22" Grid.Column="0" Grid.Row="6">
+                    <Image.Style>
+                        <Style TargetType="Image">
+                            <Setter Property="Source" Value="Resources/Icon/icons8_google_code_1.ico" />
+                        </Style>
+                    </Image.Style>
+                </Image>
+                <TextBlock Text="{DynamicResource sourceInfo}" VerticalAlignment="Center" Grid.Column="1" Grid.Row="6" Margin="10,0"/>
+                <TextBlock Name="txtCloudSourceObje" VerticalAlignment="Center" Grid.Column="2" Grid.Row="6">C:</TextBlock>
             </Grid>
         </StackPanel>
 

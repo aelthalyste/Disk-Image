@@ -82,8 +82,8 @@ namespace DiskBackupWpfGUI
             {
                 //stackLocalZip.Visibility = Visibility.Collapsed;
                 //txtLocalZip.Visibility = Visibility.Collapsed;
-                stackCloudZip.Visibility = Visibility.Collapsed;
-                txtCloudZip.Visibility = Visibility.Collapsed;
+                //stackCloudZip.Visibility = Visibility.Collapsed;
+                //txtCloudZip.Visibility = Visibility.Collapsed;
                 txtTitleBar.Text = Resources["restoreStatus"].ToString();
             }
         }
@@ -136,8 +136,8 @@ namespace DiskBackupWpfGUI
             {
                 //stackLocalZip.Visibility = Visibility.Collapsed;
                 //txtLocalZip.Visibility = Visibility.Collapsed;
-                stackCloudZip.Visibility = Visibility.Collapsed;
-                txtCloudZip.Visibility = Visibility.Collapsed;
+                //stackCloudZip.Visibility = Visibility.Collapsed;
+                //txtCloudZip.Visibility = Visibility.Collapsed;
                 txtTitleBar.Text = Resources["restoreStatus"].ToString();
             }            
         }
