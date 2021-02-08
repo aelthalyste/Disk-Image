@@ -25,7 +25,7 @@
 
         <StackPanel Panel.ZIndex="1" Orientation="Horizontal" MouseDown="MyTitleBar_MouseDown">
             <Image Source="Resources/Icon/NarBulut_PNG_Icon_White_V3.png" Margin="0,0,5,0"/>
-            <TextBlock Text="{DynamicResource licenseController}" Style="{StaticResource TitleBarText}"></TextBlock>
+            <TextBlock Text="{DynamicResource licenseController}" Style="{StaticResource TitleBarText}" />
         </StackPanel>
         <StackPanel Name="MyTitleBar" VerticalAlignment="Top" MouseDown="MyTitleBar_MouseDown">
             <Border Background="#27527B" Height="30">
