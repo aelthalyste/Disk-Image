@@ -95,8 +95,17 @@ namespace DiskBackupWpfGUI
                     key.SetValue("ExpireDate", DateTime.Now + TimeSpan.FromDays(30));
                     key.SetValue("LastDate", DateTime.Now);
                     key.SetValue("Type", 1505);
-                    var customerConfiguration = new ConfigurationData { Key = "customerName", Value = txtDemoCustomerName.Text };
-                    _configurationDataDal.Add(customerConfiguration);
+                    var customerConfiguration = _configurationDataDal.Get(x => x.Key == "customerName");
+                    if (customerConfiguration == null)
+                    {
+                        customerConfiguration = new ConfigurationData { Key = "customerName", Value = txtDemoCustomerName.Text };
+                        _configurationDataDal.Add(customerConfiguration);
+                    }
+                    else
+                    {
+                        customerConfiguration.Value = txtDemoCustomerName.Text;
+                        _configurationDataDal.Update(customerConfiguration);
+                    }
                     _validate = true;
                     Close();
                 }

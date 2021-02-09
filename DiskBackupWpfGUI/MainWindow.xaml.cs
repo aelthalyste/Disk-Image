@@ -198,6 +198,7 @@ namespace DiskBackupWpfGUI
                         var result = Convert.ToDateTime(key.GetValue("ExpireDate").ToString()) - DateTime.Now;
                         txtLicenseNotActive.Visibility = Visibility.Collapsed;
                         LicenseDemoTextWrite(key, result);
+                        txtCustomerName.Text = _configurationDataDal.Get(x => x.Key == "customerName").Value;
                     }
                     else // lisans
                     {
@@ -234,6 +235,7 @@ namespace DiskBackupWpfGUI
                             //servisde de var
                             key = Registry.LocalMachine.OpenSubKey("SOFTWARE\\NarDiskBackup", true);
                             key.SetValue("LastDate", DateTime.Now);
+                            txtCustomerName.Text = _configurationDataDal.Get(x => x.Key == "customerName").Value;
                         }
                         else // deneme süresi doldu
                         {
