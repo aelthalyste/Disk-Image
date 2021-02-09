@@ -449,9 +449,9 @@ namespace DiskBackupWpfGUI
             pbLoading.Visibility = Visibility.Collapsed;
             pbLoading.IsIndeterminate = false;
             RefreshTasks(_cancellationTokenSource.Token, backupService);
-            RefreshDemoDays(_cancellationTokenSource.Token);
             Console.WriteLine("Initilaze son: " + DateTime.Now);
             ValidateLicense();
+            RefreshDemoDays(_cancellationTokenSource.Token);
         }
 
         public async Task GetBackupStoragesAsync(List<VolumeInfo> volumeList)

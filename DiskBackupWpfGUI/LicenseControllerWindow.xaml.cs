@@ -1,4 +1,5 @@
 ﻿using DiskBackup.DataAccess.Abstract;
+using DiskBackup.Entities.Concrete;
 using DiskBackupWpfGUI.Utils;
 using Microsoft.Win32;
 using Serilog;
@@ -72,26 +73,35 @@ namespace DiskBackupWpfGUI
         {
             stackLicense.IsEnabled = false;
             btnAddLicenseFile.IsEnabled = false;
+            txtDemoCustomerName.IsEnabled = true;
         }
 
         private void rbLicense_Checked(object sender, RoutedEventArgs e)
         {
             stackLicense.IsEnabled = true;
             btnAddLicenseFile.IsEnabled = true;
+            txtDemoCustomerName.IsEnabled = false;
         }
 
         private void btnSave_Click(object sender, RoutedEventArgs e)
         {
             if (rbDemo.IsChecked == true)
             {
-                _logger.Information("Demo lisans aktifleştirildi.");
-                RegistryKey key = CreateRegistryKeyFile();
-                key.SetValue("UploadDate", DateTime.Now);
-                key.SetValue("ExpireDate", DateTime.Now + TimeSpan.FromDays(30));
-                key.SetValue("LastDate", DateTime.Now);
-                key.SetValue("Type", 1505);
-                _validate = true;
-                Close();
+                if (txtDemoCustomerName.Text != "")
+                {
+                    _logger.Information("Demo lisans aktifleştirildi.");
+                    RegistryKey key = CreateRegistryKeyFile();
+                    key.SetValue("UploadDate", DateTime.Now);
+                    key.SetValue("ExpireDate", DateTime.Now + TimeSpan.FromDays(30));
+                    key.SetValue("LastDate", DateTime.Now);
+                    key.SetValue("Type", 1505);
+                    var customerConfiguration = new ConfigurationData { Key = "customerName", Value = txtDemoCustomerName.Text };
+                    _configurationDataDal.Add(customerConfiguration);
+                    _validate = true;
+                    Close();
+                }
+                else
+                    MessageBox.Show(Resources["notNullMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
             }
             else // lisans seçili
             {

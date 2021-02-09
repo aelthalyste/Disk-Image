@@ -296,7 +296,8 @@
     <system:String x:Key="newEmailAddress">New E-Mail Address</system:String>
     <system:String x:Key="emailAddresses">E-Mail Addresses</system:String>
     <system:String x:Key="testing">Testing</system:String>
-
+    <system:String x:Key="pleaseEnterName">Please enter a name...</system:String>
+    <system:String x:Key="pleaseEnterLicenseKey">Please enter license key or select license file...</system:String>
 
     <!--MessageBox Info-->
     <system:String x:Key="notNullMB">Please do not leave the relevant fields blank.</system:String>

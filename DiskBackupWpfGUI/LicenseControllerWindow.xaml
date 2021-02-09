@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:DiskBackupWpfGUI"
         mc:Ignorable="d"
         Title="LicenseControllerWindow" 
-        Height="200" Width="550"
+        Height="240" Width="550"
         ResizeMode="CanMinimize" 
         WindowStartupLocation="CenterScreen" 
         Icon="Resources/Icon/NarBulut_PNG_Icon_White_V3.png" 
@@ -37,10 +37,11 @@
 
         <StackPanel Grid.Row="1" Margin="20">
             <RadioButton Name="rbDemo" Content="{DynamicResource demo}" GroupName="licenseGroup" IsChecked="True" Cursor="Hand" Width="120" HorizontalAlignment="Left"/>
+            <TextBox Name="txtDemoCustomerName" Style="{StaticResource placeHolder}" Tag="{DynamicResource pleaseEnterName}" VerticalContentAlignment="Center" HorizontalAlignment="Left" Height="25" Width="430" Margin="20,10,5,10"/>
             <StackPanel Margin="0,10">
                 <RadioButton Name="rbLicense" Content="{DynamicResource licenseKey}" GroupName="licenseGroup" Cursor="Hand" Width="120" HorizontalAlignment="Left"/>
                 <StackPanel Name="stackLicense" Orientation="Horizontal" IsEnabled="False">
-                    <TextBox Name="txtLicenseKey" VerticalContentAlignment="Center" Height="25" Width="430" Margin="20,10,5,10" />
+                    <TextBox Name="txtLicenseKey" Style="{StaticResource placeHolder}" Tag="{DynamicResource pleaseEnterLicenseKey}" VerticalContentAlignment="Center" Height="25" Width="430" Margin="20,10,5,10" />
                     <Button Name="btnAddLicenseFile" ToolTip="{DynamicResource addFile}" Width="30" Height="30" VerticalAlignment="Center" 
                                     Style="{StaticResource ImageButton}" Grid.Column="1" IsEnabled="False" Click="btnAddLicenseFile_Click">
                         <Button.Content>
@@ -59,8 +60,8 @@
                         </Button.Content>
                     </Button>
                 </StackPanel>
-                
-             </StackPanel>
+
+            </StackPanel>
         </StackPanel>
 
         <Button Name="btnSave" ToolTip="{DynamicResource save}" Click="btnSave_Click" Grid.Row="2" Width="80" Height="30" HorizontalAlignment="Center" Style="{StaticResource ImageButton}" Grid.Column="1" Cursor="Hand">

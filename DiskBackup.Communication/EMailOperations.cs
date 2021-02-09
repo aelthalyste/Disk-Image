@@ -212,8 +212,6 @@ namespace DiskBackup.Communication
             body = GetHTMLTestBody();
 
             var customerName = _configurationDataDal.Get(x => x.Key == "customerName");
-            if (customerName == null)
-                customerName = new ConfigurationData { Value = "Demo" };
             body = body.Replace("{customerName}", customerName.Value);
 
             if (lang == "en")
@@ -248,8 +246,6 @@ namespace DiskBackup.Communication
                 body = GetHTMLRestoreBody();
 
             var customerName = _configurationDataDal.Get(x => x.Key == "customerName");
-            if (customerName == null)
-                customerName = new ConfigurationData { Value = "Demo" };
             body = body.Replace("{customerName}", customerName.Value);
 
             if (lang == "en")

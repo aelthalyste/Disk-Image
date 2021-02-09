@@ -12,7 +12,7 @@
                 </DataTrigger>
             </Style.Triggers>
         </Style>
-        
+
         <Style x:Key="MTBListViewNextDate" TargetType="{x:Type TextBlock}">
             <Style.Triggers>
                 <DataTrigger Binding="{Binding NextDate}" Value="01.01.0002 00:00">
@@ -20,7 +20,6 @@
                 </DataTrigger>
             </Style.Triggers>
         </Style>
-        
 
         <Style x:Key="MTBListViewType" TargetType="{x:Type TextBlock}">
             <Style.Triggers>
@@ -118,8 +117,6 @@
                 </DataTrigger>
             </Style.Triggers>
         </Style>
-
-
 
         <!--original start-->
         <Style TargetType="TabItem">
@@ -405,7 +402,6 @@
             <Setter Property="Foreground" Value="White"/>
         </Style>
 
-
         <Style x:Key="CreateTaskButtonText" TargetType="{x:Type TextBlock}">
             <Style.Triggers>
                 <!-- -->
@@ -424,6 +420,38 @@
                        Color="DarkGray"/>
             </Style.Resources>
         </Style>
-        
+
+        <Style x:Key="placeHolder" TargetType="{x:Type TextBox}" BasedOn="{StaticResource {x:Type TextBox}}">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type TextBox}">
+                        <Grid>
+                            <TextBox Text="{Binding Path=Text,
+                                                RelativeSource={RelativeSource TemplatedParent}, 
+                                                Mode=TwoWay,
+                                                UpdateSourceTrigger=PropertyChanged}"
+                                 x:Name="textSource" 
+                                 Background="Transparent" 
+                                 Panel.ZIndex="2"
+                                 VerticalContentAlignment="Center"/>
+                            <TextBox Text="{TemplateBinding Tag}" Background="{TemplateBinding Background}" Panel.ZIndex="1">
+                                <TextBox.Style>
+                                    <Style TargetType="{x:Type TextBox}">
+                                        <Setter Property="Foreground" Value="Transparent"/>
+                                        <Setter Property="VerticalContentAlignment" Value="Center"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Path=Text, Source={x:Reference textSource}}" Value="">
+                                                <Setter Property="Foreground" Value="LightGray"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBox.Style>
+                            </TextBox>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
     </Application.Resources>
 </Application>
