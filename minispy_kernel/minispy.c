@@ -1039,7 +1039,7 @@ Return Value:
 
 
 // Intented usage: strings, not optimized for big buffers, used only in kernel mode to detect some special directory activity
-BOOLEAN
+inline BOOLEAN
 NarSubMemoryExists(const void* mem1, const void* mem2, unsigned int mem1len, unsigned int mem2len) {
     
     if (mem1 == 0 || mem2 == 0) return FALSE;
@@ -1237,6 +1237,7 @@ const UNICODE_STRING IgnoreMidStringTable[] = {
     RTL_CONSTANT_STRING(L"\\AppData\\Local\\Temp"),
     RTL_CONSTANT_STRING(L"\\AppData\\Local\\Microsoft\\Windows\\Temporary Internet Files"),
     RTL_CONSTANT_STRING(L"\\AppData\\Google\\Chrome\\User Data\\Default\\Cache"),
+    RTL_CONSTANT_STRING(L"\\AppData\\Local\\Microsoft\\EDGE\\User Data\\Default\\Cache"),
     RTL_CONSTANT_STRING(L"\\AppData\\Local\\Opera Software"),
     RTL_CONSTANT_STRING(L"\\AppData\\Local\\Mozilla\\Firefox\\Profiles"),
     RTL_CONSTANT_STRING(L"\\AppData\\Local\\Microsoft\\Windows\\INetCache\\IE")
