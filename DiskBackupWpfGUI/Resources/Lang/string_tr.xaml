@@ -283,6 +283,8 @@
     <system:String x:Key="newEmailAddress">Yeni E-Posta Adresi</system:String>
     <system:String x:Key="emailAddresses">E-Mail Adresleri</system:String>
     <system:String x:Key="testing">Test Et</system:String>
+    <system:String x:Key="pleaseEnterName">Lütfen bir isim giriniz...</system:String>
+    <system:String x:Key="pleaseEnterLicenseKey">Lütfen lisans anahtarı giriniz veya lisans dosyası seçiniz...</system:String>
 
     <!--MessageBox Info-->
     <system:String x:Key="notNullMB">İlgili alanları lütfen boş geçmeyiniz.</system:String>
@@ -317,5 +319,7 @@
     <system:String x:Key="LicenseKeyOSFailMB">Lisans ve işletim sistemi versiyonunuz uyuşmamaktadır.</system:String>
     <system:String x:Key="EmailFailMB">Lütfen geçerli bir email adresi giriniz.</system:String>
     <system:String x:Key="EmailSentMB">Email gönderildi.</system:String>
+    <system:String x:Key="notificationUpdateFailMB">Beklenmedik hata oluştu. Bildirim ayarları güncellenemedi.</system:String>
+    <system:String x:Key="notificationUpdateMB">Bildirim ayarları güncellendi.</system:String>
 
 </ResourceDictionary>

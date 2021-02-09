@@ -67,6 +67,7 @@ namespace DiskBackup.Service
             builder.RegisterType<RestoreVolumeJob>();
             builder.RegisterType<DiskBackupJobFactory>().As<IJobFactory>();
             builder.RegisterType<EMailOperations>().As<IEMailOperations>();
+            builder.RegisterType<LicenseService>().As<ILicenseService>();
             _container = builder.Build();
 
         }

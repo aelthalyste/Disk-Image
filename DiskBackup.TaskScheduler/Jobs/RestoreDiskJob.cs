@@ -1,4 +1,5 @@
 ﻿using DiskBackup.Business.Abstract;
+using DiskBackup.Communication;
 using DiskBackup.DataAccess.Abstract;
 using DiskBackup.Entities.Concrete;
 using Quartz;
@@ -20,8 +21,9 @@ namespace DiskBackup.TaskScheduler.Jobs
         private readonly IStatusInfoDal _statusInfoDal;
         private readonly IActivityLogDal _activityLogDal;
         private readonly ILogger _logger;
+        private IEMailOperations _emailOperations;
 
-        public RestoreDiskJob(IBackupService backupService, ITaskInfoDal taskInfoDal, IBackupStorageDal backupStorageDal, IRestoreTaskDal restoreTaskDal, IStatusInfoDal statusInfoDal, IActivityLogDal activityLogDal, ILogger logger)
+        public RestoreDiskJob(IBackupService backupService, ITaskInfoDal taskInfoDal, IBackupStorageDal backupStorageDal, IRestoreTaskDal restoreTaskDal, IStatusInfoDal statusInfoDal, IActivityLogDal activityLogDal, ILogger logger, IEMailOperations emailOperations)
         {
             _backupService = backupService;
             _taskInfoDal = taskInfoDal;
@@ -30,6 +32,7 @@ namespace DiskBackup.TaskScheduler.Jobs
             _statusInfoDal = statusInfoDal;
             _activityLogDal = activityLogDal;
             _logger = logger.ForContext<RestoreDiskJob>();
+            _emailOperations = emailOperations;
         }
 
         public Task Execute(IJobExecutionContext context)
@@ -142,6 +145,17 @@ namespace DiskBackup.TaskScheduler.Jobs
             _taskInfoDal.Update(taskInfo);
             _backupService.RefreshIncDiffTaskFlag(true);
             _backupService.RefreshIncDiffLogFlag(true);
+
+            _logger.Verbose("SendEmail çağırılıyor");
+            try
+            {
+                taskInfo.StatusInfo = resultTaskStatusInfo;
+                _emailOperations.SendEMail(taskInfo);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex + "Email gönderilemedi");
+            }
         }
     }
 }
