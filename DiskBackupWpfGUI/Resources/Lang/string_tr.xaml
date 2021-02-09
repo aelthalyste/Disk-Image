@@ -317,5 +317,7 @@
     <system:String x:Key="LicenseKeyOSFailMB">Lisans ve işletim sistemi versiyonunuz uyuşmamaktadır.</system:String>
     <system:String x:Key="EmailFailMB">Lütfen geçerli bir email adresi giriniz.</system:String>
     <system:String x:Key="EmailSentMB">Email gönderildi.</system:String>
+    <system:String x:Key="notificationUpdateFailMB">Beklenmedik hata oluştu. Bildirim ayarları güncellenemedi.</system:String>
+    <system:String x:Key="notificationUpdateMB">Bildirim ayarları güncellendi.</system:String>
 
 </ResourceDictionary>

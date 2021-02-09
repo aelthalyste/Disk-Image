@@ -614,7 +614,7 @@ namespace DiskBackupWpfGUI
             checkEMailNotification.IsChecked = Convert.ToBoolean(emailActive.Value);
             checkEMailNotificationSuccess.IsChecked = Convert.ToBoolean(emailSuccessful.Value);
             checkEMailNotificationFail.IsChecked = Convert.ToBoolean(emailFail.Value);
-            checkEMailNotificationCritical.IsChecked = Convert.ToBoolean(emailFail.Value);
+            checkEMailNotificationCritical.IsChecked = Convert.ToBoolean(emailCritical.Value);
 
         }
 
@@ -2428,21 +2428,32 @@ namespace DiskBackupWpfGUI
 
         private void btnEMailNotificationSave_Click(object sender, RoutedEventArgs e)
         {
-            var emailActive = _configurationDataDal.Get(x => x.Key == "emailActive");
-            emailActive.Value = checkEMailNotification.IsChecked.ToString();
-            _configurationDataDal.Update(emailActive);
+            try
+            {
+                var emailActive = _configurationDataDal.Get(x => x.Key == "emailActive");
+                emailActive.Value = checkEMailNotification.IsChecked.ToString();
+                _configurationDataDal.Update(emailActive);
 
-            var emailSuccessful = _configurationDataDal.Get(x => x.Key == "emailSuccessful");
-            emailSuccessful.Value = checkEMailNotificationSuccess.IsChecked.ToString();
-            _configurationDataDal.Update(emailSuccessful);
+                var emailSuccessful = _configurationDataDal.Get(x => x.Key == "emailSuccessful");
+                emailSuccessful.Value = checkEMailNotificationSuccess.IsChecked.ToString();
+                _configurationDataDal.Update(emailSuccessful);
 
-            var emailFail = _configurationDataDal.Get(x => x.Key == "emailFail");
-            emailFail.Value = checkEMailNotificationFail.IsChecked.ToString();
-            _configurationDataDal.Update(emailFail);
+                var emailFail = _configurationDataDal.Get(x => x.Key == "emailFail");
+                emailFail.Value = checkEMailNotificationFail.IsChecked.ToString();
+                _configurationDataDal.Update(emailFail);
 
-            var emailCritical = _configurationDataDal.Get(x => x.Key == "emailCritical");
-            emailCritical.Value = checkEMailNotificationCritical.IsChecked.ToString();
-            _configurationDataDal.Update(emailCritical);
+                var emailCritical = _configurationDataDal.Get(x => x.Key == "emailCritical");
+                emailCritical.Value = checkEMailNotificationCritical.IsChecked.ToString();
+                _configurationDataDal.Update(emailCritical);
+
+                MessageBox.Show(Resources["notificationUpdateMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error("Notification ayarları değiştirilemedi. " + ex);
+                MessageBox.Show(Resources["notificationUpdateFailMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            
         }
 
         #endregion

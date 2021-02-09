@@ -331,5 +331,7 @@
     <system:String x:Key="LicenseKeyOSFailMB">Your license and operating system version do not match.</system:String>
     <system:String x:Key="EmailFailMB">Please enter a valid email address.</system:String>
     <system:String x:Key="EmailSentMB">Email has been sent.</system:String>
+    <system:String x:Key="notificationUpdateFailMB">An unexpected error has occurred. Notification settings could not be updated.</system:String>
+    <system:String x:Key="notificationUpdateMB">Notification settings updated.</system:String>
 
 </ResourceDictionary>
