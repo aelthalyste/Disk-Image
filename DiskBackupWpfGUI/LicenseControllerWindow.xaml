@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:DiskBackupWpfGUI"
         mc:Ignorable="d"
         Title="LicenseControllerWindow" 
-        Height="240" Width="550"
+        Height="245" Width="550"
         ResizeMode="CanMinimize" 
         WindowStartupLocation="CenterScreen" 
         Icon="Resources/Icon/NarBulut_PNG_Icon_White_V3.png" 

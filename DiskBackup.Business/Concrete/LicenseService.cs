@@ -1,0 +1,251 @@
+﻿using DiskBackup.Business.Abstract;
+using DiskBackup.DataAccess.Abstract;
+using DiskBackup.Entities.Concrete;
+using Microsoft.Win32;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace DiskBackup.Business.Concrete
+{
+    public class LicenseService : ILicenseService
+    {
+        private readonly IConfigurationDataDal _configurationDataDal;
+        private string AESKey = "D*G-KaPdSgVkYp3s6v8y/B?E(H+MbQeT";
+        private string RegistryPath = "SOFTWARE\\NarDiskBackup"; //Registry.LocalMachine.OpenSubKey
+        private string FilePath = "C:\\Windows\\system32\\eyruebup.dll";
+
+        public LicenseService(IConfigurationDataDal configurationDataDal)
+        {
+            _configurationDataDal = configurationDataDal;
+        }
+
+        public string GetRegistryType()
+        {
+            var key = Registry.LocalMachine.OpenSubKey(RegistryPath);
+            return key.GetValue("Type").ToString();
+        }
+
+        public int GetDemoDaysLeft()
+        {
+            var key = Registry.LocalMachine.OpenSubKey(RegistryPath);
+            return (Convert.ToDateTime(key.GetValue("ExpireDate").ToString()) - DateTime.Now).Days;
+        }
+
+        public string[] GetLicenseUserInfo()
+        {
+            var key = Registry.LocalMachine.OpenSubKey(RegistryPath);
+            var licenseKey = (string)key.GetValue("License");
+            var resultDecryptLicenseKey = DecryptLicenseKey(licenseKey);
+            return resultDecryptLicenseKey.Split('_');
+        }
+
+        public void UpdateDemoLastDate()
+        {
+            var key = Registry.LocalMachine.OpenSubKey(RegistryPath, true);
+            key.SetValue("LastDate", DateTime.Now);
+        }
+
+        public bool IsDemoExpired()
+        {
+            var key = Registry.LocalMachine.OpenSubKey(RegistryPath);
+            return Convert.ToDateTime(key.GetValue("UploadDate").ToString()) <= DateTime.Now &&
+                Convert.ToDateTime(key.GetValue("ExpireDate").ToString()) >= DateTime.Now &&
+                Convert.ToDateTime(key.GetValue("LastDate").ToString()) <= DateTime.Now &&
+                (Convert.ToDateTime(key.GetValue("ExpireDate").ToString()) - Convert.ToDateTime(key.GetValue("UploadDate").ToString())).Days < 31;
+        }
+
+        public void FixBrokenRegistry()
+        {
+            var key = Registry.LocalMachine.OpenSubKey("SOFTWARE\\NarDiskBackup", true);
+            key.SetValue("UploadDate", DateTime.Now);
+            key.SetValue("ExpireDate", DateTime.Now - TimeSpan.FromDays(1));
+            key.SetValue("Type", 1505);
+        }
+
+        public void DeleteRegistryFile()
+        {
+            Registry.LocalMachine.DeleteSubKey("SOFTWARE\\NarDiskBackup");
+        }
+
+        public void SetDemoFile(string customerName)
+        {
+            FileStream fileStream = new FileStream(FilePath, FileMode.OpenOrCreate, FileAccess.Write);
+            StreamWriter streamWriter = new StreamWriter(fileStream);
+            streamWriter.WriteLine(FilePath);
+            streamWriter.Flush();
+            streamWriter.Close();
+            fileStream.Close();
+            SetRegistryDemo(customerName);
+        }
+
+        private void SetRegistryDemo(string customerName)
+        {
+            //_logger.Information("Demo lisans aktifleştirildi.");
+            RegistryKey key = CreateRegistryFile();
+            key.SetValue("UploadDate", DateTime.Now);
+            key.SetValue("ExpireDate", DateTime.Now + TimeSpan.FromDays(30));
+            key.SetValue("LastDate", DateTime.Now);
+            key.SetValue("Type", 1505);
+            var customerConfiguration = _configurationDataDal.Get(x => x.Key == "customerName");
+            if (customerConfiguration == null)
+            {
+                customerConfiguration = new ConfigurationData { Key = "customerName", Value = customerName };
+                _configurationDataDal.Add(customerConfiguration);
+            }
+            else
+            {
+                customerConfiguration.Value = customerName;
+                _configurationDataDal.Update(customerConfiguration);
+            }
+        }
+
+        private void SetRegistryLicense(string licenseKey)
+        {
+            RegistryKey key = CreateRegistryFile();
+            key.SetValue("UploadDate", DateTime.Now);
+            key.SetValue("ExpireDate", "");
+            key.SetValue("Type", 2606);
+            key.SetValue("License", licenseKey);
+        }
+
+        private RegistryKey CreateRegistryFile()
+        {
+            var key = Registry.LocalMachine.OpenSubKey(RegistryPath, true);
+
+            if (key == null) // null ise dosyayı oluştur
+            {
+                //_logger.Information("Lisans dosyası oluşturuldu.");
+                key = Registry.LocalMachine.CreateSubKey(RegistryPath);
+            }
+
+            return key;
+        }
+
+        public bool ThereIsARegistryFile()
+        {
+            var key = Registry.LocalMachine.OpenSubKey(RegistryPath);
+
+            if (key == null)
+                return false; // dosya oluşturulmamış
+
+            return true; // dosya var
+        }
+
+        public bool ThereIsAFile()
+        {
+            return File.Exists(FilePath);
+        }
+
+        public string ValidateLicenseKey(string licenseKey)
+        {
+            var resultDecryptLicenseKey = DecryptLicenseKey(licenseKey);
+            if (resultDecryptLicenseKey.Equals("fail"))
+            {
+                // lisans key doğru değil
+                return "fail";
+            }
+            else if (resultDecryptLicenseKey.Equals("failOS"))
+            {
+                // uyumsuz version workstation-server-sbs
+                return "failOS";
+            }
+            else
+            {
+                //_logger.Information("Lisans aktifleştirildi. Lisans Anahtarı: " + licenseKey);
+                SetRegistryLicense(licenseKey);
+                AddDBCustomerNameAndUniqKey(resultDecryptLicenseKey);
+                return resultDecryptLicenseKey;
+            }
+        }
+
+        private void AddDBCustomerNameAndUniqKey(string DecryptLicenseKey)
+        {
+            var splitLicenseKey = DecryptLicenseKey.Split('_');
+            var customerConfiguration = _configurationDataDal.Get(x => x.Key == "customerName");
+            if (customerConfiguration == null)
+            {
+                customerConfiguration = new ConfigurationData { Key = "customerName", Value = splitLicenseKey[1] };
+                _configurationDataDal.Add(customerConfiguration);
+            }
+            else if (customerConfiguration.Value != splitLicenseKey[1])
+            {
+                customerConfiguration.Value = splitLicenseKey[1];
+                _configurationDataDal.Update(customerConfiguration);
+            }
+            var uniqKeyConfiguration = _configurationDataDal.Get(x => x.Key == "uniqKey");
+            if (uniqKeyConfiguration == null)
+            {
+                uniqKeyConfiguration = new ConfigurationData { Key = "uniqKey", Value = splitLicenseKey[6] };
+                _configurationDataDal.Add(uniqKeyConfiguration);
+            }
+            else if (uniqKeyConfiguration.Value != splitLicenseKey[6])
+            {
+                uniqKeyConfiguration.Value = splitLicenseKey[6];
+                _configurationDataDal.Update(uniqKeyConfiguration);
+            }
+        }
+
+        private string DecryptLicenseKey(string cipherLicenseKey)
+        {
+            try
+            {
+                var iv = Convert.FromBase64String("EEXkANPr+5R9q+XyG7jR5w==");
+                byte[] buffer = Convert.FromBase64String(cipherLicenseKey);
+
+                using (Aes aes = Aes.Create())
+                {
+                    aes.Key = Encoding.UTF8.GetBytes(AESKey);
+                    aes.IV = iv;
+                    ICryptoTransform decryptor = aes.CreateDecryptor(aes.Key, aes.IV);
+
+                    using (MemoryStream memoryStream = new MemoryStream(buffer))
+                    {
+                        using (CryptoStream cryptoStream = new CryptoStream((Stream)memoryStream, decryptor, CryptoStreamMode.Read))
+                        {
+                            using (StreamReader streamReader = new StreamReader((Stream)cryptoStream))
+                            {
+                                var decryptLicenseKey = streamReader.ReadToEnd();
+                                if (CheckOSVersion(decryptLicenseKey))
+                                    return decryptLicenseKey;
+                                else
+                                    return "failOS";
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                return "fail";
+            }
+        }
+
+        private bool CheckOSVersion(string resultDecryptLicenseKey)
+        {
+            RegistryKey registryKey = Registry.LocalMachine.OpenSubKey("Software\\Microsoft\\Windows NT\\CurrentVersion");
+            var OSName = (string)registryKey.GetValue("ProductName");
+            var splitLicenseKey = resultDecryptLicenseKey.Split('_');
+
+            if (splitLicenseKey[5].Equals("SBS") && OSName.Contains("Small Business Server"))
+            {
+                return true;
+            }
+            else if (splitLicenseKey[5].Equals("Server") && OSName.Contains("Server"))
+            {
+                return true;
+            }
+            else if (splitLicenseKey[5].Equals("Workstation") && OSName.Contains("Windows"))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+    }
+}

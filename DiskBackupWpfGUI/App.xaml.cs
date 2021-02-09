@@ -66,6 +66,7 @@ namespace DiskBackupWpfGUI
             builder.RegisterType<LicenseControllerWindow>();
             builder.RegisterType<EMailSettingsWindow>();
             builder.RegisterType<EMailOperations>().As<IEMailOperations>();
+            builder.RegisterType<LicenseService>().As<ILicenseService>();
             _container = builder.Build();
         }
     }

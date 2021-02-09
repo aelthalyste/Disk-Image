@@ -52,11 +52,13 @@
   <ItemGroup>
     <Compile Include="Abstract\IBackupStorageService.cs" />
     <Compile Include="Abstract\IBackupService.cs" />
+    <Compile Include="Abstract\ILicenseService.cs" />
     <Compile Include="Abstract\ILogService.cs" />
     <Compile Include="Concrete\BackupService.cs" />
     <Compile Include="Concrete\BackupServiceClient.cs" />
     <Compile Include="Concrete\BackupStorageService.cs" />
     <Compile Include="Concrete\BackupStorageServiceClient.cs" />
+    <Compile Include="Concrete\LicenseService.cs" />
     <Compile Include="Concrete\LogService.cs" />
     <Compile Include="Concrete\LogServiceClient.cs" />
     <Compile Include="Concrete\NetworkConnection.cs" />
