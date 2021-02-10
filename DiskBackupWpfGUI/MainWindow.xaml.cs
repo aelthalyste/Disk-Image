@@ -1,7 +1,6 @@
 ﻿using Autofac;
 using Autofac.Core.Lifetime;
 using DiskBackup.Business.Abstract;
-using DiskBackup.Business.Concrete;
 using DiskBackup.DataAccess.Abstract;
 using DiskBackup.Entities.Concrete;
 using DiskBackup.TaskScheduler;
@@ -70,8 +69,6 @@ namespace DiskBackupWpfGUI
         private readonly IRestoreTaskDal _restoreTaskDal;
         private IConfigurationDataDal _configurationDataDal;
         private ILicenseService _licenseService;
-        //private IBackupService _backupService;
-
         private readonly ILifetimeScope _scope;
         private readonly ILogger _logger;
 
@@ -203,8 +200,9 @@ namespace DiskBackupWpfGUI
                 }
                 else
                 {
+                    _logger.Error("Demo bilgileri bozulmuş, lisans girişi istenecek! (505)");
                     _licenseService.DeleteRegistryFile();
-                    LicenseController();
+                    FixBrokenRegistry();
                 }
             }
             else // dosya var
@@ -227,7 +225,6 @@ namespace DiskBackupWpfGUI
                             _logger.Information("Demo lisans süresi doldu.");
                             if (stackDemo.Visibility == Visibility.Visible)
                                 stackDemo.Visibility = Visibility.Collapsed;
-
                             txtLicenseNotActive.Visibility = Visibility.Visible;
                             txtLicenseStatu.Text = Resources["inactive"].ToString();
                             FixBrokenRegistry(); // registry ile oynanmış
@@ -255,19 +252,11 @@ namespace DiskBackupWpfGUI
                 catch (Exception)
                 {
                     MessageBox.Show(Resources["unexpectedError1MB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
-                    if (_licenseService.ThereIsAFile())
-                    {
-                        _licenseService.DeleteRegistryFile();
-                        _licenseService.SetDemoFile("Demo Demo");
-                        txtLicenseNotActive.Visibility = Visibility.Visible;
-                        txtLicenseStatu.Text = Resources["inactive"].ToString();
-                        FixBrokenRegistry(); // registry ile oynanmış
-                    }
-                    else
-                    {
-                        _licenseService.DeleteRegistryFile();
-                        LicenseController();
-                    }
+                    _logger.Error("Demo bilgileri bozulmuş, lisans girişi istenecek! (606)");
+                    _licenseService.DeleteRegistryFile();
+                    txtLicenseNotActive.Visibility = Visibility.Visible;
+                    txtLicenseStatu.Text = Resources["inactive"].ToString();
+                    FixBrokenRegistry(); // registry ile oynanmış
                 }
             }
         }

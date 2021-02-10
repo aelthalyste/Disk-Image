@@ -2,6 +2,7 @@
 using DiskBackup.DataAccess.Abstract;
 using DiskBackup.Entities.Concrete;
 using Microsoft.Win32;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -15,13 +16,14 @@ namespace DiskBackup.Business.Concrete
     public class LicenseService : ILicenseService
     {
         private readonly IConfigurationDataDal _configurationDataDal;
-        private string AESKey = "D*G-KaPdSgVkYp3s6v8y/B?E(H+MbQeT";
+        private readonly ILogger _logger;
         private string RegistryPath = "SOFTWARE\\NarDiskBackup"; //Registry.LocalMachine.OpenSubKey
         private string FilePath = "C:\\Windows\\system32\\eyruebup.dll";
 
-        public LicenseService(IConfigurationDataDal configurationDataDal)
+        public LicenseService(IConfigurationDataDal configurationDataDal, ILogger logger)
         {
             _configurationDataDal = configurationDataDal;
+            _logger = logger;
         }
 
         public string GetRegistryType()
@@ -52,16 +54,22 @@ namespace DiskBackup.Business.Concrete
 
         public bool IsDemoExpired()
         {
+            StreamReader streamReader = new StreamReader(FilePath);
+            var resultString = streamReader.ReadToEnd().Split('_');
+            streamReader.Close();
+
             var key = Registry.LocalMachine.OpenSubKey(RegistryPath);
             return Convert.ToDateTime(key.GetValue("UploadDate").ToString()) <= DateTime.Now &&
                 Convert.ToDateTime(key.GetValue("ExpireDate").ToString()) >= DateTime.Now &&
                 Convert.ToDateTime(key.GetValue("LastDate").ToString()) <= DateTime.Now &&
-                (Convert.ToDateTime(key.GetValue("ExpireDate").ToString()) - Convert.ToDateTime(key.GetValue("UploadDate").ToString())).Days < 31;
+                (Convert.ToDateTime(key.GetValue("ExpireDate").ToString()) - Convert.ToDateTime(key.GetValue("UploadDate").ToString())).Days < 31 &&
+                Convert.ToDateTime(key.GetValue("ExpireDate")) == Convert.ToDateTime(resultString[3]) &&
+                Convert.ToDateTime(key.GetValue("UploadDate")) == Convert.ToDateTime(resultString[1]);
         }
 
         public void FixBrokenRegistry()
         {
-            var key = Registry.LocalMachine.OpenSubKey("SOFTWARE\\NarDiskBackup", true);
+            var key = CreateRegistryFile();
             key.SetValue("UploadDate", DateTime.Now);
             key.SetValue("ExpireDate", DateTime.Now - TimeSpan.FromDays(1));
             key.SetValue("Type", 1505);
@@ -69,27 +77,33 @@ namespace DiskBackup.Business.Concrete
 
         public void DeleteRegistryFile()
         {
-            Registry.LocalMachine.DeleteSubKey("SOFTWARE\\NarDiskBackup");
+            try
+            {
+                Registry.LocalMachine.DeleteSubKey(RegistryPath);
+            }
+            catch(Exception)
+            { }
         }
 
         public void SetDemoFile(string customerName)
         {
             FileStream fileStream = new FileStream(FilePath, FileMode.OpenOrCreate, FileAccess.Write);
             StreamWriter streamWriter = new StreamWriter(fileStream);
-            streamWriter.WriteLine(FilePath);
+            DateTime dateTimeNow = DateTime.Now;
+            streamWriter.WriteLine("UploadDate_" + dateTimeNow + "_ExpireDate_" + (dateTimeNow + TimeSpan.FromDays(30)));
             streamWriter.Flush();
             streamWriter.Close();
             fileStream.Close();
-            SetRegistryDemo(customerName);
+            SetRegistryDemo(customerName, dateTimeNow);
         }
 
-        private void SetRegistryDemo(string customerName)
+        private void SetRegistryDemo(string customerName, DateTime dateTimeNow)
         {
             //_logger.Information("Demo lisans aktifleştirildi.");
             RegistryKey key = CreateRegistryFile();
-            key.SetValue("UploadDate", DateTime.Now);
-            key.SetValue("ExpireDate", DateTime.Now + TimeSpan.FromDays(30));
-            key.SetValue("LastDate", DateTime.Now);
+            key.SetValue("UploadDate", dateTimeNow);
+            key.SetValue("ExpireDate", dateTimeNow + TimeSpan.FromDays(30));
+            key.SetValue("LastDate", dateTimeNow);
             key.SetValue("Type", 1505);
             var customerConfiguration = _configurationDataDal.Get(x => x.Key == "customerName");
             if (customerConfiguration == null)
@@ -129,7 +143,6 @@ namespace DiskBackup.Business.Concrete
         public bool ThereIsARegistryFile()
         {
             var key = Registry.LocalMachine.OpenSubKey(RegistryPath);
-
             if (key == null)
                 return false; // dosya oluşturulmamış
 
@@ -146,16 +159,17 @@ namespace DiskBackup.Business.Concrete
             var resultDecryptLicenseKey = DecryptLicenseKey(licenseKey);
             if (resultDecryptLicenseKey.Equals("fail"))
             {
-                // lisans key doğru değil
+                _logger.Error("Lisans anahtarı doğru girilmedi. Lisans Anahtarı: " + licenseKey);
                 return "fail";
             }
             else if (resultDecryptLicenseKey.Equals("failOS"))
             {
-                // uyumsuz version workstation-server-sbs
+                _logger.Error("Lisans anahtarı versiyonları uyumsuz. Lisans Anahtarı: " + licenseKey);
                 return "failOS";
             }
             else
             {
+                _logger.Information("Lisans aktifleştirildi. Lisans Anahtarı: " + licenseKey);
                 //_logger.Information("Lisans aktifleştirildi. Lisans Anahtarı: " + licenseKey);
                 SetRegistryLicense(licenseKey);
                 AddDBCustomerNameAndUniqKey(resultDecryptLicenseKey);
@@ -165,28 +179,35 @@ namespace DiskBackup.Business.Concrete
 
         private void AddDBCustomerNameAndUniqKey(string DecryptLicenseKey)
         {
-            var splitLicenseKey = DecryptLicenseKey.Split('_');
-            var customerConfiguration = _configurationDataDal.Get(x => x.Key == "customerName");
-            if (customerConfiguration == null)
+            try
             {
-                customerConfiguration = new ConfigurationData { Key = "customerName", Value = splitLicenseKey[1] };
-                _configurationDataDal.Add(customerConfiguration);
+                var splitLicenseKey = DecryptLicenseKey.Split('_');
+                var customerConfiguration = _configurationDataDal.Get(x => x.Key == "customerName");
+                if (customerConfiguration == null)
+                {
+                    customerConfiguration = new ConfigurationData { Key = "customerName", Value = splitLicenseKey[1] };
+                    _configurationDataDal.Add(customerConfiguration);
+                }
+                else if (customerConfiguration.Value != splitLicenseKey[1])
+                {
+                    customerConfiguration.Value = splitLicenseKey[1];
+                    _configurationDataDal.Update(customerConfiguration);
+                }
+                var uniqKeyConfiguration = _configurationDataDal.Get(x => x.Key == "uniqKey");
+                if (uniqKeyConfiguration == null)
+                {
+                    uniqKeyConfiguration = new ConfigurationData { Key = "uniqKey", Value = splitLicenseKey[6] };
+                    _configurationDataDal.Add(uniqKeyConfiguration);
+                }
+                else if (uniqKeyConfiguration.Value != splitLicenseKey[6])
+                {
+                    uniqKeyConfiguration.Value = splitLicenseKey[6];
+                    _configurationDataDal.Update(uniqKeyConfiguration);
+                }
             }
-            else if (customerConfiguration.Value != splitLicenseKey[1])
+            catch (Exception ex)
             {
-                customerConfiguration.Value = splitLicenseKey[1];
-                _configurationDataDal.Update(customerConfiguration);
-            }
-            var uniqKeyConfiguration = _configurationDataDal.Get(x => x.Key == "uniqKey");
-            if (uniqKeyConfiguration == null)
-            {
-                uniqKeyConfiguration = new ConfigurationData { Key = "uniqKey", Value = splitLicenseKey[6] };
-                _configurationDataDal.Add(uniqKeyConfiguration);
-            }
-            else if (uniqKeyConfiguration.Value != splitLicenseKey[6])
-            {
-                uniqKeyConfiguration.Value = splitLicenseKey[6];
-                _configurationDataDal.Update(uniqKeyConfiguration);
+                _logger.Error("Müşteri isimi ve uniq key veritabanına eklenemiyor. Error: " + ex);
             }
         }
 
@@ -199,7 +220,7 @@ namespace DiskBackup.Business.Concrete
 
                 using (Aes aes = Aes.Create())
                 {
-                    aes.Key = Encoding.UTF8.GetBytes(AESKey);
+                    aes.Key = Encoding.UTF8.GetBytes("D*G-KaPdSgVkYp3s6v8y/B?E(H+MbQeT");
                     aes.IV = iv;
                     ICryptoTransform decryptor = aes.CreateDecryptor(aes.Key, aes.IV);
 

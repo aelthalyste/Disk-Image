@@ -48,6 +48,7 @@ namespace DiskBackupWpfGUI
                 rbDemo.Visibility = Visibility.Collapsed;
                 txtDemoCustomerName.Visibility = Visibility.Collapsed;
                 rbLicense.IsChecked = true;
+                Height = 200;
             }
         }
 
