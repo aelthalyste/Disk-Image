@@ -119,7 +119,6 @@ namespace DiskBackupWpfGUI
                 MessageBox.Show(Resources["driverNotInitializedMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
             }
 
-
             try
             {
                 _logger.Verbose("GetDiskList metoduna istekte bulunuldu");
@@ -1993,23 +1992,6 @@ namespace DiskBackupWpfGUI
                 var backupService = _scope.Resolve<IBackupService>();
                 RefreshBackupsandTasks(backupService);
             }
-        }
-
-        private MessageBoxResult TaskControlToBeAffected()
-        {
-            foreach (TaskInfo itemTask in listViewTasks.Items)
-            {
-                foreach (BackupStorageInfo item in listViewBackupStorage.SelectedItems)
-                {
-                    if (itemTask.BackupStorageInfoId == item.Id)
-                    {
-                        var resultTask = MessageBox.Show($"{listViewBackupStorage.SelectedItems.Count} " + Resources["deleteTaskPieceMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
-                        return resultTask;
-                    }
-                }
-            }
-            var result = MessageBox.Show($"{listViewBackupStorage.SelectedItems.Count} " + Resources["deletePieceMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
-            return result;
         }
 
         private void listViewBackupStorage_SelectionChanged(object sender, SelectionChangedEventArgs e)

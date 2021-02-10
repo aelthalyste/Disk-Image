@@ -20,6 +20,13 @@ namespace DiskBackup.Business.Concrete
         private string RegistryPath = "SOFTWARE\\NarDiskBackup"; //Registry.LocalMachine.OpenSubKey
         private string FilePath = "C:\\Windows\\system32\\eyruebup.dll";
 
+        /* ExpireDate -> 
+         * License -> 
+         * LastDate -> 
+         * UploadDate -> 
+         * Type -> 
+         */
+
         public LicenseService(IConfigurationDataDal configurationDataDal, ILogger logger)
         {
             _configurationDataDal = configurationDataDal;
