@@ -148,6 +148,11 @@ namespace DiskBackup.TaskScheduler.Jobs
                 _logger.Information("{@task} için Incremental-Differantial görevi NAS'a bağlanılamadığı için başlatılamadı. Sonuç: Başarısız.", task);
                 UpdateActivityAndTask(activityLog, task, StatusType.ConnectionError);
             }
+            else if (result == 5) // driver initialize edilemedi
+            {
+                _logger.Information("{@task} için Incremental-Differantial görevi driver initialize edilemediği için başlatılamadı. Sonuç: Başarısız.", task);
+                UpdateActivityAndTask(activityLog, task, StatusType.DriverNotInitialized);
+            }
 
         }
 

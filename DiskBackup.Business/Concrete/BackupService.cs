@@ -268,6 +268,10 @@ namespace DiskBackup.Business.Concrete
         public byte RestoreBackupVolume(TaskInfo taskInfo)
         {
             _logger.Verbose("RestoreBackupVolume metodu çağırıldı");
+
+            if (!GetInitTracker())
+                return 4;
+
             // rootDir = K:\O'yu K'ya Backup\Nar_BACKUP.nb -- hangi backup dosyası olduğu bulunup öyle verilmeli
             NetworkConnection nc = null;
             if (taskInfo.BackupStorageInfo.Type == BackupStorageType.NAS)
@@ -348,6 +352,10 @@ namespace DiskBackup.Business.Concrete
         public byte RestoreBackupDisk(TaskInfo taskInfo)
         {
             _logger.Verbose("RestoreBackupDisk metodu çağırıldı");
+
+            if (!GetInitTracker())
+                return 4;
+
             // rootDir = K:\O'yu K'ya Backup\Nar_BACKUP.nb -- hangi backup dosyası olduğu bulunup öyle verilmeli
             NetworkConnection nc = null;
             if (taskInfo.BackupStorageInfo.Type == BackupStorageType.NAS)
@@ -422,6 +430,10 @@ namespace DiskBackup.Business.Concrete
         public byte CreateIncDiffBackup(TaskInfo taskInfo) // 0 başarısız, 1 başarılı, 2 kullanıcı durdurdu
         {
             _logger.Verbose("CreateIncDiffBackup metodu çağırıldı");
+
+            if (!GetInitTracker())
+                return 5;
+
             if (_statusInfoDal == null)
                 throw new Exception("StatusInfoDal is null");
             var statusInfo = _statusInfoDal.Get(si => si.Id == taskInfo.StatusInfoId); //her task için uygulanmalı

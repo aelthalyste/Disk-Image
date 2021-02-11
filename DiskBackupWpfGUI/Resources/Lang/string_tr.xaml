@@ -254,6 +254,7 @@
     <system:String x:Key="MessageboxTitle">Narbulut Bilgilendirme</system:String>
     <system:String x:Key="MissingFile">Eksik Dosya</system:String>
     <system:String x:Key="ValidateNAS">NAS Doğrulama</system:String>
+    <system:String x:Key="DriverNotInitialized">Driver Başlatılamadı</system:String>
     <system:String x:Key="loading...">Yükleniyor...</system:String>
     <system:String x:Key="healthy">Sağlıklı</system:String>
     <system:String x:Key="unhealthy">Sağlıksız</system:String>
@@ -307,7 +308,7 @@
     <system:String x:Key="unexpectedError1MB">Beklenmedik hata oluştu.</system:String>
     <system:String x:Key="notChainCleanMB">zincir temizleme başarılı olamadı.</system:String>
     <system:String x:Key="volumeAffectedMB">Seçili volumelarda çalışmakta olan görevleriniz etkisiz hale getirilecek. Onaylıyor musunuz?</system:String>
-    <system:String x:Key="driverNotInitializedMB">Driver initialize edilemedi!</system:String>
+    <system:String x:Key="driverNotInitializedMB">Driver başlatılamadı!</system:String>
     <system:String x:Key="deletePieceMB">adet veri silinecek. Onaylıyor musunuz?</system:String>
     <system:String x:Key="cloneFailMB">Kopyalama işlemi başarısız.</system:String>
     <system:String x:Key="sizeConflictMB">Dosya boyutu nedeniyle bu restore gerçekleştiremezsiniz.</system:String>
