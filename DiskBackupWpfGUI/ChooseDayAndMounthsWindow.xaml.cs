@@ -64,6 +64,7 @@ namespace DiskBackupWpfGUI
             //chooseFlag = true gün, false ise ay
             if (chooseFlag)
             {
+                UncheckDays();
                 gridDays.Visibility = Visibility.Visible;
                 txtTitleBar.Text = Resources["days"].ToString();
                 string[] words = daysOrMounths.Split(',');
@@ -87,6 +88,7 @@ namespace DiskBackupWpfGUI
             }
             else
             {
+                UncheckMonths();
                 gridMounths.Visibility = Visibility.Visible;
                 txtTitleBar.Text = Resources["mounths"].ToString();
                 string[] words = daysOrMounths.Split(',');
@@ -120,14 +122,41 @@ namespace DiskBackupWpfGUI
             }
         }
 
+        private void UncheckDays()
+        {
+            chbSunday.IsChecked = false;
+            chbMonday.IsChecked = false;
+            chbTuesday.IsChecked = false;
+            chbWednesday.IsChecked = false;
+            chbThursday.IsChecked = false;
+            chbFriday.IsChecked = false;
+            chbSaturday.IsChecked = false;
+        }
+
+        private void UncheckMonths()
+        {
+            chbJanuary.IsChecked = false;
+            chbFebruary.IsChecked = false;
+            chbMarch.IsChecked = false;
+            chbApril.IsChecked = false;
+            chbMay.IsChecked = false;
+            chbJune.IsChecked = false;
+            chbJuly.IsChecked = false;
+            chbAugust.IsChecked = false;
+            chbSeptember.IsChecked = false;
+            chbOctober.IsChecked = false;
+            chbNovember.IsChecked = false;
+            chbDecember.IsChecked = false;
+        }
+
         #region Title Bar
         private void btnChooseDayAndMounthsClose_Click(object sender, RoutedEventArgs e)
         {
-            if (_chooseFlag)
-                _days = _daysOrMounths;
+            SaveDaysAndMonths();
+            if (_months != null || _days != null)
+                Close();
             else
-                _months = _daysOrMounths;
-            Close();
+                MessageBox.Show(Resources["notNullMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
         }
 
         private void MyTitleBar_MouseDown(object sender, MouseButtonEventArgs e)
@@ -140,6 +169,15 @@ namespace DiskBackupWpfGUI
         #endregion
 
         private void btnSave_Click(object sender, RoutedEventArgs e)
+        {
+            SaveDaysAndMonths();
+            if (_months != null || _days != null)
+                Close();
+            else
+                MessageBox.Show(Resources["notNullMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+
+        private void SaveDaysAndMonths()
         {
             //Kontrol ve kayıt işlemi yap
             if (_chooseFlag) // gün
@@ -172,7 +210,8 @@ namespace DiskBackupWpfGUI
                 {
                     _days += 7 + ",";
                 }
-                _days = _days.Substring(0, _days.Length - 1);
+                if (_days != null)
+                    _days = _days.Substring(0, _days.Length - 1);
             }
             else
             {
@@ -224,9 +263,9 @@ namespace DiskBackupWpfGUI
                 {
                     _months += 12 + ",";
                 }
-                _months = _months.Substring(0, _months.Length - 1);
+                if (_months != null)
+                    _months = _months.Substring(0, _months.Length - 1);
             }
-            Close();
         }
 
         public void SetApplicationLanguage(string option)
