@@ -100,26 +100,31 @@ namespace DiskBackup.TaskScheduler.Jobs
 
             if (result == 1 || availableResult)
             {
-                _logger.Verbose("{@task} disk job'ın result true ifindeyim", task);
+                _logger.Verbose("{@task} için Restore-Disk görevi bitirildi. Sonuç: Başarılı.", task);
                 UpdateActivityAndTask(activityLog, task, StatusType.Success);
             }
             else if (result == 0)
             {
-                _logger.Verbose("{@task} disk job'ın result false ifindeyim", task);
+                _logger.Verbose("{@task} için Restore-Disk görevi bitirildi. Sonuç: NarDIWrapper'dan false geldi.", task);
                 UpdateActivityAndTask(activityLog, task, StatusType.Fail);
             }
             else if (result == 2)
             {
-                _logger.Verbose("{@task} disk job'ın result bağlantı hatası ifindeyim", task);
+                _logger.Verbose("{@task} için Restore-Disk görevi bitirildi. Sonuç: Bağlantı hatası.", task);
                 UpdateActivityAndTask(activityLog, task, StatusType.ConnectionError);
             }
             else if (result == 3)
             {
-                _logger.Verbose("{@task} disk job'ın result result eksik dosyalar var", task);
+                _logger.Verbose("{@task} için Restore-Disk görevi bitirildi. Sonuç: Eksik dosya var.", task);
                 UpdateActivityAndTask(activityLog, task, StatusType.MissingFile);
             }
+            else if (result == 4)
+            {
+                _logger.Verbose("{@task} için Restore-Disk görevi bitirildi. Sonuç: Driver initialize edilemedi.", task);
+                UpdateActivityAndTask(activityLog, task, StatusType.DriverNotInitialized);
+            }
 
-            _logger.Information("{@task} restore disk görevi bitirildi. Sonuç: {@result}.", task, result);
+            _logger.Information("{@task} için Restore-Disk görevi bitirildi. Sonuç: {@result}.", task, result);
             return Task.CompletedTask; // return değeri kaldırılacak ve async'e çevirilecek burası
         }
 

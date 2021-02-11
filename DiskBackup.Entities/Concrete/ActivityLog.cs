@@ -27,7 +27,8 @@ namespace DiskBackup.Entities.Concrete
         Cancel = 2,
         NotEnoughDiskSpace = 3,
         ConnectionError = 4,
-        MissingFile = 5
+        MissingFile = 5,
+        DriverNotInitialized = 6
     }
 
     public enum DetailedMissionType

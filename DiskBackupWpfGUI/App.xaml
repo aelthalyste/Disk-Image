@@ -84,6 +84,9 @@
                 <DataTrigger Binding="{Binding StatusInfo.Status}" Value="5">
                     <Setter Property="Source" Value="Resources\Icon\icons8-delete-file-24.png" />
                 </DataTrigger>
+                <DataTrigger Binding="{Binding StatusInfo.Status}" Value="6">
+                    <Setter Property="Source" Value="Resources\Icon\icons8-medium-risk-96.png" />
+                </DataTrigger>
             </Style.Triggers>
         </Style>
 

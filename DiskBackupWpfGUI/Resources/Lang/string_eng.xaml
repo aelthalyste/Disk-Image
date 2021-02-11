@@ -267,6 +267,7 @@
     <system:String x:Key="MessageboxTitle">Narbulut Information</system:String>
     <system:String x:Key="MissingFile">Missing File</system:String>
     <system:String x:Key="ValidateNAS">Validate NAS</system:String>
+    <system:String x:Key="DriverNotInitialized">Driver Not Initialized</system:String>
     <system:String x:Key="loading...">Loading...</system:String>
     <system:String x:Key="healthy">Healthy</system:String>
     <system:String x:Key="unhealthy">Unhealthy</system:String>
