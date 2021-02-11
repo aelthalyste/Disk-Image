@@ -5,6 +5,9 @@
 
 !**.*
 
+*.o
+*.out
+
 # User-specific files
 *.rsuser
 *.suo
