@@ -3837,7 +3837,7 @@ GenerateMetadataName(nar_backup_id ID, int Version) {
     }
     
     wchar_t t[8];
-    wsprintf(t, L"%c", ID.Letter);
+    swprintf(t, 8, L"%c", (char)ID.Letter);
     
     Result += L"-";
     Result += std::wstring(t);
@@ -3862,7 +3862,7 @@ GenerateBinaryFileName(nar_backup_id ID, int Version) {
     
     
     wchar_t t[8];
-    wsprintf(t, L"%c", ID.Letter);
+    swprintf(t, 8, L"%c", (char)ID.Letter);
     
     Result += L"-";
     Result += std::wstring(t);
