@@ -8026,6 +8026,24 @@ DEBUG_FileExplorerQuery(){
 int
 main(int argc, char* argv[]) {
     
+    {
+        
+        for(char letter = 'A'; letter <= 'Z'; letter ++){
+            nar_backup_id id = NarGenerateBackupID(letter);
+            std::wcout<< GenerateMetadataName(id, 0) <<L"\n";
+        }
+        
+        
+        for(char letter = 'A'; letter <= 'Z'; letter ++){
+            nar_backup_id id = NarGenerateBackupID(letter);
+            std::wcout<< GenerateBinaryFileName(id, 0) <<L"\n";
+        }
+        
+        
+        return 0;
+    }
+    
+    
     DEBUG_FileExplorerQuery();
     return 0;
     
