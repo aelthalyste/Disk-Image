@@ -53,6 +53,13 @@ namespace DiskBackup.Business.Concrete
             return resultDecryptLicenseKey.Split('_');
         }
 
+        public string GetLicenseKey()
+        {
+            var key = Registry.LocalMachine.OpenSubKey(RegistryPath);
+            var licenseKey = (string)key.GetValue("License");
+            return DecryptLicenseKey(licenseKey);
+        }
+
         public void UpdateDemoLastDate()
         {
             var key = Registry.LocalMachine.OpenSubKey(RegistryPath, true);
@@ -184,7 +191,7 @@ namespace DiskBackup.Business.Concrete
             }
         }
 
-        private void AddDBCustomerNameAndUniqKey(string DecryptLicenseKey)
+        public void AddDBCustomerNameAndUniqKey(string DecryptLicenseKey)
         {
             try
             {

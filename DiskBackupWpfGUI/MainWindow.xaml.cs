@@ -186,7 +186,10 @@ namespace DiskBackupWpfGUI
                             txtDemoDays.Text = _licenseService.GetDemoDaysLeft().ToString();
                             stackDemo.Visibility = Visibility.Visible;
                             txtLicenseStatu.Text = Resources["demo"].ToString();
-                            txtCustomerName.Text = _configurationDataDal.Get(x => x.Key == "customerName").Value;
+                            var customer = _configurationDataDal.Get(x => x.Key == "customerName");
+                            if (customer == null)
+                                customer = _configurationDataDal.Add(new ConfigurationData { Key = "customerName", Value = "Demo Demo" });
+                            txtCustomerName.Text = customer.Value;
                             //servisde de var
                             _licenseService.UpdateDemoLastDate();
                         }
@@ -215,7 +218,10 @@ namespace DiskBackupWpfGUI
                             txtDemoDays.Text = _licenseService.GetDemoDaysLeft().ToString();
                             stackDemo.Visibility = Visibility.Visible;
                             txtLicenseStatu.Text = Resources["demo"].ToString();
-                            txtCustomerName.Text = _configurationDataDal.Get(x => x.Key == "customerName").Value;
+                            var customer = _configurationDataDal.Get(x => x.Key == "customerName");
+                            if (customer == null)
+                                customer = _configurationDataDal.Add(new ConfigurationData { Key = "customerName", Value = "Demo Demo" });
+                            txtCustomerName.Text = customer.Value;
                             //servisde de var
                             _licenseService.UpdateDemoLastDate();
                         }
@@ -262,6 +268,7 @@ namespace DiskBackupWpfGUI
 
         private void LicenseInformationWrite(string[] splitLicenseKey)
         {
+            _licenseService.AddDBCustomerNameAndUniqKey(_licenseService.GetLicenseKey());
             txtLicenseStatu.Text = Resources["active"].ToString();
             txtDealerName.Text = splitLicenseKey[0];
             txtCustomerName.Text = splitLicenseKey[1];
