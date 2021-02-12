@@ -286,6 +286,8 @@
     <system:String x:Key="testing">Test Et</system:String>
     <system:String x:Key="pleaseEnterName">Lütfen bir isim giriniz...</system:String>
     <system:String x:Key="pleaseEnterLicenseKey">Lütfen lisans anahtarı giriniz veya lisans dosyası seçiniz...</system:String>
+    <system:String x:Key="PathNotFound">Yol bulunamadı</system:String>
+
 
     <!--MessageBox Info-->
     <system:String x:Key="notNullMB">İlgili alanları lütfen boş geçmeyiniz.</system:String>

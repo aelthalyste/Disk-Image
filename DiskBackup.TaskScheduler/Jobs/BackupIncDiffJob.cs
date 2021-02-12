@@ -153,6 +153,11 @@ namespace DiskBackup.TaskScheduler.Jobs
                 _logger.Information("{@task} için Incremental-Differantial görevi driver initialize edilemediği için başlatılamadı. Sonuç: Başarısız.", task);
                 UpdateActivityAndTask(activityLog, task, StatusType.DriverNotInitialized);
             }
+            else if (result == 6) // backup alınacak path yok
+            {
+                _logger.Information("{@task} için Incremental-Differantial görevi aranan disk bulunamadığı için başlatılamadı. Sonuç: Başarısız.", task);
+                UpdateActivityAndTask(activityLog, task, StatusType.PathNotFound);
+            }
 
         }
 

@@ -434,6 +434,24 @@ namespace DiskBackup.Business.Concrete
             if (!GetInitTracker())
                 return 5;
 
+            // NAS için
+            NetworkConnection nc = null;
+            try
+            {
+                if (taskInfo.BackupStorageInfo.Type == BackupStorageType.NAS)
+                {
+                    nc = new NetworkConnection(taskInfo.BackupStorageInfo.Path.Substring(0, taskInfo.BackupStorageInfo.Path.Length - 1), taskInfo.BackupStorageInfo.Username, taskInfo.BackupStorageInfo.Password, taskInfo.BackupStorageInfo.Domain);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "Uzak paylaşıma bağlanılamadığı için backup işlemine devam edilemiyor. {path}", taskInfo.BackupStorageInfo.Path);
+                return 4;
+            }
+
+            if (!Directory.Exists(taskInfo.BackupStorageInfo.Path))
+                return 6;
+
             if (_statusInfoDal == null)
                 throw new Exception("StatusInfoDal is null");
             var statusInfo = _statusInfoDal.Get(si => si.Id == taskInfo.StatusInfoId); //her task için uygulanmalı
@@ -466,21 +484,6 @@ namespace DiskBackup.Business.Concrete
 
             statusInfo.TaskName = taskInfo.Name;
             statusInfo.SourceObje = taskInfo.StrObje;
-
-            // NAS için
-            NetworkConnection nc = null;
-            try
-            {
-                if (taskInfo.BackupStorageInfo.Type == BackupStorageType.NAS)
-                {
-                    nc = new NetworkConnection(taskInfo.BackupStorageInfo.Path.Substring(0, taskInfo.BackupStorageInfo.Path.Length - 1), taskInfo.BackupStorageInfo.Username, taskInfo.BackupStorageInfo.Password, taskInfo.BackupStorageInfo.Domain);
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.Error(ex, "Uzak paylaşıma bağlanılamadığı için backup işlemine devam edilemiyor. {path}", taskInfo.BackupStorageInfo.Path);
-                return 4;
-            }
 
             foreach (var letter in letters) // C D E F
             {
