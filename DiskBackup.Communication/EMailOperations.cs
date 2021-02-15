@@ -82,7 +82,7 @@ namespace DiskBackup.Communication
                 {
                     message.Subject = taskInfo.Name + ", Başarısız (" + uniqKey.Value + ")";
                 }
-                else if ((taskInfo.StatusInfo.Status == StatusType.ConnectionError || taskInfo.StatusInfo.Status == StatusType.NotEnoughDiskSpace || taskInfo.StatusInfo.Status == StatusType.MissingFile))
+                else
                 {
                     message.Subject = taskInfo.Name + ", Kritik Hata (" + uniqKey.Value + ")";
                 }
@@ -100,7 +100,7 @@ namespace DiskBackup.Communication
                 {
                     message.Subject = taskInfo.Name + ", Fail (" + uniqKey.Value + ")";
                 }
-                else if ((taskInfo.StatusInfo.Status == StatusType.ConnectionError || taskInfo.StatusInfo.Status == StatusType.NotEnoughDiskSpace || taskInfo.StatusInfo.Status == StatusType.MissingFile))
+                else
                 {
                     message.Subject = taskInfo.Name + ", Critical Error (" + uniqKey.Value + ")";
                 }
@@ -126,7 +126,7 @@ namespace DiskBackup.Communication
                 {
                     EMailSender(emailList, taskInfo);
                 }
-                else if ((taskInfo.StatusInfo.Status == StatusType.ConnectionError || taskInfo.StatusInfo.Status == StatusType.NotEnoughDiskSpace || taskInfo.StatusInfo.Status == StatusType.MissingFile) && emailCritical.Value == "True")
+                else if ((taskInfo.StatusInfo.Status != StatusType.Success && taskInfo.StatusInfo.Status != StatusType.Fail) && emailCritical.Value == "True")
                 {
                     EMailSender(emailList, taskInfo);
                 }
@@ -199,7 +199,7 @@ namespace DiskBackup.Communication
                 body = body.Replace("{BackgroundStatus}", "green");
             else if (taskInfo.StatusInfo.Status == StatusType.Fail)
                 body = body.Replace("{BackgroundStatus}", "red");
-            else if (taskInfo.StatusInfo.Status == StatusType.ConnectionError || taskInfo.StatusInfo.Status == StatusType.MissingFile || taskInfo.StatusInfo.Status == StatusType.NotEnoughDiskSpace)
+            else 
                 body = body.Replace("{BackgroundStatus}", "orange");
 
             return body;
@@ -274,6 +274,10 @@ namespace DiskBackup.Communication
                     body = body.Replace("{txtWelcome}", taskInfo.StatusInfo.TaskName + " task dated " + taskInfo.LastWorkingDate.ToString() + " failed due to missing file error.");
                 else if (taskInfo.StatusInfo.Status == StatusType.NotEnoughDiskSpace)
                     body = body.Replace("{txtWelcome}", taskInfo.StatusInfo.TaskName + " task dated " + taskInfo.LastWorkingDate.ToString() + " failed due to not enough disk space error.");
+                else if (taskInfo.StatusInfo.Status == StatusType.DriverNotInitialized)
+                    body = body.Replace("{txtWelcome}", taskInfo.StatusInfo.TaskName + " task dated " + taskInfo.LastWorkingDate.ToString() + " failed because the driver could not be initialized.");
+                else if (taskInfo.StatusInfo.Status == StatusType.PathNotFound)
+                    body = body.Replace("{txtWelcome}", taskInfo.StatusInfo.TaskName + " task dated " + taskInfo.LastWorkingDate.ToString() + " failed because the path to save the backup could not be found.");
                 #endregion
             }
             else
@@ -302,6 +306,10 @@ namespace DiskBackup.Communication
                     body = body.Replace("{txtWelcome}", taskInfo.LastWorkingDate.ToString() + " tarihli " + taskInfo.StatusInfo.TaskName + " görevi eksik dosya hatasından dolayı başarısız olmuştur.");
                 else if (taskInfo.StatusInfo.Status == StatusType.NotEnoughDiskSpace)
                     body = body.Replace("{txtWelcome}", taskInfo.LastWorkingDate.ToString() + " tarihli " + taskInfo.StatusInfo.TaskName + " görevi yetersiz disk alanı hatasından dolayı başarısız olmuştur.");
+                else if (taskInfo.StatusInfo.Status == StatusType.DriverNotInitialized)
+                    body = body.Replace("{txtWelcome}", taskInfo.LastWorkingDate.ToString() + " tarihli " + taskInfo.StatusInfo.TaskName + " görevi driver başlatılamadığından dolayı başarısız olmuştur.");
+                else if (taskInfo.StatusInfo.Status == StatusType.PathNotFound)
+                    body = body.Replace("{txtWelcome}", taskInfo.LastWorkingDate.ToString() + " tarihli " + taskInfo.StatusInfo.TaskName + " görevi backup'ın kaydedileceği yol bulunamadığından dolayı başarısız olmuştur.");
                 #endregion
             }
 
@@ -564,21 +572,6 @@ namespace DiskBackup.Communication
         }
         #endregion
 
-
-        /*ChangLang içinde
-         * string body = string.Empty;
-
-        try
-        {
-            using (StreamReader reader = new StreamReader(@"HTML\EMailTemplate.html"))
-            {
-                body = reader.ReadToEnd();
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.Information("E-Mail hata: " + ex);
-        }*/
     }
 }
 
