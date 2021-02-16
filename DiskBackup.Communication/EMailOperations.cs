@@ -278,6 +278,8 @@ namespace DiskBackup.Communication
                     body = body.Replace("{txtWelcome}", taskInfo.StatusInfo.TaskName + " task dated " + taskInfo.LastWorkingDate.ToString() + " failed because the driver could not be initialized.");
                 else if (taskInfo.StatusInfo.Status == StatusType.PathNotFound)
                     body = body.Replace("{txtWelcome}", taskInfo.StatusInfo.TaskName + " task dated " + taskInfo.LastWorkingDate.ToString() + " failed because the path to save the backup could not be found.");
+                else if (taskInfo.StatusInfo.Status == StatusType.SameRootDirectory)
+                    body = body.Replace("{txtWelcome}", taskInfo.StatusInfo.TaskName + " task dated " + taskInfo.LastWorkingDate.ToString() + " failed because it is the same as the root directory where backup will be saved.");
                 #endregion
             }
             else
@@ -310,6 +312,8 @@ namespace DiskBackup.Communication
                     body = body.Replace("{txtWelcome}", taskInfo.LastWorkingDate.ToString() + " tarihli " + taskInfo.StatusInfo.TaskName + " görevi driver başlatılamadığından dolayı başarısız olmuştur.");
                 else if (taskInfo.StatusInfo.Status == StatusType.PathNotFound)
                     body = body.Replace("{txtWelcome}", taskInfo.LastWorkingDate.ToString() + " tarihli " + taskInfo.StatusInfo.TaskName + " görevi backup'ın kaydedileceği yol bulunamadığından dolayı başarısız olmuştur.");
+                else if (taskInfo.StatusInfo.Status == StatusType.SameRootDirectory)
+                    body = body.Replace("{txtWelcome}", taskInfo.LastWorkingDate.ToString() + " tarihli " + taskInfo.StatusInfo.TaskName + " görevi backup'ın kaydedileceği kök dizin ile aynı olduğundan dolayı başarısız olmuştur.");
                 #endregion
             }
 
