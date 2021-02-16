@@ -337,5 +337,6 @@
     <system:String x:Key="EmailSentMB">Email has been sent.</system:String>
     <system:String x:Key="notificationUpdateFailMB">An unexpected error has occurred. Notification settings could not be updated.</system:String>
     <system:String x:Key="notificationUpdateMB">Notification settings updated.</system:String>
+    <system:String x:Key="sameRootDirectoryMB">Restore cannot be performed for the same root directory.</system:String>
 
 </ResourceDictionary>

@@ -214,7 +214,7 @@ namespace DiskBackupWpfGUI
                     if (_licenseService.GetRegistryType() == "1505") // gün kontrolleri yapılacak
                     {
                         if (_licenseService.IsDemoExpired()) //uygulama çalışabilir
-                        {                          
+                        {
                             txtDemoDays.Text = _licenseService.GetDemoDaysLeft().ToString();
                             stackDemo.Visibility = Visibility.Visible;
                             txtLicenseStatu.Text = Resources["demo"].ToString();
@@ -1387,7 +1387,20 @@ namespace DiskBackupWpfGUI
             BackupInfo backupInfo = (BackupInfo)listViewRestore.SelectedItem;
             bool controlFlag = false;
 
-            if (volumeInfoList.Count > 1)
+            if (backupInfo.BackupStorageInfo.Type == BackupStorageType.Windows)
+            {
+                foreach (var item in volumeInfoList)
+                {
+                    if (item.Letter == backupInfo.BackupStorageInfo.Path[0])
+                    {
+                        controlFlag = true;
+                        MessageBox.Show(Resources["sameRootDirectoryMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+                        break;
+                    }
+                }
+            }
+
+            if (volumeInfoList.Count > 1 && !controlFlag)
             {
                 //disk kontrol et
                 foreach (var item in _diskList)

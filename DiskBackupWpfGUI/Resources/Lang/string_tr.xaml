@@ -324,5 +324,6 @@
     <system:String x:Key="EmailSentMB">Email gönderildi.</system:String>
     <system:String x:Key="notificationUpdateFailMB">Beklenmedik hata oluştu. Bildirim ayarları güncellenemedi.</system:String>
     <system:String x:Key="notificationUpdateMB">Bildirim ayarları güncellendi.</system:String>
+    <system:String x:Key="sameRootDirectoryMB">Aynı kök dizin için restore işlemi gerçekleştirilemez.</system:String>
 
 </ResourceDictionary>
