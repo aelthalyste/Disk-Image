@@ -287,7 +287,7 @@
     <system:String x:Key="pleaseEnterName">Lütfen bir isim giriniz...</system:String>
     <system:String x:Key="pleaseEnterLicenseKey">Lütfen lisans anahtarı giriniz veya lisans dosyası seçiniz...</system:String>
     <system:String x:Key="PathNotFound">Yol bulunamadı</system:String>
-
+    <system:String x:Key="SameRootDirectory">Aynı Kök Dizin</system:String>
 
     <!--MessageBox Info-->
     <system:String x:Key="notNullMB">İlgili alanları lütfen boş geçmeyiniz.</system:String>

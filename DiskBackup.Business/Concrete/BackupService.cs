@@ -427,12 +427,18 @@ namespace DiskBackup.Business.Concrete
             return DiskTracker.CW_IsVolumeAvailable(letter);
         }
 
-        public byte CreateIncDiffBackup(TaskInfo taskInfo) // 0 başarısız, 1 başarılı, 2 kullanıcı durdurdu
+        public byte CreateIncDiffBackup(TaskInfo taskInfo) // 0 başarısız, 1 başarılı, 2 kullanıcı durdurdu 8. DURUM GELİRSE BYTE'DAN ÇIKAR
         {
             _logger.Verbose("CreateIncDiffBackup metodu çağırıldı");
 
             if (!GetInitTracker())
                 return 5;
+
+            if (taskInfo.BackupStorageInfo.Type == BackupStorageType.Windows)
+            {
+                if (taskInfo.StrObje.Contains(taskInfo.BackupStorageInfo.Path[0]))
+                    return 7;
+            }
 
             // NAS için
             NetworkConnection nc = null;

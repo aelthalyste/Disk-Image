@@ -711,12 +711,6 @@ namespace DiskBackupWpfGUI
                 backupStorageInfoList.Add(item);
             }
 
-            List<VolumeInfo> volumeInfoList = new List<VolumeInfo>();
-            foreach (VolumeInfo item in listViewDisk.SelectedItems)
-            {
-                volumeInfoList.Add(item);
-            }
-
             TaskInfo taskInfo = (TaskInfo)listViewTasks.SelectedItem;
             //Console.WriteLine("Storage: " + taskInfo.BackupStorageInfoId + /*" - " + taskInfo.BackupStorageInfo.StorageName +*/ "\n" +
             //    "BackupTaskInfı: " + taskInfo.BackupTaskId + /*" - " + taskInfo.BackupTaskInfo.TaskName +*/ "\n" +
@@ -725,7 +719,7 @@ namespace DiskBackupWpfGUI
             using (var scope = _scope.BeginLifetimeScope())
             {
                 NewCreateTaskWindow newCreateTask = scope.Resolve<NewCreateTaskWindow>(new TypedParameter(backupStorageInfoList.GetType(), backupStorageInfoList),
-                    new TypedParameter(volumeInfoList.GetType(), volumeInfoList), new TypedParameter(taskInfo.GetType(), taskInfo));
+                    new TypedParameter(taskInfo.GetType(), taskInfo));
                 newCreateTask.ShowDialog();
             }
             GetTasks();
@@ -1386,27 +1380,18 @@ namespace DiskBackupWpfGUI
             _logger.Verbose("btnRestore_Click istekte bulunuldu");
 
             List<VolumeInfo> volumeInfoList = new List<VolumeInfo>();
-            int i = 0;
+
             foreach (VolumeInfo item in listViewRestoreDisk.SelectedItems)
-            {
-                Console.WriteLine(i++);
                 volumeInfoList.Add(item);
-                Console.WriteLine(item.DiskName + " " + item.Letter);
-            }
-            Console.WriteLine("Ben geldim");
 
             BackupInfo backupInfo = (BackupInfo)listViewRestore.SelectedItem;
             bool controlFlag = false;
-            Console.WriteLine("Disk listesi");
-            _diskList.ForEach(x => Console.WriteLine(x.VolumeInfos[0].DiskName));
-            Console.WriteLine("Volume listesi");
-            volumeInfoList.ForEach(x => Console.WriteLine(x.DiskName));
+
             if (volumeInfoList.Count > 1)
             {
                 //disk kontrol et
                 foreach (var item in _diskList)
                 {
-                    Console.WriteLine(item.VolumeInfos[0].DiskName);
                     if (item.VolumeInfos[0].DiskName.Equals(volumeInfoList[0].DiskName))
                     {
                         if (backupInfo.UsedSize > item.Size)
@@ -1424,7 +1409,6 @@ namespace DiskBackupWpfGUI
                     controlFlag = true;
                     MessageBox.Show(Resources["sizeConflictMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
                 }
-
             }
 
             if (!controlFlag)
@@ -1439,7 +1423,6 @@ namespace DiskBackupWpfGUI
                 }
             }
             GetTasks();
-
         }
 
         private void listViewRestore_SelectionChanged(object sender, SelectionChangedEventArgs e)

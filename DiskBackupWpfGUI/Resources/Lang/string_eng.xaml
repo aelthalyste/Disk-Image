@@ -300,6 +300,7 @@
     <system:String x:Key="pleaseEnterName">Please enter a name...</system:String>
     <system:String x:Key="pleaseEnterLicenseKey">Please enter license key or select license file...</system:String>
     <system:String x:Key="PathNotFound">Path Not Found</system:String>
+    <system:String x:Key="SameRootDirectory">Same Root Directory</system:String>
 
     <!--MessageBox Info-->
     <system:String x:Key="notNullMB">Please do not leave the relevant fields blank.</system:String>

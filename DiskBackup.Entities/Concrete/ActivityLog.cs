@@ -29,7 +29,8 @@ namespace DiskBackup.Entities.Concrete
         ConnectionError = 4,
         MissingFile = 5,
         DriverNotInitialized = 6,
-        PathNotFound = 7
+        PathNotFound = 7,
+        SameRootDirectory = 8
     }
 
     public enum DetailedMissionType
