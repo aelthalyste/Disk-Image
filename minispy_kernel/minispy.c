@@ -1464,16 +1464,37 @@ Return Value:
                 
                 goto NAR_PREOP_FAILED_END;
             }
+            if (WholeFileMapBuffer->Extents[0].Lcn.QuadPart == -1) {
+                goto NAR_PREOP_FAILED_END;
+            }
             
             for (unsigned int i = 0; i < WholeFileMapBuffer->ExtentCount; i++) {
                 
                 ClusterMapBuffer.Extents[0] = WholeFileMapBuffer->Extents[i];
                 
+                /*
+                the value (LONGLONG) -1 indicates either a compression unit that is partially allocated, or an unallocated region of a sparse file.
+                */
+                if (ClusterMapBuffer.Extents[0].Lcn.QuadPart == (LONGLONG)-1) { 
+                    break; 
+                }
+                
                 MaxIteration++;
-                if (MaxIteration > 128) {
+                if (MaxIteration > 100) {
                     Error |= NAR_ERR_MAX_ITER;
                     break;
                 }
+
+                if (ClusterMapBuffer.Extents[0].NextVcn.QuadPart == (ULONGLONG)-1) {
+                    break;
+                }
+                if (ClusterMapBuffer.StartingVcn.QuadPart == (ULONGLONG)-1) {
+                    break;
+                }
+                if (ClusterMapBuffer.Extents[0].NextVcn.QuadPart - ClusterMapBuffer.StartingVcn.QuadPart >= MAXUINT32) {
+                    break;
+                }
+
                 
                 
                 if (!HeadFound) {

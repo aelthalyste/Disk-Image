@@ -402,21 +402,18 @@ int main(int, char**)
 							RestoreInf.Version = Backups[BackupButtonID].Version;
 						}
 						
-						sprintf(bf, "%d", backup.Version);
 						ImGui::TableNextColumn();
-						ImGui::Text(bf);
+						ImGui::Text("%d", backup.Version);
 						
-						sprintf(bf, "%c", backup.Letter);
 						ImGui::TableNextColumn();
-						ImGui::Text(bf);
+						ImGui::Text("%c", backup.Letter);
 						
 						ImGui::TableNextColumn();
 						ImGui::Text((backup.BT == BackupType::Inc ? "Inc" : "Diff"));										
 					
 						ImGui::TableNextColumn();
-						//sprintf(bf, "%I64llu", backup.VolumeTotalSize);
-						
-						ImGui::Text("%I64llu", backup.VolumeTotalSize + (uint64_t)i * 1400);
+						ImGui::Text("%I64llu", backup.VolumeTotalSize);
+
 						ImGui::PopID();
 					}
 					ImGui::EndTable();

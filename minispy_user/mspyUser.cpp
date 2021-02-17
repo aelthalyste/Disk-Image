@@ -1260,31 +1260,6 @@ GetMFTandINDXLCN(char VolumeLetter, HANDLE VolumeHandle) {
         memset(ClustersExtracted, 0, ClusterExtractedBufferSize);
     }
     
-#define NAR_INSERT_CLUSTER(START, LEN) ClustersExtracted[ClusterExtractedCount++] = {(UINT32)(START), (UINT32)(LEN) };
-#define NAR_MFT_DBG_INFO 0
-    
-    
-#if NAR_MFT_DBG_INFO
-#define DBG_INC(v) (v)++;
-#else
-#define DBG_INC(v) (v);
-#endif
-    
-    int DBG_INDX_FOUND = 0;
-    int DBG_TOTAL_DIR_FOUND = 0;
-    int DBG_CLUSTER_COUNT = 0;
-    int DBG_TOTAL_FILES_FOUND = 0;
-    
-    UNREFERENCED_PARAMETER(DBG_INDX_FOUND);
-    UNREFERENCED_PARAMETER(DBG_TOTAL_DIR_FOUND);
-    UNREFERENCED_PARAMETER(DBG_CLUSTER_COUNT);
-    UNREFERENCED_PARAMETER(DBG_TOTAL_FILES_FOUND);
-    
-    
-    memset(&DEBUG_CLUSTER_INFORMATION, 0, sizeof(DEBUG_CLUSTER_INFORMATION));
-    
-    //#define DBG_INSERT(START,COUNT) DEBUG_CLUSTER_INFORMATION.Start[DBG_CLUSTER_COUNT] = (UINT32)(START); DEBUG_CLUSTER_INFORMATION.Count[DBG_CLUSTER_COUNT] = (UINT32)(COUNT); (DBG_CLUSTER_COUNT)++;
-#define DBG_INSERT(START,COUNT) do{(START);(COUNT);}while(0);
     
     void* FileBuffer = malloc(MEMORY_BUFFER_SIZE);
     UINT32 FileBufferCount = MEMORY_BUFFER_SIZE / 1024LL;
@@ -1353,150 +1328,13 @@ GetMFTandINDXLCN(char VolumeLetter, HANDLE VolumeHandle) {
                                     // block doesnt start with 'FILE0', skip
                                     continue;
                                 }
+                                void *IndxOffset = NarFindFileAttributeFromFileRecord(FileRecord, NAR_INDEX_ALLOCATION_FLAG);
                                 
-                                DBG_INC(DBG_TOTAL_FILES_FOUND);
-                                INT16 Flags = *(INT16*)((BYTE*)FileRecord + FlagOffset);
-                                
-                                
-                                if ((Flags & DirectoryFlag) == DirectoryFlag) {
-                                    // that is a directory 
-                                    DBG_INC(DBG_TOTAL_DIR_FOUND);
-                                    
-                                    /*
-                                    As far as i know, attributes will be sorted. so i can early terminate if i can just compare CurrentAttr>INDEX_ALLOCCATION
-                                    */
-                                    
-                                    INT16 FirstAttributeOffset = (*(INT16*)((BYTE*)FileRecord + 20));
-                                    void* FileAttribute = (char*)FileRecord + FirstAttributeOffset;
-                                    
-                                    INT32 RemainingLen = *(INT32*)((BYTE*)FileRecord + 24); // Real size of the file record
-                                    RemainingLen -= (FirstAttributeOffset + 8); //8 byte for end of record mark, remaining len includes it too.
-                                    
-                                    // iterate until file attr 0xA0 found, which is INDEX_ALLOCATION
-                                    // maybe some dir does not contain INDEX_ALLOCATION, like empty dirs, or other things i am not aware of.
-                                    // its better write solid solution
-                                    
-                                    while (RemainingLen > 0) {
-                                        
-                                        if ((*(INT32*)FileAttribute & NAR_INDEX_ALLOCATION_FLAG) == NAR_INDEX_ALLOCATION_FLAG) {
-                                            
-                                            INT32 DataRunsOffset = *(INT32*)((BYTE*)FileAttribute + 32);
-                                            
-                                            void* DataRuns = (char*)FileAttribute + DataRunsOffset;
-                                            
-                                            // So it looks like dataruns doesnt actually tells you LCN, to save up space, they kinda use smt like 
-                                            // winapi's deviceiocontrol routine, maybe the reason for fetching VCN-LCN maps from winapi is weird because 
-                                            // thats how its implemented at ntfs at first place. who knows
-                                            // so thats how it looks
-                                            /*
-                                            first one is always absolute LCN in the volume. rest of it is addition to previous one. if file is fragmanted, value will be
-                                            negative. so we dont have to check some edge cases here.
-                                            second data run will be lets say 0x11 04 43
-                                            and first one                    0x11 10 10
-                                            starting lcn is 0x10, but second data run does not start from 0x43, it starts from 0x10 + 0x43
-                      
-                                            LCN[n] = LCN[n-1] + datarun cluster
-                                            */
-                                            
-                                            char Size = *(BYTE*)DataRuns;
-                                            INT8 ClusterCountSize = (Size & 0x0F);
-                                            INT8 FirstClusterSize = (Size & 0xF0) >> 4;
-                                            
-                                            // Swipe to left to clear extra bits, then swap back to get correct result.
-                                            INT64 ClusterCount = *(INT64*)((char*)DataRuns + 1); // 1 byte for size variable
-                                            ClusterCount = ClusterCount & ~(0xFFFFFFFFFFFFFFFFULL << (ClusterCountSize * 8));
-                                            // cluster count must be > 0, no need to do 2s complement on it
-                                            
-                                            //same operation
-                                            INT64 FirstCluster = *(INT64*)((char*)DataRuns + 1 + ClusterCountSize);
-                                            FirstCluster = FirstCluster & ~(0xFFFFFFFFFFFFFFFFULL << (FirstClusterSize * 8));
-                                            // 2s complement to support negative values
-                                            if ((FirstCluster >> ((FirstClusterSize - 1) * 8 + 7)) & 1U) {
-                                                FirstCluster = FirstCluster | ((0xFFFFFFFFFFFFFFFULL << (FirstClusterSize * 8)));
-                                            }
-                                            
-                                            
-                                            INT64 OldClusterStart = FirstCluster;
-                                            void* D = (BYTE*)DataRuns + FirstClusterSize + ClusterCountSize + 1;
-                                            
-                                            
-                                            DBG_INSERT(FirstCluster, ClusterCount);
-                                            NAR_INSERT_CLUSTER(FirstCluster, ClusterCount);
-                                            
-                                            DBG_INC(DBG_INDX_FOUND);
-                                            while (*(BYTE*)D) {
-                                                
-                                                Size = *(BYTE*)D;
-                                                
-                                                //UPDATE: Even tho entry finishes at 8 byte aligment, it doesnt finish itself here, adds at least 1 byte for zero termination to indicate its end
-                                                //so rather than tracking how much we read so far, we can check if we encountered zero termination
-                                                // NOTE(Batuhan): Each entry is at 8byte aligment, so lets say we thought there must be smt like 80 bytes reserved for 0xA0 attribute
-                                                // but since data run's size is not constant, it might finish at not exact multiple of 8, like 75, so rest of the 5 bytes are 0
-                                                // We can keep track how many bytes we read so far etc etc, but rather than that, if we just check if size is 0, which means rest is just filler 
-                                                // bytes to aligment border, we can break early.
-                                                if (Size == 0) break;
-                                                
-                                                
-                                                
-                                                // extract 4bit nibbles from size
-                                                ClusterCountSize = (Size & 0x0F);
-                                                FirstClusterSize = (Size & 0xF0) >> 4;
-                                                
-                                                // Sparse files may cause that, but not sure about what is sparse and if it effects directories. 
-                                                // If not, nothing to worry about, branch predictor should take care of that
-                                                if (ClusterCountSize == 0 || FirstClusterSize == 0)break;
-                                                
-                                                // Swipe to left to clear extra bits, then swap back to get correct result.
-                                                ClusterCount = *(INT64*)((BYTE*)D + 1);
-                                                ClusterCount = ClusterCount & ~(0xFFFFFFFFFFFFFFFFULL << (ClusterCountSize * 8));
-                                                
-                                                //same operation
-                                                FirstCluster = *(INT64*)((BYTE*)D + 1 + ClusterCountSize);
-                                                FirstCluster = FirstCluster & ~(0xFFFFFFFFFFFFFFFFULL << (FirstClusterSize * 8));
-                                                if ((FirstCluster >> ((FirstClusterSize - 1) * 8 + 7)) & 1U) {
-                                                    FirstCluster = FirstCluster | (0xFFFFFFFFFFFFFFFFULL << (FirstClusterSize * 8));
-                                                }
-                                                
-                                                
-                                                //if(TempVariable > 1 && FirstCluster < 0){
-                                                //    dbgbreak
-                                                //}
-                                                
-                                                
-                                                FirstCluster += OldClusterStart;
-                                                // Update tail
-                                                OldClusterStart = FirstCluster;
-                                                
-                                                D = (BYTE*)D + (FirstClusterSize + ClusterCountSize + 1);
-                                                DBG_INSERT(FirstCluster, ClusterCount);
-                                                NAR_INSERT_CLUSTER(FirstCluster, ClusterCount);
-                                                DBG_INC(DBG_INDX_FOUND);
-                                                
-                                            }
-                                            
-                                            
-                                            // found INDEX_ALLOCATION attribute
-                                            break;
-                                        }
-                                        
-                                        if ((*(INT32*)FileAttribute & NAR_INDEX_ALLOCATION_FLAG) > NAR_INDEX_ALLOCATION_FLAG) break;// early termination
-                                        
-                                        
-                                        // found neither indexallocation nor attr bigger than it, just substract attribute size from remaininglen to determine if we should keep iterating
-                                        INT32 AttrSize = (*(unsigned short*)((BYTE*)FileAttribute + 4));
-                                        RemainingLen -= AttrSize;
-                                        FileAttribute = (BYTE*)FileAttribute + AttrSize;
-                                        if (AttrSize == 0) break;
-                                        
-                                    }
-                                    
-                                    
+                                if(IndxOffset != NULL){
+                                    INT32 RegFound = 0;
+                                    NarParseIndexAllocationAttribute(IndxOffset, &ClustersExtracted[ClusterExtractedCount], ClusterExtractedBufferSize/sizeof(ClustersExtracted[0]) - ClusterExtractedCount, &RegFound);
+                                    ClusterExtractedCount += RegFound;
                                 }
-                                else {
-                                    // not a directory, skip
-                                    continue;
-                                }
-                                
                                 
                             }
                             
@@ -1512,7 +1350,7 @@ GetMFTandINDXLCN(char VolumeLetter, HANDLE VolumeHandle) {
                     }
                     else {
                         printf("FileCount %i\t FileBufferCount %i\n", FileCount, FileBufferCount);
-                        // must iterate 
+                        
                         
                     }
                     
@@ -1522,13 +1360,7 @@ GetMFTandINDXLCN(char VolumeLetter, HANDLE VolumeHandle) {
                     printf("Couldnt set file pointer to %I64d\n", Offset);
                 }
                 
-                
-                
             }
-            
-            
-            
-            
         }
         else {
             // couldnt open volume as file
@@ -1545,8 +1377,8 @@ GetMFTandINDXLCN(char VolumeLetter, HANDLE VolumeHandle) {
     
     EARLY_TERMINATION:
     
+    free(FileBuffer);
     
-    // TODO remove that check
     
     data_array<nar_record> Result = { 0 };
     ClustersExtracted = (nar_record*)realloc(ClustersExtracted, ClusterExtractedCount * sizeof(nar_record));
@@ -1556,7 +1388,6 @@ GetMFTandINDXLCN(char VolumeLetter, HANDLE VolumeHandle) {
     qsort(Result.Data, Result.Count, sizeof(nar_record), CompareNarRecords);
     MergeRegions(&Result);
     
-    free(FileBuffer);
     
     ULONGLONG VolumeSize = NarGetVolumeTotalSize(VolumeLetter);
     UINT32 TruncateIndex = 0;
@@ -6044,7 +5875,7 @@ NarParseIndexAllocationAttribute(void *IndexAttribute, nar_record *OutRegions, I
         OldClusterStart = FirstCluster;
         
         D = (BYTE*)D + (FirstClusterSize + ClusterCountSize + 1);
-        DBG_INSERT(FirstCluster, ClusterCount);
+        
         
         OutRegions[InternalRegionsFound].StartPos = (UINT32)FirstCluster;
         OutRegions[InternalRegionsFound].Len   = (UINT32)ClusterCount;
@@ -7459,11 +7290,11 @@ NarEditTaskNameAndDescription(const wchar_t* FileName, const wchar_t* TaskName, 
     size_t TaskNameLen = wcslen(TaskName);
     size_t TaskDescriptionLen = wcslen(TaskDescription);
     
-    if(TaskNameLen > MAX_TASK_NAME_LEN/sizeof(wchar_t)){
+    if(TaskNameLen > NAR_MAX_TASK_NAME_LEN/sizeof(wchar_t)){
         printf("Input Task name can't fit metadata, len was %I64u\n", TaskNameLen);
         return FALSE;
     }
-    if(TaskDescriptionLen > MAX_TASK_DESCRIPTION_LEN/sizeof(wchar_t)){
+    if(TaskDescriptionLen > NAR_MAX_TASK_DESCRIPTION_LEN/sizeof(wchar_t)){
         printf("Input Task description can't fit metadata, len was %I64u\n", TaskDescriptionLen);
         return FALSE;
     }
@@ -7479,8 +7310,8 @@ NarEditTaskNameAndDescription(const wchar_t* FileName, const wchar_t* TaskName, 
         DWORD BytesOperated = 0;
         backup_metadata Metadata;
         if(ReadFile(FileHandle, &Metadata, sizeof(Metadata), &BytesOperated, 0) && BytesOperated == sizeof(Metadata)){
-            wcsncpy(Metadata.TaskName, TaskName, MAX_TASK_NAME_LEN);
-            wcsncpy(Metadata.TaskDescription, TaskDescription, MAX_TASK_DESCRIPTION_LEN);
+            wcsncpy(Metadata.TaskName, TaskName, NAR_MAX_TASK_NAME_LEN);
+            wcsncpy(Metadata.TaskDescription, TaskDescription, NAR_MAX_TASK_DESCRIPTION_LEN);
             if(NarSetFilePointer(FileHandle, FILE_BEGIN)){
                 if(WriteFile(FileHandle, &Metadata, sizeof(Metadata), &BytesOperated, 0) && BytesOperated == sizeof(Metadata)){
                     printf("Successfully updated metadata task name and task description info\n");
@@ -8025,8 +7856,16 @@ DEBUG_FileExplorerQuery(){
 
 int
 main(int argc, char* argv[]) {
+    //GetMFTandINDXLCN
     
-    {
+    DWORD SectorsPerCluster, BytesPerSector, ClusterCount, fcc;
+    GetDiskFreeSpaceA("F:\\", &SectorsPerCluster, &BytesPerSector, &fcc, &ClusterCount);
+    
+    long long a = - 1;
+    UINT32 v = (UINT32)a;
+    printf("some thing\n");
+    
+    if(0){
         
         LOG_CONTEXT C = {0};
         C.Port = INVALID_HANDLE_VALUE;
@@ -8053,45 +7892,6 @@ main(int argc, char* argv[]) {
         }
         
         return 0;
-    }
-    
-    
-    DEBUG_FileExplorerQuery();
-    return 0;
-    
-    if(0){
-        BOOLEAN Result = FALSE;
-        char StringBuffer[1024];
-        nar_backup_id ID = {0};
-        ID.Year = 2020;
-        ID.Month = 1;
-        ID.Day = 5;
-        ID.Hour  = 21;
-        ID.Min = 25;
-        ID.Letter = 'C';
-        
-        unsigned Version = -1;
-        std::wstring MetadataFilePath = GenerateMetadataName(ID, Version);
-        HANDLE MetadataFile = CreateFileW(MetadataFilePath.c_str(), GENERIC_WRITE | GENERIC_READ, 0, 0, CREATE_ALWAYS, 0, 0);
-        if (MetadataFile == INVALID_HANDLE_VALUE) {
-            printf("Couldn't create metadata file : %s\n", MetadataFilePath.c_str());
-        }
-        if(NarSetFilePointer(MetadataFile, sizeof(backup_metadata))){
-            char randombf[512];
-            DWORD BytesWritten = 0;
-            if(WriteFile(MetadataFile, randombf, 512, &BytesWritten, 0) && BytesWritten == 512){
-                
-            }
-            else{
-                printf("Writefile failed\n");
-                DisplayError(GetLastError());
-            }
-        }
-        else{
-            printf("setfilepointer failed\n");
-        }
-        
-        
     }
     
 #if 0    
@@ -8150,7 +7950,7 @@ main(int argc, char* argv[]) {
                 HANDLE file = CreateFileW(inf.FileName.c_str(), GENERIC_WRITE | GENERIC_READ, FILE_SHARE_READ, 0, CREATE_ALWAYS, 0, 0);
                 if(file != INVALID_HANDLE_VALUE){
                     
-#if 0                    
+#if 1                    
                     loop{
                         int Read = ReadStream(v, MemBuf, bsize);
                         TotalRead += Read;

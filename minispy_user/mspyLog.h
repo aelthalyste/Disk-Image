@@ -529,9 +529,10 @@ struct backup_metadata {
     }Errors;
     
     
-#define MAX_TASK_NAME_LEN        128
-#define MAX_TASK_DESCRIPTION_LEN 512
-#define MAX_PRODUCT_NAME         50
+#define NAR_MAX_TASK_NAME_LEN        128
+#define NAR_MAX_TASK_DESCRIPTION_LEN 512
+#define NAR_MAX_PRODUCT_NAME         50
+#define NAR_MAX_COMPUTERNAME_LENGTH 15
     
     union {
         CHAR Reserved[2048]; // Reserved for future usage
@@ -540,10 +541,10 @@ struct backup_metadata {
             INT64 GPT_EFIPartitionSize;
             INT64 MBR_SystemPartitionSize;
             SYSTEMTIME BackupDate;
-            char ProductName[MAX_PRODUCT_NAME];
-            char ComputerName[MAX_COMPUTERNAME_LENGTH  + 1];
-            wchar_t TaskName[MAX_TASK_NAME_LEN];
-            wchar_t TaskDescription[MAX_TASK_DESCRIPTION_LEN];
+            char ProductName[NAR_MAX_PRODUCT_NAME];
+            char ComputerName[NAR_MAX_COMPUTERNAME_LENGTH  + 1];
+            wchar_t TaskName[NAR_MAX_TASK_NAME_LEN];
+            wchar_t TaskDescription[NAR_MAX_TASK_DESCRIPTION_LEN];
             nar_backup_id ID;
         };
     };
