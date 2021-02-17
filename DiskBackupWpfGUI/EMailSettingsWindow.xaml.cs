@@ -1,6 +1,7 @@
 ﻿using DiskBackup.Communication;
 using DiskBackup.DataAccess.Abstract;
 using DiskBackup.Entities.Concrete;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -26,8 +27,9 @@ namespace DiskBackupWpfGUI
         private readonly IConfigurationDataDal _configurationDataDal;
         private IEmailInfoDal _emailInfoDal;
         private IEMailOperations _eMailOperations;
+        private readonly ILogger _logger;
 
-        public EMailSettingsWindow(IConfigurationDataDal configurationDataDal, IEmailInfoDal emailInfoDal, IEMailOperations eMailOperations)
+        public EMailSettingsWindow(IConfigurationDataDal configurationDataDal, IEmailInfoDal emailInfoDal, IEMailOperations eMailOperations, ILogger logger)
         {
             InitializeComponent();
             _emailInfoDal = emailInfoDal;
@@ -36,6 +38,7 @@ namespace DiskBackupWpfGUI
 
             listBoxEmailAddresses.ItemsSource = _emailInfoDal.GetList();
             _eMailOperations = eMailOperations;
+            _logger = logger;
         }
 
         #region Title Bar
@@ -128,9 +131,10 @@ namespace DiskBackupWpfGUI
                 _eMailOperations.SendTestEMail();
                 MessageBox.Show(Resources["EmailSentMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Information);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 MessageBox.Show(Resources["unexpectedError1MB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+                _logger.Error(ex, "Test e-mail gönderimi başarısız.");
             }
         }
     }

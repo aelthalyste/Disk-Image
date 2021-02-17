@@ -74,7 +74,7 @@
 
 	<Fragment>
 		<ComponentGroup Id="ProductComponents">
-			<Component Id="Executables" Guid="E68E1012-777A-4106-B422-8846059657FF"  Directory="INSTALLFOLDER">
+			<Component Id="Executables" Guid="E68E1012-777A-4106-B422-8846059657FF" Directory="INSTALLFOLDER">
 				<File Id="DiskBackup.Service.exe" Name="DiskBackup.Service.exe" Source="$(var.Service_TargetDir)DiskBackup.Service.exe" KeyPath="yes" />
 				<File Id="DiskBackup.Service.exe.config" Name="DiskBackup.Service.exe.config" Source="$(var.Service_TargetDir)DiskBackup.Service.exe.config"/>
 				<File Id="quartz.config" Name="quartz.config" Source="$(var.Service_TargetDir)quartz.config"/>
@@ -112,6 +112,7 @@
 				<File Id="Newtonsoft.Json.dll" Name="Newtonsoft.Json.dll" Source="$(var.UI_TargetDir)Newtonsoft.Json.dll"/>
 				<ServiceInstall Id="ServiceInstaller" Type="ownProcess" Vital="yes" Name="NarDiskBackupService" Description="Narbulut Disk Yedekleme Uygulaması" DisplayName="NarDiskBackupService" Start="auto" ErrorControl="ignore" Account="LocalSystem" Interactive="no"></ServiceInstall>
 				<ServiceControl Id="ServiceControl" Name="NarDiskBackupService" Start="install" Wait="yes" Stop="both" Remove="uninstall" />
+				<File Id="UninstallFile.bat" Name="UninstallFile.bat" Source="$(var.ProjectDir)UninstallFile.bat"/>
 			</Component>
 			<Component Id="InteropDll" Guid="685A18FE-4C44-43DF-B6BF-EBDB3D6DA398" Directory="X_86">
 				<File Id="SQLite.Interop.dll" Name="SQLite.Interop.dll" Source="$(var.Service_TargetDir)x86\SQLite.Interop.dll" KeyPath="yes" />
@@ -129,5 +130,11 @@
 				<difxapp:Driver ForceInstall="yes"/>
 			</Component>-->
 		</ComponentGroup>
+		<InstallExecuteSequence>
+			<Custom Action="Uninstall" Before="RemoveFiles">REMOVE~="ALL"</Custom>
+			<!--<Custom Action="Install" After="InstallFiles">Not Installed</Custom>-->
+		</InstallExecuteSequence>
+		<CustomAction Id="Uninstall" Directory="INSTALLFOLDER" ExeCommand="[SystemFolder]cmd.exe /c UninstallFile.bat" Execute="deferred" Impersonate="no" Return="ignore" />
+		<!--<CustomAction Id="Install" Directory="INSTALLFOLDER" ExeCommand="[SystemFolder]cmd.exe /c UninstallFile.bat" Execute="deferred" Impersonate="no" Return="ignore" />-->
 	</Fragment>
 </Wix>

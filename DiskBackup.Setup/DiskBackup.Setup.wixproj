@@ -91,6 +91,7 @@
     <Content Include="minispy.inf" />
     <Content Include="minispy.sys" />
     <Content Include="son_kullanici_lisans_sozlesmesi.rtf" />
+    <Content Include="UninstallFile.bat" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Images" />

@@ -30,21 +30,17 @@ namespace DiskBackupWpfGUI
     {
         private IBackupService _backupService;
         private IBackupStorageService _backupStorageService;
-
         private readonly IBackupTaskDal _backupTaskDal;
         private readonly IStatusInfoDal _statusInfoDal;
         private readonly ITaskInfoDal _taskInfoDal;
         private readonly IBackupStorageDal _backupStorageDal;
         private readonly IRestoreTaskDal _restoreTaskDal;
         private ITaskSchedulerManager _schedulerManager;
-
         private readonly ILifetimeScope _scope;
         private readonly ILogger _logger;
-
         private readonly IConfigurationDataDal _configurationDataDal;
 
         private List<BackupStorageInfo> _backupStorageInfoList = new List<BackupStorageInfo>();
-        private List<VolumeInfo> _volumeInfoList = new List<VolumeInfo>();
 
         private TaskInfo _taskInfo = new TaskInfo();
 
@@ -58,14 +54,9 @@ namespace DiskBackupWpfGUI
         {
             InitializeComponent();
 
-            _backupStorageInfoList = backupStorageInfoList;
-            cbTargetBackupArea.ItemsSource = _backupStorageInfoList;
-            if (_backupStorageInfoList.Count > 0)
-                cbTargetBackupArea.SelectedIndex = 0;
             _backupService = backupService;
             _backupStorageService = backupStorageService;
             _createAddBackupWindow = createAddBackupWindow;
-            _volumeInfoList = volumeInfoList;
             _backupTaskDal = backupTaskDal;
             _statusInfoDal = statusInfoDal;
             _taskInfoDal = taskInfoDal;
@@ -82,30 +73,31 @@ namespace DiskBackupWpfGUI
 
             txtTaskName.Focus();
 
-            _taskInfo.Obje = _volumeInfoList.Count();
+            _taskInfo.Obje = volumeInfoList.Count();
 
-            foreach (var item in _volumeInfoList)
+            foreach (var item in volumeInfoList)
             {
                 _taskInfo.StrObje += item.Letter;
                 lblBackupStorages.Text += (item.Letter + ", ");
             }
 
             lblBackupStorages.Text = lblBackupStorages.Text.Substring(0, lblBackupStorages.Text.Length - 2);
+
+            GetBackupStorageList(backupStorageInfoList);
+            if (_backupStorageInfoList.Count > 0)
+                cbTargetBackupArea.SelectedIndex = 0;
         }
 
         public NewCreateTaskWindow(List<BackupStorageInfo> backupStorageInfoList, IBackupService backupService, IBackupStorageService backupStorageService,
-            Func<AddBackupAreaWindow> createAddBackupWindow, List<VolumeInfo> volumeInfoList, IBackupTaskDal backupTaskDal, IStatusInfoDal statusInfoDal,
+            Func<AddBackupAreaWindow> createAddBackupWindow, IBackupTaskDal backupTaskDal, IStatusInfoDal statusInfoDal,
             ITaskInfoDal taskInfoDal, ITaskSchedulerManager schedulerManager, ILifetimeScope scope, TaskInfo taskInfo, IBackupStorageDal backupStorageDal, ILogger logger,
             IRestoreTaskDal restoreTaskDal, IConfigurationDataDal configurationDataDal)
         {
             InitializeComponent();
 
-            _backupStorageInfoList = backupStorageInfoList;
-            cbTargetBackupArea.ItemsSource = _backupStorageInfoList;
             _backupService = backupService;
             _backupStorageService = backupStorageService;
             _createAddBackupWindow = createAddBackupWindow;
-            _volumeInfoList = volumeInfoList;
             _backupTaskDal = backupTaskDal;
             _statusInfoDal = statusInfoDal;
             _taskInfoDal = taskInfoDal;
@@ -134,6 +126,7 @@ namespace DiskBackupWpfGUI
             else
                 rbBTFull.IsChecked = true;
 
+            GetBackupStorageList(backupStorageInfoList);
             foreach (BackupStorageInfo item in cbTargetBackupArea.Items)
             {
                 if (item.Id == _taskInfo.BackupStorageInfoId)
@@ -818,9 +811,10 @@ namespace DiskBackupWpfGUI
                 }
 
                 _backupStorageInfoList = GetBackupStorages(volumeList, _backupStorageService.BackupStorageInfoList());
-                cbTargetBackupArea.ItemsSource = _backupStorageInfoList;
-                if (_backupStorageInfoList.Count > 0)
-                    cbTargetBackupArea.SelectedIndex = _backupStorageInfoList.Count - 1;
+                //cbTargetBackupArea.ItemsSource = _backupStorageInfoList;
+                GetBackupStorageList(_backupStorageInfoList);
+                if (cbTargetBackupArea.Items.Count > 0)
+                    cbTargetBackupArea.SelectedIndex = cbTargetBackupArea.Items.Count - 1;
             }
             catch (Exception ex)
             {
@@ -1085,6 +1079,27 @@ namespace DiskBackupWpfGUI
 
         #endregion
 
+
+        private void GetBackupStorageList(List<BackupStorageInfo> backupStorageInfoList)
+        {
+            List<BackupStorageInfo> deleteBackupStorageList = new List<BackupStorageInfo>();
+            foreach (var item in backupStorageInfoList)
+            {
+                if (item.Type == BackupStorageType.Windows)
+                {
+                    if (_taskInfo.StrObje.Contains(item.Path[0]))
+                        deleteBackupStorageList.Add(item);
+                }
+            }
+
+            foreach (var item in deleteBackupStorageList)
+            {
+                backupStorageInfoList.Remove(item);
+            }
+
+            _backupStorageInfoList = backupStorageInfoList;
+            cbTargetBackupArea.ItemsSource = _backupStorageInfoList;
+        }
 
         private void NCTTabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {

@@ -19,5 +19,7 @@ namespace DiskBackup.Business.Abstract
         bool IsDemoExpired();
         void FixBrokenRegistry();
         void DeleteRegistryFile();
+        void AddDBCustomerNameAndUniqKey(string DecryptLicenseKey);
+        string GetLicenseKey();
     }
 }

@@ -265,6 +265,16 @@ namespace DiskBackupWpfGUI
                         {
                             return;
                         }
+                        // kök dizin kontrolü
+                        var taskList = _taskInfoDal.GetList(x => x.BackupStorageInfoId == backupStorageInfo.Id && x.EnableDisable != TecnicalTaskStatusType.Broken);
+                        foreach (var item in taskList)
+                        {
+                            if (item.StrObje.Contains(backupStorageInfo.Path[0]))
+                            {
+                                MessageBox.Show(Resources["sameRootDirectoryMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+                                return;
+                            }
+                        }
                         UpdateAndShowResult(backupStorageInfo);
                     }
                     else
