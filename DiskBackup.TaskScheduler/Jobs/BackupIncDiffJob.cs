@@ -158,11 +158,6 @@ namespace DiskBackup.TaskScheduler.Jobs
                 _logger.Information("{@task} için Incremental-Differantial görevi aranan disk bulunamadığı için başlatılamadı. Sonuç: Başarısız.", task);
                 UpdateActivityAndTask(activityLog, task, StatusType.PathNotFound);
             }
-            else if (result == 7) // backup alınacak path yok
-            {
-                _logger.Information("{@task} için Incremental-Differantial görevi aynı kök dizine backup alınmaya çalıştığı için başlatılamadı. Sonuç: Başarısız.", task);
-                UpdateActivityAndTask(activityLog, task, StatusType.SameRootDirectory);
-            }
 
         }
 

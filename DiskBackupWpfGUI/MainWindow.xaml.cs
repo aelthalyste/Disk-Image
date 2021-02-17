@@ -1394,7 +1394,7 @@ namespace DiskBackupWpfGUI
                     if (item.Letter == backupInfo.BackupStorageInfo.Path[0])
                     {
                         controlFlag = true;
-                        MessageBox.Show(Resources["sameRootDirectoryMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+                        MessageBox.Show(Resources["sameRootDirectoryRestoreMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
                         break;
                     }
                 }

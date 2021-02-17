@@ -434,12 +434,6 @@ namespace DiskBackup.Business.Concrete
             if (!GetInitTracker())
                 return 5;
 
-            if (taskInfo.BackupStorageInfo.Type == BackupStorageType.Windows)
-            {
-                if (taskInfo.StrObje.Contains(taskInfo.BackupStorageInfo.Path[0]))
-                    return 7;
-            }
-
             // NAS için
             NetworkConnection nc = null;
             try

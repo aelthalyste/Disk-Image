@@ -90,9 +90,6 @@
                 <DataTrigger Binding="{Binding StatusInfo.Status}" Value="7">
                     <Setter Property="Source" Value="Resources\Icon\icons8-medium-risk-96.png" />
                 </DataTrigger>
-                <DataTrigger Binding="{Binding StatusInfo.Status}" Value="8">
-                    <Setter Property="Source" Value="Resources\Icon\icons8-medium-risk-96.png" />
-                </DataTrigger>
             </Style.Triggers>
         </Style>
 
