@@ -1340,6 +1340,7 @@ Return Value:
         return FLT_PREOP_SUCCESS_NO_CALLBACK;
     }
     
+
     // filter out temporary files and files that would be closed if last handle freed
     if ((Data->Iopb->TargetFileObject->Flags & FO_TEMPORARY_FILE) == FO_TEMPORARY_FILE) {
         return  FLT_PREOP_SUCCESS_NO_CALLBACK;
@@ -1355,18 +1356,21 @@ Return Value:
     
     ULONG LenReturned = 0;
     // skip directories
-    FILE_STANDARD_INFORMATION fsi = { 0 };
-    status = FltQueryInformationFile(FltObjects->Instance, FltObjects->FileObject, &fsi, sizeof(FILE_STANDARD_INFORMATION), FileStandardInformation, &LenReturned);
-    if (NT_SUCCESS(status)) {
-        if (fsi.Directory == TRUE) {
-            return FLT_PREOP_SUCCESS_NO_CALLBACK;
-        }
-    }
-    else {
-        DbgPrint("Failed to query information file\n");
-    }
+
+
+
+
     
-    
+    //FILE_STANDARD_INFORMATION fsi = { 0 };
+    //status = FltQueryInformationFile(FltObjects->Instance, FltObjects->FileObject, &fsi, sizeof(FILE_STANDARD_INFORMATION), FileStandardInformation, &LenReturned);
+    //if (NT_SUCCESS(status)) {
+    //    if (fsi.Directory == TRUE) {
+    //        return FLT_PREOP_SUCCESS_NO_CALLBACK;
+    //    }
+    //}
+    //else {
+    //    DbgPrint("Failed to query information file\n");
+    //}
     
     
     PFLT_FILE_NAME_INFORMATION nameInfo = NULL;
@@ -1397,88 +1401,7 @@ Return Value:
                 }
             }
             
-#if 0
-            RtlInitEmptyUnicodeString(&UniStr, UnicodeStrBuffer, NAR_LOOKASIDE_SIZE);
-            
-            //Suffix area
-            RtlUnicodeStringPrintf(&UniStr, L"$Mft");
-            if (RtlSuffixUnicodeString(&UniStr, &nameInfo->Name, FALSE)) {
-                goto NAR_PREOP_FAILED_END;
-            }
-            RtlUnicodeStringPrintf(&UniStr, L"$LogFile");
-            if (RtlSuffixUnicodeString(&UniStr, &nameInfo->Name, FALSE)) {
-                goto NAR_PREOP_FAILED_END;
-            }
-            RtlUnicodeStringPrintf(&UniStr, L"$BitMap");
-            if (RtlSuffixUnicodeString(&UniStr, &nameInfo->Name, FALSE)) {
-                goto NAR_PREOP_FAILED_END;
-            }
-            RtlUnicodeStringPrintf(&UniStr, L".tmp");
-            if (RtlSuffixUnicodeString(&UniStr, &nameInfo->Name, FALSE)) {
-                goto NAR_PREOP_FAILED_END;
-            }
-            RtlUnicodeStringPrintf(&UniStr, L"~");
-            if (RtlSuffixUnicodeString(&UniStr, &nameInfo->Name, FALSE)) {
-                goto NAR_PREOP_FAILED_END;
-            }
-            RtlUnicodeStringPrintf(&UniStr, L".tib.metadata");
-            if (RtlSuffixUnicodeString(&UniStr, &nameInfo->Name, FALSE)) {
-                goto NAR_PREOP_FAILED_END;
-            }
-            RtlUnicodeStringPrintf(&UniStr, L".tib");
-            if (RtlSuffixUnicodeString(&UniStr, &nameInfo->Name, FALSE)) {
-                goto NAR_PREOP_FAILED_END;
-            }
-            RtlUnicodeStringPrintf(&UniStr, L".pf");
-            if (RtlSuffixUnicodeString(&UniStr, &nameInfo->Name, FALSE)) {
-                goto NAR_PREOP_FAILED_END;
-            }
-            RtlUnicodeStringPrintf(&UniStr, L".cookie");
-            if (RtlSuffixUnicodeString(&UniStr, &nameInfo->Name, FALSE)) {
-                goto NAR_PREOP_FAILED_END;
-            }
-            RtlUnicodeStringPrintf(&UniStr, L".nlfx");
-            if (RtlSuffixUnicodeString(&UniStr, &nameInfo->Name, FALSE)) {
-                goto NAR_PREOP_FAILED_END;
-            }
-            
-            
-            
-            RtlUnicodeStringPrintf(&UniStr, L"\\AppData\\Local\\Temp");
-            if (NarSubMemoryExists(nameInfo->Name.Buffer, UniStr.Buffer, nameInfo->Name.Length, UniStr.Length)) {
-                goto NAR_PREOP_FAILED_END;
-            }
-            
-            RtlUnicodeStringPrintf(&UniStr, L"\\AppData\\Local\\Microsoft\\Windows\\Temporary Internet Files");
-            if (NarSubMemoryExists(nameInfo->Name.Buffer, UniStr.Buffer, nameInfo->Name.Length, UniStr.Length)) {
-                goto NAR_PREOP_FAILED_END;
-            }
-            
-            RtlUnicodeStringPrintf(&UniStr, L"\\AppData\\Local\\Google\\Chrome\\User Data\\Default\\Cache");
-            if (NarSubMemoryExists(nameInfo->Name.Buffer, UniStr.Buffer, nameInfo->Name.Length, UniStr.Length)) {
-                goto NAR_PREOP_FAILED_END;
-            }
-            
-            RtlUnicodeStringPrintf(&UniStr, L"\\AppData\\Local\\Opera Software");
-            if (NarSubMemoryExists(nameInfo->Name.Buffer, UniStr.Buffer, nameInfo->Name.Length, UniStr.Length)) {
-                goto NAR_PREOP_FAILED_END;
-            }
-            
-            RtlUnicodeStringPrintf(&UniStr, L"\\AppData\\Local\\Mozilla\\Firefox\\Profiles");
-            if (NarSubMemoryExists(nameInfo->Name.Buffer, UniStr.Buffer, nameInfo->Name.Length, UniStr.Length)) {
-                goto NAR_PREOP_FAILED_END;
-            }
-            
-            RtlUnicodeStringPrintf(&UniStr, L"\\AppData\\Local\\Microsoft\\Windows\\INetCache\\IE");
-            if (NarSubMemoryExists(nameInfo->Name.Buffer, UniStr.Buffer, nameInfo->Name.Length, UniStr.Length)) {
-                goto NAR_PREOP_FAILED_END;
-            }
-            
-            RtlUnicodeStringPrintf(&UniStr, L"NAR_LOG_FILE_");
-            if (NarSubMemoryExists(nameInfo->Name.Buffer, UniStr.Buffer, nameInfo->Name.Length, UniStr.Length)) {
-                goto NAR_PREOP_FAILED_END;
-            }
-#endif
+
             
             
             
@@ -1524,7 +1447,7 @@ Return Value:
             BOOLEAN HeadFound = FALSE;
             BOOLEAN CeilTest = FALSE;
             
-            status = FltFsControlFile(FltObjects->Instance,
+            status =    (FltObjects->Instance,
                                       Data->Iopb->TargetFileObject,
                                       FSCTL_GET_RETRIEVAL_POINTERS,
                                       &StartingInputVCNBuffer,

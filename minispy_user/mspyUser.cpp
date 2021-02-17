@@ -8028,17 +8028,29 @@ main(int argc, char* argv[]) {
     
     {
         
-        for(char letter = 'A'; letter <= 'Z'; letter ++){
-            nar_backup_id id = NarGenerateBackupID(letter);
-            std::wcout<< GenerateMetadataName(id, 0) <<L"\n";
+        LOG_CONTEXT C = {0};
+        C.Port = INVALID_HANDLE_VALUE;
+        
+        if(SetupVSS() && ConnectDriver(&C)){
+            DotNetStreamInf inf;
+            BackupType bt = BackupType::Diff;
+            SetupStream(&C, L'C', bt, &inf);
+            
+            {
+                std::string s;
+                std::cout<<"enter anything to complete backup\n";
+                std::cin>>s;
+            }
+            
+            TerminateBackup(&C.Volumes.Data[0], TRUE);
+            NarSaveBootState(&C);
+            return 0;
+            
+            
         }
-        
-        
-        for(char letter = 'A'; letter <= 'Z'; letter ++){
-            nar_backup_id id = NarGenerateBackupID(letter);
-            std::wcout<< GenerateBinaryFileName(id, 0) <<L"\n";
+        else{
+            printf("Couldn't connect driver and setup vss!\n");
         }
-        
         
         return 0;
     }

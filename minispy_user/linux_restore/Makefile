@@ -14,7 +14,7 @@
 #CXX = g++
 #CXX = clang++
 
-EXE = example_glfw_opengl3
+EXE = nar_linux
 SOURCES = main.cpp
 IMGUI_DIR = imgui
 SOURCES += $(IMGUI_DIR)/imgui.cpp $(IMGUI_DIR)/imgui_demo.cpp $(IMGUI_DIR)/imgui_draw.cpp $(IMGUI_DIR)/imgui_tables.cpp $(IMGUI_DIR)/imgui_widgets.cpp
@@ -23,12 +23,12 @@ OBJS = $(addsuffix .o, $(basename $(notdir $(SOURCES))))
 UNAME_S := $(shell uname -s)
 
 CXXFLAGS = -I$(IMGUI_DIR) -I$(IMGUI_DIR)/backends
-CXXFLAGS += -g -Wall -Werror -std=c++17 -fms-extensions -fpermissive
+CXXFLAGS += -g -Wall -Werror -fms-extensions
 LIBS =
-
+# 
 ## ---------------------------------------
 ## NARBULUT 
-SOURCES += mspyUser.cpp
+#SOURCES += mspyUser.cpp
 ##
 
 ##---------------------------------------------------------------------

@@ -1,0 +1,126 @@
+[Window][Debug##Default]
+Pos=60,60
+Size=400,400
+Collapsed=0
+
+[Window][Dear ImGui Demo]
+Pos=629,62
+Size=550,544
+Collapsed=0
+
+[Window][Hello, world!]
+Pos=80,118
+Size=346,180
+Collapsed=0
+
+[Window][Another Window]
+Pos=60,60
+Size=198,71
+Collapsed=0
+
+[Window][NARBULUT LINUX GERI YUKLEME SIHIRBAZI]
+Pos=60,60
+Size=32,35
+Collapsed=0
+
+[Window][NARBULUT LINUX RESTORE WIZARD]
+Pos=278,53
+Size=548,535
+Collapsed=0
+
+[Window][Testpopup]
+Pos=447,283
+Size=276,130
+Collapsed=0
+
+[Window][Error!##]
+Pos=361,374
+Size=205,71
+Collapsed=0
+
+[Window][restore type!]
+Pos=81,56
+Size=785,552
+Collapsed=0
+
+[Window][Dev]
+Pos=31,53
+Size=250,105
+Collapsed=0
+
+[Window][Error!##2]
+Pos=64,60
+Size=200,68
+Collapsed=0
+
+[Window][Size error!##]
+Pos=66,60
+Size=200,68
+Collapsed=0
+
+[Table][0x49F8DCEA,3]
+RefScale=13
+Column 0  Weight=1.0000
+Column 1  Width=84
+Column 2  Width=126
+
+[Table][0xDA36A7E0,6]
+RefScale=13
+Column 0  Width=45 Sort=0v
+Column 1  Width=144
+Column 2  Width=73
+Column 3  Width=68
+Column 4  Weight=1.0000
+Column 5  Width=-1
+
+[Table][0x64418101,3]
+RefScale=13
+Column 0  Width=81
+Column 1  Width=63
+Column 2  Width=63
+
+[Table][0xC9935533,3]
+Column 0  Weight=1.0000
+Column 1  Weight=1.0000
+Column 2  Weight=1.0000
+
+[Table][0x47600645,3]
+RefScale=13
+Column 0  Width=63
+Column 1  Width=63
+Column 2  Weight=1.0000
+
+[Table][0xDE6957FF,6]
+RefScale=13
+Column 0  Width=63
+Column 1  Width=63
+Column 2  Width=-1
+Column 3  Weight=1.0000
+Column 4  Weight=1.0000
+Column 5  Weight=-1.0000
+
+[Table][0x45A0E60D,7]
+RefScale=13
+Column 0  Width=49
+Column 1  Width=112
+Column 2  Width=112
+Column 3  Width=112
+Column 4  Width=112
+Column 5  Width=112
+Column 6  Width=112
+
+[Table][0x20DF7A63,4]
+RefScale=13
+Column 0  Width=28 Sort=0v
+Column 1  Width=42
+Column 2  Width=42
+Column 3  Weight=1.0000
+
+[Table][0x8DFA6E86,2]
+Column 0  Weight=1.0000
+Column 1  Weight=1.0000
+
+[Table][0xFABAAEF7,2]
+Column 0  Weight=1.0000
+Column 1  Weight=1.0000
+

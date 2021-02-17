@@ -1,0 +1,3 @@
+sudo apt-get install syslinux
+sudo apt-get install mbr
+

@@ -25,6 +25,19 @@ wstr2str(const std::wstring& s){
 	return Result;
 }
 
+inline std::wstring
+str2wstr(const std::string& s){
+	wchar_t *w = (wchar_t*)malloc((s.size() + 1)*sizeof(wchar_t));
+	memset(w, 0, (s.size() + 1)*sizeof(wchar_t));
+	
+	size_t sr = mbstowcs(w, s.c_str(), s.size() + 1);
+	if(sr == 0xffffffffffffffffull - 1)
+		memset(w, 0, (s.size() + 1)*sizeof(wchar_t));
+	std::wstring Result(w);
+	free(w);
+	return Result;
+}
+
 struct nar_backup_id{
     union{
         unsigned long long Q;
@@ -38,9 +51,6 @@ struct nar_backup_id{
         };
     };
 };
-
-#define INVALID_HANDLE_VALUE (0xFFFFFFFF)
-//#define CreateFileW(a, b, c, d, e, f, g) INVALID_HANDLE_VALUE
 
 #define MAX_PATH 260
 
@@ -343,16 +353,18 @@ struct backup_metadata_ex {
     backup_metadata_ex() {
         RegionsMetadata = { 0, 0 };
         FilePath = L" ";
-        memset(&M, 0, sizeof(M));
+        M = {0};
     }
 };
 
 
 struct restore_inf {
-    wchar_t TargetLetter;
+    std::string TargetPartition;
     nar_backup_id BackupID;
     int Version;
     std::wstring RootDir;
+    std::string BootPartition;
+    std::string RecoveryPartition;
 };
 
 
@@ -472,10 +484,7 @@ backup_metadata
 ReadMetadata(nar_backup_id ID, int Version, std::wstring RootDir);
 
 BOOLEAN
-OfflineRestoreCleanDisk(restore_inf* R, int DiskID);
-
-BOOLEAN
-OfflineRestoreToVolume(restore_inf* R, BOOLEAN ShouldFormat);
+OfflineRestore(restore_inf* R);
 
 BOOLEAN
 SaveMetadata(char Letter, int Version, int ClusterSize, BackupType BT, data_array<nar_record> BackupRegions, HANDLE VSSHandle, nar_record* MFTLCN, unsigned int MFTLCNCount, nar_backup_id BackupID);
@@ -503,9 +512,6 @@ ReadMFTLCN(backup_metadata_ex* BMEX);
 
 inline BOOLEAN
 IsGPTVolume(char Letter);
-
-inline BOOLEAN
-InitRestoreTargetInf(restore_inf* Inf, wchar_t Letter);
 
 inline BOOLEAN
 IsSameVolumes(const wchar_t* OpName, const wchar_t VolumeLetter);

@@ -7,6 +7,7 @@
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
+
 #include <stdio.h>
 
 // About Desktop OpenGL function loaders:
@@ -50,8 +51,149 @@ static void glfw_error_callback(int error, const char* description)
     fprintf(stderr, "Glfw Error %d: %s\n", error, description);
 }
 
+#include <cstdlib>
+#include "mspyUser.cpp"
+#include <sstream>
+#include <iostream>
+
+enum app_state{
+	app_state_select_backup,
+	app_state_select_restore_type, // disk or volume
+	app_state_select_disk,
+	app_state_select_volume,
+	app_state_restore
+};
+
+struct linux_disks{
+	std::string DiskName; // sda, sdb etc..
+	struct vol_size_name{
+		std::string Name;
+		long int Size;
+	};
+	std::vector<vol_size_name> Volumes; // sda0, sda1, sda3 etc..
+};
+
+long int
+GetFileSize(const char *c){
+	FILE* f = fopen(c, "rb");
+	long int Result = 0;
+	if(f != NULL)
+		if(0 == fseek(f, 0, SEEK_END))
+			Result = ftell(f);
+	
+	if(NULL != f)
+		fclose(f);
+	else
+		printf("Unable to open file %s\n", c);
+	return Result;
+}
+
+std::vector<linux_disks>
+GetDisks(){
+	std::vector<linux_disks> Result;
+	
+	std::vector<std::string> SDList;
+	SDList.reserve(100);
+	
+	system("ls /dev > devls.txt");
+	file_read r = NarReadFile("devls.txt");
+	
+	if(r.Data != 0){
+		std::stringstream ss(std::string((char*)r.Data));	
+		FreeFileRead(r);
+
+		std::string temp;
+		while(ss >> temp)
+			if(temp.find("sd", 0) == 0)
+				SDList.push_back(temp);
+							
+	}
+	
+	if(SDList.size() > 0){
+		for(auto &it: SDList)
+			if(it.size() == 3)
+				Result.push_back({it, {}});
+			else
+				Result.back().Volumes.push_back({it,GetFileSize(("/dev/" + it).c_str())});
+	}
+	else{
+		// error unable to find disks in system
+	}
+	return Result;
+}
+
+
+// returns selected partition
+std::string
+SelectPartition(){
+
+	static bool init = false;
+	static std::vector<linux_disks> disks;			
+	static std::string Result;
+	
+	if(ImGui::Button("Update volume list!\n")) 
+		init = false;
+	if(false == init){        	        		
+	    disks = GetDisks();
+        init = true;       		
+	}
+    
+	ImGui::Separator();
+    static int SelectedRadio = 0;
+    static long int SizeGranularity[] = {
+        (1024*1024*1024), (1024*1024), (1024), 1
+    };
+    static long int type = 1;
+    if(ImGui::RadioButton("GB", type == SizeGranularity[0])) type = SizeGranularity[0]; 
+    ImGui::SameLine();
+    if(ImGui::RadioButton("MB", type == SizeGranularity[1])) type = SizeGranularity[1]; 
+    ImGui::SameLine();
+    if(ImGui::RadioButton("KB", type == SizeGranularity[2])) type = SizeGranularity[2]; 
+    ImGui::SameLine();
+    if(ImGui::RadioButton("Raw", type == SizeGranularity[3])) type = SizeGranularity[3]; 
+    
+	
+    if(ImGui::BeginTable("Volume table", 3)){
+    
+		ImGui::TableSetupColumn("##1");
+		ImGui::TableSetupColumn("Name");
+        ImGui::TableSetupColumn("Total size");
+        ImGui::TableHeadersRow();
+        
+        int ID = -1;
+        for(auto &d : disks){
+        	for(auto&v: d.Volumes){
+        		ID++;
+        		ImGui::TableNextRow();  				
+        		ImGui::PushID(ID);
+				
+				ImGui::TableNextColumn();
+				
+        		if(ImGui::RadioButton("##0", &SelectedRadio, ID)){
+        			Result = v.Name;
+        		}
+        		
+				ImGui::TableNextColumn();        					
+        		ImGui::Text(v.Name.c_str());
+        		
+        		ImGui::TableNextColumn();
+        		ImGui::Text("%.1f", (float)v.Size/type);
+        		
+        		ImGui::PopID();
+        	}
+        }
+        
+        ImGui::EndTable();
+    }
+    
+    ImGui::Separator();
+	return Result;
+}
+
+
 int main(int, char**)
 {
+	
     // Setup window
     glfwSetErrorCallback(glfw_error_callback);
     if (!glfwInit())
@@ -140,6 +282,9 @@ int main(int, char**)
     bool show_another_window = false;
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
+	app_state AppState = app_state_select_backup;
+	io.Fonts->AddFontFromFileTTF("Inconsolata-Bold.ttf", 12);
+	
     // Main loop
     while (!glfwWindowShouldClose(window))
     {
@@ -180,6 +325,239 @@ int main(int, char**)
 
             ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
             ImGui::End();
+        }
+        
+        {
+        	ImGui::Begin("Dev");
+        	if(ImGui::Button("Save state"))
+        		ImGui::SaveIniSettingsToDisk("imgui_settings");
+        	if(ImGui::Button("Load state"))
+        		ImGui::LoadIniSettingsFromDisk("imgui_settings");
+        	ImGui::End();
+        }
+        
+        {
+			ImGui::Begin("NARBULUT LINUX RESTORE WIZARD");
+        	static char BackupDir[512];
+			static std::vector<backup_metadata> Backups;
+			static int BackupButtonID = -1;
+			static std::string SelectedVolume = "/dev/!";
+			static restore_inf RestoreInf = {};
+			if(AppState == app_state_select_backup){
+				static bool debug_init = false;
+				if(false == debug_init){
+					Backups.push_back({0, 1, 2});
+					Backups.push_back({0, 2, 3});
+					Backups.push_back({0, 4, 5});
+					Backups.push_back({0, 0, 52});
+					Backups.push_back({0, 253, 253});
+					Backups.push_back({0, 253, 253});
+					Backups.push_back({0, 253, 253});
+					Backups.push_back({0, 253, 253});
+					Backups.push_back({0, 253, 253});
+					Backups.push_back({0, 253, 253});
+					Backups.push_back({0, 253, 253});
+					Backups.push_back({0, 253, 253});
+					Backups.push_back({0, 253, 253});
+					Backups.push_back({0, 253, 253});
+					Backups.push_back({0, 253, 253});
+					Backups.push_back({0, 253, 253});
+					
+					debug_init = true;
+				}
+				
+
+				ImGui::Text("Directory to look backups : ");
+				ImGui::InputText("", BackupDir, 512);
+				
+				if(ImGui::Button("Update")){
+					BackupButtonID = -1;
+					RestoreInf.RootDir = str2wstr(BackupDir);
+					Backups = NarGetBackupsInDirectory(BackupDir);
+				}
+				
+				// ImGuiTableFlags_Borders | ImGuiTableFlags_SizingFixedFit
+				if(ImGui::BeginTable("Backup table", 5, ImGuiTableFlags_Borders | ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_NoHostExtendX)){
+					
+					ImGui::TableSetupColumn("");				
+					ImGui::TableSetupColumn("Version");
+                	ImGui::TableSetupColumn("Backup Letter");
+                	ImGui::TableSetupColumn("Backup Type");
+                	ImGui::TableSetupColumn("Total volume size");
+                	ImGui::TableHeadersRow();
+                	
+                	int i =-1;
+                	
+					for(auto &backup: Backups){
+						char bf[32];
+						i++;
+						
+						ImGui::TableNextRow();
+						ImGui::PushID(i);
+						
+						sprintf(bf, "##%d", i);
+						ImGui::TableNextColumn();
+						if(ImGui::RadioButton(bf, &BackupButtonID, i)){
+							RestoreInf.BackupID = Backups[BackupButtonID].ID;
+							RestoreInf.Version = Backups[BackupButtonID].Version;
+						}
+						
+						sprintf(bf, "%d", backup.Version);
+						ImGui::TableNextColumn();
+						ImGui::Text(bf);
+						
+						sprintf(bf, "%c", backup.Letter);
+						ImGui::TableNextColumn();
+						ImGui::Text(bf);
+						
+						ImGui::TableNextColumn();
+						ImGui::Text((backup.BT == BackupType::Inc ? "Inc" : "Diff"));										
+					
+						ImGui::TableNextColumn();
+						//sprintf(bf, "%I64llu", backup.VolumeTotalSize);
+						
+						ImGui::Text("%I64llu", backup.VolumeTotalSize + (uint64_t)i * 1400);
+						ImGui::PopID();
+					}
+					ImGui::EndTable();
+				}
+				
+				
+				static bool popup = false;				
+				if(ImGui::Button("Next")){
+					if(BackupButtonID != -1){
+						AppState = app_state_select_restore_type;									
+					}
+					else{
+						ImGui::OpenPopup("Error!##");
+						popup = true;			
+					}
+				}
+
+				if (ImGui::BeginPopupModal("Error!##", &popup, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse)){
+                    ImGui::Text("Select backup first!");
+                 	if(ImGui::Button("Close"))
+                 		popup = false;
+                 		   
+                    ImGui::EndPopup();
+                }
+			
+				
+        	}
+        	else if(AppState == app_state_select_restore_type){
+				
+				if(Backups[BackupButtonID].IsOSVolume){
+					
+					if(ImGui::Button("Restore as bootable partition")){
+						AppState = app_state_select_disk;					
+					}
+					if(ImGui::Button("Restore data only")){
+						AppState = app_state_select_volume;
+					}
+									
+				}
+				else{
+					AppState = app_state_select_disk;
+					//AppState = app_state_select_volume;
+				}
+				
+        	}
+        	else if(AppState == app_state_select_disk){
+				
+				if(Backups[BackupButtonID].DiskType == NAR_DISKTYPE_MBR){
+
+					RestoreInf.TargetPartition = SelectPartition();
+					ImGui::Text("%s", RestoreInf.TargetPartition.c_str());
+					long int PartitionSize = GetFileSize(("/dev/" + RestoreInf.TargetPartition).c_str());
+					static bool popup = false;				
+							
+					if(ImGui::Button("Restore")){
+						
+						if((long long unsigned int)PartitionSize < Backups[BackupButtonID].VolumeTotalSize){
+							ImGui::OpenPopup("Size error!##");
+							popup = true;	
+						}
+						else{
+							AppState = app_state_restore;
+						}
+                		
+					}
+					
+					static ImVec2 PopupSize = {350, 120}; 
+					ImGui::SetNextWindowSize(PopupSize);
+					if (ImGui::BeginPopupModal("Size error!##", &popup, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse)){
+            			ImGui::Text("Backup can't fit that partition!");
+            			ImGui::Text("Select partition with at least %I64llu bytes.", Backups[BackupButtonID].VolumeTotalSize);
+            			if(ImGui::Button("Close##Size error"))
+							popup = false;
+            			ImGui::EndPopup();
+        			}
+	
+					
+					
+				}
+				else if(Backups[BackupButtonID].DiskType == NAR_DISKTYPE_GPT){
+					
+				}
+				
+				
+				
+				
+				
+				
+        	}
+        	else if(AppState == app_state_select_volume){
+				RestoreInf.TargetPartition = SelectPartition();
+				ImGui::Text("%s", RestoreInf.TargetPartition.c_str());
+				long int PartitionSize = GetFileSize(("/dev/" + RestoreInf.TargetPartition).c_str());
+				static bool popup = false;				
+						
+				if(ImGui::Button("Restore")){
+					
+					if((long long unsigned int)PartitionSize < Backups[BackupButtonID].VolumeTotalSize){
+						ImGui::OpenPopup("Size error!##");
+						popup = true;	
+					}
+					else{
+						AppState = app_state_restore;
+					}
+                	
+				}
+				
+				static ImVec2 PopupSize = {350, 120}; 
+				ImGui::SetNextWindowSize(PopupSize);
+				if (ImGui::BeginPopupModal("Size error!##", &popup, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse)){
+            		ImGui::Text("Backup can't fit that partition!");
+            		ImGui::Text("Select partition with at least %I64llu bytes.", Backups[BackupButtonID].VolumeTotalSize);
+            		if(ImGui::Button("Close##Size error"))
+						popup = false;
+            		ImGui::EndPopup();
+        		}
+        		
+        	}
+        	else if(AppState == app_state_restore){
+				
+				
+				OfflineRestore(&RestoreInf);
+				if(Backups[BackupButtonID].IsOSVolume && Backups[BackupButtonID].DiskType == NAR_DISKTYPE_MBR){
+					std::string cmd;
+					cmd = "sudo dd if=/usr/lib/syslinux/mbr.bin of=/dev/" + RestoreInf.TargetPartition;
+					system(cmd.c_str());
+					
+					cmd = "sudo install-mbr -i n -p D -t 0 /dev/" + RestoreInf.TargetPartition;
+					system(cmd.c_str());	
+				}
+				else if(Backups[BackupButtonID].IsOSVolume && Backups[BackupButtonID].DiskType == NAR_DISKTYPE_GPT){
+					// TODO(Batuhan)
+				}
+
+				
+					
+        	}
+			
+
+
+        	ImGui::End();
         }
 
         // 3. Show another simple window.
