@@ -40,7 +40,6 @@ namespace DiskBackup.TaskScheduler.Jobs
 
         public async Task Execute(IJobExecutionContext context)
         {
-            Console.WriteLine("Job'a başlandı");
             var taskId = int.Parse(context.JobDetail.JobDataMap["taskId"].ToString());
 
             var task = _taskInfoDal.Get(x => x.Id == taskId);
@@ -51,7 +50,7 @@ namespace DiskBackup.TaskScheduler.Jobs
             task.BackupTaskInfo = _backupTaskDal.Get(x => x.Id == task.BackupTaskId);
 
             JobExecutionException exception = null;
-            byte result = 1;
+            byte result = 0;
 
             ActivityLog activityLog = new ActivityLog
             {
@@ -72,7 +71,6 @@ namespace DiskBackup.TaskScheduler.Jobs
                         {
                             // Okuma yapılan diskte işlem yapılamaz
                             exception = new JobExecutionException();
-                            Console.WriteLine("bu volumede çalışan bir görev var");
                             _logger.Information("{@task} için Incremental-Differantial görevi çalıştırılamadı. {@letter} volumunde başka görev işliyor.", task, item.StrObje);
                         }
                     }
@@ -90,8 +88,6 @@ namespace DiskBackup.TaskScheduler.Jobs
                     _backupService.RefreshIncDiffTaskFlag(true);
                     result = _backupService.CreateIncDiffBackup(task);
                 }
-
-                Console.WriteLine("Done");
             }
             catch (Exception e)
             {
@@ -102,7 +98,6 @@ namespace DiskBackup.TaskScheduler.Jobs
                 }
                 else
                 {
-                    Console.WriteLine(e.Message);
                     exception = new JobExecutionException();
                 }
             }

@@ -66,7 +66,6 @@ namespace DiskBackup.TaskScheduler.Jobs
                         {
                             // Okuma yapılan diskte işlem yapılamaz
                             workingTask = true;
-                            Console.WriteLine("bu volumede çalışan bir görev var");
                             _logger.Information("{@task} için restore volume görevi çalıştırılamadı. {@letter} volumunde başka görev işliyor.", task, item.StrObje);
                         }
                     }
