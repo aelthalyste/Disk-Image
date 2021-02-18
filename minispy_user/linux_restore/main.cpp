@@ -193,6 +193,8 @@ SelectPartition(){
 
 int main(int, char**)
 {
+
+	std::cout<<sizeof(backup_metadata)<<std::endl;
 	
     // Setup window
     glfwSetErrorCallback(glfw_error_callback);
@@ -403,7 +405,7 @@ int main(int, char**)
 						}
 						
 						ImGui::TableNextColumn();
-						ImGui::Text("%d", backup.Version);
+						ImGui::Text("%i", backup.Version);
 						
 						ImGui::TableNextColumn();
 						ImGui::Text("%c", backup.Letter);

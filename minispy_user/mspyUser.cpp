@@ -7858,6 +7858,8 @@ int
 main(int argc, char* argv[]) {
     //GetMFTandINDXLCN
     
+    printf("%I64u\n", sizeof(backup_metadata));
+    return 0;
     DWORD SectorsPerCluster, BytesPerSector, ClusterCount, fcc;
     GetDiskFreeSpaceA("F:\\", &SectorsPerCluster, &BytesPerSector, &fcc, &ClusterCount);
     

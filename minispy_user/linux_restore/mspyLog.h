@@ -18,7 +18,7 @@ wstr2str(const std::wstring& s){
 	memset(c, 0, s.size());
 	
 	size_t sr = wcstombs(c, s.c_str(), s.size() + 1);
-	if(sr == 0xffffffffffffffffull - 1)
+	if(sr == (size_t)-1)
 		memset(c, 0, s.size() + 1);
 	std::string Result(c);
 	free(c);
@@ -31,7 +31,7 @@ str2wstr(const std::string& s){
 	memset(w, 0, (s.size() + 1)*sizeof(wchar_t));
 	
 	size_t sr = mbstowcs(w, s.c_str(), s.size() + 1);
-	if(sr == 0xffffffffffffffffull - 1)
+	if(sr == (size_t)-1)
 		memset(w, 0, (s.size() + 1)*sizeof(wchar_t));
 	std::wstring Result(w);
 	free(w);
@@ -235,7 +235,7 @@ GenerateBinaryFileName(nar_backup_id id, int Version);
 
 
 
-#pragma pack(push ,1) // force 1 byte alignment
+#pragma pack(push , 1) // force 1 byte alignment
 /*
 // NOTE(Batuhan): file that contains this struct contains:
 -- RegionMetadata:
@@ -252,7 +252,7 @@ static const int GlobalBackupMetadataVersion = 1;
 struct backup_metadata {
     
     struct {
-        int Size = sizeof(backup_metadata); // Size of this struct
+        int Size; // Size of this struct
         // NOTE(Batuhan): structure may change over time(hope it wont), this value hold which version it is so i can identify and cast accordingly
         int Version;
     }MetadataInf;
@@ -305,13 +305,13 @@ struct backup_metadata {
 #if (_MSC_VER)
             SYSTEMTIME BackupDate;
 #elif (__GNUC__)
-			unsigned char BackupDate[16];
+			unsigned short BackupDate[8];
 #endif
 
-            char ProductName[NAR_MAX_PRODUCT_NAME];
-            char ComputerName[NAR_MAX_COMPUTERNAME_LENGTH  + 1];
-            wchar_t TaskName[NAR_MAX_TASK_NAME_LEN];
-            wchar_t TaskDescription[NAR_MAX_TASK_DESCRIPTION_LEN];
+            uint8_t ProductName[NAR_MAX_PRODUCT_NAME];
+            uint8_t ComputerName[NAR_MAX_COMPUTERNAME_LENGTH  + 1];
+            uint16_t TaskName[NAR_MAX_TASK_NAME_LEN];
+            uint16_t TaskDescription[NAR_MAX_TASK_DESCRIPTION_LEN];
             nar_backup_id ID;
         };
     };

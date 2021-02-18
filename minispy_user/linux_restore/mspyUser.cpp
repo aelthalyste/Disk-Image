@@ -1910,6 +1910,7 @@ NarFileNameExtensionCheck(const char *Path, const char *Extension){
     return (strcmp(&Path[pl - el], Extension) == 0);	
 }
 
+#include <iostream>
 std::vector<backup_metadata>
 NarGetBackupsInDirectory(const char *arg_dir){
 	
@@ -1941,7 +1942,6 @@ NarGetBackupsInDirectory(const char *arg_dir){
 			
 			FILE *F = fopen((std::string(dir) + fname).c_str(), "rb");
 			backup_metadata M;
-			
 			if(NULL != F && 1 == fread(&M, sizeof(M), 1, F))
 				Result.emplace_back(M);				
 			
