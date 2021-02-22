@@ -1796,6 +1796,7 @@ TerminateBackup(volume_backup_inf* V, BOOLEAN Succeeded) {
             
             if (SaveMetadata((char)V->Letter, NAR_FULLBACKUP_VERSION, V->ClusterSize, V->BT, V->Stream.Records, V->Stream.Handle, V->MFTLCN, V->MFTLCNCount, V->BackupID)) {
                 Return = TRUE;
+                V->Version = 0;
                 V->FullBackupExists = TRUE;
             }
             else{
@@ -1804,13 +1805,10 @@ TerminateBackup(volume_backup_inf* V, BOOLEAN Succeeded) {
             
         }
         else {
-            
-            printf("Operation failed, closing log handle\n");
             //Somehow operation failed.
             V->FilterFlags.IsActive = FALSE;
-            
+            V->Version = -1;
             V->FullBackupExists = FALSE;
-            
         }
         
         //Termination of fullbackup
@@ -1820,8 +1818,6 @@ TerminateBackup(volume_backup_inf* V, BOOLEAN Succeeded) {
             V->PossibleNewBackupRegionOffsetMark = 0;
         }
         
-        // after 
-        V->Version = 0;
         
     }
     else {
@@ -7859,15 +7855,8 @@ main(int argc, char* argv[]) {
     //GetMFTandINDXLCN
     
     printf("%I64u\n", sizeof(backup_metadata));
-    return 0;
-    DWORD SectorsPerCluster, BytesPerSector, ClusterCount, fcc;
-    GetDiskFreeSpaceA("F:\\", &SectorsPerCluster, &BytesPerSector, &fcc, &ClusterCount);
     
-    long long a = - 1;
-    UINT32 v = (UINT32)a;
-    printf("some thing\n");
-    
-    if(0){
+    if(1){
         
         LOG_CONTEXT C = {0};
         C.Port = INVALID_HANDLE_VALUE;
