@@ -26,6 +26,7 @@ namespace DiskBackupWpfGUI
     public partial class RestoreWindow : Window
     {
         public bool _showTaskTab = false;
+        private bool _diskFlag = false;
         private BackupInfo _backupInfo;
         private List<VolumeInfo> _volumeInfoList = new List<VolumeInfo>();
         //volume ise true, disk ise false
@@ -39,12 +40,13 @@ namespace DiskBackupWpfGUI
         private IBackupService _backupService;
         private ILogger _logger;
 
-        public RestoreWindow(BackupInfo backupInfo, List<VolumeInfo> volumeInfoList, IRestoreTaskDal restoreTaskDal, IStatusInfoDal statusInfoDal, ITaskInfoDal taskInfoDal, ITaskSchedulerManager schedulerManager, IBackupService backupService, ILogger logger, IConfigurationDataDal configurationDataDal)
+        public RestoreWindow(BackupInfo backupInfo, List<VolumeInfo> volumeInfoList, bool diskFlag, IRestoreTaskDal restoreTaskDal, IStatusInfoDal statusInfoDal, ITaskInfoDal taskInfoDal, ITaskSchedulerManager schedulerManager, IBackupService backupService, ILogger logger, IConfigurationDataDal configurationDataDal)
         {
             InitializeComponent();
 
             _backupInfo = backupInfo;
             _volumeInfoList = volumeInfoList;
+            _diskFlag = diskFlag;
             _restoreTaskDal = restoreTaskDal;
             _statusInfoDal = statusInfoDal;
             _taskInfoDal = taskInfoDal;
@@ -59,24 +61,23 @@ namespace DiskBackupWpfGUI
             _taskInfo.BackupStorageInfo = new BackupStorageInfo();
             _taskInfo.StatusInfo = new StatusInfo();
 
-            if (_volumeInfoList.Count == 1)
+            if (diskFlag)
             {
-                if (Convert.ToBoolean(backupInfo.OSVolume)) // bootable true ise işletim sistemi var
-                    _taskInfo.RestoreTaskInfo.Type = RestoreType.RestoreDisk;
-                else
-                    _taskInfo.RestoreTaskInfo.Type = RestoreType.RestoreVolume;
+                txtAppName.Text = Resources["restoreDiskAppName"].ToString();
+                _taskInfo.RestoreTaskInfo.Type = RestoreType.RestoreDisk;
+                // partition aç
+                advancedOptionsTab.Visibility = Visibility.Visible;
+                Console.WriteLine("disk");
             }
             else
             {
-                _taskInfo.RestoreTaskInfo.Type = RestoreType.RestoreDisk;
+                txtAppName.Text = Resources["restoreVolumeAppName"].ToString();
+                _taskInfo.RestoreTaskInfo.Type = RestoreType.RestoreVolume;
+                checkBootPartition.IsChecked = false;
+                Console.WriteLine("volume");
             }
 
-            //foreach (var item in _volumeInfoList)
-            //{
-            //    MessageBox.Show(item.DiskName + " " + item.Letter + " " + item.Name);
-            //}
             dtpSetTime.Value = DateTime.Now + TimeSpan.FromMinutes(5);
-            //MessageBox.Show(backupInfo.BackupStorageInfo.StorageName + " " + backupInfo.BackupStorageInfoId);
         }
 
         #region Title Bar
@@ -102,6 +103,24 @@ namespace DiskBackupWpfGUI
         #region Next-Back-Ok-Cancel Button
         private void btnRestoreBack_Click(object sender, RoutedEventArgs e)
         {
+            if (_diskFlag)
+                DiskBackClick();
+            else
+                VolumeBackClick();
+        }
+
+        private void VolumeBackClick()
+        {
+            if (RTabControl.SelectedIndex != 0)
+            {
+                if (RTabControl.SelectedIndex == 3)
+                    RTabControl.SelectedIndex -= 1;
+                RTabControl.SelectedIndex -= 1;
+            }
+        }
+
+        private void DiskBackClick()
+        {
             if (RTabControl.SelectedIndex != 0)
             {
                 RTabControl.SelectedIndex -= 1;
@@ -110,13 +129,23 @@ namespace DiskBackupWpfGUI
 
         private void btnRestoreNext_Click(object sender, RoutedEventArgs e)
         {
-            if (RTabControl.SelectedIndex != 2)
+            if (_diskFlag)
+                DiskNextClick();
+            else
+                VolumeNextClick();
+        }
+
+        private void VolumeNextClick()
+        {
+            if (RTabControl.SelectedIndex != 3)
             {
                 RTabControl.SelectedIndex += 1;
+                if (RTabControl.SelectedIndex == 2)
+                    RTabControl.SelectedIndex += 1;
             }
 
             // özet yazımı
-            if (RTabControl.SelectedIndex == 2)
+            if (RTabControl.SelectedIndex == 3)
             {
                 lblTaskName.Text = txtTaskName.Text;
 
@@ -128,15 +157,41 @@ namespace DiskBackupWpfGUI
                 {
                     lblSchedulerTasks.Text = dtpSetTime.Text;
                 }
+
                 lblArea2Restore.Text = _backupInfo.Letter.ToString();
-                if (_taskInfo.RestoreTaskInfo.Type == RestoreType.RestoreVolume)
+                lblDisk2Restore.Text = _volumeInfoList[0].Letter.ToString();
+                lblBootableArea.Text = Resources["no"].ToString();
+            }
+        }
+
+        private void DiskNextClick()
+        {
+            if (RTabControl.SelectedIndex != 3)
+            {
+                RTabControl.SelectedIndex += 1;
+            }
+
+            // özet yazımı
+            if (RTabControl.SelectedIndex == 3)
+            {
+                lblTaskName.Text = txtTaskName.Text;
+
+                if (rbStartNow.IsChecked.Value) // hemen çalıştır
                 {
-                    lblDisk2Restore.Text = _volumeInfoList[0].Letter.ToString();
+                    lblSchedulerTasks.Text = Resources["startNow"].ToString();
                 }
+                else if (rbSetTime.IsChecked.Value) // şu saatte çalıştır
+                {
+                    lblSchedulerTasks.Text = dtpSetTime.Text;
+                }
+
+                lblArea2Restore.Text = _backupInfo.Letter.ToString();
+                lblDisk2Restore.Text = _volumeInfoList[0].DiskName;
+
+                if (checkBootPartition.IsChecked.Value)
+                    lblBootableArea.Text = Resources["yes"].ToString();
                 else
-                {
-                    lblDisk2Restore.Text = _volumeInfoList[0].DiskName;
-                }
+                    lblBootableArea.Text = Resources["no"].ToString();
             }
         }
 
@@ -159,7 +214,7 @@ namespace DiskBackupWpfGUI
 
             if (checkFlag)
                 result = MessageBox.Show(Resources["taskAffectedMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
-            
+
             if (result == MessageBoxResult.No)
                 return false;
 
@@ -192,7 +247,7 @@ namespace DiskBackupWpfGUI
             //Kaydedip Silinecek
             if (dtpSetTime.Value <= DateTime.Now + TimeSpan.FromSeconds(10))
             {
-                MessageBox.Show(Resources["notSchedulePastDaysMB"].ToString(), Resources["MessageboxTitle"].ToString(),  MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show(Resources["notSchedulePastDaysMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
             }
             else
             {
@@ -230,6 +285,13 @@ namespace DiskBackupWpfGUI
                     _taskInfo.BackupStorageInfo = _backupInfo.BackupStorageInfo;  // gelen backup'ın storageInfosu mevcut -- DEĞİŞECEK
                     _taskInfo.BackupStorageInfoId = _backupInfo.BackupStorageInfoId;
                     _taskInfo.Obje = _volumeInfoList.Count; // kaç tane volumede değişiklik olacağı
+                    if (checkBootPartition.IsChecked.Value)
+                    {
+                        //mbr mı gpt mi
+                        _taskInfo.RestoreTaskInfo.Bootable = RestoreBootable.MBR;
+                    }
+                    else
+                        _taskInfo.RestoreTaskInfo.Bootable = RestoreBootable.NotBootable;
                     // ortak alan bitti
 
                     if (_taskInfo.RestoreTaskInfo.Type == RestoreType.RestoreVolume) // volume
@@ -253,7 +315,7 @@ namespace DiskBackupWpfGUI
                             else
                                 _schedulerManager.RestoreVolumeJob(resultTaskInfo).Wait();
                         }
-                        
+
                     }
                     else // disk
                     {
@@ -270,9 +332,9 @@ namespace DiskBackupWpfGUI
                             _taskInfo.RestoreTaskInfo.TargetLetter = _backupService.AvailableVolumeLetter().ToString();
                             Console.WriteLine("NarDIWrapper'dan alınan harf: " + _taskInfo.RestoreTaskInfo.TargetLetter);
                         }
-                        catch(Exception ex)
+                        catch (Exception ex)
                         {
-                            _logger.Error(ex, "NarDIWrapper'dan uygun disk için harf alınamadı."); 
+                            _logger.Error(ex, "NarDIWrapper'dan uygun disk için harf alınamadı.");
                             MessageBox.Show(Resources["notAvailableVolumeLetterMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Information);
                             Close();
                             return;
@@ -348,6 +410,14 @@ namespace DiskBackupWpfGUI
 
         private void RTabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
+            if (_diskFlag)
+                DiskSelectionChanged();
+            else
+                VolumeSelectionChanged();
+        }
+
+        private void DiskSelectionChanged()
+        {
             if (RTabControl.SelectedIndex == 0)
             {
                 lblTabHeader.Text = Resources["name"].ToString();
@@ -361,13 +431,36 @@ namespace DiskBackupWpfGUI
                 btnRestoreBack.IsEnabled = true;
                 btnRestoreNext.IsEnabled = true;
             }
-            //else if (RTabControl.SelectedIndex == 2)
-            //{
-            //    lblTabHeader.Text = Resources["advancedOptions"].ToString();
-            //    lblTabContent.Text = Resources["restoreDiskContent1"].ToString();
-            //    btnRestoreNext.IsEnabled = true;
-            //}
             else if (RTabControl.SelectedIndex == 2)
+            {
+                lblTabHeader.Text = Resources["advancedOptions"].ToString();
+                lblTabContent.Text = Resources["restoreDiskContent1"].ToString();
+                btnRestoreNext.IsEnabled = true;
+            }
+            else if (RTabControl.SelectedIndex == 3)
+            {
+                lblTabHeader.Text = Resources["summary"].ToString();
+                lblTabContent.Text = Resources["RSummaryContent"].ToString();
+                btnRestoreNext.IsEnabled = false;
+            }
+        }
+
+        private void VolumeSelectionChanged()
+        {
+            if (RTabControl.SelectedIndex == 0)
+            {
+                lblTabHeader.Text = Resources["name"].ToString();
+                lblTabContent.Text = Resources["RNameContent"].ToString();
+                btnRestoreBack.IsEnabled = false;
+            }
+            else if (RTabControl.SelectedIndex == 1)
+            {
+                lblTabHeader.Text = Resources["scheduler"].ToString();
+                lblTabContent.Text = Resources["RSchedulerContent"].ToString();
+                btnRestoreBack.IsEnabled = true;
+                btnRestoreNext.IsEnabled = true;
+            }
+            else if (RTabControl.SelectedIndex == 3)
             {
                 lblTabHeader.Text = Resources["summary"].ToString();
                 lblTabContent.Text = Resources["RSummaryContent"].ToString();

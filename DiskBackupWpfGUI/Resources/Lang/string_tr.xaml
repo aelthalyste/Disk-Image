@@ -34,7 +34,8 @@
     <system:String x:Key="copy">Kopyala</system:String>
     <system:String x:Key="save">Kaydet</system:String>
     <system:String x:Key="restore">Geri Yükle</system:String>
-    <system:String x:Key="restoreAppName">Geri Yükleme Görevi Oluştur</system:String>
+    <system:String x:Key="restoreDiskAppName">Disk Geri Yükleme Görevi Oluştur</system:String>
+    <system:String x:Key="restoreVolumeAppName">Volume Geri Yükleme Görevi Oluştur</system:String>
     <system:String x:Key="paste">Yapıştır</system:String>
     <system:String x:Key="delete">Sil</system:String>
     <system:String x:Key="refresh">Yenile</system:String>
@@ -326,5 +327,6 @@
     <system:String x:Key="notificationUpdateMB">Bildirim ayarları güncellendi.</system:String>
     <system:String x:Key="sameRootDirectoryRestoreMB">Aynı kök dizin için restore işlemi gerçekleştirilemez.</system:String>
     <system:String x:Key="sameRootDirectoryMB">Görevler ile yedekleme alanları aynı kök dizine sahip olamaz.</system:String>
+    <system:String x:Key="filesRestoreStartedMB">Geri yükleme işlemi başlatıldı.</system:String>
 
 </ResourceDictionary>

@@ -18,12 +18,20 @@ namespace DiskBackup.Entities.Concrete
         public int BackupVersion { get; set; }
         public int DiskId { get; set; }
         public string RootDir { get; set; }
+        public RestoreBootable Bootable { get; set; }
     }
 
     public enum RestoreType
     {
         RestoreVolume = 0,
         RestoreDisk = 1
+    }
+
+    public enum RestoreBootable
+    {
+        NotBootable = 0,
+        MBR = 1,
+        GPT = 2
     }
 
 }

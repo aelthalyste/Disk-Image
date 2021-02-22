@@ -17,9 +17,9 @@
         Width="800" 
         Icon="Resources/Icon/NarBulut_PNG_Icon_White_V3.png" >
 
-    <!--<Window.Resources>
+    <Window.Resources>
         <ResourceDictionary Source="Resources\Lang\string_tr.xaml"/>
-    </Window.Resources>-->
+    </Window.Resources>
     <Grid Background="White">
         <Grid.RowDefinitions>
             <RowDefinition Height="30"/>
@@ -29,7 +29,7 @@
 
         <StackPanel Panel.ZIndex="1" Orientation="Horizontal" MouseDown="MyTitleBar_MouseDown" Margin="10,0">
             <Image Source="Resources/Icon/NarBulut_PNG_Icon_White_V3.png" Margin="0,0,5,0"/>
-            <TextBlock Text="{DynamicResource restoreAppName}" Style="{StaticResource TitleBarText}" />
+            <TextBlock Name="txtAppName"  Style="{StaticResource TitleBarText}" />
         </StackPanel>
         <StackPanel Name="MyTitleBar" VerticalAlignment="Top" MouseDown="MyTitleBar_MouseDown">
             <Border Background="#27527B" Height="30">
@@ -121,7 +121,7 @@
                 </Grid>
             </TabItem>
 
-            <!--<TabItem Name="advancedOptionsTab" IsEnabled="False" >
+            <TabItem Name="advancedOptionsTab" IsEnabled="False" Visibility="Collapsed">
                 <TabItem.Header>
                     <StackPanel Height="35" Width="130" Orientation="Horizontal">
                         <TextBlock Text="{DynamicResource advancedOptions}" Margin="5,0" VerticalAlignment="Center" HorizontalAlignment="Center" Style="{StaticResource NCTTabItemText}"/>
@@ -131,15 +131,16 @@
                     <StackPanel Margin="10,10,5,0">
                         <TextBlock Text="{DynamicResource restoreDiskContent2}" TextWrapping="Wrap"/>
                         <StackPanel Margin="15">
-                            <CheckBox Name="checkBootPartition" Checked="checkBootPartition_Checked" Unchecked="checkBootPartition_Unchecked" Margin="0,0,0,5" Content="{DynamicResource createBootPartition}"/>
+                            <CheckBox Name="checkBootPartition" Margin="0,0,0,5" Content="{DynamicResource createBootPartition}" IsChecked="True"/>
+                        <!--<CheckBox Name="checkBootPartition" Checked="checkBootPartition_Checked" Unchecked="checkBootPartition_Unchecked" Margin="0,0,0,5" Content="{DynamicResource createBootPartition}"/>
                             <StackPanel Name="stackBootCheck" Margin="20,0,0,5" IsEnabled="False">
                                 <RadioButton Name="rbBootMBR" GroupName="BootPartion" Content="MBR" Margin="0,0,0,5"/>
                                 <RadioButton Name="rbBootGPT" GroupName="BootPartion" Content="GPT"/>
-                            </StackPanel>
+                            </StackPanel>-->
                         </StackPanel>
                     </StackPanel>
                 </Grid>
-            </TabItem>-->
+            </TabItem>
 
             <TabItem Name="summaryTab" IsEnabled="False">
                 <TabItem.Header>

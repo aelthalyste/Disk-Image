@@ -37,7 +37,8 @@
     <system:String x:Key="copy">Clone</system:String>
     <system:String x:Key="save">Save</system:String>
     <system:String x:Key="restore">Restore</system:String>
-    <system:String x:Key="restoreAppName">Create Restore Task</system:String>
+    <system:String x:Key="restoreDiskAppName">Create Disk Restore Task</system:String>
+    <system:String x:Key="restoreVolumeAppName">Create Volume Restore Task</system:String>
     <system:String x:Key="paste">Paste</system:String>
     <system:String x:Key="delete">Delete</system:String>
     <system:String x:Key="refresh">Refresh</system:String>
@@ -339,5 +340,6 @@
     <system:String x:Key="notificationUpdateMB">Notification settings updated.</system:String>
     <system:String x:Key="sameRootDirectoryRestoreMB">Restore cannot be performed for the same root directory.</system:String>
     <system:String x:Key="sameRootDirectoryMB">Tasks and backup fields cannot have the same root directory.</system:String>
+    <system:String x:Key="filesRestoreStartedMB">The restore process started.</system:String>
 
 </ResourceDictionary>
