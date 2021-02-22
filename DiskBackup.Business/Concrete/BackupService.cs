@@ -310,7 +310,7 @@ namespace DiskBackup.Business.Concrete
                 nc.Dispose();
 
             _logger.Verbose("|{@restoreTaskId}| restore taskı için backupMetadata bulunamadı.", taskInfo.RestoreTaskInfo.Id);
-            return 0;
+            return 3;
         }
 
         // Tüm dosyalar aynı dizinde mi kontrolü yap
@@ -394,7 +394,7 @@ namespace DiskBackup.Business.Concrete
                 nc.Dispose();
 
             _logger.Verbose("|{@restoreTaskId}| restore taskı için backupMetadata bulunamadı.", taskInfo.RestoreTaskInfo.Id);
-            return 0;
+            return 3;
         }
 
         public bool CleanChain(char letter)
