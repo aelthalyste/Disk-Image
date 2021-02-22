@@ -1485,10 +1485,10 @@ Return Value:
                     break;
                 }
 
-                if (ClusterMapBuffer.Extents[0].NextVcn.QuadPart == (ULONGLONG)-1) {
+                if (ClusterMapBuffer.Extents[0].NextVcn.QuadPart == (LONGLONG)-1) {
                     break;
                 }
-                if (ClusterMapBuffer.StartingVcn.QuadPart == (ULONGLONG)-1) {
+                if (ClusterMapBuffer.StartingVcn.QuadPart == (LONGLONG)-1) {
                     break;
                 }
                 if (ClusterMapBuffer.Extents[0].NextVcn.QuadPart - ClusterMapBuffer.StartingVcn.QuadPart >= MAXUINT32) {

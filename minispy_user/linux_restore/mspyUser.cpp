@@ -624,9 +624,8 @@ Parameters
             while (BytesRemaining > BufSize) {
                 if (fread(Buffer, BufSize, 1, S) == 1) {
                     //size_t fwrite ( const void * ptr, size_t size, size_t count, FILE * stream );
-                    bool bResult = (1 == fwrite(Buffer, BufSize, 1, D));
-                    if (!bResult) {
-                        printf("COPY_DATA: fwrite failed with code %X\n", bResult);
+                    if (1 != fwrite(Buffer, BufSize, 1, D)) {
+                        printf("COPY_DATA: fwrite failed with code %X\n", ferror(D));
                         printf("Tried to write -> %I64lld, Bytes written -> %ld\n", Len, BytesOperated);
                         Return = FALSE;
                         break;
@@ -879,7 +878,7 @@ OfflineRestore(restore_inf* R) {
         
         std::string volname = "/dev/";
         volname += R->TargetPartition;
-        FILE* Volume = fopen(volname.c_str(), "rb");
+        FILE* Volume = fopen(volname.c_str(), "wb");
         if (NULL != Volume) {
             if (Version == NAR_FULLBACKUP_VERSION) {
                 printf("Fullbackup version will be restored\n");
@@ -1368,12 +1367,12 @@ NarIsFullBackup(int Version) {
 
 inline std::wstring
 NarBackupIDToWStr(nar_backup_id ID){
-    wchar_t B[64];
-    memset(B, 0, sizeof(B));
-    swprintf(B, 64, L"%I64llu",ID.Q);
+    //wchar_t B[64];
+    //memset(B, 0, sizeof(B));
+    //swprintf(B, 64, L"%I64llu",ID.Q);
     
-    std::wstring Result = std::wstring(B);
-    return Result;
+    //std::wstring Result = std::wstring(B);
+    return std::to_wstring(ID.Q);
 }
 
 inline std::wstring
@@ -1450,8 +1449,8 @@ RestoreVersionWithoutLoop(restore_inf R, BOOLEAN RestoreMFT, FILE* Volume) {
     BOOLEAN IsVolumeLocal = (NULL == Volume); // Determine if we should close volume handle at end of function
     
     if (R.RootDir.length() > 0) {
-        if (R.RootDir[R.RootDir.length() - 1] != L'\\') {
-            R.RootDir += L"\\";
+        if (R.RootDir[R.RootDir.length() - 1] != L'/') {
+            R.RootDir += L"/";
         }
     }
     
@@ -1631,8 +1630,8 @@ backup_metadata
 ReadMetadata(nar_backup_id ID, int Version, std::wstring RootDir) {
     
     if (RootDir.length() > 0) {
-        if (RootDir[RootDir.length() - 1] != L'\\') {
-            RootDir += L"\\";
+        if (RootDir[RootDir.length() - 1] != L'/') {
+            RootDir += L"/";
         }
     }
     
@@ -1729,8 +1728,8 @@ backup_metadata_ex*
 InitBackupMetadataEx(nar_backup_id ID, int Version, std::wstring RootDir) {
     
     if (RootDir.length() > 0) {
-        if (RootDir[RootDir.length() - 1] != L'\\') {
-            RootDir += L"\\";
+        if (RootDir[RootDir.length() - 1] != L'/') {
+            RootDir += L"/";
         }
     }
     
@@ -1910,6 +1909,7 @@ NarFileNameExtensionCheck(const char *Path, const char *Extension){
     return (strcmp(&Path[pl - el], Extension) == 0);	
 }
 
+#include <iostream>
 std::vector<backup_metadata>
 NarGetBackupsInDirectory(const char *arg_dir){
 	
@@ -1941,7 +1941,6 @@ NarGetBackupsInDirectory(const char *arg_dir){
 			
 			FILE *F = fopen((std::string(dir) + fname).c_str(), "rb");
 			backup_metadata M;
-			
 			if(NULL != F && 1 == fread(&M, sizeof(M), 1, F))
 				Result.emplace_back(M);				
 			
@@ -2083,7 +2082,7 @@ NarGetFileNameFromPath(const wchar_t* Path, wchar_t *OutName, int32_t OutMaxLen)
     
     int TrimPoint = PathLen - 1;
     {
-        while (Path[TrimPoint] != L'\\' && --TrimPoint != 0);
+        while (Path[TrimPoint] != L'/' && --TrimPoint != 0);
     }
     
     if (TrimPoint < 0) TrimPoint = 0;
