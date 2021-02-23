@@ -691,7 +691,7 @@
                                     <GridViewColumn.CellTemplate>
                                         <DataTemplate>
                                             <CheckBox IsChecked="{Binding Path=IsSelected, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ListViewItem}}}"
-                                                      Checked="chbRestoreDisk_Checked" Unchecked="chbRestoreDisk_Unchecked" Cursor="Hand" Margin="40,0,0,0"/>
+                                                      Unchecked="chbRestoreDisk_Unchecked" Cursor="Hand" Margin="40,0,0,0"/>
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>
                                 </GridViewColumn>

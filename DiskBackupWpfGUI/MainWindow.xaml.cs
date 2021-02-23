@@ -1424,12 +1424,22 @@ namespace DiskBackupWpfGUI
                 }
             }
 
+            bool diskFlag = false;
+            foreach (var item in _restoreExpanderCheckBoxes)
+            {
+                if (item.IsChecked.Value)
+                {
+                    diskFlag = true;
+                    break;
+                }
+            }
+
             if (!controlFlag)
             {
                 using (var scope = _scope.BeginLifetimeScope())
                 {
                     RestoreWindow restore = scope.Resolve<RestoreWindow>(new TypedParameter(backupInfo.GetType(), backupInfo),
-                        new TypedParameter(volumeInfoList.GetType(), volumeInfoList));
+                        new TypedParameter(volumeInfoList.GetType(), volumeInfoList), new TypedParameter(diskFlag.GetType(), diskFlag));
                     restore.ShowDialog();
                     if (restore._showTaskTab)
                         mainTabControl.SelectedIndex = 1;
@@ -1514,32 +1524,6 @@ namespace DiskBackupWpfGUI
         }
 
         #region Checkbox Operations
-
-        private void chbRestoreDisk_Checked(object sender, RoutedEventArgs e)
-        {
-            var dataItem = FindParent<ListViewItem>(sender as DependencyObject);
-            var data = dataItem.DataContext as VolumeInfo; //data seçilen değer
-
-            for (int i = 0; i < _restoreGroupName.Count; i++)
-            {
-                if (data.DiskName.Equals(_restoreGroupName[i]))
-                {
-                    int totalSelected = 0;
-                    //i kaçıncı sıradaki adete eşit olacağı
-                    foreach (VolumeInfo item in listViewRestoreDisk.SelectedItems)
-                    {
-                        if (item.DiskName.Equals(data.DiskName))
-                        {
-                            totalSelected++;
-                        }
-                    }
-                    if (_restoreNumberOfItems[i] == totalSelected)
-                    {
-                        _restoreExpanderCheckBoxes[i].IsChecked = true;
-                    }
-                }
-            }
-        }
 
         private void chbRestoreDisk_Unchecked(object sender, RoutedEventArgs e)
         {

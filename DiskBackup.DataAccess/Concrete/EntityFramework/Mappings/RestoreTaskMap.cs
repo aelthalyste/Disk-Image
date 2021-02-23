@@ -22,6 +22,7 @@ namespace DiskBackup.DataAccess.Concrete.EntityFramework.Mappings
             Property(x => x.RootDir).HasColumnName("root_dir");
             Property(x => x.TargetLetter).HasColumnName("target_letter");
             Property(x => x.SourceLetter).HasColumnName("source_letter");
+            Property(x => x.Bootable).HasColumnName("bootable");
 
         }
     }

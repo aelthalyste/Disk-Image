@@ -218,6 +218,11 @@ namespace DiskBackupWpfGUI
         {
             if (listViewFileExplorer.SelectedItems.Count != 0)
             {
+                Task.Run(() =>
+                {
+                    MessageBox.Show(Resources["filesRestoreStartedMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Information);
+                });
+
                 foreach (FilesInBackup item in listViewFileExplorer.SelectedItems)
                 {
                     try
