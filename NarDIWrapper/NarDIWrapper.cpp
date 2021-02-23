@@ -1,41 +1,3 @@
-/*
-TOPLANTI için sorulacaklar
-
-volume yedek bilgilerinin bir şekilde yedeklenmesi, mesela program crashlendi, bir şekilde volume çıkarıldı vs vs, volumein yedek bilgileri saklanıp tekrardan program açıldığında devam edilmeli mi
-
-restore işlemi tamamen stream olarak mı yapılacak yoksa dosyanın diske inme ihtimali var mı? Dosya diske inecekse C tarafında kodlar yazılacak, eğer diske inmeden stream ile aktarılacaksa metadataya uygun olarak sırasıyla, sıra önemli, bölgeler aktarılmalı. byle olursa wrappera writestream yazılacak ve sadece veri alıp kendi içinde olayı çözecek
-
-ekstra partition bilgileri nasıl saklanmalı, mesela C volumeunun bağlı olduğu 2 tane daha ek partition vs var. bunların bilgileri ve kendileri nasıl saklanmalı.
-
-silme işlemleri, şu anlık diskteki silinmeleri kontrol etmiyoruz, yani birisi diskin bir yerine yazıp daha sonra orayı silse bile orayı da alıyoruz, fakat orası disk tarafından kullanılmıyor olabilir. bunun için bir kontrol mekanizması gerekir
-
-çözüm 1;
-üzerinde düşündüğüm yöntem şu, backup alırken, diskin o anda kullanılan kısımları da alınacak, eğer yedek aldığımız kısımlar diskte kullanılmıyor ise orayı almayacağız
-
-metadatanın 4gbi geçmemesi gerekiyor bu yaklaşık olarak 2^29 tane girdi demek
-
-mesaj loopunda, threadinde, bir sorun yaşanırsa nasıl ana uygulamaya bildirilecek, nasıl iletişim sağlanılmalı sonuçta poll edilmedikçe bu fark edilemeyebilir, interrupt tarzında bir yöntem elbet vardır
-
-
--Driver kısmına çok girme, prensibini ve outputunu anlat.
--VSS ile olan tek bağlantımız diskin yedeklenme aşamasında var, onun dışında driverlara bağlı değiliz
--C# tarafındaki kod oldukça hafif, state machine gibi çalışıyor,içerisindeki bilgiler ile o anda hangi tür backup alacağına karar verip streami hazırlıyor.
--Stream için toplamda ne kadar veri aktarımı yapacağımızı biliyoruz, hedef veri bitene kadar okuma yapılacak, fonksiyon fail döndürmemeli, döndürürse memory hatası almışız demektir
--Diffbackup da alsak incremental da alsak, çıkardığımız loglar aynı olacak hep.
--Diff aldığımızda, son diff ile o an istenilen diff arasındaki incremental değişiklik metadatasını çıkartacağım. Tabi bu sadece son yedekleme arasındaki fark olduğu için eski bütün logları buluttan isteyeceğim, sonra bunları birleştirip streami sunacağım.  Verdiğim veri yine diff olacak
--Diskte saklanan veri, bölgelerin sıralı şekilde ard arda yerleştirilmesi ile oluşturulmuş bir binary data. Metadata olmadan diske nasıl geri yazacağımızı bilemeyiz.
--Incremental alırken, difften farklı olarak eski logları istemeyeceğim, direkt streami başlatacağım
--Dosyaların diskte kayıtlı olacak isimleri konusunda bir ortak nokta bulsak iyi olabilir. Şu anlık harf + versiyon olarak kodluyorum
--Metadatalar binary formatta, sadece bölgelerden oluşuyorlar. Metadataların bozulması durumunda restore yapılamaz
--Stream sağlarken, bölgelerin ayrı dosyalar olarak saklanması iyi olabilir.
--Restore işlemi için bütün versiyonları inceleyip çıkartılabilecek en küçük restore datası çıkartan bir algoritma tasarladım, buluttan kullanıcıya yollarken epey bir küçültme sağlayacaktır
--Fakat algoritma yollanan yedek dosyasının belirli parçalarını belirli uzunluklarda isteyecektir, fakat dosyalar bulutta sıkıştırıldıkları için seek edip istenilen bölgeyi bulamayız.
--Yapılabilecek bir çözüm var, bölgeleri yollarken unique bir ID ile kodlayıp her bir bölge için ayrı dosya yapıp onları ziplersek, istenilen bölgeyi yine çıkartabiliriz. Yine bölgenin seek edilerek okunabileceği ihtimali göz ardı edilmemelidir.
--Bu dosyayı diskte oluşturup kullanıcıya göndermek diskte ekstra yer kaplayacak ve işlem gücü harcayacağı için stream olarak direkt verilmesi daha iyi olabilir. Stream olarak verilmesi için seek ederek okuyup kullanıcıya gönderilebilinirse, kullanıcı tarafında metadata bilindiği için, düzgün sırayla yollayabilirsek restore yapabilirim.
--Eğer bu algoritmayı kullanamazsak, diff ve incremental için gerek offline gerek ise stream olarak restore yapmak basit bir işlem.
-
-
-*/
 
 #include "pch.h"
 
@@ -294,13 +256,15 @@ namespace NarDIWrapper {
     }
     
     
-    bool DiskTracker::CW_RestoreToFreshDisk(wchar_t TargetLetter, BackupMetadata^ BM, int DiskID, System::String^ RootDir) {
+    bool DiskTracker::CW_RestoreToFreshDisk(wchar_t TargetLetter, BackupMetadata^ BM, int DiskID, System::String^ RootDir, bool ShouldRepairBoot, wchar_t TargetDiskType) {
         
         restore_inf R;
         R.TargetLetter = TargetLetter;
         R.BackupID = *BM->BackupID;
         R.RootDir = msclr::interop::marshal_as<std::wstring>(RootDir);
         R.Version = BM->Version;
+        R.RepairBoot = ShouldRepairBoot;
+        R.DiskType = TargetDiskType;
         
         if (BM->Version < 0) {
             R.Version = NAR_FULLBACKUP_VERSION;
