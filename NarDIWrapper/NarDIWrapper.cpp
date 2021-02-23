@@ -256,15 +256,20 @@ namespace NarDIWrapper {
     }
     
     
-    bool DiskTracker::CW_RestoreToFreshDisk(wchar_t TargetLetter, BackupMetadata^ BM, int DiskID, System::String^ RootDir, bool ShouldRepairBoot, wchar_t TargetDiskType) {
+    bool DiskTracker::CW_RestoreToFreshDisk(wchar_t TargetLetter, BackupMetadata^ BM, int DiskID, System::String^ RootDir, bool ShouldRepairBoot, bool OverWriteDiskType, wchar_t OverWritedTargetDiskType) {
         
         restore_inf R;
         R.TargetLetter = TargetLetter;
         R.BackupID = *BM->BackupID;
         R.RootDir = msclr::interop::marshal_as<std::wstring>(RootDir);
         R.Version = BM->Version;
+        if (OverWriteDiskType)
+        {
+            R.DiskType = OverWritedTargetDiskType;
+            R.OverrideDiskType = true;
+        }
+
         R.RepairBoot = ShouldRepairBoot;
-        R.DiskType = TargetDiskType;
         
         if (BM->Version < 0) {
             R.Version = NAR_FULLBACKUP_VERSION;

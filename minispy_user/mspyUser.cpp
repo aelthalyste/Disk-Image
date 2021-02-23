@@ -2581,13 +2581,16 @@ OfflineRestoreCleanDisk(restore_inf* R, int DiskID) {
         if (DiskType == NAR_DISKTYPE_MBR) {
             /*TODO*MBR */
             
+#if 1            
             if ( FALSE) {
+                
                 // TODO(Batuhan):
                 // Result;
             }
             else {
-                printf("Can't create MBR partition to restore\n");
+                printf("NON OS PARTITIONS FOR MBR RESTORE NOT SUPPORTED!\n");
             }
+#endif
             
         }
     }
@@ -2618,7 +2621,10 @@ OfflineRestoreCleanDisk(restore_inf* R, int DiskID) {
                 
             }
             else {
+                if(R->RepairBoot == FALSE)
+                    printf("Boot repair explicitly disabled!");
                 printf("Skipping boot repair\n");
+                
             }
             
         }
