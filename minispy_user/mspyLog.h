@@ -145,7 +145,7 @@ HANDLE GlobalLogMutex = 0;
 
 
 /*
-CAUTION, THIS IS NOT THREAD SAFE, DO NOT USE IN MULTIPLE THREDS
+
 */
 static void
 NarLog(const char *str, ...){
@@ -175,8 +175,9 @@ NarLog(const char *str, ...){
     NarTime.HOUR  = (BYTE)Time.wHour;
     NarTime.MIN   = (BYTE)Time.wMinute;
     NarTime.SEC   = (BYTE)Time.wSecond;
+	
     
-    
+
 #if 1
     va_start(ap, str);
     vsprintf(buf, str, ap);
@@ -188,7 +189,7 @@ NarLog(const char *str, ...){
     DWORD H = 0;
     
 #if 1    
-    if(WaitForSingleObject(GlobalLogMutex, 100) == WAIT_OBJECT_0){
+    if(WaitForSingleObject(GlobalLogMutex, 25) == WAIT_OBJECT_0){
         GlobalLogs[GlobalLogCount].LogString = (char*)NarScratchAllocate((Len + 1)*sizeof(buf[0]));
         memcpy(GlobalLogs[GlobalLogCount].LogString, &buf[0], (Len + 1)*sizeof(buf[0]));
         memcpy(&GlobalLogs[GlobalLogCount].Time, &NarTime, sizeof(NarTime));
@@ -198,24 +199,29 @@ NarLog(const char *str, ...){
 #endif
     
 #if 1    
-    const static HANDLE File = CreateFileA("C:\\ProgramData\\NarDiskBackup\\NAR_APP_LOG_FILE.txt", GENERIC_WRITE|GENERIC_READ, FILE_SHARE_READ|FILE_SHARE_WRITE, 0, CREATE_ALWAYS, 0, 0);
-    
-    SetFilePointer(File, 0, 0, FILE_END);
-    WriteFile(File, buf, Len, &H, 0);
-    FlushFileBuffers(File);
+	
+	static bool fileinit = false;
+	static FILE *File = 0;
+	if(fileinit == false){
+		File = fopen("C:\\ProgramData\\NarDiskBackup\\NAR_APP_LOG_FILE.txt", "a");
+		fileinit = true;
+	}	
+	if(File){
+	    static char time_buf[80];
+	    snprintf(time_buf, 80, "[%02d/%02d/%04d | %02d:%02d:%02d] : ", NarTime.DAY, NarTime.MONTH, 2000 + NarTime.YEAR, NarTime.HOUR, NarTime.MIN, NarTime.SEC);
+   		char big_buffer[1024];
+   		big_buffer[0] = 0;
+   		strcat(big_buffer, time_buf);
+   		strcat(big_buffer, buf);
+   		fwrite(big_buffer, 1, strlen(big_buffer), File);		
+		fflush(File);
+	}
+	else{
+		OutputDebugStringA(buf);	
+	}
+
 #endif
     
-    OutputDebugStringA(buf);
-    printf(buf);
-    
-#if 0
-    char szBuff[1024];
-    va_list arg;
-    va_start(arg, str);
-    _vsnprintf(szBuff, sizeof(szBuff), str, arg);
-    va_end(arg);
-    OutputDebugStringA(szBuff);
-#endif
     
 #undef MAX_BUF_LEN
     
@@ -538,8 +544,10 @@ struct backup_metadata {
         CHAR Reserved[2048]; // Reserved for future usage
         struct {
             //FOR MBR things
-            INT64 GPT_EFIPartitionSize;
-            INT64 MBR_SystemPartitionSize;
+            union{
+            	INT64 GPT_EFIPartitionSize;
+            	INT64 MBR_SystemPartitionSize;
+            };
             SYSTEMTIME BackupDate;
             char ProductName[NAR_MAX_PRODUCT_NAME];
             char ComputerName[NAR_MAX_COMPUTERNAME_LENGTH  + 1];

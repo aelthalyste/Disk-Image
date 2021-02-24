@@ -2001,7 +2001,7 @@ SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, DotNetStreamInf* SI) {
         AppendINDXnMFTLCNToStream();
         V->MFTLCN = NarGetMFTRegionsByCommandLine(V->Letter, &V->MFTLCNCount);
         
-        unsigned int TruncateIndex = 0;
+        int TruncateIndex = -1;
         
         SI->ClusterCount = 0;
         SI->ClusterSize = V->ClusterSize;
@@ -2016,6 +2016,11 @@ SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, DotNetStreamInf* SI) {
             }
         }
         
+        if (TruncateIndex == 0) {
+            printf("Error occured, trimming all stream record information\n");
+            Return = FALSE;
+            FreeDataArray(&V->Stream.Records);
+        }
         if(TruncateIndex > 0){
             printf("Found regions that exceeds volume size, truncating stream record array from %i to %i\n", V->Stream.Records.Count, TruncateIndex);
             V->Stream.Records.Data = 
@@ -2583,7 +2588,7 @@ OfflineRestoreCleanDisk(restore_inf* R, int DiskID) {
             
 #if 1            
             if ( FALSE) {
-                
+                NarCreateCleanMBRPartition(DiskID, (int)(M.VolumeTotalSize/(1024ull*1024ull)), (char)R->TargetLetter);
                 // TODO(Batuhan):
                 // Result;
             }
@@ -2966,7 +2971,6 @@ NarGetDisks() {
     DWORD MemorySize = DriveLayoutSize + DGEXSize;
     void* Memory = VirtualAlloc(0, MemorySize, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
     
-    
     DRIVE_LAYOUT_INFORMATION_EX* DriveLayout = (DRIVE_LAYOUT_INFORMATION_EX*)(Memory);
     DISK_GEOMETRY_EX* DGEX = (DISK_GEOMETRY_EX*)((char*)Memory + DriveLayoutSize);    
     
@@ -3092,29 +3096,6 @@ NarGetVolumes() {
 }
 
 
-ULONGLONG
-NarGetDiskUnallocatedSize(int DiskID) {
-    data_array<disk_information> DIArray = NarGetDisks();
-    if (DIArray.Data == NULL) return 0;
-    ULONGLONG Result = 0;
-    
-    int DiskIndexAtArray = -1;
-    for (unsigned int i = 0; i < DIArray.Count; i++) {
-        if (DIArray.Data[i].ID == DiskID) DiskIndexAtArray = i;
-    }
-    
-    if (DiskIndexAtArray != -1) {
-        Result = DIArray.Data[DiskIndexAtArray].UnallocatedGB * 1024 * 1024 * 1024;
-    }
-    else {
-        printf("Couldn't find disk %i\n", DiskID);
-        Result = 0;
-    }
-    
-    FreeDataArray(&DIArray);
-    return Result;
-    
-}
 
 ULONGLONG
 NarGetDiskTotalSize(int DiskID) {
@@ -3126,31 +3107,32 @@ NarGetDiskTotalSize(int DiskID) {
     
     unsigned int DGEXSize = 1024 * 1; // 1 KB
     DISK_GEOMETRY_EX* DGEX = (DISK_GEOMETRY_EX*)malloc(DGEXSize);
-    if (DGEX == NULL) {
-        // TODO(Batuhan): Failed to allocate memory
-    }
-    
-    HANDLE Disk = CreateFileA(StrBuffer,
-                              GENERIC_WRITE | GENERIC_READ,
-                              FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, 0, 0);
-    
-    if (Disk != INVALID_HANDLE_VALUE) {
-        if (DeviceIoControl(Disk, IOCTL_DISK_GET_DRIVE_GEOMETRY_EX, 0, 0, DGEX, DGEXSize, &Temp, 0)) {
-            Result = (ULONGLONG)DGEX->DiskSize.QuadPart;
+    if (DGEX != NULL) {
+        HANDLE Disk = CreateFileA(StrBuffer,
+                                  GENERIC_WRITE | GENERIC_READ,
+                                  FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, 0, 0);
+        
+        if (Disk != INVALID_HANDLE_VALUE) {
+            if (DeviceIoControl(Disk, IOCTL_DISK_GET_DRIVE_GEOMETRY_EX, 0, 0, DGEX, DGEXSize, &Temp, 0)) {
+                Result = (ULONGLONG)DGEX->DiskSize.QuadPart;
+            }
+            else {
+                printf("Failed to call DeviceIoControl with IOCTL_DISK_GET_DRIVE_GEOMETRY_EX parameter for disk %i\n", DiskID);
+            }
         }
         else {
-            printf("Failed to call DeviceIoControl with IOCTL_DISK_GET_DRIVE_GEOMETRY_EX parameter for disk %i\n", DiskID);
+            printf("Can't open %s\n", StrBuffer);
         }
+        
+        CloseHandle(Disk);
+        free(DGEX);    	
     }
-    else {
-        printf("Can't open %s\n", StrBuffer);
+    else{
+    	printf("Unable to allocate memory for DISK_GEOMETYRY_EX, for disk %d\n", DiskID);
     }
     
-    CloseHandle(Disk);
-    free(DGEX);
     
     return Result;
-    
 }
 
 
@@ -3260,7 +3242,6 @@ NarCreateCleanMBRPartition(int DiskID, char VolumeLetter, int VolumeSize) {
     }
     
     
-    printf("NarCreateCleanMBRPartition IS NOT IMPLEMENTED\n");
     return FALSE;
     
 }
@@ -3268,10 +3249,6 @@ NarCreateCleanMBRPartition(int DiskID, char VolumeLetter, int VolumeSize) {
 
 inline BOOLEAN
 NarCreateCleanMBRBootPartition(int DiskID, char VolumeLetter, int VolumeSizeMB, int SystemPartitionSizeMB, int RecoveryPartitionSizeMB) {
-    
-    // TODO(Batuhan): break the code 
-    // NOTE(Batuhan): break the code
-    *(int*)0 = 0;
     
     char Buffer[2048];
     memset(Buffer, 0, 2048);
@@ -3308,141 +3285,6 @@ NarCreateCleanMBRBootPartition(int DiskID, char VolumeLetter, int VolumeSizeMB, 
     
 }
 
-
-#if 0
-BOOLEAN
-RestoreSystemPartitions(restore_inf* Inf) {
-    
-    GUID GDAT = { 0 }; // basic data partition
-    GUID GMSR = { 0 }; // microsoft reserved partition guid
-    GUID GEFI = { 0 }; // efi partition guid
-    GUID GREC = { 0 }; // recovery partition guid
-    
-    StrToGUID("{ebd0a0a2-b9e5-4433-87c0-68b6b72699c7}", &GDAT);
-    StrToGUID("{e3c9e316-0b5c-4db8-817d-f92df00215ae}", &GMSR);
-    StrToGUID("{c12a7328-f81f-11d2-ba4b-00a0c93ec93b}", &GEFI);
-    StrToGUID("{de94bba4-06d1-4d40-a16a-bfd50179d6ac}", &GREC);
-    
-    DWORD BS = 1024;
-    DWORD T;
-    DRIVE_LAYOUT_INFORMATION_EX* DL = (DRIVE_LAYOUT_INFORMATION_EX*)malloc(BS);
-    
-    BOOLEAN Result = FALSE;
-    
-    char DiskPath[32];
-    //sprintf(DiskPath, "\\\\?\\PhysicalDrive%i", Inf->DiskID);
-    printf("Opening disk : %s\n", DiskPath);
-    
-    HANDLE Disk = CreateFileA(DiskPath, GENERIC_WRITE | GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, 0, 0);
-    if (Disk != INVALID_HANDLE_VALUE) {
-        
-        if (DeviceIoControl(Disk, IOCTL_DISK_GET_DRIVE_LAYOUT_EX, 0, 0, DL, BS, &T, 0)) {
-            
-            for (int k = 0; k < DL->PartitionCount; k++) {
-                PARTITION_INFORMATION_EX* PI = &DL->PartitionEntry[k];
-                
-                if (PI->PartitionStyle == PARTITION_STYLE_GPT) {
-                    
-                    if (IsEqualGUID(PI->Gpt.PartitionType, GEFI)) {
-                        //Efi system partition
-                        printf("EFI partition detected\n");
-                        printf("Partition offset %I64d\n", PI->StartingOffset.QuadPart);
-                        std::wstring EFIFNAME = GenerateSystemPartitionFileName(Inf->SrcLetter);
-                        HANDLE SP = CreateFileW(EFIFNAME.c_str(), GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
-                        if (SP != INVALID_HANDLE_VALUE) {
-                            LARGE_INTEGER NewFilePointer = { 0 };
-                            SetFilePointerEx(Disk, PI->StartingOffset, &NewFilePointer, 0);
-                            
-                            if (NewFilePointer.QuadPart != PI->StartingOffset.QuadPart) {
-                                printf("Can't set file pointer to EFI starting offset\n");
-                            }
-                            else {
-                                if (!CopyData(SP, Disk, PI->PartitionLength.QuadPart)) {
-                                    printf("Can't copy EFI data to disk, file : %S\n", EFIFNAME.c_str());
-                                }
-                            }
-                            CloseHandle(SP);
-                        }
-                    }
-                    
-                    if (IsEqualGUID(PI->Gpt.PartitionType, GMSR)) {
-                        //found MSR
-                        printf("MSR partition detected\n");
-                        
-                        std::wstring MSRFNAME = GenerateMSRFileName(Inf->SrcLetter);
-                        HANDLE SP = CreateFileW(MSRFNAME.c_str(), GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
-                        if (SP != INVALID_HANDLE_VALUE) {
-                            LARGE_INTEGER NewFilePointer = { 0 };
-                            SetFilePointerEx(Disk, PI->StartingOffset, &NewFilePointer, 0);
-                            if (NewFilePointer.QuadPart == PI->StartingOffset.QuadPart) {
-                                if (!CopyData(SP, Disk, PI->PartitionLength.QuadPart)) {
-                                    printf("Cant copy MSR partition\n");
-                                }
-                            }
-                            else {
-                                printf("Can't set file pointer to MSR offset\n");
-                            }
-                        }
-                        else {
-                            printf("Can't open msr to write, file : %S\n", MSRFNAME.c_str());
-                            Result = FALSE;
-                        }
-                        CloseHandle(SP);
-                    }
-                    
-                    if (IsEqualGUID(PI->Gpt.PartitionType, GREC)) {
-                        //Rec partition
-                        printf("Found recovery partition\n");
-                        //std::wstring RECFNAME = GenerateRECFileName(Inf->SrcLetter);
-                        //HANDLE SP = CreateFileW(RECFNAME.c_str(), GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
-                        //if (SP != INVALID_HANDLE_VALUE) {
-                        //    LARGE_INTEGER NewFilePointer = { 0 };
-                        //    SetFilePointerEx(Disk, PI->StartingOffset, &NewFilePointer, 0);
-                        //    if (NewFilePointer.QuadPart == PI->StartingOffset.QuadPart) {
-                        //        if (!CopyData(SP, Disk, PI->PartitionLength.QuadPart)) {
-                        //            printf("Cant copy recovery partition\n");
-                        //        }
-                        //    }
-                        //    else {
-                        //        printf("Can't set file pointer to recovery offset\n");
-                        //    }
-                        //}
-                        //else {
-                        //    printf("Can't open recovery to write\n", RECFNAME.c_str());
-                        //    Result = FALSE;
-                        //}
-                        //CloseHandle(SP);
-                        
-                        
-                    }
-                    
-                }
-                if (PI->PartitionStyle == PARTITION_STYLE_RAW) {
-                    printf("ERROR : Raw partition");
-                }
-                
-            }
-            
-            
-        }
-        else {
-            printf("DeviceIOControl get drive layout failed err => %i\n", GetLastError());
-            Result = FALSE;
-        }
-        
-        CloseHandle(Disk);
-        
-    }
-    else {
-        printf("Unable to open disk, error => %i\n", GetLastError());
-        Result = FALSE;
-    }
-    
-    free(DL);
-    
-    return TRUE;
-}
-#endif
 
 inline BOOLEAN
 NarIsOSVolume(char Letter) {
@@ -3602,7 +3444,7 @@ NarOpenVolume(char Letter) {
         }
         else {
             // NOTE(Batuhan): this isnt an error, tho prohibiting volume access for other processes would be great.
-            // printf("Couldn't lock volume %c, returning INVALID_HANDLE_VALUE\n", Letter);
+            printf("Couldn't lock volume %c\n", Letter);
         }
         
         
@@ -3693,7 +3535,6 @@ GenerateBinaryFileName(nar_backup_id ID, int Version) {
     else {
         Result += std::to_wstring(Version);
     }
-    
     
     wchar_t t[8];
     swprintf(t, 8, L"%c", (char)ID.Letter);
@@ -4422,6 +4263,8 @@ SaveMetadata(char Letter, int Version, int ClusterSize, BackupType BT,
              data_array<nar_record> BackupRegions, HANDLE VSSHandle, nar_record* MFTLCN, unsigned int MFTLCNCount, nar_backup_id ID) {
     
     // TODO(Batuhan): convert letter to uppercase
+    //Letter += ('A' - 'a');
+    
     BOOLEAN IsMFTLCNInternal = FALSE;
     if (ClusterSize <= 0 || ClusterSize % 512 != 0) {
         return FALSE;
@@ -7861,9 +7704,12 @@ int
 main(int argc, char* argv[]) {
     //GetMFTandINDXLCN
     
+	printf("some test case here");
+	    
     printf("%I64u\n", sizeof(backup_metadata));
-    
-    if(1){
+    return 0;
+
+    if(0){
         
         LOG_CONTEXT C = {0};
         C.Port = INVALID_HANDLE_VALUE;
