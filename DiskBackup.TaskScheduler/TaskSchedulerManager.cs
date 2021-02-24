@@ -72,7 +72,7 @@ namespace DiskBackup.TaskScheduler
                 .Build();
 
             ITrigger trigger = TriggerBuilder.Create()
-                .WithIdentity($"backupIncDiffDailyTrigger_{taskInfo.Id}", "Backup")
+                .WithIdentity($"backupIncDiffEverydayTrigger_{taskInfo.Id}", "Backup")
                 .ForJob($"backupIncDiffEverydayJob_{taskInfo.Id}", "Backup")
                 .WithSchedule(CronScheduleBuilder.DailyAtHourAndMinute(taskInfo.NextDate.Hour, taskInfo.NextDate.Minute)) // execute job daily at 22:00
                 .Build();
@@ -183,15 +183,15 @@ namespace DiskBackup.TaskScheduler
 
         public async Task BackupIncDiffPeriodicMinutesJob(TaskInfo taskInfo)
         {
-            _logger.Verbose("BackupIncDiffPeriodicHoursJob metodu çağırıldı");
+            _logger.Verbose("BackupIncDiffPeriodicMinutesJob metodu çağırıldı");
 
             IJobDetail job = JobBuilder.Create<BackupIncDiffJob>()
-                .WithIdentity($"backupIncDiffPeriodicHoursJob_{taskInfo.Id}", "Backup")
+                .WithIdentity($"backupIncDiffPeriodicMinutesJob_{taskInfo.Id}", "Backup")
                 .UsingJobData("taskId", taskInfo.Id.ToString())
                 .Build();
 
             var trigger = TriggerBuilder.Create()
-               .WithIdentity($"backupIncDiffPeriodicHoursTrigger_{taskInfo.Id}", "Backup")
+               .WithIdentity($"backupIncDiffPeriodicMinutesTrigger_{taskInfo.Id}", "Backup")
                .WithSimpleSchedule(x => x
                    .WithIntervalInMinutes(taskInfo.BackupTaskInfo.PeriodicTime)
                    .RepeatForever())
@@ -199,7 +199,7 @@ namespace DiskBackup.TaskScheduler
 
             await _scheduler.ScheduleJob(job, trigger);
 
-            taskInfo.ScheduleId = $"backupIncDiffPeriodicHoursJob_{taskInfo.Id}/Backup";
+            taskInfo.ScheduleId = $"backupIncDiffPeriodicMinutesJob_{taskInfo.Id}/Backup";
             taskInfo.NextDate = trigger.GetNextFireTimeUtc().Value.LocalDateTime;
             _taskInfoDal.Update(taskInfo);
         }
@@ -242,7 +242,7 @@ namespace DiskBackup.TaskScheduler
                 .Build();
 
             ITrigger trigger = TriggerBuilder.Create()
-                .WithIdentity($"backupFullDailyTrigger_{taskInfo.Id}", "Backup")
+                .WithIdentity($"backupFullEverydayTrigger_{taskInfo.Id}", "Backup")
                 .ForJob($"backupFullEverydayJob_{taskInfo.Id}", "Backup")
                 .WithSchedule(CronScheduleBuilder.DailyAtHourAndMinute(taskInfo.NextDate.Hour, taskInfo.NextDate.Minute)) // execute job daily at 22:00
                 .Build();
@@ -329,7 +329,7 @@ namespace DiskBackup.TaskScheduler
         #region Periodic
         public async Task BackupFullPeriodicHoursJob(TaskInfo taskInfo)
         {
-            _logger.Verbose("DeleteJob metodu çağırıldı");
+            _logger.Verbose("BackupFullPeriodicHoursJob metodu çağırıldı");
 
             IJobDetail job = JobBuilder.Create<BackupFullJob>()
                 .WithIdentity($"backupFullPeriodicHoursJob_{taskInfo.Id}", "Backup")
@@ -352,6 +352,8 @@ namespace DiskBackup.TaskScheduler
 
         public async Task BackupFullPeriodicMinutesJob(TaskInfo taskInfo)
         {
+            _logger.Verbose("BackupFullPeriodicMinutesJob metodu çağırıldı");
+
             IJobDetail job = JobBuilder.Create<BackupFullJob>()
                 .WithIdentity($"backupFullPeriodicMinutesJob_{taskInfo.Id}", "Backup")
                 .UsingJobData("taskId", taskInfo.Id.ToString())
@@ -440,10 +442,6 @@ namespace DiskBackup.TaskScheduler
             await _scheduler.ScheduleJob(job, trigger);
         }
 
-
-        //return _diskTracker.CW_RestoreToVolume(volumeInfo.Letter, backupInfo.Letter, backupInfo.Version, true, backupInfo.BackupStorageInfo.Path);
-        //public bool RestoreBackupVolume(BackupInfo backupInfo, char volumeLetter)
-
         public async Task RestoreVolumeJob(TaskInfo taskInfo)
         {
             _logger.Verbose("RestoreVolumeJob metodu çağırıldı");
@@ -463,7 +461,6 @@ namespace DiskBackup.TaskScheduler
             _taskInfoDal.Update(taskInfo);
 
             await _scheduler.ScheduleJob(job, trigger);
-
         }
 
         public async Task RestoreVolumeNowJob(TaskInfo taskInfo)
@@ -485,7 +482,6 @@ namespace DiskBackup.TaskScheduler
             _taskInfoDal.Update(taskInfo);
 
             await _scheduler.ScheduleJob(job, trigger);
-
         }
 
         #endregion
