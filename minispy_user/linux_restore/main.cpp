@@ -122,8 +122,33 @@ GetDisks(){
 	return Result;
 }
 
+/*
+struct restore_thread_params{
+	restore_inf RestoreInf;
+};
 
-// returns selected partition
+void
+RestoreWorkerThread(void* thread_params){	
+	restore_inf* RestoreInf = ((restore_thread_params*)thread_params)->RestoreInf;
+	OfflineRestoreDisk(RestoreInf);	
+}
+
+pthread_t
+CallRestoreInThread(restore_thread_params Ri){
+	       int pthread_create(pthread_t *thread, const pthread_attr_t *attr,
+                          void *(*start_routine) (void *), void *arg);
+	
+	pthread_t RestoreThread; 
+	pthread_attr_t ThreadAttributes;
+	int tr = pthread_create(&RestoreThread, 0, &ThreadAttributes, RestoreWorkerThead, &RestoreInf);
+	if(){
+		
+	}
+	
+}
+*/
+
+
 std::string
 SelectPartition(){
 
@@ -196,10 +221,9 @@ int main(int, char**)
 	{
 		const char fn[] = "/media/lubuntu/New Volume/Disk-Image/build/minispy_user/NAR_M_0-F19704356773431269.narmd";	
 		FILE *F = fopen(fn, "rb");
-		if(F) std::cout<<"succ opened file\n";
+		if(F) std::cout<<"succ opened file"<<fn<<"\n";
 		else std::cout<<"unable to open file "<<fn<<"\n";
 		fclose(F);
-		
 	}
 	std::cout<<sizeof(backup_metadata)<<std::endl;
 	
@@ -449,7 +473,6 @@ int main(int, char**)
 									
 				}
 				else{
-					//AppState = app_state_select_disk;
 					AppState = app_state_select_volume;
 				}
 				

@@ -596,6 +596,9 @@ struct restore_inf {
     nar_backup_id BackupID;
     int Version;
     std::wstring RootDir;
+    bool OverrideDiskType;
+    bool RepairBoot;
+    char DiskType;
 };
 
 struct DotNetStreamInf {

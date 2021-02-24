@@ -2534,9 +2534,12 @@ OfflineRestoreCleanDisk(restore_inf* R, int DiskID) {
     
     backup_metadata M = ReadMetadata(R->BackupID, R->Version, R->RootDir);
     printf("Found backup for volume %c for version %i\n", M.Version, M.ID.Letter);
+    char DiskType = M.DiskType;
+    if(R->OverrideDiskType)
+        DiskType = R->DiskType;
     
     if (M.IsOSVolume) {
-        if (M.DiskType == NAR_DISKTYPE_GPT) {
+        if (DiskType == NAR_DISKTYPE_GPT) {
             
             printf("GPT Disk will be formatted as (Volume size %I64d, EFIPartitionSizeMB %u, RecoverySize %u)\n", M.VolumeTotalSize, M.GPT_EFIPartitionSize/ (1024 * 1024), M.Size.Recovery);
             
@@ -2549,7 +2552,7 @@ OfflineRestoreCleanDisk(restore_inf* R, int DiskID) {
             }
             
         }
-        if (M.DiskType == NAR_DISKTYPE_MBR) {
+        if (DiskType == NAR_DISKTYPE_MBR) {
             
             printf("MBR Disk will be formatted as (Volume size %I64d, SystemPartitionMB %u, RecoverySize %u)\n", M.VolumeTotalSize, M.MBR_SystemPartitionSize/ (1024 * 1024), M.Size.Recovery);
             
@@ -2565,7 +2568,7 @@ OfflineRestoreCleanDisk(restore_inf* R, int DiskID) {
     else { //Is not OS volume
         
         printf("volume %c does not contain an OS\n", R->BackupID.Letter);
-        if (M.DiskType == NAR_DISKTYPE_GPT) {
+        if (DiskType == NAR_DISKTYPE_GPT) {
             
             if (NarCreateCleanGPTPartition(DiskID, (int)(M.VolumeTotalSize / (1024ull * 1024ull)), (char)R->TargetLetter)) {
                 Result = TRUE;
@@ -2575,16 +2578,19 @@ OfflineRestoreCleanDisk(restore_inf* R, int DiskID) {
             }
             
         }
-        if (M.DiskType == NAR_DISKTYPE_MBR) {
+        if (DiskType == NAR_DISKTYPE_MBR) {
             /*TODO*MBR */
             
+#if 1            
             if ( FALSE) {
+                
                 // TODO(Batuhan):
                 // Result;
             }
             else {
-                printf("Can't create MBR partition to restore\n");
+                printf("NON OS PARTITIONS FOR MBR RESTORE NOT SUPPORTED!\n");
             }
+#endif
             
         }
     }
@@ -2597,8 +2603,7 @@ OfflineRestoreCleanDisk(restore_inf* R, int DiskID) {
         Result = OfflineRestoreToVolume(R, TRUE);
         if (Result) {
             
-            if (M.IsOSVolume) {
-                
+            if (M.IsOSVolume && R->RepairBoot) {
                 
                 if (!RestoreRecoveryFile(*R)) {
                     printf("Couldnt restore recovery partition\n");
@@ -2614,10 +2619,12 @@ OfflineRestoreCleanDisk(restore_inf* R, int DiskID) {
                 printf("Restored to volume %c, to version %i\n", (char)R->TargetLetter, R->Version);
                 
                 
-                
             }
             else {
-                printf("Skipping boot repair since backup doesnt contain OS\n");
+                if(R->RepairBoot == FALSE)
+                    printf("Boot repair explicitly disabled!");
+                printf("Skipping boot repair\n");
+                
             }
             
         }
