@@ -66,14 +66,14 @@ namespace DiskBackupWpfGUI
                 txtAppName.Text = Resources["restoreDiskAppName"].ToString();
                 _taskInfo.RestoreTaskInfo.Type = RestoreType.RestoreDisk;
                 // partition aç
-                advancedOptionsTab.Visibility = Visibility.Visible;
+                if (Convert.ToBoolean(backupInfo.OSVolume))
+                    advancedOptionsTab.Visibility = Visibility.Visible;
                 Console.WriteLine("disk");
             }
             else
             {
                 txtAppName.Text = Resources["restoreVolumeAppName"].ToString();
                 _taskInfo.RestoreTaskInfo.Type = RestoreType.RestoreVolume;
-                checkBootPartition.IsChecked = false;
                 Console.WriteLine("volume");
             }
 
@@ -103,7 +103,7 @@ namespace DiskBackupWpfGUI
         #region Next-Back-Ok-Cancel Button
         private void btnRestoreBack_Click(object sender, RoutedEventArgs e)
         {
-            if (_diskFlag)
+            if (_diskFlag && Convert.ToBoolean(_backupInfo.OSVolume))
                 DiskBackClick();
             else
                 VolumeBackClick();
@@ -129,7 +129,7 @@ namespace DiskBackupWpfGUI
 
         private void btnRestoreNext_Click(object sender, RoutedEventArgs e)
         {
-            if (_diskFlag)
+            if (_diskFlag && Convert.ToBoolean(_backupInfo.OSVolume))
                 DiskNextClick();
             else
                 VolumeNextClick();
@@ -189,7 +189,12 @@ namespace DiskBackupWpfGUI
                 lblDisk2Restore.Text = _volumeInfoList[0].DiskName;
 
                 if (checkBootPartition.IsChecked.Value)
-                    lblBootableArea.Text = Resources["yes"].ToString();
+                {
+                    if (rbBootGPT.IsChecked.Value)
+                        lblBootableArea.Text = Resources["yes"].ToString() + " (GPT)";
+                    else
+                        lblBootableArea.Text = Resources["yes"].ToString() + " (MBR)";
+                }
                 else
                     lblBootableArea.Text = Resources["no"].ToString();
             }
@@ -287,8 +292,10 @@ namespace DiskBackupWpfGUI
                     _taskInfo.Obje = _volumeInfoList.Count; // kaç tane volumede değişiklik olacağı
                     if (checkBootPartition.IsChecked.Value)
                     {
-                        //mbr mı gpt mi
-                        _taskInfo.RestoreTaskInfo.Bootable = RestoreBootable.MBR;
+                        if (rbBootGPT.IsChecked.Value)
+                            _taskInfo.RestoreTaskInfo.Bootable = RestoreBootable.GPT;
+                        else
+                            _taskInfo.RestoreTaskInfo.Bootable = RestoreBootable.MBR;
                     }
                     else
                         _taskInfo.RestoreTaskInfo.Bootable = RestoreBootable.NotBootable;
@@ -483,17 +490,21 @@ namespace DiskBackupWpfGUI
 
         }
 
-        //private void checkBootPartition_Checked(object sender, RoutedEventArgs e)
-        //{
-        //    stackBootCheck.IsEnabled = true;
-        //}
+        private void checkBootPartition_Checked(object sender, RoutedEventArgs e)
+        {
+            stackBootCheck.IsEnabled = true;
+            if (_backupInfo.DiskType.Equals('G'))
+                rbBootGPT.IsChecked = true;
+            else
+                rbBootMBR.IsChecked = true;
+        }
 
-        //private void checkBootPartition_Unchecked(object sender, RoutedEventArgs e)
-        //{
-        //    stackBootCheck.IsEnabled = false;
-        //    rbBootGPT.IsChecked = true;
-        //    rbBootGPT.IsChecked = false;
-        //}
+        private void checkBootPartition_Unchecked(object sender, RoutedEventArgs e)
+        {
+            stackBootCheck.IsEnabled = false;
+            rbBootGPT.IsChecked = true;
+            rbBootGPT.IsChecked = false;
+        }
 
         public void SetApplicationLanguage(string option)
         {

@@ -384,7 +384,44 @@ namespace DiskBackup.Business.Concrete
                     _logger.Verbose("|{@restoreTaskId}| restore taskı için restoreDisk gerçekleştirilecek.", taskInfo.RestoreTaskInfo.Id);
 
                     if (ChainInTheSameDirectory(resultList, backupMetadata))
-                        return Convert.ToByte(DiskTracker.CW_RestoreToFreshDisk(taskInfo.RestoreTaskInfo.TargetLetter[0], backupMetadata, taskInfo.RestoreTaskInfo.DiskId, newRootDir));
+                    {
+                        if (taskInfo.RestoreTaskInfo.Bootable == RestoreBootable.NotBootable)
+                        {
+                            _logger.Information("not bootable");
+                            return Convert.ToByte(DiskTracker.CW_RestoreToFreshDisk(taskInfo.RestoreTaskInfo.TargetLetter[0], backupMetadata, taskInfo.RestoreTaskInfo.DiskId, newRootDir, false, false, backupMetadata.DiskType));
+                        }
+                        else if (taskInfo.RestoreTaskInfo.Bootable == RestoreBootable.MBR)
+                        {
+                            if (backupMetadata.DiskType.Equals('M'))
+                            {
+                                _logger.Information("MBR - M");
+                                return Convert.ToByte(DiskTracker.CW_RestoreToFreshDisk(taskInfo.RestoreTaskInfo.TargetLetter[0], backupMetadata, taskInfo.RestoreTaskInfo.DiskId, newRootDir, true, false, backupMetadata.DiskType));
+                            }
+                            else
+                            {
+                                _logger.Information("MBR - G");
+                                return Convert.ToByte(DiskTracker.CW_RestoreToFreshDisk(taskInfo.RestoreTaskInfo.TargetLetter[0], backupMetadata, taskInfo.RestoreTaskInfo.DiskId, newRootDir, true, true, 'M'));
+                            }
+                        }
+                        else if (taskInfo.RestoreTaskInfo.Bootable == RestoreBootable.GPT)
+                        {
+                            if (backupMetadata.DiskType.Equals('G'))
+                            {
+                                _logger.Information("GPT - G");
+                                return Convert.ToByte(DiskTracker.CW_RestoreToFreshDisk(taskInfo.RestoreTaskInfo.TargetLetter[0], backupMetadata, taskInfo.RestoreTaskInfo.DiskId, newRootDir, true, false, backupMetadata.DiskType));
+                            }
+                            else
+                            {
+                                _logger.Information("GPT - M");
+                                return Convert.ToByte(DiskTracker.CW_RestoreToFreshDisk(taskInfo.RestoreTaskInfo.TargetLetter[0], backupMetadata, taskInfo.RestoreTaskInfo.DiskId, newRootDir, true, true, 'G'));
+                            }
+                        }
+                        else
+                        {
+                            _logger.Information("|{@restoreTaskId}| restore taskında bootable doğru olarak ayarlanamadığından başarısız oldu.", taskInfo.RestoreTaskInfo.Id);
+                            return 0;
+                        }
+                    }
                     else
                         return 3; // eksik dosya hatası yazdır
                 }

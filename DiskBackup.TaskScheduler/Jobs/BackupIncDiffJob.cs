@@ -60,22 +60,31 @@ namespace DiskBackup.TaskScheduler.Jobs
                 Type = (DetailedMissionType)task.BackupTaskInfo.Type,
             };
 
-            try
+            var taskList = _taskInfoDal.GetList(x => x.Status != TaskStatusType.Ready && x.Status != TaskStatusType.FirstMissionExpected);
+            foreach (var item in taskList)
             {
-                var taskList = _taskInfoDal.GetList(x => x.Status != TaskStatusType.Ready && x.Status != TaskStatusType.FirstMissionExpected);
-                foreach (var item in taskList)
+                foreach (var itemObje in task.StrObje)
                 {
-                    foreach (var itemObje in task.StrObje)
+                    if (item.StrObje.Contains(itemObje))
                     {
-                        if (item.StrObje.Contains(itemObje))
+                        // Okuma yapılan diskte işlem yapılamaz
+                        exception = new JobExecutionException();
+                        _logger.Information("{@task} için Incremental-Differantial görevi çalıştırılamadı. {@letter} volumunde başka görev işliyor.", task, item.StrObje);
+                        if (item.Id == task.Id)
                         {
-                            // Okuma yapılan diskte işlem yapılamaz
-                            exception = new JobExecutionException();
-                            _logger.Information("{@task} için Incremental-Differantial görevi çalıştırılamadı. {@letter} volumunde başka görev işliyor.", task, item.StrObje);
+                            if (context.Trigger.GetNextFireTimeUtc() != null)
+                                task.NextDate = (context.Trigger.GetNextFireTimeUtc()).Value.LocalDateTime;
+                            _taskInfoDal.Update(task);
+                            _backupService.RefreshIncDiffTaskFlag(true);
+                            throw exception;
                         }
                     }
                 }
-                task.LastWorkingDate = DateTime.Now;
+            }
+
+            try
+            {
+                task.LastWorkingDate = DateTime.Now;               
 
                 if (exception == null)
                 {
@@ -158,6 +167,7 @@ namespace DiskBackup.TaskScheduler.Jobs
 
         private void UpdateActivityAndTask(ActivityLog activityLog, TaskInfo taskInfo, StatusType status)
         {
+            taskInfo = _taskInfoDal.Get(x => x.Id == taskInfo.Id); // Aynı görev yeniden çalışmaya çalıştıysa next date değişmiş oluyor o zamanı aldığımızdan emin olmak için gerekli
             activityLog.EndDate = DateTime.Now;
             activityLog.StatusInfo = _statusInfoDal.Get(x => x.Id == taskInfo.StatusInfoId);
             activityLog.StatusInfo.Status = status;

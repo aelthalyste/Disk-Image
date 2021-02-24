@@ -1454,13 +1454,12 @@ namespace DiskBackupWpfGUI
             {
                 if (listViewRestoreDisk.SelectedIndex != -1)
                     btnRestore.IsEnabled = true;
-                /*
-                 * BAKILACAK*/
+                /*BAKILACAK*/
                 BackupInfo backupInfo = (BackupInfo)listViewRestore.SelectedItem;
 
                 txtRDriveLetter.Text = backupInfo.Letter.ToString();
                 txtROS.Text = backupInfo.OS;
-                if (backupInfo.DiskType.Equals("M"))
+                if (backupInfo.DiskType.Equals('M'))
                     txtRBootPartition.Text = "MBR";
                 else
                     txtRBootPartition.Text = "GPT";

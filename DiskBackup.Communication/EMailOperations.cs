@@ -460,7 +460,7 @@ namespace DiskBackup.Communication
                                     </a>
                                 </span>
                             </p>
-                            <h2>{Hello},</h2>
+                            <h2>{Dear}, {customerName}</h2>
                             <div style=""padding: 0px; margin: 0px 0px 30px 0px;"">
                                 <p style=""font-family:Calibri,Candara,Segoe,Segoe UI,Optima,Arial,sans-serif; font-size:18px;"">
                                     {txtWelcome} {ListTextLang}
