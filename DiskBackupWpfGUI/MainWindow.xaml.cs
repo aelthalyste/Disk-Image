@@ -1400,14 +1400,24 @@ namespace DiskBackupWpfGUI
                 }
             }
 
-            if (volumeInfoList.Count > 1 && !controlFlag)
+            bool diskFlag = false;
+            foreach (var item in _restoreExpanderCheckBoxes)
+            {
+                if (item.IsChecked.Value)
+                {
+                    diskFlag = true;
+                    break;
+                }
+            }
+
+            if (diskFlag && !controlFlag)
             {
                 //disk kontrol et
                 foreach (var item in _diskList)
                 {
                     if (item.VolumeInfos[0].DiskName.Equals(volumeInfoList[0].DiskName))
                     {
-                        if (backupInfo.UsedSize > item.Size)
+                        if (backupInfo.VolumeSize > item.Size)
                         {
                             controlFlag = true;
                             MessageBox.Show(Resources["sizeConflictMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
@@ -1417,20 +1427,10 @@ namespace DiskBackupWpfGUI
             }
             else
             {
-                if (backupInfo.UsedSize > volumeInfoList[0].Size)
+                if (backupInfo.VolumeSize > volumeInfoList[0].Size)
                 {
                     controlFlag = true;
                     MessageBox.Show(Resources["sizeConflictMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
-                }
-            }
-
-            bool diskFlag = false;
-            foreach (var item in _restoreExpanderCheckBoxes)
-            {
-                if (item.IsChecked.Value)
-                {
-                    diskFlag = true;
-                    break;
                 }
             }
 
