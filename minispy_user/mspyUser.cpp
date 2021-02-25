@@ -1244,8 +1244,8 @@ GetMFTandINDXLCN(char VolumeLetter, HANDLE VolumeHandle) {
     
     BOOLEAN JustExtractMFTRegions = FALSE;
     
-    UINT32 MEMORY_BUFFER_SIZE = 1024LL * 1024LL * 1024LL;
-    UINT32 ClusterExtractedBufferSize = 1024 * 1024 * 5;
+    UINT32 MEMORY_BUFFER_SIZE = 1024LL * 1024LL * 1024;
+    UINT32 ClusterExtractedBufferSize = 1024 * 1024 * 8;
     INT32 ClusterSize = NarGetVolumeClusterSize(VolumeLetter);
     
     struct {
@@ -2560,8 +2560,7 @@ OfflineRestoreCleanDisk(restore_inf* R, int DiskID) {
         if (DiskType == NAR_DISKTYPE_MBR) {
             
             printf("MBR Disk will be formatted as (Volume size %I64d, SystemPartitionMB %u, RecoverySize %u)\n", M.VolumeTotalSize, M.MBR_SystemPartitionSize/ (1024 * 1024), M.Size.Recovery);
-            
-            if (NarCreateCleanMBRBootPartition(DiskID, (char)R->TargetLetter, (int)(M.VolumeTotalSize / (1024ull * 1024ull)), (int)(M.MBR_SystemPartitionSize / (1024ull * 1024ull)), (int)(M.Size.Recovery / (1024ull * 1024ull)))) {
+			if (NarCreateCleanMBRBootPartition(DiskID, (char)R->TargetLetter, (int)(M.VolumeTotalSize / (1024ull * 1024ull)), (int)(M.MBR_SystemPartitionSize / (1024ull * 1024ull)), (int)(M.Size.Recovery / (1024ull * 1024ull)))) {
                 Result = TRUE;
             }
             else {
@@ -2587,13 +2586,11 @@ OfflineRestoreCleanDisk(restore_inf* R, int DiskID) {
             /*TODO*MBR */
             
 #if 1            
-            if ( FALSE) {
-                NarCreateCleanMBRPartition(DiskID, (int)(M.VolumeTotalSize/(1024ull*1024ull)), (char)R->TargetLetter);
-                // TODO(Batuhan):
-                // Result;
+            if (NarCreateCleanMBRPartition(DiskID, (char)R->TargetLetter, (int)(M.VolumeTotalSize/(1024ull*1024ull)))) {
+                Result = TRUE;
             }
             else {
-                printf("NON OS PARTITIONS FOR MBR RESTORE NOT SUPPORTED!\n");
+                printf("Unable to create MBR disk\n");
             }
 #endif
             
@@ -2674,7 +2671,7 @@ OfflineRestoreToVolume(restore_inf* R, BOOLEAN ShouldFormat) {
         }
     }
     
-    // TODO(Batuhan): This is dumb check, fix that urgently!
+    // TODO (Batuhan): This is dumb check, fix that urgently!
     if (VolumeTotalSize != 0) {
         
         if (ShouldFormat) {
@@ -3253,7 +3250,7 @@ NarCreateCleanMBRBootPartition(int DiskID, char VolumeLetter, int VolumeSizeMB, 
     char Buffer[2048];
     memset(Buffer, 0, 2048);
     
-    sprintf(Buffer, 
+    snprintf(Buffer, 2048, 
             "select disk %i\n"
             "clean\n"
             "convert mbr\n"
