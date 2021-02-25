@@ -259,6 +259,7 @@
     <system:String x:Key="Cancel">Canceled</system:String>
     <system:String x:Key="Error">Error</system:String>
     <system:String x:Key="advancedOptions">Advanced Settings</system:String>
+    <system:String x:Key="emailSettings">E-Mail Settings</system:String>
     <system:String x:Key="clone">Clone</system:String>
     <system:String x:Key="no">No</system:String>
     <system:String x:Key="yes">Yes</system:String>
@@ -334,8 +335,8 @@
     <system:String x:Key="closeServiceErrorMB">The service appears to be down, please restart the service and try again.</system:String>
     <system:String x:Key="LicenseKeyFailMB">Invalid license key.</system:String>
     <system:String x:Key="LicenseKeyOSFailMB">Your license and operating system version do not match.</system:String>
-    <system:String x:Key="EmailFailMB">Please enter a valid email address.</system:String>
-    <system:String x:Key="EmailSentMB">Email has been sent.</system:String>
+    <system:String x:Key="EmailFailMB">Please enter a valid E-Mail address.</system:String>
+    <system:String x:Key="EmailSentMB">E-Mail has been sent.</system:String>
     <system:String x:Key="notificationUpdateFailMB">An unexpected error has occurred. Notification settings could not be updated.</system:String>
     <system:String x:Key="notificationUpdateMB">Notification settings updated.</system:String>
     <system:String x:Key="sameRootDirectoryRestoreMB">Restore cannot be performed for the same root directory.</system:String>
