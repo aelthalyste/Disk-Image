@@ -246,6 +246,7 @@
     <system:String x:Key="Cancel">İptal Edildi</system:String>
     <system:String x:Key="Error">Hata</system:String>
     <system:String x:Key="advancedOptions">Gelişmiş Ayarlar</system:String>
+    <system:String x:Key="emailSettings">E-Posta Ayarları</system:String>
     <system:String x:Key="clone">Kopya</system:String>
     <system:String x:Key="no">Hayır</system:String>
     <system:String x:Key="yes">Evet</system:String>
@@ -283,7 +284,7 @@
     <system:String x:Key="critical">Kritik</system:String>
     <system:String x:Key="emailSettings">E-Posta Ayarları</system:String>
     <system:String x:Key="newEmailAddress">Yeni E-Posta Adresi</system:String>
-    <system:String x:Key="emailAddresses">E-Mail Adresleri</system:String>
+    <system:String x:Key="emailAddresses">E-Posta Adresleri</system:String>
     <system:String x:Key="testing">Test Et</system:String>
     <system:String x:Key="pleaseEnterName">Lütfen bir isim giriniz...</system:String>
     <system:String x:Key="pleaseEnterLicenseKey">Lütfen lisans anahtarı giriniz veya lisans dosyası seçiniz...</system:String>
@@ -321,8 +322,8 @@
     <system:String x:Key="closeServiceErrorMB">Servis kapanmış görünüyor, lütfen servisi yeniden başlatıp tekrar deneyin.</system:String>
     <system:String x:Key="LicenseKeyFailMB">Geçersiz lisans anahtarı.</system:String>
     <system:String x:Key="LicenseKeyOSFailMB">Lisans ve işletim sistemi versiyonunuz uyuşmamaktadır.</system:String>
-    <system:String x:Key="EmailFailMB">Lütfen geçerli bir email adresi giriniz.</system:String>
-    <system:String x:Key="EmailSentMB">Email gönderildi.</system:String>
+    <system:String x:Key="EmailFailMB">Lütfen geçerli bir E-Posta adresi giriniz.</system:String>
+    <system:String x:Key="EmailSentMB">E-Posta gönderildi.</system:String>
     <system:String x:Key="notificationUpdateFailMB">Beklenmedik hata oluştu. Bildirim ayarları güncellenemedi.</system:String>
     <system:String x:Key="notificationUpdateMB">Bildirim ayarları güncellendi.</system:String>
     <system:String x:Key="sameRootDirectoryRestoreMB">Aynı kök dizin için restore işlemi gerçekleştirilemez.</system:String>
