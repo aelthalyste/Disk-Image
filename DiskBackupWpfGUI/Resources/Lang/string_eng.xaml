@@ -259,7 +259,6 @@
     <system:String x:Key="Cancel">Canceled</system:String>
     <system:String x:Key="Error">Error</system:String>
     <system:String x:Key="advancedOptions">Advanced Settings</system:String>
-    <system:String x:Key="emailSettings">E-Mail Settings</system:String>
     <system:String x:Key="clone">Clone</system:String>
     <system:String x:Key="no">No</system:String>
     <system:String x:Key="yes">Yes</system:String>
