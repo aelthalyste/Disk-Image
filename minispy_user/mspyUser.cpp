@@ -1135,7 +1135,7 @@ NarGetMFTRegionsByCommandLine(char Letter, unsigned int* OutRecordCount){
     char CmdBuffer[512];
     char OutputName[] = "naroutput.txt";
     
-    sprintf(CmdBuffer, "fsutil file queryextents %c:\\$MFT > %s", Letter, OutputName);
+    snprintf(CmdBuffer, sizeof(CmdBuffer), "fsutil file queryextents %c:\\$MFT > %s", Letter, OutputName);
     system(CmdBuffer);
     
     file_read FileContents = NarReadFile(OutputName);
@@ -1266,7 +1266,7 @@ GetMFTandINDXLCN(char VolumeLetter, HANDLE VolumeHandle) {
     
     if (FileBuffer) {
         char VolumeName[64];
-        sprintf(VolumeName, "\\\\.\\%c:", VolumeLetter);
+        snprintf(VolumeName,sizeof(VolumeName), "\\\\.\\%c:", VolumeLetter);
         
         INT16 DirectoryFlag = 0x0002;
         INT32 FileRecordSize = 1024;
@@ -2731,15 +2731,15 @@ inline BOOLEAN
 NarRemoveLetter(char Letter){
     char Buffer[128];
     
-    sprintf(Buffer, 
-            "select volume %c\n"
-            "remove letter %c\n"
-            "exit\n", Letter, Letter);
+    snprintf(Buffer, sizeof(128), 
+             "select volume %c\n"
+             "remove letter %c\n"
+             "exit\n", Letter, Letter);
     
     
     char InputFN[] = "NARDPINPUT";
     if(NarDumpToFile(InputFN, Buffer, (unsigned int)strlen(Buffer))){
-        sprintf(Buffer, "diskpart /s %s", InputFN);
+        snprintf(Buffer, sizeof(Buffer), "diskpart /s %s", InputFN);
         printf(Buffer);
         system(Buffer);
         return TRUE;
@@ -2755,14 +2755,15 @@ NarFormatVolume(char Letter) {
     char Buffer[2096];
     memset(Buffer, 0, 2096);
     
-    sprintf(Buffer, ""
-            "select volume %c\n"
-            "format fs = ntfs quick override\n"
-            "exit\n", Letter);
+    snprintf(Buffer, sizeof(Buffer), 
+             ""
+             "select volume %c\n"
+             "format fs = ntfs quick override\n"
+             "exit\n", Letter);
     
     char InputFN[] = "NARDPINPUT";
     if (NarDumpToFile(InputFN, Buffer, (unsigned int)strlen(Buffer))) {
-        sprintf(Buffer, "diskpart /s %s", InputFN);
+        snprintf(Buffer, sizeof(Buffer), "diskpart /s %s", InputFN);
         printf(Buffer);
         system(Buffer);
         return TRUE;
@@ -2774,7 +2775,8 @@ NarFormatVolume(char Letter) {
 inline void
 NarRepairBoot(char OSVolumeLetter) {
     char Buffer[2096];
-    sprintf(Buffer, "bcdboot %c:\\Windows /s %c: /f ALL", OSVolumeLetter, NAR_EFI_PARTITION_LETTER);
+    snprintf(Buffer, sizeof(Buffer), 
+             "bcdboot %c:\\Windows /s %c: /f ALL", OSVolumeLetter, NAR_EFI_PARTITION_LETTER);
     system(Buffer);
 }
 
@@ -2879,7 +2881,7 @@ NarSetVolumeSize(char Letter, int TargetSizeMB) {
     int VolSizeMB = 0;
     char Buffer[1024];
     char FNAME[] = "NARDPSCRPT";
-    sprintf(Buffer, "%c:\\", Letter);
+    snprintf(Buffer, sizeof(Buffer), "%c:\\", Letter);
     
     ULARGE_INTEGER TOTAL_SIZE = { 0 };
     GetDiskFreeSpaceExA(Buffer, 0, &TOTAL_SIZE, 0);
@@ -2898,12 +2900,12 @@ NarSetVolumeSize(char Letter, int TargetSizeMB) {
     if (VolSizeMB > TargetSizeMB) {
         // shrink volume
         ULONGLONG Diff = (unsigned int)(VolSizeMB - TargetSizeMB);
-        sprintf(Buffer, "select volume %c\nshrink desired = %I64u\nexit\n", Letter, Diff);
+        snprintf(Buffer, sizeof(Buffer), "select volume %c\nshrink desired = %I64u\nexit\n", Letter, Diff);
     }
     else if(VolSizeMB < TargetSizeMB){
         // extend volume
         ULONGLONG Diff = (unsigned int)(TargetSizeMB - VolSizeMB);
-        sprintf(Buffer, "select volume %c\nextend size = %I64u\nexit\n", Letter, Diff);
+        snprintf(Buffer, sizeof(Buffer), "select volume %c\nextend size = %I64u\nexit\n", Letter, Diff);
     }
     else {
         // VolSizeMB == TargetSizeMB
@@ -2913,8 +2915,8 @@ NarSetVolumeSize(char Letter, int TargetSizeMB) {
     
     //NarDumpToFile(const char *FileName, void* Data, int Size)
     if (NarDumpToFile(FNAME, Buffer, (UINT32)strlen(Buffer))) {
-        char CMDBuffer[1024];
-        sprintf(CMDBuffer, "diskpart /s %s", FNAME);
+        char CMDBuffer[128];
+        snprintf(CMDBuffer, sizeof(CMDBuffer), "diskpart /s %s", FNAME);
         system(CMDBuffer);
         // TODO(Batuhan): maybe check output
         Result = TRUE;
@@ -2935,15 +2937,15 @@ CreatePartition(int Disk, char Letter, unsigned size) {
         printf("Volume exists in system\n");
         return FALSE;
     }
-    sprintf(Buffer, "select disk %i\n"
-            "create partition primary size = %u\n"
-            "format fs = \"ntfs\" quick"
-            "assign letter = \"%c\"\n", Disk, size, Letter);
+    snprintf(Buffer, sizeof(Buffer), "select disk %i\n"
+             "create partition primary size = %u\n"
+             "format fs = \"ntfs\" quick"
+             "assign letter = \"%c\"\n", Disk, size, Letter);
     char FileName[] = "NARDPSCRPT";
     
     if (NarDumpToFile(FileName, Buffer, (unsigned int)strlen(Buffer))) {
-        char CMDBuffer[1024];
-        sprintf(CMDBuffer, "diskpart /s %s", FileName);
+        char CMDBuffer[128];
+        snprintf(CMDBuffer, sizeof(CMDBuffer), "diskpart /s %s", FileName);
         system(CMDBuffer);
         // TODO(Batuhan): maybe check output
         Result = TRUE;
@@ -2977,7 +2979,7 @@ NarGetDisks() {
     DWORD HELL;
     for (unsigned int DiskID = 0; DiskID < 32; DiskID++){
         
-        sprintf(StrBuf, "\\\\?\\PhysicalDrive%i", DiskID);
+        snprintf(StrBuf, sizeof(StrBuf), "\\\\?\\PhysicalDrive%i", DiskID);
         HANDLE Disk = CreateFileA(StrBuf, GENERIC_READ, FILE_SHARE_READ|FILE_SHARE_DELETE|FILE_SHARE_WRITE, 0, OPEN_EXISTING, 0,0);
         if(Disk == INVALID_HANDLE_VALUE){
             continue;
@@ -3100,7 +3102,7 @@ NarGetDiskTotalSize(int DiskID) {
     ULONGLONG Result = 0;
     DWORD Temp = 0;
     char StrBuffer[128];
-    sprintf(StrBuffer, "\\\\?\\PhysicalDrive%i", DiskID);
+    snprintf(StrBuffer, sizeof(StrBuffer), "\\\\?\\PhysicalDrive%i", DiskID);
     
     unsigned int DGEXSize = 1024 * 1; // 1 KB
     DISK_GEOMETRY_EX* DGEX = (DISK_GEOMETRY_EX*)malloc(DGEXSize);
@@ -3146,31 +3148,32 @@ NarCreateCleanGPTBootablePartition(int DiskID, int VolumeSizeMB, int EFISizeMB, 
         }
     }
     
-    sprintf(Buffer, ""
-            "select disk %i\n" // ARG0 DiskID
-            "clean\n"
-            "convert gpt\n" // format disk as gpt
-            "select partition 1\n"
-            "delete partition override\n"
-            "create partition primary size = %i\n" // recovery partition, ARG1 RecoveryPartitionSize
-            "assign letter R\n"
-            "format fs = ntfs quick\n"
-            "remove letter R\n"
-            "set id = \"de94bba4-06d1-4d40-a16a-bfd50179d6ac\"\n"
-            "gpt attributes = 0x8000000000000001\n"
-            "create partition efi size = %i\n" //efi partition, ARG3 EFIPartitionSize
-            "format fs = fat32 quick\n"
-            "assign letter S\n"
-            "create partition msr size = 16\n" // win10
-            "create partition primary size = %i\n" // ARG4 PrimaryPartitionSize
-            "assign letter = %c\n" // ARG5 VolumeLetter
-            "format fs = \"ntfs\" quick\n"
-            "exit\n", DiskID, RecoverySizeMB, EFISizeMB, VolumeSizeMB, Letter);
+    snprintf(Buffer, sizeof(Buffer), 
+             ""
+             "select disk %i\n" // ARG0 DiskID
+             "clean\n"
+             "convert gpt\n" // format disk as gpt
+             "select partition 1\n"
+             "delete partition override\n"
+             "create partition primary size = %i\n" // recovery partition, ARG1 RecoveryPartitionSize
+             "assign letter R\n"
+             "format fs = ntfs quick\n"
+             "remove letter R\n"
+             "set id = \"de94bba4-06d1-4d40-a16a-bfd50179d6ac\"\n"
+             "gpt attributes = 0x8000000000000001\n"
+             "create partition efi size = %i\n" //efi partition, ARG3 EFIPartitionSize
+             "format fs = fat32 quick\n"
+             "assign letter S\n"
+             "create partition msr size = 16\n" // win10
+             "create partition primary size = %i\n" // ARG4 PrimaryPartitionSize
+             "assign letter = %c\n" // ARG5 VolumeLetter
+             "format fs = \"ntfs\" quick\n"
+             "exit\n", DiskID, RecoverySizeMB, EFISizeMB, VolumeSizeMB, Letter);
     
     char InputFN[] = "NARDPINPUT";
     // NOTE(Batuhan): safe conversion
     if (NarDumpToFile(InputFN, Buffer, (INT32)strlen(Buffer))) {
-        sprintf(Buffer, "diskpart /s %s", InputFN);
+        snprintf(Buffer, sizeof(Buffer), "diskpart /s %s", InputFN);
         printf(Buffer);
         system(Buffer);
         return TRUE;
@@ -3193,19 +3196,20 @@ NarCreateCleanGPTPartition(int DiskID, int VolumeSizeMB, char Letter) {
     }
     
     
-    sprintf(Buffer, ""
-            "select disk %i\n"
-            "clean\n"
-            "convert gpt\n" // format disk as gpt
-            "create partition primary size = %i\n"
-            "assign letter = %c\n"
-            "format fs = \"ntfs\" quick\n"
-            "exit\n", DiskID, VolumeSizeMB, Letter);
+    snprintf(Buffer, sizeof(Buffer),
+             ""
+             "select disk %i\n"
+             "clean\n"
+             "convert gpt\n" // format disk as gpt
+             "create partition primary size = %i\n"
+             "assign letter = %c\n"
+             "format fs = \"ntfs\" quick\n"
+             "exit\n", DiskID, VolumeSizeMB, Letter);
     
     
     char InputFN[] = "NARDPINPUT";
     if (NarDumpToFile(InputFN, Buffer, (unsigned int)strlen(Buffer))) {
-        sprintf(Buffer, "diskpart /s %s > .txt", InputFN);
+        snprintf(Buffer, sizeof(Buffer),"diskpart /s %s > .txt", InputFN);
         printf(Buffer);
         system(Buffer);
         return TRUE;
@@ -3219,20 +3223,20 @@ BOOLEAN
 NarCreateCleanMBRPartition(int DiskID, char VolumeLetter, int VolumeSize) {
     
     char Buffer[2048];
-    sprintf(Buffer, 
-            "select disk %i\n"
-            "clean\n"
-            "convert mbr\n"
-            "create partition primary size %i\n"
-            "format fs = ntfs quick\n"
-            "assign letter %c\n"
-            "exit\n",
-            DiskID, VolumeSize, VolumeLetter
-            );
+    snprintf(Buffer,sizeof(Buffer), 
+             "select disk %i\n"
+             "clean\n"
+             "convert mbr\n"
+             "create partition primary size %i\n"
+             "format fs = ntfs quick\n"
+             "assign letter %c\n"
+             "exit\n",
+             DiskID, VolumeSize, VolumeLetter
+             );
     
     char InputFN[] = "NARDPINPUT";
     if (NarDumpToFile(InputFN, Buffer, (unsigned int)strlen(Buffer))) {
-        sprintf(Buffer, "diskpart /s %s", InputFN);
+        snprintf(Buffer, sizeof(Buffer), "diskpart /s %s", InputFN);
         printf(Buffer);
         system(Buffer);
         return TRUE;
@@ -3271,7 +3275,7 @@ NarCreateCleanMBRBootPartition(int DiskID, char VolumeLetter, int VolumeSizeMB, 
     
     char InputFN[] = "NARDPINPUTFORMBR";
     if (NarDumpToFile(InputFN, Buffer, (unsigned int)strlen(Buffer))) {
-        snprintf(Buffer, 2048, "diskpart /s %s", InputFN);
+        snprintf(Buffer, sizeof(Buffer), "diskpart /s %s", InputFN);
         printf(Buffer);
         system(Buffer);
         return TRUE;
@@ -4480,7 +4484,7 @@ SaveMetadata(char Letter, int Version, int ClusterSize, BackupType BT,
         
         int DiskID = NarGetVolumeDiskID(BM.Letter);
         char DiskPath[128];
-        sprintf(DiskPath, "\\\\?\\PhysicalDrive%i", DiskID);
+        snprintf(DiskPath, sizeof(DiskPath), "\\\\?\\PhysicalDrive%i", DiskID);
         HANDLE DiskHandle = CreateFileA(DiskPath, GENERIC_READ, FILE_SHARE_WRITE | FILE_SHARE_READ | FILE_SHARE_DELETE, 0, OPEN_EXISTING, 0, 0);
         if(DiskHandle != INVALID_HANDLE_VALUE){
             
@@ -4692,8 +4696,8 @@ AppendRecoveryToFile(HANDLE File, char Letter) {
     int DiskID = NarGetVolumeDiskID(Letter);
     
     if (DiskID != NAR_INVALID_DISK_ID) {
-        char DiskPath[512];
-        sprintf(DiskPath, "\\\\?\\PhysicalDrive%i", DiskID);
+        char DiskPath[64];
+        snprintf(DiskPath, sizeof(DiskPath), "\\\\?\\PhysicalDrive%i", DiskID);
         
         Disk = CreateFileA(DiskPath, GENERIC_READ, FILE_SHARE_WRITE | FILE_SHARE_READ | FILE_SHARE_DELETE, 0, OPEN_EXISTING, 0, 0);
         if (Disk != INVALID_HANDLE_VALUE) {
@@ -7701,13 +7705,7 @@ int
 main(int argc, char* argv[]) {
     //GetMFTandINDXLCN
     
-    NarCreateCleanMBRBootPartition(1, 'B', 150000, 500, 240);
-    return 0;
-    
 	printf("some test case here");
-    
-    printf("%I64u\n", sizeof(backup_metadata));
-    return 0;
     
     if(0){
         
