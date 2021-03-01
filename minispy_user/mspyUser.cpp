@@ -3251,27 +3251,27 @@ NarCreateCleanMBRBootPartition(int DiskID, char VolumeLetter, int VolumeSizeMB, 
     memset(Buffer, 0, 2048);
     
     snprintf(Buffer, 2048, 
-            "select disk %i\n"
-            "clean\n"
-            "convert mbr\n"
-            // SYSTEM PARTITION
-            "create partition primary size = %i\n"
-            "format quick fs = ntfs label = System\n"
-            "active"
-            // WINDOWS PARTITION
-            "create partition primary size %i\n" // in MB
-            "format quick fs = ntfs label = Windows\n"
-            "assign letter %c\n"
-            //Recovery tools
-            "create partition primary\n"
-            "set id = 27\n"
-            "exit\n", 
-            DiskID, SystemPartitionSizeMB, VolumeLetter, VolumeSizeMB, VolumeLetter);
+             "select disk %i\n"
+             "clean\n"
+             "convert mbr\n"
+             // SYSTEM PARTITION
+             "create partition primary size = %i\n"
+             "format quick fs = ntfs label = System\n"
+             "active\n"
+             // WINDOWS PARTITION
+             "create partition primary size %i\n" // in MB
+             "format quick fs = ntfs label = Windows\n"
+             "assign letter %c\n"
+             //Recovery tools
+             "create partition primary\n"
+             "set id = 27\n"
+             "exit\n", 
+             DiskID, SystemPartitionSizeMB, VolumeSizeMB, VolumeLetter, VolumeLetter);
     
     
     char InputFN[] = "NARDPINPUTFORMBR";
     if (NarDumpToFile(InputFN, Buffer, (unsigned int)strlen(Buffer))) {
-        sprintf(Buffer, "diskpart /s %s", InputFN);
+        snprintf(Buffer, 2048, "diskpart /s %s", InputFN);
         printf(Buffer);
         system(Buffer);
         return TRUE;
@@ -3428,8 +3428,8 @@ NarSetFilePointer(HANDLE File, ULONGLONG V) {
 
 HANDLE
 NarOpenVolume(char Letter) {
-    char VolumePath[512];
-    sprintf(VolumePath, "\\\\.\\%c:", Letter);
+    char VolumePath[64];
+    snprintf(VolumePath, 64, "\\\\.\\%c:", Letter);
     
     HANDLE Volume = CreateFileA(VolumePath, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_WRITE | FILE_SHARE_READ | FILE_SHARE_DELETE, 0, OPEN_EXISTING, 0, 0);
     if (Volume != INVALID_HANDLE_VALUE) {
@@ -7701,11 +7701,14 @@ int
 main(int argc, char* argv[]) {
     //GetMFTandINDXLCN
     
+    NarCreateCleanMBRBootPartition(1, 'B', 150000, 500, 240);
+    return 0;
+    
 	printf("some test case here");
-	    
+    
     printf("%I64u\n", sizeof(backup_metadata));
     return 0;
-
+    
     if(0){
         
         LOG_CONTEXT C = {0};
