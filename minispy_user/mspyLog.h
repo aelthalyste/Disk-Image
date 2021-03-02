@@ -177,7 +177,7 @@ NarLog(const char *str, ...){
     NarTime.SEC   = (BYTE)Time.wSecond;
 	
     
-
+    
 #if 1
     va_start(ap, str);
     vsprintf(buf, str, ap);
@@ -209,17 +209,17 @@ NarLog(const char *str, ...){
 	if(File){
 	    static char time_buf[80];
 	    snprintf(time_buf, 80, "[%02d/%02d/%04d | %02d:%02d:%02d] : ", NarTime.DAY, NarTime.MONTH, 2000 + NarTime.YEAR, NarTime.HOUR, NarTime.MIN, NarTime.SEC);
-   		char big_buffer[1024];
-   		big_buffer[0] = 0;
-   		strcat(big_buffer, time_buf);
-   		strcat(big_buffer, buf);
-   		fwrite(big_buffer, 1, strlen(big_buffer), File);		
+        char big_buffer[1024];
+        big_buffer[0] = 0;
+        strcat(big_buffer, time_buf);
+        strcat(big_buffer, buf);
+        fwrite(big_buffer, 1, strlen(big_buffer), File);		
 		fflush(File);
 	}
 	else{
 		OutputDebugStringA(buf);	
 	}
-
+    
 #endif
     
     
@@ -670,7 +670,7 @@ BOOLEAN
 CreatePartition(int Disk, char Letter, unsigned size);
 
 inline BOOLEAN
-NarCreateCleanGPTBootablePartition(int DiskID, int VolumeSizeMB, int EFISizeMB, int RecoverySizeMB, char Letter);
+NarCreateCleanGPTBootablePartition(int DiskID, int VolumeSizeMB, int EFISizeMB, int RecoverySizeMB, char Letter, char BootPartitionLetter);
 
 inline BOOLEAN
 NarCreateCleanGPTPartition(int DiskID, int VolumeSizeMB, char Letter);
@@ -680,13 +680,17 @@ NarCreateCleanMBRPartition(int DiskID, char VolumeLetter, int VolumeSize);
 
 
 inline BOOLEAN
-NarCreateCleanMBRBootPartition(int DiskID, char VolumeLetter, int VolumeSizeMB, int SystemPartitionSizeMB, int RecoveryPartitionSizeMB);
+NarCreateCleanMBRBootPartition(int DiskID, char VolumeLetter, int VolumeSizeMB, int SystemPartitionSizeMB, int RecoveryPartitionSizeMB,
+                               char BootPartitionLetter);
+
+inline char
+NarGetAvailableVolumeLetter();
 
 inline BOOLEAN
 NarRemoveLetter(char Letter);
 
 inline void
-NarRepairBoot(char Letter);
+NarRepairBoot(char Letter, char BootPartitionLetter);
 
 data_array<disk_information>
 NarGetDisks();

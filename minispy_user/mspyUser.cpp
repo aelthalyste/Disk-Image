@@ -2543,12 +2543,41 @@ OfflineRestoreCleanDisk(restore_inf* R, int DiskID) {
     if(R->OverrideDiskType)
         DiskType = R->DiskType;
     
+    int VolSizeMB = (int)(M.VolumeTotalSize / (1024ull*1024ull)) + 1;
+    int RecSizeMB = (int)(M.Size.Recovery / (1024ull*1024ull));
+    
+    char BootPartitionLetter = 0;
+    {
+        DWORD Drives = GetLogicalDrives();
+        
+        for (int CurrentDriveIndex = 0; CurrentDriveIndex < 26; CurrentDriveIndex++) {
+            if (Drives & (1 << CurrentDriveIndex) || ('A' + (char)CurrentDriveIndex) == (char)R->TargetLetter) {
+                continue;
+            }
+            else {
+                BootPartitionLetter = ('A' + (char)CurrentDriveIndex);
+                break;
+            }
+        }
+    }
+    
+    if(0!=BootPartitionLetter)
+        printf("Assigned letter (%c) to boot partition\n", BootPartitionLetter);
+    else{
+        printf("Unable to assign letter to boot partition\n");
+        return FALSE;
+    }
+    
+    
     if (M.IsOSVolume) {
+        
         if (DiskType == NAR_DISKTYPE_GPT) {
             
-            printf("GPT Disk will be formatted as (Volume size %I64d, EFIPartitionSizeMB %u, RecoverySize %u)\n", M.VolumeTotalSize, M.GPT_EFIPartitionSize/ (1024 * 1024), M.Size.Recovery);
+            int GPTEFISizeMB = (int)(M.GPT_EFIPartitionSize / (1024ull*1024ull));
             
-            if (NarCreateCleanGPTBootablePartition(DiskID, (int)(M.VolumeTotalSize / (1024ull * 1024ull)), (int)(M.GPT_EFIPartitionSize / (1024ull * 1024ull)), (int)(M.Size.Recovery / (1024ull * 1024ull)), (char)R->TargetLetter)) {
+            printf("GPT Disk will be formatted as (Volume size %I64d, EFIPartitionSizeMB %u, RecoverySize %u)\n", VolSizeMB, GPTEFISizeMB, RecSizeMB);
+            
+            if (NarCreateCleanGPTBootablePartition(DiskID, VolSizeMB, GPTEFISizeMB, GPTEFISizeMB, (char)R->TargetLetter, BootPartitionLetter)) {
                 Result = TRUE;
                 printf("Successfully created bootable gpt partition\n");
             }
@@ -2559,8 +2588,10 @@ OfflineRestoreCleanDisk(restore_inf* R, int DiskID) {
         }
         if (DiskType == NAR_DISKTYPE_MBR) {
             
-            printf("MBR Disk will be formatted as (Volume size %I64d, SystemPartitionMB %u, RecoverySize %u)\n", M.VolumeTotalSize, M.MBR_SystemPartitionSize/ (1024 * 1024), M.Size.Recovery);
-			if (NarCreateCleanMBRBootPartition(DiskID, (char)R->TargetLetter, (int)(M.VolumeTotalSize / (1024ull * 1024ull)), (int)(M.MBR_SystemPartitionSize / (1024ull * 1024ull)), (int)(M.Size.Recovery / (1024ull * 1024ull)))) {
+            int MBRSMB = (int)(M.MBR_SystemPartitionSize / (1024ull*1024ull));
+            
+            printf("MBR Disk will be formatted as (Volume size %I64d, SystemPartitionMB %u, RecoverySize %u)\n", VolSizeMB, MBRSMB, RecSizeMB);
+            if (NarCreateCleanMBRBootPartition(DiskID, (char)R->TargetLetter, VolSizeMB, MBRSMB, RecSizeMB, BootPartitionLetter)) {
                 Result = TRUE;
             }
             else {
@@ -2574,7 +2605,7 @@ OfflineRestoreCleanDisk(restore_inf* R, int DiskID) {
         printf("volume %c does not contain an OS\n", R->BackupID.Letter);
         if (DiskType == NAR_DISKTYPE_GPT) {
             
-            if (NarCreateCleanGPTPartition(DiskID, (int)(M.VolumeTotalSize / (1024ull * 1024ull)), (char)R->TargetLetter)) {
+            if (NarCreateCleanGPTPartition(DiskID, VolSizeMB, (char)R->TargetLetter)) {
                 Result = TRUE;
             }
             else {
@@ -2583,10 +2614,9 @@ OfflineRestoreCleanDisk(restore_inf* R, int DiskID) {
             
         }
         if (DiskType == NAR_DISKTYPE_MBR) {
-            /*TODO*MBR */
             
 #if 1            
-            if (NarCreateCleanMBRPartition(DiskID, (char)R->TargetLetter, (int)(M.VolumeTotalSize/(1024ull*1024ull)))) {
+            if (NarCreateCleanMBRPartition(DiskID, (char)R->TargetLetter, VolSizeMB)) {
                 Result = TRUE;
             }
             else {
@@ -2597,8 +2627,8 @@ OfflineRestoreCleanDisk(restore_inf* R, int DiskID) {
         }
     }
     
-    // TODO (Batuhan): wait 2 second prior to bcdboot to ensure volume is usable after diskpart operations 
-    Sleep(1000); 
+    // NOTE (Batuhan): wait prior to bcdboot to ensure volume is usable after diskpart operations 
+    Sleep(500); 
     
     if (Result) {
         
@@ -2607,17 +2637,16 @@ OfflineRestoreCleanDisk(restore_inf* R, int DiskID) {
             
             if (M.IsOSVolume && R->RepairBoot) {
                 
+#if 0                
                 if (!RestoreRecoveryFile(*R)) {
                     printf("Couldnt restore recovery partition\n");
                 }
                 else {
                     printf("Successfully restored recovery partition, continuing on boot repair\n");
                 }
+#endif
                 
-                NarRepairBoot((char)R->TargetLetter);
-                NarRemoveLetter(NAR_EFI_PARTITION_LETTER);
-                NarRemoveLetter(NAR_RECOVERY_PARTITION_LETTER);
-                
+                NarRepairBoot((char)R->TargetLetter, BootPartitionLetter);
                 printf("Restored to volume %c, to version %i\n", (char)R->TargetLetter, R->Version);
                 
                 
@@ -2636,6 +2665,8 @@ OfflineRestoreCleanDisk(restore_inf* R, int DiskID) {
         
     }
     
+    
+    NarRemoveLetter(BootPartitionLetter);
     
     return Result;
 }
@@ -2773,10 +2804,10 @@ NarFormatVolume(char Letter) {
 }
 
 inline void
-NarRepairBoot(char OSVolumeLetter) {
-    char Buffer[2096];
+NarRepairBoot(char OSVolumeLetter, char BootPartitionLetter) {
+    char Buffer[128];
     snprintf(Buffer, sizeof(Buffer), 
-             "bcdboot %c:\\Windows /s %c: /f ALL", OSVolumeLetter, NAR_EFI_PARTITION_LETTER);
+             "bcdboot %c:\\Windows /s %c: /f ALL", OSVolumeLetter, BootPartitionLetter);
     system(Buffer);
 }
 
@@ -3136,46 +3167,54 @@ NarGetDiskTotalSize(int DiskID) {
 
 
 inline BOOLEAN
-NarCreateCleanGPTBootablePartition(int DiskID, int VolumeSizeMB, int EFISizeMB, int RecoverySizeMB, char Letter) {
+NarCreateCleanGPTBootablePartition(int DiskID, int VolumeSizeMB, int EFISizeMB, int RecoverySizeMB, char VolumeLetter, char BootVolumeLetter) {
     
     char Buffer[2096];
+    int BufferIndex = 0;
     memset(Buffer, 0, 2096);
     
-    {
-        ULONGLONG TotalSize = ((ULONGLONG)VolumeSizeMB * 1024ull * 1024ull) + ((ULONGLONG)EFISizeMB * 1024ull * 1024ull) + ((ULONGLONG)RecoverySizeMB * 1024ull * 1024ull);
-        if (NarGetDiskTotalSize(DiskID) < TotalSize) {
-            printf("Can't fit bootable partition and it's extra partitions to disk %i\n", DiskID);
-        }
+    BufferIndex += snprintf(Buffer, sizeof(Buffer), 
+                            "select disk %i\n" // ARG0 DiskID
+                            "clean\n"
+                            "convert gpt\n" // format disk as gpt
+                            "select partition 1\n"
+                            "delete partition override\n");
+    
+    if(0 != RecoverySizeMB){
+        BufferIndex += snprintf(&Buffer[BufferIndex], sizeof(Buffer) - BufferIndex,
+                                "create partition primary size = %i\n"
+                                "assign letter %c\n"
+                                "format fs = ntfs quick\n"
+                                "remove letter %c\n"
+                                "set id = \"de94bba4-06d1-4d40-a16a-bfd50179d6ac\"\n"
+                                "gpt attributes = 0x8000000000000001\n", 
+                                RecoverySizeMB, BootVolumeLetter, BootVolumeLetter);
+    }
+    else{
+        printf("Recovery partition's size was zero, skipping it\n");
     }
     
-    snprintf(Buffer, sizeof(Buffer), 
-             ""
-             "select disk %i\n" // ARG0 DiskID
-             "clean\n"
-             "convert gpt\n" // format disk as gpt
-             "select partition 1\n"
-             "delete partition override\n"
-             "create partition primary size = %i\n" // recovery partition, ARG1 RecoveryPartitionSize
-             "assign letter R\n"
-             "format fs = ntfs quick\n"
-             "remove letter R\n"
-             "set id = \"de94bba4-06d1-4d40-a16a-bfd50179d6ac\"\n"
-             "gpt attributes = 0x8000000000000001\n"
-             "create partition efi size = %i\n" //efi partition, ARG3 EFIPartitionSize
-             "format fs = fat32 quick\n"
-             "assign letter S\n"
-             "create partition msr size = 16\n" // win10
-             "create partition primary size = %i\n" // ARG4 PrimaryPartitionSize
-             "assign letter = %c\n" // ARG5 VolumeLetter
-             "format fs = \"ntfs\" quick\n"
-             "exit\n", DiskID, RecoverySizeMB, EFISizeMB, VolumeSizeMB, Letter);
+    BufferIndex += snprintf(&Buffer[BufferIndex], sizeof(Buffer) - BufferIndex,
+                            "create partition efi size = %i\n"
+                            "format fs = fat32 quick\n"
+                            "assign letter %c\n"
+                            "create partition msr size = 16\n" // win10
+                            "create partition primary size = %i\n"
+                            "assign letter = %c\n"
+                            "format fs = \"ntfs\" quick\n"
+                            "exit\n", 
+                            EFISizeMB, 
+                            BootVolumeLetter,
+                            VolumeSizeMB,
+                            VolumeLetter);
+    
     
     char InputFN[] = "NARDPINPUT";
     // NOTE(Batuhan): safe conversion
     if (NarDumpToFile(InputFN, Buffer, (INT32)strlen(Buffer))) {
         snprintf(Buffer, sizeof(Buffer), "diskpart /s %s", InputFN);
-        printf(Buffer);
         system(Buffer);
+        printf("%s\n", Buffer);
         return TRUE;
     }
     
@@ -3249,29 +3288,36 @@ NarCreateCleanMBRPartition(int DiskID, char VolumeLetter, int VolumeSize) {
 
 
 inline BOOLEAN
-NarCreateCleanMBRBootPartition(int DiskID, char VolumeLetter, int VolumeSizeMB, int SystemPartitionSizeMB, int RecoveryPartitionSizeMB) {
+NarCreateCleanMBRBootPartition(int DiskID, char VolumeLetter, int VolumeSizeMB, int SystemPartitionSizeMB, int RecoveryPartitionSizeMB,
+                               char BootPartitionLetter) {
     
     char Buffer[2048];
     memset(Buffer, 0, 2048);
+    int indx = 0;
+    indx = snprintf(Buffer, sizeof(Buffer), 
+                    "select disk %i\n"
+                    "clean\n"
+                    "convert mbr\n"
+                    // SYSTEM PARTITION
+                    "create partition primary size = %i\n"
+                    "assign letter %c\n"
+                    "format quick fs = ntfs label = System\n"
+                    "active\n"
+                    // WINDOWS PARTITION
+                    "create partition primary size %i\n" // in MB
+                    "format quick fs = ntfs label = Windows\n"
+                    "assign letter %c\n", 
+                    DiskID, SystemPartitionSizeMB, BootPartitionLetter, VolumeSizeMB, VolumeLetter);
     
-    snprintf(Buffer, 2048, 
-             "select disk %i\n"
-             "clean\n"
-             "convert mbr\n"
-             // SYSTEM PARTITION
-             "create partition primary size = %i\n"
-             "format quick fs = ntfs label = System\n"
-             "active\n"
-             // WINDOWS PARTITION
-             "create partition primary size %i\n" // in MB
-             "format quick fs = ntfs label = Windows\n"
-             "assign letter %c\n"
-             //Recovery tools
-             "create partition primary\n"
-             "set id = 27\n"
-             "exit\n", 
-             DiskID, SystemPartitionSizeMB, VolumeSizeMB, VolumeLetter, VolumeLetter);
+    if(0 != RecoveryPartitionSizeMB){
+        indx += snprintf(Buffer, sizeof(Buffer)-indx,
+                         "create partition primary size %i\n"
+                         "set id = 27\n", 
+                         RecoveryPartitionSizeMB);
+    }
     
+    snprintf(&Buffer[indx], sizeof(Buffer) - indx,
+             "exit\n");
     
     char InputFN[] = "NARDPINPUTFORMBR";
     if (NarDumpToFile(InputFN, Buffer, (unsigned int)strlen(Buffer))) {
@@ -5179,7 +5225,7 @@ void foo(){
     
     ULONGLONG TargetFilePointer = 0;
     
-    NarCreateCleanGPTBootablePartition(1, 61440, 100, 529, 'E');
+    //NarCreateCleanGPTBootablePartition(1, 61440, 100, 529, 'E');
     
     HANDLE OutputFile = CreateFile(L"BinaryFile", GENERIC_WRITE | GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, 0, 0);
     if(OutputFile == INVALID_HANDLE_VALUE) {
