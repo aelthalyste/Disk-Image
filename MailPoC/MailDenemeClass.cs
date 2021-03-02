@@ -44,7 +44,7 @@ namespace MailPoC
             body = body.Replace("{FileName}", "eyüp");
             body = body.Replace("{Duration}", "ebru");
             body = body.Replace("{SourceInfo}", "12123");
-            body = body.Replace("{TaskName}", "C BACKUPPPPPP XD XD ");
+            body = body.Replace("{TaskName}", "C BACKUPPPUPPPPPP XD XD PPP XD XD ");
             body = body.Replace("{AverageDataTransfer}", "12 MB/s");
             body = body.Replace("{ProcessedData}", "52 MB/s");
             body = body.Replace("{InstantDataTransfer}", "42 MB/s");
