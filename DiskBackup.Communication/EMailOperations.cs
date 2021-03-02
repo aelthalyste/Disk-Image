@@ -401,9 +401,6 @@ namespace DiskBackup.Communication
                                 <td style=""font-family:Arial, sans-serif, serif, EmojiFont; color:slategray; padding:10px 0px 20px 20px;"">{RespectLang}, Narbulut</td>
                             </tr>
                         </table>
-                        <p style=""font-family:Calibri,Candara,Segoe,Segoe UI,Optima,Arial,sans-serif; font-size:18px;"">
-                            {RespectLang}, Narbulut
-                        </p>
                             <div style=""padding:18.75pt 0;"">
                                 <p align=""center"" style=""text-align:center; margin-top:0; line-height:18.0pt;"">
                                     <span style=""color:#74787E; font-size:9pt;"">
@@ -443,9 +440,10 @@ namespace DiskBackup.Communication
                                 </tr>
                                 <tr>
                                     <td style=""padding:20px;"">
-                            <p style=""font-family: Trebuchet MS, sans-serif, serif, EmojiFont;"">
-                                {RespectLang}, Narbulut
-                            </p>
+                                <tr>
+                                    <td style=""font-family:Arial, sans-serif, serif, EmojiFont; color:slategray; padding:10px 0px 20px 20px;"">{RespectLang}, Narbulut</td>
+                                </tr>
+                            </table>
                             <div style=""padding:18.75pt 0;"">
                                 <p align=""center"" style=""text-align:center;margin-top:0;line-height:18.0pt;"">
                                     <span style=""color:#74787E;font-size:9pt;"">
