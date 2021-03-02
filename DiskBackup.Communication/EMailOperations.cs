@@ -329,7 +329,7 @@ namespace DiskBackup.Communication
                     </head>
                     <body bgcolor=""#F2F4F6"">
                         <div style=""padding: 0px 22% 0px 22%;"">
-                        <p style=""text-align: center; padding-top:50px;"">
+                        <p style=""text-align: center; padding-top:40px;"">
                             <span>
                                 <a href=""http://panel.narbulut.com"" target=""_blank"" rel=""noopener noreferrer"" data-auth=""NotApplicable"">
                                     <img src=""https://panel.narbulut.com/img/slider/Logoü.png"" alt=""Örnek Resim"" />
@@ -421,35 +421,34 @@ namespace DiskBackup.Communication
         private string GetHTMLTestBody()
         {
             return @"<!DOCTYPE html>
-                    <html>
                     <head>
-                        <style>
-                            *{
-                                text-decoration: none;
-                            }
-                        </style>
+                        <meta charset=""utf-8"" />
                     </head>
+
                     <body bgcolor=""#F2F4F6"">
-                        <div style=""padding: 0px 22% 0px 22%;"">
-                        <p style=""text-align: center; padding-top:50px;"">
-                            <span>
-                                <a href=""http://panel.narbulut.com"" target=""_blank"" rel=""noopener noreferrer"" data-auth=""NotApplicable"">
-                                    <img src=""https://panel.narbulut.com/img/slider/Logoü.png"" alt=""Örnek Resim"" />
-                                </a>
-                            </span>
-                        </p>
-                            <h2>{Dear}, {customerName}</h2>
-                            <div style=""padding: 0px; border: 0px solid #ffff; margin: 0px 0px 30px 0px;"">
-                                <p style=""font-family:Calibri,Candara,Segoe,Segoe UI,Optima,Arial,sans-serif; font-size:18px;"">
-                                    {txtWelcomeTest}
-                                </p>
-                            </div>
-                            <p style=""font-family:Calibri,Candara,Segoe,Segoe UI,Optima,Arial,sans-serif; font-size:18px;"">
+                        <div style=""padding: 0px 25% 0px 25%;"">
+                            <p style=""text-align: center; padding-top:40px;"">
+                                <span>
+                                    <a href=""http://panel.narbulut.com"" target=""_blank"" rel=""noopener noreferrer"" data-auth=""NotApplicable"">
+                                        <img src=""https://panel.narbulut.com/img/slider/Logoü.png"" alt=""Narbulut Logo"">
+                                    </a>
+                                </span>
+                            </p>
+                            <table style=""background-color:white; border-collapse:collapse; width:95%;"" align=""center"">
+                                <tr>
+                                    <th style=""font-family:Arial, sans-serif, serif, EmojiFont; text-align:left; padding:20px;"">{Dear}, {customerName}</th>
+                                </tr>
+                                <tr>
+                                    <td style=""font-family:Arial, sans-serif, serif, EmojiFont; color:slategray; text-align:left; padding:0px 0px 10px 20px;"">{txtWelcomeTest}</td>
+                                </tr>
+                                <tr>
+                                    <td style=""padding:20px;"">
+                            <p style=""font-family: Trebuchet MS, sans-serif, serif, EmojiFont;"">
                                 {RespectLang}, Narbulut
                             </p>
                             <div style=""padding:18.75pt 0;"">
-                                <p align=""center"" style=""text-align:center; margin-top:0; line-height:18.0pt;"">
-                                    <span style=""color:#74787E; font-size:9pt;"">
+                                <p align=""center"" style=""text-align:center;margin-top:0;line-height:18.0pt;"">
+                                    <span style=""color:#74787E;font-size:9pt;"">
                                         <a href=""http://panel.narbulut.com"" target=""_blank"" rel=""noopener noreferrer"" data-auth=""NotApplicable"">
                                             <span style=""color:#3869D4;"">Copyright Narbulut © 2017</span>
                                         </a>| {AllRightReservedLang}
@@ -475,7 +474,7 @@ namespace DiskBackup.Communication
                     </head>
                     <body bgcolor=""#F2F4F6"">
                         <div style=""padding: 0px 22% 0px 22%;"">
-                        <p style=""text-align: center; padding-top:50px;"">
+                        <p style=""text-align: center; padding-top:40px;"">
                             <span>
                                 <a href=""http://panel.narbulut.com"" target=""_blank"" rel=""noopener noreferrer"" data-auth=""NotApplicable"">
                                     <img src=""https://panel.narbulut.com/img/slider/Logoü.png"" alt=""Örnek Resim"" />
