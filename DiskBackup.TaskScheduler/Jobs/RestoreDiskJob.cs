@@ -93,6 +93,11 @@ namespace DiskBackup.TaskScheduler.Jobs
                         result = _backupService.RestoreBackupDisk(task);
                         var cleanChainResult = _backupService.CleanChain(task.RestoreTaskInfo.TargetLetter[0]);
                         _logger.Information("{@task} {@value} zinciri temizlendi. Sonuç: {@cleanResult}", task, task.RestoreTaskInfo.TargetLetter[0], cleanChainResult);
+                        foreach (var item in task.StrObje)
+                        {
+                            cleanChainResult = _backupService.CleanChain(item);
+                            _logger.Information("{@task} {@value} zinciri temizlendi. Sonuç: {@cleanResult}", task, item, cleanChainResult);
+                        }
                     }
                     else
                         _logger.Information("{@task} {@value} volumu müsait değildi", task, task.RestoreTaskInfo.TargetLetter[0]);
