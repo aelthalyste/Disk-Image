@@ -49,7 +49,6 @@ Environment:
 #define MINISPY_WIN7     (NTDDI_VERSION >= NTDDI_WIN7)
 #define MINISPY_VISTA    (NTDDI_VERSION >= NTDDI_VISTA)
 #define MINISPY_NOT_W2K  (OSVER(NTDDI_VERSION) > NTDDI_WIN2K)
-
 //
 //  Define callback types for Vista
 //

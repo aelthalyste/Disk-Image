@@ -2723,7 +2723,7 @@ OfflineRestoreToVolume(restore_inf* R, BOOLEAN ShouldFormat) {
         }
         
         // Wait for diskpart operation to complete
-        Sleep(2500);
+        Sleep(1000);
         
         HANDLE Volume = NarOpenVolume((char)R->TargetLetter);
         if (Volume != INVALID_HANDLE_VALUE) {
@@ -3642,7 +3642,6 @@ RestoreVersionWithoutLoop(restore_inf R, BOOLEAN RestoreMFT, HANDLE Volume) {
     std::wstring BinaryFileName = R.RootDir;
     BinaryFileName += GenerateBinaryFileName(R.BackupID, R.Version);
     
-    
     HANDLE RegionsFile = CreateFile(BinaryFileName.c_str(), GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
     
     if (Volume != INVALID_HANDLE_VALUE && RegionsFile != INVALID_HANDLE_VALUE) {
@@ -3679,21 +3678,6 @@ RestoreVersionWithoutLoop(restore_inf R, BOOLEAN RestoreMFT, HANDLE Volume) {
         printf("%i errors occured during copy operation\n", CopyErrorsOccured);
     }
     
-    if (RestoreMFT && BMEX->M.Version != NAR_FULLBACKUP_VERSION) {
-        // TODO(Batuhan): handle error returned from this function
-        
-#if 0        
-        if (NarRestoreMFT(BMEX, Volume)) {
-            printf("MFT Restored\n");
-        }
-        else {
-            printf("Error occured while restoring MFT\n");
-        }
-#endif
-        
-        
-    }
-    
     
     //NOTE(BATUHAN): Zero out fullbackup's MFT region if target version isnt fb, since its mft will be overwritten that shouldnt be a problem
     //Later, I should replace this code with smt that detects MFT regions from fullbackup metadata, then excudes it from it, so we dont have to zero it after at all.
@@ -3720,17 +3704,20 @@ RestoreVersionWithoutLoop(restore_inf R, BOOLEAN RestoreMFT, HANDLE Volume) {
                         for (UINT i = 0; i < MFTLCN.Count; i++) {
                             
                             ULONGLONG LEN = (ULONGLONG)MFTLCN.Data[i].Len * (ULONGLONG)BMEX->M.ClusterSize;
+                            if(LEN > 0xffffffffull){
+                                printf("MFT region length exceeds 4gb limit\n");
+                            }
+                            
                             void* Buffer = malloc(LEN);
                             memset(Buffer, 0, LEN);
+                            
                             // TODO(Batuhan): WE CANT ZERO OUT MORE THAN 4GB AT ONCE, 
                             //FIX IT(WHICH IS UNLIKELY FOR MFT, BUT MIGHT HAPPEN!)
                             NarSetFilePointer(Volume, (ULONGLONG)MFTLCN.Data[i].StartPos * (ULONGLONG)BMEX->M.ClusterSize);
                             if (WriteFile(Volume, Buffer, LEN, &BytesRead, 0) && BytesRead == LEN) {
-                                //printf("Starting clusternumber %i\t", MFTLCN.Data[i].StartPos);
-                                //printf("Zeroed from %I64d, with lenght %I64d\n", (ULONGLONG)MFTLCN.Data[i].StartPos * (ULONGLONG)BMEX->M.ClusterSize, LEN);
                             }
                             else {
-                                //printf("Couldnt zero specific MFT region, contiuning operation\n");
+                                printf("Couldnt zero %u'th MFT region, contiuning operation\n", i);
                             }
                             
                             free(Buffer);
@@ -3752,16 +3739,12 @@ RestoreVersionWithoutLoop(restore_inf R, BOOLEAN RestoreMFT, HANDLE Volume) {
             else {
                 printf("Cant set file pointer to MFT LCN metadata at backup_metadata file\n");
             }
-            
-            
         }
         else {
             printf("Cant open backup metadata file, cant zero out fullbackup's MFT regions\n");
         }
         
-        
         CloseHandle(BMFile);
-        
     }
 #endif
     
@@ -5371,7 +5354,7 @@ Function returns NULL if attribute is not present
 inline void*
 NarFindFileAttributeFromFileRecord(void *FileRecord, INT32 AttributeID){
     
-    if(!FileRecord) return 0;
+    if(NULL == FileRecord) return 0;
     
     TIMED_BLOCK();
     
@@ -5389,7 +5372,7 @@ NarFindFileAttributeFromFileRecord(void *FileRecord, INT32 AttributeID){
             return FileAttribute;
         }
         
-        // early termination
+        // it's guarenteed that attributes are sorted by id's in ascending order
         if(*(INT32*)FileAttribute > AttributeID){
             break;
         }
@@ -5694,7 +5677,7 @@ NarParseIndexAllocationAttribute(void *IndexAttribute, nar_record *OutRegions, I
     // thats how its implemented at ntfs at first place. who knows
     // so thats how it looks
     /*
-    first one is always absolute LCN in the volume. rest of it is addition to previous one. if file is fragmanted, value will be
+    first one is always absolute LCN in the volume. rest of it is addition to previous one. if file is fragmanted, value might be
     negative. so we dont have to check some edge cases here.
     second data run will be lets say 0x11 04 43
     and first one                    0x11 10 10
@@ -7525,7 +7508,7 @@ DEBUG_Restore(){
     printf("SELECT BACKUP : ");
     scanf("%i", &bindex);
     restore_inf R = {0};
-    R.TargetLetter = 'E';
+    R.TargetLetter = 'G';
     R.BackupID = B[bindex].ID;
     R.Version = B[bindex].Version;
     R.RootDir = rootdir;
@@ -7750,8 +7733,15 @@ DEBUG_FileExplorerQuery(){
 int
 main(int argc, char* argv[]) {
     //GetMFTandINDXLCN
+    int inp;
+    std::cout<<"Restore(0), Backup(1)\n";
+    std::cin>>inp;
+    if(0 == inp){
+        DEBUG_Restore();
+        return 0;
+	}
     
-	printf("some test case here");
+    printf("some test case here");
     
     if(0){
         
@@ -7850,6 +7840,7 @@ main(int argc, char* argv[]) {
                             if(WriteFile(file, MemBuf, Read, &BytesWritten, 0) && BytesWritten == Read){
                                 TotalWritten += BytesWritten;
                                 // NOTE(Batuhan): copied successfully
+                                FlushFileBuffers(file);
                             }
                             else{
                                 BREAK_CODE;

@@ -215,10 +215,11 @@ NarLog(const char *str, ...){
         strcat(big_buffer, buf);
         fwrite(big_buffer, 1, strlen(big_buffer), File);		
 		fflush(File);
-	}
+        printf(buf);
+    }
 	else{
-		OutputDebugStringA(buf);	
-	}
+		OutputDebugStringA(buf);
+    }
     
 #endif
     

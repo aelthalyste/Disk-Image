@@ -22,7 +22,7 @@ Environment:
 #include <stdio.h>
 #include <Ntstrsafe.h>
 #include <string.h>
-#define DbgPrint
+// #define DbgPrint
 
 //
 //  Global variables
@@ -92,8 +92,6 @@ SpyVolumeInstanceSetup(
 #endif
 
 
-#define SetFlagInterlocked(_ptrFlags,_flagToSet) \
-((VOID)InterlockedOr(((volatile LONG *)(_ptrFlags)),_flagToSet))
 
 //---------------------------------------------------------------------------
 //                      ROUTINES
@@ -128,7 +126,6 @@ Return Value:
     OBJECT_ATTRIBUTES oa;
     UNICODE_STRING uniString;
     NTSTATUS status = STATUS_SUCCESS;
-    
     UNREFERENCED_PARAMETER(RegistryPath);
     
     try {
@@ -1181,7 +1178,7 @@ NarLogThread(PVOID param) {
         if (tp->DataLen < NAR_MEMORYBUFFER_SIZE) {
             status = ZwWriteFile(NarData.FileHandles[tp->FileID], 0, 0, 0, &iosb, (tp->Data), tp->DataLen, 0, 0);
             if (NT_SUCCESS(status)) {
-                
+                DbgPrint("Flushed file %d\n", tp->FileID);
             }
             else {
                 DbgPrint("couldnt write to file, err id %X\n", status);
@@ -1217,6 +1214,29 @@ NarLogThread(PVOID param) {
     
     END:
     return;
+}
+
+
+// stupid suffix code
+BOOLEAN
+NTAPI
+NarSuffixUnicodeString(
+    _In_ PUNICODE_STRING String1,
+    _In_ PUNICODE_STRING String2,
+    _In_ BOOLEAN CaseInSensitive
+)
+{
+    //
+    // RtlSuffixUnicodeString is not exported by ntoskrnl until Win10.
+    //
+
+    return String2->Length >= String1->Length &&
+        RtlCompareUnicodeStrings(String2->Buffer + (String2->Length - String1->Length) / sizeof(WCHAR),
+            String1->Length / sizeof(WCHAR),
+            String1->Buffer,
+            String1->Length / sizeof(WCHAR),
+            CaseInSensitive) == 0;
+
 }
 
 const UNICODE_STRING IgnoreSuffixTable[] = {
@@ -1340,7 +1360,7 @@ Return Value:
         return FLT_PREOP_SUCCESS_NO_CALLBACK;
     }
     
-
+    
     // filter out temporary files and files that would be closed if last handle freed
     if ((Data->Iopb->TargetFileObject->Flags & FO_TEMPORARY_FILE) == FO_TEMPORARY_FILE) {
         return  FLT_PREOP_SUCCESS_NO_CALLBACK;
@@ -1356,10 +1376,10 @@ Return Value:
     
     ULONG LenReturned = 0;
     // skip directories
-
-
-
-
+    
+    
+    
+    
     
     //FILE_STANDARD_INFORMATION fsi = { 0 };
     //status = FltQueryInformationFile(FltObjects->Instance, FltObjects->FileObject, &fsi, sizeof(FILE_STANDARD_INFORMATION), FileStandardInformation, &LenReturned);
@@ -1390,7 +1410,7 @@ Return Value:
             for (size_t i = 0; 
                  i < sizeof(IgnoreSuffixTable) / sizeof(IgnoreSuffixTable[0]); 
                  i++) {
-                if (RtlSuffixUnicodeString(&IgnoreSuffixTable[i], &nameInfo->Name, TRUE)) {
+                if (NarSuffixUnicodeString(&IgnoreSuffixTable[i], &nameInfo->Name, TRUE)) {
                     goto NAR_PREOP_FAILED_END;
                 }
             }
@@ -1401,7 +1421,7 @@ Return Value:
                 }
             }
             
-
+            
             
             
             
@@ -1411,12 +1431,16 @@ Return Value:
 #pragma warning(disable:4090) //TODO what is this warning code
             
             STARTING_VCN_INPUT_BUFFER StartingInputVCNBuffer;
+            memset(&StartingInputVCNBuffer, 0, sizeof(StartingInputVCNBuffer));
+
             RETRIEVAL_POINTERS_BUFFER ClusterMapBuffer;
             
             DWORD WholeFileMapBufferSize = sizeof(UnicodeStrBuffer);// sizeof(RETRIEVAL_POINTERS_BUFFER) * 128;
-            RETRIEVAL_POINTERS_BUFFER* WholeFileMapBuffer = (RETRIEVAL_POINTERS_BUFFER*)&UnicodeStrBuffer[0]; // (RETRIEVAL_POINTERS_BUFFER*)ExAllocatePoolWithTag(PagedPool, WholeFileMapBufferSize, NAR_TAG);
+            RETRIEVAL_POINTERS_BUFFER* WholeFileMapBuffer = (RETRIEVAL_POINTERS_BUFFER*)&UnicodeStrBuffer[0];
+            memset(WholeFileMapBuffer, 0, WholeFileMapBufferSize);
             
             
+
             ClusterMapBuffer.StartingVcn.QuadPart = 0;
             StartingInputVCNBuffer.StartingVcn.QuadPart = 0;
             
@@ -1447,24 +1471,35 @@ Return Value:
             BOOLEAN HeadFound = FALSE;
             BOOLEAN CeilTest = FALSE;
             
-            status =    (FltObjects->Instance,
-                                      Data->Iopb->TargetFileObject,
-                                      FSCTL_GET_RETRIEVAL_POINTERS,
-                                      &StartingInputVCNBuffer,
-                                      sizeof(StartingInputVCNBuffer),
-                                      WholeFileMapBuffer,
-                                      WholeFileMapBufferSize,
-                                      &BytesReturned
-                                      );
-            
+            status = FltFsControlFile(FltObjects->Instance,
+                         Data->Iopb->TargetFileObject,
+                         FSCTL_GET_RETRIEVAL_POINTERS,
+                         &StartingInputVCNBuffer,
+                         sizeof(StartingInputVCNBuffer),
+                         WholeFileMapBuffer,
+                         WholeFileMapBufferSize,
+                         &BytesReturned
+                         );
             
             if (status != STATUS_END_OF_FILE && !NT_SUCCESS(status)) {
-                DbgPrint("FltFsControl failed with code %i,  file name %wZ\n", status, &nameInfo->Name);
-                
+
+                // invalid argument
+                //if (status == 0xC000000D) {
+                //    DbgPrint("FLT OBJ : %X\n", FltObjects->Instance              );
+                //    DbgPrint("DTF OBJ : %X\n", Data->Iopb->TargetFileObject      );
+                //    DbgPrint("SIV BUF : %X\n", &StartingInputVCNBuffer           );
+                //    DbgPrint("SIV SIZ : %I64u\n", sizeof(StartingInputVCNBuffer) );
+                //    DbgPrint("WFM BUF : %X\n", &WholeFileMapBuffer               );
+                //    DbgPrint("WFM SIZ : %I64u\n", WholeFileMapBufferSize         );
+                //    DbgPrint("BYT RET : %lu\n", BytesReturned                    );
+                //}
+
+                DbgPrint("FltFsControl failed with code %X,  file name %wZ\n", status, &nameInfo->Name);
                 
                 goto NAR_PREOP_FAILED_END;
             }
-            if (WholeFileMapBuffer->Extents[0].Lcn.QuadPart == -1) {
+            if (WholeFileMapBuffer->Extents[0].Lcn.QuadPart == (long long)-1) {
+                DbgPrint("Wholemapbuffer extents lcn was (LONGLONG)-1\n");
                 goto NAR_PREOP_FAILED_END;
             }
             
@@ -1484,17 +1519,20 @@ Return Value:
                     Error |= NAR_ERR_MAX_ITER;
                     break;
                 }
-
+                
                 if (ClusterMapBuffer.Extents[0].NextVcn.QuadPart == (LONGLONG)-1) {
+                    DbgPrint("Clustermap buffer extents was (LONGLONG)-1, file : %wZ\n", &nameInfo->Name);
                     break;
                 }
                 if (ClusterMapBuffer.StartingVcn.QuadPart == (LONGLONG)-1) {
+                    DbgPrint("Clustermap buffer starting vcn was (LONGLONG)-1, file : %wZ\n", &nameInfo->Name);
                     break;
                 }
                 if (ClusterMapBuffer.Extents[0].NextVcn.QuadPart - ClusterMapBuffer.StartingVcn.QuadPart >= MAXUINT32) {
+                    DbgPrint("Region length was exceeding max uint32 value %I64u, file : %wZ\n", ClusterMapBuffer.Extents[0].NextVcn.QuadPart - ClusterMapBuffer.StartingVcn.QuadPart, &nameInfo->Name);
                     break;
                 }
-
+                
                 
                 
                 if (!HeadFound) {
