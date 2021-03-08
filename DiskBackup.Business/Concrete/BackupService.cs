@@ -29,7 +29,7 @@ namespace DiskBackup.Business.Concrete
         private Dictionary<int, CancellationTokenSource> _cancellationTokenSource = new Dictionary<int, CancellationTokenSource>();
         private Dictionary<int, Stopwatch> _timeElapsedMap = new Dictionary<int, Stopwatch>();
 
-        private bool _isStarted = false;
+        private bool _isStarted = false; // TO DO -- Silinecek
         private bool _initTrackerResult = false;
         private bool _refreshIncDiffTaskFlag = false;
         private bool _refreshIncDiffLogFlag = false; // Refreshde yenilememe durumu olması durumunda her task için ayrı flagler oluşturulacak
@@ -471,6 +471,12 @@ namespace DiskBackup.Business.Concrete
             if (!GetInitTracker())
                 return 5;
 
+            // TO DO -- yeni zincirin başlayıp başlamayacağına dair kontroller gerçekleştirilip duruma göre CleanChain çağırılacak
+            /*
+             * if (lastFullDate - datetime.now < taskInfo.BackupTask.FullTime)
+             *      cleanChain
+             */
+
             // NAS için
             NetworkConnection nc = null;
             try
@@ -489,14 +495,14 @@ namespace DiskBackup.Business.Concrete
             if (!Directory.Exists(taskInfo.BackupStorageInfo.Path))
                 return 6;
 
-            if (_statusInfoDal == null)
+            if (_statusInfoDal == null) // TO DO -- Silinecek
                 throw new Exception("StatusInfoDal is null");
             var statusInfo = _statusInfoDal.Get(si => si.Id == taskInfo.StatusInfoId); //her task için uygulanmalı
 
-            if (statusInfo == null)
+            if (statusInfo == null) // TO DO -- Silinecek
                 throw new Exception("statusInfo is null");
 
-            if (_diskTracker == null)
+            if (_diskTracker == null) // TO DO -- Silinecek
                 throw new Exception("_diskTracker is null");
             var manualResetEvent = new ManualResetEvent(true);
             _taskEventMap[taskInfo.Id] = manualResetEvent;
@@ -542,6 +548,11 @@ namespace DiskBackup.Business.Concrete
                         fixed (byte* BAddr = &buffer[0])
                         {
                             FileStream file = File.Create(taskInfo.BackupStorageInfo.Path + str.FileName); //backupStorageInfo path alınıcak
+                            // TO DO -- Burada full name ve full date veritabanına kaydedilecek, FileName içinde eğer ki FULL ibaresi geçiyorsa 
+                            /*
+                             * if (FileName.Contains("FULL")
+                             *      veritabanına lastfullname ve lastfulldate güncellenecek
+                             */
                             while (true)
                             {
                                 if (cancellationToken.IsCancellationRequested)
@@ -1042,8 +1053,8 @@ namespace DiskBackup.Business.Concrete
                             if (result != 2)
                                 return result;
                         }
-
-                        CleanChain(backupMetadata.Letter);
+                        // TO DO -- son zincirin full'ü mü silindi duruma göre cleanChain çalıştır (backupmetadata içinde letter kullanarak aynı volume backuplarını bir araya topla)
+                        CleanChain(backupMetadata.Letter); // TO DO -- Silinecek
                         _logger.Information("Diff silme işleminden sonra, {letter} için yeni zincir başlatıldı.", backupMetadata.Letter);
                     }
                     else
@@ -1073,8 +1084,8 @@ namespace DiskBackup.Business.Concrete
                         index2++;
                     }
 
-
-                    CleanChain(backupMetadata.Letter);
+                    // TO DO -- son zincirin versionlarından biri mi silindi duruma göre cleanChain çalıştır (backupmetadata içinde letter kullanarak aynı volume backuplarını bir araya topla)
+                    CleanChain(backupMetadata.Letter); // TO DO -- Silinecek
                     _logger.Information("Inc silme işleminden sonra, {letter} için yeni zincir başlatıldı.", backupMetadata.Letter);
                 }
             }

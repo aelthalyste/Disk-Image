@@ -77,6 +77,10 @@ namespace DiskBackupWpfGUI
                 Console.WriteLine("volume");
             }
 
+            lblFolderSize2Restore.Text = backupInfo.StrFileSize;
+            lblVolumeSize2Restore.Text = backupInfo.StrVolumeSize;
+            lblAreaSize2Restore.Text = backupInfo.StrUsedSize;
+
             dtpSetTime.Value = DateTime.Now + TimeSpan.FromMinutes(5);
         }
 
