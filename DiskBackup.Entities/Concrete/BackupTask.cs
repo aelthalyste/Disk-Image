@@ -12,12 +12,9 @@ namespace DiskBackup.Entities.Concrete
         public int Id { get; set; }
         public string TaskName { get; set; } // TaskInfo'nun name'i ile aynı olarak tutulacak
         public BackupTypes Type { get; set; }
-        public int RetentionTime { get; set; } // saklama süresi
         public bool FullOverwrite { get; set; }
-        public int FullBackup { get; set; }
-        public int NarRetentionTime { get; set; }
-        public bool NarFullOverwrite { get; set; }
-        public int NarFullBackup { get; set; }
+        public FullBackupTimeTyp FullBackupTimeType { get; set; }
+        public int FullBackupTime { get; set; }
         public bool AutoRun { get; set; } //false ise manuel çalışacak
         public bool FailTryAgain { get; set; } // true ise FailNumberTryAgain'e bak
         public int FailNumberTryAgain { get; set; }
@@ -58,6 +55,12 @@ namespace DiskBackup.Entities.Concrete
     {
         Minute = 0,
         Hour = 1,
+    }
+
+    public enum FullBackupTimeTyp
+    {
+        Day = 0,
+        Week = 1
     }
 
     //public enum DayMask
