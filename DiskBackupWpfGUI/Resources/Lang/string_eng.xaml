@@ -171,6 +171,7 @@
     <system:String x:Key="fullOverwrite">Overwrite in insufficient space</system:String>
     <system:String x:Key="fullBackup">Full Backup</system:String>
     <system:String x:Key="perWeek">Per Week</system:String>
+    <system:String x:Key="week">Week</system:String>
     <system:String x:Key="fileName">File Name</system:String>
     <system:String x:Key="duration">Duration</system:String>
     <system:String x:Key="averageDataTransfer">Average Data Transfer</system:String>

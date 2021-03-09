@@ -159,6 +159,7 @@
     <system:String x:Key="fullOverwrite">Yetersiz alanda üzerine yaz</system:String>
     <system:String x:Key="fullBackup">Full Yedek</system:String>
     <system:String x:Key="perWeek">Haftada</system:String>
+    <system:String x:Key="week">Hafta</system:String>
     <system:String x:Key="fileName">Dosya Adı</system:String>
     <system:String x:Key="duration">Süre</system:String>
     <system:String x:Key="averageDataTransfer">Ortalama Veri Aktarımı</system:String>
