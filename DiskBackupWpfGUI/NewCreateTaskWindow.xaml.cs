@@ -1372,5 +1372,21 @@ namespace DiskBackupWpfGUI
                 cbPeriodic.SelectedIndex = 0;
             }
         }
+
+        private void cbFullBackupTimeType_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (cbFullBackupTimeType.SelectedIndex == 0) // gün
+            {
+                List<int> dayList = new List<int> { 1, 2, 3, 4, 5, 6, 7 };
+                cbFullBackupTime.ItemsSource = dayList;
+                cbFullBackupTime.SelectedIndex = 0;
+            }
+            else // hafta
+            {
+                List<int> weekList = new List<int> { 1, 2, 3, 4 };
+                cbFullBackupTime.ItemsSource = weekList;
+                cbFullBackupTime.SelectedIndex = 1;
+            }
+        }
     }
 }
