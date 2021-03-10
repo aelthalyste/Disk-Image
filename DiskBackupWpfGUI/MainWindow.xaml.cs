@@ -535,10 +535,54 @@ namespace DiskBackupWpfGUI
                 backupStorageInfoList.Add(item);
             }
 
+            List<TaskInfo> overlappingTaskInfoList = new List<TaskInfo>(); // değişecek adı
             List<VolumeInfo> volumeInfoList = new List<VolumeInfo>();
             foreach (VolumeInfo item in listViewDisk.SelectedItems)
             {
                 volumeInfoList.Add(item);
+
+                string letter = item.Letter.ToString();
+                var taskInfo = _taskInfoDal.Get(x => x.StrObje.Contains(letter) && x.Type == TaskType.Backup && x.EnableDisable != TecnicalTaskStatusType.Broken);
+                if (taskInfo != null)
+                {
+                    if (overlappingTaskInfoList.Count == 0)
+                    {
+                        overlappingTaskInfoList.Add(taskInfo);
+                    }
+                    else
+                    {
+                        bool controlFlag = false;
+                        foreach (var itemTask in overlappingTaskInfoList)
+                        {
+                            if (itemTask.Id == taskInfo.Id)
+                            {
+                                controlFlag = false;
+                                break;
+                            }
+                            controlFlag = true;
+                        }
+                        if (controlFlag)
+                            overlappingTaskInfoList.Add(taskInfo);
+                    }
+                }
+            }
+
+            if (overlappingTaskInfoList.Count >= 1)
+            {
+                string message = "";
+                foreach (var itemTask in overlappingTaskInfoList)
+                {
+                    message += "\n" + itemTask.Name;
+                }
+                MessageBoxResult result = MessageBox.Show(Resources["taskBackupOverlappingAffectedMB"].ToString() + message, Resources["MessageboxTitle"].ToString(), MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
+                if (result == MessageBoxResult.Yes)
+                { 
+                    overlappingTaskInfoList.ForEach(x => BreakTheTask(x)); // sil ve devam et
+                }
+                else
+                {
+                    return;
+                }
             }
 
             using (var scope = _scope.BeginLifetimeScope())
@@ -735,64 +779,47 @@ namespace DiskBackupWpfGUI
             MessageBoxResult result = MessageBox.Show($" {listViewTasks.SelectedItems.Count} " + Resources["deletePieceMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
             if (result == MessageBoxResult.Yes)
             {
-                foreach (TaskInfo item in listViewTasks.SelectedItems)
+                foreach (TaskInfo itemTask in listViewTasks.SelectedItems)
                 {
                     // ilgili triggerı sil
-                    if (item.ScheduleId != null && !item.ScheduleId.Contains("Now") && item.ScheduleId != "")
+                    if (itemTask.ScheduleId != null && !itemTask.ScheduleId.Contains("Now") && itemTask.ScheduleId != "")
                     {
                         var taskSchedulerManager = _scope.Resolve<ITaskSchedulerManager>();
-                        taskSchedulerManager.DeleteJob(item.ScheduleId);
+                        taskSchedulerManager.DeleteJob(itemTask.ScheduleId);
                     }
 
                     // task tipine göre ilgili task tablosundan bilgisini sil
-                    if (item.Type == TaskType.Backup)
+                    if (itemTask.Type == TaskType.Backup)
                     {
-                        _backupTaskDal.Delete(_backupTaskDal.Get(x => x.Id == item.BackupTaskId));
+                        _backupTaskDal.Delete(_backupTaskDal.Get(x => x.Id == itemTask.BackupTaskId));
+                        // sıfırla
+                        if (itemTask.EnableDisable != TecnicalTaskStatusType.Broken)
+                        {
+                            var backupService = _scope.Resolve<IBackupService>();
+                            foreach (var itemLetter in itemTask.StrObje)
+                            {
+                                try
+                                {
+                                    backupService.CleanChain(itemLetter);
+                                }
+                                catch (Exception ex)
+                                {
+                                    _logger.Error(ex, "Beklenmedik hatadan dolayı {harf} zincir temizleme işlemi gerçekleştirilemedi.", itemLetter);
+                                }
+                            }
+                        }           
                     }
                     else
                     {
                         //restore silme
-                        _restoreTaskDal.Delete(_restoreTaskDal.Get(x => x.Id == item.RestoreTaskId));
+                        _restoreTaskDal.Delete(_restoreTaskDal.Get(x => x.Id == itemTask.RestoreTaskId));
                     }
 
                     // ilgili status infosunu sil
-                    _statusInfoDal.Delete(_statusInfoDal.Get(x => x.Id == item.StatusInfoId));
+                    _statusInfoDal.Delete(_statusInfoDal.Get(x => x.Id == itemTask.StatusInfoId));
 
                     // kendisini sil
-                    _taskInfoDal.Delete(item);
-
-                    // zincir sıfırlama kontrolü
-                    var taskList = _taskInfoDal.GetList(x => x.EnableDisable != TecnicalTaskStatusType.Broken);
-                    bool chainFlag = false;
-                    foreach (var itemTask in taskList)
-                    {
-                        foreach (var itemLetter in itemTask.StrObje)
-                        {
-                            if (item.StrObje.Contains(itemLetter))
-                            {
-                                // sıfırlama işlemi yapılamaz
-                                chainFlag = true;
-                            }
-                        }
-                    }
-
-                    if (!chainFlag)
-                    {
-                        // sıfırla
-                        var backupService = _scope.Resolve<IBackupService>();
-                        foreach (var itemLetter in item.StrObje)
-                        {
-                            try
-                            {
-                                backupService.CleanChain(itemLetter);
-                            }
-                            catch (Exception ex)
-                            {
-                                _logger.Error(ex, "Beklenmedik hatadan dolayı {harf} zincir temizleme işlemi gerçekleştirilemedi.", itemLetter);
-                                //EYBRUG: Chain kısmı gerçekleştirilemiyorsa delete gerçekleştirilmemesi sağlanabilir bu kısım yukarı alınarak
-                            }
-                        }
-                    }
+                    _taskInfoDal.Delete(itemTask);
                 }
                 GetTasks();
             }
@@ -1271,33 +1298,6 @@ namespace DiskBackupWpfGUI
             btnTaskPause.IsEnabled = false;
             btnTaskStart.IsEnabled = false;
             btnTaskStop.IsEnabled = false;
-        }
-
-        private void PausedTaskButtons()
-        {
-            _logger.Verbose("PausedTaskButtons istekte bulunuldu");
-
-            btnTaskStart.IsEnabled = true;
-            btnTaskEdit.IsEnabled = false;
-            btnTaskPause.IsEnabled = false;
-            btnTaskStop.IsEnabled = true;
-            //diğer butonlar gelecek
-            btnTaskDelete.IsEnabled = false;
-            btnDisableTask.IsEnabled = false;
-            btnEnableTask.IsEnabled = false;
-        }
-
-        private void RunningTaskButtons()
-        {
-            _logger.Verbose("RunningTaskButtons istekte bulunuldu");
-
-            btnTaskStart.IsEnabled = false;
-            btnTaskEdit.IsEnabled = false; // çalışan görev düzenlenemez
-            btnTaskPause.IsEnabled = true;
-            btnTaskStop.IsEnabled = true;
-            btnTaskDelete.IsEnabled = false;
-            btnDisableTask.IsEnabled = false;
-            btnEnableTask.IsEnabled = false;
         }
 
         #endregion
@@ -1959,17 +1959,7 @@ namespace DiskBackupWpfGUI
                 {
                     if (_backupStorageDal.Get(x => x.Id == itemTask.BackupStorageInfoId) == null)
                     {
-                        itemTask.EnableDisable = TecnicalTaskStatusType.Broken;
-                        itemTask.BackupStorageInfoId = 0;
-
-                        if (itemTask.ScheduleId != null && itemTask.ScheduleId != "")
-                        {
-                            var taskSchedulerManager = _scope.Resolve<ITaskSchedulerManager>();
-                            taskSchedulerManager.DeleteJob(itemTask.ScheduleId);
-                            itemTask.ScheduleId = "";
-                        }
-
-                        _taskInfoDal.Update(itemTask);
+                        BreakTheTask(itemTask);
                     }
                 }
 
@@ -1978,6 +1968,37 @@ namespace DiskBackupWpfGUI
                 var backupService = _scope.Resolve<IBackupService>();
                 RefreshBackupsandTasks(backupService);
             }
+        }
+
+        private void BreakTheTask(TaskInfo itemTask)
+        {
+            itemTask.EnableDisable = TecnicalTaskStatusType.Broken;
+            itemTask.BackupStorageInfoId = 0;
+
+            if (itemTask.ScheduleId != null && itemTask.ScheduleId != "")
+            {
+                var taskSchedulerManager = _scope.Resolve<ITaskSchedulerManager>();
+                taskSchedulerManager.DeleteJob(itemTask.ScheduleId);
+                itemTask.ScheduleId = "";
+            }
+
+            if (itemTask.Type == TaskType.Backup) //clean chain yaparak zincir sıfırlanmalı
+            {
+                var backupService = _scope.Resolve<IBackupService>();
+                foreach (var itemLetter in itemTask.StrObje)
+                {
+                    try
+                    {
+                        backupService.CleanChain(itemLetter);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.Error(ex, "Beklenmedik hatadan dolayı {harf} zincir temizleme işlemi gerçekleştirilemedi.", itemLetter);
+                    }
+                }
+            }
+
+            _taskInfoDal.Update(itemTask);
         }
 
         private void listViewBackupStorage_SelectionChanged(object sender, SelectionChangedEventArgs e)

@@ -348,11 +348,12 @@ namespace DiskBackupWpfGUI
                 }
 
                 // Zincir kontrolü
-                if (!ChainCheck())
+                /* artık aynı volumede bir backup görevi olacağı için inc-diff kontrolleri yapılmasına gerek kalmadı
+                 * if (!ChainCheck())
                 {
                     //Close(); // Kullanıcı reddettiğinde görev oluşturma ekranının tamamen kapanmasını engellemek için kaldır
                     return;
-                }
+                }*/
 
                 // Restore kontrolü
                 var result = CheckAndBreakAffectedTask(_taskInfo);
@@ -466,13 +467,6 @@ namespace DiskBackupWpfGUI
                     else
                         MessageBox.Show(Resources["addFailMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
                 }
-
-
-                // task status açılması
-                //resultTaskInfo.StatusInfo = _statusInfoDal.Get(x => x.Id == resultTaskInfo.StatusInfoId);
-                //resultTaskInfo.BackupTaskInfo = _backupTaskDal.Get(x => x.Id == resultTaskInfo.BackupTaskId);
-                //StatusesWindow backupStatus = _scope.Resolve<StatusesWindow>(new NamedParameter("chooseFlag", 0), new NamedParameter("statusInfo", resultTaskInfo.StatusInfo));
-                //backupStatus.Show();
             }
 
         }
@@ -532,7 +526,7 @@ namespace DiskBackupWpfGUI
             return true;
         }
 
-        private bool ChainCheck()
+        /*private bool ChainCheck()
         {
             List<TaskInfo> brokenTaskList = new List<TaskInfo>();
             List<TaskInfo> taskList = new List<TaskInfo>();
@@ -612,7 +606,7 @@ namespace DiskBackupWpfGUI
                 MessageBox.Show(Resources["runningTaskAffectedMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
                 return false;
             }
-        }
+        }*/
 
         private void btnCreateTaskBack_Click(object sender, RoutedEventArgs e)
         {

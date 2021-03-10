@@ -342,5 +342,6 @@
     <system:String x:Key="sameRootDirectoryRestoreMB">Restore cannot be performed for the same root directory.</system:String>
     <system:String x:Key="sameRootDirectoryMB">Tasks and backup fields cannot have the same root directory.</system:String>
     <system:String x:Key="filesRestoreStartedMB">The restore process started.</system:String>
+    <system:String x:Key="taskBackupOverlappingAffectedMB">Creating tasks in the selected volumes will affect the following tasks. Do you confirm?</system:String>
 
 </ResourceDictionary>
