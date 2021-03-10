@@ -215,6 +215,7 @@ namespace DiskBackupWpfGUI
                     if (itemTask.StrObje.Contains(itemObje))
                     {
                         checkFlag = true;
+                        break;
                     }
                 }
             }
@@ -231,16 +232,32 @@ namespace DiskBackupWpfGUI
             {
                 foreach (var itemTask in taskList)
                 {
-                    foreach (var itemObje in taskInfo.StrObje) // bozulacak backup volumeleri
+                    foreach (var itemObje in taskInfo.StrObje) // bozulacak backup volumeleri C D E
                     {
                         if (itemTask.StrObje.Contains(itemObje))
                         {
                             itemTask.EnableDisable = TecnicalTaskStatusType.Broken;
+                            itemTask.BackupStorageInfoId = 0;
 
                             if (itemTask.ScheduleId != null && itemTask.ScheduleId != "")
                             {
                                 _schedulerManager.DeleteJob(itemTask.ScheduleId);
                                 itemTask.ScheduleId = "";
+                            }
+
+                            if (itemTask.Type == TaskType.Backup) //clean chain yaparak zincir sıfırlanmalı D G F
+                            {
+                                foreach (var itemLetter in itemTask.StrObje)
+                                {
+                                    try
+                                    {
+                                        _backupService.CleanChain(itemLetter);
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        _logger.Error(ex, "Beklenmedik hatadan dolayı {harf} zincir temizleme işlemi gerçekleştirilemedi.", itemLetter);
+                                    }
+                                }
                             }
 
                             _taskInfoDal.Update(itemTask);

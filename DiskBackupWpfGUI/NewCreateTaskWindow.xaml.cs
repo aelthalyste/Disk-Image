@@ -133,6 +133,25 @@ namespace DiskBackupWpfGUI
                     cbTargetBackupArea.SelectedItem = item;
             }
 
+            if (_taskInfo.BackupTaskInfo.FullBackupTimeType == FullBackupTimeTyp.Day)
+            {
+                cbFullBackupTimeType.SelectedIndex = 0;
+                for (int i = 0; i < cbFullBackupTime.Items.Count; i++)
+                {
+                    if (Convert.ToInt32(cbFullBackupTime.Items[i]) == _taskInfo.BackupTaskInfo.FullBackupTime)
+                        cbFullBackupTime.SelectedIndex = i;
+                }
+            }
+            else
+            {
+                cbFullBackupTimeType.SelectedIndex = 1;
+                for (int i = 0; i < cbFullBackupTime.Items.Count; i++)
+                {
+                    if (Convert.ToInt32(cbFullBackupTime.Items[i]) == _taskInfo.BackupTaskInfo.FullBackupTime)
+                        cbFullBackupTime.SelectedIndex = i;
+                }
+            }
+
             if (_taskInfo.BackupTaskInfo.AutoRun) // otomatik çalıştır aktif
             {
                 checkAutoRun.IsChecked = true;
@@ -265,14 +284,13 @@ namespace DiskBackupWpfGUI
                 }
 
                 // hedefdeki retentiontime vs
-                _taskInfo.BackupTaskInfo.RetentionTime = Convert.ToInt32(txtRetentionTime.Text);
+                _taskInfo.BackupTaskInfo.FullBackupTime = Convert.ToInt32(cbFullBackupTime.SelectedItem);
+                _taskInfo.BackupTaskInfo.FullBackupTimeType = (FullBackupTimeTyp)cbFullBackupTimeType.SelectedIndex;
                 _taskInfo.BackupTaskInfo.FullOverwrite = chbFullOverwrite.IsChecked.Value;
-                _taskInfo.BackupTaskInfo.FullBackup = Convert.ToInt32(txtFullBackup.Text);
+
                 if (_taskInfo.BackupStorageInfo.IsCloud)
                 {
-                    _taskInfo.BackupTaskInfo.NarRetentionTime = Convert.ToInt32(txtNarRetentionTime.Text);
-                    _taskInfo.BackupTaskInfo.NarFullOverwrite = chbNarFullOverwrite.IsChecked.Value;
-                    _taskInfo.BackupTaskInfo.NarFullBackup = Convert.ToInt32(txtNarFullBackup.Text);
+                    // Eğer ki bulut kısmı açıldığında yetersiz alanda üzerine yaz vs. gibi özellikler geldiğinde buradan kayıt işlemi gerçekleştirilecek
                 }
 
                 // zamanlama
@@ -301,22 +319,7 @@ namespace DiskBackupWpfGUI
                         _taskInfo.BackupTaskInfo.Months = ChooseDayAndMounthsWindow._months;
                         _taskInfo.NextDate = (DateTime)tpWeeklyTime.Value;
                         //haftalar
-                        if (cbWeeklyTimeWeek.SelectedIndex == 0)
-                        {
-                            _taskInfo.BackupTaskInfo.WeeklyTime = WeeklyType.First;
-                        }
-                        else if (cbWeeklyTimeWeek.SelectedIndex == 1)
-                        {
-                            _taskInfo.BackupTaskInfo.WeeklyTime = WeeklyType.Second;
-                        }
-                        else if (cbWeeklyTimeWeek.SelectedIndex == 2)
-                        {
-                            _taskInfo.BackupTaskInfo.WeeklyTime = WeeklyType.Third;
-                        }
-                        else
-                        {
-                            _taskInfo.BackupTaskInfo.WeeklyTime = WeeklyType.Fourth;
-                        }
+                        _taskInfo.BackupTaskInfo.WeeklyTime = (WeeklyType)cbWeeklyTimeWeek.SelectedIndex;
                         //günler
                         _taskInfo.BackupTaskInfo.Days = (cbWeeklyTimeDays.SelectedIndex + 1).ToString();
                     }
@@ -324,14 +327,7 @@ namespace DiskBackupWpfGUI
                     {
                         _taskInfo.BackupTaskInfo.AutoType = AutoRunType.Periodic;
                         _taskInfo.BackupTaskInfo.PeriodicTime = Convert.ToInt32(cbPeriodic.SelectedItem);
-                        if (cbPeriodicTime.SelectedIndex == 0)
-                        {
-                            _taskInfo.BackupTaskInfo.PeriodicTimeType = PeriodicType.Hour;
-                        }
-                        else
-                        {
-                            _taskInfo.BackupTaskInfo.PeriodicTimeType = PeriodicType.Minute;
-                        }
+                        _taskInfo.BackupTaskInfo.PeriodicTimeType = (PeriodicType)cbPeriodicTime.SelectedIndex;
                     }
                     else
                     {
@@ -352,11 +348,12 @@ namespace DiskBackupWpfGUI
                 }
 
                 // Zincir kontrolü
-                if (!ChainCheck())
+                /* artık aynı volumede bir backup görevi olacağı için inc-diff kontrolleri yapılmasına gerek kalmadı
+                 * if (!ChainCheck())
                 {
                     //Close(); // Kullanıcı reddettiğinde görev oluşturma ekranının tamamen kapanmasını engellemek için kaldır
                     return;
-                }
+                }*/
 
                 // Restore kontrolü
                 var result = CheckAndBreakAffectedTask(_taskInfo);
@@ -470,13 +467,6 @@ namespace DiskBackupWpfGUI
                     else
                         MessageBox.Show(Resources["addFailMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
                 }
-
-
-                // task status açılması
-                //resultTaskInfo.StatusInfo = _statusInfoDal.Get(x => x.Id == resultTaskInfo.StatusInfoId);
-                //resultTaskInfo.BackupTaskInfo = _backupTaskDal.Get(x => x.Id == resultTaskInfo.BackupTaskId);
-                //StatusesWindow backupStatus = _scope.Resolve<StatusesWindow>(new NamedParameter("chooseFlag", 0), new NamedParameter("statusInfo", resultTaskInfo.StatusInfo));
-                //backupStatus.Show();
             }
 
         }
@@ -536,7 +526,7 @@ namespace DiskBackupWpfGUI
             return true;
         }
 
-        private bool ChainCheck()
+        /*private bool ChainCheck()
         {
             List<TaskInfo> brokenTaskList = new List<TaskInfo>();
             List<TaskInfo> taskList = new List<TaskInfo>();
@@ -616,7 +606,7 @@ namespace DiskBackupWpfGUI
                 MessageBox.Show(Resources["runningTaskAffectedMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
                 return false;
             }
-        }
+        }*/
 
         private void btnCreateTaskBack_Click(object sender, RoutedEventArgs e)
         {
@@ -823,89 +813,6 @@ namespace DiskBackupWpfGUI
             }
 
         }
-
-        #region Arrow Button
-        private void btnRetentionUp_Click(object sender, RoutedEventArgs e)
-        {
-            var count = Convert.ToInt32(txtRetentionTime.Text);
-            if (count != 999)
-            {
-                count += 1;
-                txtRetentionTime.Text = count.ToString();
-            }
-        }
-
-        private void btnFullBackupUp_Click(object sender, RoutedEventArgs e)
-        {
-            var count = Convert.ToInt32(txtFullBackup.Text);
-            if (count != 999)
-            {
-                count += 1;
-                txtFullBackup.Text = count.ToString();
-            }
-        }
-
-        private void btnNarRetentionUp_Click(object sender, RoutedEventArgs e)
-        {
-            var count = Convert.ToInt32(txtNarRetentionTime.Text);
-            if (count != 999)
-            {
-                count += 1;
-                txtNarRetentionTime.Text = count.ToString();
-            }
-        }
-
-        private void btnNarFullBackupUp_Click(object sender, RoutedEventArgs e)
-        {
-            var count = Convert.ToInt32(txtNarFullBackup.Text);
-            if (count != 999)
-            {
-                count += 1;
-                txtNarFullBackup.Text = count.ToString();
-            }
-        }
-
-        private void btnRetentionDown_Click(object sender, RoutedEventArgs e)
-        {
-            var count = Convert.ToInt32(txtRetentionTime.Text);
-            if (count != 0)
-            {
-                count -= 1;
-                txtRetentionTime.Text = count.ToString();
-            }
-        }
-
-        private void btnFullBackupDown_Click(object sender, RoutedEventArgs e)
-        {
-            var count = Convert.ToInt32(txtFullBackup.Text);
-            if (count != 0)
-            {
-                count -= 1;
-                txtFullBackup.Text = count.ToString();
-            }
-        }
-
-        private void btnNarRetentionDown_Click(object sender, RoutedEventArgs e)
-        {
-            var count = Convert.ToInt32(txtNarRetentionTime.Text);
-            if (count != 0)
-            {
-                count -= 1;
-                txtNarRetentionTime.Text = count.ToString();
-            }
-        }
-
-        private void btnNarFullBackupDown_Click(object sender, RoutedEventArgs e)
-        {
-            var count = Convert.ToInt32(txtNarFullBackup.Text);
-            if (count != 0)
-            {
-                count -= 1;
-                txtNarFullBackup.Text = count.ToString();
-            }
-        }
-        #endregion
-
 
         #endregion
 
@@ -1144,8 +1051,7 @@ namespace DiskBackupWpfGUI
             bool errorFlag = false;
 
             // boş geçilmeme kontrolü
-            if (txtTaskName.Text.Equals("") || cbTargetBackupArea.SelectedIndex == -1 || txtRetentionTime.Text.Equals("") ||
-                txtFullBackup.Text.Equals("") || txtNarRetentionTime.Text.Equals("") || txtNarFullBackup.Text.Equals(""))
+            if (txtTaskName.Text.Equals("") || cbTargetBackupArea.SelectedIndex == -1)
             {
                 errorFlag = true;
             }
@@ -1370,6 +1276,22 @@ namespace DiskBackupWpfGUI
                 List<int> minuteList = new List<int> { 15, 30, 45, 60, 75, 90, 105, 120 };
                 cbPeriodic.ItemsSource = minuteList;
                 cbPeriodic.SelectedIndex = 0;
+            }
+        }
+
+        private void cbFullBackupTimeType_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (cbFullBackupTimeType.SelectedIndex == 0) // gün
+            {
+                List<int> dayList = new List<int> { 1, 2, 3, 4, 5, 6, 7 };
+                cbFullBackupTime.ItemsSource = dayList;
+                cbFullBackupTime.SelectedIndex = 0;
+            }
+            else // hafta
+            {
+                List<int> weekList = new List<int> { 1, 2, 3, 4 };
+                cbFullBackupTime.ItemsSource = weekList;
+                cbFullBackupTime.SelectedIndex = 1;
             }
         }
     }

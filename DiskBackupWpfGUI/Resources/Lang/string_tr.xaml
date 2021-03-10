@@ -159,6 +159,7 @@
     <system:String x:Key="fullOverwrite">Yetersiz alanda üzerine yaz</system:String>
     <system:String x:Key="fullBackup">Full Yedek</system:String>
     <system:String x:Key="perWeek">Haftada</system:String>
+    <system:String x:Key="week">Hafta</system:String>
     <system:String x:Key="fileName">Dosya Adı</system:String>
     <system:String x:Key="duration">Süre</system:String>
     <system:String x:Key="averageDataTransfer">Ortalama Veri Aktarımı</system:String>
@@ -328,5 +329,6 @@
     <system:String x:Key="sameRootDirectoryRestoreMB">Aynı kök dizin için restore işlemi gerçekleştirilemez.</system:String>
     <system:String x:Key="sameRootDirectoryMB">Görevler ile yedekleme alanları aynı kök dizine sahip olamaz.</system:String>
     <system:String x:Key="filesRestoreStartedMB">Geri yükleme işlemi başlatıldı.</system:String>
+    <system:String x:Key="taskBackupOverlappingAffectedMB">Seçili volumelerde görev oluşturmanız aşağıdaki görevleri etkileyecektir. Onaylıyor musunuz?</system:String>
 
 </ResourceDictionary>
