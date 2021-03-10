@@ -3,9 +3,9 @@
 call :StartTimer
 
 set build_options= -DUNICODE -D_UNICODE -D_CRT_SECURE_NO_WARNINGS
-set compile_flags=  -nologo /EHsc /W0 /DEBUG:FULL /Zi /FC /Od /Fa /INCREMENTAL:NO /F 16777216
+set compile_flags=  -nologo /EHsc /W0 /DEBUG:FULL /Zi /FC /Od /Fa /INCREMENTAL:NO /F 16777216 
 set linker_flags=  "fltLib.lib" "vssapi.lib"
-rem /DEBUG:FULL /Zi /FC /Od
+rem /DEBUG:FULL /Zi /FC /Od /fsanitize=adress
 
 if not exist build\minispy_user mkdir build\minispy_user
 pushd build\minispy_user\

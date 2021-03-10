@@ -63,7 +63,7 @@ inline void
 PrintDebugRecords();
 
 
-
+#define NAR_IS_BETWEEN(floor, ceil, test) (((test) >= (floor)) && ((test) <= (ceil)))
 #define NAR_OP_ALLOCATE 1
 #define NAR_OP_FREE     2
 #define NAR_OP_ZERO     3
@@ -296,6 +296,7 @@ RecordEqual(nar_record* N1, nar_record* N2) {
 
 #define MAX(v1,v2) ((v1)>(v2) ? (v1) : (v2))
 #define MIN(v1,v2) ((v1)<(v2) ? (v1) : (v2))
+#define CLAMP(floor,ceil, value) MAX(MIN(ceil, value), 0)
 
 #define CLEANHANDLE(handle) if((handle)!=NULL) CloseHandle(handle);
 #define CLEANMEMORY(memory) if((memory)!=NULL) free(memory);
@@ -308,8 +309,10 @@ RecordEqual(nar_record* N1, nar_record* N2) {
 
 #ifdef _DEBUG
 #define Assert(expression) if(!(expression)) do{*(int*)0 = 0;}while(0);
+#define NAR_BREAK_CODE() //__debugbreak();
 #else
 #define Assert(expression) (expression)
+#define NAR_BREAK_CODE()
 #endif
 
 #define NAR_INVALID_VOLUME_TRACK_ID -1
@@ -1199,6 +1202,9 @@ NarGetBitmapAttributeDataLen(void *BitmapAttributeStart);
 
 inline BOOLEAN
 NarParseIndexAllocationAttribute(void *IndexAttribute, nar_record *OutRegions, INT32 MaxRegionLen, INT32 *OutRegionsFound);
+
+inline BOOLEAN
+NarParseIndexAllocationAttributeSingular(void *IndexAttribute, nar_record *OutRegions, INT32 MaxRegionLen, INT32 *OutRegionsFound);
 
 inline void
 NarParseIndxRegion(void *Data, nar_file_entries_list *EList);
