@@ -1245,7 +1245,7 @@ GetMFTandINDXLCN(char VolumeLetter, HANDLE VolumeHandle) {
     BOOLEAN JustExtractMFTRegions = FALSE;
     
     UINT32 MEMORY_BUFFER_SIZE = 1024LL * 1024LL * 512;
-    UINT32 ClusterExtractedBufferSize = 1024 * 1024 * 64;
+    UINT32 ClusterExtractedBufferSize = 1024 * 1024 * 128;
     INT32 ClusterSize = NarGetVolumeClusterSize(VolumeLetter);
     
     nar_record* ClustersExtracted = (nar_record*)malloc(ClusterExtractedBufferSize);
@@ -1258,6 +1258,15 @@ GetMFTandINDXLCN(char VolumeLetter, HANDLE VolumeHandle) {
     
     void* FileBuffer = malloc(MEMORY_BUFFER_SIZE);
     UINT32 FileBufferCount = MEMORY_BUFFER_SIZE / 1024LL;
+    
+    if(NULL == FileBuffer
+       || NULL == ClustersExtracted){
+        free(ClustersExtracted);
+        ClustersExtracted = 0;
+        ClusterExtractedCount = 0;
+        
+        goto EARLY_TERMINATION;
+    }
     
     if (FileBuffer) {
         char VolumeName[64];
@@ -1344,7 +1353,7 @@ GetMFTandINDXLCN(char VolumeLetter, HANDLE VolumeHandle) {
                                         unsigned char* Bitmap = (unsigned char*)NarGetBitmapAttributeData(BitmapAttr);
                                         
                                         size_t ceil = MIN(RegFound, BLen);
-                                        for(size_t ci = 0; ci<ceil; ci++){
+                                        for(size_t ci = 0; ci<BLen; ci++){
                                             size_t ByteIndex = ci/8;
                                             size_t BitIndex = ci%8;
                                             if(Bitmap[ByteIndex] & (1 << BitIndex)){
@@ -1356,6 +1365,7 @@ GetMFTandINDXLCN(char VolumeLetter, HANDLE VolumeHandle) {
                                             }
                                         }
                                         ClusterExtractedCount += RegFound;
+                                        
                                     }
                                     
                                     
@@ -1399,13 +1409,17 @@ GetMFTandINDXLCN(char VolumeLetter, HANDLE VolumeHandle) {
     
     
     data_array<nar_record> Result = { 0 };
-    ClustersExtracted = (nar_record*)realloc(ClustersExtracted, ClusterExtractedCount * sizeof(nar_record));
+    if(ClusterExtractedCount > 0){
+        ClustersExtracted = (nar_record*)realloc(ClustersExtracted, ClusterExtractedCount * sizeof(nar_record));
+    }
+    
     Result.Data = ClustersExtracted;
     Result.Count = ClusterExtractedCount;
     
-    qsort(Result.Data, Result.Count, sizeof(nar_record), CompareNarRecords);
-    MergeRegions(&Result);
-    
+    if(Result.Count > 0){
+        qsort(Result.Data, Result.Count, sizeof(nar_record), CompareNarRecords);
+        MergeRegions(&Result);
+    }
     
     ULONGLONG VolumeSize = NarGetVolumeTotalSize(VolumeLetter);
     UINT32 TruncateIndex = 0;
