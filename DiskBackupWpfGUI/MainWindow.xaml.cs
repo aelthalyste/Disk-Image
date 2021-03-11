@@ -2542,9 +2542,11 @@ namespace DiskBackupWpfGUI
                 if (runningTask.Type == TaskType.Backup)
                 {
                     runningTask.StatusInfo = _statusInfoDal.Get(x => x.Id == runningTask.StatusInfoId);
-                    txtMakeABackup.Text = Resources["makeABackup"].ToString() + ", "
-                        + FormatBytes(runningTask.StatusInfo.DataProcessed)
-                        + ", %" + Math.Round((runningTask.StatusInfo.DataProcessed * 100.0) / (runningTask.StatusInfo.TotalDataProcessed), 2).ToString();
+                    txtMakeABackup.Text = Resources["makeABackup"].ToString() + ", " + FormatBytes(runningTask.StatusInfo.DataProcessed);
+                    if (double.IsNaN(Math.Round((runningTask.StatusInfo.DataProcessed * 100.0) / (runningTask.StatusInfo.TotalDataProcessed), 2)))
+                        txtMakeABackup.Text += ", %0"; //TO DO NaN yakalandığında buraya 0 dışında bir şey girilmek istenir mi?
+                    else
+                        txtMakeABackup.Text += ", %" + Math.Round((runningTask.StatusInfo.DataProcessed * 100.0) / (runningTask.StatusInfo.TotalDataProcessed), 2).ToString();
                 }
                 else
                 {
