@@ -276,7 +276,10 @@
                     <TextBlock Text="{DynamicResource processedTotal}" Margin="20,8"/>
                     <TextBlock Name="txtSourceSingle" Text="C:" Margin="0,8"/>
                 </StackPanel>
-                <TextBlock Name="txtLastStatus" HorizontalAlignment="Right" Text="Başarılı" Margin="20,8" Grid.Column="1"/>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="20,8" Grid.Column="1">
+                    <Image Name="imgStatus" Height="25" Width="25" Margin="10,0"/>
+                    <TextBlock Name="txtLastStatus" HorizontalAlignment="Right" Text="Başarılı" VerticalAlignment="Center" />
+                </StackPanel>
             </Grid>
 
             <ProgressBar Name="pbTotalDataProcessed" Minimum="0" Maximum="100" Value="0" Height="30" Margin="20,0">

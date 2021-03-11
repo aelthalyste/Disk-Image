@@ -139,7 +139,7 @@ namespace DiskBackupWpfGUI
                 //stackCloudZip.Visibility = Visibility.Collapsed;
                 //txtCloudZip.Visibility = Visibility.Collapsed;
                 txtTitleBar.Text = Resources["restoreStatus"].ToString();
-            }            
+            }
         }
 
         public async void RefreshStatus(CancellationToken cancellationToken)
@@ -182,9 +182,13 @@ namespace DiskBackupWpfGUI
                         //status infodan alınacak
                         var statusInfo = _statusInfoDal.Get(x => x.Id == resultTask.StatusInfoId);
                         txtLastStatus.Text = Resources[statusInfo.Status.ToString()].ToString();
+                        ChangeStatusImage(_statusInfo.Status);
                     }
                     else
+                    {
                         txtLastStatus.Text = Resources[resultTask.Status.ToString()].ToString();
+                        imgStatus.Source = new BitmapImage(new Uri("", UriKind.Relative));
+                    }
                 }
                 else 
                 { 
@@ -192,8 +196,29 @@ namespace DiskBackupWpfGUI
                     {
                         txtLocalPercentage.Text = "99.98%";
                     }
+                    ChangeStatusImage(_statusInfo.Status);
                 }
             }
+        }
+
+        public void ChangeStatusImage(StatusType status)
+        {
+            if (status == StatusType.Success)
+                imgStatus.Source = new BitmapImage(new Uri(@"../Resources/Icon/icons8_ok_3.ico", UriKind.Relative));
+            else if (status == StatusType.Fail)
+                imgStatus.Source = new BitmapImage(new Uri(@"../Resources/Icon/icons8_cancel.ico", UriKind.Relative));
+            else if (status == StatusType.NotEnoughDiskSpace)
+                imgStatus.Source = new BitmapImage(new Uri(@"../Resources/Icon/icons8-medium-risk-96.png", UriKind.Relative));
+            else if (status == StatusType.ConnectionError)
+                imgStatus.Source = new BitmapImage(new Uri(@"../Resources/Icon/icons8_brake_warning_2.ico", UriKind.Relative));
+            else if (status == StatusType.MissingFile)
+                imgStatus.Source = new BitmapImage(new Uri(@"../Resources/Icon/icons8-delete-file-24.png", UriKind.Relative));
+            else if (status == StatusType.DriverNotInitialized)
+                imgStatus.Source = new BitmapImage(new Uri(@"../Resources/Icon/icons8-medium-risk-96.png", UriKind.Relative));
+            else if (status == StatusType.PathNotFound)
+                imgStatus.Source = new BitmapImage(new Uri(@"../Resources/Icon/icons8-medium-risk-96.png", UriKind.Relative));
+            else if (status == StatusType.NewChainNotStarted)
+                imgStatus.Source = new BitmapImage(new Uri(@"../Resources/Icon/icons8_cancel.ico", UriKind.Relative));
         }
 
         #region Title Bar
