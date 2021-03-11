@@ -26,6 +26,7 @@ namespace DiskBackup.Entities.Concrete
         public WeeklyType WeeklyTime { get; set; } 
         public PeriodicType PeriodicTimeType { get; set; }
         public int PeriodicTime { get; set; }
+        public DateTime LastFullBackupDate { get; set; }
     }
 
     public enum BackupTypes

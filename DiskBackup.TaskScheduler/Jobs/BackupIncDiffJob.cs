@@ -50,7 +50,7 @@ namespace DiskBackup.TaskScheduler.Jobs
             task.BackupTaskInfo = _backupTaskDal.Get(x => x.Id == task.BackupTaskId);
 
             JobExecutionException exception = null;
-            byte result = 0;
+            int result = 0;
 
             ActivityLog activityLog = new ActivityLog
             {
@@ -84,7 +84,10 @@ namespace DiskBackup.TaskScheduler.Jobs
 
             try
             {
-                task.LastWorkingDate = DateTime.Now;               
+                if (DateTime.Now < task.NextDate)
+                    task.LastWorkingDate = DateTime.Now;
+                else
+                    task.LastWorkingDate = task.NextDate;
 
                 if (exception == null)
                 {
@@ -162,7 +165,11 @@ namespace DiskBackup.TaskScheduler.Jobs
                 _logger.Information("{@task} için Incremental-Differantial görevi aranan disk bulunamadığı için başlatılamadı. Sonuç: Başarısız.", task);
                 UpdateActivityAndTask(activityLog, task, StatusType.PathNotFound);
             }
-
+            else if (result == 8) // backup alınacak path yok
+            {
+                _logger.Information("{@task} için Incremental-Differantial görevi yeni zincir oluşturulamadığı için başlatılamadı. Sonuç: Başarısız.", task);
+                UpdateActivityAndTask(activityLog, task, StatusType.NewChainNotStarted);
+            }
         }
 
         private void UpdateActivityAndTask(ActivityLog activityLog, TaskInfo taskInfo, StatusType status)

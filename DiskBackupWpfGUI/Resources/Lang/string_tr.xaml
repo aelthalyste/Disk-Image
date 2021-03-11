@@ -257,6 +257,7 @@
     <system:String x:Key="MissingFile">Eksik Dosya</system:String>
     <system:String x:Key="ValidateNAS">NAS Doğrulama</system:String>
     <system:String x:Key="DriverNotInitialized">Driver Başlatılamadı</system:String>
+    <system:String x:Key="NewChainNotStarted">Yeni Zincir Başlatılamadı</system:String>
     <system:String x:Key="loading...">Yükleniyor...</system:String>
     <system:String x:Key="healthy">Sağlıklı</system:String>
     <system:String x:Key="unhealthy">Sağlıksız</system:String>
