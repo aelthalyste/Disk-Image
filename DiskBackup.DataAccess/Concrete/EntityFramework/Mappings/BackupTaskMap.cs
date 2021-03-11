@@ -31,6 +31,7 @@ namespace DiskBackup.DataAccess.Concrete.EntityFramework.Mappings
             Property(x => x.WeeklyTime).HasColumnName("weekly_time");
             Property(x => x.PeriodicTime).HasColumnName("periodic_time");
             Property(x => x.PeriodicTimeType).HasColumnName("periodic_time_type");
+            Property(x => x.LastFullBackupDate).HasColumnName("last_full_backup_date");
         }
     }
 }

@@ -84,7 +84,10 @@ namespace DiskBackup.TaskScheduler.Jobs
 
             try
             {
-                task.LastWorkingDate = DateTime.Now;               
+                if (DateTime.Now < task.NextDate)
+                    task.LastWorkingDate = DateTime.Now;
+                else
+                    task.LastWorkingDate = task.NextDate;
 
                 if (exception == null)
                 {

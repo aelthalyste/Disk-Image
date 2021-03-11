@@ -29,7 +29,6 @@ namespace DiskBackup.Business.Concrete
         private Dictionary<int, CancellationTokenSource> _cancellationTokenSource = new Dictionary<int, CancellationTokenSource>();
         private Dictionary<int, Stopwatch> _timeElapsedMap = new Dictionary<int, Stopwatch>();
 
-        private bool _isStarted = false; // TO DO -- Silinecek
         private bool _initTrackerResult = false;
         private bool _refreshIncDiffTaskFlag = false;
         private bool _refreshIncDiffLogFlag = false; // Refreshde yenilememe durumu olması durumunda her task için ayrı flagler oluşturulacak
@@ -37,16 +36,18 @@ namespace DiskBackup.Business.Concrete
         private readonly IStatusInfoDal _statusInfoDal; // status bilgilerini veritabanına yazabilmek için gerekli
         private readonly ITaskInfoDal _taskInfoDal; // status bilgilerini veritabanına yazabilmek için gerekli
         private readonly IBackupStorageDal _backupStorageDal;
+        private readonly IBackupTaskDal _backupTaskDal;
         private readonly ILogger _logger;
 
         private NetworkConnection _nc;
 
-        public BackupService(IStatusInfoDal statusInfoRepository, ITaskInfoDal taskInfoDal, ILogger logger, IBackupStorageDal backupStorageDal)
+        public BackupService(IStatusInfoDal statusInfoRepository, ITaskInfoDal taskInfoDal, ILogger logger, IBackupStorageDal backupStorageDal, IBackupTaskDal backupTaskDal)
         {
             _statusInfoDal = statusInfoRepository;
             _taskInfoDal = taskInfoDal;
             _logger = logger.ForContext<BackupService>();
             _backupStorageDal = backupStorageDal;
+            _backupTaskDal = backupTaskDal;
         }
 
         public bool InitTracker()
@@ -54,20 +55,16 @@ namespace DiskBackup.Business.Concrete
             // programla başlat 1 kere çalışması yeter
             // false değeri dönüyor ise eğer backup işlemlerini disable et
             _logger.Verbose("InitTracker metodu çağırıldı");
-            if (!_isStarted)
-            {
-                try
-                {
-                    _initTrackerResult = _diskTracker.CW_InitTracker();
-                    _isStarted = true;
-                }
-                catch (Exception ex)
-                {
-                    _isStarted = false;
-                    _logger.Error(ex, "_diskTracker.CW_InitTracker() gerçekleştirilemedi.");
-                }
 
+            try
+            {
+                _initTrackerResult = _diskTracker.CW_InitTracker();
             }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "_diskTracker.CW_InitTracker() gerçekleştirilemedi.");
+            }
+
             return _initTrackerResult;
         }
 
@@ -471,11 +468,27 @@ namespace DiskBackup.Business.Concrete
             if (!GetInitTracker())
                 return 5;
 
-            // TO DO -- yeni zincirin başlayıp başlamayacağına dair kontroller gerçekleştirilip duruma göre CleanChain çağırılacak
-            /*
-             * if (lastFullDate - datetime.now < taskInfo.BackupTask.FullTime)
-             *      cleanChain
-             */
+            // yeni zincirin başlayıp başlamayacağına dair kontroller gerçekleştirilip duruma göre CleanChain çağırılıyor
+            int days = taskInfo.BackupTaskInfo.FullBackupTime;
+            if (taskInfo.BackupTaskInfo.FullBackupTimeType == FullBackupTimeTyp.Week)
+            {
+                days = taskInfo.BackupTaskInfo.FullBackupTime * 7;
+            }
+            if ((DateTime.Now - taskInfo.BackupTaskInfo.LastFullBackupDate).Days >= days)
+            {
+                foreach (var letter in taskInfo.StrObje)
+                {
+                    try
+                    {
+                        CleanChain(letter);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.Error(ex, "Beklenmedik hatadan dolayı {harf} zincir temizleme işlemi gerçekleştirilemedi.", letter);
+                        // TO DO yeni zincir başlatılamıyorsa hata dönülmesi isteniyorsa
+                    }
+                }
+            }
 
             // NAS için
             NetworkConnection nc = null;
@@ -495,15 +508,8 @@ namespace DiskBackup.Business.Concrete
             if (!Directory.Exists(taskInfo.BackupStorageInfo.Path))
                 return 6;
 
-            if (_statusInfoDal == null) // TO DO -- Silinecek
-                throw new Exception("StatusInfoDal is null");
             var statusInfo = _statusInfoDal.Get(si => si.Id == taskInfo.StatusInfoId); //her task için uygulanmalı
 
-            if (statusInfo == null) // TO DO -- Silinecek
-                throw new Exception("statusInfo is null");
-
-            if (_diskTracker == null) // TO DO -- Silinecek
-                throw new Exception("_diskTracker is null");
             var manualResetEvent = new ManualResetEvent(true);
             _taskEventMap[taskInfo.Id] = manualResetEvent;
 
@@ -512,7 +518,6 @@ namespace DiskBackup.Business.Concrete
 
             timeElapsed.Start();
 
-            _isStarted = true;
             _cancellationTokenSource[taskInfo.Id] = new CancellationTokenSource();
 
             var cancellationToken = _cancellationTokenSource[taskInfo.Id].Token;
@@ -548,11 +553,13 @@ namespace DiskBackup.Business.Concrete
                         fixed (byte* BAddr = &buffer[0])
                         {
                             FileStream file = File.Create(taskInfo.BackupStorageInfo.Path + str.FileName); //backupStorageInfo path alınıcak
-                            // TO DO -- Burada full name ve full date veritabanına kaydedilecek, FileName içinde eğer ki FULL ibaresi geçiyorsa 
-                            /*
-                             * if (FileName.Contains("FULL")
-                             *      veritabanına lastfullname ve lastfulldate güncellenecek
-                             */
+
+                            if (str.FileName.Contains("FULL")) // Süreli backup zinciri için ne zaman en son full backup'ın alındığı burada güncelleniyor
+                            {
+                                taskInfo.BackupTaskInfo.LastFullBackupDate = (taskInfo.LastWorkingDate - TimeSpan.FromSeconds(taskInfo.LastWorkingDate.Second)) - TimeSpan.FromMilliseconds(taskInfo.LastWorkingDate.Millisecond); // ms ve sn sıfırlamak için
+                                _backupTaskDal.Update(taskInfo.BackupTaskInfo);
+                            }
+
                             while (true)
                             {
                                 if (cancellationToken.IsCancellationRequested)
@@ -730,7 +737,6 @@ namespace DiskBackup.Business.Concrete
             _logger.Verbose("PauseTask metodu çağırıldı");
 
             var timeElapsed = _timeElapsedMap[taskInfo.Id];
-            if (!_isStarted) throw new Exception("Backup is not started");
             timeElapsed.Stop();
 
             var statusInfo = _statusInfoDal.Get(si => si.Id == taskInfo.StatusInfoId);
@@ -751,7 +757,6 @@ namespace DiskBackup.Business.Concrete
 
             var timeElapsed = _timeElapsedMap[taskInfo.Id];
             _cancellationTokenSource[taskInfo.Id].Cancel();
-            _isStarted = false;
             timeElapsed.Stop();
 
             var statusInfo = _statusInfoDal.Get(si => si.Id == taskInfo.StatusInfoId);
@@ -773,7 +778,6 @@ namespace DiskBackup.Business.Concrete
             _logger.Verbose("ResumeTask metodu çağırıldı");
 
             var timeElapsed = _timeElapsedMap[taskInfo.Id];
-            if (!_isStarted) throw new Exception("Backup is not started");
             timeElapsed.Start();
 
             var statusInfo = _statusInfoDal.Get(si => si.Id == taskInfo.StatusInfoId);
@@ -977,18 +981,6 @@ namespace DiskBackup.Business.Concrete
 
             return ($"{dblSByte:0.##} {Suffix[i]}");
         }
-
-
-
-
-
-
-
-
-
-
-
-
 
         /*0 - NAS'a bağlanamama
           1 - Silme işlemleri gerçekleştirilemedi
