@@ -1154,8 +1154,10 @@ NarGetMFTRegionsByCommandLine(char Letter, unsigned int* OutRecordCount){
     char *prev = str;
     char *next = str;
     
-    char ClustersHexStr[64];
-    char LCNHexStr[64];
+    char *end = (char*)str + FileContents.Len;
+    
+    char ClustersHexStr[128];
+    char LCNHexStr[128];
     char Line[128];
     memset(ClustersHexStr, 0, sizeof(ClustersHexStr));
     memset(LCNHexStr, 0, sizeof(LCNHexStr));
@@ -1163,9 +1165,12 @@ NarGetMFTRegionsByCommandLine(char Letter, unsigned int* OutRecordCount){
     
     while(TRUE){
         
-        while(*next != '\n' && *next != 0 && *next != -3){
+        while(next < end && *next != '\n' && *next != -3){
             next++;
         }
+        
+        if(next == end) 
+            break;
         
         if(next != prev){
             
@@ -2851,7 +2856,6 @@ FreeBackupMetadataEx(backup_metadata_ex* BMEX) {
         free(BMEX);
     }
 }
-
 
 file_read
 NarReadFile(const char* FileName) {
@@ -7895,6 +7899,9 @@ DEBUG_FileExplorerQuery(){
 int
 main(int argc, char* argv[]) {
     //GetMFTandINDXLCN
+    unsigned int out=0;
+    nar_record *someptr = NarGetMFTRegionsByCommandLine('C', &out);
+    return 0;
     int inp;
     
     if(0){
