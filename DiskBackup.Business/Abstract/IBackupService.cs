@@ -33,7 +33,7 @@ namespace DiskBackup.Business.Abstract
 
         //INC ve DIFF TaskInfo'dan strObjeyi alarak çoklu seçim yapabilir
         [OperationContract]
-        byte CreateIncDiffBackup(TaskInfo taskInfo);
+        int CreateIncDiffBackup(TaskInfo taskInfo);
         [OperationContract]
         bool CreateFullBackup(TaskInfo taskInfo); //Bu daha hazır değil        
 

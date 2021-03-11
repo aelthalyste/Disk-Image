@@ -461,7 +461,7 @@ namespace DiskBackup.Business.Concrete
             return DiskTracker.CW_IsVolumeAvailable(letter);
         }
 
-        public byte CreateIncDiffBackup(TaskInfo taskInfo) // 0 başarısız, 1 başarılı, 2 kullanıcı durdurdu 8. DURUM GELİRSE BYTE'DAN ÇIKAR
+        public int CreateIncDiffBackup(TaskInfo taskInfo) // 0 başarısız, 1 başarılı, 2 kullanıcı durdurdu
         {
             _logger.Verbose("CreateIncDiffBackup metodu çağırıldı");
 
@@ -485,7 +485,7 @@ namespace DiskBackup.Business.Concrete
                     catch (Exception ex)
                     {
                         _logger.Error(ex, "Beklenmedik hatadan dolayı {harf} zincir temizleme işlemi gerçekleştirilemedi.", letter);
-                        // TO DO yeni zincir başlatılamıyorsa hata dönülmesi isteniyorsa
+                        return 8;
                     }
                 }
             }
