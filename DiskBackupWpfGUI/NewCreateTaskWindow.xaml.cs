@@ -319,7 +319,22 @@ namespace DiskBackupWpfGUI
                         _taskInfo.BackupTaskInfo.Months = ChooseDayAndMounthsWindow._months;
                         _taskInfo.NextDate = (DateTime)tpWeeklyTime.Value;
                         //haftalar
-                        _taskInfo.BackupTaskInfo.WeeklyTime = (WeeklyType)cbWeeklyTimeWeek.SelectedIndex;
+                        if (cbWeeklyTimeWeek.SelectedIndex == 0)
+                        {
+                            _taskInfo.BackupTaskInfo.WeeklyTime = WeeklyType.First;
+                        }
+                        else if (cbWeeklyTimeWeek.SelectedIndex == 1)
+                        {
+                            _taskInfo.BackupTaskInfo.WeeklyTime = WeeklyType.Second;
+                        }
+                        else if (cbWeeklyTimeWeek.SelectedIndex == 2)
+                        {
+                            _taskInfo.BackupTaskInfo.WeeklyTime = WeeklyType.Third;
+                        }
+                        else
+                        {
+                            _taskInfo.BackupTaskInfo.WeeklyTime = WeeklyType.Fourth;
+                        }
                         //günler
                         _taskInfo.BackupTaskInfo.Days = (cbWeeklyTimeDays.SelectedIndex + 1).ToString();
                     }
