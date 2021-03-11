@@ -1251,6 +1251,9 @@ GetMFTandINDXLCN(char VolumeLetter, HANDLE VolumeHandle) {
     
     UINT32 MEMORY_BUFFER_SIZE = 1024LL * 1024LL * 512;
     UINT32 ClusterExtractedBufferSize = 1024 * 1024 * 128;
+    
+    UINT32 MaxOutputLen = ClusterExtractedBufferSize/sizeof(nar_record);
+    
     INT32 ClusterSize = NarGetVolumeClusterSize(VolumeLetter);
     
     nar_record* ClustersExtracted = (nar_record*)malloc(ClusterExtractedBufferSize);
@@ -1260,6 +1263,24 @@ GetMFTandINDXLCN(char VolumeLetter, HANDLE VolumeHandle) {
         memset(ClustersExtracted, 0, ClusterExtractedBufferSize);
     }
     
+    auto AutoCompressAndResizeOutput = [&](){
+        if(ClusterExtractedCount >= MaxOutputLen/2){
+            printf("Sort&Merge %u regions\n", ClusterExtractedCount);
+            qsort(ClustersExtracted, ClusterExtractedCount, sizeof(nar_record), CompareNarRecords);
+            data_array<nar_record> temp;
+            temp.Data = ClustersExtracted;
+            temp.Count = ClusterExtractedCount;
+            MergeRegions(&temp);
+            
+            printf("New region length %u\n", temp.Count);
+            
+            temp.Data = (nar_record*)realloc(temp.Data, MaxOutputLen*2*sizeof(nar_record));
+            MaxOutputLen *= 2;
+            ClustersExtracted = temp.Data;
+            ClusterExtractedCount = temp.Count;
+            
+        }
+    };
     
     void* FileBuffer = malloc(MEMORY_BUFFER_SIZE);
     UINT32 FileBufferCount = MEMORY_BUFFER_SIZE / 1024LL;
@@ -1342,16 +1363,18 @@ GetMFTandINDXLCN(char VolumeLetter, HANDLE VolumeHandle) {
                                 void *BitmapAttr = NarFindFileAttributeFromFileRecord(FileRecord, NAR_BITMAP_FLAG);
                                 
                                 if(IndxOffset != NULL){
+                                    AutoCompressAndResizeOutput();
+                                    
                                     if(BitmapAttr == NULL){
                                         INT32 RegFound = 0;
-                                        NarParseIndexAllocationAttribute(IndxOffset, &ClustersExtracted[ClusterExtractedCount], ClusterExtractedBufferSize/sizeof(ClustersExtracted[0]) - ClusterExtractedCount, &RegFound);
+                                        NarParseIndexAllocationAttribute(IndxOffset, &ClustersExtracted[ClusterExtractedCount], MaxOutputLen - ClusterExtractedCount, &RegFound);
                                         ClusterExtractedCount += RegFound;
                                     }
                                     else{
                                         // NOTE(Batuhan): parses indx allocation to one-cluster granuality blocks, to make bitmap parsing trivial. increases memory usage(at parsing stage, not for the final outcome), but makes parsing much easier.
                                         NAR_BREAK_CODE();
                                         INT32 RegFound = 0;
-                                        NarParseIndexAllocationAttributeSingular(IndxOffset, &ClustersExtracted[ClusterExtractedCount], ClusterExtractedBufferSize/sizeof(ClustersExtracted[0]) - ClusterExtractedCount, &RegFound);
+                                        NarParseIndexAllocationAttributeSingular(IndxOffset, &ClustersExtracted[ClusterExtractedCount], MaxOutputLen - ClusterExtractedCount, &RegFound);
                                         
                                         
                                         int BLen = NarGetBitmapAttributeDataLen(BitmapAttr);
@@ -1422,6 +1445,7 @@ GetMFTandINDXLCN(char VolumeLetter, HANDLE VolumeHandle) {
     Result.Count = ClusterExtractedCount;
     
     if(Result.Count > 0){
+        printf("Will be sorting&merging %u regions\n", Result.Count); 
         qsort(Result.Data, Result.Count, sizeof(nar_record), CompareNarRecords);
         MergeRegions(&Result);
     }
@@ -5826,9 +5850,11 @@ NarParseIndexAllocationAttributeSingular(void *IndexAttribute, nar_record *OutRe
     INT32 InternalRegionsFound = 0;
     
     auto InsertLambda = [&](unsigned int s, unsigned int l){
-        OutRegions[InternalRegionsFound].StartPos = s;
-        OutRegions[InternalRegionsFound].Len = l;
-        InternalRegionsFound++;
+        if(InternalRegionsFound < MaxRegionLen){
+            OutRegions[InternalRegionsFound].StartPos = s;
+            OutRegions[InternalRegionsFound].Len = l;
+            InternalRegionsFound++;
+        }
     };
     
     INT32 DataRunsOffset = *(INT32*)((BYTE*)IndexAttribute + 32);
@@ -7900,8 +7926,6 @@ int
 main(int argc, char* argv[]) {
     //GetMFTandINDXLCN
     unsigned int out=0;
-    nar_record *someptr = NarGetMFTRegionsByCommandLine('C', &out);
-    return 0;
     int inp;
     
     if(0){
