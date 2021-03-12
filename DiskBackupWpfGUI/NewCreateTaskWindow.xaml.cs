@@ -342,7 +342,14 @@ namespace DiskBackupWpfGUI
                     {
                         _taskInfo.BackupTaskInfo.AutoType = AutoRunType.Periodic;
                         _taskInfo.BackupTaskInfo.PeriodicTime = Convert.ToInt32(cbPeriodic.SelectedItem);
-                        _taskInfo.BackupTaskInfo.PeriodicTimeType = (PeriodicType)cbPeriodicTime.SelectedIndex;
+                        if (cbPeriodicTime.SelectedIndex == 0)
+                        {
+                            _taskInfo.BackupTaskInfo.PeriodicTimeType = PeriodicType.Hour;
+                        }
+                        else
+                        {
+                            _taskInfo.BackupTaskInfo.PeriodicTimeType = PeriodicType.Minute;
+                        }
                     }
                     else
                     {
