@@ -105,7 +105,7 @@
                 </TabItem.Header>
                 <Grid Background="White">
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="425"/>
+                        <RowDefinition Height="420"/>
                         <RowDefinition/>
                     </Grid.RowDefinitions>
                     <DockPanel>
@@ -278,7 +278,7 @@
                         <ColumnDefinition Width="45"/>
                     </Grid.ColumnDefinitions>
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="425"/>
+                        <RowDefinition Height="420"/>
                         <RowDefinition />
                     </Grid.RowDefinitions>
                     <DockPanel>
@@ -316,7 +316,7 @@
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
-                                    <GridViewColumn Width="65" >
+                                    <GridViewColumn Width="60" >
                                         <GridViewColumn.Header>
                                             <GridViewColumnHeader Content="{DynamicResource object}" Tag="Obje" Click="listviewTasksColumnHeaderSort_Click"/>
                                         </GridViewColumn.Header>
@@ -336,7 +336,7 @@
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
-                                    <GridViewColumn Width="125" >
+                                    <GridViewColumn Width="130" >
                                         <GridViewColumn.Header>
                                             <GridViewColumnHeader Content="{DynamicResource lastStudy}" Tag="LastWorkingDate" Click="listviewTasksColumnHeaderSort_Click"/>
                                         </GridViewColumn.Header>
@@ -346,7 +346,7 @@
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
-                                    <GridViewColumn Width="125" >
+                                    <GridViewColumn Width="130" >
                                         <GridViewColumn.Header>
                                             <GridViewColumnHeader Content="{DynamicResource nextStudy}" Tag="NextDate" Click="listviewTasksColumnHeaderSort_Click"/>
                                         </GridViewColumn.Header>
@@ -366,7 +366,7 @@
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
-                                    <GridViewColumn Width="155" >
+                                    <GridViewColumn Width="150" >
                                         <GridViewColumn.Header>
                                             <GridViewColumnHeader Content="{DynamicResource description}" Tag="Descripiton" Click="listviewTasksColumnHeaderSort_Click"/>
                                         </GridViewColumn.Header>
@@ -1221,7 +1221,7 @@
                         <ColumnDefinition Width="45"/>
                     </Grid.ColumnDefinitions>
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="425"/>
+                        <RowDefinition Height="420"/>
                         <RowDefinition/>
                     </Grid.RowDefinitions>
                     <DockPanel>
