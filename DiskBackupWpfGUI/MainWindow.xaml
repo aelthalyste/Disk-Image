@@ -511,7 +511,7 @@
                                 </Button.Content>
                             </Button>
                             <Button Name="btnCopyTask" ToolTip="{DynamicResource copy}" Width="32" Height="32" HorizontalAlignment="Center" Click="btnCopyTask_Click"
-                                    Margin="0,5" Style="{StaticResource ImageButton}" Grid.Column="1" IsEnabled="False">
+                                    Margin="0,5" Style="{StaticResource ImageButton}" Grid.Column="1" IsEnabled="False" Visibility="Collapsed">
                                 <Button.Content>
                                     <Image Height="27" Width="27" HorizontalAlignment="Center" VerticalAlignment="Center">
                                         <Image.Style>
@@ -623,7 +623,7 @@
                             <ListView Name="listViewRestore" Height="370" Margin="5" SelectionChanged="listViewRestore_SelectionChanged" Grid.Row="0">
                                 <ListView.View>
                                     <GridView>
-                                        <GridViewColumn Width="60">
+                                        <GridViewColumn Width="70">
                                             <GridViewColumn.Header>
                                                 <GridViewColumnHeader Content="{DynamicResource type}" Tag="Type" Click="listviewRestoreColumnHeaderSort_Click"/>
                                             </GridViewColumn.Header>
@@ -793,7 +793,7 @@
                         <TextBlock Margin="0,0,0,15" Text="{DynamicResource fileInfo}" FontSize="18" HorizontalAlignment="Center" FontWeight="Bold"/>
                         <Grid>
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="140"/>
+                                <ColumnDefinition Width="130"/>
                                 <ColumnDefinition Width="10"/>
                                 <ColumnDefinition/>
                             </Grid.ColumnDefinitions>
