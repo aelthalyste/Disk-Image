@@ -570,7 +570,10 @@ namespace DiskBackup.Business.Concrete
                                     manualResetEvent.Dispose();
                                     _cancellationTokenSource[taskInfo.Id].Dispose();
                                     _cancellationTokenSource.Remove(taskInfo.Id);
-                                    DeleteMissingBackupFile(taskInfo, str, file);
+                                    file.Close();
+                                    // oluşturulan dosyayı sil
+                                    _logger.Information("Görev iptal edildiği için {dizin} ve {metadataDizin} dizinleri siliniyor.", taskInfo.BackupStorageInfo.Path + str.FileName, (Directory.GetCurrentDirectory() + @"\" + str.MetadataFileName));
+                                    DeleteBrokenBackupFiles(taskInfo, str);
                                     return 2;
                                 }
                                 manualResetEvent.WaitOne();
@@ -590,12 +593,10 @@ namespace DiskBackup.Business.Concrete
                                 statusInfo.TimeElapsed = timeElapsed.ElapsedMilliseconds;
                                 _statusInfoDal.Update(statusInfo);
 
-                                //_logger.Information($"gecen süre: {passingTime.ElapsedMilliseconds} islenen veri: {instantProcessData}");
                                 if (passingTime.ElapsedMilliseconds > 1000) // anlık veri için her saniye güncellensin diye
                                 {
                                     instantProcessData = 0;
                                     passingTime.Restart();
-                                    //_logger.Information($"Restart edildi. gecen süre: {passingTime.ElapsedMilliseconds} islenen veri: {instantProcessData}");
                                 }
 
                                 if (Read != bufferSize)
@@ -605,22 +606,7 @@ namespace DiskBackup.Business.Concrete
                             _diskTracker.CW_TerminateBackup(result, letter); //işlemi başarılı olup olmadığı cancel gelmeden
                             BytesReadSoFar = 0;
 
-                            try
-                            {
-                                File.Copy(str.MetadataFileName, taskInfo.BackupStorageInfo.Path + str.MetadataFileName, false);
-                            }
-                            catch (IOException iox)
-                            {
-                                _logger.Error(iox, "{dizin} dizinine metadata dosyası kopyalama işlemi başarısız.", (taskInfo.BackupStorageInfo.Path + str.MetadataFileName));
-                            }
-                            try
-                            {
-                                File.Delete(Directory.GetCurrentDirectory() + @"\" + str.MetadataFileName);
-                            }
-                            catch (IOException ex)
-                            {
-                                _logger.Error(ex, "{dizin} dizinindeki metadata dosyasını silme işlemi başarısız.", (Directory.GetCurrentDirectory() + @"\" + str.MetadataFileName));
-                            }
+                            CopyAndDeleteMetadataFile(taskInfo, str); //çalışılan dizine çıkartılan narmd dosyası kopyalanıp ilgili dizine silme işlemi yapılıyor
 
                             file.Close();
 
@@ -652,51 +638,52 @@ namespace DiskBackup.Business.Concrete
             _cancellationTokenSource.Remove(taskInfo.Id);
             if (result)
                 return 1;
+            _logger.Information("Görev başarısız olduğu için {dizin} ve {metadataDizin} dizinleri siliniyor.", taskInfo.BackupStorageInfo.Path + str.FileName, (Directory.GetCurrentDirectory() + @"\" + str.MetadataFileName));
             DeleteBrokenBackupFiles(taskInfo, str);
             return 0;
         }
 
-        private void DeleteBrokenBackupFiles(TaskInfo taskInfo, StreamInfo str)
+        private unsafe void CopyAndDeleteMetadataFile(TaskInfo taskInfo, StreamInfo str)
         {
-            _logger.Information("Görev başarısız olduğu için {dizin} siliniyor.", taskInfo.BackupStorageInfo.Path + str.FileName);
             try
             {
-                File.Delete(taskInfo.BackupStorageInfo.Path + str.FileName);
-            }
-            catch (IOException ex)
-            {
-                _logger.Error(ex, "{dizin} dizinindeki dosya silme işlemi başarısız.", taskInfo.BackupStorageInfo.Path + str.FileName);
-            }
-            _logger.Information("Görev başarısız olduğu için {dizin} siliniyor.", (Directory.GetCurrentDirectory() + @"\" + str.MetadataFileName));
-            try
-            {
-                File.Delete(Directory.GetCurrentDirectory() + @"\" + str.MetadataFileName);
-            }
-            catch (IOException ex)
-            {
-                _logger.Error(ex, "{dizin} dizinindeki metadata dosyasını silme işlemi başarısız.", (Directory.GetCurrentDirectory() + @"\" + str.MetadataFileName));
-            }
-        }
-
-        private unsafe void DeleteMissingBackupFile(TaskInfo taskInfo, StreamInfo str, FileStream file)
-        {
-            // oluşturulan dosyayı sil
-            _logger.Information("Görev iptal edildiği için {dizin} siliniyor.", taskInfo.BackupStorageInfo.Path + str.FileName);
-            try
-            {
-                file.Close();
+                if (File.Exists(Directory.GetCurrentDirectory() + @"\" + str.MetadataFileName))
+                {
+                    File.Copy(str.MetadataFileName, taskInfo.BackupStorageInfo.Path + str.MetadataFileName, false);
+                    File.Delete(Directory.GetCurrentDirectory() + @"\" + str.MetadataFileName);
+                }
+                else
+                    _logger.Information($"{Directory.GetCurrentDirectory() + @"\" + str.MetadataFileName} ilgili .narmd uzantılı dosya bulunamadığı için kopyalama işlemi yapılamıyor ve silinemiyor.");
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "{dizin} dizinindeki dosyayı kapatma işlemi başarısız.", taskInfo.BackupStorageInfo.Path + str.FileName);
+                _logger.Error(ex, "{dizin} dizinine metadata dosyası kopyalayıp silme işlemi başarısız.", (taskInfo.BackupStorageInfo.Path + str.MetadataFileName));
+            }
+        }
+
+        private void DeleteBrokenBackupFiles(TaskInfo taskInfo, StreamInfo str)
+        {
+            try
+            {
+                if (File.Exists(taskInfo.BackupStorageInfo.Path + str.FileName))
+                    File.Delete(taskInfo.BackupStorageInfo.Path + str.FileName);
+                else
+                    _logger.Information($"{taskInfo.BackupStorageInfo.Path + str.FileName} ilgili .narbd uzantılı dosya bulunamadığı için silme işlemi yapılamıyor.");
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "{dizin} dizinindeki dosya silme işlemi başarısız.", taskInfo.BackupStorageInfo.Path + str.FileName);
             }
             try
             {
-                File.Delete(taskInfo.BackupStorageInfo.Path + str.FileName);
+                if (File.Exists(Directory.GetCurrentDirectory() + @"\" + str.MetadataFileName))
+                    File.Delete(Directory.GetCurrentDirectory() + @"\" + str.MetadataFileName);
+                else
+                    _logger.Information($"{Directory.GetCurrentDirectory() + @"\" + str.MetadataFileName} ilgili .narmd uzantılı dosya bulunamadığı için silme işlemi yapılamıyor.");
             }
-            catch (IOException ex)
+            catch (Exception ex)
             {
-                _logger.Error(ex, "{dizin} dizinindeki dosya silme işlemi başarısız.", taskInfo.BackupStorageInfo.Path + str.FileName);
+                _logger.Error(ex, "{dizin} dizinindeki metadata dosyasını silme işlemi başarısız.", (Directory.GetCurrentDirectory() + @"\" + str.MetadataFileName));
             }
         }
 
