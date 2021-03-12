@@ -469,6 +469,7 @@ namespace DiskBackup.Business.Concrete
                 return 5;
 
             // yeni zincirin başlayıp başlamayacağına dair kontroller gerçekleştirilip duruma göre CleanChain çağırılıyor
+            int fullCount = 0;
             int days = taskInfo.BackupTaskInfo.FullBackupTime;
             if (taskInfo.BackupTaskInfo.FullBackupTimeType == FullBackupTimeTyp.Week)
             {
@@ -554,10 +555,9 @@ namespace DiskBackup.Business.Concrete
                         {
                             FileStream file = File.Create(taskInfo.BackupStorageInfo.Path + str.FileName); //backupStorageInfo path alınıcak
 
-                            if (str.FileName.Contains("FULL")) // Süreli backup zinciri için ne zaman en son full backup'ın alındığı burada güncelleniyor
+                            if (str.FileName.Contains("FULL")) // Süreli backup zinciri için ne zaman en son full backup'ın alındığı bu count ile belirleniyor return 1'den önce tarih güncelleniyor
                             {
-                                taskInfo.BackupTaskInfo.LastFullBackupDate = (taskInfo.LastWorkingDate - TimeSpan.FromSeconds(taskInfo.LastWorkingDate.Second)) - TimeSpan.FromMilliseconds(taskInfo.LastWorkingDate.Millisecond); // ms ve sn sıfırlamak için
-                                _backupTaskDal.Update(taskInfo.BackupTaskInfo);
+                                fullCount++;
                             }
 
                             while (true)
@@ -637,7 +637,14 @@ namespace DiskBackup.Business.Concrete
             _cancellationTokenSource[taskInfo.Id].Dispose();
             _cancellationTokenSource.Remove(taskInfo.Id);
             if (result)
+            {
+                if (fullCount == taskInfo.Obje)
+                {
+                    taskInfo.BackupTaskInfo.LastFullBackupDate = (taskInfo.LastWorkingDate - TimeSpan.FromSeconds(taskInfo.LastWorkingDate.Second)) - TimeSpan.FromMilliseconds(taskInfo.LastWorkingDate.Millisecond); // ms ve sn sıfırlamak için
+                    _backupTaskDal.Update(taskInfo.BackupTaskInfo);
+                }   
                 return 1;
+            }
             _logger.Information("Görev başarısız olduğu için {dizin} ve {metadataDizin} dizinleri siliniyor.", taskInfo.BackupStorageInfo.Path + str.FileName, (Directory.GetCurrentDirectory() + @"\" + str.MetadataFileName));
             DeleteBrokenBackupFiles(taskInfo, str);
             return 0;
