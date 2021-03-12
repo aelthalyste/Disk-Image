@@ -268,7 +268,7 @@ namespace NarDIWrapper {
             R.DiskType = OverWritedTargetDiskType;
             R.OverrideDiskType = true;
         }
-
+        
         R.RepairBoot = ShouldRepairBoot;
         
         if (BM->Version < 0) {
@@ -309,6 +309,15 @@ namespace NarDIWrapper {
         return FALSE;   
     }
     
+    // Returns backup id of the volume if it exists in backup system(and in kernel)
+    unsigned long long DiskTracker::CW_IsVolumeExists(wchar_t Letter){
+        unsigned long long Result = 0;
+        INT32 bcid = GetVolumeID(C, Letter);
+        if(bcid != NAR_INVALID_VOLUME_TRACK_ID){
+            Result = C->Volumes.Data[bcid].BackupID.Q;
+        }
+        return Result;
+    }
     
     List<VolumeInformation^>^ DiskTracker::CW_GetVolumes() {
         data_array<volume_information> V = NarGetVolumes();
