@@ -63,6 +63,10 @@ namespace NarDIWrapper {
             return memcmp(bm->BackupID, BackupID, sizeof(*BackupID));
         }
         
+        bool IsSameChainID(unsigned long long AnotherID){
+            return (BackupID->Q == AnotherID);
+        }
+        
         wchar_t Letter;
         int BackupType;
         int Version;
@@ -83,7 +87,6 @@ namespace NarDIWrapper {
         System::String^ TaskDescription;
         System::String^ ComputerName;
         System::String^ IpAdress;
-        
         
         nar_backup_id *BackupID;
         
