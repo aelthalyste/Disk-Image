@@ -1027,9 +1027,8 @@ namespace DiskBackup.Business.Concrete
                 // zinciri elde et
                 List<BackupMetadata> chainList = GetChainList(backupMetadata, backupMetadataAllList);
 
-                if (backupMetadata.BackupType == 0) // 0 diff - diff restore
+                if (backupMetadata.BackupType == 0) // 0 diff
                 {
-                    // Full ve restore edilecek backup aynı dizinde olması gerekiyor.
                     if (backupMetadata.Version == -1)
                     {
                         //tüm zinciri sil
@@ -1039,9 +1038,12 @@ namespace DiskBackup.Business.Concrete
                             if (result != 2)
                                 return result;
                         }
-                        // TO DO -- son zincirin full'ü mü silindi duruma göre cleanChain çalıştır (backupmetadata içinde letter kullanarak aynı volume backuplarını bir araya topla)
-                        CleanChain(backupMetadata.Letter); // TO DO -- Silinecek
-                        _logger.Information("Diff silme işleminden sonra, {letter} için yeni zincir başlatıldı.", backupMetadata.Letter);
+
+                        if (backupMetadata.IsSameChainID(_diskTracker.CW_IsVolumeExists(backupMetadata.Letter)))
+                        {
+                            CleanChain(backupMetadata.Letter);
+                            _logger.Information($"{backupMetadata.Fullpath} silinirken '{backupMetadata.Letter}' volume'nde işleyen zincir olduğu için yeni zincir başlatıldı.");
+                        }
                     }
                     else
                     {
@@ -1051,9 +1053,8 @@ namespace DiskBackup.Business.Concrete
                             return result;
                     }
                 }
-                else if (backupMetadata.BackupType == 1) // 1 inc - inc restore
+                else if (backupMetadata.BackupType == 1) // 1 inc
                 {
-                    // ilgili backup versiyonuna kadar tüm backuplar aynı dizinde olmalı. Sayıyı kontrol et, versiyonları kontrol et
                     int index2 = 0;
                     foreach (var backupMetadataItem in chainList)
                     {
@@ -1070,9 +1071,11 @@ namespace DiskBackup.Business.Concrete
                         index2++;
                     }
 
-                    // TO DO -- son zincirin versionlarından biri mi silindi duruma göre cleanChain çalıştır (backupmetadata içinde letter kullanarak aynı volume backuplarını bir araya topla)
-                    CleanChain(backupMetadata.Letter); // TO DO -- Silinecek
-                    _logger.Information("Inc silme işleminden sonra, {letter} için yeni zincir başlatıldı.", backupMetadata.Letter);
+                    if (backupMetadata.IsSameChainID(_diskTracker.CW_IsVolumeExists(backupMetadata.Letter)))
+                    {
+                        CleanChain(backupMetadata.Letter);
+                        _logger.Information($"{backupMetadata.Fullpath} silinirken '{backupMetadata.Letter}' volume'nde işleyen zincir olduğu için yeni zincir başlatıldı.");
+                    }
                 }
             }
 
@@ -1103,8 +1106,8 @@ namespace DiskBackup.Business.Concrete
 
             try
             {
-                File.Delete(backupMetadata.Fullpath);
-                File.Delete(newRootDir + backupMetadata.Metadataname);
+                File.Delete(backupMetadata.Fullpath); //.narbd
+                File.Delete(newRootDir + backupMetadata.Metadataname); //.narmd
             }
             catch (IOException ex)
             {
