@@ -480,6 +480,7 @@ struct volume_backup_inf {
     unsigned int MFTLCNCount;
     
     CComPtr<IVssBackupComponents> VSSPTR;
+    VSS_ID SnapshotID;
     
 };
 

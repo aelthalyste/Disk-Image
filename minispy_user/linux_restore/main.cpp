@@ -61,7 +61,10 @@ enum app_state{
 	app_state_select_restore_type, // disk or volume
 	app_state_select_disk,
 	app_state_select_volume,
-	app_state_restore
+	app_state_restore,
+	app_state_restore_in_work,
+	app_state_done,
+	app_state_count
 };
 
 struct linux_disks{
@@ -122,31 +125,44 @@ GetDisks(){
 	return Result;
 }
 
-/*
-struct restore_thread_params{
-	restore_inf RestoreInf;
-};
 
-void
+
+
+static void*
 RestoreWorkerThread(void* thread_params){	
-	restore_inf* RestoreInf = ((restore_thread_params*)thread_params)->RestoreInf;
-	OfflineRestoreDisk(RestoreInf);	
+	restore_inf *RestoreInf = ((restore_inf*)thread_params);
+	OfflineRestore(RestoreInf);	
+	return NULL;
 }
 
 pthread_t
-CallRestoreInThread(restore_thread_params Ri){
-	       int pthread_create(pthread_t *thread, const pthread_attr_t *attr,
-                          void *(*start_routine) (void *), void *arg);
+CallRestoreInThread(restore_inf Ri){
+	//       int pthread_create(pthread_t *thread, const pthread_attr_t *attr, void *(*start_routine) (void *), void *arg);
 	
 	pthread_t RestoreThread; 
 	pthread_attr_t ThreadAttributes;
-	int tr = pthread_create(&RestoreThread, 0, &ThreadAttributes, RestoreWorkerThead, &RestoreInf);
-	if(){
-		
-	}
+	memset(&ThreadAttributes, 0, sizeof(ThreadAttributes));
 	
+	pthread_attr_init(&ThreadAttributes);
+	
+	int tr = pthread_create(&RestoreThread, &ThreadAttributes, &RestoreWorkerThread, &Ri);
+	if(tr == 0){
+		fprintf(stdout, "Successfully created thread\n");
+	}
+	else{
+		if(tr == EINVAL){
+			fprintf(stderr, "Couldn't create thread, EINVAL\n");
+		}
+		if(tr == EPERM){
+			fprintf(stderr, "Couldn't create thread, EPERM\n");
+		}
+		if(tr == EAGAIN){
+			fprintf(stderr, "Couldn't create thread, EGAIN\n");
+		}
+	}
+	return RestoreThread;
 }
-*/
+
 
 
 std::string
@@ -218,14 +234,14 @@ SelectPartition(){
 
 int main(int, char**)
 {
-	{
+	if(0){
 		const char fn[] = "/media/lubuntu/New Volume/Disk-Image/build/minispy_user/NAR_M_0-F19704356773431269.narmd";	
 		FILE *F = fopen(fn, "rb");
-		if(F) std::cout<<"succ opened file"<<fn<<"\n";
+		if(NULL!=F) std::cout<<"succ opened file"<<fn<<"\n";
 		else std::cout<<"unable to open file "<<fn<<"\n";
 		fclose(F);
 	}
-	std::cout<<sizeof(backup_metadata)<<std::endl;
+	//std::cout<<sizeof(backup_metadata)<<std::endl;
 	
     // Setup window
     glfwSetErrorCallback(glfw_error_callback);
@@ -358,6 +374,7 @@ int main(int, char**)
 			static int BackupButtonID = -1;
 			static std::string SelectedVolume = "/dev/!";
 			static restore_inf RestoreInf = {};
+			static pthread_t PThreadID;
 			if(AppState == app_state_select_backup){
 				static bool debug_init = false;
 				if(false == debug_init){
@@ -518,7 +535,6 @@ int main(int, char**)
 				
 				
 				
-				
         	}
         	else if(AppState == app_state_select_volume){
 				RestoreInf.TargetPartition = SelectPartition();
@@ -551,7 +567,8 @@ int main(int, char**)
         	}
         	else if(AppState == app_state_restore){
 				
-				
+				PThreadID = CallRestoreInThread(RestoreInf);
+				/*
 				OfflineRestore(&RestoreInf);
 				if(Backups[BackupButtonID].IsOSVolume && Backups[BackupButtonID].DiskType == NAR_DISKTYPE_MBR){
 					std::string cmd;
@@ -564,9 +581,44 @@ int main(int, char**)
 				else if(Backups[BackupButtonID].IsOSVolume && Backups[BackupButtonID].DiskType == NAR_DISKTYPE_GPT){
 					// TODO(Batuhan)
 				}
-
+				*/
 				AppState = app_state_select_backup;
 				
+        	}
+        	else if(AppState == app_state_restore_in_work){
+        	
+        		ImGui::Text("Restore operation is in work, please wait\n");
+        		struct timespec ts;
+        		int s;
+        		if (clock_gettime(CLOCK_REALTIME, &ts) == -1) {
+               		/* Handle error */
+           		}
+		
+           		ts.tv_nsec += 1000;
+		
+           		s = pthread_timedjoin_np(PThreadID, NULL, &ts);
+           		if (s != 0) {
+               		//fprintf(stderr, "Timed join returned %d\n", s);
+           		}
+           		else{
+					fprintf(stdout, "Successfully restored!\n");
+					if(Backups[BackupButtonID].IsOSVolume && Backups[BackupButtonID].DiskType == NAR_DISKTYPE_MBR){
+						std::string cmd;
+						cmd = "sudo dd if=/usr/lib/syslinux/mbr.bin of=/dev/" + RestoreInf.TargetPartition;
+						system(cmd.c_str());
+						
+						cmd = "sudo install-mbr -i n -p D -t 0 /dev/" + RestoreInf.TargetPartition;
+						system(cmd.c_str());	
+					}
+					else if(Backups[BackupButtonID].IsOSVolume && Backups[BackupButtonID].DiskType == NAR_DISKTYPE_GPT){
+						// TODO(Batuhan)
+					}
+					AppState = app_state_done;
+           		}
+           		
+        	}
+        	else if(AppState == app_state_done){
+        		ImGui::Text("done\n");
         	}
 			
 

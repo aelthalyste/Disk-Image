@@ -990,7 +990,7 @@ CompareNarRecords(const void* v1, const void* v2) {
     
 }
 
-BOOLEAN
+VSS_ID
 GetShadowPath(std::wstring Drive, CComPtr<IVssBackupComponents>& ptr, wchar_t* OutShadowPath, size_t MaxOutCh) {
     
     BOOLEAN Result = FALSE;
@@ -1056,7 +1056,7 @@ GetShadowPath(std::wstring Drive, CComPtr<IVssBackupComponents>& ptr, wchar_t* O
     }
     
     
-    return Result;
+    return sid;
 }
 
 
@@ -1924,7 +1924,16 @@ TerminateBackup(volume_backup_inf* V, BOOLEAN Succeeded) {
     V->Stream.Records.Count = 0;
     V->Stream.RecIndex = 0;
     V->Stream.ClusterIndex = 0;
-    V->VSSPTR.Release();
+    {
+        LONG Deleted=0;
+        VSS_ID NonDeleted;
+        CComPtr<IVssAsync> async;
+        V->VSSPTR->BackupComplete(&async);
+        async->Wait();
+        V->VSSPTR->DeleteSnapshots(V->SnapshotID, VSS_OBJECT_SNAPSHOT, TRUE, &Deleted, &NonDeleted);
+        V->VSSPTR.Release();
+    }
+    
     
     return Return;
 }
@@ -1985,9 +1994,7 @@ SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, DotNetStreamInf* SI) {
     WCHAR Temp[] = L"!:\\";
     Temp[0] = VolInf->Letter;
     wchar_t ShadowPath[256];
-    if(GetShadowPath(Temp, VolInf->VSSPTR, ShadowPath, sizeof(ShadowPath)/sizeof(ShadowPath[0])) != TRUE){
-        // TODO(Batuhan): Error
-    }
+    VolInf->SnapshotID = GetShadowPath(Temp, VolInf->VSSPTR, ShadowPath, sizeof(ShadowPath)/sizeof(ShadowPath[0]));
     
     if (ShadowPath == NULL) {
         printf("Can't get shadowpath from VSS\n");
