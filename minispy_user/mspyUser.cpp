@@ -1927,10 +1927,13 @@ TerminateBackup(volume_backup_inf* V, BOOLEAN Succeeded) {
     {
         LONG Deleted=0;
         VSS_ID NonDeleted;
+        HRESULT hr;
         CComPtr<IVssAsync> async;
-        V->VSSPTR->BackupComplete(&async);
-        async->Wait();
-        V->VSSPTR->DeleteSnapshots(V->SnapshotID, VSS_OBJECT_SNAPSHOT, TRUE, &Deleted, &NonDeleted);
+        hr = V->VSSPTR->BackupComplete(&async);
+        if(hr == S_OK){
+            async->Wait();
+        }
+        hr = V->VSSPTR->DeleteSnapshots(V->SnapshotID, VSS_OBJECT_SNAPSHOT, TRUE, &Deleted, &NonDeleted);
         V->VSSPTR.Release();
     }
     
