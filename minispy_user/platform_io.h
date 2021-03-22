@@ -17,13 +17,13 @@ struct nar_file_read{
 };
 
 nar_file_view 
-NarOpenFileView(std::string fn);
+NarOpenFileView(const std::string &fn);
 
 nar_file_view 
-NarOpenFileView(std::wstring fn);
+NarOpenFileView(const std::wstring &fn);
 
 void                         
-NarFreeFileView(nar_file_view* fv);
+NarFreeFileView(nar_file_view fv);
 
 
 std::string
@@ -33,18 +33,18 @@ std::wstring
 NarGetFileDirectory(std::wstring fn);
 
 
-nar_file_read
-NarReadFileNBytes(std::string arg_fn);
+bool
+NarFileReadNBytes(std::wstring path, void *mem, size_t N);
 
-nar_file_read
-NarReadFileNBytes(std::wstring arg_fn);
+bool
+NarFileReadNBytes(std::string path, void *mem, size_t N);
 
-
-size_t
-NarGetFileSize(std::string c);
 
 size_t
-NarGetFileSize(std::wstring c);
+NarGetFileSize(const std::string &c);
+
+size_t
+NarGetFileSize(const std::wstring &c);
 
 
 

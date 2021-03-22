@@ -2,6 +2,7 @@
 #include <string>	
 #include <stdlib.h>
 
+
 static std::string
 wstr2str(const std::wstring& s){
 	char *c = (char*)malloc(s.size() + 1);
@@ -29,10 +30,8 @@ str2wstr(const std::string& s){
 }
 
 
-
-
 // windows implementation
-#if _MSC_VER
+#if _WIN32
 
 #include <windows.h>
 
@@ -42,14 +41,14 @@ struct imp_nar_file_view{
 };
 
 inline size_t
-NarGetFileSize(const char *Path){
-	return NarGetFileSize(str2wstr(Path).c_str());
+NarGetFileSize(const std::string &Path){
+	return NarGetFileSize(str2wstr(Path));
 }
 
 inline size_t
-NarGetFileSize(const wchar_t* Path) {
+NarGetFileSize(const std::wstring& Path) {
     ULONGLONG Result = 0;
-    HANDLE F = CreateFileW(Path, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_DELETE | FILE_SHARE_WRITE, 0, OPEN_EXISTING, 0, 0);
+    HANDLE F = CreateFileW(Path.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_DELETE | FILE_SHARE_WRITE, 0, OPEN_EXISTING, 0, 0);
     if (F != INVALID_HANDLE_VALUE) {
         LARGE_INTEGER L = { 0 };
         GetFileSizeEx(F, &L);
@@ -60,12 +59,12 @@ NarGetFileSize(const wchar_t* Path) {
 }
 
 nar_file_view
-NarOpenFileView(const char* fn){
-	return NarOpenFileView(str2wstr(fn).c_str());
+NarOpenFileView(const std::string &fn){
+	return NarOpenFileView(str2wstr(fn));
 }
 
 nar_file_view
-NarOpenFileView(const wchar_t *fn){
+NarOpenFileView(const std::wstring &fn){
 	HANDLE MappingHandle = 	INVALID_HANDLE_VALUE;
 	HANDLE FileHandle = 	INVALID_HANDLE_VALUE;
 	size_t FileSize = 0;
@@ -78,9 +77,9 @@ NarOpenFileView(const wchar_t *fn){
 	if(NULL == Result.impl) 
 		goto FV_ERROR;
 
-	FileSize = NarGetFileSize(fn);
+	FileSize = NarGetFileSize(std::wstring(fn));
     MappingHandle = 0;
-	FileHandle = CreateFileW(fn, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, 0, OPEN_ALWAYS, 0, 0);    
+	FileHandle = CreateFileW(fn.c_str(), GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, 0, OPEN_ALWAYS, 0, 0);    
 	if(FileHandle != INVALID_HANDLE_VALUE){
 		vs= {0};
 		vs.QuadPart = FileSize;
@@ -151,7 +150,7 @@ NarGetFileDirectory(const wchar_t *arg_fn){
 
 #endif // MSVC DEF
 
-#if __GNUC__
+#if __linux__
 
 #error linux mmap operations are not supported yet
 

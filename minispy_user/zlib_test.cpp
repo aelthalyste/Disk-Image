@@ -1,27 +1,9 @@
 #include <iostream>
 #include <stdio.h>
 #include <windows.h>
+
 #define ZSTD_DLL_IMPORT 1
 #include "zstd.h"
-
-struct file_view{
-    void* Data;
-	size_t Length;
-	
-    private:
-    
-    union{
-        // windows stuff
-        struct{
-            void* FHandle;
-            void* MHandle
-        };
-        // some linux stuff
-        struct {
-            void* stuff;
-        };
-    };
-};
 
 
 struct file_view {
@@ -29,65 +11,8 @@ struct file_view {
     size_t len;
     HANDLE FHandle;
     HANDLE MHandle;
-}
+};
 
-
-file_read readfile(const char *fn){
-	file_read result = {0};
-	FILE *F = fopen(fn, "rb");
-	if(F){
-		if(0 == fseek(F, 0, SEEK_END)){
-			result.len = ftell(F);
-			result.data = malloc(result.len);
-			fseek(F, 0, SEEK_SET);
-			fread(result.data, 1, result.len, F);		
-		}
-		else{
-			printf("unable to seek end of file");
-		}
-		fclose(F);
-	}
-	else{
-		printf("unable to open file %s\n", fn); 
-	}
-	return result;
-}
-
-HANDLE
-NarOpenVolume(char Letter) {
-    char VolumePath[512];
-    sprintf(VolumePath, "\\\\.\\%c:", Letter);
-    
-    HANDLE Volume = CreateFileA(VolumePath, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_WRITE | FILE_SHARE_READ | FILE_SHARE_DELETE, 0, OPEN_EXISTING, 0, 0);
-    if (Volume != INVALID_HANDLE_VALUE) {
-        
-#if 1        
-        if (DeviceIoControl(Volume, FSCTL_LOCK_VOLUME, 0, 0, 0, 0, 0, 0)) {
-            
-        }
-        else {
-            // NOTE(Batuhan): this isnt an error, tho prohibiting volume access for other processes would be great.
-            fprintf(stderr, "Couldn't lock volume %c\n", Letter);
-        }
-#endif
-        
-        
-    }
-    else {
-        fprintf(stderr, "Couldn't open volume %c\n", Letter);
-    }
-    
-    return Volume;
-}
-
-unsigned long long
-NarGetVolumeTotalSize(char Letter) {
-    char Temp[] = "!:\\";
-    Temp[0] = Letter;
-    ULARGE_INTEGER L = { 0 };
-    GetDiskFreeSpaceExA(Temp, 0, &L, 0);
-    return L.QuadPart;
-}
 
 inline size_t
 NarGetFileSize(const char* Path) {
@@ -227,7 +152,6 @@ decompress(char* srcfn, char *dstfn){
 	fprintf(stderr, "Err description %s\n", ZSTD_getErrorName(RetCode));
 	NarCloseFileView(frsrc);
 	
-	
     
 }
 
@@ -353,15 +277,6 @@ int main(){
 		output.pos = 0;
 	}
 	
-	
-	//fprintf(stdout, "Ret code %I64u\n", ReturnCode);
-	//ReturnCode = ZSTD_CCtx_setPledgedSrcSize(context, FileSize);
-	//CHECK_TERMINATE(ReturnCode);
-	
-	//ReturnCode = ZSTD_compressStream2(stream, &output, &input, ZSTD_e_end);
-	//fwrite(output.dst, 1, output.pos, FTarget);
-	//CHECK_TERMINATE(ReturnCode);
-    
 	fclose(FTarget);	
 	
 	ReturnCode = ZSTD_freeCStream(stream);

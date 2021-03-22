@@ -17,6 +17,12 @@
 #define ASSERT(exp) do{if(!(exp)){*(int*)0 = 42;}} while(0);
 #define BOOLEAN char
 
+
+#define Kilobyte(val) ((val)*1024ll)
+#define Megabyte(val) (Kilobyte(val)*1024ll)
+#define Gigabyte(val) (Megabyte(val)*1024ll)
+
+
 #define MIN(a,b) ((a)<(b) ? (a) : (b))
 #define MAX(a,b) ((a)>(b) ? (a) : (b))
 

@@ -193,7 +193,46 @@ namespace NarDIWrapper {
     };
     
     
+    public ref class RestoreStream {
     
+    public:
+
+        RestoreStream() {
+            MemLen = Gigabyte(4);
+            Mem = VirtualAlloc(0, MemLen, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+        }
+
+        ~RestoreStream() {
+            VirtualFree(Mem, MemLen, MEM_RELEASE);
+        }
+
+        bool InitStream(System::String^ RootDir, BackupMetadata ^BM) {
+            nar_arena Arena = ArenaInit(Mem, MemLen);
+            //InitFileRestoreStream();
+        }
+
+        // returns how many bytes processed. 0 means end of stream
+        size_t AdvanceStream() {
+            
+        }
+
+        bool FormatGPT() {
+                    
+        }
+
+        bool FormatMBR() {
+            
+        }
+
+        size_t BytesNeedToCopy;
+
+    private:
+        void    *Mem;
+        size_t  MemLen;
+        restore_stream* Stream;
+
+
+    };
     
     public ref class DiskTracker
     {

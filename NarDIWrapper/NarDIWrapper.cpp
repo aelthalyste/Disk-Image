@@ -117,12 +117,14 @@ namespace NarDIWrapper {
     
     bool CSNarFileExplorer::CW_SelectDirectory(UINT64 ID){
         
-        NarFileExplorerPushDirectory(ctx, ID);
+        //NarFileExplorerPushDirectory(ctx, ID);
         return true;
     }
     
     void CSNarFileExplorer::CW_PopDirectory(){
-        NarFileExplorerPopDirectory(ctx);
+
+        //NarFileExplorerPopDirectory(ctx);
+    
     }
     
     void CSNarFileExplorer::CW_Free(){
@@ -138,7 +140,8 @@ namespace NarDIWrapper {
     }
     
     void CSNarFileExplorer::CW_RestoreFile(INT64 ID, System::String^ SysBackupDirectory, System::String^ SysTargetDir) {
-        
+
+#if 0
         if(ctx == NULL || ctx->EList.Entries == 0 || ctx->EList.EntryCount < ID){
             if(!ctx) printf("File explorer context was null\n");
             if(!ctx->EList.Entries) printf("File explorer's entry list was null\n");
@@ -155,7 +158,7 @@ namespace NarDIWrapper {
         SystemStringToWCharPtr(SysBackupDirectory, RootDir);
         
         NarRestoreFileFromBackups(RootDir, SelectedFilePath.c_str(), TargetDirectory, ctx->FEHandle.BMEX->M.ID, NAR_FULLBACKUP_VERSION);
-        
+#endif   
         
     }
     
@@ -235,49 +238,21 @@ namespace NarDIWrapper {
         return false;
     }
     
+
     /*
   Version: -1 to restore full backup otherwise version number to restore(version number=0 first inc-diff backup)
   */
     bool DiskTracker::CW_RestoreToVolume(wchar_t TargetLetter, BackupMetadata^ BM, bool ShouldFormat, System::String^ RootDir) {
         
-        restore_inf R;
-        
-        R.TargetLetter = TargetLetter;
-        R.Version = BM->Version; 
-        R.BackupID = *BM->BackupID;
-        R.RootDir = msclr::interop::marshal_as<std::wstring>(RootDir);
-        
-        if (BM->Version < 0) {
-            R.Version = NAR_FULLBACKUP_VERSION;
-        }
-        
-        return OfflineRestoreToVolume(&R, ShouldFormat);
-        
     }
     
     
     bool DiskTracker::CW_RestoreToFreshDisk(wchar_t TargetLetter, BackupMetadata^ BM, int DiskID, System::String^ RootDir, bool ShouldRepairBoot, bool OverWriteDiskType, wchar_t OverWritedTargetDiskType) {
-        
-        restore_inf R;
-        R.TargetLetter = TargetLetter;
-        R.BackupID = *BM->BackupID;
-        R.RootDir = msclr::interop::marshal_as<std::wstring>(RootDir);
-        R.Version = BM->Version;
-        if (OverWriteDiskType)
-        {
-            R.DiskType = OverWritedTargetDiskType;
-            R.OverrideDiskType = true;
-        }
-        
-        R.RepairBoot = ShouldRepairBoot;
-        
-        if (BM->Version < 0) {
-            R.Version = NAR_FULLBACKUP_VERSION;
-        }
-        
-        return OfflineRestoreCleanDisk(&R, DiskID);
+                  
     }
     
+
+
     // returns 0 if one is not present
     wchar_t DiskTracker::CW_GetFirstAvailableVolumeLetter(){
         return NarGetAvailableVolumeLetter();
