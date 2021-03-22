@@ -315,24 +315,8 @@ RecordEqual(nar_record* N1, nar_record* N2) {
 #define NAR_BREAK_CODE()
 #endif
 
-#define NAR_INVALID_VOLUME_TRACK_ID -1
-#define NAR_INVALID_DISK_ID -1
-#define NAR_INVALID_ENTRY -1
 
 typedef char NARDP;
-#define NAR_DISKTYPE_GPT 'G'
-#define NAR_DISKTYPE_MBR 'M'
-#define NAR_DISKTYPE_RAW 'R'
-
-#define NAR_FULLBACKUP_VERSION -1
-
-#define MetadataFileNameDraft L"NAR_M_"
-#define BackupFileNameDraft L"NAR_BACKUP_"
-#define MetadataExtension L".narmd"
-#define BackupExtension   L".narbd"
-
-#define NAR_EFI_PARTITION_LETTER 'S'
-#define NAR_RECOVERY_PARTITION_LETTER 'R'
 
 inline BOOLEAN
 IsSameVolumes(const WCHAR* OpName, const WCHAR VolumeLetter);
@@ -341,54 +325,6 @@ struct restore_target_inf;
 struct restore_inf;
 struct volume_backup_inf;
 
-#if 1
-/*
-structs for algorithm that minimizes restore operation
-that struct generated at run-time, it is safe to std libraries
-only valid for diff restore, since fullbackup just copies raw data once
-*/
-struct region_chain {
-    nar_record Rec;
-    /*
-  Problem about indexing:
-  While tearing down region_chain in RemoveDuplicates function, information to
-  read correct positions from incremental chunk is lost, but since they are
-   in consecutive order, problem may be resolved with reading metadata's lengths,
-  and can find which position chain's record falls.
-  
-  Other than that Index doesnt have any value, and it doesnt carried during insertions,
-  appends.
-  */
-    region_chain* Next;
-    region_chain* Back; /*Fixed root point*/
-};
-
-
-
-
-/*Inserts element to given chain*/
-void
-InsertToList(region_chain* Root, nar_record Rec);
-
-/*Append to end of the list*/
-void
-AppendToList(region_chain* AnyPoint, nar_record Rec);
-
-void
-RemoveFromList(region_chain* R);
-
-inline void
-PrintList(region_chain* Temp);
-
-inline void
-PrintListReverse(region_chain* Temp);
-#endif
-
-
-enum class BackupType : short {
-    Diff,
-    Inc
-};
 
 struct stream {
     data_array<nar_record> Records;
@@ -485,103 +421,6 @@ struct volume_backup_inf {
 };
 
 
-#pragma pack(push ,1) // force 1 byte alignment
-/*
-// NOTE(Batuhan): file that contains this struct contains:
--- RegionMetadata:
--- MFTMetadata: (optional)
--- MFT: (optional)
--- Recovery: (optional)
-
-If any metadata error occurs, it's related binary data will be marked as corrupt too. If i cant copy mft metadata
-to file, mft itself will be marked as corrupt because i wont have anything to map it to volume  at restore state.
-*/
-
-// NOTE(Batuhan): nar binary file contains backup data, mft, and recovery
-static const int GlobalBackupMetadataVersion = 1;
-struct backup_metadata {
-    
-    struct {
-        int Size = sizeof(backup_metadata); // Size of this struct
-        // NOTE(Batuhan): structure may change over time(hope it wont), this value hold which version it is so i can identify and cast accordingly
-        int Version;
-    }MetadataInf;
-    
-    struct {
-        ULONGLONG RegionsMetadata;
-        ULONGLONG Regions;
-        
-        ULONGLONG MFTMetadata;
-        ULONGLONG MFT;
-        
-        ULONGLONG Recovery;
-    }Size; //In bytes!
-    
-    struct {
-        ULONGLONG RegionsMetadata;
-        ULONGLONG AlignmentReserved;
-        
-        ULONGLONG MFTMetadata;
-        ULONGLONG MFT;
-        
-        ULONGLONG Recovery;
-    }Offset; // offsets from beginning of the file
-    
-    // NOTE(Batuhan): error flags to indicate corrupted data, indicates file
-    // may not contain particular metadata or binary data.
-    struct {
-        BOOLEAN RegionsMetadata;
-        BOOLEAN Regions;
-        
-        BOOLEAN MFTMetadata;
-        BOOLEAN MFT;
-        
-        BOOLEAN Recovery;
-    }Errors;
-    
-    
-#define NAR_MAX_TASK_NAME_LEN        128
-#define NAR_MAX_TASK_DESCRIPTION_LEN 512
-#define NAR_MAX_PRODUCT_NAME         50
-#define NAR_MAX_COMPUTERNAME_LENGTH 15
-    
-    union {
-        CHAR Reserved[2048]; // Reserved for future usage
-        struct {
-            //FOR MBR things
-            union{
-            	INT64 GPT_EFIPartitionSize;
-            	INT64 MBR_SystemPartitionSize;
-            };
-            SYSTEMTIME BackupDate;
-            char ProductName[NAR_MAX_PRODUCT_NAME];
-            char ComputerName[NAR_MAX_COMPUTERNAME_LENGTH  + 1];
-            wchar_t TaskName[NAR_MAX_TASK_NAME_LEN];
-            wchar_t TaskDescription[NAR_MAX_TASK_DESCRIPTION_LEN];
-            nar_backup_id ID;
-        };
-    };
-    
-    ULONGLONG VolumeTotalSize;
-    ULONGLONG VolumeUsedSize;
-    
-    // NOTE(Batuhan): Last volume offset must be written to disk that if this specific version were to be restored, version itself can be 5 gb big, but last offset it indicates that changes were made can be 100gb'th offset.
-    ULONGLONG VersionMaxWriteOffset; 
-    
-    int Version; // -1 for full backup
-    int ClusterSize; // 4096 default
-    
-    char Letter;
-    unsigned char DiskType;
-    union {
-        BOOLEAN IsOSVolume;
-        BOOLEAN Recovery; // true if contains restore partition
-    }; // 4byte
-    BackupType BT; // diff or inc
-    
-};
-
-#pragma pack(pop)
 
 /*
 işletim sistemi durumu hakkında, eğer ilk seçenek verilmişse, sadece datayı geri yükler, eğer ikinci seçenek var ise

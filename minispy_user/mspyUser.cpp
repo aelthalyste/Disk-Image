@@ -3607,15 +3607,6 @@ NarGenerateBackupID(char Letter){
     return Result;
 }
 
-inline std::wstring
-NarBackupIDToWStr(nar_backup_id ID){
-    wchar_t B[64];
-    memset(B, 0, sizeof(B));
-    swprintf(B, L"%I64u",ID.Q);
-    
-    std::wstring Result = std::wstring(B);
-    return Result;
-}
 
 inline std::wstring
 GenerateMetadataName(nar_backup_id ID, int Version) {

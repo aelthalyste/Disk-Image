@@ -31,14 +31,6 @@ struct file_view {
     HANDLE MHandle;
 }
 
-file_view 
-NarGetFileView(const wchar_t *path){
-    
-}
-
-NarFreeFileView(file_view FV){
-    
-}
 
 file_read readfile(const char *fn){
 	file_read result = {0};
