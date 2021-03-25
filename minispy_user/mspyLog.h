@@ -319,6 +319,60 @@ struct stream {
     INT32 ClusterIndex;
     HANDLE Handle; //Used for streaming data to C#
     
+    enum {
+        Error_NoError,
+        Error_Read,
+        Error_SetFP,
+        Error_SizeOvershoot,
+        Error_Compression,
+        Error_Count
+    }Error;
+    
+    const char* GetErrorDescription(){
+        
+        static const struct {
+            int val;
+            const char* desc;
+        }
+        Table[] = {
+            {
+                stream::Error_NoError,
+                "No error occured during stream\n"
+            },
+            {
+                stream::Error_Read,
+                "Error occured while reading shadow copy\n"
+            },
+            {
+                stream::Error_SetFP,
+                "Error occured while setting volume file pointer\n"
+            },
+            {
+                stream::Error_SizeOvershoot,
+                "Logical cluster exceeds volume size\n"
+            },
+            {
+                stream::Error_Compression,
+                "Internal compression error occured\n"
+            },
+            {
+                stream::Error_Count,
+                "Error_Count is not an error. This is placeholder\n"
+            }
+        };
+        
+        const int TableElCount  =sizeof(Table)/sizeof(Table[0]);
+        static_assert(TableElCount - 1 == stream::Error_Count, "There must be same number of descriptions as error count\n");
+        
+        for(size_t i =0; i<TableElCount; i++){
+            if(Table[i].val == this->Error){
+                return Table[i].desc;
+            }
+        }
+        
+        return "Couldn't find error code in table, you must not be able to see this message\n";
+    }
+    
     bool ShouldCompress;
     void *CompressionBuffer;
     size_t BufferSize;
@@ -462,6 +516,13 @@ IsNumeric(char val) {
     return val >= '0' && val <= '9';
 }
 
+bool
+CheckStreamCompletedSuccessfully(volume_backup_inf *V){
+    if(V){
+        return (V->Stream.Error == stream::Error_NoError);
+    }
+}
+
 file_read
 NarReadFile(const char* FileName);
 
@@ -599,7 +660,7 @@ backup_metadata
 ReadMetadata(nar_backup_id ID, int Version, std::wstring RootDir);
 
 BOOLEAN
-SaveMetadata(char Letter, int Version, int ClusterSize, BackupType BT, data_array<nar_record> BackupRegions, HANDLE VSSHandle, nar_record* MFTLCN, unsigned int MFTLCNCount, nar_backup_id BackupID);
+SaveMetadata(char Letter, int Version, int ClusterSize, BackupType BT, data_array<nar_record> BackupRegions, HANDLE VSSHandle, nar_record* MFTLCN, unsigned int MFTLCNCount, nar_backup_id BackupID, bool IsCompressed);
 
 // Used to append recovery partition to metatadata file.
 BOOLEAN
