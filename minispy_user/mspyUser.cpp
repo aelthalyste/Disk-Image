@@ -205,201 +205,6 @@ StrToGUID(const char* guid, GUID* G) {
 #pragma warning(pop)
 
 
-#if 0
-BOOLEAN
-SaveExtraPartitions(volume_backup_inf* V) {
-    
-    //NOTE these guids are fetched from winapi: https://docs.microsoft.com/en-us/windows/win32/api/WinIoCtl/ns-winioctl-partition_information_gpt
-    GUID GDAT = { 0 }; // basic data partition
-    GUID GMSR = { 0 }; // microsoft reserved partition guid
-    GUID GEFI = { 0 }; // efi partition guid
-    GUID GREC = { 0 }; // recovery partition guid
-    
-    StrToGUID("{ebd0a0a2-b9e5-4433-87c0-68b6b72699c7}", &GDAT);
-    StrToGUID("{e3c9e316-0b5c-4db8-817d-f92df00215ae}", &GMSR);
-    StrToGUID("{c12a7328-f81f-11d2-ba4b-00a0c93ec93b}", &GEFI);
-    StrToGUID("{de94bba4-06d1-4d40-a16a-bfd50179d6ac}", &GREC);
-    
-    BOOLEAN Result = TRUE;
-    
-    wchar_t VolPath[128];
-    wchar_t Vol[] = L" :\\";
-    Vol[0] = V->Letter;
-    
-    VOLUME_DISK_EXTENTS* Ext = NULL;
-    DRIVE_LAYOUT_INFORMATION_EX* DL = NULL;
-    
-    DWORD BS = 1024 * 2;
-    DWORD T = 0;
-    
-    
-    GetVolumeNameForVolumeMountPointW(Vol, VolPath, 128);
-    VolPath[lstrlenW(VolPath) - 1] = L'\0'; //Remove trailing slash
-    HANDLE Drive = CreateFileW(VolPath, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, 0, 0);
-    
-    if (Drive != INVALID_HANDLE_VALUE) {
-        printf("Searching disk of volume %S\n", VolPath);
-        
-        Ext = (VOLUME_DISK_EXTENTS*)malloc(BS);
-        DL = (DRIVE_LAYOUT_INFORMATION_EX*)malloc(BS);
-        
-        if (DeviceIoControl(Drive, IOCTL_VOLUME_GET_VOLUME_DISK_EXTENTS, 0, 0, Ext, BS, &T, 0)) {
-            for (unsigned int i = 0; i < Ext->NumberOfDiskExtents; i++) {
-                
-                wchar_t DiskPath[] = L"\\\\?\\PhysicalDriveX";
-                DiskPath[lstrlenW(DiskPath) - 1] = Ext->Extents[i].DiskNumber + '0';
-                
-                HANDLE Disk = CreateFileW(DiskPath, GENERIC_READ,
-                                          FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, 0, OPEN_EXISTING, 0, 0);
-                if (Disk != INVALID_HANDLE_VALUE) {
-                    
-                    if (DeviceIoControl(Disk, IOCTL_DISK_GET_DRIVE_LAYOUT_EX, 0, 0, DL, BS, &T, 0)) {
-                        
-                        for (int k = 0; k < DL->PartitionCount; k++) {
-                            PARTITION_INFORMATION_EX* PI = &DL->PartitionEntry[k];
-                            
-                            if (PI->PartitionStyle == PARTITION_STYLE_MBR) {
-                                
-                                printf("This version can't backup MBR system partitions\n");
-                                // NOTE(Batuhan) : Need MBR OS partition to test this
-                                if (0) {// TODO(Batuhan): add mbr filter
-                                    std::wstring SPNAME = GenerateSystemPartitionFileName(V->Letter);
-                                    HANDLE SP = CreateFileW(SPNAME.c_str(), GENERIC_WRITE, 0, 0, CREATE_NEW, 0, 0);
-                                    if (SP != INVALID_HANDLE_VALUE) {
-                                        if (!CopyData(Disk, SP, PI->PartitionLength.QuadPart, PI->StartingOffset.QuadPart)) {
-                                            printf("Cant copy EFI partition\n");
-                                        }
-                                    }
-                                    else {
-                                        printf("Cant open file %S to write\n", SPNAME.c_str());
-                                        Result = FALSE;
-                                    }
-                                    CLEANHANDLE(SP);
-                                }
-                                
-                            }
-                            if (PI->PartitionStyle == PARTITION_STYLE_GPT) {
-                                
-                                
-                                if (IsEqualGUID(PI->Gpt.PartitionType, GEFI)) {
-                                    //Efi system partition
-                                    printf("EFI partition detected\n");
-                                    std::wstring EFIFNAME = GenerateSystemPartitionFileName(V->Letter);
-                                    HANDLE SP = CreateFileW(EFIFNAME.c_str(), GENERIC_WRITE, 0, 0, CREATE_NEW, 0, 0);
-                                    if (SP != INVALID_HANDLE_VALUE) {
-                                        if (!CopyData(Disk, SP, PI->PartitionLength.QuadPart, PI->StartingOffset.QuadPart)) {
-                                            printf("Cant copy EFI partition\n");
-                                        }
-                                    }
-                                    else {
-                                        printf("Cantt open file %S to write\n", EFIFNAME.c_str());
-                                        Result = FALSE;
-                                    }
-                                    CLEANHANDLE(SP);
-                                    
-                                }
-                                
-                                if (IsEqualGUID(PI->Gpt.PartitionType, GMSR)) {
-                                    printf("MSR partition detected\n");
-                                    
-                                    //MSR partition
-                                    std::wstring MSRFNAME = GenerateMSRFileName(V->Letter);
-                                    HANDLE MSRFile = CreateFileW(MSRFNAME.c_str(), GENERIC_WRITE, 0, 0, CREATE_NEW, 0, 0);
-                                    if (MSRFile != INVALID_HANDLE_VALUE) {
-                                        if (!CopyData(Disk, MSRFile, PI->PartitionLength.QuadPart, PI->StartingOffset.QuadPart)) {
-                                            printf("Cant copy MSR partition\n");
-                                        }
-                                    }
-                                    else {
-                                        printf("Cant open file %S to write\n", MSRFNAME.c_str());
-                                        Result = FALSE;
-                                    }
-                                    CLEANHANDLE(MSRFile);
-                                    
-                                }
-                                if (IsEqualGUID(PI->Gpt.PartitionType, GREC)) {
-                                    printf("Recovery partition detected\n");
-                                    std::wstring RECFNAME = GenerateRECFileName(V->Letter);
-                                    HANDLE RECFile = CreateFileW(RECFNAME.c_str(), GENERIC_WRITE, 0, 0, CREATE_NEW, 0, 0);
-                                    if (RECFile != INVALID_HANDLE_VALUE) {
-                                        if (!CopyData(Disk, RECFile, PI->PartitionLength.QuadPart, PI->StartingOffset.QuadPart)) {
-                                            printf("Cant copy MSR partition\n");
-                                        }
-                                    }
-                                    else {
-                                        printf("Cant open file %S to write\n", RECFNAME.c_str());
-                                        Result = FALSE;
-                                    }
-                                    CLEANHANDLE(RECFile);
-                                    
-                                    
-                                }
-                                
-#if 0
-                                if (PI->Gpt.Attributes != 0) {
-                                    printf("Attributes :\n");
-                                }
-                                if (PI->Gpt.Attributes & GPT_ATTRIBUTE_PLATFORM_REQUIRED) {
-                                    printf("\tPlatform required\n");
-                                }
-                                if (PI->Gpt.Attributes & GPT_BASIC_DATA_ATTRIBUTE_HIDDEN) {
-                                    printf("\tData attribute hidden\n");
-                                }
-                                if (PI->Gpt.Attributes & GPT_BASIC_DATA_ATTRIBUTE_NO_DRIVE_LETTER) {
-                                    printf("\tNo drive letter\n");
-                                }
-                                if (PI->Gpt.Attributes & GPT_BASIC_DATA_ATTRIBUTE_SHADOW_COPY) {
-                                    printf("\tShadow copy\n");
-                                }
-#endif
-                                
-                            }
-                            if (PI->PartitionStyle == PARTITION_STYLE_RAW) {
-                                printf("ERROR : Raw partition");
-                            }
-                            
-                        }
-                        
-                        
-                    }
-                    else {
-                        printf("DeviceIOControl get drive layout failed err => %i\n", GetLastError());
-                        Result = FALSE;
-                    }
-                    
-                    CloseHandle(Disk);
-                    
-                }
-                else {
-                    printf("Unable to open disk, error => %i\n", GetLastError());
-                    Result = FALSE;
-                }
-                
-            }
-        }
-        else {
-            printf("DeviceIoControl, get disk extents failed,"
-                   "last error %i\n", GetLastError());
-            Result = FALSE;
-        }
-        
-    }
-    else {
-        printf("Can't open volume\n");
-        Result = FALSE;
-    }
-    
-    CLEANHANDLE(Drive);
-    free(Ext);
-    free(DL);
-    
-    return Result;
-}
-#endif
-
-
-
-
 inline BOOLEAN
 InitVolumeInf(volume_backup_inf* VolInf, wchar_t Letter, BackupType Type) {
     
@@ -1146,7 +951,6 @@ ReadStream(volume_backup_inf* VolInf, void* CallerBuffer, unsigned int CallerBuf
     
     //TotalSize MUST be multiple of cluster size
     UINT32 Result = 0;
-    BOOLEAN ErrorOccured = FALSE;
     
     void* BufferToFill = CallerBuffer;
     unsigned int TotalSize = CallerBufferSize;
@@ -1194,15 +998,17 @@ ReadStream(volume_backup_inf* VolInf, void* CallerBuffer, unsigned int CallerBuf
                 printf("Total bytes read for buffer %u\n", Result);
                 
                 NarDumpToFile("STREAM_OVERFLOW_ERROR_LOGS", VolInf->Stream.Records.Data, VolInf->Stream.Records.Count*sizeof(nar_record));
+                VolInf->Stream.Error = stream::Error_Read;
                 
-                ErrorOccured = TRUE;
+                goto ERR_BAIL_OUT;
             }
             
             
         }
         else {
             printf("Couldnt set file pointer to %I64d\n", FilePtrTarget);
-            ErrorOccured = TRUE;
+            VolInf->Stream.Error = stream::Error_SetFP;
+            goto ERR_BAIL_OUT;
         }
         
         INT32 ClusterToIterate = (INT32)(BytesReadAfterOperation / 4096);
@@ -1214,7 +1020,8 @@ ReadStream(volume_backup_inf* VolInf, void* CallerBuffer, unsigned int CallerBuf
         }
         if ((UINT32)VolInf->Stream.ClusterIndex > VolInf->Stream.Records.Data[VolInf->Stream.RecIndex].Len) {
             printf("ClusterIndex exceeded region len, that MUST NOT happen at any circumstance\n");
-            ErrorOccured = TRUE;
+            VolInf->Stream.Error = stream::Error_SizeOvershoot;
+            goto ERR_BAIL_OUT;
         }
         
         if (BytesReadAfterOperation % VolInf->ClusterSize != 0) {
@@ -1223,13 +1030,11 @@ ReadStream(volume_backup_inf* VolInf, void* CallerBuffer, unsigned int CallerBuf
         
         RemainingSize -= BytesReadAfterOperation;
         CurrentBufferOffset = (char*)BufferToFill + (Result);
-        if (ErrorOccured) break;
         
     }
     
     if(true == VolInf->Stream.ShouldCompress
-        && Result > 0
-        && (!ErrorOccured)){
+       && Result > 0){
         
         ZSTD_outBuffer output = {0};
         ZSTD_inBuffer input = {0};
@@ -1247,19 +1052,24 @@ ReadStream(volume_backup_inf* VolInf, void* CallerBuffer, unsigned int CallerBuf
         size_t RetCode = 0;
         RetCode = ZSTD_compressStream2(VolInf->Stream.CCtx, &output, &input, ZSTD_e_end);
         ASSERT(input.pos == input.size);
-        ASSERT(ZSTD_isError(RetCode));
+        ASSERT(!ZSTD_isError(RetCode));
         
         if(!ZSTD_isError(RetCode)){
             Result = output.pos;
         }
+        else{
+            VolInf->Stream.Error = stream::Error_Compression;
+            goto ERR_BAIL_OUT;
+        }
         
     }
     
-    if (ErrorOccured) 
-        return 0;
-    
     return Result;
     
+    ERR_BAIL_OUT:
+    
+    Result = 0;
+    return Result;
     
 }
 
@@ -1277,7 +1087,7 @@ TerminateBackup(volume_backup_inf* V, BOOLEAN Succeeded) {
         printf("Fullbackup operation will be terminated\n");
         if (Succeeded) {
             
-            if (SaveMetadata((char)V->Letter, NAR_FULLBACKUP_VERSION, V->ClusterSize, V->BT, V->Stream.Records, V->Stream.Handle, V->MFTLCN, V->MFTLCNCount, V->BackupID)) {
+            if (SaveMetadata((char)V->Letter, NAR_FULLBACKUP_VERSION, V->ClusterSize, V->BT, V->Stream.Records, V->Stream.Handle, V->MFTLCN, V->MFTLCNCount, V->BackupID, V->Stream.ShouldCompress)) {
                 Return = TRUE;
                 V->Version = 0;
                 V->FullBackupExists = TRUE;
@@ -1311,7 +1121,7 @@ TerminateBackup(volume_backup_inf* V, BOOLEAN Succeeded) {
             
             // NOTE(Batuhan):
             printf("Will save metadata to working directory, Version : %i\n", V->Version);
-            SaveMetadata((char)V->Letter, V->Version, V->ClusterSize, V->BT, V->Stream.Records, V->Stream.Handle, V->MFTLCN, V->MFTLCNCount, V->BackupID);
+            SaveMetadata((char)V->Letter, V->Version, V->ClusterSize, V->BT, V->Stream.Records, V->Stream.Handle, V->MFTLCN, V->MFTLCNCount, V->BackupID, V->Stream.ShouldCompress);
             
             /*
          Since merge algorithm may have change size of the record buffer,
@@ -1542,7 +1352,7 @@ SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, DotNetStreamInf* SI, boo
         SI->ClusterSize = 0;
     }
     else{
-
+        
         if(ShouldCompress){
             
             VolInf->Stream.CompressionBuffer = malloc(NAR_COMPRESSION_FRAME_SIZE);
@@ -2686,6 +2496,7 @@ NarOpenVolume(char Letter) {
         else {
             // printf("Couldnt dismount volume\n");
         }
+        
 #endif
         
         
@@ -2819,7 +2630,7 @@ BackupRegions: Must have, this data determines how i must map binary data to the
 */
 BOOLEAN
 SaveMetadata(char Letter, int Version, int ClusterSize, BackupType BT,
-             data_array<nar_record> BackupRegions, HANDLE VSSHandle, nar_record* MFTLCN, unsigned int MFTLCNCount, nar_backup_id ID) {
+             data_array<nar_record> BackupRegions, HANDLE VSSHandle, nar_record* MFTLCN, unsigned int MFTLCNCount, nar_backup_id ID, bool IsCompressed) {
     
     // TODO(Batuhan): convert letter to uppercase
     //Letter += ('A' - 'a');
@@ -2876,6 +2687,8 @@ SaveMetadata(char Letter, int Version, int ClusterSize, BackupType BT,
     BM.VolumeTotalSize = NarGetVolumeTotalSize(BM.Letter);
     BM.VolumeUsedSize = NarGetVolumeUsedSize(BM.Letter);
     BM.ID = ID;
+    BM.IsCompressed = IsCompressed;
+    BM.FrameSize = NAR_COMPRESSION_FRAME_SIZE;
     
     NarGetProductName(BM.ProductName);
     DWORD Len = sizeof(BM.ComputerName);
@@ -4190,7 +4003,39 @@ NarInitPool(void *Memory, int MemorySize, int PoolSize){
 
 void
 DEBUG_Restore(){
-	ASSERT(0);
+    
+    size_t MemLen = Megabyte(250);
+    std::wstring MetadataPath = L"NAR_M_FULLG19995718899140581-.narmd";
+    void* Mem = VirtualAlloc(0, MemLen, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
+    nar_arena Arena = ArenaInit(Mem, MemLen);
+    char TargetLetter = 'G';
+    backup_metadata bm;
+    NarReadMetadata(MetadataPath, &bm);
+    
+#if 0    
+    if (NarSetVolumeSize(TargetLetter, bm.VolumeTotalSize/(1024*1024))) {
+        NarFormatVolume(TargetLetter);
+    }
+    else {
+        
+    }
+#endif
+    
+    restore_target *Target = InitVolumeTarget(TargetLetter, &Arena);
+    restore_stream *Stream = 0;
+    if(Target){
+        Stream = InitFileRestoreStream(MetadataPath, Target, &Arena, Megabyte(16));
+    }
+    
+    while(AdvanceStream(Stream)){
+        int hold_me_here = 5;
+        if(Stream->Error != restore_stream::Error_NoError){
+            NAR_BREAK;
+        }
+    }
+    
+    FreeRestoreStream(Stream);
+    
 }
 
 void
@@ -4205,131 +4050,22 @@ DEBUG_FileRestore(){
 }
 
 
-inline nar_ext_query
-InitExtensionQuery(void* Mem, size_t Memlen, const wchar_t *Extension){
-    
-#if 0    
-    nar_ext_query Result;
-    Result.Mem = Mem;
-    Result.Used = 0;
-    Result.Capacity = Memlen;
-    Result.FileCount = 0;
-    wcscpy(Result.Extension, Extension);
-    Result.Files.reserve(100000);
-    return Result;
-#endif
-       
-}
 
-inline void
-NarAddFile(nar_ext_query *exq, const wchar_t *FileName){
-    
-    exq->Files.push_back(FileName);
-    
-#if 0    
-    size_t l = wcslen(FileName);
-    if(exq->Used + l < exq->Capacity){
-        exq->Files[exq->FileCount] = (wchar_t*)((char*)exq->Mem + exq->Used);
-        wcscpy(exq->Files[exq->FileCount], FileName);
-        exq->Used += (l + 1);
-        exq->FileCount++;
-    }
-#endif
-    
-}
-
-
-
-size_t total_files_scanned = 0;
-
-inline void
-FindExtensions(nar_backup_file_explorer_context *Ctx, nar_ext_query* qr, const wchar_t *Extension){
-    
-    std::vector<size_t> folderids;
-    {
-        TIMED_BLOCK();
-        
-        
-        folderids.reserve(Ctx->EList.EntryCount);
-        total_files_scanned += Ctx->EList.EntryCount;
-        
-        for(size_t i =0; i<Ctx->EList.EntryCount; i++){
-            TIMED_NAMED_BLOCK("for loop");
-            if(Ctx->EList.Entries[i].IsDirectory == FALSE){
-                if(TRUE==NarFileNameExtensionCheck(Ctx->EList.Entries[i].Name, Extension)){
-                    TIMED_NAMED_BLOCK("Add file");
-                    
-                    qr->bf[0] = L'\0';
-                    wcscat(qr->bf, Ctx->CurrentDirectory);
-                    wcscat(qr->bf, Ctx->EList.Entries[i].Name);
-                    NarAddFile(qr, qr->bf);
-                }
-            }
-            else{
-                TIMED_NAMED_BLOCK("else dir");
-                if(NULL==wcsstr(L"$", Ctx->EList.Entries[i].Name) 
-                   && Ctx->EList.Entries[i].Name[0] != L'.'
-                   && Ctx->EList.Entries[i].MFTFileIndex != 5){
-                    folderids.emplace_back(i);
-                }
-            }
-        }
-    }
-    
-    folderids.shrink_to_fit();
-    for(size_t i =0; i<folderids.size();i++){
-        //std::wcout<<std::wstring(Ctx->CurrentDirectory) + std::wstring(Ctx->EList.Entries[folderids[i]].Name)<<"\n";
-        NarFileExplorerPushDirectory(Ctx, folderids[i]);
-        FindExtensions(Ctx, qr, Extension);
-    }
-    
-    NarFileExplorerPopDirectory(Ctx);
-    
-}
 
 void
 DEBUG_FileExplorerQuery(){
     ASSERT(0);
-#if 0
-    wchar_t Letter;
-    std::wstring Extension;
     
-    printf("enter volume letter: ");
-    
-    std::wcin>>Letter;
-    printf("Enter extension(without dot and asterisk): ");
-    std::wcin>>Extension;
-    std::wcout<<Extension;
-    nar_backup_file_explorer_context ctx = {0};
-    
-    if(NarInitFileExplorerContextFromVolume(&ctx, Letter)){
-        
-        size_t bfsize = Megabyte(512);
-        void *Mem = malloc(bfsize);
-        
-        nar_ext_query qr = InitExtensionQuery(Mem, bfsize, Extension.c_str());
-        
-        clock_t start = clock();
-        
-        FindExtensions(&ctx, &qr, Extension.c_str());
-        for(size_t i =0; i<qr.Files.size(); i++){
-            //printf("%S\n", qr.Files[i].c_str());
-        }
-        
-        clock_t end = clock();
-        
-        printf("Done! total files scanned  %I64u, found %I64u\n", total_files_scanned, qr.Files.size());
-        printf("Time elapsed %.3f\n", (end-start)/1000.0);
-        PrintDebugRecords();
-        NarReleaseFileExplorerContext(&ctx);
-        
-    }
-#endif
 }
 
 int
 main(int argc, char* argv[]) {
-        
+    
+#if 1
+    DEBUG_Restore();
+    return 0;
+#endif
+    
     size_t bsize = 64*1024*1024;
     void *MemBuf = malloc(bsize);
     
@@ -4339,16 +4075,6 @@ main(int argc, char* argv[]) {
     
     if(SetupVSS() && ConnectDriver(&C)){
         DotNetStreamInf inf = {0};
-        
-#if 0        
-        SetupStream(&C, (wchar_t)'E', (BackupType)0, &inf);
-        loop{
-            char temp;
-            std::cin>>temp;
-            NarRemoveVolumeFromKernelList('E', C.Port);
-            Sleep(16);
-        }
-#endif
         
         char Volume = 0;
         int Type = 1;
@@ -4361,7 +4087,7 @@ main(int argc, char* argv[]) {
             
             BackupType bt = (BackupType)Type;
             
-            if(SetupStream(&C, (wchar_t)Volume, bt, &inf)){
+            if(SetupStream(&C, (wchar_t)Volume, bt, &inf, true)){
                 
                 int id = GetVolumeID(&C, (wchar_t)Volume);
                 volume_backup_inf *v = &C.Volumes.Data[id];
@@ -4378,7 +4104,7 @@ main(int argc, char* argv[]) {
                                           0, 0);
                 if(file != INVALID_HANDLE_VALUE){
                     
-#if 0                    
+#if 1                    
                     loop{
                         int Read = ReadStream(v, MemBuf, bsize);
                         TotalRead += Read;
@@ -4393,7 +4119,7 @@ main(int argc, char* argv[]) {
                                 //FlushFileBuffers(file);
                             }
                             else{
-                                BREAK_CODE;
+                                NAR_BREAK;
                                 printf("Couldnt write to file\n");
                                 DisplayError(GetLastError());
                             }
@@ -4405,12 +4131,13 @@ main(int argc, char* argv[]) {
                     TotalWritten = TargetWrite;
 #endif
                     
-                    if((TotalRead != TargetWrite || TotalWritten != TargetWrite)){
-                        NAR_BREAK_CODE();
-                        TerminateBackup(v, NAR_FAILED);
+                    
+                    NAR_BREAK;
+                    if(CheckStreamCompletedSuccessfully(v)){
+                        TerminateBackup(v, NAR_SUCC);
                     }
                     else{
-                        TerminateBackup(v, NAR_SUCC);
+                        TerminateBackup(v, NAR_FAILED);
                     }
                     
                     PrintDebugRecords();
