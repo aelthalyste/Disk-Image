@@ -6,8 +6,20 @@ using namespace System;
 using namespace System::Text;
 using namespace System::Collections::Generic;
 
+
+
 namespace NarDIWrapper {
-    
+
+    void
+        SystemStringToWCharPtr(System::String^ SystemStr, wchar_t* Destination) {
+
+        pin_ptr<const wchar_t> wch = PtrToStringChars(SystemStr);
+        size_t ConvertedChars = 0;
+        size_t SizeInBytes = (SystemStr->Length + 1) * 2;
+        memcpy(Destination, wch, SizeInBytes);
+
+    }
+
     public ref class StreamInfo {
         public:
         System::UInt32 ClusterSize; //Size of clusters, requester has to call readstream with multiples of this size
@@ -74,11 +86,14 @@ namespace NarDIWrapper {
         
         CSNarFileTime^ BackupDate;
         // TODO(Batuhan): 
-        UINT64 VolumeTotalSize;
-        UINT64 VolumeUsedSize;
-        UINT64 BytesNeedToCopy; // just for this version, not cumilative
-        UINT64 MaxWriteOffset;  // last write offset that is going to be made
+        size_t VolumeTotalSize;
+        size_t VolumeUsedSize;
+        size_t BytesNeedToCopy; // just for this version, not cumilative
+        size_t MaxWriteOffset;  // last write offset that is going to be made
         
+        size_t EFIPartSize;
+        size_t SystemPartSize;
+
         wchar_t DiskType;
         System::String^ Fullpath; // fullpath of the backup
         System::String^ Metadataname; // 
@@ -193,7 +208,156 @@ namespace NarDIWrapper {
     };
     
     
+    public ref class RestoreStream {
     
+    public:
+
+        RestoreStream(BackupMetadata^ arg_BM, System::String^ arg_RootDir) {
+            Stream      = 0;
+            MemLen      = Gigabyte(4);
+            Mem         = VirtualAlloc(0, MemLen, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+            BM          = arg_BM;
+            RootDir     = arg_RootDir;
+        }
+
+        ~RestoreStream() {
+            TerminateRestore();
+        }
+
+
+        bool SetDiskRestore(int DiskID, wchar_t Letter, bool arg_RepairBoot, bool OverrideDiskType, wchar_t AlternativeDiskType) {
+            
+            char DiskType = (char)BM->DiskType;
+            if (OverrideDiskType)
+                DiskType = (char)AlternativeDiskType;
+
+            RepairBoot = arg_RepairBoot;
+
+            int VolSizeMB = BM->VolumeTotalSize/(1024ull* 1024ull) + 1;
+            int SysPartitionMB = BM->EFIPartSize / (1024ull * 1024ull);
+            int RecPartitionMB = 0;
+
+            BootLetter = 0;
+            {
+                DWORD Drives = GetLogicalDrives();
+
+                for (int CurrentDriveIndex = 0; CurrentDriveIndex < 26; CurrentDriveIndex++) {
+                    if (Drives & (1 << CurrentDriveIndex) || ('A' + (char)CurrentDriveIndex) == (char)Letter) {
+                        continue;
+                    }
+                    else {
+                        BootLetter = ('A' + (char)CurrentDriveIndex);
+                        break;
+                    }
+                }
+            }
+
+            if (BootLetter != 0) {
+                if (DiskType == NAR_DISKTYPE_GPT) {
+                    if (BM->OSVolume) {
+                        NarCreateCleanGPTBootablePartition(DiskID, VolSizeMB, SysPartitionMB, RecPartitionMB, Letter, BootLetter);
+                    }
+                    else {
+                        NarCreateCleanGPTPartition(DiskID, VolSizeMB, Letter);
+                    }
+                }
+                if (DiskType == NAR_DISKTYPE_MBR) {
+                    if (BM->OSVolume) {
+                        NarCreateCleanMBRBootPartition(DiskID, Letter, VolSizeMB, SysPartitionMB, RecPartitionMB, BootLetter);
+                    }
+                    else {
+                        NarCreateCleanMBRPartition(DiskID, Letter, VolSizeMB);
+                    }
+                }
+
+            }
+            else {
+                return false;
+            }
+
+
+            IsDiskRestore = true;
+            return true;
+
+        }
+
+
+        bool SetupStream(wchar_t VolumeLetter) {
+
+            nar_arena Arena = ArenaInit(Mem, MemLen);
+            TargetLetter = VolumeLetter;
+
+            if (NarSetVolumeSize((char)VolumeLetter, BM->VolumeTotalSize)) {
+                NarFormatVolume((char)VolumeLetter);
+            }
+            else {
+                
+            }
+
+            restore_target *Target = InitVolumeTarget(VolumeLetter, &Arena);
+            if (Target) {
+                wchar_t bf[256];
+
+                memset(bf, 0, sizeof(bf));
+                SystemStringToWCharPtr(RootDir, &bf[0]);
+                std::wstring RootDir(bf);
+
+                memset(bf, 0, sizeof(bf));
+                SystemStringToWCharPtr(BM->Metadataname, bf);
+                std::wstring mdname(bf);
+
+
+                std::wstring MetadataPath = RootDir + mdname;
+
+                Stream = InitFileRestoreStream(MetadataPath, Target, &Arena, Megabyte(16));
+            }
+
+            return !(Stream == NULL);
+        }
+
+
+        void TerminateRestore() {
+            if (Mem) {
+                VirtualFree(Mem, MemLen, MEM_RELEASE);
+                FreeRestoreStream(Stream);
+                if (IsDiskRestore) {
+                    if (RepairBoot && BM->OSVolume) {
+                        NarRepairBoot(TargetLetter, BootLetter);
+                    }
+                    NarRemoveLetter(BootLetter);
+                }
+            }
+            Mem = 0;
+        }
+
+
+
+        // returns how many bytes processed. 0 means either end of stream or something bad happened
+        size_t CW_AdvanceStream() {
+            return AdvanceStream(Stream);
+        }
+
+        bool ErrorOccured() {
+            return (Stream->Error != restore_stream::Error_NoError);
+        }
+
+        size_t BytesNeedToCopy;
+        BackupMetadata^ BM;
+        System::String^ RootDir;
+
+    private:
+
+
+        void            *Mem;
+        size_t          MemLen;
+        restore_stream* Stream;
+        
+        bool IsDiskRestore;
+        char BootLetter;
+        char TargetLetter;
+        bool RepairBoot = true;
+
+    };
     
     public ref class DiskTracker
     {
@@ -216,9 +380,6 @@ namespace NarDIWrapper {
         bool CW_TerminateBackup(bool Succeeded, wchar_t VolumeLetter);
         
         unsigned long long CW_IsVolumeExists(wchar_t Letter);
-        
-        static bool CW_RestoreToVolume(wchar_t TargetLetter, BackupMetadata^ BM, bool ShouldFormat, System::String^ RootDir);
-        static bool CW_RestoreToFreshDisk(wchar_t TargetLetter, BackupMetadata^ BM, int DiskID,  System::String^ Rootdir, bool FormatBoot, bool OverWriteDiskType, wchar_t OverWritedTargetDiskType);
         
         static wchar_t CW_GetFirstAvailableVolumeLetter();
         static List<BackupMetadata^>^ CW_GetBackupsInDirectory(System::String^ RootDir);

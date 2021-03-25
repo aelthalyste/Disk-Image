@@ -1,25 +1,7 @@
-/*++
+#ifndef __NAR_COMMON_H__
+#define __NAR_COMMON_H__
 
-Copyright (c) 1989-2002  Microsoft Corporation
-
-Module Name:
-
-    minispy.h
-
-Abstract:
-
-    Header file which contains the structures, type definitions,
-    and constants that are shared between the kernel mode driver,
-    minispy.sys, and the user mode executable, minispy.exe.
-
-Environment:
-
-    Kernel and user mode
-
---*/
-#ifndef __MINISPY_H__
-#define __MINISPY_H__
-
+#if _MSC_VER
 // Custom NAR error codes
 
 #define NAR_ERR_TRINITY         0x00000001
@@ -61,6 +43,8 @@ Environment:
 #define NAR_KERNEL_MAX_FILE_ID 30
 #define NAR_KERNEL_GEN_FILE_ID(c) ((char)(c) - 'A' + 1)
 
+#endif // msvc, kernel build detection
+
 // force 1 byte aligment
 #pragma pack(push ,1)
 
@@ -68,12 +52,12 @@ struct nar_backup_id{
     union{
         unsigned long long Q;
         struct{
-            UINT16 Year;
-            UINT8 Month;
-            UINT8 Day;
-            UINT8 Hour;
-            UINT8 Min;
-            UINT8 Letter;
+            unsigned short Year;
+            unsigned char Month;
+            unsigned char Day;
+            unsigned char Hour;
+            unsigned char Min;
+            char Letter;
         };
     };
 };
@@ -82,12 +66,12 @@ struct nar_backup_id{
 struct nar_log_thread_params {
     void* Data;
     size_t FileSize;
-    LONG InternalError; // NTSTATUS = LONG
+    long InternalError; // NTSTATUS = LONG
     INT DataLen;
     int FileID;
-    BOOLEAN ShouldFlush;
-    BOOLEAN ShouldQueryFileSize;
-    BOOLEAN ShouldDelete; // set's file size to 0
+    int ShouldFlush;
+    int ShouldQueryFileSize;
+    int ShouldDelete; // set's file size to 0
 };
 
 #ifndef __cplusplus
@@ -130,27 +114,8 @@ typedef struct _nar_boot_track_data{
 
 #define MINISPY_PORT_NAME                   L"\\MiniSpyPort"
 
-//
-//  Local definitions for passing parameters between the filter and user mode
-//
-
-typedef ULONG_PTR FILE_ID;
-typedef _Return_type_success_(return >= 0) LONG NTSTATUS;
-
-//
-//  The maximum size of a record that can be passed from the filter
-//
-
-//#define RECORD_SIZE     1024
-#define RECORD_SIZE     4096
 
 
-
-
-
-//
-//  Defines the command structure between the utility and the filter.
-//
 
 #pragma warning(push)
 #pragma warning(disable:4200) // disable warnings for structures with zero length arrays.
@@ -165,44 +130,26 @@ typedef struct NAR_COMMAND {
     
     NAR_COMMAND_TYPE Type;
     struct {
-        WCHAR VolumeGUIDStr[49];     // Null terminated VolumeGUID string
+        wchar_t VolumeGUIDStr[49];     // Null terminated VolumeGUID string
     };
     char Letter; // neccecary for driver to calculate it's fileid
     
 }NAR_COMMAND;
 
 typedef struct NAR_LOG_INF{
-    UINT64 CurrentSize;
-    BOOLEAN ErrorOccured;
+    long long CurrentSize;
+    int ErrorOccured;
 }NAR_LOG_INF;
 
 #pragma warning(pop)
 
 typedef struct _NAR_CONNECTION_CONTEXT {
-    ULONG  PID;           // PID of user mode application to prevent deadlock in write operations on same volumes. This PID will be filtered out in PREOPERATION callback
-    INT32  OsDeviceID;    // parse QueryDeviceName
-    INT32  UserNameSize;  // In bytes, not characters.
-    WCHAR* UserName;      // Null terminated USERname that is currently active
+    unsigned long PID;           // PID of user mode application to prevent deadlock in write operations on same volumes. This PID will be filtered out in PREOPERATION callback
+    int  OsDeviceID;    // parse QueryDeviceName
+    int UserNameSize;  // In bytes, not characters.
+    wchar_t* UserName;      // Null terminated USERname that is currently active
 }NAR_CONNECTION_CONTEXT;
 
 
-
-//
-//  Macros available in kernel mode which are not available in user mode
-//
-
-#ifndef Add2Ptr
-#define Add2Ptr(P,I) ((PVOID)((PUCHAR)(P) + (I)))
-#endif
-
-#ifndef ROUND_TO_SIZE
-#define ROUND_TO_SIZE(_length, _alignment)    \
-(((_length) + ((_alignment)-1)) & ~((_alignment) - 1))
-#endif
-
-#ifndef FlagOn
-#define FlagOn(_F,_SF)        ((_F) & (_SF))
-#endif
-
-#endif /* __MINISPY_H__ */
+#endif /* __NAR_COMMON_H__ */
 

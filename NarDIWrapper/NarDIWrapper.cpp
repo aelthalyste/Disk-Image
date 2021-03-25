@@ -18,15 +18,7 @@ using namespace System;
 
 #define CONVERT_TYPES(_in,_out) _out = msclr::interop::marshal_as<decltype(_out)>(_in);
 
-void 
-SystemStringToWCharPtr(System::String ^SystemStr, wchar_t *Destination) {
-    
-    pin_ptr<const wchar_t> wch = PtrToStringChars(SystemStr);
-    size_t ConvertedChars = 0;
-    size_t SizeInBytes = (SystemStr->Length + 1) * 2;
-    memcpy(Destination, wch, SizeInBytes);
-    
-}
+
 
 
 namespace NarDIWrapper {
@@ -117,12 +109,14 @@ namespace NarDIWrapper {
     
     bool CSNarFileExplorer::CW_SelectDirectory(UINT64 ID){
         
-        NarFileExplorerPushDirectory(ctx, ID);
+        //NarFileExplorerPushDirectory(ctx, ID);
         return true;
     }
     
     void CSNarFileExplorer::CW_PopDirectory(){
-        NarFileExplorerPopDirectory(ctx);
+
+        //NarFileExplorerPopDirectory(ctx);
+    
     }
     
     void CSNarFileExplorer::CW_Free(){
@@ -138,7 +132,8 @@ namespace NarDIWrapper {
     }
     
     void CSNarFileExplorer::CW_RestoreFile(INT64 ID, System::String^ SysBackupDirectory, System::String^ SysTargetDir) {
-        
+
+#if 0
         if(ctx == NULL || ctx->EList.Entries == 0 || ctx->EList.EntryCount < ID){
             if(!ctx) printf("File explorer context was null\n");
             if(!ctx->EList.Entries) printf("File explorer's entry list was null\n");
@@ -155,7 +150,7 @@ namespace NarDIWrapper {
         SystemStringToWCharPtr(SysBackupDirectory, RootDir);
         
         NarRestoreFileFromBackups(RootDir, SelectedFilePath.c_str(), TargetDirectory, ctx->FEHandle.BMEX->M.ID, NAR_FULLBACKUP_VERSION);
-        
+#endif   
         
     }
     
@@ -235,49 +230,8 @@ namespace NarDIWrapper {
         return false;
     }
     
-    /*
-  Version: -1 to restore full backup otherwise version number to restore(version number=0 first inc-diff backup)
-  */
-    bool DiskTracker::CW_RestoreToVolume(wchar_t TargetLetter, BackupMetadata^ BM, bool ShouldFormat, System::String^ RootDir) {
-        
-        restore_inf R;
-        
-        R.TargetLetter = TargetLetter;
-        R.Version = BM->Version; 
-        R.BackupID = *BM->BackupID;
-        R.RootDir = msclr::interop::marshal_as<std::wstring>(RootDir);
-        
-        if (BM->Version < 0) {
-            R.Version = NAR_FULLBACKUP_VERSION;
-        }
-        
-        return OfflineRestoreToVolume(&R, ShouldFormat);
-        
-    }
-    
-    
-    bool DiskTracker::CW_RestoreToFreshDisk(wchar_t TargetLetter, BackupMetadata^ BM, int DiskID, System::String^ RootDir, bool ShouldRepairBoot, bool OverWriteDiskType, wchar_t OverWritedTargetDiskType) {
-        
-        restore_inf R;
-        R.TargetLetter = TargetLetter;
-        R.BackupID = *BM->BackupID;
-        R.RootDir = msclr::interop::marshal_as<std::wstring>(RootDir);
-        R.Version = BM->Version;
-        if (OverWriteDiskType)
-        {
-            R.DiskType = OverWritedTargetDiskType;
-            R.OverrideDiskType = true;
-        }
-        
-        R.RepairBoot = ShouldRepairBoot;
-        
-        if (BM->Version < 0) {
-            R.Version = NAR_FULLBACKUP_VERSION;
-        }
-        
-        return OfflineRestoreCleanDisk(&R, DiskID);
-    }
-    
+
+
     // returns 0 if one is not present
     wchar_t DiskTracker::CW_GetFirstAvailableVolumeLetter(){
         return NarGetAvailableVolumeLetter();
@@ -403,13 +357,15 @@ namespace NarDIWrapper {
                 BMet->MaxWriteOffset =  BMList[i].VersionMaxWriteOffset;
                 *BMet->BackupID = BMList[i].ID;
                 
+                BMet->EFIPartSize       = BMList[i].GPT_EFIPartitionSize;
+                BMet->SystemPartSize    = BMList[i].MBR_SystemPartitionSize;
+
                 BMet->BackupDate = gcnew CSNarFileTime(BMList[i].BackupDate.wYear, BMList[i].BackupDate.wMonth, BMList[i].BackupDate.wDay, BMList[i].BackupDate.wHour, BMList[i].BackupDate.wMinute, BMList[i].BackupDate.wSecond);
                 
-                pth = std::wstring(RootDir);
-                pth += GenerateBinaryFileName(*BMet->BackupID, BMet->Version);
-                BMet->Fullpath = gcnew System::String(pth.c_str());
+                GenerateBinaryFileName(*BMet->BackupID, BMet->Version, pth);
+                BMet->Fullpath = gcnew System::String((std::wstring(RootDir) + pth).c_str());
                 
-                pth = GenerateMetadataName(*BMet->BackupID, BMet->Version);
+                GenerateMetadataName(*BMet->BackupID, BMet->Version, pth);
                 BMet->Metadataname = gcnew System::String(pth.c_str());
                 
                 ResultList->Add(BMet);

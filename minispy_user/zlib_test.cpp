@@ -1,162 +1,13 @@
 #include <iostream>
 #include <stdio.h>
 #include <windows.h>
+
 #define ZSTD_DLL_IMPORT 1
 #include "zstd.h"
 
-struct file_view{
-    void* Data;
-	size_t Length;
-	
-    private:
-    
-    union{
-        // windows stuff
-        struct{
-            void* FHandle;
-            void* MHandle
-        };
-        // some linux stuff
-        struct {
-            void* stuff;
-        };
-    };
-};
+#include "platform_io.cpp"
 
-
-struct file_view {
-    void* data;
-    size_t len;
-    HANDLE FHandle;
-    HANDLE MHandle;
-}
-
-file_view 
-NarGetFileView(const wchar_t *path){
-    
-}
-
-NarFreeFileView(file_view FV){
-    
-}
-
-file_read readfile(const char *fn){
-	file_read result = {0};
-	FILE *F = fopen(fn, "rb");
-	if(F){
-		if(0 == fseek(F, 0, SEEK_END)){
-			result.len = ftell(F);
-			result.data = malloc(result.len);
-			fseek(F, 0, SEEK_SET);
-			fread(result.data, 1, result.len, F);		
-		}
-		else{
-			printf("unable to seek end of file");
-		}
-		fclose(F);
-	}
-	else{
-		printf("unable to open file %s\n", fn); 
-	}
-	return result;
-}
-
-HANDLE
-NarOpenVolume(char Letter) {
-    char VolumePath[512];
-    sprintf(VolumePath, "\\\\.\\%c:", Letter);
-    
-    HANDLE Volume = CreateFileA(VolumePath, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_WRITE | FILE_SHARE_READ | FILE_SHARE_DELETE, 0, OPEN_EXISTING, 0, 0);
-    if (Volume != INVALID_HANDLE_VALUE) {
-        
-#if 1        
-        if (DeviceIoControl(Volume, FSCTL_LOCK_VOLUME, 0, 0, 0, 0, 0, 0)) {
-            
-        }
-        else {
-            // NOTE(Batuhan): this isnt an error, tho prohibiting volume access for other processes would be great.
-            fprintf(stderr, "Couldn't lock volume %c\n", Letter);
-        }
-#endif
-        
-        
-    }
-    else {
-        fprintf(stderr, "Couldn't open volume %c\n", Letter);
-    }
-    
-    return Volume;
-}
-
-unsigned long long
-NarGetVolumeTotalSize(char Letter) {
-    char Temp[] = "!:\\";
-    Temp[0] = Letter;
-    ULARGE_INTEGER L = { 0 };
-    GetDiskFreeSpaceExA(Temp, 0, &L, 0);
-    return L.QuadPart;
-}
-
-inline size_t
-NarGetFileSize(const char* Path) {
-    ULONGLONG Result = 0;
-    HANDLE F = CreateFileA(Path, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_DELETE | FILE_SHARE_WRITE, 0, OPEN_EXISTING, 0, 0);
-    if (F != INVALID_HANDLE_VALUE) {
-        LARGE_INTEGER L = { 0 };
-        GetFileSizeEx(F, &L);
-        Result = L.QuadPart;
-    }
-    CloseHandle(F);
-    return Result;
-}
-
-file_read
-NarGetFileView(char *fn){
-	file_read Result = {0};
-	size_t FileSize = NarGetFileSize(fn);
-    HANDLE MappingHandle = 0;
-	HANDLE FileHandle = CreateFileA(fn, GENERIC_READ|GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, 0, OPEN_ALWAYS, 0, 0);
-    
-	if(FileHandle != INVALID_HANDLE_VALUE){
-		ULARGE_INTEGER vs= {0};
-		vs.QuadPart = FileSize;
-		MappingHandle = CreateFileMappingA(FileHandle, NULL, PAGE_READWRITE, 0, 0, 0);	
-		if(NULL != MappingHandle){
-        	void* FileView = MapViewOfFile(MappingHandle, FILE_MAP_ALL_ACCESS, 0, 0, 0);
-        	if(NULL != FileView){
-        		Result.data = FileView;
-        		Result.len = FileSize;
-        		Result.MHandle = MappingHandle;
-        		Result.FHandle = FileHandle;
-        		fprintf(stdout, "hold me here\n");	
-        	}
-        	else{
-        		fprintf(stderr, "MapViewOfFile failed with code %X\n", GetLastError());
-        		return Result;
-        	}		
-		}
-		else{
-			fprintf(stderr, "createfilemappinga failed with error code %X\n", GetLastError());
-			return Result;
-		}
-        
-	}
-	else{
-		fprintf(stderr, "naropenvolunme failed with code %X\n", GetLastError());
-		return Result;
-	}
-    
-	return Result;
-}
-
-void
-NarCloseFileView(file_read f){
-	UnmapViewOfFile(f.data);
-	CloseHandle(f.MHandle);
-	CloseHandle(f.FHandle);
-}
-
-void
+/*void
 list_frame_sizes(char *src){
 	file_read frsrc = NarGetFileView(src);
     
@@ -191,7 +42,9 @@ list_frame_sizes(char *src){
     
 	return;
 }
+*/
 
+#if 0
 void
 decompress(char* srcfn, char *dstfn){
     
@@ -235,7 +88,6 @@ decompress(char* srcfn, char *dstfn){
 	fprintf(stderr, "Err description %s\n", ZSTD_getErrorName(RetCode));
 	NarCloseFileView(frsrc);
 	
-	
     
 }
 
@@ -267,29 +119,24 @@ test(){
     
 	return;
 }
+#endif 
 
 #define ASSERT(expression) do{if(!(expression)) *(int*)0 = 0;}while(0);
 #define CHECK_TERMINATE(code) do{if(ZSTD_isError(code)) {goto ERR_TERMINATION;}}while(0);
 int main(){
-    list_frame_sizes("C:\\Users\\User\\Desktop\\targetfile");
-	return 0;
-    decompress("C:\\Users\\User\\Desktop\\targetfile", "C:\\Users\\User\\Desktop\\anotherfile");
-	return 0;
     
-	test();
-	return 0;
 	fprintf(stdout, "%I64u\n", sizeof(long int));
-	FILE *FTarget = fopen("C:\\Users\\User\\Desktop\\targetfile", "wb");
+	FILE *FTarget = fopen("C:\\Users\\Batuhan\\Desktop\\zliboutput", "wb");
 	if(FTarget == NULL){
 		fprintf(stderr, "Unable to create target file\n");
 		return 0;
 	}
 	
-	char fn[] = "F:\\Disk-Image\\build\\minispy_user\\NAR_BACKUP_FULL-C18890713974573029.narbd";
+	char fn[] = "C:\\Users\\Batuhan\\AppData\\Local\\Microsoft\\Terminal Server Client\\Cache\\Cache0002.bin";
     
-    file_read fr = NarGetFileView(fn);
-	size_t FileSize = fr.len;
-    void *FileView = fr.data;
+    nar_file_view fr = NarOpenFileView(fn);
+	size_t FileSize = fr.Len;
+    void *FileView = fr.Data;
     
     
 	size_t bsize = 16*1024*1024;
@@ -331,7 +178,7 @@ int main(){
     //ReturnCode = ZSTD_CCtx_setPledgedSrcSize(context, FileSize);
 	//CHECK_TERMINATE(ReturnCode);
 	size_t processed = 0;
-	size_t block_size = 1024*1024*16;
+	size_t block_size = 1024*1024*8;
 	while(processed != FileSize){
 		input.src = (char*)FileView + processed;
 		if(FileSize - processed > block_size)
@@ -361,15 +208,6 @@ int main(){
 		output.pos = 0;
 	}
 	
-	
-	//fprintf(stdout, "Ret code %I64u\n", ReturnCode);
-	//ReturnCode = ZSTD_CCtx_setPledgedSrcSize(context, FileSize);
-	//CHECK_TERMINATE(ReturnCode);
-	
-	//ReturnCode = ZSTD_compressStream2(stream, &output, &input, ZSTD_e_end);
-	//fwrite(output.dst, 1, output.pos, FTarget);
-	//CHECK_TERMINATE(ReturnCode);
-    
 	fclose(FTarget);	
 	
 	ReturnCode = ZSTD_freeCStream(stream);
