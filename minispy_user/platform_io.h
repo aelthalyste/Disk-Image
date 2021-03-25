@@ -27,10 +27,10 @@ NarFreeFileView(nar_file_view fv);
 
 
 std::string
-NarGetFileDirectory(std::string fn);
+NarGetFileDirectory(const std::string& fn);
 
 std::wstring
-NarGetFileDirectory(std::wstring fn);
+NarGetFileDirectory(const std::wstring& fn);
 
 
 bool

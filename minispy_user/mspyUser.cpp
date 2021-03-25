@@ -1140,7 +1140,7 @@ GetVolumeID(PLOG_CONTEXT C, wchar_t Letter) {
     return ID;
 }
 
-// Assumes TotalSize >= NAR_COMPRESSION_FRAME_SIZE
+// Assumes CallerBufferSize >= NAR_COMPRESSION_FRAME_SIZE
 UINT32
 ReadStream(volume_backup_inf* VolInf, void* CallerBuffer, unsigned int CallerBufferSize) {
     
@@ -1148,7 +1148,6 @@ ReadStream(volume_backup_inf* VolInf, void* CallerBuffer, unsigned int CallerBuf
     UINT32 Result = 0;
     BOOLEAN ErrorOccured = FALSE;
     
-    // int ClustersToRead = (int)TotalSize / (int)VolInf->ClusterSize;
     void* BufferToFill = CallerBuffer;
     unsigned int TotalSize = CallerBufferSize;
     if(true == VolInf->Stream.ShouldCompress){
@@ -1156,12 +1155,10 @@ ReadStream(volume_backup_inf* VolInf, void* CallerBuffer, unsigned int CallerBuf
         TotalSize = VolInf->Stream.BufferSize;
     }
     
-    
     if (TotalSize == 0) {
         printf("Passed totalsize as 0, terminating now\n");
         return TRUE;
     }
-    
     
     unsigned int RemainingSize = TotalSize;
     void* CurrentBufferOffset = BufferToFill;
@@ -1249,7 +1246,6 @@ ReadStream(volume_backup_inf* VolInf, void* CallerBuffer, unsigned int CallerBuf
         
         size_t RetCode = 0;
         RetCode = ZSTD_compressStream2(VolInf->Stream.CCtx, &output, &input, ZSTD_e_end);
-        
         ASSERT(input.pos == input.size);
         ASSERT(ZSTD_isError(RetCode));
         
@@ -1548,26 +1544,34 @@ SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, DotNetStreamInf* SI, boo
     else{
 
         if(ShouldCompress){
+            
             VolInf->Stream.CompressionBuffer = malloc(NAR_COMPRESSION_FRAME_SIZE);
             VolInf->Stream.BufferSize = NAR_COMPRESSION_FRAME_SIZE;
+            
             if(NULL != VolInf->Stream.CompressionBuffer){        
                 VolInf->Stream.ShouldCompress = true;
                 
                 VolInf->Stream.CCtx = ZSTD_createCCtx();
                 VolInf->Stream.CStream = ZSTD_createCStream();
                 
+                ASSERT(VolInf->Stream.CCtx);
+                ASSERT(VolInf->Stream.CStream);
+                
                 ZSTD_bounds ThreadBounds = ZSTD_cParam_getBounds(ZSTD_c_nbWorkers);
                 if(!ZSTD_isError(ThreadBounds.error)){
                     ZSTD_CCtx_setParameter(VolInf->Stream.CCtx, ZSTD_c_nbWorkers, ThreadBounds.upperBound);
                 }
                 else{
+                    ASSERT(0);
                     printf("Couldn't query worker thread bounds for compression, zstd error code : %X\n", ThreadBounds.error);
                     ZSTD_CCtx_setParameter(VolInf->Stream.CCtx, ZSTD_c_nbWorkers, 0);
                 }
             }
             else{
                 VolInf->Stream.ShouldCompress = false;        
+                VolInf->Stream.BufferSize = 0;
             }
+            
         }
         
     }

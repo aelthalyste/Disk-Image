@@ -93,18 +93,18 @@ NarOpenFileView(const std::wstring &fn){
         		Result.impl->FHandle 	= FileHandle;
         	}
         	else{
-        		fprintf(stderr, "MapViewOfFile failed with code %X for file %S\n", GetLastError(), fn);
+        		fprintf(stderr, "MapViewOfFile failed with code %X for file %S\n", GetLastError(), fn.c_str());
         		goto FV_ERROR;
         	}		
 		}
 		else{
-			fprintf(stderr, "CreateFileMappingW failed with error code %X for file %S\n", GetLastError(), fn);
+			fprintf(stderr, "CreateFileMappingW failed with error code %X for file %S\n", GetLastError(), fn.c_str());
 			goto FV_ERROR;
 		}
         
 	}
 	else{
-		fprintf(stderr, "CreateFileW failed with code %X for file %S\n", GetLastError(), fn);
+		fprintf(stderr, "CreateFileW failed with code %X for file %S\n", GetLastError(), fn.c_str());
 		goto FV_ERROR;
 	}
     
@@ -130,8 +130,7 @@ NarFreeFileView(nar_file_view FV){
 }
 
 std::string
-NarGetFileDirectory(const char *arg_fn){
-    std::string fn(arg_fn);
+NarGetFileDirectory(const std::string& fn){
     auto indice = fn.rfind("\\");
     if(indice != std::string::npos)
         return fn.substr(0, indice + 1);
@@ -139,14 +138,40 @@ NarGetFileDirectory(const char *arg_fn){
 }
 
 std::wstring
-NarGetFileDirectory(const wchar_t *arg_fn){
-    std::wstring fn(arg_fn);
+NarGetFileDirectory(const std::wstring& fn){
     auto indice = fn.rfind(L"\\");
     if(indice != std::wstring::npos)
         return fn.substr(0, indice + 1);
     return L"";
 }
 
+
+bool
+NarFileReadNBytes(std::string path, void *mem, size_t N){
+    return NarFileReadNBytes(str2wstr(path), mem, N);
+}
+
+bool
+NarFileReadNBytes(std::wstring path, void *mem, size_t N){
+    bool Result = false;
+    HANDLE File = CreateFileW(path.c_str(), GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
+    if (File != INVALID_HANDLE_VALUE) {
+        DWORD BytesRead = 0;
+        ReadFile(File, mem, N, &BytesRead, 0);
+        if (BytesRead == N) {
+            // NOTE success
+            Result = true;
+        }
+        else {
+            //printf("Read %i bytes instead of %i\n", BytesRead, Result.Len);
+        }
+        CloseHandle(File);
+    }
+    else {
+        //printf("Can't create file: %s\n", FileName);
+    }
+    return Result;
+}
 
 #endif // MSVC DEF
 

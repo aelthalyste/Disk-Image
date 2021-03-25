@@ -27,10 +27,18 @@ struct restore_source{
 			bool IsCompressed;
 
         	// Pre-allocated buffer for decompressing backup.
-			void   *Bf;
+			void    *Bf;
+            
+            size_t  AdvancedSoFar;
+            
 			size_t	BfSize;        	
-			size_t 	BfNeedle;
-        	
+			size_t  BfNeedle;
+            
+            size_t  CompressedSize;
+            size_t  UncompressedSize;
+            
+            size_t ZSTDError;
+            
         	ZSTD_DStream* DStream;
         };
         
@@ -42,11 +50,24 @@ struct restore_source{
             size_t NewNeedle;
         };
     };
-	
+    
+    
+    // NOTE(Batuhan): 
     enum{
-        FileStream,
-        NetworkStream,
-        Count
+        Error_NoError,
+        Error_InsufficentBufferSize,
+        Error_Decompression,
+        Error_NullCompBuffer,
+        Error_NullFileViews,
+        Error_NullArg,
+        Error_Count
+    }Error;
+    
+    
+    enum{
+        Type_FileSource,
+        Type_NetworkSource,
+        Type_Count
     }Type;
     
     // Recommended needle position for restore_target in absolute file position(that might exceed backup file's max size)
@@ -72,7 +93,7 @@ struct restore_source{
             -For compressed backups, it will be less than BfSize.
         
     */
-    const void (*Read)(restore_source* Rs, size_t *AvailableBytes);
+    const void* (*Read)(restore_source* Rs, size_t *AvailableBytes);
     
 };
 
@@ -102,7 +123,8 @@ struct restore_source{
 */
 struct restore_target{
 	// Holds user defined parameters that can be useful when implementing write-setneedle functions
-    void* Impl;
+    void* Impl; // this is either HANDLE or FILE*, these variants supports file level restore so we don't need to use tagged-union like stuff.
+    
     
     // One can provide it's own implementation of Write(like memory mapped file or classic volume target) to set restore's target    
 	// advantage of this use style is caller can change state of restore_target by just simply changing Write and SetNeedle fnctor pointers.
@@ -114,6 +136,14 @@ struct restore_target{
 struct restore_stream{
 	restore_source **Sources;
 	restore_target *Target;
+    
+    enum{
+        Error_NoError,
+        Error_Read,
+        Error_Needle,
+        Error_Write,
+        Error_Count
+    }Error;
     
     size_t CSI;
 	size_t SourceCap;
@@ -127,28 +157,40 @@ struct restore_stream{
 };
 
 
-
-template<typename StrType>
-restore_source*
-InitRestoreFileSource(StrType MetadataPath, nar_arena* Arena);
-
-
 // Returns how many bytes copied from source to target
 // 0 means either error or source(s) are deplated.
 size_t
 AdvanceStream(restore_stream *Stream);
 
-
 const void*
 NarBackupRead(restore_source* Rs, size_t *AvailableBytes);
 
+
+// returns NULL every call.
+const void*
+NarReadZero(restore_source* Rs, size_t *AvailableBytes);
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////
 template<typename StrType>
 restore_source*
-InitRestoreFileSource(StrType MetadataPath, nar_arena* Arena);
+InitRestoreFileSource(StrType MetadataPath, nar_arena* Arena, size_t MaxAdvanceSize = 1024ull * 1024ull * 64ull);
 
+void
+FreeRestoreSource(restore_source *Rs);
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////
 template<typename StrType>
 restore_stream*
-InitFileRestoreStream(StrType MetadataFile, restore_target* Target, nar_arena* Arena);
+InitFileRestoreStream(StrType MetadataFile, restore_target* Target, nar_arena* Arena, size_t MaxAdvanceSize = 1024ull * 1024ull * 64ull);
+
+void
+FreeRestoreStream(restore_stream *Stream);
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 
 const void*
 NarReadBackup(restore_source* Rs, size_t *AvailableBytes);
@@ -160,102 +202,34 @@ NarReadMetadata(StrType path, backup_metadata *bm);
 #if _WIN32
 
 size_t
-NarSetNeedleVolume(restore_target* Rt, size_t TargetFilePointer){
-    size_t Result = 0;
-    {
-        LARGE_INTEGER MoveTo = { 0 };
-        MoveTo.QuadPart = TargetFilePointer;
-        LARGE_INTEGER NewFilePointer = { 0 };
-        SetFilePointerEx(Rt->Impl, MoveTo, &NewFilePointer, FILE_BEGIN);
-        Result = NewFilePointer.QuadPart;
-    }
-    return Result;
-}
+NarSetNeedleVolume(restore_target* Rt, size_t TargetFilePointer);
 
 // expects memsize to be lower than 4gb
 size_t 
-NarWriteVolume(restore_target *Rt, const void *Mem, size_t MemSize){
-    
-    DWORD BytesWritten = 0;
-    if(WriteFile(Rt->Impl, Mem, MemSize, &BytesWritten, 0) && BytesWritten == MemSize){
-        // success
-    }
-    else{
-        NAR_DEBUG("Unable to write %lu bytes to restore target\n");
-    }
-    
-    return (size_t)BytesWritten;
-}
+NarWriteVolume(restore_target *Rt, const void *Mem, size_t MemSize);
 
 restore_target*
-InitVolumeTarget(char Letter, nar_arena *Arena){
-    
-    restore_target *Result = NULL;
-    if((Letter <= 'z' && Letter >= 'a') 
-        || Letter >= 'A' && Letter <= 'Z'){
-        
-        if(Letter >= 'Z')
-            Letter = Letter - ('a' - 'A');
-    
-    }
-    else{
-        return Result;
-    }
-    
-    char VolumePath[16];
-    snprintf(VolumePath, 16, "\\\\.\\%c:", Letter);
-    HANDLE Volume = CreateFileA(VolumePath, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_WRITE | FILE_SHARE_READ | FILE_SHARE_DELETE, 0, OPEN_EXISTING, 0, 0);
-    if(Volume != INVALID_HANDLE_VALUE){
-        if (DeviceIoControl(Volume, FSCTL_LOCK_VOLUME, 0, 0, 0, 0, 0, 0)) {
-            Result              = (restore_target*)ArenaAllocate(Arena, sizeof(restore_target));
-            Result->Impl        = Volume;
-            Result->Write       = NarWriteVolume;
-            Result->SetNeedle   = NarSetNeedleVolume;
-        }
-        else {
-            NAR_DEBUG("Couldn't lock volume %c\n", Letter);
-        }
-    }
-    
-    return Result;
-}
+InitVolumeTarget(char Letter, nar_arena *Arena);
+
+void
+FreeRestoreTarget(restore_target* Rt);
+
 
 #elif __linux__
 
 #include <stdio.h>
 
-size_t
-NarWriteVolume(restore_target* Rt, const void* Mem, size_t MemSize){
-    size_t Ret = fwrite(Mem, MemSize, 1, Rt->Impl);
-    ASSERT(Ret == 1);
-    return MemSize;
-}
+void
+FreeRestoreTarget(restore_target* Rt);
 
 size_t
-NarSetNeedleVolume(restore_target* Rt, size_t TargetFilePointer){
-    int Ret=fseeko64(Rt->Impl, (off64_t)TargetFilePointer, 0);
-    ASSERT(Ret == 0);
-    return TargetFilePointer;
-}
+NarWriteVolume(restore_target* Rt, const void* Mem, size_t MemSize);
+
+size_t
+NarSetNeedleVolume(restore_target* Rt, size_t TargetFilePointer);
 
 restore_target*
-InitVolumeTarget(std::string VolumePath, nar_arena* Arena){
-    static_assert(false, "not implemented");
-    restore_target *Result = 0;
-    
-    FILE *F = fopen(VolumePath.c_str(), "rb");
-    if(F){
-        Result = (restore_target*)ArenaAllocate(Arena, sizeof(restore_target));
-        Result->Impl        = F;
-        Result->Write       = NarWriteVolume;
-        Result->SetNeedle   = NarSetNeedleVolume;        
-    }
-    else{
-        NAR_DEBUG("Unable to open volume %s\n", VolumePath.c_str());
-    }
-    
-    return Result;
-}
+InitVolumeTarget(std::string VolumePath, nar_arena* Arena);
 
 
 
