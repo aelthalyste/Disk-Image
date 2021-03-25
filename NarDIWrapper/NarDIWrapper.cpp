@@ -213,10 +213,10 @@ namespace NarDIWrapper {
         return Result;
     }
     
-    bool DiskTracker::CW_SetupStream(wchar_t L, int BT, StreamInfo^ StrInf) {
+    bool DiskTracker::CW_SetupStream(wchar_t L, int BT, StreamInfo^ StrInf, bool ShouldCompress) {
         
         DotNetStreamInf SI = { 0 };
-        if (SetupStream(C, L, (BackupType)BT, &SI)) {
+        if (SetupStream(C, L, (BackupType)BT, &SI, ShouldCompress)) {
             
             StrInf->ClusterCount = SI.ClusterCount;
             StrInf->ClusterSize = SI.ClusterSize;
@@ -250,6 +250,19 @@ namespace NarDIWrapper {
         return 0;
     }
     
+    // returns false if internal error occured
+    bool DiskTracker::CW_CheckStreamStatus(wchar_t Letter) {
+        int VolID = GetVolumeID(C, Letter);
+        if (VolID != NAR_INVALID_VOLUME_TRACK_ID) {
+            return C->Volumes.Data[VolID].Stream.Error == stream::Error_NoError;
+        }
+    }
+    
+    int DiskTracker::CW_HintBufferSize() {
+        return NAR_COMPRESSION_FRAME_SIZE;
+    }
+    
+
     bool DiskTracker::CW_TerminateBackup(bool Succeeded, wchar_t VolumeLetter) {
         
         INT32 VolID = GetVolumeID(C, VolumeLetter);
