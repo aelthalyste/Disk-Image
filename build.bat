@@ -4,7 +4,7 @@ call :StartTimer
 
 
 set build_options= -DUNICODE -D_UNICODE -D_CRT_SECURE_NO_WARNINGS
-set compile_flags=  -nologo /EHsc /W0 /Od /DEBUG /Zi /FC /Fa  /INCREMENTAL:NO /F 16777216 /Bt
+set compile_flags=  -nologo /EHsc /W0  /DEBUG /Zi /FC /Od /Fa /INCREMENTAL:NO /F 16777216 
 set linker_flags=  "fltLib.lib" "vssapi.lib" "../../minispy_user/libzstd_static.lib" "../../minispy_user/libzstd.dll.a"
 rem /DEBUG:FULL /Zi /FC /Od /fsanitize=address
 rem /DEBUG /Zi /FC /Fa 

@@ -215,7 +215,7 @@ namespace NarDIWrapper {
         RestoreStream(BackupMetadata^ arg_BM, System::String^ arg_RootDir) {
             Stream      = 0;
             MemLen      = Gigabyte(4);
-            Mem         = VirtualAlloc(0, MemLen, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+            Mem         = VirtualAlloc(0, MemLen, MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_READWRITE);
             BM          = arg_BM;
             RootDir     = arg_RootDir;
         }
@@ -310,6 +310,8 @@ namespace NarDIWrapper {
                 std::wstring MetadataPath = RootDir + mdname;
 
                 Stream = InitFileRestoreStream(MetadataPath, Target, &Arena, Megabyte(16));
+                BytesNeedToCopy = Stream->BytesToBeCopied;
+
             }
 
             return !(Stream == NULL);
@@ -332,14 +334,19 @@ namespace NarDIWrapper {
 
 
 
-        // returns how many bytes processed. 0 means either end of stream or something bad happened
+        /* 
+            returns how many bytes processed. 0 means either end of stream or something bad happened. check internal errors via CheckStreamStatus.
+        */
         size_t CW_AdvanceStream() {
             return AdvanceStream(Stream);
         }
 
-        bool ErrorOccured() {
+        // returns false if internal error flags are set
+        bool CheckStreamStatus() {
             return (Stream->Error != restore_stream::Error_NoError);
         }
+        
+        
 
         size_t BytesNeedToCopy;
         BackupMetadata^ BM;
@@ -373,10 +380,11 @@ namespace NarDIWrapper {
         
         bool CW_RemoveFromTrack(wchar_t Letter);
         
-        bool CW_SetupStream(wchar_t L, int BT, StreamInfo^ StrInf);
+        bool CW_SetupStream(wchar_t L, int BT, StreamInfo^ StrInf, bool ShouldCompress);
         
         INT32 CW_ReadStream(void* Data, wchar_t VolumeLetter, int Size);
-        
+        bool CW_CheckStreamStatus(wchar_t Letter);
+
         bool CW_TerminateBackup(bool Succeeded, wchar_t VolumeLetter);
         
         unsigned long long CW_IsVolumeExists(wchar_t Letter);
@@ -386,7 +394,8 @@ namespace NarDIWrapper {
         static List<DiskInfo^>^ CW_GetDisksOnSystem();
         static BOOLEAN CW_MetadataEditTaskandDescriptionField(System::String^ MetadataFileName, System::String^ TaskName, System::String^ TaskDescription);
         static bool CW_IsVolumeAvailable(wchar_t Letter);
-        
+        static int CW_HintBufferSize();
+
         static List<CSLog^>^ CW_GetLogs();
         static void CW_GenerateLogs();
         
