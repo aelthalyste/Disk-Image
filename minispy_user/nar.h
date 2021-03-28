@@ -14,7 +14,7 @@
 #define NAR_WINDOWS 1
 #endif
 
-#define ASSERT(exp) do{if(!(exp)){*(int*)0 = 42;}} while(0);
+#define ASSERT(exp) do{if(!(exp)){*(volatile int*)0 = 42;}} while(0);
 #define BOOLEAN char
 
 
@@ -50,7 +50,7 @@
 #define NAR_BREAK do{__debugbreak();}while(0);
 #endif
 
-#define NAR_DEBUG
+#define NAR_DEBUG(fmt, ...) fprintf(stderr, fmt, __VA_ARGS__)
 
 
 enum class BackupType : short {

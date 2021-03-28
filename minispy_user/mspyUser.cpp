@@ -1758,7 +1758,7 @@ NarGetLogFileSizeFromKernel(HANDLE CommPort, char Letter){
     
     ULONGLONG Result = 0;
     
-    NAR_COMMAND Cmd = {0};
+    NAR_COMMAND Cmd = {};
     Cmd.Letter = Letter;
     Cmd.Type = NarCommandType_FlushLog;
     
@@ -2897,7 +2897,7 @@ SaveMetadata(char Letter, int Version, int ClusterSize, BackupType BT,
         for (size_t i = 0; i < BackupRegions.Count; i++) {
             BM.Size.Regions += (ULONGLONG)BackupRegions.Data[i].Len * BM.ClusterSize;
         }
-        BM. VersionMaxWriteOffset = ((ULONGLONG)BackupRegions.Data[BackupRegions.Count - 1].StartPos + BackupRegions.Data[BackupRegions.Count - 1].Len)*BM.ClusterSize;
+        BM.VersionMaxWriteOffset = ((ULONGLONG)BackupRegions.Data[BackupRegions.Count - 1].StartPos + BackupRegions.Data[BackupRegions.Count - 1].Len)*BM.ClusterSize;
     }
     
     /*
@@ -4531,7 +4531,7 @@ DisplayError(DWORD Code) {
     printf("    %ws\n", buffer);
 }
 
-debug_record GlobalDebugRecordArray[__COUNTER__];
+//debug_record GlobalDebugRecordArray[__COUNTER__];
 
 inline void
 PrintDebugRecords() {

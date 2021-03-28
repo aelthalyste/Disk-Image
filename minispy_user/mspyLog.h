@@ -17,10 +17,17 @@
 
 #include <stdio.h>
 
+#if 1
 #define TIMED_BLOCK__(NAME, Number, ...) timed_block timed_##Number(__COUNTER__, __LINE__, __FUNCTION__, NAME);
 #define TIMED_BLOCK_(NAME, Number, ...)  TIMED_BLOCK__(NAME, Number,  ## __VA__ARGS__)
 #define TIMED_BLOCK(...)                 TIMED_BLOCK_("UNNAMED", __LINE__, ## __VA__ARGS__)
 #define TIMED_NAMED_BLOCK(NAME, ...)     TIMED_BLOCK_(NAME, __LINE__, ## __VA__ARGS__)
+#else
+#define TIMED_BLOCK__(NAME, Number, ...) 
+#define TIMED_BLOCK_(NAME, Number, ...)  
+#define TIMED_BLOCK(...)                 
+#define TIMED_NAMED_BLOCK(NAME, ...)     
+#endif
 
 struct debug_record {
     char* FunctionName;
@@ -32,7 +39,7 @@ struct debug_record {
     uint32_t HitCount;
 };
 
-debug_record GlobalDebugRecordArray[];
+debug_record GlobalDebugRecordArray[1000];
 
 struct timed_block {
     

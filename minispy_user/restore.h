@@ -20,11 +20,11 @@ struct restore_source{
             size_t RecordsLen;
 
             // internal stuff about which region we are currently processing, and which cluster
-            size_t RegionIndice; 
-            size_t ClusterIndice;
+            size_t 	RegionIndice; 
+            size_t 	ClusterIndice;
 
-			size_t ClusterSize;
-			bool IsCompressed;
+			size_t 	ClusterSize;
+			bool   	IsCompressed;
 
         	// Pre-allocated buffer for decompressing backup.
 			void    *Bf;
@@ -70,6 +70,9 @@ struct restore_source{
         Type_Count
     }Type;
     
+
+    size_t BytesToBeCopied;
+
     // Recommended needle position for restore_target in absolute file position(that might exceed backup file's max size)
     // this value is LCN of latest read * clustersize of the backup
     // For volume targets, for ecah Read, it's recommended to call SetNeedle(AbsoluteNeedleInBytes);

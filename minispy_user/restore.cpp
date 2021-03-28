@@ -175,8 +175,10 @@ InitRestoreFileSource(StrType MetadataPath, nar_arena* Arena, size_t MaxAdvanceS
     if (Result->Metadata.Data) {
         backup_metadata* bm = (backup_metadata*)Result->Metadata.Data;
 
-        Result->ClusterSize = bm->ClusterSize;
-        Result->IsCompressed = false;
+        Result->ClusterSize 	= bm->ClusterSize;
+        Result->IsCompressed 	= false;
+        Result->BytesToBeCopied = bm->Size.Regions;
+         
         StrType BinName;
         GenerateBinaryFileName(bm->ID, bm->Version, BinName);
 
@@ -248,8 +250,8 @@ InitFileRestoreStream(StrType MetadataFile, restore_target* Target, nar_arena* A
 
                     Result->Sources[0] = InitRestoreFileSource(RootDir + fpath, Arena, MaxAdvanceSize);
                     Result->Sources[1] = InitRestoreFileSource(RootDir + dpath, Arena, MaxAdvanceSize);
-                    Result->BytesToBeCopied += Result->Sources[0]->Bin.Len;
-                    Result->BytesToBeCopied += Result->Sources[1]->Bin.Len;
+                    Result->BytesToBeCopied += Result->Sources[0]->BytesToBeCopied;
+                    Result->BytesToBeCopied += Result->Sources[1]->BytesToBeCopied;
 
 
                 }
@@ -267,7 +269,7 @@ InitFileRestoreStream(StrType MetadataFile, restore_target* Target, nar_arena* A
                         StrType fpath;
                         GenerateMetadataName(bm.ID, bm.Version, fpath);
                         Result->Sources[i] = InitRestoreFileSource(RootDir + fpath, Arena, MaxAdvanceSize);
-                        Result->BytesToBeCopied += Result->Sources[i]->Bin.Len;
+                        Result->BytesToBeCopied += Result->Sources[i]->BytesToBeCopied;
                     }
 
                 }
@@ -282,7 +284,7 @@ InitFileRestoreStream(StrType MetadataFile, restore_target* Target, nar_arena* A
                 Result->Sources[0] = InitRestoreFileSource(MetadataFile, Arena, MaxAdvanceSize);
                 Result->SourceCap = 1;
                 Result->CSI = 0;
-                Result->BytesToBeCopied = Result->Sources[0]->Bin.Len;
+                Result->BytesToBeCopied = Result->Sources[0]->BytesToBeCopied;
             }
 
     }
@@ -397,7 +399,7 @@ NarWriteVolume(restore_target* Rt, const void* Mem, size_t MemSize) {
         // success
     }
     else {
-        NAR_DEBUG("Unable to write %lu bytes to restore target\n");
+        NAR_DEBUG("Unable to write %I64u bytes to restore target\n", MemSize);
     }
 
     return (size_t)BytesWritten;

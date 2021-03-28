@@ -19,7 +19,7 @@ static inline void*
 ArenaAllocate(nar_arena *Arena, size_t s){
 	void* Result = 0;
 
-	if(0 == Arena) return Result;
+	if(!Arena) return Result;
 
 	size_t left = Arena->Capacity - Arena->Used;
 	if(s < left){
@@ -31,7 +31,7 @@ ArenaAllocate(nar_arena *Arena, size_t s){
 
 static inline void
 ArenaFreeBytes(nar_arena* Arena, size_t s){
-	if(0!=Arena){
+	if(!Arena){
 		if(s >= Arena->Used){
 			s = Arena->Used;
 		}
