@@ -7,7 +7,7 @@ NarReadMetadata(StrType path, backup_metadata* bm) {
     bool Result = false;
     if (NULL == bm)
         return Result;
-
+    
     // TODO (Batuhan): I have to put crc32-like thing to validate metadata.
     if (NarFileReadNBytes(path, bm, sizeof(backup_metadata))) {
         Result = true;
@@ -15,7 +15,7 @@ NarReadMetadata(StrType path, backup_metadata* bm) {
     else {
         NAR_DEBUG("Unable to read file %s", path.c_str());
     }
-
+    
     return Result;
 }
 
@@ -26,24 +26,13 @@ const void*
 NarReadBackup(restore_source* Rs, size_t* AvailableBytes) {
     //Rs->Regions[RegionIndice];		
     const void* Result = 0;
-    /*
-        nar_file_view Bin;
-        nar_file_view Metadata;
-
-        const nar_record *Regions;
-        size_t RecordLen;
-
-        // internal stuff about which region we are currently processing, and which cluster
-        size_t RegionIndice;
-        size_t ClusterIndice;
-    */
-
+    
     ASSERT(Rs);
     ASSERT(AvailableBytes);
     ASSERT(Rs->Bin.Data);
     ASSERT(Rs->Metadata.Data);
     ASSERT(Rs->MaxAdvanceSize % Rs->ClusterSize == 0);
-
+    
     // End of stream 
     if (Rs->RegionIndice >= Rs->RecordsLen) {
         return NULL;
@@ -61,20 +50,35 @@ NarReadBackup(restore_source* Rs, size_t* AvailableBytes) {
         Rs->Read    = NarReadZero;
         return Rs->Read(Rs, AvailableBytes);
     }
-
+    
+    if(Rs->Regions[Rs->RegionIndice].Len == 0){
+        Rs->RegionIndice++;
+        Rs->ClusterIndice = 0;
+    }
+    
     size_t MaxClustersToAdvance = (Rs->MaxAdvanceSize / Rs->ClusterSize);
     size_t RemainingClusterInRegion = Rs->Regions[Rs->RegionIndice].Len - Rs->ClusterIndice;
-
+    
     size_t ClustersToRead = MIN(MaxClustersToAdvance, RemainingClusterInRegion);
     size_t DataOffset = (size_t)(Rs->Regions[Rs->RegionIndice].StartPos + Rs->ClusterIndice) * Rs->ClusterSize;
-
+    
     // Uncompressed file stream
     if (false == Rs->IsCompressed) {
-        Result = (unsigned char*)Rs->Bin.Data + DataOffset;
+        Result = (unsigned char*)Rs->Bin.Data + Rs->AdvancedSoFar;
+        
+        ASSERT(Rs->AdvancedSoFar <= Rs->Bin.Len);
+        
+        Rs->AdvancedSoFar += (ClustersToRead*Rs->ClusterSize);
+        
+        /*
+        memcpy(Rs->Bf, (unsigned char*)Rs->Bin.Data + DataOffset, ClustersToRead * Rs->ClusterSize);
+        Result = Rs->Bf;
+        */
+        
         // NOTE(Batuhan): updating region and cluster indices handled at end of the function
     }
     else {
-
+        
         // fetch next frame
         if(Rs->BfNeedle == Rs->UncompressedSize){
             Rs->AdvancedSoFar += Rs->CompressedSize;
@@ -86,7 +90,7 @@ NarReadBackup(restore_source* Rs, size_t* AvailableBytes) {
             Rs->CompressedSize   = ZSTD_findFrameCompressedSize(NewFrame, Remaining);
             Rs->UncompressedSize = ZSTD_getFrameContentSize(NewFrame, Remaining);
             
-            if(Rs->UncompressedSize >= Rs->BfSize){
+            if(Rs->UncompressedSize > Rs->BfSize){
                 NAR_BREAK;
                 Rs->Error   = restore_source::Error_InsufficentBufferSize;
                 Rs->Read    = NarReadZero;
@@ -97,7 +101,7 @@ NarReadBackup(restore_source* Rs, size_t* AvailableBytes) {
             ZSTD_inBuffer input = {0};
             {
                 input.src   = NewFrame;
-                input.size  = Remaining;
+                input.size  = Rs->CompressedSize;
                 input.pos   = 0;
                 
                 output.dst  = Rs->Bf;
@@ -115,27 +119,27 @@ NarReadBackup(restore_source* Rs, size_t* AvailableBytes) {
             }
             
         }
-         
+        
         ASSERT(((Rs->UncompressedSize - Rs->BfNeedle) % Rs->ClusterSize) == 0);
         
         size_t ClusterRemainingInBf = (Rs->UncompressedSize - Rs->BfNeedle) / Rs->ClusterSize;
         
         ClustersToRead = MIN(ClusterRemainingInBf, ClustersToRead);
-        Rs->BfNeedle += (ClustersToRead * Rs->ClusterSize);
-        
         Result = (unsigned char*)Rs->Bf + Rs->BfNeedle;
         
+        Rs->BfNeedle += (ClustersToRead * Rs->ClusterSize);
+        
     }
-
+    
     Rs->ClusterIndice += ClustersToRead;
     if (Rs->ClusterIndice >= Rs->Regions[Rs->RegionIndice].Len) {
         Rs->ClusterIndice = 0;
         Rs->RegionIndice++;
     }
     *AvailableBytes = ClustersToRead * Rs->ClusterSize;
-
+    
     Rs->AbsoluteNeedleInBytes = DataOffset;
-
+    
     return Result;
 }
 
@@ -161,19 +165,22 @@ narrestorefilesource_compilation_force_unit() {
 template<typename StrType>
 restore_source*
 InitRestoreFileSource(StrType MetadataPath, nar_arena* Arena, size_t MaxAdvanceSize) {
-
+    
     restore_source* Result = (restore_source*)ArenaAllocate(Arena, sizeof(restore_source));
     memset(Result, 0, sizeof(restore_source));
     Result->Type            = restore_source::Type_FileSource;
     Result->MaxAdvanceSize  = MaxAdvanceSize;
-    
+    Result->Read  = NarReadBackup;
     Result->Error = restore_source::Error_NoError;
     
     bool Error = true;
-
+    
     Result->Metadata = NarOpenFileView(MetadataPath);
     if (Result->Metadata.Data) {
         backup_metadata* bm = (backup_metadata*)Result->Metadata.Data;
+        
+        Result->ClusterSize = bm->ClusterSize;
+        
 
         Result->ClusterSize 	= bm->ClusterSize;
         Result->IsCompressed 	= false;
@@ -181,38 +188,44 @@ InitRestoreFileSource(StrType MetadataPath, nar_arena* Arena, size_t MaxAdvanceS
          
         StrType BinName;
         GenerateBinaryFileName(bm->ID, bm->Version, BinName);
-
+        
         StrType Dir = NarGetFileDirectory(MetadataPath);
-
+        
         Result->Bin = NarOpenFileView((Dir + BinName));
         if (NULL != Result->Bin.Data) {
             // check if backup is compressed
-
+            
             ASSERT(bm->Offset.RegionsMetadata < Result->Metadata.Len);
             if (bm->Offset.RegionsMetadata < Result->Metadata.Len) {
                 Result->Regions = (nar_record*)((unsigned char*)Result->Metadata.Data + bm->Offset.RegionsMetadata);
                 Result->RecordsLen = bm->Size.RegionsMetadata / sizeof(nar_record);
-
+                
+                
                 if (bm->IsCompressed) {
                     Result->IsCompressed = true;
                     Result->BfSize = bm->FrameSize;
                     Result->Bf = ArenaAllocate(Arena, bm->FrameSize);
+                    Result->DStream = ZSTD_createDStream();
                 }
-
+                else{
+                    Result->Bf     = ArenaAllocate(Arena, MaxAdvanceSize);
+                    Result->BfSize = MaxAdvanceSize;
+                }
+                
                 Error = false;
             }
             else {
                 NAR_DEBUG("");
             }
-
-
+            
+            
         }
         else {
             NarFreeFileView(Result->Metadata);
         }
     }
-
-
+    
+    
     return Result;
 }
 
@@ -220,15 +233,14 @@ InitRestoreFileSource(StrType MetadataPath, nar_arena* Arena, size_t MaxAdvanceS
 template<typename StrType>
 restore_stream*
 InitFileRestoreStream(StrType MetadataFile, restore_target* Target, nar_arena* Arena, size_t MaxAdvanceSize) {
-
+    
     restore_stream* Result = NULL;
-
+    
     Result = (restore_stream*)ArenaAllocate(Arena, sizeof(restore_stream));
     Result->Target = Target;
     
-    
     backup_metadata bm;
-
+    
     StrType RootDir = NarGetFileDirectory(MetadataFile);
     if (NarReadMetadata(MetadataFile, &bm)) {
         size_t SourceFileCount = 1;
@@ -291,7 +303,7 @@ InitFileRestoreStream(StrType MetadataFile, restore_target* Target, nar_arena* A
     else {
         Result = NULL;
     }
-
+    
     return Result;
 }
 
@@ -330,7 +342,7 @@ FreeRestoreSource(restore_source* Rs) {
 
 size_t
 AdvanceStream(restore_stream* Stream) {
-
+    
     size_t Result = 0;
     if (Stream == NULL)
         return Result;
@@ -338,13 +350,13 @@ AdvanceStream(restore_stream* Stream) {
         NAR_DEBUG("End of stream source pipe list");
         return Result;
     }
-
+    
     size_t ReadLen = 0;
     restore_source* CS = Stream->Sources[Stream->CSI];
-
+    
     const void* Mem = CS->Read(CS, &ReadLen);
     if (Mem != NULL && ReadLen > 0) {
-
+        
         size_t NewNeedle = Stream->Target->SetNeedle(Stream->Target, CS->AbsoluteNeedleInBytes);
         if(NewNeedle != CS->AbsoluteNeedleInBytes){
             Stream->Error = restore_stream::Error_Needle;
@@ -369,7 +381,7 @@ AdvanceStream(restore_stream* Stream) {
         }
         
     }
-
+    
     return Result;
 }
 
@@ -393,48 +405,57 @@ NarSetNeedleVolume(restore_target* Rt, size_t TargetFilePointer) {
 // expects memsize to be lower than 4gb
 size_t
 NarWriteVolume(restore_target* Rt, const void* Mem, size_t MemSize) {
-
+    
     DWORD BytesWritten = 0;
     if (WriteFile(Rt->Impl, Mem, MemSize, &BytesWritten, 0) && BytesWritten == MemSize) {
         // success
     }
     else {
-        NAR_DEBUG("Unable to write %I64u bytes to restore target\n", MemSize);
+        NAR_DEBUG("Unable to write %lu bytes to restore target\n");
     }
-
+    
     return (size_t)BytesWritten;
 }
 
 restore_target*
 InitVolumeTarget(char Letter, nar_arena* Arena) {
-
+    
     restore_target* Result = NULL;
     if ((Letter <= 'z' && Letter >= 'a')
         || Letter >= 'A' && Letter <= 'Z') {
-
+        
         if (Letter >= 'Z')
             Letter = Letter - ('a' - 'A');
-
+        
     }
     else {
         return Result;
     }
-
+    
     char VolumePath[16];
     snprintf(VolumePath, 16, "\\\\.\\%c:", Letter);
     HANDLE Volume = CreateFileA(VolumePath, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_WRITE | FILE_SHARE_READ | FILE_SHARE_DELETE, 0, OPEN_EXISTING, 0, 0);
     if (Volume != INVALID_HANDLE_VALUE) {
         if (DeviceIoControl(Volume, FSCTL_LOCK_VOLUME, 0, 0, 0, 0, 0, 0)) {
-            Result = (restore_target*)ArenaAllocate(Arena, sizeof(restore_target));
-            Result->Impl = Volume;
-            Result->Write = NarWriteVolume;
-            Result->SetNeedle = NarSetNeedleVolume;
+            NAR_BREAK;
         }
         else {
             NAR_DEBUG("Couldn't lock volume %c\n", Letter);
         }
+        
+        if (DeviceIoControl(Volume, FSCTL_DISMOUNT_VOLUME, 0, 0, 0, 0, 0, 0)) {
+            NAR_BREAK;
+        }
+        else {
+            // printf("Couldnt dismount volume\n");
+        }
+        
+        Result = (restore_target*)ArenaAllocate(Arena, sizeof(restore_target));
+        Result->Impl = Volume;
+        Result->Write = NarWriteVolume;
+        Result->SetNeedle = NarSetNeedleVolume;
     }
-
+    
     return Result;
 }
 
@@ -477,7 +498,7 @@ restore_target*
 InitVolumeTarget(std::string VolumePath, nar_arena* Arena) {
     static_assert(false, "not implemented");
     restore_target* Result = 0;
-
+    
     FILE* F = fopen(VolumePath.c_str(), "rb");
     if (F) {
         Result = (restore_target*)ArenaAllocate(Arena, sizeof(restore_target));
@@ -488,7 +509,7 @@ InitVolumeTarget(std::string VolumePath, nar_arena* Arena) {
     else {
         NAR_DEBUG("Unable to open volume %s\n", VolumePath.c_str());
     }
-
+    
     return Result;
 }
 

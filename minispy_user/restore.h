@@ -15,23 +15,22 @@ struct restore_source{
         struct {
             nar_file_view Bin; 
             nar_file_view Metadata;
-
+            
             const nar_record *Regions;
             size_t RecordsLen;
-
+            
             // internal stuff about which region we are currently processing, and which cluster
-            size_t 	RegionIndice; 
-            size_t 	ClusterIndice;
-
-			size_t 	ClusterSize;
-			bool   	IsCompressed;
-
+            size_t RegionIndice; 
+            size_t ClusterIndice;
+            
+			size_t ClusterSize;
+			bool IsCompressed;
+            
+            size_t  AdvancedSoFar;
         	// Pre-allocated buffer for decompressing backup.
 			void    *Bf;
             
-            size_t  AdvancedSoFar;
-            
-			size_t	BfSize;        	
+            size_t  BfSize;        	
 			size_t  BfNeedle;
             
             size_t  CompressedSize;
@@ -82,7 +81,7 @@ struct restore_source{
 	// For compressed backups, copy-size is at LEAST as decompressed size, to prevent deadlocks due to 0 byte copy.
     // Min advance size is forced to be 1mb
     size_t MaxAdvanceSize = (64*1024*1024);
-
+    
     /*
         Returns NULL if end of stream
         
