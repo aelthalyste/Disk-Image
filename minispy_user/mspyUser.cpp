@@ -3072,10 +3072,13 @@ NarFileNameExtensionCheck(const wchar_t *Path, const wchar_t *Extension){
     return (wcscmp(&Path[pl - el], Extension) == 0);
 }
 
+
+
 BOOLEAN
 NarGetBackupsInDirectory(const wchar_t* Directory, backup_metadata* B, int BufferSize, int* FoundCount) {
     
     //#error "IMPLEMENT THAT SHIT"
+    
     BOOLEAN Result = TRUE;
     
     wchar_t WildcardDir[280];
@@ -3107,11 +3110,11 @@ NarGetBackupsInDirectory(const wchar_t* Directory, backup_metadata* B, int Buffe
             }
             
             //printf("Found file %S\n", FDATA.cFileName);
-            std::wstring MetadataDraft;
-            NarGetMetadataDraft(MetadataDraft);
+            std::wstring MDExtension;
+            NarGetMetadataExtension(MDExtension);
             
             //NOTE(Batuhan): Compare file name for metadata draft prefix NAR_ , if prefix found, try to read it
-            if (NarFileNameExtensionCheck(FDATA.cFileName, MetadataDraft.c_str())) {
+            if (NarFileNameExtensionCheck(FDATA.cFileName, MDExtension.c_str())) {
                 
                 wcscpy(wstrbuffer, Directory);
                 wcscat(wstrbuffer, L"\\");
@@ -3123,14 +3126,15 @@ NarGetBackupsInDirectory(const wchar_t* Directory, backup_metadata* B, int Buffe
                     if (ReadFile(F, &B[BackupFound], sizeof(*B), &BR, 0) && BR == sizeof(*B)) {
                         //NOTE(Batuhan): Since we just compared metadata file name draft, now, just compare full name, to determine its filename, since it might be corrupted
                         
-                        std::wstring T;
-                        GenerateMetadataName(B[BackupFound].ID, B[BackupFound].Version, T);
+                        std::wstring TempName;
+                        GenerateMetadataName(B[BackupFound].ID, B[BackupFound].Version, TempName);
                         
-                        if (wcscmp(FDATA.cFileName, T.c_str()) == 0) {
+                        if (wcscmp(FDATA.cFileName, TempName.c_str()) == 0) {
                             //NOTE(Batuhan): File name indicated from metadata and actual file name matches
                             //Even though metadatas match, actual binary data may not exist at all or even, metadata itself might be corrupted too, or missing. Check it
                             
-                            //printf("Backup found %S, ver %i\n", FDATA.cFileName, B[BackupFound].Version);
+                            printf("Backup found %S, ver %i\n", FDATA.cFileName, B[BackupFound].Version);
+                            BackupFound++;
                             
 #if 0
                             //NOTE(Batuhan): check if actual binary data exists in path and valid in size
@@ -3143,7 +3147,7 @@ NarGetBackupsInDirectory(const wchar_t* Directory, backup_metadata* B, int Buffe
                             }
 #endif
                             
-                            BackupFound++;
+                            
                             
                         }
                         else {
@@ -4060,7 +4064,36 @@ DEBUG_FileExplorerQuery(){
 
 int
 main(int argc, char* argv[]) {
+    {
+        backup_metadata *B = new backup_metadata[100];
+        int fc = 0;
+        //NarGetBackupsInDirectory(L"D:\\workspace\\programming\\c++\\Disk Image\\build\\minispy_user\\", B, sizeof(backup_metadata)*100, &fc);
+    }
     
+    nar_backup_id ID = {0};
+    ID.Year = 2020;
+    ID.Month= 12;
+    ID.Day = 24;
+    ID.Hour = 2;
+    ID.Min = 14;
+    ID.Letter = 'C';
+    
+    std::string a;
+    NarBackupIDToStr(ID, a);
+    
+    std::string GenName;
+    for(size_t i =0; i<5; i++){
+        ID.Letter++;
+        GenerateMetadataName(ID, i, GenName);
+        unsigned char stack[sizeof(backup_metadata)];
+        NarDumpToFile(GenName.c_str(), stack, sizeof(stack));
+        
+        GenerateBinaryFileName(ID, i, GenName);
+        NarDumpToFile(GenName.c_str(), stack, sizeof(stack));
+        
+    }
+    
+    return 0;
 #if 1
     DEBUG_Restore();
     return 0;

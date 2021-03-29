@@ -133,7 +133,7 @@ struct backup_metadata {
             	int64_t GPT_EFIPartitionSize;
             	int64_t MBR_SystemPartitionSize;
             };
-           
+            
 #if NAR_LINUX
             uint16_t BackupDate[8];
 #else // _MSC_VER
@@ -149,12 +149,12 @@ struct backup_metadata {
             wchar_t TaskName[NAR_MAX_TASK_NAME_LEN];
             wchar_t TaskDescription[NAR_MAX_TASK_DESCRIPTION_LEN];
 #endif
-       
+            
             nar_backup_id ID;
         	
         	unsigned char IsCompressed;
         	unsigned int FrameSize;
-
+            
         };
     };
     
@@ -170,7 +170,7 @@ struct backup_metadata {
     char Letter;
     uint8_t DiskType;
     unsigned char IsOSVolume;
-
+    
     BackupType BT; // diff or inc
 };
 
@@ -274,12 +274,18 @@ NarGetVersionMidFix(int Version, std::wstring &Res){
 /////////////////////////////////////////////////////
 static inline void
 NarBackupIDToStr(nar_backup_id ID, std::wstring &Res){
-    Res = std::to_wstring(ID.Q) + L"-";
+    Res = L"";
+    Res += L"-"; 
+    Res += (wchar_t)ID.Letter;
+    Res += std::to_wstring(ID.Q);
 }
 
 static inline void
 NarBackupIDToStr(nar_backup_id ID, std::string &Res){
-    Res = std::to_string(ID.Q) + "-";
+    Res = "";
+    Res += "-";
+    Res+= ID.Letter;
+    Res+= std::to_string(ID.Q);
 }
 /////////////////////////////////////////////////////
 
@@ -295,17 +301,16 @@ GenerateMetadataName(nar_backup_id ID, int Version, StrType &Res){
 		NarGetVersionMidFix(Version, garbage);
 		Res += garbage;
 	}
-
-	// LETTER
-	Res += ID.Letter;
-	
+    
+    
 	// BACKUP ID
 	{
-		StrType garbage;
+		// LETTER IS BEING SILENTLY APPENDED HERE
+        StrType garbage;
 		NarBackupIDToStr(ID, garbage);
 		Res += garbage;
 	}
-
+    
 	// EXTENSION
 	{
 		StrType garbage;
@@ -326,17 +331,15 @@ GenerateBinaryFileName(nar_backup_id ID, int Version, StrType &Res){
 		NarGetVersionMidFix(Version, garbage);
 		Res += garbage;
 	}
-
-	// LETTER
-	Res += ID.Letter;
-	
+    
 	// BACKUP ID
 	{
-		StrType garbage;
+		// LETTER IS BEING SILENTLY APPENDED HERE
+        StrType garbage;
 		NarBackupIDToStr(ID, garbage);
 		Res += garbage;
 	}
-
+    
 	// EXTENSION
 	{
 		StrType garbage;
