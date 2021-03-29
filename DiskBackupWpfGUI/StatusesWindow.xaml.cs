@@ -26,7 +26,6 @@ namespace DiskBackupWpfGUI
         private CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
 
         private StatusInfo _statusInfo;
-        private ActivityLog _activityLog;
 
         private readonly IStatusInfoDal _statusInfoDal;
         private readonly ITaskInfoDal _taskInfoDal;
@@ -93,44 +92,38 @@ namespace DiskBackupWpfGUI
             InitializeComponent();
             _statusInfoDal = statusInfoDal;
             StatusInfo statusInfo = _statusInfoDal.Get(x => x.Id == activityLog.StatusInfoId);
-            _statusInfo = statusInfo;
-            _activityLog = activityLog;
-            RefreshStatus(_cancellationTokenSource.Token);
-            this.Closing += (sender, e) => _cancellationTokenSource.Cancel();
             txtLastStatus.Text = activityLog.StatusInfo.StrStatus;
 
             _configurationDataDal = configurationDataDal;
             SetApplicationLanguage(_configurationDataDal.Get(x => x.Key == "lang").Value);
 
+            txtLocalTaskName.Text = statusInfo.TaskName;
+            txtCloudTaskName.Text = statusInfo.TaskName;
+            txtLocalFileName.Text = statusInfo.FileName;
+            txtCloudFileName.Text = statusInfo.FileName;
+            txtLocalTime.Text = FormatMilliseconds(TimeSpan.FromMilliseconds(statusInfo.TimeElapsed)); // milisaniye
+            txtLocalAverageDataRate.Text = Math.Round(statusInfo.AverageDataRate, 2).ToString() + " MB/s";
+            txtLocalDataProcessed.Text = FormatBytes(statusInfo.DataProcessed).ToString(); //dönüş değerine bakılmalı byte, kb, mb, gb...
+            txtLocalInstantDataRate.Text = Math.Round(statusInfo.InstantDataRate, 2).ToString() + " MB/s"; //dönüş değerine bakılmalı byte, kb, mb, gb...
+            pbTotalDataProcessed.Maximum = statusInfo.TotalDataProcessed;
+            pbTotalDataProcessed.Value = statusInfo.DataProcessed;
+            if (double.IsNaN(Math.Round((statusInfo.DataProcessed * 100.0) / (statusInfo.TotalDataProcessed), 2)))
+                txtLocalPercentage.Text = "0%"; //TO DO NaN yakalandığında buraya 0 dışında bir şey girilmek istenir mi?
+            else
+                txtLocalPercentage.Text = Math.Round((statusInfo.DataProcessed * 100.0) / (statusInfo.TotalDataProcessed), 2).ToString() + "%";
+            txtLocalSourceObje.Text = statusInfo.SourceObje;
+            txtCloudSourceObje.Text = statusInfo.SourceObje;
+            txtSourceSingle.Text = statusInfo.SourceObje;
+            if (statusInfo.Status == StatusType.Fail && txtLocalPercentage.Text.Equals("100%"))
+            {
+                txtLocalPercentage.Text = "99.98%";
+            }
+            ChangeStatusImage(statusInfo.Status);
+
             // 0 yedekleme durumu, 1 geri yükleme
             if (chooseFlag == 0)
             {
                 txtTitleBar.Text = Resources["backupStatus"].ToString();
-
-                txtLocalTaskName.Text = statusInfo.TaskName;
-                txtCloudTaskName.Text = statusInfo.TaskName;
-                txtLocalFileName.Text = statusInfo.FileName;
-                txtCloudFileName.Text = statusInfo.FileName;
-                txtLocalTime.Text = FormatMilliseconds(TimeSpan.FromMilliseconds(statusInfo.TimeElapsed)); // milisaniye
-                txtLocalAverageDataRate.Text = statusInfo.AverageDataRate.ToString() + " MB/s";
-                txtLocalDataProcessed.Text = FormatBytes(statusInfo.DataProcessed).ToString(); //dönüş değerine bakılmalı byte, kb, mb, gb...
-                txtLocalInstantDataRate.Text = statusInfo.InstantDataRate.ToString(); //dönüş değerine bakılmalı byte, kb, mb, gb...
-                if (statusInfo.SourceObje.Contains("-"))
-                {
-                    var source = statusInfo.SourceObje.Split('-');
-                    txtLocalSourceObje.Text = source[0];
-                    txtCloudSourceObje.Text = source[0];
-                    txtSourceSingle.Text = source[1];
-                }
-                else
-                {
-                    txtLocalSourceObje.Text = statusInfo.SourceObje;
-                    txtCloudSourceObje.Text = statusInfo.SourceObje;
-                    txtSourceSingle.Text = statusInfo.SourceObje;
-                }
-
-                pbTotalDataProcessed.Maximum = statusInfo.TotalDataProcessed;
-                pbTotalDataProcessed.Value = statusInfo.DataProcessed;
             }
             else
             {
@@ -150,7 +143,7 @@ namespace DiskBackupWpfGUI
                 _statusInfo = _statusInfoDal.Get(x => x.Id == _statusInfo.Id);
                 pbTotalDataProcessed.Maximum = _statusInfo.TotalDataProcessed;
                 pbTotalDataProcessed.Value = _statusInfo.DataProcessed;
-                if (double.IsNaN(Math.Round((_statusInfo.DataProcessed * 100.0) / (_statusInfo.TotalDataProcessed), 2))) 
+                if (double.IsNaN(Math.Round((_statusInfo.DataProcessed * 100.0) / (_statusInfo.TotalDataProcessed), 2)))
                     txtLocalPercentage.Text = "0%"; //TO DO NaN yakalandığında buraya 0 dışında bir şey girilmek istenir mi?
                 else
                     txtLocalPercentage.Text = Math.Round((_statusInfo.DataProcessed * 100.0) / (_statusInfo.TotalDataProcessed), 2).ToString() + "%";
@@ -174,29 +167,18 @@ namespace DiskBackupWpfGUI
                     txtSourceSingle.Text = _statusInfo.SourceObje;
                 }
 
-                if (_taskId != 0)
+                var resultTask = _taskInfoDal.Get(x => x.Id == _taskId);
+                if (resultTask.Status == TaskStatusType.Ready)
                 {
-                    var resultTask = _taskInfoDal.Get(x => x.Id == _taskId);
-                    if (resultTask.Status == TaskStatusType.Ready)
-                    {
-                        //status infodan alınacak
-                        var statusInfo = _statusInfoDal.Get(x => x.Id == resultTask.StatusInfoId);
-                        txtLastStatus.Text = Resources[statusInfo.Status.ToString()].ToString();
-                        ChangeStatusImage(_statusInfo.Status);
-                    }
-                    else
-                    {
-                        txtLastStatus.Text = Resources[resultTask.Status.ToString()].ToString();
-                        imgStatus.Source = new BitmapImage(new Uri("", UriKind.Relative));
-                    }
-                }
-                else 
-                { 
-                    if (_activityLog.StatusInfo.Status == StatusType.Fail && txtLocalPercentage.Text.Equals("100%"))
-                    {
-                        txtLocalPercentage.Text = "99.98%";
-                    }
+                    //status infodan alınacak
+                    var statusInfo = _statusInfoDal.Get(x => x.Id == resultTask.StatusInfoId);
+                    txtLastStatus.Text = Resources[statusInfo.Status.ToString()].ToString();
                     ChangeStatusImage(_statusInfo.Status);
+                }
+                else
+                {
+                    txtLastStatus.Text = Resources[resultTask.Status.ToString()].ToString();
+                    imgStatus.Source = new BitmapImage(new Uri("", UriKind.Relative));
                 }
             }
         }
@@ -218,6 +200,8 @@ namespace DiskBackupWpfGUI
             else if (status == StatusType.PathNotFound)
                 imgStatus.Source = new BitmapImage(new Uri(@"../Resources/Icon/icons8-medium-risk-96.png", UriKind.Relative));
             else if (status == StatusType.NewChainNotStarted)
+                imgStatus.Source = new BitmapImage(new Uri(@"../Resources/Icon/icons8_cancel.ico", UriKind.Relative));
+            else if (status == StatusType.Cancel)
                 imgStatus.Source = new BitmapImage(new Uri(@"../Resources/Icon/icons8_cancel.ico", UriKind.Relative));
         }
 

@@ -49,21 +49,21 @@ namespace DiskBackupWpfGUI
 
             SetApplicationLanguage(_configurationDataDal.Get(x => x.Key == "lang").Value);
 
-            try
-            {
-                _backupManager.InitFileExplorer(backupInfo);
-                _filesInBackupList = _backupManager.GetFileInfoList();
-                RemoveSystemFiles();
-                listViewFileExplorer.ItemsSource = _filesInBackupList;
-                SortItems();
-                txtfileExplorerPath.Text = _backupManager.GetCurrentDirectory();
-            }
-            catch (Exception ex)
-            {
-                _logger.Error(ex, "Beklenmedik hatadan dolayı file explorer açılamıyor.");
-                MessageBox.Show(Resources["unexpectedErrorMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
-                return;
-            }
+            //try
+            //{
+            //    _backupManager.InitFileExplorer(backupInfo);
+            //    _filesInBackupList = _backupManager.GetFileInfoList();
+            //    RemoveSystemFiles();
+            //    listViewFileExplorer.ItemsSource = _filesInBackupList;
+            //    SortItems();
+            //    txtfileExplorerPath.Text = _backupManager.GetCurrentDirectory();
+            //}
+            //catch (Exception ex)
+            //{
+            //    _logger.Error(ex, "Beklenmedik hatadan dolayı file explorer açılamıyor.");
+            //    MessageBox.Show(Resources["unexpectedErrorMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+            //    return;
+            //}
         }
 
         #region Title Bar

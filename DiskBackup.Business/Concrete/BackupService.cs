@@ -284,10 +284,15 @@ namespace DiskBackup.Business.Concrete
                 }
             }
 
+            var timeElapsed = new Stopwatch();
+            _timeElapsedMap[taskInfo.Id] = timeElapsed;
+            timeElapsed.Start();
+
             string backupName = taskInfo.RestoreTaskInfo.RootDir.Split('\\').Last();
             string newRootDir = taskInfo.RestoreTaskInfo.RootDir.Substring(0, taskInfo.RestoreTaskInfo.RootDir.Length - backupName.Length);
             var resultList = DiskTracker.CW_GetBackupsInDirectory(newRootDir);
             BackupMetadata backupMetadata = new BackupMetadata();
+            var statusInfo = _statusInfoDal.Get(x => x.Id == taskInfo.StatusInfoId);
 
             foreach (var item in resultList)
             {
@@ -297,9 +302,59 @@ namespace DiskBackup.Business.Concrete
                     _logger.Verbose("|{@restoreTaskId}| restore taskı için restoreVolume gerçekleştirilecek.", taskInfo.RestoreTaskInfo.Id);
 
                     if (ChainInTheSameDirectory(resultList, backupMetadata))
-                        return Convert.ToByte(DiskTracker.CW_RestoreToVolume(taskInfo.RestoreTaskInfo.TargetLetter[0], backupMetadata, true, newRootDir)); //true gidecek
-                    else
-                        return 3; // eksik dosya hatası yazdır
+                    {
+                        //return Convert.ToByte(DiskTracker.CW_RestoreToVolume(taskInfo.RestoreTaskInfo.TargetLetter[0], backupMetadata, true, newRootDir)); //true gidecek
+                        RestoreStream restoreStream = new RestoreStream(backupMetadata, newRootDir);
+                        restoreStream.SetupStream(taskInfo.RestoreTaskInfo.TargetLetter[0]);
+                        ulong bytesReadSoFar = 0;
+                        ulong bytesToBeCopied = restoreStream.BytesNeedToCopy;
+
+                        bool result = false;
+                        _logger.Information($"bytesReadSoFar: {bytesReadSoFar} - bytesToBeCopied: {bytesToBeCopied} - result: {result} - result.toByte: {Convert.ToByte(result)}");
+                        // anlık veri için
+                        Stopwatch passingTime = new Stopwatch();
+                        long instantProcessData = 0;
+                        passingTime.Start();
+
+                        while (true)
+                        {
+                            var read = restoreStream.CW_AdvanceStream();
+                            bytesReadSoFar += read;
+
+                            instantProcessData += (long)read; // anlık veri için
+                            statusInfo.DataProcessed = (long)bytesReadSoFar;
+                            statusInfo.TotalDataProcessed = (long)bytesToBeCopied;
+                            statusInfo.AverageDataRate = ((statusInfo.TotalDataProcessed / 1024.0) / 1024.0) / (timeElapsed.ElapsedMilliseconds / 1000.0); // MB/s
+                            if (instantProcessData != 0) // anlık veri için 0 gelmesin diye
+                                statusInfo.InstantDataRate = ((instantProcessData / 1024.0) / 1024.0) / (passingTime.ElapsedMilliseconds / 1000.0); // MB/s
+                            statusInfo.TimeElapsed = timeElapsed.ElapsedMilliseconds;
+                            _statusInfoDal.Update(statusInfo);
+                            if (passingTime.ElapsedMilliseconds > 1000) // anlık veri için her saniye güncellensin diye
+                            {
+                                instantProcessData = 0;
+                                passingTime.Restart();
+                            }
+
+                            _logger.Information($"read: {read}");
+                            if (read == 0) // 0 dönerse restore bitti demektir
+                            {
+                                result = restoreStream.CheckStreamStatus(); // başarılı ise true, değilse false dönecek
+                                _logger.Information($"read = 0 geldi. result: {result}");
+                                break;
+                            }
+                            else if (restoreStream.CheckStreamStatus() == false)
+                            {
+                                result = false;
+                                _logger.Information($"check stream false geldi. result: {false}");
+                                break;
+                            }
+                        }
+                        _logger.Information("whiledan çıktı");
+                        restoreStream.TerminateRestore();
+                        timeElapsed.Stop();
+                        _timeElapsedMap.Remove(taskInfo.Id);
+                        return Convert.ToByte(result);
+                    }
                 }
             }
 
@@ -307,6 +362,8 @@ namespace DiskBackup.Business.Concrete
                 nc.Dispose();
 
             _logger.Verbose("|{@restoreTaskId}| restore taskı için backupMetadata bulunamadı.", taskInfo.RestoreTaskInfo.Id);
+            timeElapsed.Stop();
+            _timeElapsedMap.Remove(taskInfo.Id);
             return 3;
         }
 
@@ -368,10 +425,16 @@ namespace DiskBackup.Business.Concrete
                 }
             }
 
+            var timeElapsed = new Stopwatch();
+            _timeElapsedMap[taskInfo.Id] = timeElapsed;
+            timeElapsed.Start();
+
             string backupName = taskInfo.RestoreTaskInfo.RootDir.Split('\\').Last();
             string newRootDir = taskInfo.RestoreTaskInfo.RootDir.Substring(0, taskInfo.RestoreTaskInfo.RootDir.Length - backupName.Length);
             var resultList = DiskTracker.CW_GetBackupsInDirectory(newRootDir);
             BackupMetadata backupMetadata = new BackupMetadata();
+            RestoreStream restoreStream = new RestoreStream(backupMetadata, newRootDir);
+            var statusInfo = _statusInfoDal.Get(x => x.Id == taskInfo.StatusInfoId);
 
             foreach (var item in resultList)
             {
@@ -382,45 +445,57 @@ namespace DiskBackup.Business.Concrete
 
                     if (ChainInTheSameDirectory(resultList, backupMetadata))
                     {
-                        if (taskInfo.RestoreTaskInfo.Bootable == RestoreBootable.NotBootable)
+                        SettingBootable(taskInfo, backupMetadata, restoreStream);
+                        restoreStream.SetupStream(taskInfo.RestoreTaskInfo.TargetLetter[0]);
+                        ulong bytesReadSoFar = 0;
+                        ulong bytesToBeCopied = restoreStream.BytesNeedToCopy;
+
+                        bool result = false;
+                        _logger.Information($"bytesReadSoFar: {bytesReadSoFar} - bytesToBeCopied: {bytesToBeCopied} - result: {result} - result.toByte: {Convert.ToByte(result)}");
+                        // anlık veri için
+                        Stopwatch passingTime = new Stopwatch();
+                        long instantProcessData = 0;
+                        passingTime.Start();
+
+                        while (true)
                         {
-                            _logger.Information("not bootable");
-                            return Convert.ToByte(DiskTracker.CW_RestoreToFreshDisk(taskInfo.RestoreTaskInfo.TargetLetter[0], backupMetadata, taskInfo.RestoreTaskInfo.DiskId, newRootDir, false, false, backupMetadata.DiskType));
-                        }
-                        else if (taskInfo.RestoreTaskInfo.Bootable == RestoreBootable.MBR)
-                        {
-                            if (backupMetadata.DiskType.Equals('M'))
+                            var read = restoreStream.CW_AdvanceStream();
+                            bytesReadSoFar += read;
+
+                            instantProcessData += (long)read; // anlık veri için
+                            statusInfo.DataProcessed = (long)bytesReadSoFar;
+                            statusInfo.TotalDataProcessed = (long)bytesToBeCopied;
+                            statusInfo.AverageDataRate = ((statusInfo.TotalDataProcessed / 1024.0) / 1024.0) / (timeElapsed.ElapsedMilliseconds / 1000.0); // MB/s
+                            if (instantProcessData != 0) // anlık veri için 0 gelmesin diye
+                                statusInfo.InstantDataRate = ((instantProcessData / 1024.0) / 1024.0) / (passingTime.ElapsedMilliseconds / 1000.0); // MB/s
+                            statusInfo.TimeElapsed = timeElapsed.ElapsedMilliseconds;
+                            _statusInfoDal.Update(statusInfo);
+                            if (passingTime.ElapsedMilliseconds > 1000) // anlık veri için her saniye güncellensin diye
                             {
-                                _logger.Information("MBR - M");
-                                return Convert.ToByte(DiskTracker.CW_RestoreToFreshDisk(taskInfo.RestoreTaskInfo.TargetLetter[0], backupMetadata, taskInfo.RestoreTaskInfo.DiskId, newRootDir, true, false, backupMetadata.DiskType));
+                                instantProcessData = 0;
+                                passingTime.Restart();
                             }
-                            else
+
+                            _logger.Information($"read: {read}");
+                            if (read == 0) // 0 dönerse restore bitti demektir
                             {
-                                _logger.Information("MBR - G");
-                                return Convert.ToByte(DiskTracker.CW_RestoreToFreshDisk(taskInfo.RestoreTaskInfo.TargetLetter[0], backupMetadata, taskInfo.RestoreTaskInfo.DiskId, newRootDir, true, true, 'M'));
+                                result = restoreStream.CheckStreamStatus(); // başarılı ise true, değilse false dönecek
+                                _logger.Information($"read = 0 geldi. result: {result}");
+                                break;
+                            }
+                            else if (restoreStream.CheckStreamStatus() == false)
+                            {
+                                result = false;
+                                _logger.Information($"check stream false geldi. result: {false}");
+                                break;
                             }
                         }
-                        else if (taskInfo.RestoreTaskInfo.Bootable == RestoreBootable.GPT)
-                        {
-                            if (backupMetadata.DiskType.Equals('G'))
-                            {
-                                _logger.Information("GPT - G");
-                                return Convert.ToByte(DiskTracker.CW_RestoreToFreshDisk(taskInfo.RestoreTaskInfo.TargetLetter[0], backupMetadata, taskInfo.RestoreTaskInfo.DiskId, newRootDir, true, false, backupMetadata.DiskType));
-                            }
-                            else
-                            {
-                                _logger.Information("GPT - M");
-                                return Convert.ToByte(DiskTracker.CW_RestoreToFreshDisk(taskInfo.RestoreTaskInfo.TargetLetter[0], backupMetadata, taskInfo.RestoreTaskInfo.DiskId, newRootDir, true, true, 'G'));
-                            }
-                        }
-                        else
-                        {
-                            _logger.Information("|{@restoreTaskId}| restore taskında bootable doğru olarak ayarlanamadığından başarısız oldu.", taskInfo.RestoreTaskInfo.Id);
-                            return 0;
-                        }
+                        _logger.Information("whiledan çıktı");
+                        restoreStream.TerminateRestore();
+                        timeElapsed.Stop();
+                        _timeElapsedMap.Remove(taskInfo.Id);
+                        return Convert.ToByte(result);
                     }
-                    else
-                        return 3; // eksik dosya hatası yazdır
                 }
             }
 
@@ -428,7 +503,53 @@ namespace DiskBackup.Business.Concrete
                 nc.Dispose();
 
             _logger.Verbose("|{@restoreTaskId}| restore taskı için backupMetadata bulunamadı.", taskInfo.RestoreTaskInfo.Id);
+            timeElapsed.Stop();
+            _timeElapsedMap.Remove(taskInfo.Id);
             return 3;
+        }
+
+        private void SettingBootable(TaskInfo taskInfo, BackupMetadata backupMetadata, RestoreStream restoreStream)
+        {
+            if (taskInfo.RestoreTaskInfo.Bootable == RestoreBootable.NotBootable)
+            {
+                _logger.Information("not bootable");
+                restoreStream.SetDiskRestore(taskInfo.RestoreTaskInfo.DiskId, taskInfo.RestoreTaskInfo.TargetLetter[0], false, false, backupMetadata.DiskType);
+                //return Convert.ToByte(DiskTracker.CW_RestoreToFreshDisk(taskInfo.RestoreTaskInfo.TargetLetter[0], backupMetadata, taskInfo.RestoreTaskInfo.DiskId, newRootDir, false, false, backupMetadata.DiskType));
+            }
+            else if (taskInfo.RestoreTaskInfo.Bootable == RestoreBootable.MBR)
+            {
+                if (backupMetadata.DiskType.Equals('M'))
+                {
+                    _logger.Information("MBR - M");
+                    restoreStream.SetDiskRestore(taskInfo.RestoreTaskInfo.DiskId, taskInfo.RestoreTaskInfo.TargetLetter[0], true, false, backupMetadata.DiskType);
+                    //return Convert.ToByte(DiskTracker.CW_RestoreToFreshDisk(taskInfo.RestoreTaskInfo.TargetLetter[0], backupMetadata, taskInfo.RestoreTaskInfo.DiskId, newRootDir, true, false, backupMetadata.DiskType));
+                }
+                else
+                {
+                    _logger.Information("MBR - G");
+                    restoreStream.SetDiskRestore(taskInfo.RestoreTaskInfo.DiskId, taskInfo.RestoreTaskInfo.TargetLetter[0], true, true, 'M');
+                    //return Convert.ToByte(DiskTracker.CW_RestoreToFreshDisk(taskInfo.RestoreTaskInfo.TargetLetter[0], backupMetadata, taskInfo.RestoreTaskInfo.DiskId, newRootDir, true, true, 'M'));
+                }
+            }
+            else if (taskInfo.RestoreTaskInfo.Bootable == RestoreBootable.GPT)
+            {
+                if (backupMetadata.DiskType.Equals('G'))
+                {
+                    _logger.Information("GPT - G");
+                    restoreStream.SetDiskRestore(taskInfo.RestoreTaskInfo.DiskId, taskInfo.RestoreTaskInfo.TargetLetter[0], true, false, backupMetadata.DiskType);
+                    //return Convert.ToByte(DiskTracker.CW_RestoreToFreshDisk(taskInfo.RestoreTaskInfo.TargetLetter[0], backupMetadata, taskInfo.RestoreTaskInfo.DiskId, newRootDir, true, false, backupMetadata.DiskType));
+                }
+                else
+                {
+                    _logger.Information("GPT - M");
+                    restoreStream.SetDiskRestore(taskInfo.RestoreTaskInfo.DiskId, taskInfo.RestoreTaskInfo.TargetLetter[0], true, true, 'G');
+                    //return Convert.ToByte(DiskTracker.CW_RestoreToFreshDisk(taskInfo.RestoreTaskInfo.TargetLetter[0], backupMetadata, taskInfo.RestoreTaskInfo.DiskId, newRootDir, true, true, 'G'));
+                }
+            }
+            else
+            {
+                _logger.Information("SON ELSE");
+            }
         }
 
         public bool CleanChain(char letter)
@@ -516,18 +637,16 @@ namespace DiskBackup.Business.Concrete
 
             var timeElapsed = new Stopwatch();
             _timeElapsedMap[taskInfo.Id] = timeElapsed;
-
             timeElapsed.Start();
 
             _cancellationTokenSource[taskInfo.Id] = new CancellationTokenSource();
-
             var cancellationToken = _cancellationTokenSource[taskInfo.Id].Token;
             string letters = taskInfo.StrObje;
 
-            int bufferSize = 64 * 1024 * 1024;
+            int bufferSize = DiskTracker.CW_HintBufferSize();
             byte[] buffer = new byte[bufferSize];
             StreamInfo str = new StreamInfo();
-            long BytesReadSoFar = 0;
+            long bytesReadSoFar = 0;
             int Read = 0;
             bool result = false;
 
@@ -542,10 +661,10 @@ namespace DiskBackup.Business.Concrete
                 passingTime.Start();
 
                 _logger.Information($"{letter} backup işlemi başlatılıyor...");
-                if (_diskTracker.CW_SetupStream(letter, (int)taskInfo.BackupTaskInfo.Type, str)) // 0 diff, 1 inc, full (2) ucu gelmediğinden ayrılabilir veya aynı devam edebilir
+                if (_diskTracker.CW_SetupStream(letter, (int)taskInfo.BackupTaskInfo.Type, str, true)) // 0 diff, 1 inc, full (2) ucu gelmediğinden ayrılabilir veya aynı devam edebilir
                 {
                     // yeterli alan kontrolü yap
-                    if (!CheckDiskSize(taskInfo, statusInfo, timeElapsed, str, BytesReadSoFar))
+                    if (!CheckDiskSize(taskInfo, statusInfo, timeElapsed, str, bytesReadSoFar))
                         return 3;
 
                     statusInfo.SourceObje = statusInfo.SourceObje + "-" + letter;
@@ -580,12 +699,12 @@ namespace DiskBackup.Business.Concrete
 
                                 Read = _diskTracker.CW_ReadStream(BAddr, letter, bufferSize);
                                 file.Write(buffer, 0, Read);
-                                BytesReadSoFar += Read;
+                                bytesReadSoFar += Read;
 
                                 instantProcessData += Read; // anlık veri için              
 
                                 statusInfo.FileName = taskInfo.BackupStorageInfo.Path + str.FileName;
-                                statusInfo.DataProcessed = BytesReadSoFar;
+                                statusInfo.DataProcessed = bytesReadSoFar;
                                 statusInfo.TotalDataProcessed = (long)str.CopySize;
                                 statusInfo.AverageDataRate = ((statusInfo.TotalDataProcessed / 1024.0) / 1024.0) / (timeElapsed.ElapsedMilliseconds / 1000.0); // MB/s
                                 if (instantProcessData != 0) // anlık veri için 0 gelmesin diye
@@ -602,9 +721,9 @@ namespace DiskBackup.Business.Concrete
                                 if (Read != bufferSize)
                                     break;
                             }
-                            result = (long)str.CopySize == BytesReadSoFar;
+                            result = _diskTracker.CW_CheckStreamStatus(letter);
                             _diskTracker.CW_TerminateBackup(result, letter); //işlemi başarılı olup olmadığı cancel gelmeden
-                            BytesReadSoFar = 0;
+                            bytesReadSoFar = 0;
 
                             CopyAndDeleteMetadataFile(taskInfo, str); //çalışılan dizine çıkartılan narmd dosyası kopyalanıp ilgili dizine silme işlemi yapılıyor
 
@@ -632,6 +751,7 @@ namespace DiskBackup.Business.Concrete
             manualResetEvent.Dispose();
             _taskEventMap.Remove(taskInfo.Id);
 
+            timeElapsed.Reset();
             _timeElapsedMap.Remove(taskInfo.Id);
 
             _cancellationTokenSource[taskInfo.Id].Dispose();
@@ -642,7 +762,7 @@ namespace DiskBackup.Business.Concrete
                 {
                     taskInfo.BackupTaskInfo.LastFullBackupDate = (taskInfo.LastWorkingDate - TimeSpan.FromSeconds(taskInfo.LastWorkingDate.Second)) - TimeSpan.FromMilliseconds(taskInfo.LastWorkingDate.Millisecond); // ms ve sn sıfırlamak için
                     _backupTaskDal.Update(taskInfo.BackupTaskInfo);
-                }   
+                }
                 return 1;
             }
             _logger.Information("Görev başarısız olduğu için {dizin} ve {metadataDizin} dizinleri siliniyor.", taskInfo.BackupStorageInfo.Path + str.FileName, (Directory.GetCurrentDirectory() + @"\" + str.MetadataFileName));

@@ -182,18 +182,10 @@ namespace DiskBackup.Communication
             body = body.Replace("{FileName}", taskInfo.StatusInfo.FileName);
             body = body.Replace("{SourceInfo}", taskInfo.StatusInfo.SourceObje);
 
-            if (taskInfo.Type == TaskType.Backup)
-            {
-                body = body.Replace("{Duration}", FormatMilliseconds(TimeSpan.FromMilliseconds(taskInfo.StatusInfo.TimeElapsed), lang));
-                body = body.Replace("{AverageDataTransfer}", Math.Round(taskInfo.StatusInfo.AverageDataRate, 2).ToString() + " MB/s");
-                body = body.Replace("{ProcessedData}", FormatBytes(taskInfo.StatusInfo.DataProcessed));
-                body = body.Replace("{InstantDataTransfer}", Math.Round(taskInfo.StatusInfo.InstantDataRate, 2).ToString() + " MB/s");
-            }
-            else // restore
-            {
-                TimeSpan duration = DateTime.Now - taskInfo.LastWorkingDate;
-                body = body.Replace("{Duration}", FormatMilliseconds(duration, lang));
-            }
+            body = body.Replace("{Duration}", FormatMilliseconds(TimeSpan.FromMilliseconds(taskInfo.StatusInfo.TimeElapsed), lang));
+            body = body.Replace("{AverageDataTransfer}", Math.Round(taskInfo.StatusInfo.AverageDataRate, 2).ToString() + " MB/s");
+            body = body.Replace("{ProcessedData}", FormatBytes(taskInfo.StatusInfo.DataProcessed));
+            body = body.Replace("{InstantDataTransfer}", Math.Round(taskInfo.StatusInfo.InstantDataRate, 2).ToString() + " MB/s");
 
             if (taskInfo.StatusInfo.Status == StatusType.Success)
                 body = body.Replace("{BackgroundStatus}", "#4CAF50");
@@ -495,26 +487,41 @@ namespace DiskBackup.Communication
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                <tr>
-                                                    <td style=""text-align:left; padding:8px; font-weight:bold; width:24%;"">{TaskNameLang}</td>
-                                                    <td style=""text-align:left; padding:8px; font-weight:bold; width:1%;"">:</td>
-                                                    <td style=""text-align:left; padding:8px; width:75%; word-break:break-all;"">{TaskName}</td>
-                                                </tr>
-                                                <tr>
-                                                    <td style=""text-align:left; padding:8px; font-weight:bold; width:24%;"">{FileNameLang}</td>
-                                                    <td style=""text-align:left; padding:8px; font-weight:bold; width:1%;"">:</td>
-                                                    <td style=""text-align:left; padding:8px; width:75%; word-break:break-all;"">{FileName}</td>
-                                                </tr>
-                                                <tr>
-                                                    <td style=""text-align:left; padding:8px; font-weight:bold; width:24%;"">{DurationLang}</td>
-                                                    <td style=""text-align:left; padding:8px; font-weight:bold; width:1%;"">:</td>
-                                                    <td style=""text-align:left; padding:8px; width:75%; word-break:break-all;"">{Duration}</td>
-                                                </tr>
-                                                <tr>
-                                                    <td style=""text-align:left; padding:8px; font-weight:bold; width:24%;"">{SourceInfoLang}</td>
-                                                    <td style=""text-align:left; padding:8px; font-weight:bold; width:1%;"">:</td>
-                                                    <td style=""text-align:left; padding:8px; width:75%;"">{SourceInfo}</td>
-                                                </tr>
+                                            <tr>
+                                                <td style=""text-align:left; padding:8px; font-weight:bold; width:24%;"">{TaskNameLang}</td>
+                                                <td style=""text-align:left; padding:8px; font-weight:bold; width:1%;"">:</td>
+                                                <td style=""text-align:left; padding:8px; width:75%; word-break:break-all;"">{TaskName}</td>
+                                            </tr>
+                                            <tr>
+                                                <td style=""text-align:left; padding:8px; font-weight:bold; width:24%;"">{FileNameLang}</td>
+                                                <td style=""text-align:left; padding:8px; font-weight:bold; width:1%;"">:</td>
+                                                <td style=""text-align:left; padding:8px; width:75%; word-break:break-all;"">{FileName}</td>
+                                            </tr>
+                                            <tr>
+                                                <td style=""text-align:left; padding:8px; font-weight:bold; width:24%;"">{DurationLang}</td>
+                                                <td style=""text-align:left; padding:8px; font-weight:bold; width:1%;"">:</td>
+                                                <td style=""text-align:left; padding:8px; width:75%; word-break:break-all;"">{Duration}</td>
+                                            </tr>
+                                            <tr>
+                                                <td style=""text-align:left; padding:8px; font-weight:bold; width:24%;"">{AverageDataTransferLang}</td>
+                                                <td style=""text-align:left; padding:8px; font-weight:bold; width:1%;"">:</td>
+                                                <td style=""text-align:left; padding:8px; width:75%;"">{AverageDataTransfer}</td>
+                                            </tr>
+                                            <tr>
+                                                <td style=""text-align:left; padding:8px; font-weight:bold; width:24%;"">{ProcessedDataLang}</td>
+                                                <td style=""text-align:left; padding:8px; font-weight:bold; width:1%;"">:</td>
+                                                <td style=""text-align:left; padding:8px; width:75%;"">{ProcessedData}</td>
+                                            </tr>
+                                            <tr>
+                                                <td style=""text-align:left; padding:8px; font-weight:bold; width:24%;"">{InstantDataTransferLang}</td>
+                                                <td style=""text-align:left; padding:8px; font-weight:bold; width:1%;"">:</td>
+                                                <td style=""text-align:left; padding:8px; width:75%;"">{InstantDataTransfer}</td>
+                                            </tr>
+                                            <tr>
+                                                <td style=""text-align:left; padding:8px; font-weight:bold; width:24%;"">{SourceInfoLang}</td>
+                                                <td style=""text-align:left; padding:8px; font-weight:bold; width:1%;"">:</td>
+                                                <td style=""text-align:left; padding:8px; width:75%;"">{SourceInfo}</td>
+                                            </tr>
                                             </tbody>
                                         </table>
                                     </td>
