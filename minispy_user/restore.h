@@ -34,7 +34,7 @@ struct restore_source{
 			size_t  BfNeedle;
             
             size_t  CompressedSize;
-            size_t  UncompressedSize;
+            size_t  DecompressedSize;
             
             size_t ZSTDError;
             
@@ -69,9 +69,9 @@ struct restore_source{
         Type_Count
     }Type;
     
-
+    
     size_t BytesToBeCopied;
-
+    
     // Recommended needle position for restore_target in absolute file position(that might exceed backup file's max size)
     // this value is LCN of latest read * clustersize of the backup
     // For volume targets, for ecah Read, it's recommended to call SetNeedle(AbsoluteNeedleInBytes);
@@ -100,29 +100,7 @@ struct restore_source{
 };
 
 
-/*
-    Example usage of structure
-    struct MyTargetVars{
-        HANDLE File;
-        DWORD ErrorCode;
-    };
-    //size_t MyCustomWrite(restore_target* Rt, void* B, size_t BufferLen){
-        MyTargetVars *mtv = (MyTargetVars*)Rt->Impl;
-        DWORD BytesWritten= 0;
-        mtv->ErrorCode = WriteFile(File, mtv, BufferLen, &BytesWritten, 0);
-    }
-    //size_t MySetNeedle(restore_target* Rt, size_t Needle){
-        MyTargetVars *mtv = (MyTargetVars*)Rt->Impl;
-        SetFilePointerEx(....);
-    }
-    //restore_target InitMyRestoreTarget(){
-        restore_target Result;
-        Result.impl = ...;
-        Result.Write = MyCustomWrite;
-        Result.SetNeedle = MySetNeedle;
-        return Result;
-    }
-*/
+
 struct restore_target{
 	// Holds user defined parameters that can be useful when implementing write-setneedle functions
     void* Impl; // this is either HANDLE or FILE*, these variants supports file level restore so we don't need to use tagged-union like stuff.

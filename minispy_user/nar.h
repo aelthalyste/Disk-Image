@@ -53,6 +53,9 @@
 #define NAR_DEBUG(fmt, ...) fprintf(stderr, fmt, __VA_ARGS__)
 
 
+#define NAR_DBG_ERR(fmt, ...) fprintf(stderr, fmt, __VA_ARGS__)
+
+
 enum class BackupType : short {
     Diff,
     Inc

@@ -4064,32 +4064,35 @@ DEBUG_FileExplorerQuery(){
 
 int
 main(int argc, char* argv[]) {
-    {
+    
+    if(0){
         backup_metadata *B = new backup_metadata[100];
         int fc = 0;
         //NarGetBackupsInDirectory(L"D:\\workspace\\programming\\c++\\Disk Image\\build\\minispy_user\\", B, sizeof(backup_metadata)*100, &fc);
-    }
-    
-    nar_backup_id ID = {0};
-    ID.Year = 2020;
-    ID.Month= 12;
-    ID.Day = 24;
-    ID.Hour = 2;
-    ID.Min = 14;
-    ID.Letter = 'C';
-    
-    std::string a;
-    NarBackupIDToStr(ID, a);
-    
-    std::string GenName;
-    for(size_t i =0; i<5; i++){
-        ID.Letter++;
-        GenerateMetadataName(ID, i, GenName);
-        unsigned char stack[sizeof(backup_metadata)];
-        NarDumpToFile(GenName.c_str(), stack, sizeof(stack));
         
-        GenerateBinaryFileName(ID, i, GenName);
-        NarDumpToFile(GenName.c_str(), stack, sizeof(stack));
+        
+        nar_backup_id ID = {0};
+        ID.Year = 2020;
+        ID.Month= 12;
+        ID.Day = 24;
+        ID.Hour = 2;
+        ID.Min = 14;
+        ID.Letter = 'C';
+        
+        std::string a;
+        NarBackupIDToStr(ID, a);
+        
+        std::string GenName;
+        for(size_t i =0; i<5; i++){
+            ID.Letter++;
+            GenerateMetadataName(ID, i, GenName);
+            unsigned char stack[sizeof(backup_metadata)];
+            NarDumpToFile(GenName.c_str(), stack, sizeof(stack));
+            
+            GenerateBinaryFileName(ID, i, GenName);
+            NarDumpToFile(GenName.c_str(), stack, sizeof(stack));
+            
+        }
         
     }
     
@@ -4170,6 +4173,7 @@ main(int argc, char* argv[]) {
                         TerminateBackup(v, NAR_SUCC);
                     }
                     else{
+                        NAR_BREAK;
                         TerminateBackup(v, NAR_FAILED);
                     }
                     

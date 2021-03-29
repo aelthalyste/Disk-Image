@@ -33,10 +33,11 @@ NarReadBackup(restore_source* Rs, size_t* AvailableBytes) {
     ASSERT(Rs->Metadata.Data);
     ASSERT(Rs->MaxAdvanceSize % Rs->ClusterSize == 0);
     
-    // End of stream 
+    // NOTE(Batuhan): End of stream 
     if (Rs->RegionIndice >= Rs->RecordsLen) {
         return NULL;
     }
+    
     
     if(NULL == AvailableBytes){
         NAR_BREAK;
@@ -44,6 +45,7 @@ NarReadBackup(restore_source* Rs, size_t* AvailableBytes) {
         Rs->Read    = NarReadZero;
         return Rs->Read(Rs, AvailableBytes);
     }
+    
     if(Rs->Bin.Data == NULL || Rs->Metadata.Data == NULL){
         NAR_BREAK;
         Rs->Error   = restore_source::Error_NullFileViews;
@@ -56,11 +58,11 @@ NarReadBackup(restore_source* Rs, size_t* AvailableBytes) {
         Rs->ClusterIndice = 0;
     }
     
-    size_t MaxClustersToAdvance = (Rs->MaxAdvanceSize / Rs->ClusterSize);
+    size_t MaxClustersToAdvance     = (Rs->MaxAdvanceSize / Rs->ClusterSize);
     size_t RemainingClusterInRegion = Rs->Regions[Rs->RegionIndice].Len - Rs->ClusterIndice;
     
     size_t ClustersToRead = MIN(MaxClustersToAdvance, RemainingClusterInRegion);
-    size_t DataOffset = (size_t)(Rs->Regions[Rs->RegionIndice].StartPos + Rs->ClusterIndice) * Rs->ClusterSize;
+    size_t DataOffset     = (size_t)(Rs->Regions[Rs->RegionIndice].StartPos + Rs->ClusterIndice) * Rs->ClusterSize;
     
     // Uncompressed file stream
     if (false == Rs->IsCompressed) {
@@ -70,17 +72,13 @@ NarReadBackup(restore_source* Rs, size_t* AvailableBytes) {
         
         Rs->AdvancedSoFar += (ClustersToRead*Rs->ClusterSize);
         
-        /*
-        memcpy(Rs->Bf, (unsigned char*)Rs->Bin.Data + DataOffset, ClustersToRead * Rs->ClusterSize);
-        Result = Rs->Bf;
-        */
-        
-        // NOTE(Batuhan): updating region and cluster indices handled at end of the function
+        // NOTE(Batuhan): updating region and cluster indices is being handled at end of the function
     }
     else {
         
-        // fetch next frame
-        if(Rs->BfNeedle == Rs->UncompressedSize){
+        // Fetch next compression frame if current one is depleted
+        if(Rs->BfNeedle == Rs->DecompressedSize){
+            
             Rs->AdvancedSoFar += Rs->CompressedSize;
             Rs->BfNeedle = 0;
             
@@ -88,14 +86,38 @@ NarReadBackup(restore_source* Rs, size_t* AvailableBytes) {
             size_t Remaining = Rs->Bin.Len - Rs->AdvancedSoFar;
             
             Rs->CompressedSize   = ZSTD_findFrameCompressedSize(NewFrame, Remaining);
-            Rs->UncompressedSize = ZSTD_getFrameContentSize(NewFrame, Remaining);
+            Rs->DecompressedSize = ZSTD_getFrameContentSize(NewFrame, Remaining);
             
-            if(Rs->UncompressedSize > Rs->BfSize){
+            // NOTE(Batuhan): ZSTD based errors
+            if(ZSTD_CONTENTSIZE_UNKNOWN == Rs->DecompressedSize
+               || ZSTD_CONTENTSIZE_ERROR == Rs->DecompressedSize
+               || ZSTD_isError(Rs->CompressedSize)){
+                
+                
+                if(ZSTD_CONTENTSIZE_UNKNOWN == Rs->DecompressedSize
+                   || ZSTD_CONTENTSIZE_ERROR == Rs->DecompressedSize){
+                    NAR_DBG_ERR("Contentsize error msg %s\n", 
+                                (Rs->DecompressedSize == ZSTD_CONTENTSIZE_ERROR ? 
+                                 "ZSTD_CONTENT_SIZE_UNKNOWN" : "ZSTD_CONTENTSIZE_ERROR"));
+                }
+                
+                if(ZSTD_isError(Rs->CompressedSize)){
+                    NAR_DBG_ERR("FindFramecompressed size error!\n", );
+                }
+                
+                Rs->Error   = restore_source::Error_Decompression;
+                Rs->Read    = NarReadZero;
+                return Rs->Read(Rs, AvailableBytes);
+            }
+            
+            // NOTE(Batuhan): That shouldn't happen, but in any case we should check it
+            if(Rs->DecompressedSize > Rs->BfSize){
                 NAR_BREAK;
                 Rs->Error   = restore_source::Error_InsufficentBufferSize;
                 Rs->Read    = NarReadZero;
                 return Rs->Read(Rs, AvailableBytes);
             }
+            
             
             ZSTD_outBuffer output = {0};
             ZSTD_inBuffer input = {0};
@@ -120,9 +142,9 @@ NarReadBackup(restore_source* Rs, size_t* AvailableBytes) {
             
         }
         
-        ASSERT(((Rs->UncompressedSize - Rs->BfNeedle) % Rs->ClusterSize) == 0);
+        ASSERT(((Rs->DecompressedSize - Rs->BfNeedle) % Rs->ClusterSize) == 0);
         
-        size_t ClusterRemainingInBf = (Rs->UncompressedSize - Rs->BfNeedle) / Rs->ClusterSize;
+        size_t ClusterRemainingInBf = (Rs->DecompressedSize - Rs->BfNeedle) / Rs->ClusterSize;
         
         ClustersToRead = MIN(ClusterRemainingInBf, ClustersToRead);
         Result = (unsigned char*)Rs->Bf + Rs->BfNeedle;
@@ -141,6 +163,8 @@ NarReadBackup(restore_source* Rs, size_t* AvailableBytes) {
     Rs->AbsoluteNeedleInBytes = DataOffset;
     
     return Result;
+    
+    
 }
 
 
@@ -181,11 +205,10 @@ InitRestoreFileSource(StrType MetadataPath, nar_arena* Arena, size_t MaxAdvanceS
         
         Result->ClusterSize = bm->ClusterSize;
         
-
         Result->ClusterSize 	= bm->ClusterSize;
         Result->IsCompressed 	= false;
         Result->BytesToBeCopied = bm->Size.Regions;
-         
+        
         StrType BinName;
         GenerateBinaryFileName(bm->ID, bm->Version, BinName);
         
@@ -208,14 +231,13 @@ InitRestoreFileSource(StrType MetadataPath, nar_arena* Arena, size_t MaxAdvanceS
                     Result->DStream = ZSTD_createDStream();
                 }
                 else{
-                    Result->Bf     = ArenaAllocate(Arena, MaxAdvanceSize);
-                    Result->BfSize = MaxAdvanceSize;
+                    // NOTE(Batuhan): nothing special here
                 }
                 
                 Error = false;
             }
             else {
-                NAR_DEBUG("");
+                
             }
             
             
@@ -244,61 +266,61 @@ InitFileRestoreStream(StrType MetadataFile, restore_target* Target, nar_arena* A
     StrType RootDir = NarGetFileDirectory(MetadataFile);
     if (NarReadMetadata(MetadataFile, &bm)) {
         size_t SourceFileCount = 1;
-            if (bm.Version != NAR_FULLBACKUP_VERSION) {
-                if (bm.BT == BackupType::Diff) {
-                    SourceFileCount = 2;
-
-                    Result->Sources = (restore_source**)ArenaAllocate(Arena, SourceFileCount * sizeof(restore_source*));
-                    Result->SourceCap = SourceFileCount;
-                    Result->CSI = 0;
-
-                    // nar_backup_id ID, int Version, StrType &Res
+        if (bm.Version != NAR_FULLBACKUP_VERSION) {
+            if (bm.BT == BackupType::Diff) {
+                SourceFileCount = 2;
+                
+                Result->Sources = (restore_source**)ArenaAllocate(Arena, SourceFileCount * sizeof(restore_source*));
+                Result->SourceCap = SourceFileCount;
+                Result->CSI = 0;
+                
+                // nar_backup_id ID, int Version, StrType &Res
+                StrType fpath;
+                StrType dpath;
+                {
+                    GenerateMetadataName(bm.ID, NAR_FULLBACKUP_VERSION, fpath);
+                    GenerateMetadataName(bm.ID, bm.Version, dpath);
+                }
+                
+                Result->Sources[0] = InitRestoreFileSource(RootDir + fpath, Arena, MaxAdvanceSize);
+                Result->Sources[1] = InitRestoreFileSource(RootDir + dpath, Arena, MaxAdvanceSize);
+                Result->BytesToBeCopied += Result->Sources[0]->BytesToBeCopied;
+                Result->BytesToBeCopied += Result->Sources[1]->BytesToBeCopied;
+                
+                
+            }
+            else if (bm.BT == BackupType::Inc) {
+                
+                SourceFileCount = bm.Version + SourceFileCount;
+                
+                Result->Sources = (restore_source**)ArenaAllocate(Arena, SourceFileCount * sizeof(restore_source*));
+                Result->SourceCap = SourceFileCount;
+                Result->CSI = 0;
+                
+                static_assert(NAR_FULLBACKUP_VERSION == -1, "Changing FULLBACKUP VERSION number breaks this loop, and probably many more hidden ones too");
+                
+                for (int i = NAR_FULLBACKUP_VERSION; i <= bm.Version; i++) {
                     StrType fpath;
-                    StrType dpath;
-                    {
-                        GenerateMetadataName(bm.ID, NAR_FULLBACKUP_VERSION, fpath);
-                        GenerateMetadataName(bm.ID, bm.Version, dpath);
-                    }
-
-                    Result->Sources[0] = InitRestoreFileSource(RootDir + fpath, Arena, MaxAdvanceSize);
-                    Result->Sources[1] = InitRestoreFileSource(RootDir + dpath, Arena, MaxAdvanceSize);
-                    Result->BytesToBeCopied += Result->Sources[0]->BytesToBeCopied;
-                    Result->BytesToBeCopied += Result->Sources[1]->BytesToBeCopied;
-
-
+                    GenerateMetadataName(bm.ID, bm.Version, fpath);
+                    Result->Sources[i] = InitRestoreFileSource(RootDir + fpath, Arena, MaxAdvanceSize);
+                    Result->BytesToBeCopied += Result->Sources[i]->BytesToBeCopied;
                 }
-                else if (bm.BT == BackupType::Inc) {
-
-                    SourceFileCount = bm.Version + SourceFileCount;
-
-                    Result->Sources = (restore_source**)ArenaAllocate(Arena, SourceFileCount * sizeof(restore_source*));
-                    Result->SourceCap = SourceFileCount;
-                    Result->CSI = 0;
-
-                    static_assert(NAR_FULLBACKUP_VERSION == -1, "Changing FULLBACKUP VERSION number breaks this loop, and probably many more hidden ones too");
-                    
-                    for (int i = NAR_FULLBACKUP_VERSION; i <= bm.Version; i++) {
-                        StrType fpath;
-                        GenerateMetadataName(bm.ID, bm.Version, fpath);
-                        Result->Sources[i] = InitRestoreFileSource(RootDir + fpath, Arena, MaxAdvanceSize);
-                        Result->BytesToBeCopied += Result->Sources[i]->BytesToBeCopied;
-                    }
-
-                }
-                else {
-                    // that shouldnt be possible
-                    NAR_BREAK;
-                }
-
+                
             }
             else {
-                Result->Sources = (restore_source**)ArenaAllocate(Arena, 8);
-                Result->Sources[0] = InitRestoreFileSource(MetadataFile, Arena, MaxAdvanceSize);
-                Result->SourceCap = 1;
-                Result->CSI = 0;
-                Result->BytesToBeCopied = Result->Sources[0]->BytesToBeCopied;
+                // that shouldnt be possible
+                NAR_BREAK;
             }
-
+            
+        }
+        else {
+            Result->Sources = (restore_source**)ArenaAllocate(Arena, 8);
+            Result->Sources[0] = InitRestoreFileSource(MetadataFile, Arena, MaxAdvanceSize);
+            Result->SourceCap = 1;
+            Result->CSI = 0;
+            Result->BytesToBeCopied = Result->Sources[0]->BytesToBeCopied;
+        }
+        
     }
     else {
         Result = NULL;
@@ -344,14 +366,18 @@ size_t
 AdvanceStream(restore_stream* Stream) {
     
     size_t Result = 0;
-    if (Stream == NULL)
+    size_t ReadLen = 0;
+    
+    if (Stream == NULL){
         return Result;
+    }
+    
     if (Stream->CSI >= Stream->SourceCap) {
         NAR_DEBUG("End of stream source pipe list");
         return Result;
     }
     
-    size_t ReadLen = 0;
+    
     restore_source* CS = Stream->Sources[Stream->CSI];
     
     const void* Mem = CS->Read(CS, &ReadLen);
@@ -375,7 +401,7 @@ AdvanceStream(restore_stream* Stream) {
             Stream->Error = restore_stream::Error_Read;
         }
         else{
-            NAR_DEBUG("Source %I64u is depleted, moving to next one\n", Stream->CSI);
+            NAR_DBG_ERR("Source %I64u is depleted, moving to next one\n", Stream->CSI);
             Stream->CSI++;
             return AdvanceStream(Stream);
         }
@@ -405,6 +431,8 @@ NarSetNeedleVolume(restore_target* Rt, size_t TargetFilePointer) {
 // expects memsize to be lower than 4gb
 size_t
 NarWriteVolume(restore_target* Rt, const void* Mem, size_t MemSize) {
+    
+    ASSERT(MemSize <= 0xffffffffull);
     
     DWORD BytesWritten = 0;
     if (WriteFile(Rt->Impl, Mem, MemSize, &BytesWritten, 0) && BytesWritten == MemSize) {
