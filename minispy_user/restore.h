@@ -8,6 +8,37 @@
 #include <string>
 
 
+/*
+In order to export these symbosl to .NET, we have to put public keyword before enum
+*/
+
+#if _MANAGED
+public
+#endif
+
+enum class RestoreSource_Errors: int{
+    Error_NoError,
+    Error_InsufficentBufferSize,
+    Error_Decompression,
+    Error_NullCompBuffer,
+    Error_NullFileViews,
+    Error_NullArg,
+    Error_Count
+};
+
+
+#if _MANAGED
+public
+#endif
+
+enum class RestoreStream_Errors: int{
+    Error_NoError,
+    Error_Read,
+    Error_Needle,
+    Error_Write,
+    Error_Count
+};
+
 struct restore_source{
     
     union{
@@ -51,6 +82,7 @@ struct restore_source{
     };
     
     
+#if 0    
     // NOTE(Batuhan): 
     enum{
         Error_NoError,
@@ -61,6 +93,8 @@ struct restore_source{
         Error_NullArg,
         Error_Count
     }Error;
+#endif
+    RestoreSource_Errors Error;
     
     
     enum{
@@ -117,6 +151,7 @@ struct restore_stream{
 	restore_source **Sources;
 	restore_target *Target;
     
+#if 0    
     enum{
         Error_NoError,
         Error_Read,
@@ -124,6 +159,9 @@ struct restore_stream{
         Error_Write,
         Error_Count
     }Error;
+#endif
+    
+    RestoreStream_Errors Error;
     
     size_t CSI;
 	size_t SourceCap;

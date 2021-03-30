@@ -87,19 +87,19 @@ THIS FUNCTION REALLOCATES MEMORY VIA realloc(), DO NOT PUT MEMORY OTHER THAN ALL
 inline void
 MergeRegions(data_array<nar_record>* R) {
     
-    UINT32 MergedRecordsIndex = 0;
-    UINT32 CurrentIter = 0;
+    uint32_t MergedRecordsIndex = 0;
+    uint32_t CurrentIter = 0;
     
     for (;;) {
         if (CurrentIter >= R->Count) {
             break;
         }
         
-        UINT32 EndPointTemp = R->Data[CurrentIter].StartPos + R->Data[CurrentIter].Len;
+        uint32_t EndPointTemp = R->Data[CurrentIter].StartPos + R->Data[CurrentIter].Len;
         
         if (IsRegionsCollide(R->Data[MergedRecordsIndex], R->Data[CurrentIter])) {
-            UINT32 EP1 = R->Data[CurrentIter].StartPos + R->Data[CurrentIter].Len;
-            UINT32 EP2 = R->Data[MergedRecordsIndex].StartPos + R->Data[MergedRecordsIndex].Len;
+            uint32_t EP1 = R->Data[CurrentIter].StartPos + R->Data[CurrentIter].Len;
+            uint32_t EP2 = R->Data[MergedRecordsIndex].StartPos + R->Data[MergedRecordsIndex].Len;
             
             EndPointTemp = MAX(EP1, EP2);
             R->Data[MergedRecordsIndex].Len = EndPointTemp - R->Data[MergedRecordsIndex].StartPos;
@@ -123,7 +123,7 @@ BOOLEAN
 CopyData(HANDLE S, HANDLE D, ULONGLONG Len) {
     BOOLEAN Return = TRUE;
     
-    UINT32 BufSize = 8*1024*1024; //8 MB
+    uint32_t BufSize = 8*1024*1024; //8 MB
     ULONGLONG TotalCopied = 0;
     
     void* Buffer = malloc(BufSize);
@@ -368,8 +368,8 @@ inline BOOLEAN
 IsRegionsCollide(nar_record R1, nar_record R2) {
     
     BOOLEAN Result = FALSE;
-    UINT32 R1EndPoint = R1.StartPos + R1.Len;
-    UINT32 R2EndPoint = R2.StartPos + R2.Len;
+    uint32_t R1EndPoint = R1.StartPos + R1.Len;
+    uint32_t R2EndPoint = R2.StartPos + R2.Len;
     
     if (R1.StartPos == R2.StartPos && R1.Len == R2.Len) {
         return TRUE;
@@ -442,10 +442,10 @@ GetMFTandINDXLCN(char VolumeLetter, HANDLE VolumeHandle) {
     
     BOOLEAN JustExtractMFTRegions = FALSE;
     
-    UINT32 MEMORY_BUFFER_SIZE = 1024LL * 1024LL * 512;
-    UINT32 ClusterExtractedBufferSize = 1024 * 1024 * 128;
+    uint32_t MEMORY_BUFFER_SIZE = 1024LL * 1024LL * 512;
+    uint32_t ClusterExtractedBufferSize = 1024 * 1024 * 128;
     
-    UINT32 MaxOutputLen = ClusterExtractedBufferSize/sizeof(nar_record);
+    uint32_t MaxOutputLen = ClusterExtractedBufferSize/sizeof(nar_record);
     
     INT32 ClusterSize = NarGetVolumeClusterSize(VolumeLetter);
     
@@ -476,7 +476,7 @@ GetMFTandINDXLCN(char VolumeLetter, HANDLE VolumeHandle) {
     };
     
     void* FileBuffer = malloc(MEMORY_BUFFER_SIZE);
-    UINT32 FileBufferCount = MEMORY_BUFFER_SIZE / 1024LL;
+    uint32_t FileBufferCount = MEMORY_BUFFER_SIZE / 1024LL;
     
     if(NULL == FileBuffer
        || NULL == ClustersExtracted){
@@ -512,7 +512,7 @@ GetMFTandINDXLCN(char VolumeLetter, HANDLE VolumeHandle) {
             // TODO (Batuhan): remove this after testing on windows server, looks like rest of the code finds some invalid regions on volume.
             if (JustExtractMFTRegions) {
                 printf("Found %i regions\n", ClusterExtractedCount);
-                for(UINT32 indx = 0; indx < ClusterExtractedCount; indx++){
+                for(uint32_t indx = 0; indx < ClusterExtractedCount; indx++){
                     printf("0x%X\t0x%X\n", ClustersExtracted[indx].StartPos, ClustersExtracted[indx].Len);
                 }
                 goto EARLY_TERMINATION;
@@ -526,9 +526,9 @@ GetMFTandINDXLCN(char VolumeLetter, HANDLE VolumeHandle) {
             
             for (unsigned int MFTOffsetIndex = 0; MFTOffsetIndex < MFTRegionCount; MFTOffsetIndex++) {
                 
-                ULONGLONG Offset = (ULONGLONG)ClustersExtracted[MFTOffsetIndex].StartPos * (UINT64)ClusterSize;
+                ULONGLONG Offset = (ULONGLONG)ClustersExtracted[MFTOffsetIndex].StartPos * (uint64_t)ClusterSize;
                 INT32 FilePerCluster = ClusterSize / 1024;
-                ULONGLONG FileCount = (ULONGLONG)ClustersExtracted[MFTOffsetIndex].Len * (UINT64)FilePerCluster;
+                ULONGLONG FileCount = (ULONGLONG)ClustersExtracted[MFTOffsetIndex].Len * (uint64_t)FilePerCluster;
                 
                 // set file pointer to actual records
                 if (NarSetFilePointer(VolumeHandle, Offset)) {
@@ -545,7 +545,7 @@ GetMFTandINDXLCN(char VolumeLetter, HANDLE VolumeHandle) {
                             
                             for (unsigned int FileRecordIndex = 0; FileRecordIndex < TargetFileCount; FileRecordIndex++) {
                                 
-                                void* FileRecord = (BYTE*)FileBuffer + (UINT64)FileRecordSize * (UINT64)FileRecordIndex;
+                                void* FileRecord = (BYTE*)FileBuffer + (uint64_t)FileRecordSize * (uint64_t)FileRecordIndex;
                                 
                                 // file flags are at 22th offset in the record
                                 if (*(INT32*)FileRecord != 'ELIF') {
@@ -644,8 +644,8 @@ GetMFTandINDXLCN(char VolumeLetter, HANDLE VolumeHandle) {
     }
     
     ULONGLONG VolumeSize = NarGetVolumeTotalSize(VolumeLetter);
-    UINT32 TruncateIndex = 0;
-    for (UINT32 i = 0; i < Result.Count; i++) {
+    uint32_t TruncateIndex = 0;
+    for (uint32_t i = 0; i < Result.Count; i++) {
         if ((ULONGLONG)Result.Data[i].StartPos * (ULONGLONG)ClusterSize + (ULONGLONG)Result.Data[i].Len * ClusterSize > VolumeSize) {
             TruncateIndex = i;
             break;
@@ -946,11 +946,11 @@ GetVolumeID(PLOG_CONTEXT C, wchar_t Letter) {
 }
 
 // Assumes CallerBufferSize >= NAR_COMPRESSION_FRAME_SIZE
-UINT32
+uint32_t
 ReadStream(volume_backup_inf* VolInf, void* CallerBuffer, unsigned int CallerBufferSize) {
     
     //TotalSize MUST be multiple of cluster size
-    UINT32 Result = 0;
+    uint32_t Result = 0;
     
     void* BufferToFill = CallerBuffer;
     unsigned int TotalSize = CallerBufferSize;
@@ -981,10 +981,10 @@ ReadStream(volume_backup_inf* VolInf, void* CallerBuffer, unsigned int CallerBuf
         
         DWORD BytesReadAfterOperation = 0;
         
-        UINT64 ClustersRemainingByteSize = (UINT64)VolInf->Stream.Records.Data[VolInf->Stream.RecIndex].Len - (UINT64)VolInf->Stream.ClusterIndex;
+        uint64_t ClustersRemainingByteSize = (uint64_t)VolInf->Stream.Records.Data[VolInf->Stream.RecIndex].Len - (uint64_t)VolInf->Stream.ClusterIndex;
         ClustersRemainingByteSize *= VolInf->ClusterSize;
         
-        DWORD ReadSize = (DWORD)MIN((UINT64)RemainingSize, ClustersRemainingByteSize); // safe to truncate, since remainingsize's max value is UINT32_MAX, and its MIN macro
+        DWORD ReadSize = (DWORD)MIN((uint64_t)RemainingSize, ClustersRemainingByteSize); // safe to truncate, since remainingsize's max value is uint32_t_MAX, and its MIN macro
         // we expect max value of DWORD.
         
         ULONGLONG FilePtrTarget = (ULONGLONG)VolInf->ClusterSize * ((ULONGLONG)VolInf->Stream.Records.Data[VolInf->Stream.RecIndex].StartPos + (ULONGLONG)VolInf->Stream.ClusterIndex);
@@ -1014,11 +1014,11 @@ ReadStream(volume_backup_inf* VolInf, void* CallerBuffer, unsigned int CallerBuf
         INT32 ClusterToIterate = (INT32)(BytesReadAfterOperation / 4096);
         VolInf->Stream.ClusterIndex += ClusterToIterate;
         
-        if ((UINT32)VolInf->Stream.ClusterIndex == VolInf->Stream.Records.Data[VolInf->Stream.RecIndex].Len) {
+        if ((uint32_t)VolInf->Stream.ClusterIndex == VolInf->Stream.Records.Data[VolInf->Stream.RecIndex].Len) {
             VolInf->Stream.ClusterIndex = 0;
             VolInf->Stream.RecIndex++;
         }
-        if ((UINT32)VolInf->Stream.ClusterIndex > VolInf->Stream.Records.Data[VolInf->Stream.RecIndex].Len) {
+        if ((uint32_t)VolInf->Stream.ClusterIndex > VolInf->Stream.Records.Data[VolInf->Stream.RecIndex].Len) {
             printf("ClusterIndex exceeded region len, that MUST NOT happen at any circumstance\n");
             VolInf->Stream.Error = stream::Error_SizeOvershoot;
             goto ERR_BAIL_OUT;
@@ -1386,7 +1386,7 @@ SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, DotNetStreamInf* SI, boo
         
     }
     
-    printf("Totalbytes should be backed up %I64u\n", (UINT64)SI->ClusterCount*(UINT64)SI->ClusterSize);
+    printf("Totalbytes should be backed up %I64u\n", (uint64_t)SI->ClusterCount*(uint64_t)SI->ClusterSize);
     
     return Return;
 }
@@ -1398,12 +1398,12 @@ SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, DotNetStreamInf* SI, boo
   returns NULL if any error occurs
 */
 nar_record*
-GetVolumeRegionsFromBitmap(HANDLE VolumeHandle, UINT32* OutRecordCount) {
+GetVolumeRegionsFromBitmap(HANDLE VolumeHandle, uint32_t* OutRecordCount) {
     
     if(OutRecordCount == NULL) return NULL;
     
     nar_record* Records = NULL;
-    UINT32 RecordCount = 0;
+    uint32_t RecordCount = 0;
     
     
     STARTING_LCN_INPUT_BUFFER StartingLCN;
@@ -1422,10 +1422,10 @@ GetVolumeRegionsFromBitmap(HANDLE VolumeHandle, UINT32* OutRecordCount) {
             DWORD ClustersRead = 0;
             UCHAR* BitmapIndex = Bitmap->Buffer;
             UCHAR BitmapMask = 1;
-            //UINT32 CurrentIndex = 0;
-            UINT32 LastActiveCluster = 0;
+            //uint32_t CurrentIndex = 0;
+            uint32_t LastActiveCluster = 0;
             
-            UINT32 RecordBufferSize = 128 * 1024 * 1024;
+            uint32_t RecordBufferSize = 128 * 1024 * 1024;
             Records = (nar_record*)malloc(RecordBufferSize);
             
             memset(Records, 0, RecordBufferSize);
@@ -1493,7 +1493,7 @@ SetFullRecords(volume_backup_inf* V) {
     
     //UINT* ClusterIndices = 0;
     
-    UINT32 Count = 0;
+    uint32_t Count = 0;
     V->Stream.Records.Data  = GetVolumeRegionsFromBitmap(V->Stream.Handle, &Count);
     V->Stream.Records.Count = Count;
     
@@ -1524,7 +1524,7 @@ SetIncRecords(HANDLE CommPort, volume_backup_inf* V) {
     // setupstream will include mft to stream, stream will not be empty.
     if(TargetReadSize != 0){
         
-        if(NarSetFilePointer(LogHandle, (UINT64)V->IncLogMark.LastBackupRegionOffset)){
+        if(NarSetFilePointer(LogHandle, (uint64_t)V->IncLogMark.LastBackupRegionOffset)){
             
             V->Stream.Records.Data = (nar_record*)malloc(TargetReadSize);
             V->Stream.Records.Count = TargetReadSize/sizeof(nar_record);
@@ -1940,7 +1940,7 @@ NarSetVolumeSize(char Letter, int TargetSizeMB) {
     }
     
     //NarDumpToFile(const char *FileName, void* Data, int Size)
-    if (NarDumpToFile(FNAME, Buffer, (UINT32)strlen(Buffer))) {
+    if (NarDumpToFile(FNAME, Buffer, (uint32_t)strlen(Buffer))) {
         char CMDBuffer[128];
         snprintf(CMDBuffer, sizeof(CMDBuffer), "diskpart /s %s", FNAME);
         system(CMDBuffer);
@@ -2582,7 +2582,7 @@ ReadMetadata(nar_backup_id ID, int Version, std::wstring RootDir) {
         }
         else {
             ErrorOccured = TRUE;
-            printf("Unable to read metadata, read %i bytes instead of %i\n", BytesOperated, (UINT32)sizeof(BM));
+            printf("Unable to read metadata, read %i bytes instead of %i\n", BytesOperated, (uint32_t)sizeof(BM));
             memset(&BM, 0, sizeof(BM));
             memset(&BM.Errors, 1, sizeof(BM.Errors)); // Set all error flags
         }
@@ -3384,7 +3384,7 @@ NarSaveBootState(LOG_CONTEXT* CTX) {
                     Pack.Letter = (char)CTX->Volumes.Data[i].Letter;
                     Pack.Version = (char)CTX->Volumes.Data[i].Version; // for testing purposes, 128 version looks like fine
                     Pack.BackupType = (char)CTX->Volumes.Data[i].BT;
-                    Pack.LastBackupOffset = (UINT64)CTX->Volumes.Data[i].IncLogMark.LastBackupRegionOffset;
+                    Pack.LastBackupOffset = (uint64_t)CTX->Volumes.Data[i].IncLogMark.LastBackupRegionOffset;
                     
                     DWORD BR = 0;
                     
@@ -3542,7 +3542,7 @@ NarGetRegionIntersection(nar_record* r1, nar_record* r2, nar_record** intersecti
     i1 = i2 = i3 = 0;
     
     //memset(r3, 0, len3 * sizeof(*r3));
-    UINT32 r3cap = len2;
+    uint32_t r3cap = len2;
     nar_record* r3 = (nar_record*)malloc(r3cap * sizeof(nar_record));
     
     // logic behind iteration, ALWAYS iterate item that has LOWER END.
@@ -3557,8 +3557,8 @@ NarGetRegionIntersection(nar_record* r1, nar_record* r2, nar_record** intersecti
             r3 = (nar_record*)realloc(r3, r3cap * sizeof(nar_record));
         }
         
-        UINT32 r1end = r1[i1].StartPos + r1[i1].Len;
-        UINT32 r2end = r2[i2].StartPos + r2[i2].Len;
+        uint32_t r1end = r1[i1].StartPos + r1[i1].Len;
+        uint32_t r2end = r2[i2].StartPos + r2[i2].Len;
         
         /*
        r2          -----------------
@@ -3602,8 +3602,8 @@ NarGetRegionIntersection(nar_record* r1, nar_record* r2, nar_record** intersecti
         as you can see, if we would like to spot continuous colliding blocks, we must ALWAYS ITERATE THAT HAS LOWER END POINT, and their intersection WILL ALWAYS BE REPRESENTED AS
         HIGH_START - LOW_END of both of them.
         */
-        UINT32 IntersectionEnd   = MIN(r1end, r2end);
-        UINT32 IntersectionStart = MAX(r1[i1].StartPos, r2[i2].StartPos);
+        uint32_t IntersectionEnd   = MIN(r1end, r2end);
+        uint32_t IntersectionStart = MAX(r1[i1].StartPos, r2[i2].StartPos);
         
         r3[i3].StartPos = IntersectionStart;
         r3[i3].Len = IntersectionEnd - IntersectionStart;
@@ -3859,8 +3859,8 @@ TestFindPointOffsetInRecords(){
 
 
 struct{
-    UINT64 LastCycleCount;
-    UINT64 WorkCycleCount;
+    uint64_t LastCycleCount;
+    uint64_t WorkCycleCount;
     LARGE_INTEGER LastCounter;
     LARGE_INTEGER WorkCounter;
     INT64 GlobalPerfCountFrequency;
@@ -4033,7 +4033,7 @@ DEBUG_Restore(){
     
     while(AdvanceStream(Stream)){
         int hold_me_here = 5;
-        if(Stream->Error != restore_stream::Error_NoError){
+        if(Stream->Error != RestoreStream_Errors::Error_NoError){
             NAR_BREAK;
         }
     }

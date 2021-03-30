@@ -9,17 +9,17 @@ using namespace System::Collections::Generic;
 
 
 namespace NarDIWrapper {
-
+    
     void
         SystemStringToWCharPtr(System::String^ SystemStr, wchar_t* Destination) {
-
+        
         pin_ptr<const wchar_t> wch = PtrToStringChars(SystemStr);
         size_t ConvertedChars = 0;
         size_t SizeInBytes = (SystemStr->Length + 1) * 2;
         memcpy(Destination, wch, SizeInBytes);
-
+        
     }
-
+    
     public ref class StreamInfo {
         public:
         System::UInt32 ClusterSize; //Size of clusters, requester has to call readstream with multiples of this size
@@ -93,7 +93,7 @@ namespace NarDIWrapper {
         
         size_t EFIPartSize;
         size_t SystemPartSize;
-
+        
         wchar_t DiskType;
         System::String^ Fullpath; // fullpath of the backup
         System::String^ Metadataname; // 
@@ -209,9 +209,9 @@ namespace NarDIWrapper {
     
     
     public ref class RestoreStream {
-    
-    public:
-
+        
+        public:
+        
         RestoreStream(BackupMetadata^ arg_BM, System::String^ arg_RootDir) {
             Stream      = 0;
             MemLen      = Gigabyte(4);
@@ -219,28 +219,28 @@ namespace NarDIWrapper {
             BM          = arg_BM;
             RootDir     = arg_RootDir;
         }
-
+        
         ~RestoreStream() {
             TerminateRestore();
         }
-
-
+        
+        
         bool SetDiskRestore(int DiskID, wchar_t Letter, bool arg_RepairBoot, bool OverrideDiskType, wchar_t AlternativeDiskType) {
             
             char DiskType = (char)BM->DiskType;
             if (OverrideDiskType)
                 DiskType = (char)AlternativeDiskType;
-
+            
             RepairBoot = arg_RepairBoot;
-
+            
             int VolSizeMB = BM->VolumeTotalSize/(1024ull* 1024ull) + 1;
             int SysPartitionMB = BM->EFIPartSize / (1024ull * 1024ull);
             int RecPartitionMB = 0;
-
+            
             BootLetter = 0;
             {
                 DWORD Drives = GetLogicalDrives();
-
+                
                 for (int CurrentDriveIndex = 0; CurrentDriveIndex < 26; CurrentDriveIndex++) {
                     if (Drives & (1 << CurrentDriveIndex) || ('A' + (char)CurrentDriveIndex) == (char)Letter) {
                         continue;
@@ -251,7 +251,7 @@ namespace NarDIWrapper {
                     }
                 }
             }
-
+            
             if (BootLetter != 0) {
                 if (DiskType == NAR_DISKTYPE_GPT) {
                     if (BM->OSVolume) {
@@ -269,55 +269,56 @@ namespace NarDIWrapper {
                         NarCreateCleanMBRPartition(DiskID, Letter, VolSizeMB);
                     }
                 }
-
+                
             }
             else {
                 return false;
             }
-
-
+            
+            
             IsDiskRestore = true;
             return true;
-
+            
         }
-
-
+        
+        
         bool SetupStream(wchar_t VolumeLetter) {
-
+            
             nar_arena Arena = ArenaInit(Mem, MemLen);
             TargetLetter = VolumeLetter;
-
+            
             if (NarSetVolumeSize((char)VolumeLetter, BM->VolumeTotalSize)) {
                 NarFormatVolume((char)VolumeLetter);
             }
             else {
                 
             }
-
+            
             restore_target *Target = InitVolumeTarget(VolumeLetter, &Arena);
             if (Target) {
                 wchar_t bf[256];
-
+                
                 memset(bf, 0, sizeof(bf));
                 SystemStringToWCharPtr(RootDir, &bf[0]);
                 std::wstring RootDir(bf);
-
+                
                 memset(bf, 0, sizeof(bf));
                 SystemStringToWCharPtr(BM->Metadataname, bf);
                 std::wstring mdname(bf);
-
-
+                
                 std::wstring MetadataPath = RootDir + mdname;
-
+                
+                printf("WRAPPER: RootDir path : %S\n", RootDir.c_str());
+                printf("WRAPPER: Metadata path : %S\n", MetadataPath.c_str());
+                
                 Stream = InitFileRestoreStream(MetadataPath, Target, &Arena, Megabyte(16));
                 BytesNeedToCopy = Stream->BytesToBeCopied;
-
             }
-
+            
             return !(Stream == NULL);
         }
-
-
+        
+        
         void TerminateRestore() {
             if (Mem) {
                 VirtualFree(Mem, MemLen, MEM_RELEASE);
@@ -329,32 +330,45 @@ namespace NarDIWrapper {
                     NarRemoveLetter(BootLetter);
                 }
             }
+            Stream = 0;
             Mem = 0;
         }
-
-
-
+        
+        
+        
         /* 
             returns how many bytes processed. 0 means either end of stream or something bad happened. check internal errors via CheckStreamStatus.
         */
         size_t CW_AdvanceStream() {
-            return AdvanceStream(Stream);
+            size_t Result = 0;
+            if(Stream){
+                Result = AdvanceStream(Stream);
+                // update error enums for caller
+                StreamError = Stream->Error;
+                SrcError = Stream->Sources[Stream->CSI]->Error;
+            }
+            return Result;
         }
-
+        
         // returns false if internal error flags are set
         bool CheckStreamStatus() {
-            return (Stream->Error != restore_stream::Error_NoError);
+            bool Result = false;
+            if(Stream){
+                Result = (Stream->Error != RestoreStream_Errors::Error_NoError);
+            }
+            return Result;
         }
         
+        RestoreSource_Errors SrcError = RestoreSource_Errors::Error_NoError;
+        RestoreStream_Errors StreamError = RestoreStream_Errors::Error_NoError;
         
-
         size_t BytesNeedToCopy;
         BackupMetadata^ BM;
         System::String^ RootDir;
-
-    private:
-
-
+        
+        private:
+        
+        
         void            *Mem;
         size_t          MemLen;
         restore_stream* Stream;
@@ -363,7 +377,7 @@ namespace NarDIWrapper {
         char BootLetter;
         char TargetLetter;
         bool RepairBoot = true;
-
+        
     };
     
     public ref class DiskTracker
@@ -384,7 +398,7 @@ namespace NarDIWrapper {
         
         INT32 CW_ReadStream(void* Data, wchar_t VolumeLetter, int Size);
         bool CW_CheckStreamStatus(wchar_t Letter);
-
+        
         bool CW_TerminateBackup(bool Succeeded, wchar_t VolumeLetter);
         
         unsigned long long CW_IsVolumeExists(wchar_t Letter);
@@ -395,7 +409,7 @@ namespace NarDIWrapper {
         static BOOLEAN CW_MetadataEditTaskandDescriptionField(System::String^ MetadataFileName, System::String^ TaskName, System::String^ TaskDescription);
         static bool CW_IsVolumeAvailable(wchar_t Letter);
         static int CW_HintBufferSize();
-
+        
         static List<CSLog^>^ CW_GetLogs();
         static void CW_GenerateLogs();
         

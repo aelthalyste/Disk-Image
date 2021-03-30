@@ -41,14 +41,14 @@ NarReadBackup(restore_source* Rs, size_t* AvailableBytes) {
     
     if(NULL == AvailableBytes){
         NAR_BREAK;
-        Rs->Error   = restore_source::Error_NullArg;
+        Rs->Error   = RestoreSource_Errors::Error_NullArg;
         Rs->Read    = NarReadZero;
         return Rs->Read(Rs, AvailableBytes);
     }
     
     if(Rs->Bin.Data == NULL || Rs->Metadata.Data == NULL){
         NAR_BREAK;
-        Rs->Error   = restore_source::Error_NullFileViews;
+        Rs->Error   = RestoreSource_Errors::Error_NullFileViews;
         Rs->Read    = NarReadZero;
         return Rs->Read(Rs, AvailableBytes);
     }
@@ -105,7 +105,7 @@ NarReadBackup(restore_source* Rs, size_t* AvailableBytes) {
                     NAR_DBG_ERR("FindFramecompressed size error!\n", );
                 }
                 
-                Rs->Error   = restore_source::Error_Decompression;
+                Rs->Error   = RestoreSource_Errors::Error_Decompression;
                 Rs->Read    = NarReadZero;
                 return Rs->Read(Rs, AvailableBytes);
             }
@@ -113,7 +113,7 @@ NarReadBackup(restore_source* Rs, size_t* AvailableBytes) {
             // NOTE(Batuhan): That shouldn't happen, but in any case we should check it
             if(Rs->DecompressedSize > Rs->BfSize){
                 NAR_BREAK;
-                Rs->Error   = restore_source::Error_InsufficentBufferSize;
+                Rs->Error   = RestoreSource_Errors::Error_InsufficentBufferSize;
                 Rs->Read    = NarReadZero;
                 return Rs->Read(Rs, AvailableBytes);
             }
@@ -134,7 +134,7 @@ NarReadBackup(restore_source* Rs, size_t* AvailableBytes) {
             size_t ZSTD_RetCode = ZSTD_decompressStream(Rs->DStream, &output, &input);
             if(ZSTD_isError(ZSTD_RetCode)){
                 NAR_BREAK;
-                Rs->Error       = restore_source::Error_Decompression;
+                Rs->Error       = RestoreSource_Errors::Error_Decompression;
                 Rs->Read        = NarReadZero;
                 Rs->ZSTDError   = ZSTD_RetCode;
                 return Rs->Read(Rs, AvailableBytes);
@@ -195,7 +195,7 @@ InitRestoreFileSource(StrType MetadataPath, nar_arena* Arena, size_t MaxAdvanceS
     Result->Type            = restore_source::Type_FileSource;
     Result->MaxAdvanceSize  = MaxAdvanceSize;
     Result->Read  = NarReadBackup;
-    Result->Error = restore_source::Error_NoError;
+    Result->Error = RestoreSource_Errors::Error_NoError;
     
     bool Error = true;
     
@@ -222,7 +222,6 @@ InitRestoreFileSource(StrType MetadataPath, nar_arena* Arena, size_t MaxAdvanceS
             if (bm->Offset.RegionsMetadata < Result->Metadata.Len) {
                 Result->Regions = (nar_record*)((unsigned char*)Result->Metadata.Data + bm->Offset.RegionsMetadata);
                 Result->RecordsLen = bm->Size.RegionsMetadata / sizeof(nar_record);
-                
                 
                 if (bm->IsCompressed) {
                     Result->IsCompressed = true;
@@ -385,20 +384,20 @@ AdvanceStream(restore_stream* Stream) {
         
         size_t NewNeedle = Stream->Target->SetNeedle(Stream->Target, CS->AbsoluteNeedleInBytes);
         if(NewNeedle != CS->AbsoluteNeedleInBytes){
-            Stream->Error = restore_stream::Error_Needle;
+            Stream->Error = RestoreStream_Errors::Error_Needle;
         }
         
         size_t BytesWritten = Stream->Target->Write(Stream->Target, Mem, ReadLen);
         if (BytesWritten != ReadLen) {
-            Stream->Error = restore_stream::Error_Write;
+            Stream->Error = RestoreStream_Errors::Error_Write;
         }
         Result = BytesWritten;
         
     }
     else {
         
-        if(Stream->Sources[Stream->CSI]->Error != restore_source::Error_NoError){
-            Stream->Error = restore_stream::Error_Read;
+        if(Stream->Sources[Stream->CSI]->Error != RestoreSource_Errors::Error_NoError){
+            Stream->Error = RestoreStream_Errors::Error_Read;
         }
         else{
             NAR_DBG_ERR("Source %I64u is depleted, moving to next one\n", Stream->CSI);

@@ -1,4 +1,4 @@
-version(1);
+version(2);
 project_name = "Disk Backup";
 
 patterns = {
@@ -7,56 +7,52 @@ patterns = {
 "*.h",
 "*.4coder",
 "*.sh",
-"*.bat"
+"*.bat",
 };
-
-blacklist_patterns={
+blacklist_patterns = {
 "*.",
 "*.xml",
-"*.txt"
-};
-
-lp = {
-{".",.recursive=false},
-{"/inc"},
-{"/minispy_user/",.recursive=false},
-{"/NarDIWrapper/",.recursive=false},
-{"/TestArea/src/",.recursive=false},
-{"/OfflineTestGUI/",.recursive=false}
+"*.txt",
 };
 
 load_paths = {
-{lp,.os="win"},
+.win = {
+{ .path = ".", .recursive = false, .relative = true, },
+{ .path = "/inc", .recursive = true, .relative = true, },
+{ .path = "/minispy_user/", .recursive = false, .relative = true, },
+{ .path = "/NarDIWrapper/", .recursive = false, .relative = true, },
+{ .path = "/TestArea/src/", .recursive = false, .relative = true, },
+{ .path = "/OfflineTestGUI/", .recursive = false, .relative = true, },
+},
 };
 
-command_list = {
-{
-.name="build",
-.out="compilation", 
+commands = {
+.build = {
+.win = "build.bat",
+.out = "compilation",
 .footer_panel = true,
 .save_dirty_files = true,
 .cursor_at_end = true,
-.cmd = {{"build.bat",.os = "win"}}
 },
-{
-.name="run",
-.out="run", 
+.run = {
+.win = "run.bat",
+.out = "run",
 .footer_panel = true,
 .save_dirty_files = false,
 .cursor_at_end = true,
-.cmd = {{"run.bat",.os = "win"}}
 },
-{
-.name="build_large",
-.out="compilation_large", 
+.build_large = {
+.win = "build.bat",
+.out = "compilation_large",
 .footer_panel = false,
 .save_dirty_files = true,
 .cursor_at_end = false,
-.cmd = {{"build.bat",.os = "win"}}
-}
+},
 };
 
-fkey_command[1] = "build";
-fkey_command[2] = "run";
-fkey_command[3] = "build_large";
+fkey_command = {
+.F1 = "build",
+.F2 = "run",
+.F3 = "build_large",
+};
 
