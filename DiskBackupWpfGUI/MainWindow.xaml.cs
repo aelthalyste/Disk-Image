@@ -893,7 +893,8 @@ namespace DiskBackupWpfGUI
                         var taskSchedulerManager = _scope.Resolve<ITaskSchedulerManager>();
                         taskSchedulerManager.RestoreDiskNowJob(taskInfo).Wait();
                     }
-
+                    StatusesWindow restoreStatus = _scope.Resolve<StatusesWindow>(new NamedParameter("chooseFlag", 1), new NamedParameter("taskInfo", taskInfo));
+                    restoreStatus.Show();
                 }
             }
             else if (taskInfo.Status.Equals(TaskStatusType.Paused))

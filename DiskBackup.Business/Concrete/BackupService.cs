@@ -342,7 +342,7 @@ namespace DiskBackup.Business.Concrete
                                 _logger.Information($"read = 0 geldi. result: {result}");
                                 break;
                             }
-                            else if (restoreStream.CheckStreamStatus() == false)
+                            if (!restoreStream.CheckStreamStatus())
                             {
                                 result = false;
                                 _logger.Information($"check stream false geldi. result: {false}");
@@ -483,7 +483,7 @@ namespace DiskBackup.Business.Concrete
                                 _logger.Information($"read = 0 geldi. result: {result}");
                                 break;
                             }
-                            else if (restoreStream.CheckStreamStatus() == false)
+                            if (!restoreStream.CheckStreamStatus())
                             {
                                 result = false;
                                 _logger.Information($"check stream false geldi. result: {false}");
@@ -647,7 +647,7 @@ namespace DiskBackup.Business.Concrete
             byte[] buffer = new byte[bufferSize];
             StreamInfo str = new StreamInfo();
             long bytesReadSoFar = 0;
-            int Read = 0;
+            int read = 0;
             bool result = false;
 
             statusInfo.TaskName = taskInfo.Name;
@@ -697,11 +697,11 @@ namespace DiskBackup.Business.Concrete
                                 }
                                 manualResetEvent.WaitOne();
 
-                                Read = _diskTracker.CW_ReadStream(BAddr, letter, bufferSize);
-                                file.Write(buffer, 0, Read);
-                                bytesReadSoFar += Read;
+                                read = _diskTracker.CW_ReadStream(BAddr, letter, bufferSize);
+                                file.Write(buffer, 0, read);
+                                bytesReadSoFar += read;
 
-                                instantProcessData += Read; // anlık veri için              
+                                instantProcessData += read; // anlık veri için              
 
                                 statusInfo.FileName = taskInfo.BackupStorageInfo.Path + str.FileName;
                                 statusInfo.DataProcessed = bytesReadSoFar;
@@ -718,7 +718,7 @@ namespace DiskBackup.Business.Concrete
                                     passingTime.Restart();
                                 }
 
-                                if (Read != bufferSize)
+                                if (read == 0 || !_diskTracker.CW_CheckStreamStatus(letter))
                                     break;
                             }
                             result = _diskTracker.CW_CheckStreamStatus(letter);

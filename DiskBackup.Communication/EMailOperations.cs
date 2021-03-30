@@ -232,10 +232,7 @@ namespace DiskBackup.Communication
         {
             string body = string.Empty;
 
-            if (taskInfo.Type == TaskType.Backup)
-                body = GetHTMLBackupBody();
-            else
-                body = GetHTMLRestoreBody();
+            body = GetHTMLTaskBody();
 
             var customerName = _configurationDataDal.Get(x => x.Key == "customerName");
             body = body.Replace("{customerName}", customerName.Value);
@@ -308,100 +305,6 @@ namespace DiskBackup.Communication
             return body;
         }
 
-        private string GetHTMLBackupBody()
-        {
-            return @"<!DOCTYPE html>
-                    <html>
-                    <head>
-                        <meta http-equiv=""Content-Type"" content=""text/html; charset=utf-8"">
-                        <style>
-                            * {
-                                text-decoration: none;
-                            }
-                        </style>
-                    </head>
-                    <body bgcolor=""#F2F4F6"">
-                        <p style=""text-align:center; padding-top:50px;"">
-                            <span>
-                                <a href=""http://panel.narbulut.com"" target=""_blank"" rel=""noopener noreferrer"" data-auth=""NotApplicable"">
-                                    <img src=""https://panel.narbulut.com/img/slider/Logoü.png"" alt=""Narbulut Logo"" />
-                                </a>
-                            </span>
-                        </p>
-                    <div style=""padding:0px 15% 0px 15%;"">
-                        <table style=""background-color:white; border-collapse:collapse; width:90%;"" align=""center"">
-                            <tr>
-                                <th style=""font-family:Arial, sans-serif, serif, EmojiFont; text-align:left; padding:20px;"">{Dear}, {customerName}</th>
-                            </tr>
-                            <tr>
-                                <td style=""font-family:Arial, sans-serif, serif, EmojiFont; color:slategray; text-align:left; padding:0px 0px 10px 20px;"">{txtWelcome} {ListTextLang}</td>
-                            </tr>
-                            <tr>
-                                <td style=""padding:20px;"">
-                                    <table style=""border-collapse:collapse; width:100%; font-family:Arial, sans-serif, serif, EmojiFont;"">
-                                        <thead>
-                                            <tr>
-                                                <th style=""background-color:{BackgroundStatus}; color:white; text-align:center; padding:8px;"" colspan=""3"">{StatusInfoLang}</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <tr>
-                                                <td style=""text-align:left; padding:8px; font-weight:bold; width:24%;"">{TaskNameLang}</td>
-                                                <td style=""text-align:left; padding:8px; font-weight:bold; width:1%;"">:</td>
-                                                <td style=""text-align:left; padding:8px; width:75%; word-break:break-all;"">{TaskName}</td>
-                                            </tr>
-                                            <tr>
-                                                <td style=""text-align:left; padding:8px; font-weight:bold; width:24%;"">{FileNameLang}</td>
-                                                <td style=""text-align:left; padding:8px; font-weight:bold; width:1%;"">:</td>
-                                                <td style=""text-align:left; padding:8px; width:75%; word-break:break-all;"">{FileName}</td>
-                                            </tr>
-                                            <tr>
-                                                <td style=""text-align:left; padding:8px; font-weight:bold; width:24%;"">{DurationLang}</td>
-                                                <td style=""text-align:left; padding:8px; font-weight:bold; width:1%;"">:</td>
-                                                <td style=""text-align:left; padding:8px; width:75%; word-break:break-all;"">{Duration}</td>
-                                            </tr>
-                                            <tr>
-                                                <td style=""text-align:left; padding:8px; font-weight:bold; width:24%;"">{AverageDataTransferLang}</td>
-                                                <td style=""text-align:left; padding:8px; font-weight:bold; width:1%;"">:</td>
-                                                <td style=""text-align:left; padding:8px; width:75%;"">{AverageDataTransfer}</td>
-                                            </tr>
-                                            <tr>
-                                                <td style=""text-align:left; padding:8px; font-weight:bold; width:24%;"">{ProcessedDataLang}</td>
-                                                <td style=""text-align:left; padding:8px; font-weight:bold; width:1%;"">:</td>
-                                                <td style=""text-align:left; padding:8px; width:75%;"">{ProcessedData}</td>
-                                            </tr>
-                                            <tr>
-                                                <td style=""text-align:left; padding:8px; font-weight:bold; width:24%;"">{InstantDataTransferLang}</td>
-                                                <td style=""text-align:left; padding:8px; font-weight:bold; width:1%;"">:</td>
-                                                <td style=""text-align:left; padding:8px; width:75%;"">{InstantDataTransfer}</td>
-                                            </tr>
-                                            <tr>
-                                                <td style=""text-align:left; padding:8px; font-weight:bold; width:24%;"">{SourceInfoLang}</td>
-                                                <td style=""text-align:left; padding:8px; font-weight:bold; width:1%;"">:</td>
-                                                <td style=""text-align:left; padding:8px; width:75%;"">{SourceInfo}</td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td style=""font-family:Arial, sans-serif, serif, EmojiFont; color:slategray; padding:10px 0px 20px 20px;"">{RespectLang}, Narbulut</td>
-                            </tr>
-                        </table>
-                            <div style=""padding:18.75pt 0;"">
-                                <p align=""center"" style=""text-align:center; margin-top:0; line-height:18.0pt;"">
-                                    <span style=""color:#74787E; font-size:9pt;"">
-                                        <a href=""http://panel.narbulut.com"" target=""_blank"" rel=""noopener noreferrer"" data-auth=""NotApplicable"">
-                                            <span style=""color:#3869D4;"">Copyright Narbulut © 2017</span>
-                                        </a>| {AllRightReservedLang}
-                                    </span>
-                                </p>
-                            </div>
-                        </div>
-                    </body>
-                    </html>";
-        }
-
         private string GetHTMLTestBody()
         {
             return @"<!DOCTYPE html>
@@ -450,7 +353,7 @@ namespace DiskBackup.Communication
                     </html>";
         }
 
-        private string GetHTMLRestoreBody()
+        private string GetHTMLTaskBody()
         {
             return @"<!DOCTYPE html>
                     <html>
