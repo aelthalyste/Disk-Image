@@ -354,7 +354,7 @@ namespace NarDIWrapper {
         bool CheckStreamStatus() {
             bool Result = false;
             if(Stream){
-                Result = (Stream->Error != RestoreStream_Errors::Error_NoError);
+                Result = (Stream->Error == RestoreStream_Errors::Error_NoError);
             }
             return Result;
         }
