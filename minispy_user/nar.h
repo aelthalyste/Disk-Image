@@ -5,6 +5,8 @@
 #endif
 
 #include <stdint.h>
+#include <string>
+
 #include "../inc/minispy.h"
 
 

@@ -82,18 +82,6 @@ struct restore_source{
     };
     
     
-#if 0    
-    // NOTE(Batuhan): 
-    enum{
-        Error_NoError,
-        Error_InsufficentBufferSize,
-        Error_Decompression,
-        Error_NullCompBuffer,
-        Error_NullFileViews,
-        Error_NullArg,
-        Error_Count
-    }Error;
-#endif
     RestoreSource_Errors Error;
     
     
@@ -151,16 +139,6 @@ struct restore_stream{
 	restore_source **Sources;
 	restore_target *Target;
     
-#if 0    
-    enum{
-        Error_NoError,
-        Error_Read,
-        Error_Needle,
-        Error_Write,
-        Error_Count
-    }Error;
-#endif
-    
     RestoreStream_Errors Error;
     
     size_t CSI;
@@ -214,7 +192,7 @@ const void*
 NarReadBackup(restore_source* Rs, size_t *AvailableBytes);
 
 template<typename StrType>
-static inline bool
+inline bool
 NarReadMetadata(StrType path, backup_metadata *bm);
 
 #if _WIN32

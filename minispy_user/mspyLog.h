@@ -17,16 +17,20 @@
 
 #include <stdio.h>
 
-#if 1
+#if 0
+
 #define TIMED_BLOCK__(NAME, Number, ...) timed_block timed_##Number(__COUNTER__, __LINE__, __FUNCTION__, NAME);
 #define TIMED_BLOCK_(NAME, Number, ...)  TIMED_BLOCK__(NAME, Number,  ## __VA__ARGS__)
 #define TIMED_BLOCK(...)                 TIMED_BLOCK_("UNNAMED", __LINE__, ## __VA__ARGS__)
 #define TIMED_NAMED_BLOCK(NAME, ...)     TIMED_BLOCK_(NAME, __LINE__, ## __VA__ARGS__)
+
 #else
+
 #define TIMED_BLOCK__(NAME, Number, ...) 
 #define TIMED_BLOCK_(NAME, Number, ...)  
 #define TIMED_BLOCK(...)                 
 #define TIMED_NAMED_BLOCK(NAME, ...)     
+
 #endif
 
 struct debug_record {
@@ -230,7 +234,6 @@ NarLog(const char *str, ...){
     
 }
 
-
 #define printf(fmt, ...) NarLog(fmt, __VA_ARGS__)
 
 enum rec_or {
@@ -320,12 +323,31 @@ IsSameVolumes(const WCHAR* OpName, const WCHAR VolumeLetter);
 struct volume_backup_inf;
 
 
+
+#if _MANAGED
+public
+#endif
+
+enum class BackupStream_Errors: int{
+    Error_NoError,
+    Error_Read,
+    Error_SetFP,
+    Error_SizeOvershoot,
+    Error_Compression,
+    Error_Count
+};
+
+
 struct stream {
     data_array<nar_record> Records;
     INT32 RecIndex;
     INT32 ClusterIndex;
     HANDLE Handle; //Used for streaming data to C#
     
+    
+    // BackupStream_Errors Error;
+    
+#if 1    
     enum {
         Error_NoError,
         Error_Read,
@@ -334,6 +356,7 @@ struct stream {
         Error_Compression,
         Error_Count
     }Error;
+#endif
     
     const char* GetErrorDescription(){
         
@@ -512,12 +535,6 @@ struct volume_information {
 };
 
 
-// Up to 2GB
-struct file_read {
-    void* Data;
-    int Len;
-};
-
 inline BOOLEAN
 IsNumeric(char val) {
     return val >= '0' && val <= '9';
@@ -529,12 +546,6 @@ CheckStreamCompletedSuccessfully(volume_backup_inf *V){
         return (V->Stream.Error == stream::Error_NoError);
     }
 }
-
-file_read
-NarReadFile(const char* FileName);
-
-inline BOOLEAN
-NarDumpToFile(const char* FileName, void* Data, unsigned int Size);
 
 BOOLEAN
 NarSetVolumeSize(char Letter, int TargetSizeMB);
@@ -763,9 +774,6 @@ AttachVolume(volume_backup_inf* VolInf, BOOLEAN SetActive = TRUE);
 
 BOOLEAN
 NarGetBackupsInDirectory(const wchar_t* Directory, backup_metadata* B, int BufferSize, int* FoundCount);
-
-inline void
-FreeFileRead(file_read FR);
 
 BOOLEAN
 ConnectDriver(PLOG_CONTEXT Ctx);

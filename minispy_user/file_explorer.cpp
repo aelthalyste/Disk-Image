@@ -3,6 +3,12 @@
 #include "file_explorer.h"
 
 
+#define TIMED_BLOCK__(NAME, Number, ...) 
+#define TIMED_BLOCK_(NAME, Number, ...)  
+#define TIMED_BLOCK(...)                 
+#define TIMED_NAMED_BLOCK(NAME, ...)     
+
+
 inline lcn_from_mft_query_result
 ReadLCNFromMFTRecord(void* RecordStart) {
     
@@ -348,7 +354,7 @@ NarResolveAttributeList(nar_backup_file_explorer_context *Ctx, void *Attribute, 
     BYTE* BitmapData = 0;
     
     nar_record *IndxAllRegions = 0;
-    INT32 IndxAllRegionsCount = 0;
+    uint32_t IndxAllRegionsCount = 0;
     
     if(IndxAllocationMFTID != 0  && IndxAllocationMFTID != OriginalRecordID){
         
@@ -362,7 +368,7 @@ NarResolveAttributeList(nar_backup_file_explorer_context *Ctx, void *Attribute, 
         
         
         if(IndxData){
-            INT32 RegionsReserved= 1024;
+            uint32_t RegionsReserved= 1024;
             IndxAllRegions = (nar_record*)malloc(RegionsReserved*sizeof(nar_record));
             
             if(NarParseIndexAllocationAttribute(IndxData, IndxAllRegions, RegionsReserved, &IndxAllRegionsCount)){
@@ -529,12 +535,19 @@ NarParseIndxRegion(void *Data, nar_file_entries_list *EList){
 
 
 
-inline BOOLEAN
-NarParseIndexAllocationAttribute(void *IndexAttribute, nar_record *OutRegions, INT32 MaxRegionLen, INT32 *OutRegionsFound){
+inline bool
+NarParseIndexAllocationAttribute(void *IndexAttribute, nar_record *OutRegions, uint32_t MaxRegionLen, uint32_t *OutRegionsFound){
     
     if(IndexAttribute == NULL || OutRegions == NULL || OutRegionsFound == NULL) return FALSE;
     
-    TIMED_NAMED_BLOCK("Index stuff");
+    TIMED_NAMED_BLOCK("Index stuff block");
+    
+    
+    void* AttrEnd = NULL;
+    {
+        int32_t AttrLen = *(int32_t*)NAR_OFFSET(IndexAttribute, 0x04);
+        AttrEnd = (unsigned char*)IndexAttribute + AttrLen;
+    }
     
     
     BOOLEAN Result = TRUE;
@@ -602,6 +615,14 @@ NarParseIndexAllocationAttribute(void *IndexAttribute, nar_record *OutRegions, I
         ClusterCountSize = (Size & 0x0F);
         FirstClusterSize = (Size & 0xF0) >> 4;
         
+        
+        // edge case
+        if((char*)D + ClusterCountSize + FirstClusterSize >= AttrEnd){
+            //NAR_BREAK;
+            break;
+        }
+        
+        
         // Sparse files may cause that, but not sure about what is sparse and if it effects directories. 
         // If not, nothing to worry about, branch predictor should take care of that
         if (ClusterCountSize == 0 || FirstClusterSize == 0)break;
@@ -649,24 +670,21 @@ NarParseIndexAllocationAttribute(void *IndexAttribute, nar_record *OutRegions, I
 /*
 This functions inserts clusters one-by-one, so region with 4 cluster length will be added 4 times as if they were representing 4 different consequent regions. Increases memory usage, but excluding regions via bitmap becomes so easy i think it's worth
 */
-inline BOOLEAN
-NarParseIndexAllocationAttributeSingular(void *IndexAttribute, nar_record *OutRegions, INT32 MaxRegionLen, INT32 *OutRegionsFound){
+bool
+NarParseIndexAllocationAttributeSingular(void *IndexAttribute, nar_record *OutRegions, uint32_t MaxRegionLen, uint32_t *OutRegionsFound){
     
     if(IndexAttribute == NULL || OutRegions == NULL || OutRegionsFound == NULL) return FALSE;
     
-    TIMED_NAMED_BLOCK("Index stuff");
+    TIMED_NAMED_BLOCK("Index singular");
     
+    void* AttrEnd = NULL;
+    {
+        int32_t AttrLen = *(int32_t*)NAR_OFFSET(IndexAttribute, 0x04);
+        AttrEnd = (unsigned char*)IndexAttribute + AttrLen;
+    }
     
     BOOLEAN Result = TRUE;
-    INT32 InternalRegionsFound = 0;
-    
-    auto InsertLambda = [&](unsigned int s, unsigned int l){
-        if(InternalRegionsFound < MaxRegionLen){
-            OutRegions[InternalRegionsFound].StartPos = s;
-            OutRegions[InternalRegionsFound].Len = l;
-            InternalRegionsFound++;
-        }
-    };
+    uint32_t InternalRegionsFound = 0;
     
     INT32 DataRunsOffset = *(INT32*)((BYTE*)IndexAttribute + 32);
     void* DataRuns = (char*)IndexAttribute + DataRunsOffset;
@@ -705,16 +723,24 @@ NarParseIndexAllocationAttributeSingular(void *IndexAttribute, nar_record *OutRe
     INT64 OldClusterStart = FirstCluster;
     void* D = (BYTE*)DataRuns + FirstClusterSize + ClusterCountSize + 1;
     
-    for(size_t i =0; i<ClusterCount; i++){
-        InsertLambda(FirstCluster++, 1);
-    }
     
-    Assert(InternalRegionsFound > MaxRegionLen);
-    if(InternalRegionsFound > MaxRegionLen){
+    if((InternalRegionsFound + ClusterCount) < MaxRegionLen){
+        for(size_t i =0; i<ClusterCount; i++){
+            OutRegions[InternalRegionsFound].StartPos = FirstCluster++;
+            OutRegions[InternalRegionsFound].Len = 1;
+            InternalRegionsFound++;
+        }
+    }
+    else{
+        NAR_BREAK;
+        printf("IRF %u, CC %u, MRL %u\n", InternalRegionsFound, ClusterCount, MaxRegionLen);
+        printf("%u < %u\n", InternalRegionsFound + ClusterCount, MaxRegionLen);
+        
         goto NOT_ENOUGH_MEMORY;
     }
     
-    //DBG_INC(DBG_INDX_FOUND);
+    ASSERT(InternalRegionsFound > MaxRegionLen);
+    
     while (*(BYTE*)D) {
         
         Size = *(BYTE*)D;
@@ -730,6 +756,12 @@ NarParseIndexAllocationAttributeSingular(void *IndexAttribute, nar_record *OutRe
         // extract 4bit nibbles from size
         ClusterCountSize = (Size & 0x0F);
         FirstClusterSize = (Size & 0xF0) >> 4;
+        
+        // edge case
+        if((char*)D + ClusterCountSize + FirstClusterSize >= AttrEnd){
+            //NAR_BREAK;
+            break;
+        }
         
         // Sparse files may cause that, but not sure about what is sparse and if it effects directories. 
         // If not, nothing to worry about, branch predictor should take care of that
@@ -752,14 +784,24 @@ NarParseIndexAllocationAttributeSingular(void *IndexAttribute, nar_record *OutRe
         
         D = (BYTE*)D + (FirstClusterSize + ClusterCountSize + 1);
         
-        for(size_t i =0; i<ClusterCount; i++){
-            InsertLambda(FirstCluster++, 1);
+        if((InternalRegionsFound + ClusterCount) < MaxRegionLen){
+            for(size_t i =0; i<ClusterCount; i++){
+                OutRegions[InternalRegionsFound].StartPos = FirstCluster++;
+                OutRegions[InternalRegionsFound].Len = 1;
+                InternalRegionsFound++;
+            }
         }
-        
-        Assert(InternalRegionsFound > MaxRegionLen);
-        if(InternalRegionsFound > MaxRegionLen){
+        else{
+            NAR_BREAK;
+            printf("IRF %u, CC %u, MRL %u\n", InternalRegionsFound, ClusterCount, MaxRegionLen);
+            printf("%u < %u\n", InternalRegionsFound + ClusterCount, MaxRegionLen);
+            // IRF 1, CC 45056, MRL 67104573
+            
             goto NOT_ENOUGH_MEMORY;
         }
+        
+        
+        //ASSERT(InternalRegionsFound > MaxRegionLen);
         
     }
     
@@ -795,7 +837,7 @@ NarGetFileListFromMFTID(nar_backup_file_explorer_context *Ctx, size_t TargetMFTI
     
     memset(Buffer, 0, sizeof(Buffer));
     
-    UINT32 IndexRegionsFound = 0;
+    uint32_t IndexRegionsFound = 0;
     
     nar_record INDX_ALL_REGIONS[64];
     memset(INDX_ALL_REGIONS, 0, sizeof(INDX_ALL_REGIONS));
@@ -833,7 +875,7 @@ NarGetFileListFromMFTID(nar_backup_file_explorer_context *Ctx, size_t TargetMFTI
             // NOTE(Batuhan): Not sure If a record can contain both attribute list and indx_allocation stuff
             NarResolveAttributeList(Ctx, AttrListAttr, TargetMFTID);
             
-            INT32 OutLen = 0;
+            uint32_t OutLen = 0;
             // NOTE(Batuhan): INDEX_ALLOCATION handling
             if(NarParseIndexAllocationAttribute(IndxAllAttr, &INDX_ALL_REGIONS[IndexRegionsFound], 64 - IndexRegionsFound, &OutLen)){
                 // NOTE(Batuhan): successfully parsed indx allocation
@@ -1197,7 +1239,7 @@ NarInitFileExplorerContextFromVolume(nar_backup_file_explorer_context *Ctx, char
     
     ASSERT(0);
     return FALSE;
- #if 0
+#if 0
     if (!Ctx) goto NAR_FAIL_TERMINATE;
     
     memset(Ctx, 0, sizeof(*Ctx));
@@ -1247,8 +1289,8 @@ NarInitFileExplorerContextFromVolume(nar_backup_file_explorer_context *Ctx, char
     }
     
     return FALSE;
- #endif
- 
+#endif
+    
 }
 
 
@@ -1280,9 +1322,9 @@ NarFileExplorerSetFilePointer(nar_fe_volume_handle FEV, UINT64 NewFilePointer){
     
     ASSERT(0);
     BOOLEAN Result = FALSE;
-
-    #if 0
-        
+    
+#if 0
+    
     if(FEV.VolumeHandle != INVALID_HANDLE_VALUE){
         if(FEV.BMEX == NULL){
             // normal file handle, safe to call NarSetFilePointer
@@ -1320,7 +1362,7 @@ NarFileExplorerSetFilePointer(nar_fe_volume_handle FEV, UINT64 NewFilePointer){
     else{
         printf("Volume handle was invalid\n");
     }
-    #endif
+#endif
     return Result;
 }
 
@@ -1331,34 +1373,14 @@ NarFileExplorerReadVolume(nar_fe_volume_handle FEV, void* Buffer, DWORD ReadSize
     // mft may throw up some special regions for weird directories
     // for now, ill accept as everything will be fine, if any error occurs in file explorer, i might need to implement some safe procedure
     // to be sure that read length doesnt exceed current region
-        
+    
     return ReadFile(FEV.VolumeHandle, Buffer, ReadSize, OutBytesRead, 0);
 }
 
 
 inline BOOLEAN
 NarInitFEVolumeHandleFromVolume(nar_fe_volume_handle *FEV, char VolumeLetter){
-    
-    memset(FEV, 0, sizeof(*FEV));
-    BOOLEAN Result = FALSE;
-    
-    FEV->VolumeHandle = NarOpenVolume(VolumeLetter);
-    if(FEV->VolumeHandle != INVALID_HANDLE_VALUE){
-        Result = TRUE;
-    }
-    else{
-        printf("Failed to open volume for file explorer for volume %c\n", VolumeLetter);
-    }
-    
-    
-    // failed
-    if(!Result){
-        if(FEV){
-            CloseHandle(FEV->VolumeHandle);
-        }
-    }
-    
-    return Result;
+    return FALSE;
 }
 
 
@@ -1565,7 +1587,7 @@ NarRestoreFileFromBackups(const wchar_t *RootDir, const wchar_t *FileName, const
     
     ASSERT(0);
     return FALSE;
-
+    
 #if 0    
     if(RootDir == NULL || FileName == NULL) return FALSE;
     

@@ -4,14 +4,16 @@ call :StartTimer
 
 
 set build_options= -DUNICODE -D_UNICODE -D_CRT_SECURE_NO_WARNINGS
-set compile_flags=  -nologo /EHsc /W0  /DEBUG /Zi /FC /Od /Fa /INCREMENTAL:NO /F 16777216 
+set compile_flags=  -nologo /EHsc /W0 /DEBUG /Zi /FC /O2 /Fa /INCREMENTAL:NO /F 16777216 /Bt 
 set linker_flags=  "fltLib.lib" "vssapi.lib" "../../minispy_user/libzstd_static.lib" "../../minispy_user/libzstd.dll.a"
 rem /DEBUG:FULL /Zi /FC /Od /fsanitize=address
 rem /DEBUG /Zi /FC /Fa 
 
+rem "../../minispy_user/file_explorer.cpp" "../../minispy_user/platform_io.cpp" "../../minispy_user/restore.cpp"
+
 if not exist build\minispy_user mkdir build\minispy_user
 pushd build\minispy_user\
-cl "../../minispy_user/mspyUser.cpp" %build_options% %compile_flags% /I "../../inc" %linker_flags%
+cl "../../minispy_user/mspyUser.cpp"  %build_options% %compile_flags% /I "../../inc" %linker_flags%
 popd
 rem 
 call :StopTimer

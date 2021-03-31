@@ -38,6 +38,7 @@ _Analysis_mode_(_Analysis_code_type_user_code_)
 #include <vsbackup.h>
 #include <vsmgmt.h>
 #include <wchar.h>
+#include <string>
 
 #include "iphlpapi.h"
 
@@ -57,9 +58,11 @@ _Analysis_mode_(_Analysis_code_type_user_code_)
 #include "minispy.h"
 #include "mspyLog.h"
 
+#if 1
 #include "platform_io.cpp"
 #include "file_explorer.cpp"
 #include "restore.cpp"
+#endif
 
 
 #if 0
@@ -86,6 +89,8 @@ THIS FUNCTION REALLOCATES MEMORY VIA realloc(), DO NOT PUT MEMORY OTHER THAN ALL
 */
 inline void
 MergeRegions(data_array<nar_record>* R) {
+    
+    TIMED_BLOCK();
     
     uint32_t MergedRecordsIndex = 0;
     uint32_t CurrentIter = 0;
@@ -283,6 +288,16 @@ CompareNarRecords(const void* v1, const void* v2) {
     
     nar_record* n1 = (nar_record*)v1;
     nar_record* n2 = (nar_record*)v2;
+    
+    if(n1->StartPos == n2->StartPos){
+        return (BOOL)((int64_t)n1->Len - (int64_t)n2->Len);
+    }
+    else{
+        return (BOOL)((int64_t)n1->StartPos - (int64_t)n2->StartPos);
+    }
+    
+#if 0    
+    // old version
     if (n1->StartPos == n2->StartPos && n2->Len < n1->Len) {
         return 1;
     }
@@ -291,6 +306,7 @@ CompareNarRecords(const void* v1, const void* v2) {
         return 1;
     }
     return -1;
+#endif
     
 }
 
@@ -440,10 +456,12 @@ Split(std::wstring str, std::wstring delimiter) {
 data_array<nar_record>
 GetMFTandINDXLCN(char VolumeLetter, HANDLE VolumeHandle) {
     
+    TIMED_BLOCK();
+    
     BOOLEAN JustExtractMFTRegions = FALSE;
     
-    uint32_t MEMORY_BUFFER_SIZE = 1024LL * 1024LL * 512;
-    uint32_t ClusterExtractedBufferSize = 1024 * 1024 * 128;
+    uint32_t MEMORY_BUFFER_SIZE = 1024LL * 1024LL * 1;
+    uint32_t ClusterExtractedBufferSize = 1024 * 1024 * 512;
     
     uint32_t MaxOutputLen = ClusterExtractedBufferSize/sizeof(nar_record);
     
@@ -453,11 +471,13 @@ GetMFTandINDXLCN(char VolumeLetter, HANDLE VolumeHandle) {
     unsigned int ClusterExtractedCount = 0;
     
     if (ClustersExtracted != 0) {
-        memset(ClustersExtracted, 0, ClusterExtractedBufferSize);
+        //memset(ClustersExtracted, 0, ClusterExtractedBufferSize);
     }
     
     auto AutoCompressAndResizeOutput = [&](){
         if(ClusterExtractedCount >= MaxOutputLen/2){
+            TIMED_NAMED_BLOCK("Autocompression stuff");
+            
             printf("Sort&Merge %u regions\n", ClusterExtractedCount);
             qsort(ClustersExtracted, ClusterExtractedCount, sizeof(nar_record), CompareNarRecords);
             data_array<nar_record> temp;
@@ -524,6 +544,15 @@ GetMFTandINDXLCN(char VolumeLetter, HANDLE VolumeHandle) {
             
             unsigned int MFTRegionCount = ClusterExtractedCount;
             
+            {
+                size_t TotalFC = 0;
+                printf("Region count %u\n", MFTRegionCount);
+                for(unsigned int MFTOffsetIndex = 0; MFTOffsetIndex < MFTRegionCount; MFTOffsetIndex++){
+                    TotalFC += ClustersExtracted[MFTOffsetIndex].Len;
+                }
+                printf("Total file count is %I64u\n", TotalFC*4ull);
+            }
+            
             for (unsigned int MFTOffsetIndex = 0; MFTOffsetIndex < MFTRegionCount; MFTOffsetIndex++) {
                 
                 ULONGLONG Offset = (ULONGLONG)ClustersExtracted[MFTOffsetIndex].StartPos * (uint64_t)ClusterSize;
@@ -545,6 +574,8 @@ GetMFTandINDXLCN(char VolumeLetter, HANDLE VolumeHandle) {
                             
                             for (unsigned int FileRecordIndex = 0; FileRecordIndex < TargetFileCount; FileRecordIndex++) {
                                 
+                                TIMED_NAMED_BLOCK("File record parser");
+                                
                                 void* FileRecord = (BYTE*)FileBuffer + (uint64_t)FileRecordSize * (uint64_t)FileRecordIndex;
                                 
                                 // file flags are at 22th offset in the record
@@ -552,6 +583,7 @@ GetMFTandINDXLCN(char VolumeLetter, HANDLE VolumeHandle) {
                                     // block doesnt start with 'FILE0', skip
                                     continue;
                                 }
+                                
                                 void *IndxOffset = NarFindFileAttributeFromFileRecord(FileRecord, NAR_INDEX_ALLOCATION_FLAG);
                                 void *BitmapAttr = NarFindFileAttributeFromFileRecord(FileRecord, NAR_BITMAP_FLAG);
                                 
@@ -559,14 +591,14 @@ GetMFTandINDXLCN(char VolumeLetter, HANDLE VolumeHandle) {
                                     AutoCompressAndResizeOutput();
                                     
                                     if(BitmapAttr == NULL){
-                                        INT32 RegFound = 0;
+                                        uint32_t RegFound = 0;
                                         NarParseIndexAllocationAttribute(IndxOffset, &ClustersExtracted[ClusterExtractedCount], MaxOutputLen - ClusterExtractedCount, &RegFound);
                                         ClusterExtractedCount += RegFound;
                                     }
                                     else{
                                         // NOTE(Batuhan): parses indx allocation to one-cluster granuality blocks, to make bitmap parsing trivial. increases memory usage(at parsing stage, not for the final outcome), but makes parsing much easier.
-                                        NAR_BREAK_CODE();
-                                        INT32 RegFound = 0;
+                                        
+                                        uint32_t RegFound = 0;
                                         NarParseIndexAllocationAttributeSingular(IndxOffset, &ClustersExtracted[ClusterExtractedCount], MaxOutputLen - ClusterExtractedCount, &RegFound);
                                         
                                         
@@ -575,6 +607,7 @@ GetMFTandINDXLCN(char VolumeLetter, HANDLE VolumeHandle) {
                                         
                                         size_t ceil = MIN(RegFound, BLen);
                                         for(size_t ci = 0; ci<BLen; ci++){
+                                            TIMED_NAMED_BLOCK("Bitmap merge stuff");
                                             size_t ByteIndex = ci/8;
                                             size_t BitIndex = ci%8;
                                             if(Bitmap[ByteIndex] & (1 << BitIndex)){
@@ -1353,6 +1386,7 @@ SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, DotNetStreamInf* SI, boo
     }
     else{
         
+        // NOTE(Batuhan): Compression stuff
         if(ShouldCompress){
             
             VolInf->Stream.CompressionBuffer = malloc(NAR_COMPRESSION_FRAME_SIZE);
@@ -1372,7 +1406,7 @@ SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, DotNetStreamInf* SI, boo
                     ZSTD_CCtx_setParameter(VolInf->Stream.CCtx, ZSTD_c_nbWorkers, ThreadBounds.upperBound);
                 }
                 else{
-                    ASSERT(0);
+                    NAR_BREAK;
                     printf("Couldn't query worker thread bounds for compression, zstd error code : %X\n", ThreadBounds.error);
                     ZSTD_CCtx_setParameter(VolInf->Stream.CCtx, ZSTD_c_nbWorkers, 0);
                 }
@@ -1815,90 +1849,6 @@ NarRepairBoot(char OSVolumeLetter, char BootPartitionLetter) {
 }
 
 
-
-file_read
-NarReadFile(const char* FileName) {
-    file_read Result = { 0 };
-    HANDLE File = CreateFileA(FileName, GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
-    if (File != INVALID_HANDLE_VALUE) {
-        DWORD BytesRead = 0;
-        Result.Len = (int)GetFileSize(File, 0); // safe to assume file size < 2 GB
-        if (Result.Len == 0) return Result;
-        Result.Data = malloc((size_t)Result.Len);
-        if (Result.Data) {
-            ReadFile(File, Result.Data, (DWORD)Result.Len, &BytesRead, 0);
-            if (BytesRead == (DWORD)Result.Len) {
-                // NOTE success
-            }
-            else {
-                free(Result.Data);
-                printf("Read %i bytes instead of %i\n", BytesRead, Result.Len);
-            }
-        }
-        CloseHandle(File);
-    }
-    else {
-        printf("Can't create file: %s\n", FileName);
-    }
-    //CreateFileA(FNAME, GENERIC_WRITE, 0,0 ,CREATE_NEW, 0,0)
-    return Result;
-}
-
-
-file_read
-NarReadFile(const wchar_t* FileName) {
-    file_read Result = { 0 };
-    HANDLE File = CreateFileW(FileName, GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
-    if (File != INVALID_HANDLE_VALUE) {
-        DWORD BytesRead = 0;
-        Result.Len = (DWORD)GetFileSize(File, 0); // safe conversion
-        if (Result.Len == 0) return Result;
-        Result.Data = malloc((size_t)Result.Len);
-        if (Result.Data) {
-            ReadFile(File, Result.Data, Result.Len, &BytesRead, 0);
-            if (BytesRead == (DWORD)Result.Len) {
-                // NOTE success
-            }
-            else {
-                free(Result.Data);
-                printf("Read %i bytes instead of %i\n", BytesRead, Result.Len);
-            }
-        }
-        CloseHandle(File);
-    }
-    else {
-        printf("Can't create file: %S\n", FileName);
-    }
-    return Result;
-}
-
-inline void
-FreeFileRead(file_read FR) {
-    free(FR.Data);
-}
-
-
-inline BOOLEAN
-NarDumpToFile(const char* FileName, void* Data, unsigned int Size) {
-    BOOLEAN Result = FALSE;
-    HANDLE File = CreateFileA(FileName, GENERIC_WRITE, 0, 0, CREATE_ALWAYS, 0, 0);
-    if (File != INVALID_HANDLE_VALUE) {
-        DWORD BytesWritten = 0;
-        WriteFile(File, Data, Size, &BytesWritten, 0);
-        if (BytesWritten == Size) {
-            Result = TRUE;
-        }
-        else {
-            printf("Written %i bytes instead of %i\n", BytesWritten, Size);
-        }
-        CloseHandle(File);
-    }
-    else {
-        printf("Can't create file: %s\n", FileName);
-    }
-    //CreateFileA(FNAME, GENERIC_WRITE, 0,0 ,CREATE_NEW, 0,0)
-    return Result;
-}
 
 
 BOOLEAN
@@ -2480,7 +2430,7 @@ NarOpenVolume(char Letter) {
     if (Volume != INVALID_HANDLE_VALUE) {
         
         
-#if 1        
+#if 0        
         if (DeviceIoControl(Volume, FSCTL_LOCK_VOLUME, 0, 0, 0, 0, 0, 0)) {
             
         }
@@ -4014,7 +3964,7 @@ DEBUG_Restore(){
     nar_arena Arena = ArenaInit(Mem, MemLen);
     char TargetLetter = 'G';
     backup_metadata bm;
-    NarReadMetadata(MetadataPath, &bm);
+    //NarReadMetadata(MetadataPath, &bm);
     
 #if 0    
     if (NarSetVolumeSize(TargetLetter, bm.VolumeTotalSize/(1024*1024))) {
@@ -4028,7 +3978,7 @@ DEBUG_Restore(){
     restore_target *Target = InitVolumeTarget(TargetLetter, &Arena);
     restore_stream *Stream = 0;
     if(Target){
-        Stream = InitFileRestoreStream(MetadataPath, Target, &Arena, Megabyte(16));
+        //Stream = InitFileRestoreStream(MetadataPath, Target, &Arena, Megabyte(16));
     }
     
     while(AdvanceStream(Stream)){
@@ -4064,6 +4014,16 @@ DEBUG_FileExplorerQuery(){
 
 int
 main(int argc, char* argv[]) {
+    
+    printf("started !\n");
+    
+    HANDLE H = NarOpenVolume('D');
+    if(H != INVALID_HANDLE_VALUE){
+        GetMFTandINDXLCN('D', H);
+    }
+    printf("end!\n");
+    
+    return 0;
     
     if(0){
         backup_metadata *B = new backup_metadata[100];
@@ -4299,6 +4259,19 @@ DisplayError(DWORD Code) {
 
 inline void
 PrintDebugRecords() {
+    
+    
+#if 0    
+    SYSTEMTIME Time;
+    char tbuf[80];
+    
+    snprintf(tbuf, 80, "NarPerformanceDump [%02d/%02d/%04d | %02d:%02d:%02d]", );
+    
+    GetLocalTime(&Time);
+    
+    FILE *F = fopen("NarPerformanceDump", "rb");
+#endif
+    
     
     int len = sizeof(GlobalDebugRecordArray) / sizeof(debug_record);
     for (int i = 0; i < len; i++) {

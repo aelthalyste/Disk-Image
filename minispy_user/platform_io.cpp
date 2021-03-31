@@ -76,7 +76,7 @@ NarOpenFileView(const std::wstring &fn){
 	Result.impl = (imp_nar_file_view*)malloc(sizeof(imp_nar_file_view));
 	if(NULL == Result.impl) 
 		goto FV_ERROR;
-
+    
 	FileSize = NarGetFileSize(std::wstring(fn));
     MappingHandle = 0;
 	FileHandle = CreateFileW(fn.c_str(), GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, 0, OPEN_ALWAYS, 0, 0);    
@@ -172,6 +172,95 @@ NarFileReadNBytes(std::wstring path, void *mem, size_t N){
     }
     return Result;
 }
+
+
+
+
+file_read
+NarReadFile(const char* FileName) {
+    file_read Result = { 0 };
+    HANDLE File = CreateFileA(FileName, GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
+    if (File != INVALID_HANDLE_VALUE) {
+        DWORD BytesRead = 0;
+        Result.Len = (int)GetFileSize(File, 0); // safe to assume file size < 2 GB
+        if (Result.Len == 0) return Result;
+        Result.Data = malloc((size_t)Result.Len);
+        if (Result.Data) {
+            ReadFile(File, Result.Data, (DWORD)Result.Len, &BytesRead, 0);
+            if (BytesRead == (DWORD)Result.Len) {
+                // NOTE success
+            }
+            else {
+                free(Result.Data);
+                printf("Read %i bytes instead of %i\n", BytesRead, Result.Len);
+            }
+        }
+        CloseHandle(File);
+    }
+    else {
+        printf("Can't create file: %s\n", FileName);
+    }
+    //CreateFileA(FNAME, GENERIC_WRITE, 0,0 ,CREATE_NEW, 0,0)
+    return Result;
+}
+
+
+file_read
+NarReadFile(const wchar_t* FileName) {
+    file_read Result = { 0 };
+    HANDLE File = CreateFileW(FileName, GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
+    if (File != INVALID_HANDLE_VALUE) {
+        DWORD BytesRead = 0;
+        Result.Len = (DWORD)GetFileSize(File, 0); // safe conversion
+        if (Result.Len == 0) return Result;
+        Result.Data = malloc((size_t)Result.Len);
+        if (Result.Data) {
+            ReadFile(File, Result.Data, Result.Len, &BytesRead, 0);
+            if (BytesRead == (DWORD)Result.Len) {
+                // NOTE success
+            }
+            else {
+                free(Result.Data);
+                printf("Read %i bytes instead of %i\n", BytesRead, Result.Len);
+            }
+        }
+        CloseHandle(File);
+    }
+    else {
+        printf("Can't create file: %S\n", FileName);
+    }
+    return Result;
+}
+
+void
+FreeFileRead(file_read FR) {
+    free(FR.Data);
+}
+
+
+bool
+NarDumpToFile(const char* FileName, void* Data, unsigned int Size) {
+    BOOLEAN Result = FALSE;
+    HANDLE File = CreateFileA(FileName, GENERIC_WRITE, 0, 0, CREATE_ALWAYS, 0, 0);
+    if (File != INVALID_HANDLE_VALUE) {
+        DWORD BytesWritten = 0;
+        WriteFile(File, Data, Size, &BytesWritten, 0);
+        if (BytesWritten == Size) {
+            Result = TRUE;
+        }
+        else {
+            printf("Written %i bytes instead of %i\n", BytesWritten, Size);
+        }
+        CloseHandle(File);
+    }
+    else {
+        printf("Can't create file: %s\n", FileName);
+    }
+    //CreateFileA(FNAME, GENERIC_WRITE, 0,0 ,CREATE_NEW, 0,0)
+    return Result;
+}
+
+
 
 #endif // MSVC DEF
 

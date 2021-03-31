@@ -16,6 +16,14 @@ struct nar_file_read{
     int Len;
 };
 
+
+// Up to 2GB
+struct file_read {
+    void* Data;
+    int Len;
+};
+
+
 nar_file_view 
 NarOpenFileView(const std::string &fn);
 
@@ -47,4 +55,17 @@ size_t
 NarGetFileSize(const std::wstring &c);
 
 
+
+
+file_read
+NarReadFile(const char* FileName) ;
+
+file_read
+NarReadFile(const wchar_t* FileName);
+
+void
+FreeFileRead(file_read FR);
+
+bool
+NarDumpToFile(const char* FileName, void* Data, unsigned int Size);
 

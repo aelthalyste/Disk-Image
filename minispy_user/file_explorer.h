@@ -2,6 +2,7 @@
 
 #include "nar.h"
 #include "platform_io.h"
+#include <vector>
 
 
 
@@ -244,11 +245,11 @@ NarGetBitmapAttributeData(void *BitmapAttributeStart);
 inline INT32
 NarGetBitmapAttributeDataLen(void *BitmapAttributeStart);
 
-inline BOOLEAN
-NarParseIndexAllocationAttribute(void *IndexAttribute, nar_record *OutRegions, INT32 MaxRegionLen, INT32 *OutRegionsFound);
+inline bool
+NarParseIndexAllocationAttribute(void *IndexAttribute, nar_record *OutRegions, uint32_t MaxRegionLen, uint32_t *OutRegionsFound);
 
-inline BOOLEAN
-NarParseIndexAllocationAttributeSingular(void *IndexAttribute, nar_record *OutRegions, INT32 MaxRegionLen, INT32 *OutRegionsFound);
+bool
+NarParseIndexAllocationAttributeSingular(void *IndexAttribute, nar_record *OutRegions, uint32_t MaxRegionLen, uint32_t *OutRegionsFound);
 
 inline void
 NarParseIndxRegion(void *Data, nar_file_entries_list *EList);

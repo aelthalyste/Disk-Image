@@ -2,7 +2,7 @@
 
 
 template<typename StrType>
-static inline bool
+inline bool
 NarReadMetadata(StrType path, backup_metadata* bm) {
     bool Result = false;
     if (NULL == bm)
