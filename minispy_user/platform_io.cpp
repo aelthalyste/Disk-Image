@@ -287,12 +287,12 @@ NarGetFileDirectory(const wchar_t *arg_fn){
     return L"";
 }
 
-nar_file_read
+file_read
 NarReadFileNBytes(const char *arg_fn){
 	
 }
 
-nar_file_read
+file_read
 NarReadFileNBytes(const wchar_t *arg_fn){
 	
 }

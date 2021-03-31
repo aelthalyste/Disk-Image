@@ -32,6 +32,7 @@ _Analysis_mode_(_Analysis_code_type_user_code_)
 #include <strsafe.h>
 #include <functional>
 #include <winioctl.h>
+#include <emmintrin.h>
 
 #include <vss.h>
 #include <vswriter.h>
@@ -81,6 +82,7 @@ narfree(void* m){
 
 #endif
 
+unsigned int GlobalReadFileCallCount = 0;
 
 
 /*
@@ -460,8 +462,8 @@ GetMFTandINDXLCN(char VolumeLetter, HANDLE VolumeHandle) {
     
     BOOLEAN JustExtractMFTRegions = FALSE;
     
-    uint32_t MEMORY_BUFFER_SIZE = 1024LL * 1024LL * 1;
-    uint32_t ClusterExtractedBufferSize = 1024 * 1024 * 512;
+    uint32_t MEMORY_BUFFER_SIZE = 1024LL * 1024LL * 256;
+    uint32_t ClusterExtractedBufferSize = 1024 * 1024 * 128;
     
     uint32_t MaxOutputLen = ClusterExtractedBufferSize/sizeof(nar_record);
     
@@ -572,23 +574,64 @@ GetMFTandINDXLCN(char VolumeLetter, HANDLE VolumeHandle) {
                         
                         if (ReadFile(VolumeHandle, FileBuffer, TargetFileCount * 1024, &BR, 0) && BR == TargetFileCount * 1024) {
                             
+                            GlobalReadFileCallCount++;
+                            
+                            
                             for (unsigned int FileRecordIndex = 0; FileRecordIndex < TargetFileCount; FileRecordIndex++) {
+                                
                                 
                                 TIMED_NAMED_BLOCK("File record parser");
                                 
                                 void* FileRecord = (BYTE*)FileBuffer + (uint64_t)FileRecordSize * (uint64_t)FileRecordIndex;
                                 
+                                
+#if 1                                
+                                _mm_prefetch((const char*)FileRecord + 1024*1, _MM_HINT_T0);
+                                _mm_prefetch((const char*)FileRecord + 1024*2, _MM_HINT_T0);
+                                _mm_prefetch((const char*)FileRecord + 1024*2, _MM_HINT_T0);
+                                _mm_prefetch((const char*)FileRecord + 1024*4, _MM_HINT_T0);
+                                
+                                
+                                _mm_prefetch((const char*)FileRecord + 1024*5, _MM_HINT_T0);
+                                _mm_prefetch((const char*)FileRecord + 1024*6, _MM_HINT_T0);
+                                _mm_prefetch((const char*)FileRecord + 1024*7, _MM_HINT_T0);
+                                _mm_prefetch((const char*)FileRecord + 1024*8, _MM_HINT_T0);
+                                
+                                
+                                _mm_prefetch((const char*)FileRecord + 1024*9, _MM_HINT_T0);
+                                _mm_prefetch((const char*)FileRecord + 1024*10, _MM_HINT_T0);
+                                _mm_prefetch((const char*)FileRecord + 1024*11, _MM_HINT_T0);
+                                _mm_prefetch((const char*)FileRecord + 1024*12, _MM_HINT_T0);
+                                
+                                
+                                _mm_prefetch((const char*)FileRecord + 1024*13, _MM_HINT_T0);
+                                _mm_prefetch((const char*)FileRecord + 1024*14, _MM_HINT_T0);
+                                _mm_prefetch((const char*)FileRecord + 1024*15, _MM_HINT_T0);
+                                _mm_prefetch((const char*)FileRecord + 1024*16, _MM_HINT_T0);
+#endif
+                                
+                                
                                 // file flags are at 22th offset in the record
                                 if (*(INT32*)FileRecord != 'ELIF') {
+                                    
                                     // block doesnt start with 'FILE0', skip
                                     continue;
                                 }
                                 
+#if 1                                
+                                _mm_prefetch((const char*)FileRecord, _MM_HINT_T0);
+                                _mm_prefetch((const char*)FileRecord + 0x40, _MM_HINT_T0);
+                                _mm_prefetch((const char*)FileRecord + 0x80, _MM_HINT_T0);
+                                _mm_prefetch((const char*)FileRecord + 0xC0, _MM_HINT_T0);
+#endif
+                                
                                 void *IndxOffset = NarFindFileAttributeFromFileRecord(FileRecord, NAR_INDEX_ALLOCATION_FLAG);
-                                void *BitmapAttr = NarFindFileAttributeFromFileRecord(FileRecord, NAR_BITMAP_FLAG);
+                                
                                 
                                 if(IndxOffset != NULL){
                                     AutoCompressAndResizeOutput();
+                                    
+                                    void *BitmapAttr = NarFindFileAttributeFromFileRecord(FileRecord, NAR_BITMAP_FLAG);
                                     
                                     if(BitmapAttr == NULL){
                                         uint32_t RegFound = 0;
@@ -626,6 +669,7 @@ GetMFTandINDXLCN(char VolumeLetter, HANDLE VolumeHandle) {
                                 }
                                 
                             }
+                            
                             
                             
                             
@@ -670,27 +714,31 @@ GetMFTandINDXLCN(char VolumeLetter, HANDLE VolumeHandle) {
     Result.Data = ClustersExtracted;
     Result.Count = ClusterExtractedCount;
     
+    
     if(Result.Count > 0){
         printf("Will be sorting&merging %u regions\n", Result.Count); 
         qsort(Result.Data, Result.Count, sizeof(nar_record), CompareNarRecords);
         MergeRegions(&Result);
     }
     
+    
+    
     ULONGLONG VolumeSize = NarGetVolumeTotalSize(VolumeLetter);
     uint32_t TruncateIndex = 0;
     for (uint32_t i = 0; i < Result.Count; i++) {
         if ((ULONGLONG)Result.Data[i].StartPos * (ULONGLONG)ClusterSize + (ULONGLONG)Result.Data[i].Len * ClusterSize > VolumeSize) {
+            NAR_BREAK;
             TruncateIndex = i;
             break;
         }
     }
     
+    ASSERT(TruncateIndex == 0);
+    
     if (TruncateIndex > 0) {
-        
         printf("INDEX_ALLOCATION blocks exceeds volume size, truncating from index %i\n", TruncateIndex);
         Result.Data = (nar_record*)realloc(Result.Data, TruncateIndex * sizeof(nar_record));
         Result.Count = TruncateIndex;
-        
     }
     
     return Result;
@@ -3955,18 +4003,87 @@ NarInitPool(void *Memory, int MemorySize, int PoolSize){
 
 #include<iostream>
 
+bool SetDiskRestore(int DiskID, wchar_t Letter, backup_metadata *BM) {
+    
+    char DiskType = (char)BM->DiskType;
+    
+    int VolSizeMB = BM->VolumeTotalSize/(1024ull* 1024ull) + 1;
+    int SysPartitionMB = BM->GPT_EFIPartitionSize / (1024ull * 1024ull);
+    int RecPartitionMB = 0;
+    
+    char BootLetter = 0;
+    {
+        DWORD Drives = GetLogicalDrives();
+        
+        for (int CurrentDriveIndex = 0; CurrentDriveIndex < 26; CurrentDriveIndex++) {
+            if (Drives & (1 << CurrentDriveIndex) || ('A' + (char)CurrentDriveIndex) == (char)Letter) {
+                continue;
+            }
+            else {
+                BootLetter = ('A' + (char)CurrentDriveIndex);
+                break;
+            }
+        }
+    }
+    
+    if (BootLetter != 0) {
+        if (DiskType == NAR_DISKTYPE_GPT) {
+            if (BM->IsOSVolume) {
+                NarCreateCleanGPTBootablePartition(DiskID, VolSizeMB, SysPartitionMB, RecPartitionMB, Letter, BootLetter);
+            }
+            else {
+                NarCreateCleanGPTPartition(DiskID, VolSizeMB, Letter);
+            }
+        }
+        if (DiskType == NAR_DISKTYPE_MBR) {
+            if (BM->IsOSVolume) {
+                NarCreateCleanMBRBootPartition(DiskID, Letter, VolSizeMB, SysPartitionMB, RecPartitionMB, BootLetter);
+            }
+            else {
+                NarCreateCleanMBRPartition(DiskID, Letter, VolSizeMB);
+            }
+        }
+        
+    }
+    else {
+        return false;
+    }
+    
+    
+    return true;
+}
+
+
 void
 DEBUG_Restore(){
     
     size_t MemLen = Megabyte(250);
-    std::wstring MetadataPath = L"NAR_M_FULLG19995718899140581-.narmd";
+    std::wstring MetadataPath = L"";
+    int DiskID;
+    wchar_t TargetLetter;
+    
+    std::cout<<"Enter metadata path\n";
+    std::wcin>>MetadataPath;
+    
+    std::cout<<"Enter disk id\n";
+    std::cin>>DiskID;
+    
+    std::cout<<"Enter target letter\n";
+    std::wcin>>TargetLetter;
+    
+    backup_metadata bm;
+    NarReadMetadata(MetadataPath, &bm);
+    
+    if(false == NarReadMetadata(MetadataPath, &bm)){
+        std::wcout<<L"Unable to read metadata "<<MetadataPath<<"\n";
+    }
+    
+    SetDiskRestore(DiskID, TargetLetter, &bm);
+    
     void* Mem = VirtualAlloc(0, MemLen, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
     nar_arena Arena = ArenaInit(Mem, MemLen);
-    char TargetLetter = 'G';
-    backup_metadata bm;
-    //NarReadMetadata(MetadataPath, &bm);
     
-#if 0    
+#if 1    
     if (NarSetVolumeSize(TargetLetter, bm.VolumeTotalSize/(1024*1024))) {
         NarFormatVolume(TargetLetter);
     }
@@ -3978,7 +4095,7 @@ DEBUG_Restore(){
     restore_target *Target = InitVolumeTarget(TargetLetter, &Arena);
     restore_stream *Stream = 0;
     if(Target){
-        //Stream = InitFileRestoreStream(MetadataPath, Target, &Arena, Megabyte(16));
+        Stream = InitFileRestoreStream(MetadataPath, Target, &Arena, Megabyte(16));
     }
     
     while(AdvanceStream(Stream)){
@@ -4012,55 +4129,96 @@ DEBUG_FileExplorerQuery(){
     
 }
 
+void
+DEBUG_Parser(){
+    
+    file_read r = NarReadFile("C:\\tmp\\mftdump");
+    
+    uint64_t MaxOutputLen = 1024ull*1024ull*512ull;
+    
+    nar_record *ClustersExtracted = (nar_record*)VirtualAlloc(0, MaxOutputLen*sizeof(nar_record), MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+    unsigned int ClusterExtractedCount = 0;
+    
+    unsigned int TotalFC = r.Len/1024u;
+    
+    for(unsigned int FileRecordIndex = 0; FileRecordIndex < TotalFC; FileRecordIndex++){
+        void* FileRecord = (BYTE*)r.Data + (uint64_t)1024 * (uint64_t)FileRecordIndex;
+        
+        if (*(INT32*)FileRecord != 'ELIF') {
+            // block doesnt start with 'FILE0', skip
+            continue;
+        }
+        
+        void *IndxOffset = NarFindFileAttributeFromFileRecord(FileRecord, NAR_INDEX_ALLOCATION_FLAG);
+        
+        
+        if(IndxOffset != NULL){
+            
+            void *BitmapAttr = NarFindFileAttributeFromFileRecord(FileRecord, NAR_BITMAP_FLAG);
+            
+            if(BitmapAttr == NULL){
+                uint32_t RegFound = 0;
+                NarParseIndexAllocationAttribute(IndxOffset, &ClustersExtracted[ClusterExtractedCount], MaxOutputLen - ClusterExtractedCount, &RegFound);
+                ClusterExtractedCount += RegFound;
+            }
+            else{
+                // NOTE(Batuhan): parses indx allocation to one-cluster granuality blocks, to make bitmap parsing trivial. increases memory usage(at parsing stage, not for the final outcome), but makes parsing much easier.
+                
+                uint32_t RegFound = 0;
+                NarParseIndexAllocationAttributeSingular(IndxOffset, &ClustersExtracted[ClusterExtractedCount], MaxOutputLen - ClusterExtractedCount, &RegFound);
+                
+                
+                int BLen = NarGetBitmapAttributeDataLen(BitmapAttr);
+                unsigned char* Bitmap = (unsigned char*)NarGetBitmapAttributeData(BitmapAttr);
+                
+                size_t ceil = MIN(RegFound, BLen);
+                for(size_t ci = 0; ci<BLen; ci++){
+                    TIMED_NAMED_BLOCK("Bitmap merge stuff");
+                    size_t ByteIndex = ci/8;
+                    size_t BitIndex = ci%8;
+                    if(Bitmap[ByteIndex] & (1 << BitIndex)){
+                        // everything is ok
+                    }
+                    else{
+                        ClustersExtracted[ci + ClusterExtractedCount].StartPos = 0;
+                        ClustersExtracted[ci + ClusterExtractedCount].Len = 0;
+                    }
+                }
+                ClusterExtractedCount += RegFound;
+                
+            }
+            
+            
+        }
+    }
+    
+    
+}
+
 int
 main(int argc, char* argv[]) {
     
-    printf("started !\n");
-    
-    HANDLE H = NarOpenVolume('D');
-    if(H != INVALID_HANDLE_VALUE){
-        GetMFTandINDXLCN('D', H);
-    }
-    printf("end!\n");
-    
-    return 0;
-    
-    if(0){
-        backup_metadata *B = new backup_metadata[100];
-        int fc = 0;
-        //NarGetBackupsInDirectory(L"D:\\workspace\\programming\\c++\\Disk Image\\build\\minispy_user\\", B, sizeof(backup_metadata)*100, &fc);
-        
-        
-        nar_backup_id ID = {0};
-        ID.Year = 2020;
-        ID.Month= 12;
-        ID.Day = 24;
-        ID.Hour = 2;
-        ID.Min = 14;
-        ID.Letter = 'C';
-        
-        std::string a;
-        NarBackupIDToStr(ID, a);
-        
-        std::string GenName;
-        for(size_t i =0; i<5; i++){
-            ID.Letter++;
-            GenerateMetadataName(ID, i, GenName);
-            unsigned char stack[sizeof(backup_metadata)];
-            NarDumpToFile(GenName.c_str(), stack, sizeof(stack));
-            
-            GenerateBinaryFileName(ID, i, GenName);
-            NarDumpToFile(GenName.c_str(), stack, sizeof(stack));
-            
-        }
-        
+    if(argc != 2){
+        printf("invalid argument, pass restore or backup\n");
     }
     
-    return 0;
-#if 1
-    DEBUG_Restore();
+    
+    if(std::string(argv[1]) == "restore"){
+        DEBUG_Restore();
+        return 0;
+    }
+    
+    if(std::string(argv[1]) != "backup"){
+        printf("invalid argument\n");
+    }
+    
+#if 0    
+    HANDLE H = NarOpenVolume('C');
+    GetMFTandINDXLCN('C', H);
+    
     return 0;
 #endif
+    
     
     size_t bsize = 64*1024*1024;
     void *MemBuf = malloc(bsize);
