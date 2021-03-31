@@ -2312,7 +2312,7 @@ NarCreateCleanMBRBootPartition(int DiskID, char VolumeLetter, int VolumeSizeMB, 
     snprintf(&Buffer[indx], sizeof(Buffer) - indx,
              "exit\n");
     
-    char InputFN[] = "NARDPINPUTFORMBR";
+    char InputFN[] = "NARDPINPUT";
     if (NarDumpToFile(InputFN, Buffer, (unsigned int)strlen(Buffer))) {
         snprintf(Buffer, sizeof(Buffer), "diskpart /s %s", InputFN);
         printf(Buffer);
@@ -4003,56 +4003,6 @@ NarInitPool(void *Memory, int MemorySize, int PoolSize){
 
 #include<iostream>
 
-bool SetDiskRestore(int DiskID, wchar_t Letter, backup_metadata *BM) {
-    
-    char DiskType = (char)BM->DiskType;
-    
-    int VolSizeMB = BM->VolumeTotalSize/(1024ull* 1024ull) + 1;
-    int SysPartitionMB = BM->GPT_EFIPartitionSize / (1024ull * 1024ull);
-    int RecPartitionMB = 0;
-    
-    char BootLetter = 0;
-    {
-        DWORD Drives = GetLogicalDrives();
-        
-        for (int CurrentDriveIndex = 0; CurrentDriveIndex < 26; CurrentDriveIndex++) {
-            if (Drives & (1 << CurrentDriveIndex) || ('A' + (char)CurrentDriveIndex) == (char)Letter) {
-                continue;
-            }
-            else {
-                BootLetter = ('A' + (char)CurrentDriveIndex);
-                break;
-            }
-        }
-    }
-    
-    if (BootLetter != 0) {
-        if (DiskType == NAR_DISKTYPE_GPT) {
-            if (BM->IsOSVolume) {
-                NarCreateCleanGPTBootablePartition(DiskID, VolSizeMB, SysPartitionMB, RecPartitionMB, Letter, BootLetter);
-            }
-            else {
-                NarCreateCleanGPTPartition(DiskID, VolSizeMB, Letter);
-            }
-        }
-        if (DiskType == NAR_DISKTYPE_MBR) {
-            if (BM->IsOSVolume) {
-                NarCreateCleanMBRBootPartition(DiskID, Letter, VolSizeMB, SysPartitionMB, RecPartitionMB, BootLetter);
-            }
-            else {
-                NarCreateCleanMBRPartition(DiskID, Letter, VolSizeMB);
-            }
-        }
-        
-    }
-    else {
-        return false;
-    }
-    
-    
-    return true;
-}
-
 
 void
 DEBUG_Restore(){
@@ -4078,7 +4028,7 @@ DEBUG_Restore(){
         std::wcout<<L"Unable to read metadata "<<MetadataPath<<"\n";
     }
     
-    SetDiskRestore(DiskID, TargetLetter, &bm);
+    //SetDiskRestore(DiskID, TargetLetter, &bm);
     
     void* Mem = VirtualAlloc(0, MemLen, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
     nar_arena Arena = ArenaInit(Mem, MemLen);
@@ -4197,6 +4147,9 @@ DEBUG_Parser(){
 
 int
 main(int argc, char* argv[]) {
+    
+    SetDiskRestore();
+    return 0;
     
     if(argc != 2){
         printf("invalid argument, pass restore or backup\n");
