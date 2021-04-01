@@ -1877,7 +1877,7 @@ NarFormatVolume(char Letter) {
              "format fs = ntfs quick override\n"
              "exit\n", Letter);
     
-    char InputFN[] = "NARDPINPUT";
+    char InputFN[] = "NARDPFORMATVOLUME";
     if (NarDumpToFile(InputFN, Buffer, (unsigned int)strlen(Buffer))) {
         snprintf(Buffer, sizeof(Buffer), "diskpart /s %s", InputFN);
         printf(Buffer);
@@ -2205,7 +2205,7 @@ NarCreateCleanGPTBootablePartition(int DiskID, int VolumeSizeMB, int EFISizeMB, 
     char InputFN[] = "NARDPINPUT";
     // NOTE(Batuhan): safe conversion
     if (NarDumpToFile(InputFN, Buffer, (INT32)strlen(Buffer))) {
-        snprintf(Buffer, sizeof(Buffer), "diskpart /s %s", InputFN);
+        snprintf(Buffer, sizeof(Buffer), "diskpart /s %s > NARDPOUTPUT.txt", InputFN);
         system(Buffer);
         printf("%s\n", Buffer);
         return TRUE;
@@ -2241,7 +2241,7 @@ NarCreateCleanGPTPartition(int DiskID, int VolumeSizeMB, char Letter) {
     
     char InputFN[] = "NARDPINPUT";
     if (NarDumpToFile(InputFN, Buffer, (unsigned int)strlen(Buffer))) {
-        snprintf(Buffer, sizeof(Buffer),"diskpart /s %s > .txt", InputFN);
+        snprintf(Buffer, sizeof(Buffer),"diskpart /s %s > NARDPOUTPUT.txt", InputFN);
         printf(Buffer);
         system(Buffer);
         return TRUE;
@@ -2268,7 +2268,7 @@ NarCreateCleanMBRPartition(int DiskID, char VolumeLetter, int VolumeSize) {
     
     char InputFN[] = "NARDPINPUT";
     if (NarDumpToFile(InputFN, Buffer, (unsigned int)strlen(Buffer))) {
-        snprintf(Buffer, sizeof(Buffer), "diskpart /s %s", InputFN);
+        snprintf(Buffer, sizeof(Buffer), "diskpart /s %s > NARDPOUTPUT.txt", InputFN);
         printf(Buffer);
         system(Buffer);
         return TRUE;
@@ -2314,7 +2314,7 @@ NarCreateCleanMBRBootPartition(int DiskID, char VolumeLetter, int VolumeSizeMB, 
     
     char InputFN[] = "NARDPINPUT";
     if (NarDumpToFile(InputFN, Buffer, (unsigned int)strlen(Buffer))) {
-        snprintf(Buffer, sizeof(Buffer), "diskpart /s %s", InputFN);
+        snprintf(Buffer, sizeof(Buffer), "diskpart /s %s > NARDPOUTPUT.txt", InputFN);
         printf(Buffer);
         system(Buffer);
         return TRUE;
@@ -4148,7 +4148,7 @@ DEBUG_Parser(){
 int
 main(int argc, char* argv[]) {
     
-    SetDiskRestore();
+    
     return 0;
     
     if(argc != 2){
