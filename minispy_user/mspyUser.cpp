@@ -1853,7 +1853,7 @@ NarRemoveLetter(char Letter){
              "exit\n", Letter, Letter);
     
     
-    char InputFN[] = "NARDPINPUT";
+    char InputFN[] = "NARDPRLINPUT";
     if(NarDumpToFile(InputFN, Buffer, (unsigned int)strlen(Buffer))){
         snprintf(Buffer, sizeof(Buffer), "diskpart /s %s", InputFN);
         printf(Buffer);
@@ -2171,7 +2171,7 @@ NarCreateCleanGPTBootablePartition(int DiskID, int VolumeSizeMB, int EFISizeMB, 
                             "clean\n"
                             "convert gpt\n" // format disk as gpt
                             "select partition 1\n"
-                            "delete partition override\n");
+                            "delete partition override\n", DiskID);
     
     if(0 != RecoverySizeMB){
         BufferIndex += snprintf(&Buffer[BufferIndex], sizeof(Buffer) - BufferIndex,
