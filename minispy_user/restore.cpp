@@ -464,23 +464,26 @@ InitVolumeTarget(char Letter, nar_arena* Arena) {
     HANDLE Volume = CreateFileA(VolumePath, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_WRITE | FILE_SHARE_READ | FILE_SHARE_DELETE, 0, OPEN_EXISTING, 0, 0);
     if (Volume != INVALID_HANDLE_VALUE) {
         if (DeviceIoControl(Volume, FSCTL_LOCK_VOLUME, 0, 0, 0, 0, 0, 0)) {
-            NAR_BREAK;
+            
         }
         else {
             NAR_DEBUG("Couldn't lock volume %c\n", Letter);
         }
         
         if (DeviceIoControl(Volume, FSCTL_DISMOUNT_VOLUME, 0, 0, 0, 0, 0, 0)) {
-            NAR_BREAK;
+            
         }
         else {
             // printf("Couldnt dismount volume\n");
         }
         
         Result = (restore_target*)ArenaAllocate(Arena, sizeof(restore_target));
-        Result->Impl = Volume;
-        Result->Write = NarWriteVolume;
-        Result->SetNeedle = NarSetNeedleVolume;
+        ASSERT(Result);
+        if(Result){
+            Result->Impl = Volume;
+            Result->Write = NarWriteVolume;
+            Result->SetNeedle = NarSetNeedleVolume;
+        }
     }
     
     return Result;

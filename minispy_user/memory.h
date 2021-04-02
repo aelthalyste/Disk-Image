@@ -18,9 +18,10 @@ ArenaInit(void* Memory, size_t MemSize){
 static inline void*
 ArenaAllocate(nar_arena *Arena, size_t s){
 	void* Result = 0;
-
-	if(!Arena) return Result;
-
+    
+	if(!Arena) 
+        return Result;
+    
 	size_t left = Arena->Capacity - Arena->Used;
 	if(s < left){
 		Result = Arena->Memory + Arena->Used;

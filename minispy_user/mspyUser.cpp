@@ -1847,7 +1847,7 @@ inline BOOLEAN
 NarRemoveLetter(char Letter){
     char Buffer[128];
     
-    snprintf(Buffer, sizeof(128), 
+    snprintf(Buffer, sizeof(Buffer), 
              "select volume %c\n"
              "remove letter %c\n"
              "exit\n", Letter, Letter);

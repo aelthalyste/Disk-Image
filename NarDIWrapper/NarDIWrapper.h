@@ -214,8 +214,8 @@ namespace NarDIWrapper {
         
         RestoreStream(BackupMetadata^ arg_BM, System::String^ arg_RootDir) {
             Stream      = 0;
-            MemLen      = Gigabyte(4);
-            Mem         = VirtualAlloc(0, MemLen, MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_READWRITE);
+            MemLen      = Gigabyte(2);
+            Mem         = VirtualAlloc(0, MemLen, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
             BM          = arg_BM;
             RootDir     = arg_RootDir;
         }
@@ -283,6 +283,8 @@ namespace NarDIWrapper {
         
         
         bool SetupStream(wchar_t VolumeLetter) {
+            
+            Stream = NULL;
             
             nar_arena Arena = ArenaInit(Mem, MemLen);
             TargetLetter = VolumeLetter;
