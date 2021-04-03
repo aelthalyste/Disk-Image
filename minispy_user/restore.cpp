@@ -90,25 +90,27 @@ NarReadBackup(restore_source* Rs, size_t* AvailableBytes) {
             
             // NOTE(Batuhan): ZSTD based errors
             if(ZSTD_CONTENTSIZE_UNKNOWN == Rs->DecompressedSize
-               || ZSTD_CONTENTSIZE_ERROR == Rs->DecompressedSize
-               || ZSTD_isError(Rs->CompressedSize)){
+               || ZSTD_CONTENTSIZE_ERROR == Rs->DecompressedSize){
                 
-                
-                if(ZSTD_CONTENTSIZE_UNKNOWN == Rs->DecompressedSize
-                   || ZSTD_CONTENTSIZE_ERROR == Rs->DecompressedSize){
-                    NAR_DBG_ERR("Contentsize error msg %s\n", 
-                                (Rs->DecompressedSize == ZSTD_CONTENTSIZE_ERROR ? 
-                                 "ZSTD_CONTENT_SIZE_UNKNOWN" : "ZSTD_CONTENTSIZE_ERROR"));
+#if 1                
+                if(ZSTD_CONTENTSIZE_UNKNOWN == Rs->DecompressedSize){
+                    Rs->Error = RestoreSource_Errors::Error_DecompressionUnknownContentSize;
                 }
-                
-                if(ZSTD_isError(Rs->CompressedSize)){
-                    NAR_DBG_ERR("FindFramecompressed size error!\n", );
+                if(ZSTD_CONTENTSIZE_ERROR == Rs->DecompressedSize){
+                    Rs->Error = RestoreSource_Errors::Error_DecompressionErrorContentsize;
                 }
+#endif
                 
-                Rs->Error   = RestoreSource_Errors::Error_Decompression;
                 Rs->Read    = NarReadZero;
                 return Rs->Read(Rs, AvailableBytes);
             }
+            
+            if(ZSTD_isError(Rs->CompressedSize)){
+                Rs->Error = RestoreSource_Errors::Error_DecompressionCompressedSize;
+                Rs->Read  = NarReadZero;
+                return Rs->Read(Rs, AvailableBytes);
+            }
+            
             
             // NOTE(Batuhan): That shouldn't happen, but in any case we should check it
             if(Rs->DecompressedSize > Rs->BfSize){

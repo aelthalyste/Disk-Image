@@ -19,6 +19,9 @@ public
 enum class RestoreSource_Errors: int{
     Error_NoError,
     Error_InsufficentBufferSize,
+    Error_DecompressionUnknownContentSize,
+    Error_DecompressionErrorContentsize,
+    Error_DecompressionCompressedSize,
     Error_Decompression,
     Error_NullCompBuffer,
     Error_NullFileViews,
