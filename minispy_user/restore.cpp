@@ -436,7 +436,7 @@ NarWriteVolume(restore_target* Rt, const void* Mem, size_t MemSize) {
     ASSERT(MemSize <= 0xffffffffull);
     
     DWORD BytesWritten = 0;
-    if (WriteFile(Rt->Impl, Mem, MemSize, &BytesWritten, 0) && BytesWritten == MemSize) {
+    if (WriteFile(Rt->Impl, Mem, (DWORD)MemSize, &BytesWritten, 0) && BytesWritten == MemSize) {
         // success
     }
     else {

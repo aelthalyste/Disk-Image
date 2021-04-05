@@ -339,11 +339,11 @@ enum class BackupStream_Errors: int{
 
 
 struct stream {
+    
     data_array<nar_record> Records;
     INT32 RecIndex;
     INT32 ClusterIndex;
     HANDLE Handle; //Used for streaming data to C#
-    
     
     // BackupStream_Errors Error;
     

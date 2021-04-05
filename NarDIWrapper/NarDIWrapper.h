@@ -215,7 +215,7 @@ namespace NarDIWrapper {
         RestoreStream(BackupMetadata^ arg_BM, System::String^ arg_RootDir) {
             Stream      = 0;
             MemLen      = Gigabyte(2);
-            Mem         = VirtualAlloc(0, MemLen, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+            Mem         = VirtualAlloc(0, MemLen, MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_READWRITE);
             BM          = arg_BM;
             RootDir     = arg_RootDir;
         }
@@ -323,7 +323,6 @@ namespace NarDIWrapper {
         
         void TerminateRestore() {
             if (Mem) {
-                VirtualFree(Mem, MemLen, MEM_RELEASE);
                 FreeRestoreStream(Stream);
                 if (IsDiskRestore) {
                     if (RepairBoot && BM->OSVolume) {
@@ -331,6 +330,7 @@ namespace NarDIWrapper {
                     }
                     NarRemoveLetter(BootLetter);
                 }
+                VirtualFree(Mem, MemLen, MEM_RELEASE);
             }
             Stream = 0;
             Mem = 0;
@@ -413,7 +413,6 @@ namespace NarDIWrapper {
         static int CW_HintBufferSize();
         
         static List<CSLog^>^ CW_GetLogs();
-        static void CW_GenerateLogs();
         
         private:
         

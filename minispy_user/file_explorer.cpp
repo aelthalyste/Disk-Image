@@ -33,7 +33,7 @@ ReadLCNFromMFTRecord(void* RecordStart) {
     INT32 RemainingLen = *(INT32*)((BYTE*)FileRecord + 24); // Real size of the file record
     RemainingLen -= (FirstAttributeOffset + 8); //8 byte for end of record mark, remaining len includes it too.
     
-    auto InsertToResult = [&](UINT32 Start, UINT32 Len) {
+    auto InsertToResult = [&](uint32_t Start, uint32_t Len) {
         Result.Records[Result.RecordCount++] = {Start, Len};
     };
     
@@ -84,7 +84,9 @@ ReadLCNFromMFTRecord(void* RecordStart) {
         
         INT64 OldClusterStart = FirstCluster;
         void* D = (BYTE*)DataRuns + FirstClusterSize + ClusterCountSize + 1;
-        InsertToResult(FirstCluster, ClusterCount);
+        
+        // safe to convert to 32bit
+        InsertToResult((uint32_t)FirstCluster, (uint32_t)ClusterCount);
         
         while (*(BYTE*)D) {
             
@@ -447,7 +449,7 @@ NarGetFileEntriesFromIndxClusters(nar_backup_file_explorer_context *Ctx, nar_rec
   Each bitmap BIT represents availablity of that virtual cluster number of the indx_allocation clusters
   */
     
-    for(int _i_ = 0; 
+    for(size_t  _i_ = 0; 
         NarFileExplorerSetFilePointer(Ctx->FEHandle, (UINT64)Clusters[_i_].StartPos*Ctx->ClusterSize) && _i_ < Count;
         _i_++){
         
@@ -551,7 +553,7 @@ NarParseIndexAllocationAttribute(void *IndexAttribute, nar_record *OutRegions, u
     
     
     BOOLEAN Result = TRUE;
-    INT32 InternalRegionsFound = 0;
+    uint32_t InternalRegionsFound = 0;
     
     INT32 DataRunsOffset = *(INT32*)((BYTE*)IndexAttribute + 32);
     void* DataRuns = (char*)IndexAttribute + DataRunsOffset;
@@ -725,8 +727,8 @@ NarParseIndexAllocationAttributeSingular(void *IndexAttribute, nar_record *OutRe
     
     
     if((InternalRegionsFound + ClusterCount) < MaxRegionLen){
-        for(size_t i =0; i<ClusterCount; i++){
-            OutRegions[InternalRegionsFound].StartPos = FirstCluster++;
+        for(size_t i =0; i<(size_t)ClusterCount; i++){
+            OutRegions[InternalRegionsFound].StartPos = uint32_t(FirstCluster++);
             OutRegions[InternalRegionsFound].Len = 1;
             InternalRegionsFound++;
         }
@@ -785,8 +787,8 @@ NarParseIndexAllocationAttributeSingular(void *IndexAttribute, nar_record *OutRe
         D = (BYTE*)D + (FirstClusterSize + ClusterCountSize + 1);
         
         if((InternalRegionsFound + ClusterCount) < MaxRegionLen){
-            for(size_t i =0; i<ClusterCount; i++){
-                OutRegions[InternalRegionsFound].StartPos = FirstCluster++;
+            for(size_t i =0; i<(size_t)ClusterCount; i++){
+                OutRegions[InternalRegionsFound].StartPos = (uint32_t)(FirstCluster++);
                 OutRegions[InternalRegionsFound].Len = 1;
                 InternalRegionsFound++;
             }
@@ -913,7 +915,7 @@ NarGetFileListFromMFTID(nar_backup_file_explorer_context *Ctx, size_t TargetMFTI
             size_t ByteIndex = 0;
             size_t BitIndex = 0;
             
-            for(int _i_ = 0; 
+            for(size_t _i_ = 0; 
                 NarFileExplorerSetFilePointer(Ctx->FEHandle, (UINT64)INDX_ALL_REGIONS[_i_].StartPos*Ctx->ClusterSize) && _i_ < IndexRegionsFound;
                 _i_++){
                 
@@ -1509,9 +1511,9 @@ NarSearchFileInVolume(const wchar_t* arg_RootDir, const wchar_t *arg_FileName, n
             INT32 FileRecordPerCluster = Ctx.ClusterSize / 1024;
             INT64 AdvancedFileCountSoFar = 0;
             
-            for(int i = 0; i<Ctx.MFTRecordsCount; i++){
+            for(size_t i = 0; i<Ctx.MFTRecordsCount; i++){
                 
-                INT64 FileCountInRegion = (UINT64)FileRecordPerCluster * (UINT64)Ctx.MFTRecords[i].Len;
+                uint64_t FileCountInRegion = (uint64_t)FileRecordPerCluster * (uint64_t)Ctx.MFTRecords[i].Len;
                 if(AdvancedFileCountSoFar + FileCountInRegion > FileMFTID){
                     
                     INT64 RemainingFileCountInRegion = FileMFTID - AdvancedFileCountSoFar;

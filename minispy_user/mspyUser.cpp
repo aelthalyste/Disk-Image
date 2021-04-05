@@ -251,7 +251,7 @@ InitVolumeInf(volume_backup_inf* VolInf, wchar_t Letter, BackupType Type) {
     wchar_t DN[] = L"C:";
     DN[0] = Letter;
     
-    VolInf->BackupID = NarGenerateBackupID(Letter);
+    VolInf->BackupID = NarGenerateBackupID((char)Letter);
     
     wchar_t V[] = L"!:\\";
     V[0] = Letter;
@@ -315,12 +315,17 @@ CompareNarRecords(const void* v1, const void* v2) {
 VSS_ID
 GetShadowPath(std::wstring Drive, CComPtr<IVssBackupComponents>& ptr, wchar_t* OutShadowPath, size_t MaxOutCh) {
     
-    BOOLEAN Result = FALSE;
     BOOLEAN Error = TRUE;
     VSS_ID sid = { 0 };
     HRESULT res;
     
     res = CreateVssBackupComponents(&ptr);
+    
+    ASSERT(ptr);
+    if(nullptr == ptr){
+        return sid;
+        // early termination
+    }
     
     if (S_OK == ptr->InitializeForBackup()) {
         if (S_OK == ptr->SetContext(VSS_CTX_BACKUP)) {
@@ -1232,8 +1237,8 @@ TerminateBackup(volume_backup_inf* V, BOOLEAN Succeeded) {
         V->Stream.CompressionBuffer = NULL;
     }
     
-    if(V->Stream.CStream)  ZSTD_freeCStream(V->Stream.CStream);
-    if(V->Stream.CCtx)     ZSTD_freeCCtx(V->Stream.CCtx);
+    if(NULL != V->Stream.CStream)  ZSTD_freeCStream(V->Stream.CStream);
+    if(NULL != V->Stream.CCtx)     ZSTD_freeCCtx(V->Stream.CCtx);
     
     
     if(V->Stream.Handle != INVALID_HANDLE_VALUE) {
@@ -4144,6 +4149,7 @@ DEBUG_Parser(){
     
     
 }
+
 
 int
 main(int argc, char* argv[]) {

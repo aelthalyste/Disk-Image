@@ -114,9 +114,9 @@ namespace NarDIWrapper {
     }
     
     void CSNarFileExplorer::CW_PopDirectory(){
-
+        
         //NarFileExplorerPopDirectory(ctx);
-    
+        
     }
     
     void CSNarFileExplorer::CW_Free(){
@@ -132,7 +132,7 @@ namespace NarDIWrapper {
     }
     
     void CSNarFileExplorer::CW_RestoreFile(INT64 ID, System::String^ SysBackupDirectory, System::String^ SysTargetDir) {
-
+        
 #if 0
         if(ctx == NULL || ctx->EList.Entries == 0 || ctx->EList.EntryCount < ID){
             if(!ctx) printf("File explorer context was null\n");
@@ -230,8 +230,8 @@ namespace NarDIWrapper {
         return false;
     }
     
-
-
+    
+    
     // returns 0 if one is not present
     wchar_t DiskTracker::CW_GetFirstAvailableVolumeLetter(){
         return NarGetAvailableVolumeLetter();
@@ -262,7 +262,7 @@ namespace NarDIWrapper {
         return NAR_COMPRESSION_FRAME_SIZE;
     }
     
-
+    
     bool DiskTracker::CW_TerminateBackup(bool Succeeded, wchar_t VolumeLetter) {
         
         INT32 VolID = GetVolumeID(C, VolumeLetter);
@@ -372,7 +372,7 @@ namespace NarDIWrapper {
                 
                 BMet->EFIPartSize       = BMList[i].GPT_EFIPartitionSize;
                 BMet->SystemPartSize    = BMList[i].MBR_SystemPartitionSize;
-
+                
                 BMet->BackupDate = gcnew CSNarFileTime(BMList[i].BackupDate.wYear, BMList[i].BackupDate.wMonth, BMList[i].BackupDate.wDay, BMList[i].BackupDate.wHour, BMList[i].BackupDate.wMinute, BMList[i].BackupDate.wSecond);
                 
                 GenerateBinaryFileName(*BMet->BackupID, BMet->Version, pth);
@@ -443,31 +443,6 @@ namespace NarDIWrapper {
         }
         
         return Result;
-    }
-    
-    void DiskTracker::CW_GenerateLogs(){
-        
-        printf("laksfdjlasdkfjsdfşüğşqwüerüasdf şiasdf üğadfsşüğş");
-        printf("ALSJHDFKJAHSDFAS");
-        printf("asdfas");
-        printf("asldfkjas");
-        printf("9108273123");
-        printf("3poisr");
-        
-        printf("ALSJHDFKJAHSDFAS");
-        printf("asdfas");
-        printf("asldfkjas");
-        printf("9108273123");
-        printf("laksfdjlasdkfjsdf");
-        printf("3poisr");
-        
-        printf("ALSJHDFKJAHSDFAS");
-        printf("asdfas");
-        printf("asldfkjas");
-        printf("9108273123");
-        printf("laksfdjlasdkfjsdf");
-        printf("3poisr");
-        
     }
     
     // TODO(Batuhan): helper functions, like which volume we are streaming etc.
