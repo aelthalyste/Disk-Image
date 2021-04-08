@@ -335,7 +335,6 @@ namespace DiskBackup.Business.Concrete
                                 passingTime.Restart();
                             }
 
-                            _logger.Information($"read: {read}");
                             if (read == 0) // 0 dönerse restore bitti demektir
                             {
                                 result = restoreStream.CheckStreamStatus(); // başarılı ise true, değilse false dönecek
@@ -349,8 +348,8 @@ namespace DiskBackup.Business.Concrete
                                 break;
                             }
                         }
-                        _logger.Information("whiledan çıktı");
                         restoreStream.TerminateRestore();
+                        _logger.Information($"restoreStream.StreamError: {restoreStream.StreamError} - restoreStream.SrcError: {restoreStream.SrcError}");
                         timeElapsed.Stop();
                         _timeElapsedMap.Remove(taskInfo.Id);
                         return Convert.ToByte(result);
@@ -433,7 +432,6 @@ namespace DiskBackup.Business.Concrete
             string newRootDir = taskInfo.RestoreTaskInfo.RootDir.Substring(0, taskInfo.RestoreTaskInfo.RootDir.Length - backupName.Length);
             var resultList = DiskTracker.CW_GetBackupsInDirectory(newRootDir);
             BackupMetadata backupMetadata = new BackupMetadata();
-            RestoreStream restoreStream = new RestoreStream(backupMetadata, newRootDir);
             var statusInfo = _statusInfoDal.Get(x => x.Id == taskInfo.StatusInfoId);
 
             foreach (var item in resultList)
@@ -445,6 +443,7 @@ namespace DiskBackup.Business.Concrete
 
                     if (ChainInTheSameDirectory(resultList, backupMetadata))
                     {
+                        RestoreStream restoreStream = new RestoreStream(backupMetadata, newRootDir);
                         SettingBootable(taskInfo, backupMetadata, restoreStream);
                         restoreStream.SetupStream(taskInfo.RestoreTaskInfo.TargetLetter[0]);
                         ulong bytesReadSoFar = 0;
@@ -476,7 +475,6 @@ namespace DiskBackup.Business.Concrete
                                 passingTime.Restart();
                             }
 
-                            _logger.Information($"read: {read}");
                             if (read == 0) // 0 dönerse restore bitti demektir
                             {
                                 result = restoreStream.CheckStreamStatus(); // başarılı ise true, değilse false dönecek
@@ -490,8 +488,8 @@ namespace DiskBackup.Business.Concrete
                                 break;
                             }
                         }
-                        _logger.Information("whiledan çıktı");
                         restoreStream.TerminateRestore();
+                        _logger.Information($"restoreStream.StreamError: {restoreStream.StreamError} - restoreStream.SrcError: {restoreStream.SrcError}");
                         timeElapsed.Stop();
                         _timeElapsedMap.Remove(taskInfo.Id);
                         return Convert.ToByte(result);
