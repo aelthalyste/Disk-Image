@@ -14,14 +14,36 @@ namespace DotNetTest
         static void Main(string[] args)
         {
             //NarDIWrapper.RestoreSource_Errors e;
-
-            RestoreStream a = new RestoreStream(new BackupMetadata(), "adsf");
-
-            if (a.SrcError == RestoreSource_Errors.Error_Decompression) { 
+            var rlist = DiskTracker.CW_GetBackupsInDirectory(args[0]);
             
+            foreach(var item in rlist){
+                Console.WriteLine(item.Letter);
+                Console.WriteLine(item.Version);
+                Console.WriteLine(item.VolumeTotalSize);
+                Console.WriteLine(item.VolumeUsedSize);
+                Console.WriteLine(item.SystemPartSize);
+                Console.WriteLine(item.Fullpath);
+                Console.WriteLine("##################");
+            }
+
+
+            BackupMetadata bm = new BackupMetadata();
+
+            bm = rlist[0];
+            {
+                Console.WriteLine(bm.VolumeTotalSize);
+                Console.WriteLine(bm.VolumeUsedSize);
+                Console.WriteLine(bm.SystemPartSize);
+                Console.WriteLine(bm.Fullpath);
             }
             
-            var b = RestoreSource_Errors.Error_InsufficentBufferSize;
+            RestoreStream stream = new RestoreStream(bm, args[0]);
+            stream.SetDiskRestore(2, 'F', false, false, 'G');
+
+
+
+
+            return;
 
         }
 

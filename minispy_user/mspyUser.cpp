@@ -4151,16 +4151,71 @@ DEBUG_Parser(){
 }
 
 
+        
+bool SetDiskRestore(int DiskID, wchar_t Letter, size_t VolumeTotalSize, size_t EFIPartSize) {
+    
+    char DiskType = 'G';
+    
+    
+    int VolSizeMB 		= VolumeTotalSize / (1024ull* 1024ull) + 1;
+    int SysPartitionMB 	= EFIPartSize / (1024ull * 1024ull);
+	int RecPartitionMB 	= 0;
+
+    printf("VolSizeMB : %I64u\nSysPartMB : %I64u\n", VolSizeMB, SysPartitionMB);
+
+    char BootLetter = 0;
+    {
+        DWORD Drives = GetLogicalDrives();
+        
+        for (int CurrentDriveIndex = 0; CurrentDriveIndex < 26; CurrentDriveIndex++) {
+            if (Drives & (1 << CurrentDriveIndex) || ('A' + (char)CurrentDriveIndex) == (char)Letter) {
+                continue;
+            }
+            else {
+                BootLetter = ('A' + (char)CurrentDriveIndex);
+                break;
+            }
+        }
+    }
+    
+    if (BootLetter != 0) {
+        if (DiskType == NAR_DISKTYPE_GPT) {
+            if (1) {
+                NarCreateCleanGPTBootablePartition(DiskID, VolSizeMB, SysPartitionMB, RecPartitionMB, Letter, BootLetter);
+            }
+            else {
+                NarCreateCleanGPTPartition(DiskID, VolSizeMB, Letter);
+            }
+        }
+        if (DiskType == NAR_DISKTYPE_MBR) {
+            if (1) {
+                NarCreateCleanMBRBootPartition(DiskID, Letter, VolSizeMB, SysPartitionMB, RecPartitionMB, BootLetter);
+            }
+            else {
+                NarCreateCleanMBRPartition(DiskID, Letter, VolSizeMB);
+            }
+        }
+        
+    }
+    else {
+        return false;
+    }
+    
+    
+    return true;
+    
+}
+
+
 int
-main(int argc, char* argv[]) {
-    
-    
-    return 0;
-    
+main(int argc, char* argv[]) {   
+
+	SetDiskRestore(2, 'F', Gigabyte(12), Megabyte(500));
+	return 0;		
+
     if(argc != 2){
         printf("invalid argument, pass restore or backup\n");
     }
-    
     
     if(std::string(argv[1]) == "restore"){
         DEBUG_Restore();
@@ -4170,14 +4225,7 @@ main(int argc, char* argv[]) {
     if(std::string(argv[1]) != "backup"){
         printf("invalid argument\n");
     }
-    
-#if 0    
-    HANDLE H = NarOpenVolume('C');
-    GetMFTandINDXLCN('C', H);
-    
-    return 0;
-#endif
-    
+        
     
     size_t bsize = 64*1024*1024;
     void *MemBuf = malloc(bsize);
@@ -4217,7 +4265,7 @@ main(int argc, char* argv[]) {
                                           0, 0);
                 if(file != INVALID_HANDLE_VALUE){
                     
-#if 1                    
+#if 0                    
                     loop{
                         int Read = ReadStream(v, MemBuf, bsize);
                         TotalRead += Read;

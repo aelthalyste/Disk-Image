@@ -216,8 +216,13 @@ namespace NarDIWrapper {
             Stream      = 0;
             MemLen      = Gigabyte(2);
             Mem         = VirtualAlloc(0, MemLen, MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_READWRITE);
+            
+            BM          = gcnew BackupMetadata;
             BM          = arg_BM;
+            
+            RootDir     = gcnew System::String(L"");
             RootDir     = arg_RootDir;
+
         }
         
         ~RestoreStream() {
