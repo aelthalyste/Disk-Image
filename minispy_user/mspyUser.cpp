@@ -1041,8 +1041,8 @@ ReadStream(volume_backup_inf* VolInf, void* CallerBuffer, unsigned int CallerBuf
     void* BufferToFill = CallerBuffer;
     unsigned int TotalSize = CallerBufferSize;
     if(true == VolInf->Stream.ShouldCompress){
-        BufferToFill = VolInf->Stream.CompressionBuffer;
-        TotalSize = VolInf->Stream.BufferSize;
+        BufferToFill    = VolInf->Stream.CompressionBuffer;
+        TotalSize       = VolInf->Stream.BufferSize;
     }
     
     if (TotalSize == 0) {

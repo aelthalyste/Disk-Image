@@ -255,6 +255,7 @@ namespace NarDIWrapper {
             if(true == C->Volumes.Data[VolID].Stream.ShouldCompress){
                 Res->DecompressedSize = C->Volumes.Data[VolID].Stream.BytesProcessed;
             }
+            Res->Error = C->Volumes.Data[VolID].Stream.Error;
             
             
         }
@@ -272,7 +273,7 @@ namespace NarDIWrapper {
     }
     
     int DiskTracker::CW_HintBufferSize() {
-        return NAR_COMPRESSION_FRAME_SIZE;
+        return NAR_COMPRESSION_FRAME_SIZE + Megabyte(1);
     }
     
     
