@@ -645,7 +645,6 @@ namespace DiskBackup.Business.Concrete
             byte[] buffer = new byte[bufferSize];
             StreamInfo str = new StreamInfo();
             long bytesReadSoFar = 0;
-            int read = 0;
             bool result = false;
 
             statusInfo.TaskName = taskInfo.Name;
@@ -695,11 +694,11 @@ namespace DiskBackup.Business.Concrete
                                 }
                                 manualResetEvent.WaitOne();
 
-                                read = _diskTracker.CW_ReadStream(BAddr, letter, bufferSize);
-                                file.Write(buffer, 0, read);
-                                bytesReadSoFar += read;
+                                var readStream = _diskTracker.CW_ReadStream(BAddr, letter, bufferSize);
+                                file.Write(buffer, 0, (int)readStream.WriteSize);
+                                bytesReadSoFar += readStream.DecompressedSize;
 
-                                instantProcessData += read; // anlık veri için              
+                                instantProcessData += readStream.DecompressedSize; // anlık veri için              
 
                                 statusInfo.FileName = taskInfo.BackupStorageInfo.Path + str.FileName;
                                 statusInfo.DataProcessed = bytesReadSoFar;
@@ -716,10 +715,13 @@ namespace DiskBackup.Business.Concrete
                                     passingTime.Restart();
                                 }
 
-                                if (read == 0 || !_diskTracker.CW_CheckStreamStatus(letter))
+                                if (readStream.WriteSize == 0 || !_diskTracker.CW_CheckStreamStatus(letter)) {
+                                    _logger.Information($"readStream.WriteSize: {readStream.WriteSize} - readStream.Error: {readStream.Error} - _diskTracker.CW_CheckStreamStatus({letter}): {_diskTracker.CW_CheckStreamStatus(letter)}");
                                     break;
+                                }
                             }
                             result = _diskTracker.CW_CheckStreamStatus(letter);
+                            _logger.Information($"_diskTracker.CW_CheckStreamStatus({letter}): {result}");
                             _diskTracker.CW_TerminateBackup(result, letter); //işlemi başarılı olup olmadığı cancel gelmeden
                             bytesReadSoFar = 0;
 

@@ -102,6 +102,7 @@
 				<File Id="Serilog.Sinks.File.dll" Name="Serilog.Sinks.File.dll" Source="$(var.Service_TargetDir)Serilog.Sinks.File.dll"/>
 				<File Id="System.Numerics.Vectors.dll" Name="System.Numerics.Vectors.dll" Source="$(var.Service_TargetDir)System.Numerics.Vectors.dll"/>
 				<File Id="DiskBackup.Communication.dll" Name="DiskBackup.Communication.dll" Source="$(var.Service_TargetDir)DiskBackup.Communication.dll"/>
+				<File Id="libzstd.dll" Name="libzstd.dll" Source="$(var.Service_TargetDir)libzstd.dll"/><!--libzstd.dll dışarıdan eklenen dll, NarDIWrapper için gerekli-->
 				<File Id="DiskBackupWpfGUI.exe" Name="DiskBackupWpfGUI.exe" Source="$(var.UI_TargetDir)DiskBackupWpfGUI.exe"/>
 				<File Id="DiskBackupWpfGUI.exe.config" Name="DiskBackupWpfGUI.exe.config" Source="$(var.UI_TargetDir)DiskBackupWpfGUI.exe.config"/>
 				<File Id="Xceed.Wpf.Toolkit.dll" Name="Xceed.Wpf.Toolkit.dll" Source="$(var.UI_TargetDir)Xceed.Wpf.Toolkit.dll"/>
