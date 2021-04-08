@@ -13,46 +13,41 @@ namespace DotNetTest
 
         static void Main(string[] args)
         {
-            //NarDIWrapper.RestoreSource_Errors e;
-            //var rlist = DiskTracker.CW_GetBackupsInDirectory(args[0]);
-            //
-            //foreach(var item in rlist){
-            //    Console.WriteLine(item.Letter);
-            //    Console.WriteLine(item.Version);
-            //    Console.WriteLine(item.VolumeTotalSize);
-            //    Console.WriteLine(item.VolumeUsedSize);
-            //    Console.WriteLine(item.SystemPartSize);
-            //    Console.WriteLine(item.Fullpath);
-            //    Console.WriteLine("##################");
-            //}
-            //
-            //
-            //BackupMetadata bm = new BackupMetadata();
-            //
-            //bm = rlist[0];
-            //{
-            //    Console.WriteLine(bm.VolumeTotalSize);
-            //    Console.WriteLine(bm.VolumeUsedSize);
-            //    Console.WriteLine(bm.SystemPartSize);
-            //    Console.WriteLine(bm.Fullpath);
-            //}
-            BackupReadResult r = new BackupReadResult;
-            
-            RestoreStream stream = new RestoreStream(new BackupMetadata(), "haha");
-            uint a = 50;
-            
-            unsafe
-            {
-                stream.foo(&a);
+            DiskTracker dt = new DiskTracker();
+            StreamInfo streamInfo = new StreamInfo();
+            dt.CW_InitTracker();
+
+            dt.CW_SetupStream('C', 0, streamInfo, true);
+            int i = 0;
+            while (true) {
+                unsafe
+                {
+                    
+                    int bfsize = 1024 * 1024 * 64;
+
+                    fixed (byte* a = new Byte[bfsize])
+                    { 
+                        var r = dt.CW_ReadStream(a, 'C', bfsize);
+
+                        if (r.Error != BackupStream_Errors.Error_NoError)
+                        {
+                            Console.WriteLine("Detected stream error");
+                            break;
+                        }
+                        if (r.WriteSize == 0) 
+                        {
+                            Console.WriteLine("Write size returned 0");
+                            break;
+                        }
+
+                        Console.Write("\rStep : ", i++);
+
+                    }
+
+
+                }
             }
-            Console.WriteLine(a);
-            Console.Read();
-
-            //RestoreStream stream = new RestoreStream(bm, args[0]);
-            //stream.SetDiskRestore(2, 'F', false, false, 'G');
-
-
-
+            dt.CW_TerminateBackup(false, 'C');
 
             return;
 

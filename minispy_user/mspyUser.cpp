@@ -1137,7 +1137,7 @@ ReadStream(volume_backup_inf* VolInf, void* CallerBuffer, unsigned int CallerBuf
         
         size_t RetCode = 0;
 
-        while (1) {
+        while (input.size != input.pos) {
             RetCode = ZSTD_compressStream2(VolInf->Stream.CCtx, &output, &input, ZSTD_e_end);
             
             if (RetCode == 0) {
@@ -1146,6 +1146,7 @@ ReadStream(volume_backup_inf* VolInf, void* CallerBuffer, unsigned int CallerBuf
             if (ZSTD_isError(RetCode)) {
                 break;
             }
+
         }
 
         ASSERT(input.pos == input.size);
