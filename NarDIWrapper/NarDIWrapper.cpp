@@ -241,20 +241,33 @@ namespace NarDIWrapper {
         return NarIsVolumeAvailable(Letter);
     }
     
-    INT32 DiskTracker::CW_ReadStream(void* Data, wchar_t VolumeLetter, int Size) {
+    BackupReadResult^ DiskTracker::CW_ReadStream(void* Data, wchar_t VolumeLetter, int Size) {
+        
+        BackupReadResult ^Res = gcnew BackupReadResult;
+        
         int VolID = GetVolumeID(C, VolumeLetter);
         if(VolID != NAR_INVALID_VOLUME_TRACK_ID){
-            return ReadStream(&C->Volumes.Data[VolID], Data, Size);
+            
+            uint32_t WriteSize = ReadStream(&C->Volumes.Data[VolID], Data, Size);
+            Res->WriteSize        = WriteSize;
+            Res->DecompressedSize = 0;
+            
+            if(true == C->Volumes.Data[VolID].Stream.ShouldCompress){
+                Res->DecompressedSize = C->Volumes.Data[VolID].Stream.BytesProcessed;
+            }
+            
+            
         }
         // couldnt find volume in the Context, which shoudlnt happen at all
-        return 0;
+        
+        return Res;
     }
     
     // returns false if internal error occured
     bool DiskTracker::CW_CheckStreamStatus(wchar_t Letter) {
         int VolID = GetVolumeID(C, Letter);
         if (VolID != NAR_INVALID_VOLUME_TRACK_ID) {
-            return C->Volumes.Data[VolID].Stream.Error == stream::Error_NoError;
+            return C->Volumes.Data[VolID].Stream.Error == BackupStream_Errors::Error_NoError;
         }
     }
     

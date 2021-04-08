@@ -1084,7 +1084,7 @@ ReadStream(volume_backup_inf* VolInf, void* CallerBuffer, unsigned int CallerBuf
                 printf("Total bytes read for buffer %u\n", Result);
                 
                 NarDumpToFile("STREAM_OVERFLOW_ERROR_LOGS", VolInf->Stream.Records.Data, VolInf->Stream.Records.Count*sizeof(nar_record));
-                VolInf->Stream.Error = stream::Error_Read;
+                VolInf->Stream.Error = BackupStream_Errors::Error_Read;
                 
                 goto ERR_BAIL_OUT;
             }
@@ -1093,7 +1093,7 @@ ReadStream(volume_backup_inf* VolInf, void* CallerBuffer, unsigned int CallerBuf
         }
         else {
             printf("Couldnt set file pointer to %I64d\n", FilePtrTarget);
-            VolInf->Stream.Error = stream::Error_SetFP;
+            VolInf->Stream.Error = BackupStream_Errors::Error_SetFP;
             goto ERR_BAIL_OUT;
         }
         
@@ -1106,7 +1106,7 @@ ReadStream(volume_backup_inf* VolInf, void* CallerBuffer, unsigned int CallerBuf
         }
         if ((uint32_t)VolInf->Stream.ClusterIndex > VolInf->Stream.Records.Data[VolInf->Stream.RecIndex].Len) {
             printf("ClusterIndex exceeded region len, that MUST NOT happen at any circumstance\n");
-            VolInf->Stream.Error = stream::Error_SizeOvershoot;
+            VolInf->Stream.Error = BackupStream_Errors::Error_SizeOvershoot;
             goto ERR_BAIL_OUT;
         }
         
@@ -1140,19 +1140,27 @@ ReadStream(volume_backup_inf* VolInf, void* CallerBuffer, unsigned int CallerBuf
         ASSERT(input.pos == input.size);
         ASSERT(!ZSTD_isError(RetCode));
         
-        if(!ZSTD_isError(RetCode)){
+        if(!ZSTD_isError(RetCode) && input.pos == input.size){
             Result = output.pos;
+            VolInf->Stream.BytesProcessed = input.size;
         }
         else{
-            VolInf->Stream.Error = stream::Error_Compression;
+            if(input.pos != input.size){
+                printf("Input buffer size %u, input pos %u\n", input.size, input.pos);
+                printf("output buffer size %u, output pos %u\n", output.size, output.pos);
+            }
+            VolInf->Stream.Error = BackupStream_Errors::Error_Compression;
             goto ERR_BAIL_OUT;
         }
+        
         
     }
     
     return Result;
     
     ERR_BAIL_OUT:
+    
+    printf("ReadStream error : %s\n", VolInf->Stream.GetErrorDescription());
     
     Result = 0;
     return Result;
@@ -4151,7 +4159,7 @@ DEBUG_Parser(){
 }
 
 
-        
+
 bool SetDiskRestore(int DiskID, wchar_t Letter, size_t VolumeTotalSize, size_t EFIPartSize) {
     
     char DiskType = 'G';
@@ -4160,9 +4168,9 @@ bool SetDiskRestore(int DiskID, wchar_t Letter, size_t VolumeTotalSize, size_t E
     int VolSizeMB 		= VolumeTotalSize / (1024ull* 1024ull) + 1;
     int SysPartitionMB 	= EFIPartSize / (1024ull * 1024ull);
 	int RecPartitionMB 	= 0;
-
+    
     printf("VolSizeMB : %I64u\nSysPartMB : %I64u\n", VolSizeMB, SysPartitionMB);
-
+    
     char BootLetter = 0;
     {
         DWORD Drives = GetLogicalDrives();
@@ -4209,10 +4217,10 @@ bool SetDiskRestore(int DiskID, wchar_t Letter, size_t VolumeTotalSize, size_t E
 
 int
 main(int argc, char* argv[]) {   
-
+    
 	SetDiskRestore(2, 'F', Gigabyte(12), Megabyte(500));
 	return 0;		
-
+    
     if(argc != 2){
         printf("invalid argument, pass restore or backup\n");
     }
@@ -4225,7 +4233,7 @@ main(int argc, char* argv[]) {
     if(std::string(argv[1]) != "backup"){
         printf("invalid argument\n");
     }
-        
+    
     
     size_t bsize = 64*1024*1024;
     void *MemBuf = malloc(bsize);

@@ -208,6 +208,18 @@ namespace NarDIWrapper {
     };
     
     
+    public ref class BackupReadResult{
+        public:
+        BackupReadResult(){
+            
+        }
+        
+        uint32_t WriteSize = 0;
+        uint32_t DecompressedSize = 0;
+        BackupStream_Errors Error = BackupStream_Errors::Error_NoError;
+    };
+    
+    
     public ref class RestoreStream {
         
         public:
@@ -222,13 +234,12 @@ namespace NarDIWrapper {
             
             RootDir     = gcnew System::String(L"");
             RootDir     = arg_RootDir;
-
+            
         }
         
         ~RestoreStream() {
             TerminateRestore();
         }
-        
         
         bool SetDiskRestore(int DiskID, wchar_t Letter, bool arg_RepairBoot, bool OverrideDiskType, wchar_t AlternativeDiskType) {
             
@@ -403,7 +414,7 @@ namespace NarDIWrapper {
         
         bool CW_SetupStream(wchar_t L, int BT, StreamInfo^ StrInf, bool ShouldCompress);
         
-        INT32 CW_ReadStream(void* Data, wchar_t VolumeLetter, int Size);
+        BackupReadResult^ CW_ReadStream(void* Data, wchar_t VolumeLetter, int Size);
         bool CW_CheckStreamStatus(wchar_t Letter);
         
         bool CW_TerminateBackup(bool Succeeded, wchar_t VolumeLetter);

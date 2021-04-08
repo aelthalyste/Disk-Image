@@ -345,54 +345,48 @@ struct stream {
     INT32 ClusterIndex;
     HANDLE Handle; //Used for streaming data to C#
     
+    
     // BackupStream_Errors Error;
     
 #if 1    
-    enum {
-        Error_NoError,
-        Error_Read,
-        Error_SetFP,
-        Error_SizeOvershoot,
-        Error_Compression,
-        Error_Count
-    }Error;
+    BackupStream_Errors Error;
 #endif
     
     const char* GetErrorDescription(){
         
         static const struct {
-            int val;
+            BackupStream_Errors val;
             const char* desc;
         }
         Table[] = {
             {
-                stream::Error_NoError,
+                BackupStream_Errors::Error_NoError,
                 "No error occured during stream\n"
             },
             {
-                stream::Error_Read,
+                BackupStream_Errors::Error_Read,
                 "Error occured while reading shadow copy\n"
             },
             {
-                stream::Error_SetFP,
+                BackupStream_Errors::Error_SetFP,
                 "Error occured while setting volume file pointer\n"
             },
             {
-                stream::Error_SizeOvershoot,
+                BackupStream_Errors::Error_SizeOvershoot,
                 "Logical cluster exceeds volume size\n"
             },
             {
-                stream::Error_Compression,
+                BackupStream_Errors::Error_Compression,
                 "Internal compression error occured\n"
             },
             {
-                stream::Error_Count,
+                BackupStream_Errors::Error_Count,
                 "Error_Count is not an error. This is placeholder\n"
             }
         };
         
         const int TableElCount  =sizeof(Table)/sizeof(Table[0]);
-        static_assert(TableElCount - 1 == stream::Error_Count, "There must be same number of descriptions as error count\n");
+        static_assert(TableElCount - 1 == (int)BackupStream_Errors::Error_Count, "There must be same number of descriptions as error count\n");
         
         for(size_t i =0; i<TableElCount; i++){
             if(Table[i].val == this->Error){
@@ -403,12 +397,21 @@ struct stream {
         return "Couldn't find error code in table, you must not be able to see this message\n";
     }
     
+
+    // If compression enabled, this value is equal to uncompressed size of the resultant compression job
+    // otherwise it's equal to readstream's return value
+    uint32_t BytesProcessed;
+    
     bool ShouldCompress;
     void *CompressionBuffer;
     size_t BufferSize;
     ZSTD_CCtx* CCtx;
     ZSTD_CStream* CStream;
+
+    
 };
+
+
 
 
 /*
@@ -543,7 +546,7 @@ IsNumeric(char val) {
 bool
 CheckStreamCompletedSuccessfully(volume_backup_inf *V){
     if(V){
-        return (V->Stream.Error == stream::Error_NoError);
+        return (V->Stream.Error == BackupStream_Errors::Error_NoError);
     }
 }
 

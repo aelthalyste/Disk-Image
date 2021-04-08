@@ -14,31 +14,42 @@ namespace DotNetTest
         static void Main(string[] args)
         {
             //NarDIWrapper.RestoreSource_Errors e;
-            var rlist = DiskTracker.CW_GetBackupsInDirectory(args[0]);
+            //var rlist = DiskTracker.CW_GetBackupsInDirectory(args[0]);
+            //
+            //foreach(var item in rlist){
+            //    Console.WriteLine(item.Letter);
+            //    Console.WriteLine(item.Version);
+            //    Console.WriteLine(item.VolumeTotalSize);
+            //    Console.WriteLine(item.VolumeUsedSize);
+            //    Console.WriteLine(item.SystemPartSize);
+            //    Console.WriteLine(item.Fullpath);
+            //    Console.WriteLine("##################");
+            //}
+            //
+            //
+            //BackupMetadata bm = new BackupMetadata();
+            //
+            //bm = rlist[0];
+            //{
+            //    Console.WriteLine(bm.VolumeTotalSize);
+            //    Console.WriteLine(bm.VolumeUsedSize);
+            //    Console.WriteLine(bm.SystemPartSize);
+            //    Console.WriteLine(bm.Fullpath);
+            //}
+            BackupReadResult r = new BackupReadResult;
             
-            foreach(var item in rlist){
-                Console.WriteLine(item.Letter);
-                Console.WriteLine(item.Version);
-                Console.WriteLine(item.VolumeTotalSize);
-                Console.WriteLine(item.VolumeUsedSize);
-                Console.WriteLine(item.SystemPartSize);
-                Console.WriteLine(item.Fullpath);
-                Console.WriteLine("##################");
-            }
-
-
-            BackupMetadata bm = new BackupMetadata();
-
-            bm = rlist[0];
+            RestoreStream stream = new RestoreStream(new BackupMetadata(), "haha");
+            uint a = 50;
+            
+            unsafe
             {
-                Console.WriteLine(bm.VolumeTotalSize);
-                Console.WriteLine(bm.VolumeUsedSize);
-                Console.WriteLine(bm.SystemPartSize);
-                Console.WriteLine(bm.Fullpath);
+                stream.foo(&a);
             }
-            
-            RestoreStream stream = new RestoreStream(bm, args[0]);
-            stream.SetDiskRestore(2, 'F', false, false, 'G');
+            Console.WriteLine(a);
+            Console.Read();
+
+            //RestoreStream stream = new RestoreStream(bm, args[0]);
+            //stream.SetDiskRestore(2, 'F', false, false, 'G');
 
 
 
