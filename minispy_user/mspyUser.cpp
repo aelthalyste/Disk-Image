@@ -1136,7 +1136,18 @@ ReadStream(volume_backup_inf* VolInf, void* CallerBuffer, unsigned int CallerBuf
         }
         
         size_t RetCode = 0;
-        RetCode = ZSTD_compressStream2(VolInf->Stream.CCtx, &output, &input, ZSTD_e_end);
+
+        while (1) {
+            RetCode = ZSTD_compressStream2(VolInf->Stream.CCtx, &output, &input, ZSTD_e_end);
+            
+            if (RetCode == 0) {
+                break;
+            }
+            if (ZSTD_isError(RetCode)) {
+                break;
+            }
+        }
+
         ASSERT(input.pos == input.size);
         ASSERT(!ZSTD_isError(RetCode));
         
@@ -1149,6 +1160,11 @@ ReadStream(volume_backup_inf* VolInf, void* CallerBuffer, unsigned int CallerBuf
                 printf("Input buffer size %u, input pos %u\n", input.size, input.pos);
                 printf("output buffer size %u, output pos %u\n", output.size, output.pos);
             }
+            if (ZSTD_isError(RetCode)) {
+                printf("ZSTD Error description : %s\n", ZSTD_getErrorName(RetCode));
+            }
+            printf("ZSTD RetCode : %I64u\n", RetCode);
+
             VolInf->Stream.Error = BackupStream_Errors::Error_Compression;
             goto ERR_BAIL_OUT;
         }

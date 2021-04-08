@@ -248,7 +248,7 @@ namespace NarDIWrapper {
         int VolID = GetVolumeID(C, VolumeLetter);
         if(VolID != NAR_INVALID_VOLUME_TRACK_ID){
             
-            uint32_t WriteSize = ReadStream(&C->Volumes.Data[VolID], Data, Size);
+            uint32_t WriteSize     = ReadStream(&C->Volumes.Data[VolID], Data, Size);
             Res->WriteSize        = WriteSize;
             Res->DecompressedSize = 0;
             
