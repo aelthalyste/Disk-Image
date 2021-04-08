@@ -272,7 +272,7 @@ namespace NarDIWrapper {
     }
     
     int DiskTracker::CW_HintBufferSize() {
-        return NAR_COMPRESSION_FRAME_SIZE;
+        return NAR_COMPRESSION_FRAME_SIZE + Megabyte(1);
     }
     
     

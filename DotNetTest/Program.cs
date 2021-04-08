@@ -23,7 +23,7 @@ namespace DotNetTest
                 unsafe
                 {
                     
-                    int bfsize = 1024 * 1024 * 64;
+                    int bfsize = 1024 * 1024 * 4;
 
                     fixed (byte* a = new Byte[bfsize])
                     { 
@@ -40,7 +40,7 @@ namespace DotNetTest
                             break;
                         }
 
-                        Console.Write("\rStep : ", i++);
+                        //Console.Write("\rStep : ", i++);
 
                     }
 
