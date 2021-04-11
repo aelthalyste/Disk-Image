@@ -12,7 +12,6 @@
 inline lcn_from_mft_query_result
 ReadLCNFromMFTRecord(void* RecordStart) {
     
-    
     lcn_from_mft_query_result Result = { 0 };
     
     if (RecordStart == NULL) {
@@ -43,31 +42,15 @@ ReadLCNFromMFTRecord(void* RecordStart) {
         UINT8 AttributeNameLen = *((UINT8*)FileAttribute + 9);
         UINT8 AttributeNonResident = *((UINT8*)FileAttribute + 8);
         if(!AttributeNonResident){
-            // IMPORTANT TODO(Batuhan): Find and append these data points to result structure, restore operation depends on it
             Result.Flags |= Result.HAS_DATA_IN_MFT;
         }
         
         INT32 DataRunsOffset = *(INT32*)((BYTE*)FileAttribute + 32);
         void* DataRuns = (char*)FileAttribute + DataRunsOffset;
         
-        // So it looks like dataruns doesnt actually tells you LCN, to save up space, they kinda use smt like 
-        // winapi's deviceiocontrol routine, maybe the reason for fetching VCN-LCN maps from winapi is weird because 
-        // thats how its implemented at ntfs at first place. who knows
-        // so thats how it looks
-        
-        /*
-            first one is always absolute LCN in the volume. rest of it is addition to previous one. if file is fragmanted, value will be
-            negative. so we dont have to check some edge cases here.
-            second data run will be lets say 0x11 04 43
-            and first one                    0x11 10 10
-            starting lcn is 0x10, but second data run does not start from 0x43, it starts from 0x10 + 0x43
-    
-            LCN[n] = LCN[n-1] + datarun cluster
-        */
-        
         char Size = *(BYTE*)DataRuns;
-        INT8 ClusterCountSize = (Size & 0x0F);
-        INT8 FirstClusterSize = (Size & 0xF0) >> 4;
+        uint8_t ClusterCountSize = (Size & 0x0F);
+        uint8_t FirstClusterSize = (Size >> 4);
         
         INT64 ClusterCount = *(INT64*)((char*)DataRuns + 1);
         ClusterCount = ClusterCount & ~(0xFFFFFFFFFFFFFFFFULL << (ClusterCountSize * 8));
@@ -91,17 +74,10 @@ ReadLCNFromMFTRecord(void* RecordStart) {
         while (*(BYTE*)D) {
             
             Size = *(BYTE*)D;
-            
-            //UPDATE: Even tho entry finishes at 8 byte aligment, it doesnt finish itself here, adds at least 1 byte for zero termination to indicate its end
-            //so rather than tracking how much we read so far, we can check if we encountered zero termination
-            // NOTE(Batuhan): Each entry is at 8byte aligment, so lets say we thought there must be smt like 80 bytes reserved for 0xA0 attribute
-            // but since data run's size is not constant, it might finish at not exact multiple of 8, like 75, so rest of the 5 bytes are 0
-            // We can keep track how many bytes we read so far etc etc, but rather than that, if we just check if size is 0, which means rest is just filler 
-            // bytes to aligment border, we can break early.
             if (Size == 0) break;  
             
             ClusterCountSize = (Size & 0x0F);
-            FirstClusterSize = (Size & 0xF0) >> 4;
+            FirstClusterSize = (Size >> 4);
             
             if (ClusterCountSize == 0 || FirstClusterSize == 0)break;
             
@@ -573,8 +549,8 @@ NarParseIndexAllocationAttribute(void *IndexAttribute, nar_record *OutRegions, u
     */
     
     BYTE Size = *(BYTE*)DataRuns;
-    INT8 ClusterCountSize = (Size & 0x0F);
-    INT8 FirstClusterSize = (Size & 0xF0) >> 4;
+    uint8_t ClusterCountSize = (Size & 0x0F);
+    uint8_t FirstClusterSize = (Size >> 4);
     
     // Swipe to left to clear extra bits, then swap back to get correct result.
     INT64 ClusterCount = *(INT64*)((char*)DataRuns + 1); // 1 byte for size variable
@@ -605,22 +581,21 @@ NarParseIndexAllocationAttribute(void *IndexAttribute, nar_record *OutRegions, u
         
         Size = *(BYTE*)D;
         
-        //UPDATE: Even tho entry finishes at 8 byte aligment, it doesnt finish itself here, adds at least 1 byte for zero termination to indicate its end
-        //so rather than tracking how much we read so far, we can check if we encountered zero termination
-        // NOTE(Batuhan): Each entry is at 8byte aligment, so lets say we thought there must be smt like 80 bytes reserved for 0xA0 attribute
-        // but since data run's size is not constant, it might finish at not exact multiple of 8, like 75, so rest of the 5 bytes are 0
-        // We can keep track how many bytes we read so far etc etc, but rather than that, if we just check if size is 0, which means rest is just filler 
-        // bytes to aligment border, we can break early.
         if (Size == 0) break;
         
         // extract 4bit nibbles from size
         ClusterCountSize = (Size & 0x0F);
-        FirstClusterSize = (Size & 0xF0) >> 4;
+        FirstClusterSize = (Size >> 4);
         
         
         // edge case
         if((char*)D + ClusterCountSize + FirstClusterSize >= AttrEnd){
             //NAR_BREAK;
+            break;
+        }
+        
+        if(ClusterCountSize > 4 || FirstClusterSize > 4){
+            printf("new special case 4102021 detected\n");
             break;
         }
         
@@ -640,8 +615,7 @@ NarParseIndexAllocationAttribute(void *IndexAttribute, nar_record *OutRegions, u
             FirstCluster = FirstCluster | (0xFFFFFFFFFFFFFFFFULL << (FirstClusterSize * 8));
         }
         
-        FirstCluster += OldClusterStart;
-        // Update tail
+        FirstCluster   += OldClusterStart;
         OldClusterStart = FirstCluster;
         
         D = (BYTE*)D + (FirstClusterSize + ClusterCountSize + 1);
@@ -649,6 +623,7 @@ NarParseIndexAllocationAttribute(void *IndexAttribute, nar_record *OutRegions, u
         
         OutRegions[InternalRegionsFound].StartPos = (UINT32)FirstCluster;
         OutRegions[InternalRegionsFound].Len   = (UINT32)ClusterCount;
+        
         InternalRegionsFound++;
         if(InternalRegionsFound > MaxRegionLen){
             goto NOT_ENOUGH_MEMORY;
@@ -691,33 +666,17 @@ NarParseIndexAllocationAttributeSingular(void *IndexAttribute, nar_record *OutRe
     INT32 DataRunsOffset = *(INT32*)((BYTE*)IndexAttribute + 32);
     void* DataRuns = (char*)IndexAttribute + DataRunsOffset;
     
-    // So it looks like dataruns doesnt actually tells you LCN, to save up space, they kinda use smt like 
-    // winapi's deviceiocontrol routine, maybe the reason for fetching VCN-LCN maps from winapi is weird because 
-    // thats how its implemented at ntfs at first place. who knows
-    // so thats how it looks
-    /*
-    first one is always absolute LCN in the volume. rest of it is addition to previous one. if file is fragmanted, value might be
-    negative. so we dont have to check some edge cases here.
-    second data run will be lets say 0x11 04 43
-    and first one                    0x11 10 10
-    starting lcn is 0x10, but second data run does not start from 0x43, it starts from 0x10 + 0x43
-  
-    LCN[n] = LCN[n-1] + datarun cluster
-    */
-    
     BYTE Size = *(BYTE*)DataRuns;
-    INT8 ClusterCountSize = (Size & 0x0F);
-    INT8 FirstClusterSize = (Size & 0xF0) >> 4;
+    uint8_t ClusterCountSize = (Size & 0x0F);
+    uint8_t FirstClusterSize = (Size >> 4);
     
-    // Swipe to left to clear extra bits, then swap back to get correct result.
-    INT64 ClusterCount = *(INT64*)((char*)DataRuns + 1); // 1 byte for size variable
+    
+    INT64 ClusterCount = *(INT64*)((char*)DataRuns + 1);
     ClusterCount = ClusterCount & ~(0xFFFFFFFFFFFFFFFFULL << (ClusterCountSize * 8));
-    // cluster count must be > 0, no need to do 2s complement on it
     
-    //same operation
     INT64 FirstCluster = *(INT64*)((char*)DataRuns + 1 + ClusterCountSize);
     FirstCluster = FirstCluster & ~(0xFFFFFFFFFFFFFFFFULL << (FirstClusterSize * 8));
-    // 2s complement to support negative values
+    
     if ((FirstCluster >> ((FirstClusterSize - 1) * 8 + 7)) & 1U) {
         FirstCluster = FirstCluster | ((0xFFFFFFFFFFFFFFFULL << (FirstClusterSize * 8)));
     }
@@ -747,21 +706,19 @@ NarParseIndexAllocationAttributeSingular(void *IndexAttribute, nar_record *OutRe
         
         Size = *(BYTE*)D;
         
-        //UPDATE: Even tho entry finishes at 8 byte aligment, it doesnt finish itself here, adds at least 1 byte for zero termination to indicate its end
-        //so rather than tracking how much we read so far, we can check if we encountered zero termination
-        // NOTE(Batuhan): Each entry is at 8byte aligment, so lets say we thought there must be smt like 80 bytes reserved for 0xA0 attribute
-        // but since data run's size is not constant, it might finish at not exact multiple of 8, like 75, so rest of the 5 bytes are 0
-        // We can keep track how many bytes we read so far etc etc, but rather than that, if we just check if size is 0, which means rest is just filler 
-        // bytes to aligment border, we can break early.
         if (Size == 0) break;
         
         // extract 4bit nibbles from size
         ClusterCountSize = (Size & 0x0F);
-        FirstClusterSize = (Size & 0xF0) >> 4;
+        FirstClusterSize = (Size >> 4);
         
         // edge case
         if((char*)D + ClusterCountSize + FirstClusterSize >= AttrEnd){
-            //NAR_BREAK;
+            break;
+        }
+        
+        if(ClusterCountSize > 4 || FirstClusterSize > 4){
+            printf("new special case 4102021 detected\n");
             break;
         }
         
@@ -780,11 +737,11 @@ NarParseIndexAllocationAttributeSingular(void *IndexAttribute, nar_record *OutRe
             FirstCluster = FirstCluster | (0xFFFFFFFFFFFFFFFFULL << (FirstClusterSize * 8));
         }
         
-        FirstCluster += OldClusterStart;
-        // Update tail
+        FirstCluster   += OldClusterStart;
         OldClusterStart = FirstCluster;
         
         D = (BYTE*)D + (FirstClusterSize + ClusterCountSize + 1);
+        
         
         if((InternalRegionsFound + ClusterCount) < MaxRegionLen){
             for(size_t i =0; i<(size_t)ClusterCount; i++){
@@ -797,13 +754,11 @@ NarParseIndexAllocationAttributeSingular(void *IndexAttribute, nar_record *OutRe
             NAR_BREAK;
             printf("IRF %u, CC %u, MRL %u\n", InternalRegionsFound, ClusterCount, MaxRegionLen);
             printf("%u < %u\n", InternalRegionsFound + ClusterCount, MaxRegionLen);
-            // IRF 1, CC 45056, MRL 67104573
-            
             goto NOT_ENOUGH_MEMORY;
         }
         
         
-        //ASSERT(InternalRegionsFound > MaxRegionLen);
+        ASSERT(InternalRegionsFound > MaxRegionLen);
         
     }
     
