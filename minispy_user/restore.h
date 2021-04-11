@@ -143,6 +143,7 @@ struct restore_stream{
 	restore_target *Target;
     
     RestoreStream_Errors Error;
+    RestoreSource_Errors SrcError;
     
     size_t CSI;
 	size_t SourceCap;

@@ -357,13 +357,13 @@ namespace NarDIWrapper {
         /* 
             returns how many bytes processed. 0 means either end of stream or something bad happened. check internal errors via CheckStreamStatus.
         */
+        
         size_t CW_AdvanceStream() {
             size_t Result = 0;
             if(Stream){
                 Result = AdvanceStream(Stream);
-                // update error enums for caller
                 StreamError = Stream->Error;
-                SrcError = Stream->Sources[Stream->CSI]->Error;
+                SrcError    = Stream->SrcError;
             }
             return Result;
         }

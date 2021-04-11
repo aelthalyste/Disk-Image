@@ -228,7 +228,7 @@ InitRestoreFileSource(StrType MetadataPath, nar_arena* Arena, size_t MaxAdvanceS
                 if (bm->IsCompressed) {
                     Result->IsCompressed = true;
                     Result->BfSize = bm->FrameSize;
-                    Result->Bf = ArenaAllocate(Arena, bm->FrameSize);
+                    Result->Bf = ArenaAllocate(Arena, bm->FrameSize + Megabyte(1));
                     Result->DStream = ZSTD_createDStream();
                 }
                 else{
@@ -382,6 +382,9 @@ AdvanceStream(restore_stream* Stream) {
     restore_source* CS = Stream->Sources[Stream->CSI];
     
     const void* Mem = CS->Read(CS, &ReadLen);
+    
+    Stream->SrcError = CS->Error;
+    
     if (Mem != NULL && ReadLen > 0) {
         
         size_t NewNeedle = Stream->Target->SetNeedle(Stream->Target, CS->AbsoluteNeedleInBytes);

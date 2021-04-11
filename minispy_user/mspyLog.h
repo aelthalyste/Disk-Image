@@ -225,6 +225,7 @@ NarLog(const char *str, ...){
     }
 	else{
 		OutputDebugStringA(buf);
+        //printf(buf);
     }
     
 #endif
@@ -397,7 +398,7 @@ struct stream {
         return "Couldn't find error code in table, you must not be able to see this message\n";
     }
     
-
+    
     // If compression enabled, this value is equal to uncompressed size of the resultant compression job
     // otherwise it's equal to readstream's return value
     uint32_t BytesProcessed;
@@ -407,7 +408,7 @@ struct stream {
     size_t BufferSize;
     ZSTD_CCtx* CCtx;
     ZSTD_CStream* CStream;
-
+    
     
 };
 

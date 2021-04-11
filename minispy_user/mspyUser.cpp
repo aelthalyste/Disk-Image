@@ -83,7 +83,7 @@ narfree(void* m){
 #endif
 
 unsigned int GlobalReadFileCallCount = 0;
-
+FILE* GlobalFile = 0;
 
 /*
     ASSUMES RECORDS ARE SORTED
@@ -291,14 +291,16 @@ CompareNarRecords(const void* v1, const void* v2) {
     nar_record* n1 = (nar_record*)v1;
     nar_record* n2 = (nar_record*)v2;
     
+#if 0    
     if(n1->StartPos == n2->StartPos){
         return (BOOL)((int64_t)n1->Len - (int64_t)n2->Len);
     }
     else{
         return (BOOL)((int64_t)n1->StartPos - (int64_t)n2->StartPos);
     }
+#endif
     
-#if 0    
+#if 1    
     // old version
     if (n1->StartPos == n2->StartPos && n2->Len < n1->Len) {
         return 1;
@@ -467,8 +469,8 @@ GetMFTandINDXLCN(char VolumeLetter, HANDLE VolumeHandle) {
     
     BOOLEAN JustExtractMFTRegions = FALSE;
     
-    uint32_t MEMORY_BUFFER_SIZE = 1024LL * 1024LL * 256;
-    uint32_t ClusterExtractedBufferSize = 1024 * 1024 * 128;
+    uint32_t MEMORY_BUFFER_SIZE = 1024LL * 1024LL * 128;
+    uint32_t ClusterExtractedBufferSize = 1024 * 1024 * 64;
     
     uint32_t MaxOutputLen = ClusterExtractedBufferSize/sizeof(nar_record);
     
@@ -576,45 +578,25 @@ GetMFTandINDXLCN(char VolumeLetter, HANDLE VolumeHandle) {
                         // We can read all file records for given data region
                         
                         size_t TargetFileCount = MIN(FileBufferCount, FileRemaining);
+                        FileRemaining -= TargetFileCount;
                         
-                        if (ReadFile(VolumeHandle, FileBuffer, TargetFileCount * 1024, &BR, 0) && BR == TargetFileCount * 1024) {
+                        //NAR_BREAK;
+                        
+                        
+                        BOOL RFResult = ReadFile(VolumeHandle, FileBuffer, TargetFileCount * 1024ul, &BR, 0);
+                        
+                        //printf("%X\n%X\n%X\n%X\n%X\n",VolumeHandle, FileBuffer, TargetFileCount*1024ul, &BR, 0);
+                        
+                        if (RFResult && BR == (TargetFileCount * 1024ul)) {
+#if 1                          
                             
-                            GlobalReadFileCallCount++;
-                            
+                            printf("Succ read %u of files\n", TargetFileCount);
                             
                             for (unsigned int FileRecordIndex = 0; FileRecordIndex < TargetFileCount; FileRecordIndex++) {
-                                
                                 
                                 TIMED_NAMED_BLOCK("File record parser");
                                 
                                 void* FileRecord = (BYTE*)FileBuffer + (uint64_t)FileRecordSize * (uint64_t)FileRecordIndex;
-                                
-                                
-#if 1                                
-                                _mm_prefetch((const char*)FileRecord + 1024*1, _MM_HINT_T0);
-                                _mm_prefetch((const char*)FileRecord + 1024*2, _MM_HINT_T0);
-                                _mm_prefetch((const char*)FileRecord + 1024*2, _MM_HINT_T0);
-                                _mm_prefetch((const char*)FileRecord + 1024*4, _MM_HINT_T0);
-                                
-                                
-                                _mm_prefetch((const char*)FileRecord + 1024*5, _MM_HINT_T0);
-                                _mm_prefetch((const char*)FileRecord + 1024*6, _MM_HINT_T0);
-                                _mm_prefetch((const char*)FileRecord + 1024*7, _MM_HINT_T0);
-                                _mm_prefetch((const char*)FileRecord + 1024*8, _MM_HINT_T0);
-                                
-                                
-                                _mm_prefetch((const char*)FileRecord + 1024*9, _MM_HINT_T0);
-                                _mm_prefetch((const char*)FileRecord + 1024*10, _MM_HINT_T0);
-                                _mm_prefetch((const char*)FileRecord + 1024*11, _MM_HINT_T0);
-                                _mm_prefetch((const char*)FileRecord + 1024*12, _MM_HINT_T0);
-                                
-                                
-                                _mm_prefetch((const char*)FileRecord + 1024*13, _MM_HINT_T0);
-                                _mm_prefetch((const char*)FileRecord + 1024*14, _MM_HINT_T0);
-                                _mm_prefetch((const char*)FileRecord + 1024*15, _MM_HINT_T0);
-                                _mm_prefetch((const char*)FileRecord + 1024*16, _MM_HINT_T0);
-#endif
-                                
                                 
                                 // file flags are at 22th offset in the record
                                 if (*(INT32*)FileRecord != 'ELIF') {
@@ -622,13 +604,6 @@ GetMFTandINDXLCN(char VolumeLetter, HANDLE VolumeHandle) {
                                     // block doesnt start with 'FILE0', skip
                                     continue;
                                 }
-                                
-#if 1                                
-                                _mm_prefetch((const char*)FileRecord, _MM_HINT_T0);
-                                _mm_prefetch((const char*)FileRecord + 0x40, _MM_HINT_T0);
-                                _mm_prefetch((const char*)FileRecord + 0x80, _MM_HINT_T0);
-                                _mm_prefetch((const char*)FileRecord + 0xC0, _MM_HINT_T0);
-#endif
                                 
                                 void *IndxOffset = NarFindFileAttributeFromFileRecord(FileRecord, NAR_INDEX_ALLOCATION_FLAG);
                                 
@@ -644,7 +619,6 @@ GetMFTandINDXLCN(char VolumeLetter, HANDLE VolumeHandle) {
                                         ClusterExtractedCount += RegFound;
                                     }
                                     else{
-                                        // NOTE(Batuhan): parses indx allocation to one-cluster granuality blocks, to make bitmap parsing trivial. increases memory usage(at parsing stage, not for the final outcome), but makes parsing much easier.
                                         
                                         uint32_t RegFound = 0;
                                         NarParseIndexAllocationAttributeSingular(IndxOffset, &ClustersExtracted[ClusterExtractedCount], MaxOutputLen - ClusterExtractedCount, &RegFound);
@@ -675,15 +649,17 @@ GetMFTandINDXLCN(char VolumeLetter, HANDLE VolumeHandle) {
                                 
                             }
                             
-                            
+#endif
                             
                             
                         }
                         else {
-                            printf("Couldnt read file records\n");
+                            printf("Couldnt read file records, read %u bytes instead of %u\n", BR, TargetFileCount*1024);
+                            printf("Error code is %X\n", RFResult);
+                            DisplayError(RFResult);
                         }
                         
-                        FileRemaining -= TargetFileCount;
+                        
                     }// END OF WHILE(FILE REMAINING)
                     
                 }
@@ -727,18 +703,17 @@ GetMFTandINDXLCN(char VolumeLetter, HANDLE VolumeHandle) {
     }
     
     
-    
     ULONGLONG VolumeSize = NarGetVolumeTotalSize(VolumeLetter);
     uint32_t TruncateIndex = 0;
     for (uint32_t i = 0; i < Result.Count; i++) {
         if ((ULONGLONG)Result.Data[i].StartPos * (ULONGLONG)ClusterSize + (ULONGLONG)Result.Data[i].Len * ClusterSize > VolumeSize) {
-            NAR_BREAK;
             TruncateIndex = i;
+            printf("MFT PARSER : truncation index found %u\n", i);
             break;
         }
     }
     
-    ASSERT(TruncateIndex == 0);
+    //ASSERT(TruncateIndex == 0);
     
     if (TruncateIndex > 0) {
         printf("INDEX_ALLOCATION blocks exceeds volume size, truncating from index %i\n", TruncateIndex);
@@ -1136,7 +1111,7 @@ ReadStream(volume_backup_inf* VolInf, void* CallerBuffer, unsigned int CallerBuf
         }
         
         size_t RetCode = 0;
-
+        
         while (input.size != input.pos) {
             RetCode = ZSTD_compressStream2(VolInf->Stream.CCtx, &output, &input, ZSTD_e_end);
             
@@ -1146,9 +1121,9 @@ ReadStream(volume_backup_inf* VolInf, void* CallerBuffer, unsigned int CallerBuf
             if (ZSTD_isError(RetCode)) {
                 break;
             }
-
+            
         }
-
+        
         ASSERT(input.pos == input.size);
         ASSERT(!ZSTD_isError(RetCode));
         
@@ -1165,7 +1140,7 @@ ReadStream(volume_backup_inf* VolInf, void* CallerBuffer, unsigned int CallerBuf
                 printf("ZSTD Error description : %s\n", ZSTD_getErrorName(RetCode));
             }
             printf("ZSTD RetCode : %I64u\n", RetCode);
-
+            
             VolInf->Stream.Error = BackupStream_Errors::Error_Compression;
             goto ERR_BAIL_OUT;
         }
@@ -1790,7 +1765,7 @@ SetupVSS() {
      */
     
 #if 1
-#if (_MANAGED == 1) || (_M_CEE == 1)
+#if (_MANAGED == 1)
     return TRUE;
 #else
     BOOLEAN Return = TRUE;
@@ -2504,7 +2479,7 @@ NarOpenVolume(char Letter) {
     char VolumePath[64];
     snprintf(VolumePath, 64, "\\\\.\\%c:", Letter);
     
-    HANDLE Volume = CreateFileA(VolumePath, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_WRITE | FILE_SHARE_READ | FILE_SHARE_DELETE, 0, OPEN_EXISTING, 0, 0);
+    HANDLE Volume = CreateFileA(VolumePath, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_WRITE | FILE_SHARE_READ | FILE_SHARE_DELETE, 0, OPEN_EXISTING, FILE_FLAG_NO_BUFFERING, 0);
     if (Volume != INVALID_HANDLE_VALUE) {
         
         
@@ -3806,6 +3781,8 @@ NarEditTaskNameAndDescription(const wchar_t* FileName, const wchar_t* TaskName, 
         return FALSE;
     }
     
+    
+    
     BOOLEAN Result = 0;
     
     HANDLE FileHandle = CreateFileW(FileName, 
@@ -4232,15 +4209,36 @@ bool SetDiskRestore(int DiskID, wchar_t Letter, size_t VolumeTotalSize, size_t E
 }
 
 
+
 int
 main(int argc, char* argv[]) {   
     
-	SetDiskRestore(2, 'F', Gigabyte(12), Megabyte(500));
-	return 0;		
+    
+#if 1    
+    // argv[1][0]
+    SetupVSS();
+    CComPtr<IVssBackupComponents> ptr;
+    wchar_t out[300];
+    GetShadowPath(L"C:\\", ptr, out, 300);
+    HANDLE V = CreateFileW(out, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, NULL, NULL);
+    if(V!= INVALID_HANDLE_VALUE){
+        GetMFTandINDXLCN('C', V);
+    }
+    else{
+        printf("openvolume returned invalid handle value\n");
+    }
+    
+    int a = 0;
+    std::cout<<"Done!\n";
+    std::cin>>a;
+    return 0;
+#endif
+    return 0;
     
     if(argc != 2){
         printf("invalid argument, pass restore or backup\n");
     }
+    
     
     if(std::string(argv[1]) == "restore"){
         DEBUG_Restore();
@@ -4363,7 +4361,6 @@ main(int argc, char* argv[]) {
 
 
 
-
 VOID
 DisplayError(DWORD Code) {
     
@@ -4393,7 +4390,7 @@ DisplayError(DWORD Code) {
             //  system directory path.
             //
             
-            printf("    Could not translate error: %d\n", Code);
+            printf("Could not translate error: %d\n", Code);
             return;
         }
         
@@ -4404,7 +4401,7 @@ DisplayError(DWORD Code) {
         
         if (status != S_OK) {
             
-            printf("    Could not translate error: %d\n", Code);
+            printf("Could not translate error: %d\n", Code);
             return;
         }
         
@@ -4423,7 +4420,6 @@ DisplayError(DWORD Code) {
                               NULL);
         
         if (module != NULL) {
-            
             FreeLibrary(module);
         }
         

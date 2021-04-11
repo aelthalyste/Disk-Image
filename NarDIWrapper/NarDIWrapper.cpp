@@ -108,7 +108,6 @@ namespace NarDIWrapper {
     }
     
     bool CSNarFileExplorer::CW_SelectDirectory(UINT64 ID){
-        
         //NarFileExplorerPushDirectory(ctx, ID);
         return true;
     }
