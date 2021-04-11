@@ -226,8 +226,8 @@ namespace NarDIWrapper {
         
         RestoreStream(BackupMetadata^ arg_BM, System::String^ arg_RootDir) {
             Stream      = 0;
-            MemLen      = Gigabyte(2);
-            Mem         = VirtualAlloc(0, MemLen, MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_READWRITE);
+            MemLen      = Megabyte(512);
+            Mem         = VirtualAlloc(0, MemLen, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
             
             BM          = gcnew BackupMetadata;
             BM          = arg_BM;
@@ -314,7 +314,7 @@ namespace NarDIWrapper {
             
             restore_target *Target = InitVolumeTarget(VolumeLetter, &Arena);
             if (Target) {
-                wchar_t bf[256];
+                wchar_t bf[512];
                 
                 memset(bf, 0, sizeof(bf));
                 SystemStringToWCharPtr(RootDir, &bf[0]);
@@ -338,6 +338,7 @@ namespace NarDIWrapper {
         
         
         void TerminateRestore() {
+            printf("Bytes copied %I64u, total was %I64u, ratio is %%(%.4f)\n", InternalBytesCopied, BytesNeedToCopy, (double)BytesNeedToCopy/(double)InternalBytesCopied);
             if (Mem) {
                 FreeRestoreStream(Stream);
                 if (IsDiskRestore) {
@@ -361,10 +362,11 @@ namespace NarDIWrapper {
         size_t CW_AdvanceStream() {
             size_t Result = 0;
             if(Stream){
-                Result = AdvanceStream(Stream);
+                Result      = AdvanceStream(Stream);
                 StreamError = Stream->Error;
                 SrcError    = Stream->SrcError;
             }
+            InternalBytesCopied += Result;
             return Result;
         }
         
@@ -377,7 +379,7 @@ namespace NarDIWrapper {
             return Result;
         }
         
-        RestoreSource_Errors SrcError = RestoreSource_Errors::Error_NoError;
+        RestoreSource_Errors SrcError    = RestoreSource_Errors::Error_NoError;
         RestoreStream_Errors StreamError = RestoreStream_Errors::Error_NoError;
         
         size_t BytesNeedToCopy;
@@ -386,6 +388,7 @@ namespace NarDIWrapper {
         
         private:
         
+        size_t InternalBytesCopied = 0;
         
         void            *Mem;
         size_t          MemLen;

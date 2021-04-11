@@ -238,7 +238,7 @@ InitRestoreFileSource(StrType MetadataPath, nar_arena* Arena, size_t MaxAdvanceS
                 Error = false;
             }
             else {
-                
+                printf("Error : Regions metadata < metadata.len\n");
             }
             
             
@@ -246,6 +246,9 @@ InitRestoreFileSource(StrType MetadataPath, nar_arena* Arena, size_t MaxAdvanceS
         else {
             NarFreeFileView(Result->Metadata);
         }
+    }
+    else{
+        printf("Unable to open metadata\n");
     }
     
     
@@ -271,7 +274,7 @@ InitFileRestoreStream(StrType MetadataFile, restore_target* Target, nar_arena* A
             if (bm.BT == BackupType::Diff) {
                 SourceFileCount = 2;
                 
-                Result->Sources = (restore_source**)ArenaAllocate(Arena, SourceFileCount * sizeof(restore_source*));
+                Result->Sources   = (restore_source**)ArenaAllocate(Arena, SourceFileCount * sizeof(restore_source*));
                 Result->SourceCap = SourceFileCount;
                 Result->CSI = 0;
                 
@@ -292,19 +295,19 @@ InitFileRestoreStream(StrType MetadataFile, restore_target* Target, nar_arena* A
             }
             else if (bm.BT == BackupType::Inc) {
                 
-                SourceFileCount = bm.Version + SourceFileCount;
-                
-                Result->Sources = (restore_source**)ArenaAllocate(Arena, SourceFileCount * sizeof(restore_source*));
+                SourceFileCount   = bm.Version + SourceFileCount + 1;
+                Result->Sources   = (restore_source**)ArenaAllocate(Arena, SourceFileCount * sizeof(restore_source*));
                 Result->SourceCap = SourceFileCount;
-                Result->CSI = 0;
+                Result->CSI       = 0;
                 
                 static_assert(NAR_FULLBACKUP_VERSION == -1, "Changing FULLBACKUP VERSION number breaks this loop, and probably many more hidden ones too");
                 
                 for (int i = NAR_FULLBACKUP_VERSION; i <= bm.Version; i++) {
                     StrType fpath;
                     GenerateMetadataName(bm.ID, bm.Version, fpath);
-                    Result->Sources[i] = InitRestoreFileSource(RootDir + fpath, Arena, MaxAdvanceSize);
-                    Result->BytesToBeCopied += Result->Sources[i]->BytesToBeCopied;
+                    printf("Inc backup file path : %S\n", fpath.c_str());
+                    Result->Sources[i + 1]   = InitRestoreFileSource(RootDir + fpath, Arena, MaxAdvanceSize);
+                    Result->BytesToBeCopied += Result->Sources[i + 1]->BytesToBeCopied;
                 }
                 
             }
