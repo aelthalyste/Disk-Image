@@ -2479,7 +2479,7 @@ NarOpenVolume(char Letter) {
     char VolumePath[64];
     snprintf(VolumePath, 64, "\\\\.\\%c:", Letter);
     
-    HANDLE Volume = CreateFileA(VolumePath, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_WRITE | FILE_SHARE_READ | FILE_SHARE_DELETE, 0, OPEN_EXISTING, FILE_FLAG_NO_BUFFERING, 0);
+    HANDLE Volume = CreateFileA(VolumePath, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_WRITE | FILE_SHARE_READ | FILE_SHARE_DELETE, 0, OPEN_EXISTING, 0, 0);
     if (Volume != INVALID_HANDLE_VALUE) {
         
         
@@ -4014,7 +4014,7 @@ NarInitPool(void *Memory, int MemorySize, int PoolSize){
 void
 DEBUG_Restore(){
     
-    size_t MemLen = Megabyte(250);
+    size_t MemLen = Megabyte(512);
     std::wstring MetadataPath = L"";
     int DiskID;
     wchar_t TargetLetter;
@@ -4022,8 +4022,10 @@ DEBUG_Restore(){
     std::cout<<"Enter metadata path\n";
     std::wcin>>MetadataPath;
     
+#if 0    
     std::cout<<"Enter disk id\n";
     std::cin>>DiskID;
+#endif
     
     std::cout<<"Enter target letter\n";
     std::wcin>>TargetLetter;
@@ -4033,14 +4035,13 @@ DEBUG_Restore(){
     
     if(false == NarReadMetadata(MetadataPath, &bm)){
         std::wcout<<L"Unable to read metadata "<<MetadataPath<<"\n";
+        exit(0);
     }
     
-    //SetDiskRestore(DiskID, TargetLetter, &bm);
-    
-    void* Mem = VirtualAlloc(0, MemLen, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
+    void* Mem = VirtualAlloc(0, MemLen, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
     nar_arena Arena = ArenaInit(Mem, MemLen);
     
-#if 1    
+#if 0    
     if (NarSetVolumeSize(TargetLetter, bm.VolumeTotalSize/(1024*1024))) {
         NarFormatVolume(TargetLetter);
     }
@@ -4062,6 +4063,7 @@ DEBUG_Restore(){
         }
     }
     
+    std::cout<<"Done !\n";
     FreeRestoreStream(Stream);
     
 }
@@ -4158,7 +4160,6 @@ bool SetDiskRestore(int DiskID, wchar_t Letter, size_t VolumeTotalSize, size_t E
     
     char DiskType = 'G';
     
-    
     int VolSizeMB 		= VolumeTotalSize / (1024ull* 1024ull) + 1;
     int SysPartitionMB 	= EFIPartSize / (1024ull * 1024ull);
 	int RecPartitionMB 	= 0;
@@ -4212,6 +4213,10 @@ bool SetDiskRestore(int DiskID, wchar_t Letter, size_t VolumeTotalSize, size_t E
 
 int
 main(int argc, char* argv[]) {   
+    
+    DEBUG_Restore();
+    
+    return 0;
     
     
 #if 1    

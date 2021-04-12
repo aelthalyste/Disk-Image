@@ -79,13 +79,13 @@ NarOpenFileView(const std::wstring &fn){
     
 	FileSize = NarGetFileSize(std::wstring(fn));
     MappingHandle = 0;
-	FileHandle = CreateFileW(fn.c_str(), GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, 0, OPEN_ALWAYS, 0, 0);    
+	FileHandle = CreateFileW(fn.c_str(), GENERIC_READ, FILE_SHARE_READ, 0, OPEN_ALWAYS, 0, 0);    
 	if(FileHandle != INVALID_HANDLE_VALUE){
 		vs= {0};
 		vs.QuadPart = FileSize;
-		MappingHandle = CreateFileMappingW(FileHandle, NULL, PAGE_READWRITE, 0, 0, 0);	
+		MappingHandle = CreateFileMappingW(FileHandle, NULL, PAGE_READONLY, 0, 0, 0);	
 		if(NULL != MappingHandle){
-        	FileView = MapViewOfFile(MappingHandle, FILE_MAP_ALL_ACCESS, 0, 0, 0);
+        	FileView = MapViewOfFile(MappingHandle, FILE_MAP_READ, 0, 0, 0);
         	if(NULL != FileView){
         		Result.Data 			= (unsigned char*)FileView;
         		Result.Len  			= FileSize;
