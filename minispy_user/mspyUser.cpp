@@ -324,10 +324,13 @@ GetShadowPath(std::wstring Drive, CComPtr<IVssBackupComponents>& ptr, wchar_t* O
     res = CreateVssBackupComponents(&ptr);
     
     ASSERT(ptr);
+    
+#if 0    
     if(nullptr == ptr){
         return sid;
         // early termination
     }
+#endif
     
     if (S_OK == ptr->InitializeForBackup()) {
         if (S_OK == ptr->SetContext(VSS_CTX_BACKUP)) {
@@ -510,6 +513,7 @@ GetMFTandINDXLCN(char VolumeLetter, HANDLE VolumeHandle) {
     if(NULL == FileBuffer
        || NULL == ClustersExtracted){
         free(ClustersExtracted);
+        printf("Unable to allocate memory for cluster&file buffer\n");
         ClustersExtracted = 0;
         ClusterExtractedCount = 0;
         
@@ -580,12 +584,8 @@ GetMFTandINDXLCN(char VolumeLetter, HANDLE VolumeHandle) {
                         size_t TargetFileCount = MIN(FileBufferCount, FileRemaining);
                         FileRemaining -= TargetFileCount;
                         
-                        //NAR_BREAK;
-                        
-                        
                         BOOL RFResult = ReadFile(VolumeHandle, FileBuffer, TargetFileCount * 1024ul, &BR, 0);
                         
-                        //printf("%X\n%X\n%X\n%X\n%X\n",VolumeHandle, FileBuffer, TargetFileCount*1024ul, &BR, 0);
                         
                         if (RFResult && BR == (TargetFileCount * 1024ul)) {
 #if 1                          
@@ -702,7 +702,7 @@ GetMFTandINDXLCN(char VolumeLetter, HANDLE VolumeHandle) {
         MergeRegions(&Result);
     }
     
-    
+    size_t DebugRegionCount = 0;
     ULONGLONG VolumeSize = NarGetVolumeTotalSize(VolumeLetter);
     uint32_t TruncateIndex = 0;
     for (uint32_t i = 0; i < Result.Count; i++) {
@@ -711,6 +711,7 @@ GetMFTandINDXLCN(char VolumeLetter, HANDLE VolumeHandle) {
             printf("MFT PARSER : truncation index found %u\n", i);
             break;
         }
+        DebugRegionCount += (size_t)Result.Data[i].Len;
     }
     
     //ASSERT(TruncateIndex == 0);
@@ -720,6 +721,10 @@ GetMFTandINDXLCN(char VolumeLetter, HANDLE VolumeHandle) {
         Result.Data = (nar_record*)realloc(Result.Data, TruncateIndex * sizeof(nar_record));
         Result.Count = TruncateIndex;
     }
+    else{
+        printf("Number of regions found %I64u\n", DebugRegionCount);
+    }
+    
     
     return Result;
 }
@@ -1045,8 +1050,9 @@ ReadStream(volume_backup_inf* VolInf, void* CallerBuffer, unsigned int CallerBuf
         uint64_t ClustersRemainingByteSize = (uint64_t)VolInf->Stream.Records.Data[VolInf->Stream.RecIndex].Len - (uint64_t)VolInf->Stream.ClusterIndex;
         ClustersRemainingByteSize *= VolInf->ClusterSize;
         
-        DWORD ReadSize = (DWORD)MIN((uint64_t)RemainingSize, ClustersRemainingByteSize); // safe to truncate, since remainingsize's max value is uint32_t_MAX, and its MIN macro
+        // safe to truncate, since remainingsize's max value is uint32_t_MAX, and its MIN macro
         // we expect max value of DWORD.
+        DWORD ReadSize = (DWORD)MIN((uint64_t)RemainingSize, ClustersRemainingByteSize); 
         
         ULONGLONG FilePtrTarget = (ULONGLONG)VolInf->ClusterSize * ((ULONGLONG)VolInf->Stream.Records.Data[VolInf->Stream.RecIndex].StartPos + (ULONGLONG)VolInf->Stream.ClusterIndex);
         if (NarSetFilePointer(VolInf->Stream.Handle, FilePtrTarget)) {
@@ -1300,11 +1306,9 @@ SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, DotNetStreamInf* SI, boo
     VolInf->Stream.Records.Count = 0;
     
     auto AppendINDXnMFTLCNToStream = [&]() {
-        
         TIMED_NAMED_BLOCK("AppendINDXMFTLCN");
         data_array<nar_record> MFTandINDXRegions = GetMFTandINDXLCN((char)L, VolInf->Stream.Handle);
         if (MFTandINDXRegions.Data != 0) {
-            
             printf("Parsed MFTLCN for volume %c for version %i, count %u", (wchar_t)VolInf->Letter, VolInf->Version, VolInf->MFTLCNCount);
             VolInf->Stream.Records.Data = (nar_record*)realloc(VolInf->Stream.Records.Data, (VolInf->Stream.Records.Count + MFTandINDXRegions.Count) * sizeof(nar_record));
             memcpy(&VolInf->Stream.Records.Data[VolInf->Stream.Records.Count], MFTandINDXRegions.Data, MFTandINDXRegions.Count * sizeof(nar_record));
@@ -1362,9 +1366,9 @@ SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, DotNetStreamInf* SI, boo
         }
         
         if (SI && Return) {
-            //SI->MetadataFileName;
+            SI->MetadataFileName = L"";
             GenerateMetadataName(VolInf->BackupID, NAR_FULLBACKUP_VERSION, SI->MetadataFileName);
-            //SI->FileName;
+            SI->FileName = L"";
             GenerateBinaryFileName(VolInf->BackupID, NAR_FULLBACKUP_VERSION, SI->FileName);
         }
     }
@@ -3240,7 +3244,7 @@ NarLoadBootState() {
     printf("Entered NarLoadBootState\n");
     LOG_CONTEXT* Result;
     BOOLEAN bResult = FALSE;
-    Result = (LOG_CONTEXT*)malloc(sizeof(LOG_CONTEXT));
+    Result = new LOG_CONTEXT;
     memset(Result, 0, sizeof(LOG_CONTEXT));
     
     Result->Port = INVALID_HANDLE_VALUE;
@@ -3286,8 +3290,8 @@ NarLoadBootState() {
                                 VolInf.BackupID = BootTrackData[i].BackupID;
                                 
                                 VolInf.FilterFlags.IsActive = TRUE;
-                                VolInf.FullBackupExists = TRUE;
-                                VolInf.Version = BootTrackData[i].Version;
+                                VolInf.FullBackupExists     = TRUE;
+                                VolInf.Version              = BootTrackData[i].Version;
                                 
                                 // NOTE(Batuhan): Diff backups only need to know file pointer position they started backing up. For single-tracking system we use now, that's 0
                                 if((BackupType)BootTrackData[i].BackupType == BackupType::Diff){
@@ -3340,7 +3344,7 @@ NarLoadBootState() {
     }
     
     if (!Result) {
-        free(Result);
+        delete Result;
         Result = NULL;
     }
     
@@ -4214,28 +4218,28 @@ bool SetDiskRestore(int DiskID, wchar_t Letter, size_t VolumeTotalSize, size_t E
 int
 main(int argc, char* argv[]) {   
     
-    DEBUG_Restore();
-    
-    return 0;
-    
-    
 #if 1    
-    // argv[1][0]
+    
+    wchar_t drive[] = {(wchar_t)argv[1][0], ':', '\\'};
+    
     SetupVSS();
     CComPtr<IVssBackupComponents> ptr;
     wchar_t out[300];
-    GetShadowPath(L"C:\\", ptr, out, 300);
+    
+    GetShadowPath(drive, ptr, out, 300);
+    
     HANDLE V = CreateFileW(out, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, NULL, NULL);
     if(V!= INVALID_HANDLE_VALUE){
-        GetMFTandINDXLCN('C', V);
+        GetMFTandINDXLCN(argv[1][0], V);
     }
     else{
-        printf("openvolume returned invalid handle value\n");
+        printf("vss returned invalid handle value\n");
+        V = NarOpenVolume(argv[1][0]);
+        if(V != INVALID_HANDLE_VALUE)
+            GetMFTandINDXLCN(argv[1][0], V);
     }
     
-    int a = 0;
-    std::cout<<"Done!\n";
-    std::cin>>a;
+    printf("Done!\n");
     return 0;
 #endif
     return 0;

@@ -224,8 +224,8 @@ NarLog(const char *str, ...){
         printf(buf);
     }
 	else{
-		//OutputDebugStringA(buf);
-        //printf(buf);
+		OutputDebugStringA(buf);
+        printf(buf);
     }
     
 #endif

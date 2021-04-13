@@ -160,30 +160,34 @@ namespace NarDIWrapper {
     
     
     
-    
     DiskTracker::DiskTracker() {
-        C = NarLoadBootState();
-        // when loading, always check for old states, if one is not presented, create new one from scratch
-        if (C == NULL) {
-            printf("Coulndt load from boot file, initializing new CONTEXT\n");
-            // couldnt find old state
-            C = (LOG_CONTEXT*)malloc(sizeof(LOG_CONTEXT));
-            memset(C, 0, sizeof(LOG_CONTEXT));
-        }
-        else {
-            // found old state
-            printf("Succ loaded boot state from file\n");
+        
+        if(false == msInit){
+            msInit = true;
+            C = NarLoadBootState();
+            
+            // when loading, always check for old states, if one is not presented, create new one from scratch
+            if (C == NULL) {
+                printf("Coulndt load from boot file, initializing new CONTEXT\n");
+                C = new LOG_CONTEXT;
+                memset(C, 0, sizeof(LOG_CONTEXT));
+            }
+            else {
+                // found old state
+                printf("Succ loaded boot state from file\n");
+            }
+            
+            C->Port = INVALID_HANDLE_VALUE;
         }
         
-        C->Port = INVALID_HANDLE_VALUE;
-    }
+        
+    } 
+    
     
     DiskTracker::~DiskTracker() {
-        //Do deconstructor things
-        
-        free(C->Volumes.Data);
-        
-        delete C;
+        // We don't ever need to free anything, this class-object is supposed to be ALWAYS alive with program 
+        //free(C->Volumes.Data);
+        //delete C;
     }
     
     
@@ -216,13 +220,11 @@ namespace NarDIWrapper {
         
         DotNetStreamInf SI = { 0 };
         if (SetupStream(C, L, (BackupType)BT, &SI, ShouldCompress)) {
-            
-            StrInf->ClusterCount = SI.ClusterCount;
-            StrInf->ClusterSize = SI.ClusterSize;
-            StrInf->FileName = gcnew String(SI.FileName.c_str());
+            StrInf->ClusterCount     = SI.ClusterCount;
+            StrInf->ClusterSize      = SI.ClusterSize;
+            StrInf->FileName         = gcnew String(SI.FileName.c_str());
             StrInf->MetadataFileName = gcnew String(SI.MetadataFileName.c_str());
-            StrInf->CopySize = (UINT64)StrInf->ClusterSize * (UINT64)StrInf->ClusterCount;
-            
+            StrInf->CopySize         = (UINT64)StrInf->ClusterSize * (UINT64)StrInf->ClusterCount;
             return true;
         }
         

@@ -404,6 +404,7 @@ namespace NarDIWrapper {
     public ref class DiskTracker
     {
         public:
+        
         DiskTracker();
         ~DiskTracker();
         
@@ -435,10 +436,10 @@ namespace NarDIWrapper {
         
         private:
         
-        // Volume ID that it's stream requested store in wrapper, so requester doesnt have to pass letter or ID everytime it calls readstream or closestream.
-        //StreamID is invalidated after CloseStream(), and refreshed every SetupStream() call
+        static bool msInit    = false;
+        static LOG_CONTEXT* C = nullptr;
         
-        LOG_CONTEXT* C;
+        
         
     };
     
