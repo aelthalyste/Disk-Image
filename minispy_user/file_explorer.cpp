@@ -594,15 +594,9 @@ NarParseIndexAllocationAttribute(void *IndexAttribute, nar_record *OutRegions, u
             break;
         }
         
-        if(ClusterCountSize > 4 || FirstClusterSize > 4){
-            printf("new special case 4102021 detected\n");
+        
+        if (ClusterCountSize == 0 || FirstClusterSize == 0)
             break;
-        }
-        
-        
-        // Sparse files may cause that, but not sure about what is sparse and if it effects directories. 
-        // If not, nothing to worry about, branch predictor should take care of that
-        if (ClusterCountSize == 0 || FirstClusterSize == 0)break;
         
         // Swipe to left to clear extra bits, then swap back to get correct result.
         ClusterCount = *(INT64*)((BYTE*)D + 1);
@@ -620,6 +614,10 @@ NarParseIndexAllocationAttribute(void *IndexAttribute, nar_record *OutRegions, u
         
         D = (BYTE*)D + (FirstClusterSize + ClusterCountSize + 1);
         
+        if(FirstCluster > 0xFFFFFFFFull || FirstCluster > 0xFFFFFFFFull){
+            printf("new special case 4132021");
+            break;
+        }
         
         OutRegions[InternalRegionsFound].StartPos = (UINT32)FirstCluster;
         OutRegions[InternalRegionsFound].Len   = (UINT32)ClusterCount;
@@ -717,20 +715,12 @@ NarParseIndexAllocationAttributeSingular(void *IndexAttribute, nar_record *OutRe
             break;
         }
         
-        if(ClusterCountSize > 4 || FirstClusterSize > 4){
-            printf("new special case 4102021 detected\n");
+        if (ClusterCountSize == 0 || FirstClusterSize == 0)
             break;
-        }
         
-        // Sparse files may cause that, but not sure about what is sparse and if it effects directories. 
-        // If not, nothing to worry about, branch predictor should take care of that
-        if (ClusterCountSize == 0 || FirstClusterSize == 0)break;
-        
-        // Swipe to left to clear extra bits, then swap back to get correct result.
         ClusterCount = *(INT64*)((BYTE*)D + 1);
         ClusterCount = ClusterCount & ~(0xFFFFFFFFFFFFFFFFULL << (ClusterCountSize * 8));
         
-        //same operation
         FirstCluster = *(INT64*)((BYTE*)D + 1 + ClusterCountSize);
         FirstCluster = FirstCluster & ~(0xFFFFFFFFFFFFFFFFULL << (FirstClusterSize * 8));
         if ((FirstCluster >> ((FirstClusterSize - 1) * 8 + 7)) & 1U) {
@@ -741,6 +731,12 @@ NarParseIndexAllocationAttributeSingular(void *IndexAttribute, nar_record *OutRe
         OldClusterStart = FirstCluster;
         
         D = (BYTE*)D + (FirstClusterSize + ClusterCountSize + 1);
+        
+        
+        if(FirstCluster > 0xFFFFFFFFull || FirstCluster > 0xFFFFFFFFull){
+            printf("new special case 4132021");
+            break;;
+        }
         
         
         if((InternalRegionsFound + ClusterCount) < MaxRegionLen){
