@@ -614,8 +614,8 @@ NarParseIndexAllocationAttribute(void *IndexAttribute, nar_record *OutRegions, u
         
         D = (BYTE*)D + (FirstClusterSize + ClusterCountSize + 1);
         
-        if(FirstCluster > 0xFFFFFFFFull || FirstCluster > 0xFFFFFFFFull){
-            printf("new special case 4132021");
+        if(FirstCluster >= 0xFFFFFFFFull || ClusterCount >= 0xFFFFFFFFull){
+            printf("new special case 4132021\n");
             break;
         }
         
@@ -676,7 +676,7 @@ NarParseIndexAllocationAttributeSingular(void *IndexAttribute, nar_record *OutRe
     FirstCluster = FirstCluster & ~(0xFFFFFFFFFFFFFFFFULL << (FirstClusterSize * 8));
     
     if ((FirstCluster >> ((FirstClusterSize - 1) * 8 + 7)) & 1U) {
-        FirstCluster = FirstCluster | ((0xFFFFFFFFFFFFFFFULL << (FirstClusterSize * 8)));
+        FirstCluster = FirstCluster | ((0xFFFFFFFFFFFFFFFFULL << (FirstClusterSize * 8)));
     }
     
     INT64 OldClusterStart = FirstCluster;
@@ -733,8 +733,8 @@ NarParseIndexAllocationAttributeSingular(void *IndexAttribute, nar_record *OutRe
         D = (BYTE*)D + (FirstClusterSize + ClusterCountSize + 1);
         
         
-        if(FirstCluster > 0xFFFFFFFFull || FirstCluster > 0xFFFFFFFFull){
-            printf("new special case 4132021");
+        if(FirstCluster > 0xFFFFFFFFull || ClusterCount > 0xFFFFFFFFull){
+            printf("new special case 4132021\n");
             break;;
         }
         
