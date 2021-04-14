@@ -25,7 +25,7 @@
         </Grid.RowDefinitions>
 
         <StackPanel Panel.ZIndex="1" Orientation="Horizontal" MouseDown="MyTitleBar_MouseDown">
-            <Image Source="Resources/Icon/NarBulut_PNG_Icon_White_V3.png" Margin="0,0,5,0"/>
+            <Image Source="Resources/Icon/NarBulut_PNG_Icon_White_V3.png" Margin="0,0,5,0" Height="26" Width="26"/>
             <TextBlock Name="txtTitleBar" Style="{StaticResource TitleBarText}" />
         </StackPanel>
         <StackPanel Name="MyTitleBar" VerticalAlignment="Top" MouseDown="MyTitleBar_MouseDown">
