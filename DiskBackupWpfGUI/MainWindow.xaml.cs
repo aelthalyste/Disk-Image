@@ -936,7 +936,10 @@ namespace DiskBackupWpfGUI
             var backupService = _scope.Resolve<IBackupService>();
             try
             {
-                backupService.CancelTask((TaskInfo)listViewTasks.SelectedItem);
+                var task = (TaskInfo)listViewTasks.SelectedItem;
+                if (task.Type == TaskType.Restore) // Restore stop edilirse disk veya volume bozulmuş olacağından aynı görev başlatılamaz
+                    BreakTheTask(task);
+                backupService.CancelTask(task);
             }
             catch (Exception ex)
             {
@@ -1236,10 +1239,19 @@ namespace DiskBackupWpfGUI
                 if (restoreTaskFlag) // Hazır, İlk görev bekleniyor, working, hata
                 {
                     // restore button durumları
-
                     if (readyFlag) // burada kontrol edilmesi gereken iki buton mevcut delete ve start
                     {
                         btnTaskDelete.IsEnabled = true;
+                        btnTaskStart.IsEnabled = true;
+                    }
+                    else if (runningFlag)
+                    {
+                        btnTaskPause.IsEnabled = true;
+                        btnTaskStop.IsEnabled = true;
+                    }
+                    else if (pauseFlag)
+                    {
+                        btnTaskStop.IsEnabled = true;
                         btnTaskStart.IsEnabled = true;
                     }
                 }
