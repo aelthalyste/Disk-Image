@@ -211,24 +211,24 @@ GenerateBinaryFileName(nar_backup_id ID, int Version, StrType &Res);
 /////////////////////////////////////////////////////
 static inline void
 NarGetMetadataDraft(std::string &Res){
-	Res = std::string("NAR_M_");
+	Res = std::string("NB_M_");
 }
 
 static inline void
 NarGetMetadataDraft(std::wstring &Res){
-	Res = std::wstring(L"NAR_M_");
+	Res = std::wstring(L"NB_M_");
 }
 /////////////////////////////////////////////////////
 
 /////////////////////////////////////////////////////
 static inline void
 NarGetBinaryDraft(std::string &Res){
-	Res = std::string("NAR_BACKUP_");
+	Res = std::string("NB_");
 }
 
 static inline void
 NarGetBinaryDraft(std::wstring &Res){
-	Res = std::wstring(L"NAR_BACKUP_");
+	Res = std::wstring(L"NB_");
 }
 /////////////////////////////////////////////////////
 
@@ -236,12 +236,12 @@ NarGetBinaryDraft(std::wstring &Res){
 /////////////////////////////////////////////////////
 static inline void
 NarGetMetadataExtension(std::string &Res){
-	Res = std::string(".narmd");
+	Res = std::string(".nbfsm");
 }
 
 static inline void
 NarGetMetadataExtension(std::wstring &Res){
-	Res = std::wstring(L".narmd");
+	Res = std::wstring(L".nbfsm");
 }
 /////////////////////////////////////////////////////
 
@@ -249,12 +249,12 @@ NarGetMetadataExtension(std::wstring &Res){
 /////////////////////////////////////////////////////
 static inline void
 NarGetBinaryExtension(std::string &Res){
-	Res = std::string(".narbd");
+	Res = std::string(".nbfsf");
 }
 
 static inline void
 NarGetBinaryExtension(std::wstring &Res){
-	Res = std::wstring(L".narbd");
+	Res = std::wstring(L".nbfsf");
 }
 /////////////////////////////////////////////////////
 
@@ -288,18 +288,18 @@ NarGetVersionMidFix(int Version, std::wstring &Res){
 /////////////////////////////////////////////////////
 static inline void
 NarBackupIDToStr(nar_backup_id ID, std::wstring &Res){
-    Res = L"";
-    Res += L"-"; 
-    Res += (wchar_t)ID.Letter;
-    Res += std::to_wstring(ID.Q);
+    wchar_t bf[64];
+    memset(bf, 0, sizeof(bf));
+    wsprintfW(bf, L"-%c%02d%02d%02d", ID.Letter, ID.Month, ID.Day, ID.Hour);
+    Res = std::wstring(bf);
 }
 
 static inline void
 NarBackupIDToStr(nar_backup_id ID, std::string &Res){
-    Res = "";
-    Res += "-";
-    Res+= ID.Letter;
-    Res+= std::to_string(ID.Q);
+    char bf[64];
+    memset(bf, 0, sizeof(bf));
+    snprintf(bf, sizeof(bf), "-%c%02d%02d%02d", ID.Letter, ID.Month, ID.Day, ID.Hour);
+    Res = std::string(bf);
 }
 /////////////////////////////////////////////////////
 
