@@ -3,6 +3,7 @@
 
 
 
+
 // forces templated functions to be compiled
 void
 nar_compilation_force(){
