@@ -132,6 +132,10 @@ namespace DiskBackup.TaskScheduler.Jobs
                     _logger.Verbose("{@task} için Restore-Disk görevi bitirildi. Sonuç: Driver initialize edilemedi.", task);
                     UpdateActivityAndTask(activityLog, task, StatusType.DriverNotInitialized);
                     break;
+                case 5:
+                    _logger.Information("{@task} için Restore-Disk görevi durduruldu.", task);
+                    UpdateActivityAndTask(activityLog, task, StatusType.Cancel);
+                    break;
                 default:
                     _logger.Verbose("{@task} için Restore-Disk görevi bitirildi. Sonuç: Default çalıştı.", task);
                     UpdateActivityAndTask(activityLog, task, StatusType.Fail);
