@@ -533,6 +533,8 @@ NarParseIndexAllocationAttribute(void *IndexAttribute, nar_record *OutRegions, u
     INT32 DataRunsOffset = *(INT32*)((BYTE*)IndexAttribute + 32);
     void* D = (char*)IndexAttribute + DataRunsOffset;
     
+    int32_t total_cluster_count_size = 0;
+    
     // So it looks like dataruns doesnt actually tells you LCN, to save up space, they kinda use smt like 
     // winapi's deviceiocontrol routine, maybe the reason for fetching VCN-LCN maps from winapi is weird because 
     // thats how its implemented at ntfs at first place. who knows
@@ -550,6 +552,9 @@ NarParseIndexAllocationAttribute(void *IndexAttribute, nar_record *OutRegions, u
     BYTE Size = *(BYTE*)D;
     uint8_t ClusterCountSize = (Size & 0x0F);
     uint8_t FirstClusterSize = (Size >> 4);
+    
+    if((Size >> 4) > 4 || (Size & 0x0F) > 4) 
+        NAR_BREAK;
     
     uint32_t ClusterCount = *(uint32_t*)((char*)D + 1); // 1 byte for size variable
     ClusterCount = ClusterCount & ~(0xffffffffu << (ClusterCountSize * 8));
@@ -580,6 +585,8 @@ NarParseIndexAllocationAttribute(void *IndexAttribute, nar_record *OutRegions, u
         FirstCluster = FirstCluster | ((0xffffffffu << (FirstClusterSize * 8)));
     }
     
+    total_cluster_count_size += ClusterCount;
+    
     INT64 OldClusterStart = FirstCluster;
     D = (BYTE*)D + FirstClusterSize + ClusterCountSize + 1;
     
@@ -592,8 +599,6 @@ NarParseIndexAllocationAttribute(void *IndexAttribute, nar_record *OutRegions, u
         goto NOT_ENOUGH_MEMORY;
     }
     
-    
-    //DBG_INC(DBG_INDX_FOUND);
     while (*(BYTE*)D) {
         
         Size = *(BYTE*)D;
@@ -604,38 +609,51 @@ NarParseIndexAllocationAttribute(void *IndexAttribute, nar_record *OutRegions, u
         ClusterCountSize = (Size & 0x0F);
         FirstClusterSize = (Size >> 4);
         
-        if((char*)D + ClusterCountSize + FirstClusterSize >= AttrEnd) break;
-        if (ClusterCountSize == 0 || FirstClusterSize == 0)           break;
-        if (ClusterCountSize > 4 || FirstClusterSize > 4)             break;
+        if((char*)D + ClusterCountSize + FirstClusterSize >= AttrEnd) {
+            printf("ERROR case : overshoot\n");
+            break;
+        }
+        if (ClusterCountSize == 0 || FirstClusterSize == 0){
+            printf("ERROR case : case zero len\n");
+            break;
+        }
+        if (ClusterCountSize > 4  || FirstClusterSize > 4)            {
+            printf("ERROR case : 1704  ccs %X fcs %X \n", ClusterCountSize, FirstClusterSize);
+            break;
+        }
         
         ClusterCount = *(uint32_t*)((BYTE*)D + 1);
         ClusterCount = ClusterCount & ~(0xffffffffu << (ClusterCountSize * 8));
         
         FirstCluster = 0;
+        if(((char*)D + 1 + ClusterCountSize)[FirstClusterSize - 1] & 0x80){
+            FirstCluster = -1;
+        }
+        memcpy(&FirstCluster, (char*)D + 1 + ClusterCountSize, FirstClusterSize);
         
-        if(FirstClusterSize == 1){
-            FirstCluster = *(int8_t*)((char*)D + 1 + ClusterCountSize);
+        total_cluster_count_size += ClusterCount;
+        
+        
+        if(ClusterCount == 0){
+            printf("ERROR case : cc was zero. ccs : %X, cc %X, fcs %X, fc %X\n", ClusterCountSize, ClusterCount, FirstClusterSize, FirstCluster);
+            break;
         }
-        else if(FirstClusterSize == 2){
-            FirstCluster = *(int16_t*)((char*)D + 1 + ClusterCountSize);
-        }
-        else if(FirstClusterSize == 3){
-            FirstCluster = *(int32_t*)((char*)D + 1 + ClusterCountSize);
-            FirstCluster = FirstCluster & ~(0xffffffffu << (24));
-            // check msb to determine if we have to convert correct representation of negative number
-            if(FirstCluster & 0x00800000u){
-                FirstCluster = FirstCluster | 0xff000000;
-            }
-        }
-        else if(FirstClusterSize == 4){
-            FirstCluster = *(int32_t*)((char*)D + 1 + ClusterCountSize);
+        if(FirstCluster == 0){
+            printf("ERROR case : fc was zero. ccs : %X, cc %X, fcs %X, fc %X\n", ClusterCountSize, ClusterCount, FirstClusterSize, FirstCluster);
+            break;
         }
         
+        
+#if 0        
+        if(ClusterCount*4096 >= Gigabyte(120))                              NAR_BREAK;
+        if(((int64_t)FirstCluster + OldClusterStart)*4096 >= Gigabyte(120)) NAR_BREAK;
+#endif
         
         OutRegions[InternalRegionsFound].StartPos = (uint32_t)((int64_t)FirstCluster + OldClusterStart);
         OutRegions[InternalRegionsFound].Len      = (uint32_t)ClusterCount;
         
         InternalRegionsFound++;
+        
         if(InternalRegionsFound > MaxRegionLen){
             printf("attribute parser not enough memory[Line : %u]\n", __LINE__);
             goto NOT_ENOUGH_MEMORY;
@@ -677,6 +695,7 @@ NarParseIndexAllocationAttributeSingular(void *IndexAttribute, nar_record *OutRe
     
     BOOLEAN Result = TRUE;
     uint32_t InternalRegionsFound = 0;
+    int32_t total_cluster_count_size = 0;
     
     int32_t DataRunsOffset = *(int32_t*)((BYTE*)IndexAttribute + 32);
     void* D = (char*)IndexAttribute + DataRunsOffset;
@@ -709,6 +728,7 @@ NarParseIndexAllocationAttributeSingular(void *IndexAttribute, nar_record *OutRe
         FirstCluster = *(int32_t*)((char*)D + 1 + ClusterCountSize);
     }
     
+    total_cluster_count_size += ClusterCount;
     
     int64_t OldClusterStart = FirstCluster;
     D = (uint8_t*)D + FirstClusterSize + ClusterCountSize + 1;
@@ -717,7 +737,7 @@ NarParseIndexAllocationAttributeSingular(void *IndexAttribute, nar_record *OutRe
     if((InternalRegionsFound + ClusterCount) < MaxRegionLen){
         for(size_t i =0; i<(size_t)ClusterCount; i++){
             // safe conversion
-            OutRegions[InternalRegionsFound].StartPos = uint32_t(FirstCluster++);
+            OutRegions[InternalRegionsFound].StartPos = FirstCluster++;
             OutRegions[InternalRegionsFound].Len      = 1;
             InternalRegionsFound++;
         }
@@ -738,31 +758,44 @@ NarParseIndexAllocationAttributeSingular(void *IndexAttribute, nar_record *OutRe
         ClusterCountSize = (Size & 0x0F);
         FirstClusterSize = (Size >> 4);
         
-        if((char*)D + ClusterCountSize + FirstClusterSize >= AttrEnd) break;
-        if (ClusterCountSize == 0 || FirstClusterSize == 0)           break;
-        if (ClusterCountSize > 4 || FirstClusterSize > 4)             break;
+        if((char*)D + ClusterCountSize + FirstClusterSize >= AttrEnd) {
+            printf("ERROR case : overshoot\n");
+            break;
+        }
+        if (ClusterCountSize == 0 || FirstClusterSize == 0){
+            printf("ERROR case : case zero len\n");
+            break;
+        }
+        if (ClusterCountSize > 4  || FirstClusterSize > 4)            {
+            printf("ERROR case : 1704  ccs 0x%X fcs 0x%X \n", ClusterCountSize, FirstClusterSize);
+            break;
+        }
         
         ClusterCount = *(int32_t*)((BYTE*)D + 1);
         ClusterCount = ClusterCount & ~(0xffffffffu << (ClusterCountSize * 8));
         
-        if(FirstClusterSize == 1){
-            FirstCluster = *(int8_t*)((char*)D + 1 + ClusterCountSize);
+        FirstCluster = 0;
+        if(((char*)D + 1 + ClusterCountSize)[FirstClusterSize - 1] & 0x80){
+            FirstCluster = -1;
         }
-        else if(FirstClusterSize == 2){
-            FirstCluster = *(int16_t*)((char*)D + 1 + ClusterCountSize);
+        memcpy(&FirstCluster, (char*)D + 1 + ClusterCountSize, FirstClusterSize);
+        
+        total_cluster_count_size += ClusterCount;
+        
+        if(ClusterCount == 0){
+            printf("ERROR case : cc was zero. ccs : 0x%X, cc 0x%X, fcs 0x%X, fc 0x%X\n", ClusterCountSize, ClusterCount, FirstClusterSize, FirstCluster);
+            break;
         }
-        else if(FirstClusterSize == 3){
-            FirstCluster = *(int32_t*)((char*)D + 1 + ClusterCountSize);
-            FirstCluster = FirstCluster & ~(0xffffffffu << (24));
-            // check msb to determine if we have to convert correct representation of negative number
-            if(FirstCluster & 0x00800000u){
-                FirstCluster = FirstCluster | 0xff000000;
-            }
-        }
-        else if(FirstClusterSize == 4){
-            FirstCluster = *(int32_t*)((char*)D + 1 + ClusterCountSize);
+        if(FirstCluster == 0){
+            printf("ERROR case : fc was zero. ccs : 0x%X, cc 0x%X, fcs 0x%X, fc 0x%X\n", ClusterCountSize, ClusterCount, FirstClusterSize, FirstCluster);
+            break;
         }
         
+        
+#if 0        
+        if(ClusterCount*4096 >= Gigabyte(120))                              NAR_BREAK;
+        if(((int64_t)FirstCluster + OldClusterStart)*4096 >= Gigabyte(120)) NAR_BREAK;
+#endif
         
         if((InternalRegionsFound + ClusterCount) < MaxRegionLen){
             int64_t plcholder = (int64_t)FirstCluster + OldClusterStart;
