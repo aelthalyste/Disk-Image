@@ -2,24 +2,28 @@
 
 call :StartTimer
 
-
 set build_options= -DUNICODE -D_UNICODE -D_CRT_SECURE_NO_WARNINGS
-set compile_flags=  -nologo /MT /EHsc /W0 /DEBUG:FULL /Zi /FC /Od /Fa /INCREMENTAL:NO /F 16777216 
-set linker_flags=  "fltLib.lib" "vssapi.lib" "../../minispy_user/libzstd_static.lib" "../../minispy_user/libzstd.dll.a"
+set compile_flags=  -nologo /MT /EHsc /W0 /DEBUG:FULL /Zi /FC /Fa /O2 /INCREMENTAL:NO /F 16777216 /Bt
 
-rem /fsanitize=address
-rem  /fsanitize=address
+rem /d2cgsummary
+rem /Bt
+rem -ftime-trace
 
+set linker_flags=  "fltLib.lib" "vssapi.lib" "libzstd_static.lib" "libzstd.dll.a"
 
-rem "../../minispy_user/file_explorer.cpp" "../../minispy_user/platform_io.cpp" "../../minispy_user/restore.cpp"
+pushd minispy_user\
+if not exist precompiled.obj cl /c  %compile_flags% /Yc"precompiled.h" "precompiled.cpp" 
+rem  
+rem if not exist build\minispy_user mkdir build\minispy_user
+cl /Yu"precompiled.h" "mspyUser.cpp" "precompiled.obj" %build_options% %compile_flags% /I"../inc" %linker_flags%
 
-if not exist build\minispy_user mkdir build\minispy_user
-pushd build\minispy_user\
-cl "../../minispy_user/mspyUser.cpp"  %build_options% %compile_flags% /I "../../inc" %linker_flags%
+rem CLEANUP
+
 popd
-rem 
+
 call :StopTimer
 call :DisplayTimerResult
+
 
 
 REM TIMING THINGS BELOW

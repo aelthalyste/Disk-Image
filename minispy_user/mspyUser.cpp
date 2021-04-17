@@ -13,7 +13,7 @@ _Analysis_mode_(_Analysis_code_type_user_code_)
 #define _CRT_SECURE_NO_WARNINGS
 #endif
 
-#if 0
+#if 1
 #ifndef UNICODE
 #define UNICODE
 #endif
@@ -23,48 +23,24 @@ _Analysis_mode_(_Analysis_code_type_user_code_)
 #endif
 #endif
 
-
-#include <stdlib.h>
-#include <stdio.h>
-#include <cstdio>
-#include <windows.h>
-#include <assert.h>
-#include <strsafe.h>
-#include <functional>
-#include <winioctl.h>
-#include <emmintrin.h>
-
-#include <vss.h>
-#include <vswriter.h>
-#include <vsbackup.h>
-#include <vsmgmt.h>
-#include <wchar.h>
-#include <string>
-
-#include "iphlpapi.h"
-
 // VDS includes
-#include <vds.h>
 
-// ATL includes
-#include <atlbase.h>
-#include <vector>
-#include <string>
+#include "precompiled.h"
 
-#include <fstream>
-#include <streambuf>
-#include <sstream>
-
-#include "nar.h"
-#include "minispy.h"
 #include "mspyLog.h"
+#include "minispy.h"
+
+#include <strsafe.h>
+#include <stdlib.h>
+#include <cstdio>
+
+
 
 #if 1
 #include "platform_io.cpp"
 #include "file_explorer.cpp"
 #include "restore.cpp"
 #endif
-
 
 #if 0
 inline void* 
@@ -259,7 +235,7 @@ InitVolumeInf(volume_backup_inf* VolInf, wchar_t Letter, BackupType Type) {
         VolInf->ClusterSize = SectorsPerCluster * BytesPerSector;
         VolInf->VolumeTotalClusterCount = ClusterCount;
         WCHAR windir[MAX_PATH];
-        GetWindowsDirectory(windir, MAX_PATH);
+        GetWindowsDirectoryW(windir, MAX_PATH);
         if (windir[0] == Letter) {
             //Selected volume contains windows
             VolInf->IsOSVolume = TRUE;
@@ -703,7 +679,7 @@ GetMFTandINDXLCN(char VolumeLetter, HANDLE VolumeHandle) {
     for (uint32_t i = 0; i < Result.Count; i++) {
         if ((ULONGLONG)Result.Data[i].StartPos * (ULONGLONG)ClusterSize + (ULONGLONG)Result.Data[i].Len * ClusterSize > VolumeSize) {
             TruncateIndex = i;
-            printf("MFT PARSER : truncation index found %u\n", i);
+            printf("MFT PARSER : truncation index found %u, out of %u\n", i, Result.Count);
             break;
         }
         DebugRegionCount += (size_t)Result.Data[i].Len;
@@ -716,11 +692,11 @@ GetMFTandINDXLCN(char VolumeLetter, HANDLE VolumeHandle) {
         Result.Count = TruncateIndex;
     }
     else{
-        printf("Number of regions found %I64u\n", DebugRegionCount);
+        
     }
     
-    printf("done all\n");
-    NAR_BREAK;
+    printf("Number of regions found %I64u, mb : %I64u\n", DebugRegionCount, DebugRegionCount*4096ull/(1024ull*1024ull));
+    
     return Result;
 }
 
@@ -2586,7 +2562,7 @@ ReadMetadata(nar_backup_id ID, int Version, std::wstring RootDir) {
     
     backup_metadata BM = { 0 };
     
-    HANDLE F = CreateFile(FileName.c_str(), GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, 0, 0);
+    HANDLE F = CreateFileW(FileName.c_str(), GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, 0, 0);
     if (F != INVALID_HANDLE_VALUE) {
         if (ReadFile(F, &BM, sizeof(BM), &BytesOperated, 0) && BytesOperated == sizeof(BM)) {
             ErrorOccured = FALSE;
@@ -4017,10 +3993,6 @@ NarInitPool(void *Memory, int MemorySize, int PoolSize){
 
 #define loop for(;;)
 
-
-#include<iostream>
-
-
 void
 DEBUG_Restore(){
     
@@ -4247,6 +4219,7 @@ main(int argc, char* argv[]) {
     }
     
     printf("Done!\n");
+    
     return 0;
 #endif
     return 0;
@@ -4385,19 +4358,19 @@ DisplayError(DWORD Code) {
     HMODULE module = NULL;
     HRESULT status;
     
-    count = FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM,
-                          NULL,
-                          Code,
-                          0,
-                          buffer,
-                          sizeof(buffer) / sizeof(WCHAR),
-                          NULL);
+    count = FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM,
+                           NULL,
+                           Code,
+                           0,
+                           buffer,
+                           sizeof(buffer) / sizeof(WCHAR),
+                           NULL);
     
     
     if (count == 0) {
         
-        count = GetSystemDirectory(buffer,
-                                   sizeof(buffer) / sizeof(WCHAR));
+        count = GetSystemDirectoryW(buffer,
+                                    sizeof(buffer) / sizeof(WCHAR));
         
         if (count == 0 || count > sizeof(buffer) / sizeof(WCHAR)) {
             
@@ -4427,13 +4400,13 @@ DisplayError(DWORD Code) {
         //  Translate the Win32 error code into a useful message.
         //
         
-        count = FormatMessage(FORMAT_MESSAGE_FROM_HMODULE,
-                              module,
-                              Code,
-                              0,
-                              buffer,
-                              sizeof(buffer) / sizeof(WCHAR),
-                              NULL);
+        count = FormatMessageW(FORMAT_MESSAGE_FROM_HMODULE,
+                               module,
+                               Code,
+                               0,
+                               buffer,
+                               sizeof(buffer) / sizeof(WCHAR),
+                               NULL);
         
         if (module != NULL) {
             FreeLibrary(module);

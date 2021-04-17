@@ -377,7 +377,7 @@ namespace NarDIWrapper {
                 BMet->TaskName         = gcnew System::String(BMList[i].TaskName);
                 BMet->TaskDescription  = gcnew System::String(BMList[i].TaskDescription);
                 BMet->ComputerName     = gcnew System::String(BMList[i].ComputerName);
-                BMet->IpAdress         = gcnew System::String("NOT IMPLEMENTED");
+                BMet->IpAdress         = gcnew System::String(" ");
                 
                 BMet->VolumeTotalSize = BMList[i].VolumeTotalSize;
                 BMet->VolumeUsedSize = BMList[i].VolumeUsedSize;
