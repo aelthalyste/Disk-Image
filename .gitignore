@@ -17,6 +17,11 @@
 
 *.exe
 *.pdb
+*.obj
+*.pch
+*.json
+*.asm
+*.7z
 /build
 
 # User-specific files (MonoDevelop/Xamarin Studio)
