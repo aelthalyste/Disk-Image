@@ -169,6 +169,7 @@ namespace DiskBackup.TaskScheduler
 
             var trigger = TriggerBuilder.Create()
                .WithIdentity($"backupIncDiffPeriodicHoursTrigger_{taskInfo.Id}", "Backup")
+               .StartAt(DateTime.Now + TimeSpan.FromHours(taskInfo.BackupTaskInfo.PeriodicTime))
                .WithSimpleSchedule(x => x
                    .WithIntervalInHours(taskInfo.BackupTaskInfo.PeriodicTime)
                    .RepeatForever())
@@ -192,6 +193,7 @@ namespace DiskBackup.TaskScheduler
 
             var trigger = TriggerBuilder.Create()
                .WithIdentity($"backupIncDiffPeriodicMinutesTrigger_{taskInfo.Id}", "Backup")
+               .StartAt(DateTime.Now + TimeSpan.FromMinutes(taskInfo.BackupTaskInfo.PeriodicTime))
                .WithSimpleSchedule(x => x
                    .WithIntervalInMinutes(taskInfo.BackupTaskInfo.PeriodicTime)
                    .RepeatForever())
