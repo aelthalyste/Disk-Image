@@ -13,11 +13,19 @@ namespace LicenseKeyGenerator.Entities
         public string DealerName { get; set; }
         public string CustomerName { get; set; }
         public string AuthorizedPerson { get; set; }
+        public MachineType MachineType { get; set; }
         public DateTime SupportEndDate { get; set; }
         public DateTime CreatedDate { get; set; }
         public VersionType LicenseVersion { get; set; }
         public string Key { get; set; }
     }
+
+    public enum MachineType
+    {
+        PhysicalMachine = 0,
+        VMware = 1
+    }
+
     public enum VersionType
     {
         Server = 0,

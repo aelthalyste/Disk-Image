@@ -24,9 +24,6 @@ using License = LicenseKeyGenerator.Entities.License; //Column sort işlemini ya
 
 namespace LicenseKeyGenerator
 {
-    /// <summary>
-    /// Interaction logic for MainWindow.xaml
-    /// </summary>
     public partial class MainWindow : Window
     {
         public string key = "D*G-KaPdSgVkYp3s6v8y/B?E(H+MbQeT";
@@ -95,11 +92,12 @@ namespace LicenseKeyGenerator
                 license.DealerName = txtDealerName.Text;
                 license.CustomerName = txtCustomerName.Text;
                 license.AuthorizedPerson = txtAuthorizedPerson.Text;
+                license.MachineType = (MachineType)cbMachineVersion.SelectedIndex;
                 license.CreatedDate = DateTime.Now;
                 license.SupportEndDate = license.CreatedDate.AddDays(Convert.ToDouble(txtEndDate.Text));
                 license.UniqKey = UniqKeyGenerator();
 
-                var str = license.DealerName + "_" + license.CustomerName + "_" + license.AuthorizedPerson + "_" + license.CreatedDate + "_" + license.SupportEndDate + "_" + license.LicenseVersion.ToString() + "_" + license.UniqKey;
+                var str = license.DealerName + "_" + license.CustomerName + "_" + license.AuthorizedPerson + "_" + license.CreatedDate + "_" + license.SupportEndDate + "_" + license.MachineType.ToString() +"_"+ license.LicenseVersion.ToString() + "_" + license.UniqKey;
                 license.Key = EncryptString(key, str);
                 txtLicenceKey.Text = license.Key;
                 txtVerificationKey.Text = license.UniqKey;
@@ -323,6 +321,13 @@ namespace LicenseKeyGenerator
                     return ((item as License).SupportEndDate.ToString().IndexOf(txtSearchBox.Text, StringComparison.OrdinalIgnoreCase) >= 0);
             }
             else if (cbLicensesColumn.SelectedIndex == 6)
+            {
+                if (String.IsNullOrEmpty(txtSearchBox.Text))
+                    return true;
+                else
+                    return ((item as License).MachineType.ToString().IndexOf(txtSearchBox.Text, StringComparison.OrdinalIgnoreCase) >= 0);
+            }
+            else if (cbLicensesColumn.SelectedIndex == 7)
             {
                 if (String.IsNullOrEmpty(txtSearchBox.Text))
                     return true;

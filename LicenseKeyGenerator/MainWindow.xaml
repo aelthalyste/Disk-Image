@@ -23,7 +23,7 @@
             <RowDefinition/>
         </Grid.RowDefinitions>
         <StackPanel Panel.ZIndex="1" Orientation="Horizontal" MouseDown="MyTitleBar_MouseDown" Margin="10,0">
-            <Image Source="Images/NarBulut_PNG_Icon_White_V3.png" Margin="0,0,5,0"/>
+            <Image Width="26" Height="26" Source="Images/NarBulut_PNG_Icon_White_V3.png" Margin="0,0,5,0"/>
             <TextBlock Text="Narbulut Disk Backup Lisans Anahtarı Oluşturucusu" FontSize="13" Foreground="White" VerticalAlignment="Center" HorizontalAlignment="Center"></TextBlock>
         </StackPanel>
         <StackPanel Name="MyTitleBar" VerticalAlignment="Top" MouseDown="MyTitleBar_MouseDown">
@@ -105,9 +105,13 @@
                                 <!--Row5-->
                                 <TextBlock Text="Versiyon *" VerticalAlignment="Center" FontSize="14" Grid.Row="5" Grid.Column="0" Margin="0,10"/>
                                 <StackPanel Grid.Row="5" Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                    <RadioButton Name="rbServer" Content="Server" GroupName="rbVersions" Margin="0,0,90,0"/>
-                                    <RadioButton Name="rbWorkStation"  Content="Workstation" GroupName="rbVersions" Margin="0,0,90,0" IsChecked="True"/>
-                                    <RadioButton Name="rbSBS" Content="SBS" GroupName="rbVersions" />
+                                    <ComboBox Name="cbMachineVersion" Width="120" Margin="0,0,75,0" SelectedIndex="0">
+                                        <ComboBoxItem Content="Fiziksel Makine"/>
+                                        <ComboBoxItem Content="VMware"/>
+                                    </ComboBox>
+                                    <RadioButton Name="rbServer" Content="Server" GroupName="rbVersions" Margin="0,0,50,0"/>
+                                    <RadioButton Name="rbWorkStation"  Content="Workstation" GroupName="rbVersions" Margin="0,0,50,0" IsChecked="True"/>
+                                    <RadioButton Name="rbSBS" Content="SBS" GroupName="rbVersions" Margin="0,0,70,0"/>
                                 </StackPanel>
                                 <!--Row6-->
                                 <Button Name="btnEncrypt" Width="200" Height="30" Grid.Row="6" Grid.Column="2" IsEnabled="False" Style="{StaticResource BlueButton}" Cursor="Hand" Click="btnEncrypt_Click" HorizontalAlignment="Left" >
@@ -237,6 +241,7 @@
                             <ComboBoxItem Content="Yetkili Kişi Adı"/>
                             <ComboBoxItem Content="Başlangıç Tarihi"/>
                             <ComboBoxItem Content="Bitiş Tarihi"/>
+                            <ComboBoxItem Content="Makine Türü"/>
                             <ComboBoxItem Content="Lisans Versiyonu"/>
                             <ComboBoxItem Content="Key :D"/>
                         </ComboBox>
@@ -328,6 +333,18 @@
                                         <DataTemplate>
                                             <StackPanel Orientation="Horizontal">
                                                 <TextBlock Text="{Binding SupportEndDate}" TextAlignment="Left" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </GridViewColumn.CellTemplate>
+                                </GridViewColumn>
+                                <GridViewColumn Width="100">
+                                    <GridViewColumn.Header>
+                                        <GridViewColumnHeader Content="Makine Türü" Tag="MachineType" Click="listviewLicensesColumnSort_Click" HorizontalContentAlignment="Left"/>
+                                    </GridViewColumn.Header>
+                                    <GridViewColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="{Binding MachineType}" TextAlignment="Left" VerticalAlignment="Center"/>
                                             </StackPanel>
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>

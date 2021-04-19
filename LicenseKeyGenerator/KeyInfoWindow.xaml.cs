@@ -31,6 +31,7 @@ namespace LicenseKeyGenerator
             txtEndDate.Text = license.SupportEndDate.ToString();
             txtVerificationKey.Text = license.UniqKey;
             txtLicenceKey.Text = license.Key;
+            txtMachineType.Text = license.MachineType.ToString();
 
             if (license.LicenseVersion == VersionType.SBS)
                 txtVersion.Text = "SBS";

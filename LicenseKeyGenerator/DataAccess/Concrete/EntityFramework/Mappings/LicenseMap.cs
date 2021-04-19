@@ -21,6 +21,7 @@ namespace LicenseKeyGenerator.DataAccess.Concrete.EntityFramework.Mappings
             Property(x => x.AuthorizedPerson).HasColumnName("authorized_person");
             Property(x => x.SupportEndDate).HasColumnName("support_end_date");
             Property(x => x.CreatedDate).HasColumnName("created_date");
+            Property(x => x.MachineType).HasColumnName("machine_type");
             Property(x => x.LicenseVersion).HasColumnName("license_version");
             Property(x => x.Key).HasColumnName("key");
         }
