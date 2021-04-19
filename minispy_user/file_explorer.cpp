@@ -617,8 +617,8 @@ NarParseIndexAllocationAttribute(void *IndexAttribute, nar_record *OutRegions, u
             printf("ERROR case : case zero len\n");
             break;
         }
-        if (ClusterCountSize > 4  || FirstClusterSize > 4)            {
-            printf("ERROR case : 1704  ccs %X fcs %X \n", ClusterCountSize, FirstClusterSize);
+        if (ClusterCountSize > 4  || FirstClusterSize > 4){
+            printf("ERROR case : 1704  ccs 0x%X fcs 0x%X\n", ClusterCountSize, FirstClusterSize);
             break;
         }
         
@@ -643,11 +643,6 @@ NarParseIndexAllocationAttribute(void *IndexAttribute, nar_record *OutRegions, u
             break;
         }
         
-        
-#if 0        
-        if(ClusterCount*4096 >= Gigabyte(120))                              NAR_BREAK;
-        if(((int64_t)FirstCluster + OldClusterStart)*4096 >= Gigabyte(120)) NAR_BREAK;
-#endif
         
         OutRegions[InternalRegionsFound].StartPos = (uint32_t)((int64_t)FirstCluster + OldClusterStart);
         OutRegions[InternalRegionsFound].Len      = (uint32_t)ClusterCount;
@@ -733,7 +728,6 @@ NarParseIndexAllocationAttributeSingular(void *IndexAttribute, nar_record *OutRe
     int64_t OldClusterStart = FirstCluster;
     D = (uint8_t*)D + FirstClusterSize + ClusterCountSize + 1;
     
-    
     if((InternalRegionsFound + ClusterCount) < MaxRegionLen){
         for(size_t i =0; i<(size_t)ClusterCount; i++){
             // safe conversion
@@ -766,8 +760,8 @@ NarParseIndexAllocationAttributeSingular(void *IndexAttribute, nar_record *OutRe
             printf("ERROR case : case zero len\n");
             break;
         }
-        if (ClusterCountSize > 4  || FirstClusterSize > 4)            {
-            printf("ERROR case : 1704  ccs 0x%X fcs 0x%X \n", ClusterCountSize, FirstClusterSize);
+        if (ClusterCountSize > 4  || FirstClusterSize > 4){
+            printf("ERROR case : 1704  ccs 0x%X fcs 0x%X\n", ClusterCountSize, FirstClusterSize);
             break;
         }
         
@@ -791,11 +785,6 @@ NarParseIndexAllocationAttributeSingular(void *IndexAttribute, nar_record *OutRe
             break;
         }
         
-        
-#if 0        
-        if(ClusterCount*4096 >= Gigabyte(120))                              NAR_BREAK;
-        if(((int64_t)FirstCluster + OldClusterStart)*4096 >= Gigabyte(120)) NAR_BREAK;
-#endif
         
         if((InternalRegionsFound + ClusterCount) < MaxRegionLen){
             int64_t plcholder = (int64_t)FirstCluster + OldClusterStart;

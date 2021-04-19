@@ -571,6 +571,10 @@ GetMFTandINDXLCN(char VolumeLetter, HANDLE VolumeHandle) {
                                 
                                 void* FileRecord = (BYTE*)FileBuffer + (uint64_t)FileRecordSize * (uint64_t)FileRecordIndex;
                                 
+                                ((uint8_t*)FileRecord)[510] = *(uint8_t*)NAR_OFFSET(FileRecord, 50);
+                                ((uint8_t*)FileRecord)[511] = *(uint8_t*)NAR_OFFSET(FileRecord, 51);
+                                
+                                
                                 // file flags are at 22th offset in the record
                                 if (*(int32_t*)FileRecord != 'ELIF') {
                                     // block doesnt start with 'FILE0', skip
@@ -3681,8 +3685,8 @@ inline char
 NarGetAvailableVolumeLetter() {
     
     DWORD Drives = GetLogicalDrives();
-    
-    for (int CurrentDriveIndex = 0; CurrentDriveIndex < 26; CurrentDriveIndex++) {
+    // NOTE(Batuhan): skip volume A and B
+    for (int CurrentDriveIndex = 2; CurrentDriveIndex < 26; CurrentDriveIndex++) {
         if (Drives & (1 << CurrentDriveIndex)) {
             
         }
