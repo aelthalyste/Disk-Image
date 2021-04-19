@@ -323,6 +323,7 @@
     <system:String x:Key="closeServiceErrorMB">Servis kapanmış görünüyor, lütfen servisi yeniden başlatıp tekrar deneyin.</system:String>
     <system:String x:Key="LicenseKeyFailMB">Geçersiz lisans anahtarı.</system:String>
     <system:String x:Key="LicenseKeyOSFailMB">Lisans ve işletim sistemi versiyonunuz uyuşmamaktadır.</system:String>
+    <system:String x:Key="LicenseKeyMachineFailMB">Lisans ve makine türünüz uyuşmamaktadır.</system:String>
     <system:String x:Key="EmailFailMB">Lütfen geçerli bir E-Posta adresi giriniz.</system:String>
     <system:String x:Key="EmailSentMB">E-Posta gönderildi.</system:String>
     <system:String x:Key="notificationUpdateFailMB">Beklenmedik hata oluştu. Bildirim ayarları güncellenemedi.</system:String>

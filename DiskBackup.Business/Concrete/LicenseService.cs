@@ -176,6 +176,11 @@ namespace DiskBackup.Business.Concrete
                 _logger.Error("Lisans anahtarı doğru girilmedi. Lisans Anahtarı: " + licenseKey);
                 return "fail";
             }
+            else if (resultDecryptLicenseKey.Equals("failMachine"))
+            {
+                _logger.Error("Lisans anahtarı makine türünüz uyumsuz. Lisans Anahtarı: " + licenseKey);
+                return "failMachine";
+            }
             else if (resultDecryptLicenseKey.Equals("failOS"))
             {
                 _logger.Error("Lisans anahtarı versiyonları uyumsuz. Lisans Anahtarı: " + licenseKey);
@@ -184,7 +189,6 @@ namespace DiskBackup.Business.Concrete
             else
             {
                 _logger.Information("Lisans aktifleştirildi. Lisans Anahtarı: " + licenseKey);
-                //_logger.Information("Lisans aktifleştirildi. Lisans Anahtarı: " + licenseKey);
                 SetRegistryLicense(licenseKey);
                 AddDBCustomerNameAndUniqKey(resultDecryptLicenseKey);
                 return resultDecryptLicenseKey;
@@ -210,12 +214,12 @@ namespace DiskBackup.Business.Concrete
                 var uniqKeyConfiguration = _configurationDataDal.Get(x => x.Key == "uniqKey");
                 if (uniqKeyConfiguration == null)
                 {
-                    uniqKeyConfiguration = new ConfigurationData { Key = "uniqKey", Value = splitLicenseKey[6] };
+                    uniqKeyConfiguration = new ConfigurationData { Key = "uniqKey", Value = splitLicenseKey[7] };
                     _configurationDataDal.Add(uniqKeyConfiguration);
                 }
-                else if (uniqKeyConfiguration.Value != splitLicenseKey[6])
+                else if (uniqKeyConfiguration.Value != splitLicenseKey[7])
                 {
-                    uniqKeyConfiguration.Value = splitLicenseKey[6];
+                    uniqKeyConfiguration.Value = splitLicenseKey[7];
                     _configurationDataDal.Update(uniqKeyConfiguration);
                 }
             }
@@ -245,7 +249,9 @@ namespace DiskBackup.Business.Concrete
                             using (StreamReader streamReader = new StreamReader((Stream)cryptoStream))
                             {
                                 var decryptLicenseKey = streamReader.ReadToEnd();
-                                if (CheckOSVersion(decryptLicenseKey))
+                                if (!CheckMachine(decryptLicenseKey.Split('_')[5]))
+                                    return "failMachine";
+                                if (CheckOSVersion(decryptLicenseKey.Split('_')[6]))
                                     return decryptLicenseKey;
                                 else
                                     return "failOS";
@@ -260,22 +266,47 @@ namespace DiskBackup.Business.Concrete
             }
         }
 
-        private bool CheckOSVersion(string resultDecryptLicenseKey)
+        private bool CheckOSVersion(string versionType)
         {
             RegistryKey registryKey = Registry.LocalMachine.OpenSubKey("Software\\Microsoft\\Windows NT\\CurrentVersion");
             var OSName = (string)registryKey.GetValue("ProductName");
-            var splitLicenseKey = resultDecryptLicenseKey.Split('_');
 
-            if (splitLicenseKey[5].Equals("SBS") && OSName.Contains("Small Business Server"))
+            if (versionType.Equals("SBS") && OSName.Contains("Small Business Server"))
             {
                 return true;
             }
-            else if (splitLicenseKey[5].Equals("Server") && OSName.Contains("Server"))
+            else if (versionType.Equals("Server") && OSName.Contains("Server"))
             {
                 return true;
             }
-            else if (splitLicenseKey[5].Equals("Workstation") && OSName.Contains("Windows"))
+            else if (versionType.Equals("Workstation") && OSName.Contains("Windows"))
             {
+                return true;
+            }
+
+            return false;
+        }
+
+        private bool CheckMachine(string machineType)
+        {
+            RegistryKey registryKey = Registry.LocalMachine.OpenSubKey("HARDWARE\\DESCRIPTION\\System\\BIOS");
+            var pathName = registryKey.GetValueNames();
+
+            if (machineType.Equals("VirtualMachine"))
+            {
+                foreach (var item in pathName)
+                {
+                    if (registryKey.GetValue(item).ToString().Contains("VMware") || registryKey.GetValue(item).ToString().Contains("Hyper-V") || registryKey.GetValue(item).ToString().Contains("Virtual"))
+                        return true;
+                }
+            }
+            else
+            {
+                foreach (var item in pathName)
+                {
+                    if (registryKey.GetValue(item).ToString().Contains("VMware") || registryKey.GetValue(item).ToString().Contains("Hyper-V") || registryKey.GetValue(item).ToString().Contains("Virtual"))
+                        return false;
+                }
                 return true;
             }
 

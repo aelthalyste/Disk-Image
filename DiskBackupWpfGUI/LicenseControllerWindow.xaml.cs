@@ -115,6 +115,10 @@ namespace DiskBackupWpfGUI
             {
                 MessageBox.Show(Resources["LicenseKeyFailMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
             }
+            else if (resultLicense.Equals("failMachine"))
+            {
+                MessageBox.Show(Resources["LicenseKeyMachineFailMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+            }
             else if (resultLicense.Equals("failOS"))
             {
                 MessageBox.Show(Resources["LicenseKeyOSFailMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);

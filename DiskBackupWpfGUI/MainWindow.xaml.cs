@@ -273,7 +273,7 @@ namespace DiskBackupWpfGUI
             txtDealerName.Text = splitLicenseKey[0];
             txtCustomerName.Text = splitLicenseKey[1];
             txtAuthorizedPerson.Text = splitLicenseKey[2];
-            txtVersionType.Text = splitLicenseKey[5];
+            txtVersionType.Text = splitLicenseKey[6];
             txtExpireDate.Text = Convert.ToDateTime(splitLicenseKey[4], CultureInfo.CreateSpecificCulture("tr-TR")).ToString();
             var supportDays = (Convert.ToDateTime(splitLicenseKey[4], CultureInfo.CreateSpecificCulture("tr-TR")) - DateTime.Now).Days;
             if (supportDays < 0)
@@ -281,7 +281,7 @@ namespace DiskBackupWpfGUI
             else
                 txtExpireDateDays.Text = supportDays.ToString();
             stackSupportDate.Visibility = Visibility.Visible;
-            txtVerificationKey.Text = splitLicenseKey[6];
+            txtVerificationKey.Text = splitLicenseKey[7];
         }
 
         private void FixBrokenRegistry()
@@ -2255,6 +2255,10 @@ namespace DiskBackupWpfGUI
             if (resultLicense.Equals("fail"))
             {
                 MessageBox.Show(Resources["LicenseKeyFailMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            else if (resultLicense.Equals("failMachine"))
+            {
+                MessageBox.Show(Resources["LicenseKeyMachineFailMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
             }
             else if (resultLicense.Equals("failOS"))
             {
