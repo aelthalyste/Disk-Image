@@ -227,9 +227,9 @@ InitRestoreFileSource(StrType MetadataPath, nar_arena* Arena, size_t MaxAdvanceS
                 
                 if (bm->IsCompressed) {
                     Result->IsCompressed = true;
-                    Result->BfSize = bm->FrameSize;
-                    Result->Bf = ArenaAllocate(Arena, bm->FrameSize + Megabyte(1));
-                    Result->DStream = ZSTD_createDStream();
+                    Result->BfSize       = bm->FrameSize;
+                    Result->Bf           = ArenaAllocate(Arena, bm->FrameSize + Megabyte(1));
+                    Result->DStream      = ZSTD_createDStream();
                 }
                 else{
                     // NOTE(Batuhan): nothing special here
@@ -251,6 +251,9 @@ InitRestoreFileSource(StrType MetadataPath, nar_arena* Arena, size_t MaxAdvanceS
         printf("Unable to open metadata\n");
     }
     
+    if(true == Error){
+        Result->Read = NarReadZero;
+    }
     
     return Result;
 }
@@ -304,7 +307,7 @@ InitFileRestoreStream(StrType MetadataFile, restore_target* Target, nar_arena* A
                 
                 for (int i = NAR_FULLBACKUP_VERSION; i <= bm.Version; i++) {
                     StrType fpath;
-                    GenerateMetadataName(bm.ID, bm.Version, fpath);
+                    GenerateMetadataName(bm.ID, i, fpath);
                     printf("Inc backup file path : %S\n", fpath.c_str());
                     Result->Sources[i + 1]   = InitRestoreFileSource(RootDir + fpath, Arena, MaxAdvanceSize);
                     Result->BytesToBeCopied += Result->Sources[i + 1]->BytesToBeCopied;
