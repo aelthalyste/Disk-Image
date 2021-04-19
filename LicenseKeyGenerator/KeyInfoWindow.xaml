@@ -22,7 +22,7 @@
         </Grid.RowDefinitions>
         <StackPanel Panel.ZIndex="1" Orientation="Horizontal" MouseDown="MyTitleBar_MouseDown" Margin="10,0">
             <Image Width="26" Height="26" Source="Images/NarBulut_PNG_Icon_White_V3.png" Margin="0,0,5,0"/>
-            <TextBlock Text="Narbulut Disk Backup Lisans Anahtarı Görüntüleme" FontSize="13" Foreground="White" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+            <TextBlock Text="Narbulut Disk Backup Lisans Anahtarı Görüntüleme" FontSize="14" Foreground="White" VerticalAlignment="Center" HorizontalAlignment="Center"/>
         </StackPanel>
         <StackPanel Name="MyTitleBar" VerticalAlignment="Top" MouseDown="MyTitleBar_MouseDown">
             <Border Background="#27527B" Height="30">

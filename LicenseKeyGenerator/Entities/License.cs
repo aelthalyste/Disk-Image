@@ -23,7 +23,7 @@ namespace LicenseKeyGenerator.Entities
     public enum MachineType
     {
         PhysicalMachine = 0,
-        VMware = 1
+        VirtualMachine = 1
     }
 
     public enum VersionType
