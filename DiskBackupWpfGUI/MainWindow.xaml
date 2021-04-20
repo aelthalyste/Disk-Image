@@ -1431,7 +1431,12 @@
                             <TextBlock Name="txtDealerName" Text="Demo" FontSize="14" Grid.Column="1" Grid.Row="1"/>
                             <TextBlock Name="txtCustomerName" Text="Demo" FontSize="14" Grid.Column="1" Grid.Row="2"/>
                             <TextBlock Name="txtAuthorizedPerson" Text="demo@demo.com" FontSize="14" Grid.Column="1" Grid.Row="3"/>
-                            <TextBlock Name="txtVersionType" Text="Demo" FontSize="14" Grid.Column="1" Grid.Row="4"/>
+                            <StackPanel Orientation="Horizontal" Grid.Column="1" Grid.Row="4">
+                                <TextBlock Name="txtVersionType" Text="Demo" FontSize="14"/>
+                                <TextBlock Text=" (" FontSize="14"/>
+                                <TextBlock Name="txtMachineType" FontSize="14"/>
+                                <TextBlock Text=")" FontSize="14"/>
+                            </StackPanel>
                             <StackPanel Orientation="Horizontal" Grid.Column="1" Grid.Row="5">
                                 <TextBlock Name="txtExpireDate" Text="Demo" FontSize="14" />
                                 <StackPanel Name="stackSupportDate" Orientation="Horizontal" Visibility="Collapsed">
@@ -1585,11 +1590,11 @@
                                     <TextBlock Text="{DynamicResource emailNotification}" FontSize="14" Grid.Column="0" Grid.Row="0" Margin="2,0" VerticalAlignment="Center"/>
                                     <TextBlock Text="{DynamicResource notificationTypes}" FontSize="14" Grid.Column="0" Grid.Row="1" Margin="2,7,0,0"/>
 
-                                    <CheckBox Name="checkEMailNotification" Content="{DynamicResource active}" FontSize="14" Grid.Column="1" Grid.Row="0" VerticalContentAlignment="Center" Checked="checkEMailNotification_Checked" Unchecked="checkEMailNotification_Unchecked"/>
+                                    <CheckBox Name="checkEMailNotification" Content="{DynamicResource active}" FontSize="14" Grid.Column="1" Grid.Row="0" Cursor="Hand" VerticalContentAlignment="Center" Checked="checkEMailNotification_Checked" Unchecked="checkEMailNotification_Unchecked"/>
                                     <StackPanel Name="stackEMailNotification" Grid.Column="1" Grid.Row="1" VerticalAlignment="Center" IsEnabled="False">
-                                        <CheckBox Name="checkEMailNotificationSuccess" Content="{DynamicResource Success}" FontSize="14" VerticalContentAlignment="Center" Margin="0,0,0,5"/>
-                                        <CheckBox Name="checkEMailNotificationFail" Content="{DynamicResource Fail}" FontSize="14" VerticalContentAlignment="Center" Margin="0,0,0,5"/>
-                                        <CheckBox Name="checkEMailNotificationCritical" Content="{DynamicResource critical}" FontSize="14" VerticalContentAlignment="Center"/>
+                                        <CheckBox Name="checkEMailNotificationSuccess" Content="{DynamicResource Success}" FontSize="14" Cursor="Hand" VerticalContentAlignment="Center" Margin="0,0,0,5"/>
+                                        <CheckBox Name="checkEMailNotificationFail" Content="{DynamicResource Fail}" FontSize="14" Cursor="Hand" VerticalContentAlignment="Center" Margin="0,0,0,5"/>
+                                        <CheckBox Name="checkEMailNotificationCritical" Content="{DynamicResource critical}" FontSize="14" Cursor="Hand" VerticalContentAlignment="Center"/>
                                     </StackPanel>
 
                                     <StackPanel Grid.Row="2" Grid.ColumnSpan="2" Orientation="Horizontal" HorizontalAlignment="Center">

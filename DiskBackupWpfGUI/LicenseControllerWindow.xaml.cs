@@ -126,7 +126,7 @@ namespace DiskBackupWpfGUI
             else
             {
                 // lisans key etkinleştirildi
-                _logger.Information("Lisans aktifleştirildi.Lisans Anahtarı: " + txtLicenseKey.Text);
+                _logger.Information("Lisans aktifleştirildi. Lisans Anahtarı: " + txtLicenseKey.Text);
                 _validate = true;
                 Close();
             }
