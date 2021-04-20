@@ -565,15 +565,11 @@ GetMFTandINDXLCN(char VolumeLetter, HANDLE VolumeHandle) {
                             
                             printf("Succ read %u of files\n", TargetFileCount);
                             
-                            for (unsigned int FileRecordIndex = 0; FileRecordIndex < TargetFileCount; FileRecordIndex++) {
+                            for (uint64_t FileRecordIndex = 0; FileRecordIndex < TargetFileCount; FileRecordIndex++) {
                                 
                                 TIMED_NAMED_BLOCK("File record parser");
                                 
                                 void* FileRecord = (BYTE*)FileBuffer + (uint64_t)FileRecordSize * (uint64_t)FileRecordIndex;
-                                
-                                ((uint8_t*)FileRecord)[510] = *(uint8_t*)NAR_OFFSET(FileRecord, 50);
-                                ((uint8_t*)FileRecord)[511] = *(uint8_t*)NAR_OFFSET(FileRecord, 51);
-                                
                                 
                                 // file flags are at 22th offset in the record
                                 if (*(int32_t*)FileRecord != 'ELIF') {
@@ -581,24 +577,53 @@ GetMFTandINDXLCN(char VolumeLetter, HANDLE VolumeHandle) {
                                     continue;
                                 }
                                 
+                                
+                                ((uint8_t*)FileRecord)[510] = *(uint8_t*)NAR_OFFSET(FileRecord, 50);
+                                ((uint8_t*)FileRecord)[511] = *(uint8_t*)NAR_OFFSET(FileRecord, 51);
+                                
+                                
+                                // manually insert $BITMAP data regions to stream.
+                                if(*(uint32_t*)NAR_OFFSET(FileRecord, 44) == 6){
+                                    
+                                    void *attr = NarFindFileAttributeFromFileRecord(FileRecord, 0x80);
+                                    if(!!(*(uint8_t*)NAR_OFFSET(attr, 8))){
+                                        
+                                        int16_t DataRunOffset = *(int16_t*)NAR_OFFSET(attr, 32);
+                                        void* DataRun = NAR_OFFSET(attr, DataRunOffset);
+                                        uint32_t RegFound = 0;
+                                        if(false == NarParseDataRun(DataRun, &ClustersExtracted[ClusterExtractedCount], MaxOutputLen - ClusterExtractedCount, &RegFound, false)){
+                                            NAR_BREAK;
+                                        }
+                                        ClusterExtractedCount += RegFound;
+                                        
+                                    }
+                                    else{
+                                        NAR_BREAK;
+                                    }
+                                    
+                                }
+                                
+                                
                                 void *IndxOffset = NarFindFileAttributeFromFileRecord(FileRecord, NAR_INDEX_ALLOCATION_FLAG);
                                 
                                 
                                 if(IndxOffset != NULL){
+                                    TIMED_NAMED_BLOCK("File record parser(valid ones)");
+                                    
                                     AutoCompressAndResizeOutput();
                                     
                                     void *BitmapAttr = NarFindFileAttributeFromFileRecord(FileRecord, NAR_BITMAP_FLAG);
                                     
                                     if(BitmapAttr == NULL){
                                         uint32_t RegFound = 0;
-                                        NarParseIndexAllocationAttribute(IndxOffset, &ClustersExtracted[ClusterExtractedCount], MaxOutputLen - ClusterExtractedCount, &RegFound);
+                                        NarParseIndexAllocationAttribute(IndxOffset, &ClustersExtracted[ClusterExtractedCount], MaxOutputLen - ClusterExtractedCount, &RegFound,
+                                                                         false);
                                         ClusterExtractedCount += RegFound;
                                     }
                                     else{
-                                        
                                         uint32_t RegFound = 0;
-                                        NarParseIndexAllocationAttributeSingular(IndxOffset, &ClustersExtracted[ClusterExtractedCount], MaxOutputLen - ClusterExtractedCount, &RegFound);
-                                        
+                                        NarParseIndexAllocationAttribute(IndxOffset, &ClustersExtracted[ClusterExtractedCount], MaxOutputLen - ClusterExtractedCount, &RegFound,
+                                                                         true);
                                         
                                         int BLen = NarGetBitmapAttributeDataLen(BitmapAttr);
                                         unsigned char* Bitmap = (unsigned char*)NarGetBitmapAttributeData(BitmapAttr);
@@ -617,6 +642,7 @@ GetMFTandINDXLCN(char VolumeLetter, HANDLE VolumeHandle) {
                                             }
                                         }
                                         ClusterExtractedCount += RegFound;
+                                        
                                         
                                     }
                                     
@@ -4110,7 +4136,6 @@ DEBUG_Parser(){
                 // NOTE(Batuhan): parses indx allocation to one-cluster granuality blocks, to make bitmap parsing trivial. increases memory usage(at parsing stage, not for the final outcome), but makes parsing much easier.
                 
                 uint32_t RegFound = 0;
-                NarParseIndexAllocationAttributeSingular(IndxOffset, &ClustersExtracted[ClusterExtractedCount], MaxOutputLen - ClusterExtractedCount, &RegFound);
                 
                 
                 int BLen = NarGetBitmapAttributeDataLen(BitmapAttr);

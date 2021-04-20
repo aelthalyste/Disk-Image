@@ -246,10 +246,11 @@ inline INT32
 NarGetBitmapAttributeDataLen(void *BitmapAttributeStart);
 
 inline bool
-NarParseIndexAllocationAttribute(void *IndexAttribute, nar_record *OutRegions, uint32_t MaxRegionLen, uint32_t *OutRegionsFound);
+NarParseIndexAllocationAttribute(void *IndexAttribute, nar_record *OutRegions, uint32_t MaxRegionLen, uint32_t *OutRegionsFound, bool BitmapCompatibleInsert = false);
+
 
 bool
-NarParseIndexAllocationAttributeSingular(void *IndexAttribute, nar_record *OutRegions, uint32_t MaxRegionLen, uint32_t *OutRegionsFound);
+NarParseDataRun(void* DatarunStart, nar_record *OutRegions, uint32_t MaxRegionLen, uint32_t *OutRegionsFound, bool BitmapCompatibleInsert = false);
 
 inline void
 NarParseIndxRegion(void *Data, nar_file_entries_list *EList);
