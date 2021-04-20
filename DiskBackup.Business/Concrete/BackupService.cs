@@ -226,6 +226,7 @@ namespace DiskBackup.Business.Concrete
                         catch (Exception ex)
                         {
                             _logger.Error(ex, "Uzak paylaşıma bağlanılamadığı için backup dosyaları gösterilemiyor. {path}", backupStorageItem.Path);
+                            continue;
                         }
                     }
 
