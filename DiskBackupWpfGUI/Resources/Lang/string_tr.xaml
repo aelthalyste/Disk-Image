@@ -291,6 +291,8 @@
     <system:String x:Key="pleaseEnterLicenseKey">Lütfen lisans anahtarı giriniz veya lisans dosyası seçiniz...</system:String>
     <system:String x:Key="PathNotFound">Yol bulunamadı</system:String>
     <system:String x:Key="SameRootDirectory">Aynı Kök Dizin</system:String>
+    <system:String x:Key="PhysicalMachine">Fiziksel Makine</system:String>
+    <system:String x:Key="VirtualMachine">Sanal Makine</system:String>
 
     <!--MessageBox Info-->
     <system:String x:Key="notNullMB">İlgili alanları lütfen boş geçmeyiniz.</system:String>

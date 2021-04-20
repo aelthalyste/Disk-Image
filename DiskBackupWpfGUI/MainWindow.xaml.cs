@@ -170,6 +170,7 @@ namespace DiskBackupWpfGUI
                     _logger.Information("Lisans dosyası bulunamadı.");
                     txtLicenseNotActive.Visibility = Visibility.Visible;
                     txtLicenseStatu.Text = Resources["inactive"].ToString();
+                    txtMachineType.Text = Resources[_licenseService.GetMachineType().ToString()].ToString();
 
                     LicenseControllerWindow licenseControllerWindow = _scope.Resolve<LicenseControllerWindow>(new NamedParameter("windowType", false));
                     licenseControllerWindow.ShowDialog();
@@ -218,6 +219,7 @@ namespace DiskBackupWpfGUI
                             txtDemoDays.Text = _licenseService.GetDemoDaysLeft().ToString();
                             stackDemo.Visibility = Visibility.Visible;
                             txtLicenseStatu.Text = Resources["demo"].ToString();
+                            txtMachineType.Text = Resources[_licenseService.GetMachineType().ToString()].ToString();
                             var customer = _configurationDataDal.Get(x => x.Key == "customerName");
                             if (customer == null)
                                 customer = _configurationDataDal.Add(new ConfigurationData { Key = "customerName", Value = "Demo Demo" });
@@ -232,6 +234,7 @@ namespace DiskBackupWpfGUI
                                 stackDemo.Visibility = Visibility.Collapsed;
                             txtLicenseNotActive.Visibility = Visibility.Visible;
                             txtLicenseStatu.Text = Resources["inactive"].ToString();
+                            txtMachineType.Text = Resources[_licenseService.GetMachineType().ToString()].ToString();
                             FixBrokenRegistry(); // registry ile oynanmış
                         }
                     }
@@ -251,6 +254,7 @@ namespace DiskBackupWpfGUI
                     {
                         txtLicenseNotActive.Visibility = Visibility.Visible;
                         txtLicenseStatu.Text = Resources["inactive"].ToString();
+                        txtMachineType.Text = Resources[_licenseService.GetMachineType().ToString()].ToString();
                         FixBrokenRegistry(); // registry ile oynanmış
                     }
                 }
@@ -261,6 +265,7 @@ namespace DiskBackupWpfGUI
                     _licenseService.DeleteRegistryFile();
                     txtLicenseNotActive.Visibility = Visibility.Visible;
                     txtLicenseStatu.Text = Resources["inactive"].ToString();
+                    txtMachineType.Text = Resources[_licenseService.GetMachineType().ToString()].ToString();
                     FixBrokenRegistry(); // registry ile oynanmış
                 }
             }
@@ -273,6 +278,7 @@ namespace DiskBackupWpfGUI
             txtDealerName.Text = splitLicenseKey[0];
             txtCustomerName.Text = splitLicenseKey[1];
             txtAuthorizedPerson.Text = splitLicenseKey[2];
+            txtMachineType.Text = Resources[splitLicenseKey[5]].ToString();
             txtVersionType.Text = splitLicenseKey[6];
             txtExpireDate.Text = Convert.ToDateTime(splitLicenseKey[4], CultureInfo.CreateSpecificCulture("tr-TR")).ToString();
             var supportDays = (Convert.ToDateTime(splitLicenseKey[4], CultureInfo.CreateSpecificCulture("tr-TR")) - DateTime.Now).Days;
@@ -2221,6 +2227,36 @@ namespace DiskBackupWpfGUI
             cbLang.ItemsSource = null;
             cbLang.Items.Clear();
             cbLang.ItemsSource = languages;
+            txtLicenseStatu.Text = Resources[ReloadLicenseStatu(txtLicenseStatu.Text)].ToString();
+            txtMachineType.Text = Resources[ReoladMachineType(txtMachineType.Text)].ToString();
+        }
+
+        private string ReloadLicenseStatu(string activeStatus)
+        {
+            if (activeStatus.Equals("İnactive") || activeStatus.Equals("Aktif Değil"))
+            {
+                return "inactive";
+            }
+            else if (activeStatus.Equals("Demo"))
+            {
+                return "demo";
+            }
+            else
+            {
+                return "active";
+            }
+        }
+
+        private string ReoladMachineType(string activeStatus)
+        {
+            if (activeStatus.Equals("Virtual Machine") || activeStatus.Equals("Sanal Makine"))
+            {
+                return "VirtualMachine";
+            }
+            else
+            {
+                return "PhysicalMachine";
+            }
         }
 
         private void btnValidateLicense_Click(object sender, RoutedEventArgs e)

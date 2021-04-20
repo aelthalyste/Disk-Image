@@ -20,7 +20,8 @@ namespace DiskBackup.Business.Concrete
         private string RegistryPath = "SOFTWARE\\NarDiskBackup"; //Registry.LocalMachine.OpenSubKey
         private string FilePath = "C:\\Windows\\system32\\eyruebup.dll";
 
-        /* ExpireDate -> 
+        /* Registry bilgileri
+         * ExpireDate -> 
          * License -> 
          * LastDate -> 
          * UploadDate -> 
@@ -30,7 +31,7 @@ namespace DiskBackup.Business.Concrete
         public LicenseService(IConfigurationDataDal configurationDataDal, ILogger logger)
         {
             _configurationDataDal = configurationDataDal;
-            _logger = logger;
+            _logger = logger.ForContext<LicenseService>();
         }
 
         public string GetRegistryType()
@@ -95,7 +96,7 @@ namespace DiskBackup.Business.Concrete
             {
                 Registry.LocalMachine.DeleteSubKey(RegistryPath);
             }
-            catch(Exception)
+            catch (Exception)
             { }
         }
 
@@ -311,6 +312,19 @@ namespace DiskBackup.Business.Concrete
             }
 
             return false;
+        }
+
+        public MachineType GetMachineType()
+        {
+            RegistryKey registryKey = Registry.LocalMachine.OpenSubKey("HARDWARE\\DESCRIPTION\\System\\BIOS");
+            var pathName = registryKey.GetValueNames();
+
+            foreach (var item in pathName)
+            {
+                if (registryKey.GetValue(item).ToString().Contains("VMware") || registryKey.GetValue(item).ToString().Contains("Hyper-V") || registryKey.GetValue(item).ToString().Contains("Virtual"))
+                    return MachineType.VirtualMachine;
+            }
+            return MachineType.PhysicalMachine;
         }
 
     }

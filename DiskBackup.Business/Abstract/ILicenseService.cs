@@ -21,5 +21,12 @@ namespace DiskBackup.Business.Abstract
         void DeleteRegistryFile();
         void AddDBCustomerNameAndUniqKey(string DecryptLicenseKey);
         string GetLicenseKey();
+        MachineType GetMachineType();
+    }
+
+    public enum MachineType
+    {
+        PhysicalMachine = 0,
+        VirtualMachine = 1
     }
 }
