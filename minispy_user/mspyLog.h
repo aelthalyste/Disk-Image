@@ -1,11 +1,9 @@
 #pragma once
 
 #include <stdio.h>
-#include <fltUser.h>
 #include "minispy.h"
-#include <vector>
-#include <fltUser.h>
 
+#if 1
 #include <string>
 #include <vector>
 #include <atlbase.h>
@@ -16,6 +14,7 @@
 #include <vsmgmt.h>
 
 #include <stdio.h>
+#endif
 
 #if 0
 

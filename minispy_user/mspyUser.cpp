@@ -13,7 +13,7 @@ _Analysis_mode_(_Analysis_code_type_user_code_)
 #define _CRT_SECURE_NO_WARNINGS
 #endif
 
-#if 0
+#if 1
 #ifndef UNICODE
 #define UNICODE
 #endif
@@ -23,48 +23,24 @@ _Analysis_mode_(_Analysis_code_type_user_code_)
 #endif
 #endif
 
-
-#include <stdlib.h>
-#include <stdio.h>
-#include <cstdio>
-#include <windows.h>
-#include <assert.h>
-#include <strsafe.h>
-#include <functional>
-#include <winioctl.h>
-#include <emmintrin.h>
-
-#include <vss.h>
-#include <vswriter.h>
-#include <vsbackup.h>
-#include <vsmgmt.h>
-#include <wchar.h>
-#include <string>
-
-#include "iphlpapi.h"
-
 // VDS includes
-#include <vds.h>
 
-// ATL includes
-#include <atlbase.h>
-#include <vector>
-#include <string>
+#include "precompiled.h"
 
-#include <fstream>
-#include <streambuf>
-#include <sstream>
-
-#include "nar.h"
-#include "minispy.h"
 #include "mspyLog.h"
+#include "minispy.h"
+
+#include <strsafe.h>
+#include <stdlib.h>
+#include <cstdio>
+
+
 
 #if 1
 #include "platform_io.cpp"
 #include "file_explorer.cpp"
 #include "restore.cpp"
 #endif
-
 
 #if 0
 inline void* 
@@ -259,7 +235,7 @@ InitVolumeInf(volume_backup_inf* VolInf, wchar_t Letter, BackupType Type) {
         VolInf->ClusterSize = SectorsPerCluster * BytesPerSector;
         VolInf->VolumeTotalClusterCount = ClusterCount;
         WCHAR windir[MAX_PATH];
-        GetWindowsDirectory(windir, MAX_PATH);
+        GetWindowsDirectoryW(windir, MAX_PATH);
         if (windir[0] == Letter) {
             //Selected volume contains windows
             VolInf->IsOSVolume = TRUE;
@@ -323,14 +299,11 @@ GetShadowPath(std::wstring Drive, CComPtr<IVssBackupComponents>& ptr, wchar_t* O
     
     res = CreateVssBackupComponents(&ptr);
     
-    ASSERT(ptr);
-    
-#if 0    
     if(nullptr == ptr){
+        printf("createbackup components returned %X\n", res);
         return sid;
         // early termination
     }
-#endif
     
     if (S_OK == ptr->InitializeForBackup()) {
         if (S_OK == ptr->SetContext(VSS_CTX_BACKUP)) {
@@ -483,7 +456,7 @@ GetMFTandINDXLCN(char VolumeLetter, HANDLE VolumeHandle) {
     unsigned int ClusterExtractedCount = 0;
     
     if (ClustersExtracted != 0) {
-        //memset(ClustersExtracted, 0, ClusterExtractedBufferSize);
+        memset(ClustersExtracted, 0, ClusterExtractedBufferSize);
     }
     
     auto AutoCompressAndResizeOutput = [&](){
@@ -598,9 +571,12 @@ GetMFTandINDXLCN(char VolumeLetter, HANDLE VolumeHandle) {
                                 
                                 void* FileRecord = (BYTE*)FileBuffer + (uint64_t)FileRecordSize * (uint64_t)FileRecordIndex;
                                 
+                                ((uint8_t*)FileRecord)[510] = *(uint8_t*)NAR_OFFSET(FileRecord, 50);
+                                ((uint8_t*)FileRecord)[511] = *(uint8_t*)NAR_OFFSET(FileRecord, 51);
+                                
+                                
                                 // file flags are at 22th offset in the record
-                                if (*(INT32*)FileRecord != 'ELIF') {
-                                    
+                                if (*(int32_t*)FileRecord != 'ELIF') {
                                     // block doesnt start with 'FILE0', skip
                                     continue;
                                 }
@@ -670,7 +646,6 @@ GetMFTandINDXLCN(char VolumeLetter, HANDLE VolumeHandle) {
             }
         }
         else {
-            // couldnt open volume as file
             printf("VSSVolumeHandle was invalid \n");
             DisplayError(GetLastError());
         }
@@ -708,13 +683,12 @@ GetMFTandINDXLCN(char VolumeLetter, HANDLE VolumeHandle) {
     for (uint32_t i = 0; i < Result.Count; i++) {
         if ((ULONGLONG)Result.Data[i].StartPos * (ULONGLONG)ClusterSize + (ULONGLONG)Result.Data[i].Len * ClusterSize > VolumeSize) {
             TruncateIndex = i;
-            printf("MFT PARSER : truncation index found %u\n", i);
+            printf("MFT PARSER : truncation index found %u, out of %u\n", i, Result.Count);
             break;
         }
         DebugRegionCount += (size_t)Result.Data[i].Len;
     }
     
-    //ASSERT(TruncateIndex == 0);
     
     if (TruncateIndex > 0) {
         printf("INDEX_ALLOCATION blocks exceeds volume size, truncating from index %i\n", TruncateIndex);
@@ -722,9 +696,10 @@ GetMFTandINDXLCN(char VolumeLetter, HANDLE VolumeHandle) {
         Result.Count = TruncateIndex;
     }
     else{
-        printf("Number of regions found %I64u\n", DebugRegionCount);
+        
     }
     
+    printf("Number of regions found %I64u, mb : %I64u\n", DebugRegionCount, DebugRegionCount*4096ull/(1024ull*1024ull));
     
     return Result;
 }
@@ -1603,6 +1578,12 @@ SetIncRecords(HANDLE CommPort, volume_backup_inf* V) {
     }
     
     V->PossibleNewBackupRegionOffsetMark = NarGetLogFileSizeFromKernel(CommPort, V->Letter);
+    
+    printf("PNBRO : %I64u\n", V->PossibleNewBackupRegionOffsetMark);
+    printf("SIR: Volume %c, lko %I64u\n", V->Letter, V->IncLogMark.LastBackupRegionOffset);
+    
+    ASSERT((uint64_t)V->IncLogMark.LastBackupRegionOffset < (uint64_t)V->PossibleNewBackupRegionOffsetMark);
+    
     DWORD TargetReadSize = (DWORD)(V->PossibleNewBackupRegionOffsetMark - V->IncLogMark.LastBackupRegionOffset);
     
     V->Stream.Records.Data = 0;
@@ -1611,7 +1592,7 @@ SetIncRecords(HANDLE CommPort, volume_backup_inf* V) {
     std::wstring logfilepath = GenerateLogFilePath(V->Letter);
     HANDLE LogHandle = CreateFileW(logfilepath.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, 0, OPEN_EXISTING, 0, 0);
     
-    // calling malloc with 0 is undefined behaviour, but not having logs is possible thing that might happen and no need to worry about it since
+    // calling malloc with 0 is implementation defined behaviour, but not having logs is possible thing that might happen and no need to worry about it since
     // setupstream will include mft to stream, stream will not be empty.
     if(TargetReadSize != 0){
         
@@ -1625,13 +1606,15 @@ SetIncRecords(HANDLE CommPort, volume_backup_inf* V) {
                 Result = TRUE;
             }
             else{
+                
                 printf("SetIncRecords Couldnt read %lu, instead read %lu\n", TargetReadSize, BytesRead);
                 DisplayError(GetLastError());
+                if(BytesRead == 0){
+                    free(V->Stream.Records.Data);
+                    V->Stream.Records.Count = 0;
+                }
                 
-                free(V->Stream.Records.Data);
-                V->Stream.Records.Count = 0;
             }
-            
         }
         else{
             printf("Couldnt set file pointer\n");
@@ -1671,6 +1654,7 @@ NarGetLogFileSizeFromKernel(HANDLE CommPort, char Letter){
         HRESULT hResult = FilterSendMessage(CommPort, &Cmd, sizeof(NAR_COMMAND), &Respond, sizeof(Respond), &BR);
         if(SUCCEEDED(hResult) && FALSE == Respond.ErrorOccured){
             Result = Respond.CurrentSize;
+            printf("KERNEL RESPOND: Log size of volume %c is %I64u\n", Letter, Result);
         }
         else{
             printf("FilterSendMessage failed, couldnt remove volume from kernel side, err %i\n", hResult);
@@ -1679,7 +1663,7 @@ NarGetLogFileSizeFromKernel(HANDLE CommPort, char Letter){
         
     }
     else{
-        
+        printf("Unable to generate kernel GUID of volume %c\n", Letter);
     }
     
     return Result;
@@ -2582,7 +2566,7 @@ ReadMetadata(nar_backup_id ID, int Version, std::wstring RootDir) {
     
     backup_metadata BM = { 0 };
     
-    HANDLE F = CreateFile(FileName.c_str(), GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, 0, 0);
+    HANDLE F = CreateFileW(FileName.c_str(), GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, 0, 0);
     if (F != INVALID_HANDLE_VALUE) {
         if (ReadFile(F, &BM, sizeof(BM), &BytesOperated, 0) && BytesOperated == sizeof(BM)) {
             ErrorOccured = FALSE;
@@ -3306,6 +3290,8 @@ NarLoadBootState() {
                                 
                                 Result->Volumes.Insert(VolInf);
                                 
+                                printf("BOOTFILELOADER : Added volume %c, version %u, lko %I64u to track list.", VolInf.Letter, VolInf.Version, VolInf.IncLogMark.LastBackupRegionOffset);
+                                
                             }
                             else{
                                 printf("Couldnt initialize volume backup inf for volume %c\n", BootTrackData[i].Letter);
@@ -3699,8 +3685,8 @@ inline char
 NarGetAvailableVolumeLetter() {
     
     DWORD Drives = GetLogicalDrives();
-    
-    for (int CurrentDriveIndex = 0; CurrentDriveIndex < 26; CurrentDriveIndex++) {
+    // NOTE(Batuhan): skip volume A and B
+    for (int CurrentDriveIndex = 2; CurrentDriveIndex < 26; CurrentDriveIndex++) {
         if (Drives & (1 << CurrentDriveIndex)) {
             
         }
@@ -4011,10 +3997,6 @@ NarInitPool(void *Memory, int MemorySize, int PoolSize){
 
 #define loop for(;;)
 
-
-#include<iostream>
-
-
 void
 DEBUG_Restore(){
     
@@ -4218,8 +4200,9 @@ bool SetDiskRestore(int DiskID, wchar_t Letter, size_t VolumeTotalSize, size_t E
 int
 main(int argc, char* argv[]) {   
     
-#if 1    
     
+    
+#if 1 
     wchar_t drive[] = {(wchar_t)argv[1][0], ':', '\\'};
     
     SetupVSS();
@@ -4240,6 +4223,7 @@ main(int argc, char* argv[]) {
     }
     
     printf("Done!\n");
+    
     return 0;
 #endif
     return 0;
@@ -4378,19 +4362,19 @@ DisplayError(DWORD Code) {
     HMODULE module = NULL;
     HRESULT status;
     
-    count = FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM,
-                          NULL,
-                          Code,
-                          0,
-                          buffer,
-                          sizeof(buffer) / sizeof(WCHAR),
-                          NULL);
+    count = FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM,
+                           NULL,
+                           Code,
+                           0,
+                           buffer,
+                           sizeof(buffer) / sizeof(WCHAR),
+                           NULL);
     
     
     if (count == 0) {
         
-        count = GetSystemDirectory(buffer,
-                                   sizeof(buffer) / sizeof(WCHAR));
+        count = GetSystemDirectoryW(buffer,
+                                    sizeof(buffer) / sizeof(WCHAR));
         
         if (count == 0 || count > sizeof(buffer) / sizeof(WCHAR)) {
             
@@ -4420,13 +4404,13 @@ DisplayError(DWORD Code) {
         //  Translate the Win32 error code into a useful message.
         //
         
-        count = FormatMessage(FORMAT_MESSAGE_FROM_HMODULE,
-                              module,
-                              Code,
-                              0,
-                              buffer,
-                              sizeof(buffer) / sizeof(WCHAR),
-                              NULL);
+        count = FormatMessageW(FORMAT_MESSAGE_FROM_HMODULE,
+                               module,
+                               Code,
+                               0,
+                               buffer,
+                               sizeof(buffer) / sizeof(WCHAR),
+                               NULL);
         
         if (module != NULL) {
             FreeLibrary(module);

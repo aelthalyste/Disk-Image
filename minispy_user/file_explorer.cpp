@@ -457,7 +457,6 @@ NarGetFileEntriesFromIndxClusters(nar_backup_file_explorer_context *Ctx, nar_rec
                     void *IC = (char*)IndxBuffer + (UINT64)_j_ * Ctx->ClusterSize;
                     NarParseIndxRegion(IC, &Ctx->EList);
                 }
-                
 #endif
                 
                 ParsedClusterIndex++;
@@ -532,7 +531,9 @@ NarParseIndexAllocationAttribute(void *IndexAttribute, nar_record *OutRegions, u
     uint32_t InternalRegionsFound = 0;
     
     INT32 DataRunsOffset = *(INT32*)((BYTE*)IndexAttribute + 32);
-    void* DataRuns = (char*)IndexAttribute + DataRunsOffset;
+    void* D = (char*)IndexAttribute + DataRunsOffset;
+    
+    int32_t total_cluster_count_size = 0;
     
     // So it looks like dataruns doesnt actually tells you LCN, to save up space, they kinda use smt like 
     // winapi's deviceiocontrol routine, maybe the reason for fetching VCN-LCN maps from winapi is weird because 
@@ -548,35 +549,56 @@ NarParseIndexAllocationAttribute(void *IndexAttribute, nar_record *OutRegions, u
     LCN[n] = LCN[n-1] + datarun cluster
     */
     
-    BYTE Size = *(BYTE*)DataRuns;
+    BYTE Size = *(BYTE*)D;
     uint8_t ClusterCountSize = (Size & 0x0F);
     uint8_t FirstClusterSize = (Size >> 4);
     
-    // Swipe to left to clear extra bits, then swap back to get correct result.
-    INT64 ClusterCount = *(INT64*)((char*)DataRuns + 1); // 1 byte for size variable
-    ClusterCount = ClusterCount & ~(0xFFFFFFFFFFFFFFFFULL << (ClusterCountSize * 8));
-    // cluster count must be > 0, no need to do 2s complement on it
+    if((Size >> 4) > 4 || (Size & 0x0F) > 4) 
+        NAR_BREAK;
     
-    //same operation
-    INT64 FirstCluster = *(INT64*)((char*)DataRuns + 1 + ClusterCountSize);
-    FirstCluster = FirstCluster & ~(0xFFFFFFFFFFFFFFFFULL << (FirstClusterSize * 8));
-    // 2s complement to support negative values
-    if ((FirstCluster >> ((FirstClusterSize - 1) * 8 + 7)) & 1U) {
-        FirstCluster = FirstCluster | ((0xFFFFFFFFFFFFFFFULL << (FirstClusterSize * 8)));
+    uint32_t ClusterCount = *(uint32_t*)((char*)D + 1); // 1 byte for size variable
+    ClusterCount = ClusterCount & ~(0xffffffffu << (ClusterCountSize * 8));
+    
+    int32_t FirstCluster = *(int32_t*)((char*)D + 1 + ClusterCountSize);
+    FirstCluster = FirstCluster & ~(0xffffffffu << (FirstClusterSize * 8));
+    
+    if(FirstClusterSize == 1){
+        FirstCluster = *(int8_t*)((char*)D + 1 + ClusterCountSize);
+    }
+    else if(FirstClusterSize == 2){
+        FirstCluster = *(int16_t*)((char*)D + 1 + ClusterCountSize);
+    }
+    else if(FirstClusterSize == 3){
+        FirstCluster = *(int32_t*)((char*)D + 1 + ClusterCountSize);
+        FirstCluster = FirstCluster & ~(0xffffffffu << (24));
+        // check msb to determine if we have to convert correct representation of negative number
+        if(FirstCluster & 0x00800000u){
+            FirstCluster = FirstCluster | 0xff000000;
+        }
+    }
+    else if(FirstClusterSize == 4){
+        FirstCluster = *(int32_t*)((char*)D + 1 + ClusterCountSize);
     }
     
-    INT64 OldClusterStart = FirstCluster;
-    void* D = (BYTE*)DataRuns + FirstClusterSize + ClusterCountSize + 1;
     
-    OutRegions[InternalRegionsFound].StartPos = (UINT32)FirstCluster;
-    OutRegions[InternalRegionsFound].Len   = (UINT32)ClusterCount;
+    if ((FirstCluster >> ((FirstClusterSize - 1) * 8 + 7)) & 1U) {
+        FirstCluster = FirstCluster | ((0xffffffffu << (FirstClusterSize * 8)));
+    }
+    
+    total_cluster_count_size += ClusterCount;
+    
+    INT64 OldClusterStart = FirstCluster;
+    D = (BYTE*)D + FirstClusterSize + ClusterCountSize + 1;
+    
+    // its guarenteed that first cluster will be higher than zero here.
+    OutRegions[InternalRegionsFound].StartPos = (uint32_t)FirstCluster;
+    OutRegions[InternalRegionsFound].Len      = (uint32_t)ClusterCount;
     InternalRegionsFound++;
     
     if(InternalRegionsFound > MaxRegionLen){
         goto NOT_ENOUGH_MEMORY;
     }
     
-    //DBG_INC(DBG_INDX_FOUND);
     while (*(BYTE*)D) {
         
         Size = *(BYTE*)D;
@@ -587,42 +609,53 @@ NarParseIndexAllocationAttribute(void *IndexAttribute, nar_record *OutRegions, u
         ClusterCountSize = (Size & 0x0F);
         FirstClusterSize = (Size >> 4);
         
-        if((char*)D + ClusterCountSize + FirstClusterSize >= AttrEnd){
+        if((char*)D + ClusterCountSize + FirstClusterSize >= AttrEnd) {
+            printf("ERROR case : overshoot\n");
+            break;
+        }
+        if (ClusterCountSize == 0 || FirstClusterSize == 0){
+            printf("ERROR case : case zero len\n");
+            break;
+        }
+        if (ClusterCountSize > 4  || FirstClusterSize > 4){
+            printf("ERROR case : 1704  ccs 0x%X fcs 0x%X\n", ClusterCountSize, FirstClusterSize);
+            break;
+        }
+        
+        ClusterCount = *(uint32_t*)((BYTE*)D + 1);
+        ClusterCount = ClusterCount & ~(0xffffffffu << (ClusterCountSize * 8));
+        
+        FirstCluster = 0;
+        if(((char*)D + 1 + ClusterCountSize)[FirstClusterSize - 1] & 0x80){
+            FirstCluster = -1;
+        }
+        memcpy(&FirstCluster, (char*)D + 1 + ClusterCountSize, FirstClusterSize);
+        
+        total_cluster_count_size += ClusterCount;
+        
+        
+        if(ClusterCount == 0){
+            printf("ERROR case : cc was zero. ccs : %X, cc %X, fcs %X, fc %X\n", ClusterCountSize, ClusterCount, FirstClusterSize, FirstCluster);
+            break;
+        }
+        if(FirstCluster == 0){
+            printf("ERROR case : fc was zero. ccs : %X, cc %X, fcs %X, fc %X\n", ClusterCountSize, ClusterCount, FirstClusterSize, FirstCluster);
             break;
         }
         
         
-        if (ClusterCountSize == 0 || FirstClusterSize == 0)
-            break;
-        
-        ClusterCount = *(INT64*)((BYTE*)D + 1);
-        ClusterCount = ClusterCount & ~(0xFFFFFFFFFFFFFFFFULL << (ClusterCountSize * 8));
-        
-        FirstCluster = *(INT64*)((BYTE*)D + 1 + ClusterCountSize);
-        FirstCluster = FirstCluster & ~(0xFFFFFFFFFFFFFFFFULL << (FirstClusterSize * 8));
-        
-        if ((FirstCluster >> ((FirstClusterSize - 1) * 8 + 7)) & 1U) {
-            FirstCluster = FirstCluster | (0xFFFFFFFFFFFFFFFFULL << (FirstClusterSize * 8));
-        }
-        
-        FirstCluster   += OldClusterStart;
-        OldClusterStart = FirstCluster;
-        
-        D = (BYTE*)D + (FirstClusterSize + ClusterCountSize + 1);
-        
-        if(FirstCluster >= 0xFFFFFFFFull || ClusterCount >= 0xFFFFFFFFull){
-            printf("new special case 4132021\n");
-            break;
-        }
-        
-        OutRegions[InternalRegionsFound].StartPos = (UINT32)FirstCluster;
-        OutRegions[InternalRegionsFound].Len   = (UINT32)ClusterCount;
+        OutRegions[InternalRegionsFound].StartPos = (uint32_t)((int64_t)FirstCluster + OldClusterStart);
+        OutRegions[InternalRegionsFound].Len      = (uint32_t)ClusterCount;
         
         InternalRegionsFound++;
+        
         if(InternalRegionsFound > MaxRegionLen){
             printf("attribute parser not enough memory[Line : %u]\n", __LINE__);
             goto NOT_ENOUGH_MEMORY;
         }
+        
+        OldClusterStart  = OldClusterStart + (int64_t)FirstCluster;
+        D = (BYTE*)D + (FirstClusterSize + ClusterCountSize + 1);
         
     }
     
@@ -657,39 +690,54 @@ NarParseIndexAllocationAttributeSingular(void *IndexAttribute, nar_record *OutRe
     
     BOOLEAN Result = TRUE;
     uint32_t InternalRegionsFound = 0;
+    int32_t total_cluster_count_size = 0;
     
-    INT32 DataRunsOffset = *(INT32*)((BYTE*)IndexAttribute + 32);
-    void* DataRuns = (char*)IndexAttribute + DataRunsOffset;
+    int32_t DataRunsOffset = *(int32_t*)((BYTE*)IndexAttribute + 32);
+    void* D = (char*)IndexAttribute + DataRunsOffset;
     
-    BYTE Size = *(BYTE*)DataRuns;
+    BYTE Size = *(BYTE*)D;
     uint8_t ClusterCountSize = (Size & 0x0F);
     uint8_t FirstClusterSize = (Size >> 4);
     
-    
-    INT64 ClusterCount = *(INT64*)((char*)DataRuns + 1);
+    int32_t ClusterCount = *(INT64*)((char*)D + 1);
     ClusterCount = ClusterCount & ~(0xFFFFFFFFFFFFFFFFULL << (ClusterCountSize * 8));
     
-    INT64 FirstCluster = *(INT64*)((char*)DataRuns + 1 + ClusterCountSize);
-    FirstCluster = FirstCluster & ~(0xFFFFFFFFFFFFFFFFULL << (FirstClusterSize * 8));
+    int32_t FirstCluster = 0;
     
-    if ((FirstCluster >> ((FirstClusterSize - 1) * 8 + 7)) & 1U) {
-        FirstCluster = FirstCluster | ((0xFFFFFFFFFFFFFFFFULL << (FirstClusterSize * 8)));
+    
+    if(FirstClusterSize == 1){
+        FirstCluster = *(int8_t*)((char*)D + 1 + ClusterCountSize);
+    }
+    else if(FirstClusterSize == 2){
+        FirstCluster = *(int16_t*)((char*)D + 1 + ClusterCountSize);
+    }
+    else if(FirstClusterSize == 3){
+        FirstCluster = *(int32_t*)((char*)D + 1 + ClusterCountSize);
+        FirstCluster = FirstCluster & ~(0xffffffffu << (24));
+        // check msb to determine if we have to convert correct representation of negative number
+        if(FirstCluster & 0x00800000u){
+            FirstCluster = FirstCluster | 0xff000000;
+        }
+    }
+    else if(FirstClusterSize == 4){
+        FirstCluster = *(int32_t*)((char*)D + 1 + ClusterCountSize);
     }
     
-    INT64 OldClusterStart = FirstCluster;
-    void* D = (BYTE*)DataRuns + FirstClusterSize + ClusterCountSize + 1;
+    total_cluster_count_size += ClusterCount;
     
+    int64_t OldClusterStart = FirstCluster;
+    D = (uint8_t*)D + FirstClusterSize + ClusterCountSize + 1;
     
     if((InternalRegionsFound + ClusterCount) < MaxRegionLen){
         for(size_t i =0; i<(size_t)ClusterCount; i++){
-            OutRegions[InternalRegionsFound].StartPos = uint32_t(FirstCluster++);
-            OutRegions[InternalRegionsFound].Len = 1;
+            // safe conversion
+            OutRegions[InternalRegionsFound].StartPos = FirstCluster++;
+            OutRegions[InternalRegionsFound].Len      = 1;
             InternalRegionsFound++;
         }
     }
     else{
-        printf("IRF %u, CC %u, MRL %u\n", InternalRegionsFound, ClusterCount, MaxRegionLen);
-        printf("%u < %u\n", InternalRegionsFound + ClusterCount, MaxRegionLen);
+        printf("parser not enough memory %d\n", __LINE__);
         goto NOT_ENOUGH_MEMORY;
     }
     
@@ -697,59 +745,65 @@ NarParseIndexAllocationAttributeSingular(void *IndexAttribute, nar_record *OutRe
     
     while (*(BYTE*)D) {
         
-        Size = *(BYTE*)D;
-        
+        Size = *(uint8_t*)D;
         if (Size == 0) break;
         
         // extract 4bit nibbles from size
         ClusterCountSize = (Size & 0x0F);
         FirstClusterSize = (Size >> 4);
         
-        // edge case
-        if((char*)D + ClusterCountSize + FirstClusterSize >= AttrEnd){
+        if((char*)D + ClusterCountSize + FirstClusterSize >= AttrEnd) {
+            printf("ERROR case : overshoot\n");
+            break;
+        }
+        if (ClusterCountSize == 0 || FirstClusterSize == 0){
+            printf("ERROR case : case zero len\n");
+            break;
+        }
+        if (ClusterCountSize > 4  || FirstClusterSize > 4){
+            printf("ERROR case : 1704  ccs 0x%X fcs 0x%X\n", ClusterCountSize, FirstClusterSize);
             break;
         }
         
-        if (ClusterCountSize == 0 || FirstClusterSize == 0)
-            break;
+        ClusterCount = *(int32_t*)((BYTE*)D + 1);
+        ClusterCount = ClusterCount & ~(0xffffffffu << (ClusterCountSize * 8));
         
-        ClusterCount = *(INT64*)((BYTE*)D + 1);
-        ClusterCount = ClusterCount & ~(0xFFFFFFFFFFFFFFFFULL << (ClusterCountSize * 8));
-        
-        FirstCluster = *(INT64*)((BYTE*)D + 1 + ClusterCountSize);
-        FirstCluster = FirstCluster & ~(0xFFFFFFFFFFFFFFFFULL << (FirstClusterSize * 8));
-        if ((FirstCluster >> ((FirstClusterSize - 1) * 8 + 7)) & 1U) {
-            FirstCluster = FirstCluster | (0xFFFFFFFFFFFFFFFFULL << (FirstClusterSize * 8));
+        FirstCluster = 0;
+        if(((char*)D + 1 + ClusterCountSize)[FirstClusterSize - 1] & 0x80){
+            FirstCluster = -1;
         }
+        memcpy(&FirstCluster, (char*)D + 1 + ClusterCountSize, FirstClusterSize);
         
-        FirstCluster   += OldClusterStart;
-        OldClusterStart = FirstCluster;
+        total_cluster_count_size += ClusterCount;
         
-        D = (BYTE*)D + (FirstClusterSize + ClusterCountSize + 1);
-        
-        
-        if(FirstCluster >= 0xFFFFFFFFull || ClusterCount >= 0xFFFFFFFFull){
-            printf("new special case 4132021\n");
-            break;;
+        if(ClusterCount == 0){
+            printf("ERROR case : cc was zero. ccs : 0x%X, cc 0x%X, fcs 0x%X, fc 0x%X\n", ClusterCountSize, ClusterCount, FirstClusterSize, FirstCluster);
+            break;
+        }
+        if(FirstCluster == 0){
+            printf("ERROR case : fc was zero. ccs : 0x%X, cc 0x%X, fcs 0x%X, fc 0x%X\n", ClusterCountSize, ClusterCount, FirstClusterSize, FirstCluster);
+            break;
         }
         
         
         if((InternalRegionsFound + ClusterCount) < MaxRegionLen){
+            int64_t plcholder = (int64_t)FirstCluster + OldClusterStart;
             for(size_t i =0; i<(size_t)ClusterCount; i++){
-                OutRegions[InternalRegionsFound].StartPos = (uint32_t)(FirstCluster++);
-                OutRegions[InternalRegionsFound].Len = 1;
+                // safe conversion
+                OutRegions[InternalRegionsFound].StartPos = (uint32_t)(plcholder + i);
+                OutRegions[InternalRegionsFound].Len      = 1;
                 InternalRegionsFound++;
             }
         }
         else{
-            NAR_BREAK;
             printf("IRF %u, CC %u, MRL %u\n", InternalRegionsFound, ClusterCount, MaxRegionLen);
             printf("%u < %u\n", InternalRegionsFound + ClusterCount, MaxRegionLen);
+            NAR_BREAK;
             goto NOT_ENOUGH_MEMORY;
         }
         
-        
-        ASSERT(InternalRegionsFound > MaxRegionLen);
+        OldClusterStart = (int64_t)FirstCluster + OldClusterStart;
+        D = (BYTE*)D + (FirstClusterSize + ClusterCountSize + 1);
         
     }
     
