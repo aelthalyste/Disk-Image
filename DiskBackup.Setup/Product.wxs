@@ -63,8 +63,8 @@
 			</Component>
 		</DirectoryRef>
 		<DirectoryRef Id="TARGETDIR">
-			<Merge Id="VCRedist64" SourceFile="C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Redist\MSVC\14.16.27012\MergeModules\Microsoft_VC141_CRT_x64.msm" DiskId="1" Language="0" />
-			<!--<Merge Id="VCRedist64" SourceFile="C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Redist\MSVC\14.16.27012\MergeModules\Microsoft_VC141_CRT_x64.msm" DiskId="1" Language="0" />-->
+			<Merge Id="VCRedist64" SourceFile="C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Redist\MSVC\14.16.27012\MergeModules\Microsoft_VC141_CRT_x64.msm" DiskId="1" Language="0" /> <!--Ebru-->
+			<!--<Merge Id="VCRedist64" SourceFile="C:\Program Files (x86)\Microsoft Visual Studio\2019\Professional\VC\Redist\MSVC\14.16.27012\MergeModules\Microsoft_VC141_CRT_x64.msm" DiskId="1" Language="0" />--> <!--Eyüp-->
 		</DirectoryRef>
 		<Feature Id="VCRedist" Title="VS 2019 C++ Runtime" AllowAdvertise="no" Display="hidden" Level="1">
 			<MergeRef Id="VCRedist64" />
@@ -102,7 +102,7 @@
 				<File Id="Serilog.Sinks.File.dll" Name="Serilog.Sinks.File.dll" Source="$(var.Service_TargetDir)Serilog.Sinks.File.dll"/>
 				<File Id="System.Numerics.Vectors.dll" Name="System.Numerics.Vectors.dll" Source="$(var.Service_TargetDir)System.Numerics.Vectors.dll"/>
 				<File Id="DiskBackup.Communication.dll" Name="DiskBackup.Communication.dll" Source="$(var.Service_TargetDir)DiskBackup.Communication.dll"/>
-				<File Id="libzstd.dll" Name="libzstd.dll" Source="$(var.Service_TargetDir)libzstd.dll"/><!--libzstd.dll dışarıdan eklenen dll, NarDIWrapper için gerekli-->
+				<File Id="libzstd.dll" Name="libzstd.dll" Source="$(var.Service_TargetDir)libzstd.dll"/><!--libzstd.dll dışarıdan eklenen dll, NarDIWrapper için gerekli (Service'in release dosyasında bulunacak)-->
 				<File Id="DiskBackupWpfGUI.exe" Name="DiskBackupWpfGUI.exe" Source="$(var.UI_TargetDir)DiskBackupWpfGUI.exe"/>
 				<File Id="DiskBackupWpfGUI.exe.config" Name="DiskBackupWpfGUI.exe.config" Source="$(var.UI_TargetDir)DiskBackupWpfGUI.exe.config"/>
 				<File Id="Xceed.Wpf.Toolkit.dll" Name="Xceed.Wpf.Toolkit.dll" Source="$(var.UI_TargetDir)Xceed.Wpf.Toolkit.dll"/>
