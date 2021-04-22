@@ -3,8 +3,6 @@ cd /d "%~dp0" && ( if exist "%temp%\getadmin.vbs" del "%temp%\getadmin.vbs" ) &&
 net stop NarDiskBackupService
 TASKKILL/F /IM DiskBackup.Service.exe
 del C:\Windows\NARBOOTFILE
-del C:\ProgramData\NarDiskBackup\disk_image_quartz.db
-del C:\ProgramData\NarDiskBackup\image_disk.db
 net stop minispy
 del C:\Windows\NAR_LOG_FILE_*
 net start minispy

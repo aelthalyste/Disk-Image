@@ -80,6 +80,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MailPoC", "MailPoC\MailPoC.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DiskBackup.Communication", "DiskBackup.Communication\DiskBackup.Communication.csproj", "{258921DE-2586-4E54-B545-D304615FB6B1}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DiskBackup.Reinstall", "DiskBackup.Reinstall\DiskBackup.Reinstall.csproj", "{B8F310FA-B6CE-44ED-8BBC-77E94CE6FAE2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -732,6 +734,18 @@ Global
 		{258921DE-2586-4E54-B545-D304615FB6B1}.Release|x64.Build.0 = Release|Any CPU
 		{258921DE-2586-4E54-B545-D304615FB6B1}.Release|x86.ActiveCfg = Release|Any CPU
 		{258921DE-2586-4E54-B545-D304615FB6B1}.Release|x86.Build.0 = Release|Any CPU
+		{B8F310FA-B6CE-44ED-8BBC-77E94CE6FAE2}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{B8F310FA-B6CE-44ED-8BBC-77E94CE6FAE2}.Debug|ARM.ActiveCfg = Debug|x86
+		{B8F310FA-B6CE-44ED-8BBC-77E94CE6FAE2}.Debug|ARM64.ActiveCfg = Debug|x86
+		{B8F310FA-B6CE-44ED-8BBC-77E94CE6FAE2}.Debug|x64.ActiveCfg = Debug|x86
+		{B8F310FA-B6CE-44ED-8BBC-77E94CE6FAE2}.Debug|x86.ActiveCfg = Debug|x86
+		{B8F310FA-B6CE-44ED-8BBC-77E94CE6FAE2}.Debug|x86.Build.0 = Debug|x86
+		{B8F310FA-B6CE-44ED-8BBC-77E94CE6FAE2}.Release|Any CPU.ActiveCfg = Release|x86
+		{B8F310FA-B6CE-44ED-8BBC-77E94CE6FAE2}.Release|ARM.ActiveCfg = Release|x86
+		{B8F310FA-B6CE-44ED-8BBC-77E94CE6FAE2}.Release|ARM64.ActiveCfg = Release|x86
+		{B8F310FA-B6CE-44ED-8BBC-77E94CE6FAE2}.Release|x64.ActiveCfg = Release|x86
+		{B8F310FA-B6CE-44ED-8BBC-77E94CE6FAE2}.Release|x86.ActiveCfg = Release|x86
+		{B8F310FA-B6CE-44ED-8BBC-77E94CE6FAE2}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
