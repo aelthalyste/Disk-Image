@@ -18,6 +18,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Security.AccessControl;
 using System.ServiceModel;
 using System.ServiceProcess;
 using System.Text;
@@ -78,6 +79,8 @@ namespace DiskBackup.Service
             CleanUp();
             StartHost();
             RegistryLastDateWriter();
+            SetFileAcl(@"C:\ProgramData\NarDiskBackup\disk_image_quartz.db");
+            SetFileAcl(@"C:\ProgramData\NarDiskBackup\image_disk.db");
         }
 
         private static void RegistryLastDateWriter()
@@ -149,6 +152,23 @@ namespace DiskBackup.Service
             _backupStorageServiceHost.Close();
             _logServiceHost.Close();
             _taskSchedulerHost.Close();
+        }
+
+        private void SetFileAcl(string path)
+        {
+            var logger = _container.Resolve<ILogger>();
+            try
+            {
+                var finfo = new FileInfo(path);
+                FileSystemAccessRule fsar = new FileSystemAccessRule("Users", FileSystemRights.FullControl, AccessControlType.Allow);
+                FileSecurity fs = finfo.GetAccessControl();
+                fs.AddAccessRule(fsar);
+                finfo.SetAccessControl(fs);
+            }
+            catch (Exception)
+            {
+                logger.Error($"{path} erişim değiştirme işlemi başarısız!");
+            }
         }
     }
 }
