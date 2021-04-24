@@ -532,11 +532,8 @@ NarParseDataRun(void* DatarunStart, nar_record *OutRegions, uint32_t MaxRegionLe
     LCN[n] = LCN[n-1] + datarun cluster
     */
     bool Result = true;
-    
     uint32_t InternalRegionsFound = 0;
-    
     void* D = DatarunStart;
-    
     int64_t OldClusterStart = 0;
     
     while (*(BYTE*)D) {
@@ -551,6 +548,7 @@ NarParseDataRun(void* DatarunStart, nar_record *OutRegions, uint32_t MaxRegionLe
         // extract 4bit nibbles from size
         ClusterCountSize = (Size & 0x0F);
         FirstClusterSize = (Size >> 4);
+        
         
         ClusterCount = *(uint32_t*)((BYTE*)D + 1);
         ClusterCount = ClusterCount & ~(0xffffffffu << (ClusterCountSize * 8));
@@ -588,7 +586,7 @@ NarParseDataRun(void* DatarunStart, nar_record *OutRegions, uint32_t MaxRegionLe
             }
         }
         else{
-            OutRegions[InternalRegionsFound].StartPos = (uint32_t )(OldClusterStart + (int64_t)FirstCluster);
+            OutRegions[InternalRegionsFound].StartPos = (uint32_t)(OldClusterStart + (int64_t)FirstCluster);
             OutRegions[InternalRegionsFound].Len = ClusterCount;
             InternalRegionsFound++;
         }
@@ -599,9 +597,8 @@ NarParseDataRun(void* DatarunStart, nar_record *OutRegions, uint32_t MaxRegionLe
             goto NOT_ENOUGH_MEMORY;
         }
         
-        OldClusterStart  = OldClusterStart + (int64_t)FirstCluster;
+        OldClusterStart = OldClusterStart + (int64_t)FirstCluster;
         D = (BYTE*)D + (FirstClusterSize + ClusterCountSize + 1);
-        
     }
     
     *OutRegionsFound = InternalRegionsFound;
@@ -1555,3 +1552,7 @@ NarRestoreFileFromBackups(const wchar_t *RootDir, const wchar_t *FileName, const
 }
 
 
+uint32_t
+NarGetFileID(void* FileRecord){
+    return *(uint32_t*)NAR_OFFSET(FileRecord, 44);
+}

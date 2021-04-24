@@ -261,6 +261,9 @@ NarResolveAttributeList(nar_backup_file_explorer_context *Ctx, void *Attribute, 
 inline void NarGetFileEntriesFromIndxClusters(nar_backup_file_explorer_context *Ctx, nar_record *Clusters, INT32 Count, BYTE *Bitmap, INT32 BitmapLen);
 
 
+uint32_t
+NarGetFileID(void* FileRecord);
+
 /*
     Ctx = output
     HandleOptions

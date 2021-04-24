@@ -577,32 +577,40 @@ GetMFTandINDXLCN(char VolumeLetter, HANDLE VolumeHandle) {
                                     continue;
                                 }
                                 
-                                
+                                // lsn, lsa swap to not confuse further parsing stages.
                                 ((uint8_t*)FileRecord)[510] = *(uint8_t*)NAR_OFFSET(FileRecord, 50);
                                 ((uint8_t*)FileRecord)[511] = *(uint8_t*)NAR_OFFSET(FileRecord, 51);
                                 
+                                uint32_t FileID = 0;
+                                FileID = NarGetFileID(FileRecord);
                                 
-                                // manually insert $BITMAP data regions to stream.
-                                if(*(uint32_t*)NAR_OFFSET(FileRecord, 44) == 6){
-                                    
+                                // manually insert $BITMAP & $LogFile data regions to stream.
+                                if(FileID == 2 ||
+                                   FileID == 6){
                                     void *attr = NarFindFileAttributeFromFileRecord(FileRecord, 0x80);
-                                    if(!!(*(uint8_t*)NAR_OFFSET(attr, 8))){
-                                        
-                                        int16_t DataRunOffset = *(int16_t*)NAR_OFFSET(attr, 32);
-                                        void* DataRun = NAR_OFFSET(attr, DataRunOffset);
-                                        uint32_t RegFound = 0;
-                                        if(false == NarParseDataRun(DataRun, &ClustersExtracted[ClusterExtractedCount], MaxOutputLen - ClusterExtractedCount, &RegFound, false)){
-                                            NAR_BREAK;
+                                    if(attr){
+                                        if(!!(*(uint8_t*)NAR_OFFSET(attr, 8))){
+                                            
+                                            int16_t DataRunOffset = *(int16_t*)NAR_OFFSET(attr, 32);
+                                            void* DataRun = NAR_OFFSET(attr, DataRunOffset);
+                                            uint32_t RegFound = 0;
+                                            if(false == NarParseDataRun(DataRun, &ClustersExtracted[ClusterExtractedCount], MaxOutputLen - ClusterExtractedCount, &RegFound, false)){
+                                                printf("Error occured while parsing data run of special file case\n");
+                                            }
+                                            ClusterExtractedCount += RegFound;
+                                            
                                         }
-                                        ClusterExtractedCount += RegFound;
-                                        
+                                        else{
+                                            printf("Skipped data run parsing for file 0x%X\n", FileID);
+                                        }
                                     }
                                     else{
-                                        NAR_BREAK;
+                                        if(FileID == 2)
+                                            printf("Unable to find data attribute of $LogFile\n");
+                                        if(FileID == 6)
+                                            printf("Unable to find data attribute of $BITMAP\n");
                                     }
-                                    
                                 }
-                                
                                 
                                 void *IndxOffset = NarFindFileAttributeFromFileRecord(FileRecord, NAR_INDEX_ALLOCATION_FLAG);
                                 
@@ -4228,7 +4236,6 @@ bool SetDiskRestore(int DiskID, wchar_t Letter, size_t VolumeTotalSize, size_t E
 
 int
 main(int argc, char* argv[]) {   
-    
     
     
 #if 1 
