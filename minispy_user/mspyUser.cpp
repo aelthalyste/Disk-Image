@@ -612,8 +612,13 @@ GetMFTandINDXLCN(char VolumeLetter, HANDLE VolumeHandle) {
                                     
                                     AutoCompressAndResizeOutput();
                                     
-                                    void *BitmapAttr = NarFindFileAttributeFromFileRecord(FileRecord, NAR_BITMAP_FLAG);
+                                    uint32_t RegFound = 0;
+                                    NarParseIndexAllocationAttribute(IndxOffset, &ClustersExtracted[ClusterExtractedCount], MaxOutputLen - ClusterExtractedCount, &RegFound,
+                                                                     false);
+                                    ClusterExtractedCount += RegFound;
                                     
+#if 0                               
+                                    void *BitmapAttr = NarFindFileAttributeFromFileRecord(FileRecord, NAR_BITMAP_FLAG);
                                     if(BitmapAttr == NULL){
                                         uint32_t RegFound = 0;
                                         NarParseIndexAllocationAttribute(IndxOffset, &ClustersExtracted[ClusterExtractedCount], MaxOutputLen - ClusterExtractedCount, &RegFound,
@@ -642,9 +647,8 @@ GetMFTandINDXLCN(char VolumeLetter, HANDLE VolumeHandle) {
                                             }
                                         }
                                         ClusterExtractedCount += RegFound;
-                                        
-                                        
                                     }
+#endif
                                     
                                     
                                 }
