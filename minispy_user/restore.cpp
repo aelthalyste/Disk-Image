@@ -163,7 +163,7 @@ NarReadBackup(restore_source* Rs, size_t* AvailableBytes) {
     *AvailableBytes = ClustersToRead * Rs->ClusterSize;
     
     Rs->AbsoluteNeedleInBytes = DataOffset;
-    //printf("RS needle %8I64u, %8I64u\n", Rs->AbsoluteNeedleInBytes/4096, Rs->AbsoluteNeedleInBytes);
+    printf("Needle : %8I64u, %8I64u\n", Rs->AbsoluteNeedleInBytes/4096, Rs->AbsoluteNeedleInBytes);
     
     return Result;
     

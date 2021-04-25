@@ -689,6 +689,9 @@ GetMFTandINDXLCN(char VolumeLetter, HANDLE VolumeHandle) {
             printf("MFT PARSER : truncation index found %u, out of %u\n", i, Result.Count);
             break;
         }
+        else{
+            printf("MFT PARSER region : %9u, length %9u\n", Result.Data[i].StartPos, Result.Data[i].Len);
+        }
         DebugRegionCount += (size_t)Result.Data[i].Len;
     }
     
@@ -1035,9 +1038,9 @@ ReadStream(volume_backup_inf* VolInf, void* CallerBuffer, unsigned int CallerBuf
         ULONGLONG FilePtrTarget = (ULONGLONG)VolInf->ClusterSize * ((ULONGLONG)VolInf->Stream.Records.Data[VolInf->Stream.RecIndex].StartPos + (ULONGLONG)VolInf->Stream.ClusterIndex);
         if (NarSetFilePointer(VolInf->Stream.Handle, FilePtrTarget)) {
             
-#if 0            
+#if 1            
             if(VolInf->Version != NAR_FULLBACKUP_VERSION){
-                printf("[%4d] Reading %7I64u clusters from volume offset %7I64u, writing it to buffer offset of %6I64u\n", lc, ReadSize/4096ull, FilePtrTarget/4096, (char*)CurrentBufferOffset - (char*)BufferToFill);
+                printf("BackupRead : Reading %9I64u clusters from volume offset %9I64u, writing it to buffer offset of %9I64u\n", ReadSize/4096ull, FilePtrTarget/4096, (char*)CurrentBufferOffset - (char*)BufferToFill);
             }
 #endif
             
@@ -1306,6 +1309,7 @@ SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, DotNetStreamInf* SI, boo
             
             qsort(VolInf->Stream.Records.Data, VolInf->Stream.Records.Count, sizeof(nar_record), CompareNarRecords);
             MergeRegions(&VolInf->Stream.Records);
+            
         }
         else {
             printf("Couldnt parse MFT at setupstream function for volume %c, version %i\n", L, VolInf->Version);
@@ -1397,6 +1401,12 @@ SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, DotNetStreamInf* SI, boo
     
     if(Return != FALSE){
         volume_backup_inf* V = VolInf;
+        
+        printf("DRIVER REGIONS : \n");
+        for(size_t i =0; i<V->Stream.Records.Count; i++){
+            printf("Start : %9u Len : %9u\n", V->Stream.Records.Data[i].StartPos,  V->Stream.Records.Data[i].Len);
+        }
+        
         AppendINDXnMFTLCNToStream();
         V->MFTLCN = NarGetMFTRegionsByCommandLine(V->Letter, &V->MFTLCNCount);
         
