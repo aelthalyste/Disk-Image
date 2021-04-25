@@ -16,21 +16,10 @@
 #include <stdio.h>
 #endif
 
-#if 0
-
 #define TIMED_BLOCK__(NAME, Number, ...) timed_block timed_##Number(__COUNTER__, __LINE__, __FUNCTION__, NAME);
 #define TIMED_BLOCK_(NAME, Number, ...)  TIMED_BLOCK__(NAME, Number,  ## __VA__ARGS__)
 #define TIMED_BLOCK(...)                 TIMED_BLOCK_("UNNAMED", __LINE__, ## __VA__ARGS__)
 #define TIMED_NAMED_BLOCK(NAME, ...)     TIMED_BLOCK_(NAME, __LINE__, ## __VA__ARGS__)
-
-#else
-
-#define TIMED_BLOCK__(NAME, Number, ...) 
-#define TIMED_BLOCK_(NAME, Number, ...)  
-#define TIMED_BLOCK(...)                 
-#define TIMED_NAMED_BLOCK(NAME, ...)     
-
-#endif
 
 struct debug_record {
     char* FunctionName;
@@ -114,6 +103,13 @@ _NarInternalMemoryOp(int OpCode, size_t Size) {
     
     return Result;
 }
+
+// some debug stuff
+int64_t NarGetPerfCounter();
+int64_t NarGetPerfFrequency();
+
+// time elapsed in ms
+double NarTimeElapsed(int64_t start);
 
 static inline void*
 NarScratchAllocate(size_t Size) {
@@ -209,7 +205,8 @@ NarLog(const char *str, ...){
 	static FILE *File = 0;
 	if(fileinit == false){
 		File = fopen("C:\\ProgramData\\NarDiskBackup\\NAR_APP_LOG_FILE.txt", "a");
-		fileinit = true;
+		//File = fopen("NAR_APP_LOG_FILE.txt", "a");
+        fileinit = true;
 	}	
 	if(File){
 	    static char time_buf[80];

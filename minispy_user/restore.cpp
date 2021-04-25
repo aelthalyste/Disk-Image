@@ -88,18 +88,19 @@ NarReadBackup(restore_source* Rs, size_t* AvailableBytes) {
             Rs->CompressedSize   = ZSTD_findFrameCompressedSize(NewFrame, Remaining);
             Rs->DecompressedSize = ZSTD_getFrameContentSize(NewFrame, Remaining);
             
+            ASSERT(ZSTD_CONTENTSIZE_UNKNOWN != Rs->DecompressedSize);
+            ASSERT(ZSTD_CONTENTSIZE_ERROR   != Rs->DecompressedSize);
+            
             // NOTE(Batuhan): ZSTD based errors
             if(ZSTD_CONTENTSIZE_UNKNOWN == Rs->DecompressedSize
                || ZSTD_CONTENTSIZE_ERROR == Rs->DecompressedSize){
                 
-#if 1                
                 if(ZSTD_CONTENTSIZE_UNKNOWN == Rs->DecompressedSize){
                     Rs->Error = RestoreSource_Errors::Error_DecompressionUnknownContentSize;
                 }
                 if(ZSTD_CONTENTSIZE_ERROR == Rs->DecompressedSize){
                     Rs->Error = RestoreSource_Errors::Error_DecompressionErrorContentsize;
                 }
-#endif
                 
                 Rs->Read    = NarReadZero;
                 return Rs->Read(Rs, AvailableBytes);
@@ -110,7 +111,6 @@ NarReadBackup(restore_source* Rs, size_t* AvailableBytes) {
                 Rs->Read  = NarReadZero;
                 return Rs->Read(Rs, AvailableBytes);
             }
-            
             
             // NOTE(Batuhan): That shouldn't happen, but in any case we should check it
             if(Rs->DecompressedSize > Rs->BfSize){
@@ -163,6 +163,7 @@ NarReadBackup(restore_source* Rs, size_t* AvailableBytes) {
     *AvailableBytes = ClustersToRead * Rs->ClusterSize;
     
     Rs->AbsoluteNeedleInBytes = DataOffset;
+    //printf("RS needle %8I64u, %8I64u\n", Rs->AbsoluteNeedleInBytes/4096, Rs->AbsoluteNeedleInBytes);
     
     return Result;
     
@@ -429,6 +430,7 @@ size_t
 NarSetNeedleVolume(restore_target* Rt, size_t TargetFilePointer) {
     size_t Result = 0;
     {
+        //printf("SetNeedle %8I64u %8I64u\n", TargetFilePointer/4096, TargetFilePointer);
         LARGE_INTEGER MoveTo = { 0 };
         MoveTo.QuadPart = TargetFilePointer;
         LARGE_INTEGER NewFilePointer = { 0 };

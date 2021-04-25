@@ -285,6 +285,7 @@ CompareNarRecords(const void* v1, const void* v2) {
     if (n1->StartPos > n2->StartPos) {
         return 1;
     }
+    
     return -1;
 #endif
     
@@ -387,49 +388,6 @@ IsRegionsCollide(nar_record R1, nar_record R2) {
     
     return Result;
 }
-
-
-/*
-Pass by value, might be slow if input str is too big ??
-*/
-inline std::vector<std::string>
-Split(std::string str, std::string delimiter) {
-    std::vector<std::string> Result;
-    Result.reserve(100);
-    
-    size_t pos = 0;
-    std::string token;
-    while ((pos = str.find(delimiter)) != std::string::npos) {
-        token = str.substr(0, pos);
-        str.erase(0, pos + delimiter.length());
-        Result.emplace_back(std::move(token));
-    }
-    if (str.length() > 0) Result.emplace_back(std::move(str));
-    Result.shrink_to_fit();
-    
-    return Result;
-}
-
-inline std::vector<std::wstring>
-Split(std::wstring str, std::wstring delimiter) {
-    UINT SizeAssumed = 100;
-    
-    std::vector<std::wstring> Result;
-    Result.reserve(SizeAssumed);
-    
-    size_t pos = 0;
-    std::wstring token;
-    while ((pos = str.find(delimiter)) != std::string::npos) {
-        token = str.substr(0, pos);
-        str.erase(0, pos + delimiter.length());
-        Result.emplace_back(std::move(token));
-    }
-    if (str.length() > 0) Result.emplace_back(std::move(str));
-    Result.shrink_to_fit();
-    
-    return Result;
-}
-
 
 
 
@@ -557,13 +515,18 @@ GetMFTandINDXLCN(char VolumeLetter, HANDLE VolumeHandle) {
                         size_t TargetFileCount = MIN(FileBufferCount, FileRemaining);
                         FileRemaining -= TargetFileCount;
                         
+#if 1                        
+                        int64_t rstart = NarGetPerfCounter();
                         BOOL RFResult = ReadFile(VolumeHandle, FileBuffer, TargetFileCount * 1024ul, &BR, 0);
-                        
+                        double tsec = NarTimeElapsed(rstart);
+                        //printf("readfile elapsed %.5f\n", tsec);
+#endif
                         
                         if (RFResult && BR == (TargetFileCount * 1024ul)) {
 #if 1                          
+                            TIMED_NAMED_BLOCK("after readfile");
                             
-                            printf("Succ read %u of files\n", TargetFileCount);
+                            int64_t start = NarGetPerfCounter();
                             
                             for (uint64_t FileRecordIndex = 0; FileRecordIndex < TargetFileCount; FileRecordIndex++) {
                                 
@@ -665,6 +628,8 @@ GetMFTandINDXLCN(char VolumeLetter, HANDLE VolumeHandle) {
                             
 #endif
                             
+                            double time_sec = NarTimeElapsed(start);
+                            printf("Processed %8u files in %.5f sec, file per ms %.5f\n", TargetFileCount, time_sec, (double)TargetFileCount/time_sec/1000.0);
                             
                         }
                         else {
@@ -1046,14 +1011,15 @@ ReadStream(volume_backup_inf* VolInf, void* CallerBuffer, unsigned int CallerBuf
     unsigned int RemainingSize = TotalSize;
     void* CurrentBufferOffset = BufferToFill;
     
-    if ((UINT)VolInf->Stream.RecIndex >= VolInf->Stream.Records.Count) {
+    if ((uint32_t)VolInf->Stream.RecIndex >= VolInf->Stream.Records.Count) {
         printf("End of the stream\n", VolInf->Stream.RecIndex, VolInf->Stream.Records.Count);
         return Result;
     }
     
+    
     while (RemainingSize) {
         
-        if ((UINT)VolInf->Stream.RecIndex >= VolInf->Stream.Records.Count) {
+        if ((uint32_t)VolInf->Stream.RecIndex >= VolInf->Stream.Records.Count) {
             printf("Rec index was higher than record's count, result %u, rec_index %i rec_count %i\n", Result, VolInf->Stream.RecIndex, VolInf->Stream.Records.Count);
             break;
         }
@@ -1063,15 +1029,22 @@ ReadStream(volume_backup_inf* VolInf, void* CallerBuffer, unsigned int CallerBuf
         uint64_t ClustersRemainingByteSize = (uint64_t)VolInf->Stream.Records.Data[VolInf->Stream.RecIndex].Len - (uint64_t)VolInf->Stream.ClusterIndex;
         ClustersRemainingByteSize *= VolInf->ClusterSize;
         
-        // safe to truncate, since remainingsize's max value is uint32_t_MAX, and its MIN macro
-        // we expect max value of DWORD.
+        
         DWORD ReadSize = (DWORD)MIN((uint64_t)RemainingSize, ClustersRemainingByteSize); 
         
         ULONGLONG FilePtrTarget = (ULONGLONG)VolInf->ClusterSize * ((ULONGLONG)VolInf->Stream.Records.Data[VolInf->Stream.RecIndex].StartPos + (ULONGLONG)VolInf->Stream.ClusterIndex);
         if (NarSetFilePointer(VolInf->Stream.Handle, FilePtrTarget)) {
             
+#if 0            
+            if(VolInf->Version != NAR_FULLBACKUP_VERSION){
+                printf("[%4d] Reading %7I64u clusters from volume offset %7I64u, writing it to buffer offset of %6I64u\n", lc, ReadSize/4096ull, FilePtrTarget/4096, (char*)CurrentBufferOffset - (char*)BufferToFill);
+            }
+#endif
+            
             BOOL OperationResult = ReadFile(VolInf->Stream.Handle, CurrentBufferOffset, ReadSize, &BytesReadAfterOperation, 0);
             Result += BytesReadAfterOperation;
+            ASSERT(BytesReadAfterOperation == ReadSize);
+            
             if (!OperationResult || BytesReadAfterOperation != ReadSize) {
                 printf("STREAM ERROR: Couldnt read %lu bytes, instead read %lu, error code %i\n", ReadSize, BytesReadAfterOperation, OperationResult);
                 printf("rec_index % i rec_count % i, remaining bytes %I64u, offset at disk %I64u\n", VolInf->Stream.RecIndex, VolInf->Stream.Records.Count, ClustersRemainingByteSize, FilePtrTarget);
@@ -1091,7 +1064,7 @@ ReadStream(volume_backup_inf* VolInf, void* CallerBuffer, unsigned int CallerBuf
             goto ERR_BAIL_OUT;
         }
         
-        INT32 ClusterToIterate = (INT32)(BytesReadAfterOperation / 4096);
+        INT32 ClusterToIterate = (INT32)(BytesReadAfterOperation / VolInf->ClusterSize);
         VolInf->Stream.ClusterIndex += ClusterToIterate;
         
         if ((uint32_t)VolInf->Stream.ClusterIndex == VolInf->Stream.Records.Data[VolInf->Stream.RecIndex].Len) {
@@ -1163,7 +1136,6 @@ ReadStream(volume_backup_inf* VolInf, void* CallerBuffer, unsigned int CallerBuf
             VolInf->Stream.Error = BackupStream_Errors::Error_Compression;
             goto ERR_BAIL_OUT;
         }
-        
         
     }
     
@@ -1296,6 +1268,10 @@ SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, DotNetStreamInf* SI, boo
     
     TIMED_BLOCK();
     
+#if _MANAGED
+    // #error remove this stuff
+#endif
+    
     BOOLEAN Return = FALSE;
     int ID = GetVolumeID(C, L);
     
@@ -1330,7 +1306,6 @@ SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, DotNetStreamInf* SI, boo
             
             qsort(VolInf->Stream.Records.Data, VolInf->Stream.Records.Count, sizeof(nar_record), CompareNarRecords);
             MergeRegions(&VolInf->Stream.Records);
-            
         }
         else {
             printf("Couldnt parse MFT at setupstream function for volume %c, version %i\n", L, VolInf->Version);
@@ -1343,6 +1318,11 @@ SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, DotNetStreamInf* SI, boo
     WCHAR Temp[] = L"!:\\";
     Temp[0] = VolInf->Letter;
     wchar_t ShadowPath[256];
+    
+    HANDLE TmpVolHandle = NarOpenVolume(VolInf->Letter);
+    BOOL WapiResult = FlushFileBuffers(TmpVolHandle);
+    CloseHandle(TmpVolHandle);
+    
     VolInf->SnapshotID = GetShadowPath(Temp, VolInf->VSSPTR, ShadowPath, sizeof(ShadowPath)/sizeof(ShadowPath[0]));
     
     if (ShadowPath == NULL) {
@@ -4237,8 +4217,17 @@ bool SetDiskRestore(int DiskID, wchar_t Letter, size_t VolumeTotalSize, size_t E
 int
 main(int argc, char* argv[]) {   
     
+#if 0
+    nar_file_view v = NarOpenFileView("C:\\Disk-Image\\minispy_user\\NB_M_0-E042518.nbfsm");
+    backup_metadata *md = (backup_metadata*)v.Data;
     
-#if 1 
+    nar_file_view f = NarOpenFileView("C:\\Disk-Image\\minispy_user\\NB_0-E042518.nbfsf");
+    int hold_me_here = 235235;
+#endif
+    
+    DEBUG_Restore();
+    return 0;
+#if 0
     wchar_t drive[] = {(wchar_t)argv[1][0], ':', '\\'};
     
     SetupVSS();
@@ -4257,26 +4246,12 @@ main(int argc, char* argv[]) {
         if(V != INVALID_HANDLE_VALUE)
             GetMFTandINDXLCN(argv[1][0], V);
     }
+    PrintDebugRecords();
     
     printf("Done!\n");
     
     return 0;
 #endif
-    return 0;
-    
-    if(argc != 2){
-        printf("invalid argument, pass restore or backup\n");
-    }
-    
-    
-    if(std::string(argv[1]) == "restore"){
-        DEBUG_Restore();
-        return 0;
-    }
-    
-    if(std::string(argv[1]) != "backup"){
-        printf("invalid argument\n");
-    }
     
     
     size_t bsize = 64*1024*1024;
@@ -4298,15 +4273,15 @@ main(int argc, char* argv[]) {
             printf("ENTER LETTER TO DO BACKUP \n");
             scanf("%c", &Volume);
             
-            BackupType bt = (BackupType)Type;
+            BackupType bt = BackupType::Inc;
             
-            if(SetupStream(&C, (wchar_t)Volume, bt, &inf, true)){
+            if(SetupStream(&C, (wchar_t)Volume, bt, &inf, false)){
                 
                 int id = GetVolumeID(&C, (wchar_t)Volume);
                 volume_backup_inf *v = &C.Volumes.Data[id];
-                size_t TotalRead = 0;
+                size_t TotalRead    = 0;
                 size_t TotalWritten = 0;
-                size_t TargetWrite = (size_t)inf.ClusterSize * (size_t)inf.ClusterCount;
+                size_t TargetWrite  = (size_t)inf.ClusterSize * (size_t)inf.ClusterCount;
                 
                 printf("filename : %S\n", inf.FileName.c_str());
                 
@@ -4317,7 +4292,7 @@ main(int argc, char* argv[]) {
                                           0, 0);
                 if(file != INVALID_HANDLE_VALUE){
                     
-#if 0                    
+#if 1                    
                     loop{
                         int Read = ReadStream(v, MemBuf, bsize);
                         TotalRead += Read;
@@ -4336,6 +4311,7 @@ main(int argc, char* argv[]) {
                                 printf("Couldnt write to file\n");
                                 DisplayError(GetLastError());
                             }
+                            ASSERT(BytesWritten == Read);
                         }
                     }
 #else
@@ -4345,7 +4321,6 @@ main(int argc, char* argv[]) {
 #endif
                     
                     
-                    NAR_BREAK;
                     if(CheckStreamCompletedSuccessfully(v)){
                         TerminateBackup(v, NAR_SUCC);
                     }
@@ -4470,25 +4445,36 @@ DisplayError(DWORD Code) {
     printf("    %ws\n", buffer);
 }
 
+
+// some debug stuff
+int64_t NarGetPerfCounter(){
+    LARGE_INTEGER li;
+    QueryPerformanceCounter(&li);
+    return li.QuadPart;
+}
+int64_t NarPerfFrequency(){
+    static int64_t cache = 0;
+    if(cache == 0){
+        LARGE_INTEGER i;
+        QueryPerformanceFrequency(&i);
+        cache = i.QuadPart;
+    }
+    return cache;
+}
+
+// time elapsed in ms
+double NarTimeElapsed(int64_t start){
+    return ((double)NarGetPerfCounter() - (double)start)/(double)NarPerfFrequency();
+}
+
+
+
 //debug_record GlobalDebugRecordArray[__COUNTER__];
 
 inline void
 PrintDebugRecords() {
     
-    
-#if 0    
-    SYSTEMTIME Time;
-    char tbuf[80];
-    
-    snprintf(tbuf, 80, "NarPerformanceDump [%02d/%02d/%04d | %02d:%02d:%02d]", );
-    
-    GetLocalTime(&Time);
-    
-    FILE *F = fopen("NarPerformanceDump", "rb");
-#endif
-    
-    
-    int len = sizeof(GlobalDebugRecordArray) / sizeof(debug_record);
+    int len = __COUNTER__;//sizeof(GlobalDebugRecordArray) / sizeof(debug_record);
     for (int i = 0; i < len; i++) {
         
         if(GlobalDebugRecordArray[i].FunctionName == NULL){
