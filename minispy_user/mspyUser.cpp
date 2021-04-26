@@ -1084,8 +1084,13 @@ ReadStream(volume_backup_inf* VolInf, void* CallerBuffer, unsigned int CallerBuf
             printf("Couldnt read cluster aligned size, error, read %i bytes instead of %i\n", BytesReadAfterOperation, ReadSize);
         }
         
+        ASSERT(Result % 4096 == 0);
+        if(Result % 4096 != 0)
+            NAR_BREAK;
+        
         RemainingSize -= BytesReadAfterOperation;
         CurrentBufferOffset = (char*)BufferToFill + (Result);
+        
         
     }
     
@@ -1309,6 +1314,9 @@ SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, DotNetStreamInf* SI, boo
             
             qsort(VolInf->Stream.Records.Data, VolInf->Stream.Records.Count, sizeof(nar_record), CompareNarRecords);
             MergeRegions(&VolInf->Stream.Records);
+            for(size_t i =0; i<VolInf->Stream.Records.Count; i++){
+                printf("MERGED REGIONS OVERALL : %9u %9u\n", VolInf->Stream.Records.Data[i].StartPos, VolInf->Stream.Records.Data[i].Len);
+            }
             
         }
         else {
@@ -4227,14 +4235,21 @@ bool SetDiskRestore(int DiskID, wchar_t Letter, size_t VolumeTotalSize, size_t E
 int
 main(int argc, char* argv[]) {   
     
-#if 0
-    nar_file_view v = NarOpenFileView("C:\\Disk-Image\\minispy_user\\NB_M_0-E042518.nbfsm");
-    backup_metadata *md = (backup_metadata*)v.Data;
     
-    nar_file_view f = NarOpenFileView("C:\\Disk-Image\\minispy_user\\NB_0-E042518.nbfsf");
+#if 1
+    nar_file_view v = NarOpenFileView("C:\\Disk-Image\\minispy_user\\NB_M_0-E04260334.nbfsm");
+    backup_metadata *bm = (backup_metadata*)v.Data;
+    
+    nar_file_view f = NarOpenFileView("C:\\Disk-Image\\minispy_user\\NB_0-E04260334.nbfsf");
     int hold_me_here = 235235;
-#endif
     
+    {
+        nar_record *records = (nar_record*)((char*)v.Data + bm->Offset.RegionsMetadata);
+        size_t count = bm->Size.RegionsMetadata/sizeof(nar_record);
+        int hold_me_here = 2315;
+    }
+    
+#endif
     DEBUG_Restore();
     return 0;
 #if 0

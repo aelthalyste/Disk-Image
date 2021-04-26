@@ -17,7 +17,7 @@
 #endif
 
 
-#ifdef _DEBUG
+#if _DEBUG || !_MANAGED 
 #define ASSERT(exp) do{if(!(exp)){*(volatile int*)0 = 42;}} while(0);
 #else
 #define ASSERT(exp)
@@ -290,7 +290,7 @@ static inline void
 NarBackupIDToStr(nar_backup_id ID, std::wstring &Res){
     wchar_t bf[64];
     memset(bf, 0, sizeof(bf));
-    wsprintfW(bf, L"-%c%02d%02d%02d", ID.Letter, ID.Month, ID.Day, ID.Hour);
+    wsprintfW(bf, L"-%c%02d%02d%02d%02d", ID.Letter, ID.Month, ID.Day, ID.Hour, ID.Min);
     Res = std::wstring(bf);
 }
 
@@ -298,7 +298,7 @@ static inline void
 NarBackupIDToStr(nar_backup_id ID, std::string &Res){
     char bf[64];
     memset(bf, 0, sizeof(bf));
-    snprintf(bf, sizeof(bf), "-%c%02d%02d%02d", ID.Letter, ID.Month, ID.Day, ID.Hour);
+    snprintf(bf, sizeof(bf), "-%c%02d%02d%02d%02d", ID.Letter, ID.Month, ID.Day, ID.Hour, ID.Min);
     Res = std::string(bf);
 }
 /////////////////////////////////////////////////////

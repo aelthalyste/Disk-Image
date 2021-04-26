@@ -58,19 +58,21 @@ NarReadBackup(restore_source* Rs, size_t* AvailableBytes) {
         Rs->ClusterIndice = 0;
     }
     
+    ASSERT(Rs->MaxAdvanceSize % 4096 == 0);
     size_t MaxClustersToAdvance     = (Rs->MaxAdvanceSize / Rs->ClusterSize);
     size_t RemainingClusterInRegion = Rs->Regions[Rs->RegionIndice].Len - Rs->ClusterIndice;
     
     size_t ClustersToRead = MIN(MaxClustersToAdvance, RemainingClusterInRegion);
-    size_t DataOffset     = (size_t)(Rs->Regions[Rs->RegionIndice].StartPos + Rs->ClusterIndice) * Rs->ClusterSize;
+    size_t DataOffset     = ((size_t)Rs->Regions[Rs->RegionIndice].StartPos + Rs->ClusterIndice) * Rs->ClusterSize;
     
     // Uncompressed file stream
     if (false == Rs->IsCompressed) {
         Result = (unsigned char*)Rs->Bin.Data + Rs->AdvancedSoFar;
         
         ASSERT(Rs->AdvancedSoFar <= Rs->Bin.Len);
+        ASSERT(Rs->AdvancedSoFar % 4096 == 0);
         
-        Rs->AdvancedSoFar += (ClustersToRead*Rs->ClusterSize);
+        Rs->AdvancedSoFar = Rs->AdvancedSoFar + ClustersToRead * Rs->ClusterSize;
         
         // NOTE(Batuhan): updating region and cluster indices is being handled at end of the function
     }
@@ -161,13 +163,19 @@ NarReadBackup(restore_source* Rs, size_t* AvailableBytes) {
         Rs->RegionIndice++;
     }
     *AvailableBytes = ClustersToRead * Rs->ClusterSize;
+    ASSERT((ClustersToRead*Rs->ClusterSize) % 4096 == 0);
+    ASSERT(*AvailableBytes % 4096 == 0);
+    ASSERT(DataOffset % 4096 == 0);
+    
+    if((ClustersToRead*Rs->ClusterSize) % 4096 != 0)
+        NAR_BREAK;
+    if(*AvailableBytes % 4096 != 0)
+        NAR_BREAK;
     
     Rs->AbsoluteNeedleInBytes = DataOffset;
-    printf("Needle : %8I64u, %8I64u\n", Rs->AbsoluteNeedleInBytes/4096, Rs->AbsoluteNeedleInBytes);
+    printf("Restore write : volume offset %8I64u size %8I64u backup read offset %8I64u\n", Rs->AbsoluteNeedleInBytes/4096ull, *AvailableBytes/4096ull, (Rs->AdvancedSoFar - ClustersToRead * Rs->ClusterSize)/4096ull);
     
     return Result;
-    
-    
 }
 
 
@@ -395,6 +403,7 @@ AdvanceStream(restore_stream* Stream) {
     if (Mem != NULL && ReadLen > 0) {
         
         size_t NewNeedle = Stream->Target->SetNeedle(Stream->Target, CS->AbsoluteNeedleInBytes);
+        
         if(NewNeedle != CS->AbsoluteNeedleInBytes){
             Stream->Error = RestoreStream_Errors::Error_Needle;
         }

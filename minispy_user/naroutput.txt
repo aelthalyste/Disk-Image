@@ -1,1 +1,0 @@
-VCN: 0x0        Clusters: 0x40       LCN: 0xc0000
