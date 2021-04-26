@@ -3,7 +3,7 @@
 call :StartTimer
 
 set build_options= -DUNICODE -D_UNICODE -D_CRT_SECURE_NO_WARNINGS
-set compile_flags= -nologo /MT /EHsc /W0 /DEBUG:FULL /Zi /FC /Fa /Od /F 16777216
+set compile_flags= -nologo /MT /EHsc /W0 /DEBUG:FULL /Zi /FC /Fa /Od /F 16777216 /fsanitize=address
 
 rem /d2cgsummary
 rem /Bt

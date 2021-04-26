@@ -403,7 +403,6 @@ AdvanceStream(restore_stream* Stream) {
     if (Mem != NULL && ReadLen > 0) {
         
         size_t NewNeedle = Stream->Target->SetNeedle(Stream->Target, CS->AbsoluteNeedleInBytes);
-        
         if(NewNeedle != CS->AbsoluteNeedleInBytes){
             Stream->Error = RestoreStream_Errors::Error_Needle;
         }
@@ -564,7 +563,6 @@ InitVolumeTarget(std::string VolumePath, nar_arena* Arena) {
     
     return Result;
 }
-
 
 
 #endif

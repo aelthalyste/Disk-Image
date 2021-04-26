@@ -548,7 +548,7 @@ GetMFTandINDXLCN(char VolumeLetter, HANDLE VolumeHandle) {
                                 FileID = NarGetFileID(FileRecord);
                                 
                                 // manually insert $BITMAP & $LogFile data regions to stream.
-                                if(FileID == 2 ||
+                                if(FileID == 2||
                                    FileID == 6){
                                     void *attr = NarFindFileAttributeFromFileRecord(FileRecord, 0x80);
                                     if(attr){
@@ -1038,7 +1038,11 @@ ReadStream(volume_backup_inf* VolInf, void* CallerBuffer, unsigned int CallerBuf
         ULONGLONG FilePtrTarget = (ULONGLONG)VolInf->ClusterSize * ((ULONGLONG)VolInf->Stream.Records.Data[VolInf->Stream.RecIndex].StartPos + (ULONGLONG)VolInf->Stream.ClusterIndex);
         if (NarSetFilePointer(VolInf->Stream.Handle, FilePtrTarget)) {
             
-#if 1            
+#if 1       
+            ASSERT(ReadSize % 4096 == 0);
+            ASSERT(FilePtrTarget % 4096 == 0);
+            ASSERT(((char*)CurrentBufferOffset - (char*)BufferToFill) % 4096 == 0);
+            
             if(VolInf->Version != NAR_FULLBACKUP_VERSION){
                 printf("BackupRead : Reading %9I64u clusters from volume offset %9I64u, writing it to buffer offset of %9I64u\n", ReadSize/4096ull, FilePtrTarget/4096, (char*)CurrentBufferOffset - (char*)BufferToFill);
             }
@@ -1067,18 +1071,19 @@ ReadStream(volume_backup_inf* VolInf, void* CallerBuffer, unsigned int CallerBuf
             goto ERR_BAIL_OUT;
         }
         
-        INT32 ClusterToIterate = (INT32)(BytesReadAfterOperation / VolInf->ClusterSize);
+        INT32 ClusterToIterate       = (INT32)(BytesReadAfterOperation / VolInf->ClusterSize);
         VolInf->Stream.ClusterIndex += ClusterToIterate;
         
-        if ((uint32_t)VolInf->Stream.ClusterIndex == VolInf->Stream.Records.Data[VolInf->Stream.RecIndex].Len) {
-            VolInf->Stream.ClusterIndex = 0;
-            VolInf->Stream.RecIndex++;
-        }
         if ((uint32_t)VolInf->Stream.ClusterIndex > VolInf->Stream.Records.Data[VolInf->Stream.RecIndex].Len) {
             printf("ClusterIndex exceeded region len, that MUST NOT happen at any circumstance\n");
             VolInf->Stream.Error = BackupStream_Errors::Error_SizeOvershoot;
             goto ERR_BAIL_OUT;
         }
+        if ((uint32_t)VolInf->Stream.ClusterIndex == VolInf->Stream.Records.Data[VolInf->Stream.RecIndex].Len) {
+            VolInf->Stream.ClusterIndex = 0;
+            VolInf->Stream.RecIndex++;
+        }
+        
         
         if (BytesReadAfterOperation % VolInf->ClusterSize != 0) {
             printf("Couldnt read cluster aligned size, error, read %i bytes instead of %i\n", BytesReadAfterOperation, ReadSize);
@@ -1088,9 +1093,8 @@ ReadStream(volume_backup_inf* VolInf, void* CallerBuffer, unsigned int CallerBuf
         if(Result % 4096 != 0)
             NAR_BREAK;
         
-        RemainingSize -= BytesReadAfterOperation;
+        RemainingSize      -= BytesReadAfterOperation;
         CurrentBufferOffset = (char*)BufferToFill + (Result);
-        
         
     }
     
@@ -1339,25 +1343,23 @@ SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, DotNetStreamInf* SI, boo
     
     if (ShadowPath == NULL) {
         printf("Can't get shadowpath from VSS\n");
-        return FALSE;
+        Return = FALSE;
     }
     
     // no overheat for attaching volume again and again
     if(FALSE == AttachVolume(VolInf->Letter)){
         printf("Cant attach volume\n");
-        return FALSE;
+        Return = FALSE;
     }
     
     VolInf->Stream.Handle = CreateFileW(ShadowPath, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, NULL, NULL);
     if (VolInf->Stream.Handle == INVALID_HANDLE_VALUE) {
         printf("Can not open shadow path %S..\n", ShadowPath);
         DisplayError(GetLastError());
-        return FALSE;
+        Return = FALSE;
     }
     printf("Setup stream handle successfully\n");
     
-    // NOTE(Batuhan): Experimental feature, from now on (06.10.2020), every binary data MUST contain MFTLCN with extended INDEX_ALLOCATION data.
-    // that helps file explorer to search that volume 
     
     if (!VolInf->FullBackupExists) {
         printf("Fullbackup stream is preparing\n");
@@ -1538,7 +1540,7 @@ GetVolumeRegionsFromBitmap(HANDLE VolumeHandle, uint32_t* OutRecordCount) {
             ClustersRead++;
             BitmapMask <<= 1;
             
-            while (ClustersRead < MaxClusterCount) {
+            while (BitmapIndex != (Bitmap->Buffer + Bitmap->BitmapSize.QuadPart)) {
                 
                 if ((*BitmapIndex & BitmapMask) == BitmapMask) {
                     
@@ -4080,8 +4082,10 @@ DEBUG_Restore(){
     
     while(AdvanceStream(Stream)){
         int hold_me_here = 5;
-        if(Stream->Error != RestoreStream_Errors::Error_NoError){
+        if(Stream->Error != RestoreStream_Errors::Error_NoError
+           || Stream->SrcError != RestoreSource_Errors::Error_NoError){
             NAR_BREAK;
+            break;
         }
     }
     
@@ -4236,7 +4240,7 @@ int
 main(int argc, char* argv[]) {   
     
     
-#if 1
+#if 0
     nar_file_view v = NarOpenFileView("C:\\Disk-Image\\minispy_user\\NB_M_0-E04260334.nbfsm");
     backup_metadata *bm = (backup_metadata*)v.Data;
     
@@ -4250,8 +4254,8 @@ main(int argc, char* argv[]) {
     }
     
 #endif
-    DEBUG_Restore();
-    return 0;
+    //DEBUG_Restore();
+    //return 0;
 #if 0
     wchar_t drive[] = {(wchar_t)argv[1][0], ':', '\\'};
     
@@ -4298,7 +4302,7 @@ main(int argc, char* argv[]) {
             printf("ENTER LETTER TO DO BACKUP \n");
             scanf("%c", &Volume);
             
-            BackupType bt = BackupType::Inc;
+            BackupType bt = BackupType::Diff;
             
             if(SetupStream(&C, (wchar_t)Volume, bt, &inf, false)){
                 

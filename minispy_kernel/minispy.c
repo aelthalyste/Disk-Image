@@ -1651,6 +1651,10 @@ Return Value:
                         if (RtlCompareMemory(&CompareBuffer[0], NarData.VolumeRegionBuffer[i].GUIDStrVol.Buffer, NAR_GUID_STR_SIZE) == NAR_GUID_STR_SIZE) {
                             RemainingSizeOnBuffer = NAR_MEMORYBUFFER_SIZE - NAR_MB_USED(NarData.VolumeRegionBuffer[i].MemoryBuffer);
                             
+                            for (size_t j = 0; j < RecCount; j++) {
+                                DbgPrint("Detected region : start %7u %7u\n", P[j].S, P[j].L);
+                            }
+
                             if (RemainingSizeOnBuffer >= SizeNeededForMemoryBuffer) {
                                 NAR_MB_PUSH(NarData.VolumeRegionBuffer[i].MemoryBuffer, &P[0], SizeNeededForMemoryBuffer);
                                 Added = TRUE;
