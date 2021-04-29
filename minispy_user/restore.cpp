@@ -173,7 +173,8 @@ NarReadBackup(restore_source* Rs, size_t* AvailableBytes) {
         NAR_BREAK;
     
     Rs->AbsoluteNeedleInBytes = DataOffset;
-    printf("Restore write : volume offset %8I64u size %8I64u backup read offset %8I64u\n", Rs->AbsoluteNeedleInBytes/4096ull, *AvailableBytes/4096ull, (Rs->AdvancedSoFar - ClustersToRead * Rs->ClusterSize)/4096ull);
+    
+    printf("Restore write : volume offset %8I64u size %8I64u backup read offset %8I64u\n", Rs->AbsoluteNeedleInBytes/4096ull, *AvailableBytes/4096ull, ((uint64_t)Rs->AdvancedSoFar - (uint64_t)ClustersToRead * Rs->ClusterSize)/4096ull);
     
     return Result;
 }

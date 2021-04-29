@@ -593,40 +593,6 @@ GetMFTandINDXLCN(char VolumeLetter, HANDLE VolumeHandle) {
                                                                      false);
                                     ClusterExtractedCount += RegFound;
                                     
-#if 0                               
-                                    void *BitmapAttr = NarFindFileAttributeFromFileRecord(FileRecord, NAR_BITMAP_FLAG);
-                                    if(BitmapAttr == NULL){
-                                        uint32_t RegFound = 0;
-                                        NarParseIndexAllocationAttribute(IndxOffset, &ClustersExtracted[ClusterExtractedCount], MaxOutputLen - ClusterExtractedCount, &RegFound,
-                                                                         false);
-                                        ClusterExtractedCount += RegFound;
-                                    }
-                                    else{
-                                        uint32_t RegFound = 0;
-                                        NarParseIndexAllocationAttribute(IndxOffset, &ClustersExtracted[ClusterExtractedCount], MaxOutputLen - ClusterExtractedCount, &RegFound,
-                                                                         true);
-                                        
-                                        int BLen = NarGetBitmapAttributeDataLen(BitmapAttr);
-                                        unsigned char* Bitmap = (unsigned char*)NarGetBitmapAttributeData(BitmapAttr);
-                                        
-                                        size_t ceil = MIN(RegFound, BLen);
-                                        for(size_t ci = 0; ci<BLen; ci++){
-                                            TIMED_NAMED_BLOCK("Bitmap merge stuff");
-                                            size_t ByteIndex = ci/8;
-                                            size_t BitIndex = ci%8;
-                                            if(Bitmap[ByteIndex] & (1 << BitIndex)){
-                                                // everything is ok
-                                            }
-                                            else{
-                                                ClustersExtracted[ci + ClusterExtractedCount].StartPos = 0;
-                                                ClustersExtracted[ci + ClusterExtractedCount].Len = 0;
-                                            }
-                                        }
-                                        ClusterExtractedCount += RegFound;
-                                    }
-#endif
-                                    
-                                    
                                 }
                                 
                             }
@@ -677,7 +643,6 @@ GetMFTandINDXLCN(char VolumeLetter, HANDLE VolumeHandle) {
     
     Result.Data = ClustersExtracted;
     Result.Count = ClusterExtractedCount;
-    
     
     if(Result.Count > 0){
         printf("Will be sorting&merging %u regions\n", Result.Count); 
@@ -1495,7 +1460,7 @@ SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, DotNetStreamInf* SI, boo
         
     }
     
-    printf("Totalbytes should be backed up %I64u\n", (uint64_t)SI->ClusterCount*(uint64_t)SI->ClusterSize);
+    printf("Number of backup bytes : %I64u\n", (uint64_t)SI->ClusterCount*(uint64_t)SI->ClusterSize);
     
     return Return;
 }
@@ -1528,43 +1493,43 @@ GetVolumeRegionsFromBitmap(HANDLE VolumeHandle, uint32_t* OutRecordCount) {
         if (SUCCEEDED(R)) {
             
             MaxClusterCount = (ULONGLONG)Bitmap->BitmapSize.QuadPart;
-            DWORD ClustersRead = 0;
+            uint32_t ClusterIndex = 0;
             UCHAR* BitmapIndex = Bitmap->Buffer;
             UCHAR BitmapMask = 1;
             //uint32_t CurrentIndex = 0;
             uint32_t LastActiveCluster = 0;
             
-            uint32_t RecordBufferSize = 128 * 1024 * 1024;
-            Records = (nar_record*)malloc(RecordBufferSize);
-            
-            memset(Records, 0, RecordBufferSize);
+            uint32_t RecordBufferCount = 1 * 1024 * 1024;
+            Records = (nar_record*)calloc(RecordBufferCount, sizeof(nar_record));
             
             Records[0] = { 0,1 };
             RecordCount++; 
             
-            ClustersRead++;
+            ClusterIndex++;
             BitmapMask <<= 1;
             
             while (BitmapIndex != (Bitmap->Buffer + Bitmap->BitmapSize.QuadPart)) {
                 
                 if ((*BitmapIndex & BitmapMask) == BitmapMask) {
                     
-                    if (LastActiveCluster == ClustersRead - 1) {
-                        Records[RecordCount].Len++;
+                    if (LastActiveCluster == ClusterIndex - 1) {
+                        Records[RecordCount - 1].Len++;
                     }
                     else {
-                        Records[++RecordCount] = { ClustersRead, 1 };
+                        nar_record dbg = {0};
+                        dbg.StartPos = ClusterIndex;
+                        dbg.Len      = 1;
+                        Records[RecordCount++] = dbg;
                     }
                     
-                    LastActiveCluster = ClustersRead;
-                    
+                    LastActiveCluster = ClusterIndex;
                 }
                 BitmapMask <<= 1;
                 if (BitmapMask == 0) {
                     BitmapMask = 1;
                     BitmapIndex++;
                 }
-                ClustersRead++;
+                ClusterIndex++;
             }
             
             printf("Successfully set fullbackup records\n");
@@ -4414,10 +4379,6 @@ temp(char VolumeLetter, HANDLE VolumeHandle, wchar_t *Extension) {
 int
 main(int argc, char* argv[]) {
     
-    temp('C', NarOpenVolume('C'), L".dll");
-    return 0;
-    
-    
 #if 0
     nar_file_view v = NarOpenFileView("C:\\Disk-Image\\minispy_user\\NB_M_0-E04260334.nbfsm");
     backup_metadata *bm = (backup_metadata*)v.Data;
@@ -4432,8 +4393,8 @@ main(int argc, char* argv[]) {
     }
     
 #endif
-    //DEBUG_Restore();
-    //return 0;
+    DEBUG_Restore();
+    return 0;
 #if 0
     wchar_t drive[] = {(wchar_t)argv[1][0], ':', '\\'};
     

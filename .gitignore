@@ -7,6 +7,10 @@
 
 *.o
 *.out
+*.nbfsf
+*.nbfsm
+mspyUser.lib
+NAR_APP_LOG_FILE.txt
 
 # User-specific files
 *.rsuser

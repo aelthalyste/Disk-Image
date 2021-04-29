@@ -3,7 +3,9 @@
 call :StartTimer
 
 set build_options= -DUNICODE -D_UNICODE -D_CRT_SECURE_NO_WARNINGS
-set compile_flags= -nologo /MT /EHsc /W0 /DEBUG:FULL /Zi /FC /Fa /O2 /F 16777216 
+set compile_flags= -nologo /MT /EHsc /W0 /Fa /DEBUG:FULL /Zi /FC /Od /F 16777216 
+rem /fsanitize=address
+rem /DEBUG:FULL /Zi /FC 
 rem /fsanitize=address
 rem /d2cgsummary
 rem /Bt
@@ -12,18 +14,19 @@ rem -ftime-trace
 set linker_flags= /INCREMENTAL:NO "fltLib.lib" "vssapi.lib" "libzstd_static.lib" "libzstd.dll.a"
 
 pushd minispy_user\
-cl /c  %compile_flags% /Yc"precompiled.h" "precompiled.cpp" 
+if not exist precompiled.obj cl /c  %compile_flags% /Yc"precompiled.h" "precompiled.cpp" 
 
 cl /Yu"precompiled.h" "mspyUser.cpp" "precompiled.obj" %build_options% %compile_flags% /I"../inc" %linker_flags%
 
 rem CLEANUP
 
-popd
-
 call :StopTimer
 call :DisplayTimerResult
 
+if exist *.ilk del *.ilk
+if exist *.exp del *.exp
 
+popd
 
 REM TIMING THINGS BELOW
 
