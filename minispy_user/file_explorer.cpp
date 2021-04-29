@@ -215,25 +215,25 @@ NarFindFileAttributeFromFileRecord(void *FileRecord, INT32 AttributeID){
     
     void *Start = FileRecord;
     
-    INT16 FirstAttributeOffset = (*(INT16*)((BYTE*)FileRecord + 20));
+    INT16 FirstAttributeOffset = (*(int16_t*)((BYTE*)FileRecord + 20));
     void* FileAttribute = (char*)FileRecord + FirstAttributeOffset;
     
-    INT32 RemainingLen = *(INT32*)((BYTE*)FileRecord + 24); // Real size of the file record
-    RemainingLen -= (FirstAttributeOffset + 8); //8 byte for end of record mark, remaining len includes it too.
+    INT32 RemainingLen = *(int32_t*)((BYTE*)FileRecord + 24); // Real size of the file record
+    RemainingLen      -= (FirstAttributeOffset + 8); //8 byte for end of record mark, remaining len includes it too.
     
     while(RemainingLen > 0){
         
-        if(*(INT32*)FileAttribute == AttributeID){
+        if(*(int32_t*)FileAttribute == AttributeID){
             return FileAttribute;
         }
         
         // it's guarenteed that attributes are sorted by id's in ascending order
-        if(*(INT32*)FileAttribute > AttributeID){
+        if(*(int32_t*)FileAttribute > AttributeID){
             break;
         }
         
         //Just substract attribute size from remaininglen to determine if we should keep iterating
-        INT32 AttrSize = (*(unsigned short*)((BYTE*)FileAttribute + 4));
+        int32_t AttrSize = (*(unsigned short*)((BYTE*)FileAttribute + 4));
         RemainingLen -= AttrSize;
         FileAttribute = (BYTE*)FileAttribute + AttrSize;
         if (AttrSize == 0) break;
@@ -788,15 +788,12 @@ Be careful about return value, its not a fail-pass thing
 */
 inline INT
 NarFileExplorerGetFileEntryFromData(void *IndxCluster, nar_file_entry *OutFileEntry){
-    
-    
     TIMED_BLOCK();
     
     memset(OutFileEntry, 0, sizeof(*OutFileEntry));
     
-    
-    UINT16 EntrySize = *(UINT16*)((char*)IndxCluster + 8);
-    UINT16 AttrSize = *(UINT16*)((char*)IndxCluster + 10);
+    UINT16 EntrySize    = *(UINT16*)((char*)IndxCluster + 8);
+    UINT16 AttrSize     = *(UINT16*)((char*)IndxCluster + 10);
     if (EntrySize == 16 || EntrySize == 24 || AttrSize == 0) {
         return NAR_FEXP_END_MARK;
     }
@@ -826,9 +823,9 @@ NarFileExplorerGetFileEntryFromData(void *IndxCluster, nar_file_entry *OutFileEn
     memcpy(&OutFileEntry->Name[0], NamePtr, NameLen * sizeof(wchar_t));
     
     // push stuff
-    OutFileEntry->MFTFileIndex = MagicNumber;
-    OutFileEntry->Size = FileSize;
-    OutFileEntry->CreationTime = CreationTime;
+    OutFileEntry->MFTFileIndex     = MagicNumber;
+    OutFileEntry->Size             = FileSize;
+    OutFileEntry->CreationTime     = CreationTime;
     OutFileEntry->LastModifiedTime = ModificationTime;
     
     OutFileEntry->IsDirectory = FALSE;
@@ -839,8 +836,6 @@ NarFileExplorerGetFileEntryFromData(void *IndxCluster, nar_file_entry *OutFileEn
     }
     
     return NAR_FEXP_SUCCEEDED;
-    
-    
 }
 
 
@@ -873,9 +868,6 @@ NarFileExplorerPushDirectory(nar_backup_file_explorer_context* Ctx, UINT32 Selec
     Ctx->EList.EntryCount = 0;
     
     NarGetFileListFromMFTID(Ctx, NewMFTID);
-    
-    
-    
 }
 
 inline void
@@ -1556,3 +1548,45 @@ uint32_t
 NarGetFileID(void* FileRecord){
     return *(uint32_t*)NAR_OFFSET(FileRecord, 44);
 }
+
+struct name_and_parent_id{
+    uint32_t FileID;
+    uint32_t ParentFileID;
+    uint8_t  NameLen; // not including whitespace
+    wchar_t *Name;
+};
+
+name_and_parent_id
+NarGetFileNameAndParentID(void *FileRecord){
+    
+    name_and_parent_id Result = {0};
+    Result.FileID = NarGetFileID(FileRecord);
+    
+    // doesnt matter if it's posix or normal file name attribute
+    void* FNAttribute = NarFindFileAttributeFromFileRecord(FileRecord, 0x30);
+    if(FNAttribute){
+        // POSIX, skip
+        if(*(uint8_t*)NAR_OFFSET(FNAttribute, 89) == 2){
+            uint32_t AttLen = *(uint32_t*)NAR_OFFSET(FNAttribute, 4);
+            FNAttribute = NAR_OFFSET(FNAttribute, AttLen);
+            
+            if(*(uint32_t*)FNAttribute != 0x30){
+                memset(&Result, 0, sizeof(Result));
+                goto bail;
+            }
+            
+        }
+        
+        Result.Name = (wchar_t*)NAR_OFFSET(FNAttribute, 90);
+        Result.NameLen  = *(uint8_t*)NAR_OFFSET(FNAttribute, 88);
+        Result.ParentFileID = *(uint32_t*)NAR_OFFSET(FNAttribute, 24);
+    }
+    else{
+        int hodl = 25;
+    }
+    
+    bail:;
+    
+    return Result;
+}
+

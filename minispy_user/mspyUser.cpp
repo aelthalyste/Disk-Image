@@ -291,6 +291,11 @@ CompareNarRecords(const void* v1, const void* v2) {
     
 }
 
+BOOL
+CompareUINT32(const void* v1, const void *v2){
+    return *(uint32_t*)v1 - *(uint32_t*)v2;
+}
+
 VSS_ID
 GetShadowPath(std::wstring Drive, CComPtr<IVssBackupComponents>& ptr, wchar_t* OutShadowPath, size_t MaxOutCh) {
     
@@ -4235,9 +4240,182 @@ bool SetDiskRestore(int DiskID, wchar_t Letter, size_t VolumeTotalSize, size_t E
 }
 
 
+wchar_t**
+temp(char VolumeLetter, HANDLE VolumeHandle, wchar_t *Extension) {
+    
+    BOOLEAN JustExtractMFTRegions = FALSE;
+    
+    nar_record* TempRecords   = NULL;
+    uint64_t FileRecordSize   = 1024;
+    uint64_t TotalFC          = 0;
+    
+    wchar_t **Result  = NULL;
+    uint32_t *IndiceMap = NULL;
+    uint32_t *IndiceArr = NULL;
+    uint64_t ArrLen     = 0;
+    
+    uint8_t* FileBuffer = 0;
+    
+    
+    DWORD BR = 0;
+    unsigned int RecCountByCommandLine = 0;
+    TempRecords = NarGetMFTRegionsByCommandLine(VolumeLetter, &RecCountByCommandLine);
+    
+    {
+        TotalFC = 0;
+        for(unsigned int MFTOffsetIndex = 0; MFTOffsetIndex < RecCountByCommandLine; MFTOffsetIndex++){
+            TotalFC += TempRecords[MFTOffsetIndex].Len;
+        }
+        TotalFC *= 4;
+        printf("Total file count is %I64u\n", TotalFC);
+        Result  = (wchar_t**)VirtualAlloc(0, TotalFC*8ull, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+        
+        FileBuffer = (uint8_t*)VirtualAlloc(0, TotalFC * 1024, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+        ASSERT(FileBuffer);
+        
+        IndiceMap = (uint32_t*)VirtualAlloc(0, TotalFC*4, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+        IndiceArr = (uint32_t*)VirtualAlloc(0, TotalFC*2, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+    }
+    
+    uint32_t BufferStartFileID = 0;
+    uint64_t VCNOffset = 0;
+    {
+        int64_t start = NarGetPerfCounter();
+        
+        for (unsigned int MFTOffsetIndex = 0; MFTOffsetIndex < RecCountByCommandLine; MFTOffsetIndex++) {
+            uint64_t ClusterSize    = 4096ull;
+            uint64_t FilePerCluster = ClusterSize / 1024ull;
+            
+            uint64_t Offset    = (uint64_t)TempRecords[MFTOffsetIndex].StartPos * (uint64_t)ClusterSize;
+            uint64_t FileCount = (uint64_t)TempRecords[MFTOffsetIndex].Len * (uint64_t)FilePerCluster;
+            
+            // set file pointer to actual records
+            if (NarSetFilePointer(VolumeHandle, Offset)) {
+                BOOL RFResult  = ReadFile(VolumeHandle, 
+                                          FileBuffer + VCNOffset*4096ull, 
+                                          FileCount * 1024ull, 
+                                          &BR, 0);
+                VCNOffset += TempRecords[MFTOffsetIndex].Len;
+            }
+        }
+        
+        
+        double time_sec = NarTimeElapsed(start);
+        printf("Processed %8u files in %.5f sec, file per ms %.5f\n", TotalFC, time_sec, (double)TotalFC/time_sec/1000.0);
+    }
+    
+    TIMED_NAMED_BLOCK("after readfile");
+    
+    int64_t start = NarGetPerfCounter();
+    
+    for (uint64_t FileRecordIndex = 11; FileRecordIndex < TotalFC; FileRecordIndex++) {
+        
+        TIMED_NAMED_BLOCK("File record parser");
+        void* FileRecord = (BYTE*)FileBuffer + (uint64_t)FileRecordSize * (uint64_t)FileRecordIndex;
+        
+        // file flags are at 22th offset in the record
+        if (*(int32_t*)FileRecord != 'ELIF') {
+            // block doesnt start with 'FILE0', skip
+            continue;
+        }
+        
+        FileRecordHeader *h = (FileRecordHeader*)FileRecord;
+        if(h->inUse == 0){
+            continue;
+        }
+        
+        // lsn, lsa swap to not confuse further parsing stages.
+        ((uint8_t*)FileRecord)[510] = *(uint8_t*)NAR_OFFSET(FileRecord, 50);
+        ((uint8_t*)FileRecord)[511] = *(uint8_t*)NAR_OFFSET(FileRecord, 51);
+        
+        uint32_t FileID   = 0;
+        uint32_t ParentID = 0;
+        
+        name_and_parent_id NamePID = NarGetFileNameAndParentID(FileRecord);
+        if(NamePID.Name != 0 && NamePID.Name[0] != L'$'){
+            IndiceMap[NamePID.FileID] = NamePID.ParentFileID;
+            
+            wchar_t fn[256];
+            memset(fn, 0, sizeof(fn));
+            memcpy(fn, NamePID.Name, NamePID.NameLen * sizeof(wchar_t));
+            
+            Result[NamePID.FileID] = _wcsdup(fn);
+            
+            if(NarFileNameExtensionCheck(fn, Extension)){
+                IndiceArr[ArrLen++] = NamePID.FileID;
+                
+#if 0                
+                while(NamePID.ParentFileID != 5 && NamePID.ParentFileID != 0){
+                    void* ParentRecord = (uint8_t*)FileBuffer + (NamePID.ParentFileID)*1024ull;
+                    
+                    NamePID = NarGetFileNameAndParentID(ParentRecord);
+                    memset(fn, 0, sizeof(fn));
+                    memcpy(fn, NamePID.Name, NamePID.NameLen * sizeof(wchar_t));
+                    Result[NamePID.FileID] = _wcsdup(fn);
+                    IndiceMap[NamePID.FileID]  = NamePID.ParentFileID;
+                }
+#endif
+                
+            }
+        }
+        
+    }
+    
+    double time_sec = NarTimeElapsed(start);
+    printf("Parser, %8u files in %.5f sec, file per ms %.5f\n", TotalFC, time_sec, (double)TotalFC/time_sec/1000.0);
+    
+    VirtualFree(FileBuffer, TotalFC * 1024ull, MEM_RELEASE);
+    wchar_t **rr = (wchar_t**)VirtualAlloc(0, ArrLen*8, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+    start = NarGetPerfCounter();
+    
+    for(uint64_t s = 0; s<ArrLen; s++){
+        uint32_t stack[256];
+        uint32_t si = 0;
+        memset(stack, 0, sizeof(stack));
+        for(uint32_t ParentID = IndiceMap[IndiceArr[s]]; 
+            ParentID != 5 && ParentID != 0; 
+            ParentID    = IndiceMap[ParentID]){
+            stack[si++] = IndiceMap[ParentID];
+        }
+        
+        rr[s] = (wchar_t*)calloc(4096, sizeof(wchar_t));
+        wcscat(rr[s], L"C:\\");
+        
+        //printf("%6u C:\\", s);
+        for(uint32_t i =0; i<si; i++){
+            if(stack[si - i - 1] != 5 && stack[si - i - 1] != 0){
+                //printf("%S\\", Result[stack[si - i - 1]]);
+                if(Result[stack[si - i - 1]] == 0)
+                    break;
+                wcscat(rr[s], Result[stack[si - i - 1]]);
+                wcscat(rr[s], L"\\");
+            }
+        }
+        
+        wcscat(rr[s], Result[IndiceArr[s]]);
+        
+        //printf("%S ", Result[IndiceArr[s]]);
+        //printf("\n");
+        
+    }
+    
+    time_sec = NarTimeElapsed(start);
+    printf("Traverser %8u files in %.5f sec, file per ms %.5f\n", ArrLen, time_sec, (double)ArrLen/time_sec/1000.0);
+    
+    {
+        int hodl = 0;
+        printf("Match count %I64u\n", ArrLen);
+        scanf("%d", &hodl);
+    }
+    NarFreeMFTRegionsByCommandLine(TempRecords);
+    return Result;
+}
 
 int
-main(int argc, char* argv[]) {   
+main(int argc, char* argv[]) {
+    
+    temp('C', NarOpenVolume('C'), L".dll");
+    return 0;
     
     
 #if 0

@@ -35,6 +35,23 @@
 
 #define NAR_OFFSET(m, o) ((char*)(m) + (o))
 
+struct FileRecordHeader {
+	uint32_t magic;
+	uint16_t updateSequenceOffset;
+	uint16_t updateSequenceSize;
+	uint64_t logSequence;
+	uint16_t sequenceNumber;
+	uint16_t hardLinkCount;
+	uint16_t firstAttributeOffset;
+	uint16_t inUse : 1;
+	uint16_t isDirectory : 1;
+	uint32_t usedSize;
+	uint32_t allocatedSize;
+	uint64_t fileReference;
+	uint16_t nextAttributeID;
+	uint16_t unused;
+	uint32_t recordNumber;
+};
 
 struct nar_fe_volume_handle{
     HANDLE VolumeHandle;
