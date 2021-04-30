@@ -432,7 +432,6 @@ namespace NarDIWrapper {
         List<CSLog^> ^Result = gcnew List<CSLog^>;
         
         if(WaitForSingleObject(GlobalLogMutex, 100) == WAIT_OBJECT_0){
-            
             for(int i = 0; i<GlobalLogCount; i++){
                 CSLog^ Log = gcnew CSLog;
                 Log->LogStr = gcnew System::String(GlobalLogs[i].LogString);
@@ -451,7 +450,6 @@ namespace NarDIWrapper {
             GlobalLogCount = 0;
             
             ReleaseMutex(GlobalLogMutex);
-            
         }
         else{
             printf("Couldnt lock log mutex\n");

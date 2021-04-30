@@ -160,8 +160,6 @@ NarLog(const char *str, ...){
     
     va_list ap;
     
-    //
-    
 #define MAX_BUF_LEN 1024*2
     
     static char buf[MAX_BUF_LEN];
