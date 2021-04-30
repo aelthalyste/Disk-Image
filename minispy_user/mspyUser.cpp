@@ -313,45 +313,51 @@ GetShadowPath(std::wstring Drive, CComPtr<IVssBackupComponents>& ptr, wchar_t* O
     
     if (S_OK == ptr->InitializeForBackup()) {
         if (S_OK == ptr->SetContext(VSS_CTX_BACKUP)) {
-            if (S_OK == ptr->StartSnapshotSet(&sid)) {
-                if (S_OK == ptr->SetBackupState(false, false, VSS_BACKUP_TYPE::VSS_BT_FULL, false)) {
-                    if (S_OK == ptr->AddToSnapshotSet((LPWSTR)Drive.c_str(), GUID_NULL, &sid)) {
-                        CComPtr<IVssAsync> Async;
-                        if (S_OK == ptr->PrepareForBackup(&Async)) {
-                            Async->Wait();
-                            CComPtr<IVssAsync> Async2;
-                            if (S_OK == ptr->DoSnapshotSet(&Async2)) {
-                                Async2->Wait();
-                                Error = FALSE;
+            if(S_OK == ptr->SetBackupState(false, false, VSS_BACKUP_TYPE::VSS_BT_COPY, false)){
+                CComPtr<IVssAsync> async3;
+                if(S_OK == ptr->GatherWriterMetadata(&async3)){
+                    async3->Wait();
+                    if (S_OK == ptr->StartSnapshotSet(&sid)) {
+                        if (S_OK == ptr->AddToSnapshotSet((LPWSTR)Drive.c_str(), GUID_NULL, &sid)) {
+                            CComPtr<IVssAsync> Async;
+                            if (S_OK == ptr->PrepareForBackup(&Async)) {
+                                Async->Wait();
+                                CComPtr<IVssAsync> Async2;
+                                if (S_OK == ptr->DoSnapshotSet(&Async2)) {
+                                    Async2->Wait();
+                                    Error = FALSE;
+                                }
+                                else{
+                                    printf("DoSnapshotSet failed\n");
+                                }
                             }
-                            else {
-                                printf("Can't do snapshotset\n");
+                            else{
+                                printf("PrepareForBackup failed\n");
                             }
                         }
-                        else {
-                            printf("Can't prepare for backup");
+                        else{
+                            printf("AddToSnapshotSet failed\n");
                         }
                     }
-                    else {
-                        printf("Can't add volume to snapshot set\n");
+                    else{
+                        printf("StartSnapshotSet failed\n");
                     }
                 }
-                else {
-                    printf("Can't set VSS backup state\n");
+                else{
+                    printf("GatherWriterMetadata failed\n");
                 }
             }
-            else {
-                printf("Can't start VSS snapshotset\n");
+            else{
+                printf("SetBackupState failed\n");
             }
         }
-        else {
-            printf("Can't set VSS context\n");
+        else{
+            printf("SetContext failed\n");
         }
     }
-    else {
-        printf("Can't initialize VSS for backup\n");
+    else{
+        printf("InitializeForBackup failed\n");
     }
-    
     
     if (!Error) {
         VSS_SNAPSHOT_PROP SnapshotProp;
@@ -1417,9 +1423,16 @@ SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, DotNetStreamInf* SI, boo
         }
         if(TruncateIndex > 0){
             printf("Found regions that exceeds volume size, truncating stream record array from %i to %i\n", V->Stream.Records.Count, TruncateIndex);
+            
+            uint32_t NewEnd = V->VolumeTotalClusterCount;
+            V->Stream.Records.Data[TruncateIndex].Len = NewEnd - V->Stream.Records.Data[TruncateIndex].StartPos;
+            
+            ASSERT(V->Stream.Records.Data[TruncateIndex].StartPos + V->Stream.Records.Data[TruncateIndex].Len <= V->VolumeTotalClusterCount);
+            
             V->Stream.Records.Data = 
-                (nar_record*)realloc(V->Stream.Records.Data, TruncateIndex*sizeof(nar_record));            
-            V->Stream.Records.Count = TruncateIndex;
+                (nar_record*)realloc(V->Stream.Records.Data, (TruncateIndex + 1)*sizeof(nar_record));            
+            V->Stream.Records.Count = TruncateIndex + 1;
+            
         }
         
     }
@@ -2157,7 +2170,7 @@ NarGetDiskTotalSize(int DiskID) {
         free(DGEX);    	
     }
     else{
-    	printf("Unable to allocate memory for DISK_GEOMETYRY_EX, for disk %d\n", DiskID);
+        printf("Unable to allocate memory for DISK_GEOMETYRY_EX, for disk %d\n", DiskID);
     }
     
     
@@ -4071,13 +4084,13 @@ DEBUG_Restore(){
 
 void
 DEBUG_FileExplorer(){
-	ASSERT(0);    
+    ASSERT(0);    
 }
 
 
 void
 DEBUG_FileRestore(){
-	ASSERT(0);    
+    ASSERT(0);    
 }
 
 
@@ -4162,7 +4175,7 @@ bool SetDiskRestore(int DiskID, wchar_t Letter, size_t VolumeTotalSize, size_t E
     
     int VolSizeMB 		= VolumeTotalSize / (1024ull* 1024ull) + 1;
     int SysPartitionMB 	= EFIPartSize / (1024ull * 1024ull);
-	int RecPartitionMB 	= 0;
+    int RecPartitionMB 	= 0;
     
     printf("VolSizeMB : %I64u\nSysPartMB : %I64u\n", VolSizeMB, SysPartitionMB);
     
@@ -4398,8 +4411,6 @@ main(int argc, char* argv[]) {
     }
     
 #endif
-    DEBUG_Restore();
-    return 0;
 #if 0
     wchar_t drive[] = {(wchar_t)argv[1][0], ':', '\\'};
     
