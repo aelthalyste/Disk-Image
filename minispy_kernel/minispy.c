@@ -22,7 +22,7 @@ Environment:
 #include <stdio.h>
 #include <Ntstrsafe.h>
 #include <string.h>
-// #define DbgPrint
+#define DbgPrint
 
 //
 //  Global variables
@@ -1381,16 +1381,16 @@ Return Value:
     
     
     
-    //FILE_STANDARD_INFORMATION fsi = { 0 };
-    //status = FltQueryInformationFile(FltObjects->Instance, FltObjects->FileObject, &fsi, sizeof(FILE_STANDARD_INFORMATION), FileStandardInformation, &LenReturned);
-    //if (NT_SUCCESS(status)) {
-    //    if (fsi.Directory == TRUE) {
-    //        return FLT_PREOP_SUCCESS_NO_CALLBACK;
-    //    }
-    //}
-    //else {
-    //    DbgPrint("Failed to query information file\n");
-    //}
+    FILE_STANDARD_INFORMATION fsi = { 0 };
+    status = FltQueryInformationFile(FltObjects->Instance, FltObjects->FileObject, &fsi, sizeof(FILE_STANDARD_INFORMATION), FileStandardInformation, &LenReturned);
+    if (NT_SUCCESS(status)) {
+        if (fsi.Directory == TRUE) {
+            return FLT_PREOP_SUCCESS_NO_CALLBACK;
+        }
+    }
+    else {
+        DbgPrint("Failed to query information file\n");
+    }
     
     
     PFLT_FILE_NAME_INFORMATION nameInfo = NULL;
