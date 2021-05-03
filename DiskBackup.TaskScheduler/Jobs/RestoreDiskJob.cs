@@ -42,8 +42,11 @@ namespace DiskBackup.TaskScheduler.Jobs
             var taskId = int.Parse(context.JobDetail.JobDataMap["taskId"].ToString());
             var task = _taskInfoDal.Get(x => x.Id == taskId);
             _logger.Information("{@task} için restore disk görevi başlatıldı.", task);
+
             task.BackupStorageInfo = _backupStorageDal.Get(x => x.Id == task.BackupStorageInfoId);
             task.RestoreTaskInfo = _restoreTaskDal.Get(x => x.Id == task.RestoreTaskId);
+            task.StatusInfo = _statusInfoDal.Get(x => x.Id == task.StatusInfoId);
+            ResetStatusInfo(task);
 
             ActivityLog activityLog = new ActivityLog
             {
@@ -102,7 +105,6 @@ namespace DiskBackup.TaskScheduler.Jobs
                     else
                         _logger.Information("{@task} {@value} volumu müsait değildi", task, task.RestoreTaskInfo.TargetLetter[0]);
                 }
-                // başarısızsa tekrar dene restore da başarısızsa tekrar dene yok
             }
             catch (Exception e)
             {
@@ -180,6 +182,17 @@ namespace DiskBackup.TaskScheduler.Jobs
             {
                 _logger.Error(ex + "Email gönderilemedi");
             }
+        }
+
+        private void ResetStatusInfo(TaskInfo task)
+        {
+            task.StatusInfo.AverageDataRate = 0;
+            task.StatusInfo.DataProcessed = 0;
+            task.StatusInfo.FileName = "";
+            task.StatusInfo.InstantDataRate = 0;
+            task.StatusInfo.TimeElapsed = 0;
+            task.StatusInfo.TotalDataProcessed = 100;
+            _statusInfoDal.Update(task.StatusInfo);
         }
     }
 }

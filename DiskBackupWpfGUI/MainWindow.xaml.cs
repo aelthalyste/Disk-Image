@@ -856,7 +856,6 @@ namespace DiskBackupWpfGUI
             {
                 taskInfo.LastWorkingDate = DateTime.Now;
                 taskInfo.BackupStorageInfo = _backupStorageDal.Get(x => x.Id == taskInfo.BackupStorageInfoId);
-                taskInfo.StatusInfo = _statusInfoDal.Get(x => x.Id == taskInfo.StatusInfoId);
                 Console.WriteLine("Hemen çalıştırılıyor");
                 if (taskInfo.Type == TaskType.Backup)
                 {

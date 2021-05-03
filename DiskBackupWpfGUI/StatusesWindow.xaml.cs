@@ -39,7 +39,7 @@ namespace DiskBackupWpfGUI
             _statusInfoDal = statusInfoDal;
             _taskInfoDal = taskInfoDal;
             _taskId = taskInfo.Id;
-            _statusInfo = taskInfo.StatusInfo;
+            _statusInfo = _statusInfoDal.Get(x => x.Id == taskInfo.StatusInfoId);
             RefreshStatus(_cancellationTokenSource.Token);
             this.Closing += (sender, e) => _cancellationTokenSource.Cancel();
             txtLastStatus.Text = taskInfo.StrStatus;
