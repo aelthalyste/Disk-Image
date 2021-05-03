@@ -308,10 +308,10 @@ namespace DiskBackup.Business.Concrete
                         RestoreStream restoreStream = new RestoreStream(backupMetadata, newRootDir);
                         restoreStream.SetupStream(taskInfo.RestoreTaskInfo.TargetLetter[0]);
                         ulong bytesReadSoFar = 0;
-                        ulong bytesToBeCopied = restoreStream.BytesNeedToCopy;
+                        statusInfo.TotalDataProcessed = (long)restoreStream.BytesNeedToCopy;
 
                         bool result = false;
-                        _logger.Information($"bytesReadSoFar: {bytesReadSoFar} - bytesToBeCopied: {bytesToBeCopied} - result: {result} - result.toByte: {Convert.ToByte(result)}");
+                        _logger.Information($"bytesReadSoFar: {bytesReadSoFar} - bytesToBeCopied: {restoreStream.BytesNeedToCopy} - result: {result} - result.toByte: {Convert.ToByte(result)}");
                         // anlık veri için
                         Stopwatch passingTime = new Stopwatch();
                         long instantProcessData = 0;
@@ -341,8 +341,8 @@ namespace DiskBackup.Business.Concrete
                             instantProcessData += (long)read; // anlık veri için
                             if (passingTime.ElapsedMilliseconds > 500)
                             {
-                                statusInfo.DataProcessed = (long)bytesReadSoFar;
-                                statusInfo.TotalDataProcessed = (long)bytesToBeCopied;
+                                if (statusInfo.TotalDataProcessed >= (long)bytesReadSoFar)
+                                    statusInfo.DataProcessed = (long)bytesReadSoFar;
                                 statusInfo.AverageDataRate = ((statusInfo.TotalDataProcessed / 1024.0) / 1024.0) / (timeElapsed.ElapsedMilliseconds / 1000.0); // MB/s
                                 if (instantProcessData != 0) // anlık veri için 0 gelmesin diye
                                     statusInfo.InstantDataRate = ((instantProcessData / 1024.0) / 1024.0) / (passingTime.ElapsedMilliseconds / 1000.0); // MB/s
@@ -377,6 +377,11 @@ namespace DiskBackup.Business.Concrete
                         _taskEventMap.Remove(taskInfo.Id);
                         _cancellationTokenSource[taskInfo.Id].Dispose();
                         _cancellationTokenSource.Remove(taskInfo.Id);
+                        if (result)
+                        {
+                            statusInfo.TotalDataProcessed = statusInfo.DataProcessed;
+                            _statusInfoDal.Update(statusInfo);
+                        }
                         return Convert.ToByte(result);
                     }
                 }
@@ -472,10 +477,10 @@ namespace DiskBackup.Business.Concrete
                         SettingBootable(taskInfo, backupMetadata, restoreStream);
                         restoreStream.SetupStream(taskInfo.RestoreTaskInfo.TargetLetter[0]);
                         ulong bytesReadSoFar = 0;
-                        ulong bytesToBeCopied = restoreStream.BytesNeedToCopy;
+                        statusInfo.TotalDataProcessed = (long)restoreStream.BytesNeedToCopy;
 
                         bool result = false;
-                        _logger.Information($"bytesReadSoFar: {bytesReadSoFar} - bytesToBeCopied: {bytesToBeCopied} - result: {result} - result.toByte: {Convert.ToByte(result)}");
+                        _logger.Information($"bytesReadSoFar: {bytesReadSoFar} - bytesToBeCopied: {restoreStream.BytesNeedToCopy} - result: {result} - result.toByte: {Convert.ToByte(result)}");
                         // anlık veri için
                         Stopwatch passingTime = new Stopwatch();
                         long instantProcessData = 0;
@@ -505,8 +510,8 @@ namespace DiskBackup.Business.Concrete
                             instantProcessData += (long)read; // anlık veri için
                             if (passingTime.ElapsedMilliseconds > 500)
                             {
-                                statusInfo.DataProcessed = (long)bytesReadSoFar;
-                                statusInfo.TotalDataProcessed = (long)bytesToBeCopied;
+                                if (statusInfo.TotalDataProcessed >= (long)bytesReadSoFar)
+                                    statusInfo.DataProcessed = (long)bytesReadSoFar;
                                 statusInfo.AverageDataRate = ((statusInfo.TotalDataProcessed / 1024.0) / 1024.0) / (timeElapsed.ElapsedMilliseconds / 1000.0); // MB/s
                                 if (instantProcessData != 0) // anlık veri için 0 gelmesin diye
                                     statusInfo.InstantDataRate = ((instantProcessData / 1024.0) / 1024.0) / (passingTime.ElapsedMilliseconds / 1000.0); // MB/s
@@ -541,6 +546,11 @@ namespace DiskBackup.Business.Concrete
                         _taskEventMap.Remove(taskInfo.Id);
                         _cancellationTokenSource[taskInfo.Id].Dispose();
                         _cancellationTokenSource.Remove(taskInfo.Id);
+                        if (result)
+                        {
+                            statusInfo.TotalDataProcessed = statusInfo.DataProcessed;
+                            _statusInfoDal.Update(statusInfo);
+                        }
                         return Convert.ToByte(result);
                     }
                 }
@@ -719,6 +729,7 @@ namespace DiskBackup.Business.Concrete
                         fixed (byte* BAddr = &buffer[0])
                         {
                             FileStream file = File.Create(taskInfo.BackupStorageInfo.Path + str.FileName); //backupStorageInfo path alınıcak
+                            statusInfo.TotalDataProcessed = (long)str.CopySize;
 
                             if (str.FileName.Contains("FULL")) // Süreli backup zinciri için ne zaman en son full backup'ın alındığı bu count ile belirleniyor return 1'den önce tarih güncelleniyor
                             {
@@ -751,8 +762,8 @@ namespace DiskBackup.Business.Concrete
                                 if (passingTime.ElapsedMilliseconds > 500)
                                 {
                                     statusInfo.FileName = taskInfo.BackupStorageInfo.Path + str.FileName;
-                                    statusInfo.DataProcessed = bytesReadSoFar;
-                                    statusInfo.TotalDataProcessed = (long)str.CopySize;
+                                    if (statusInfo.TotalDataProcessed >= (long)bytesReadSoFar)
+                                        statusInfo.DataProcessed = bytesReadSoFar;
                                     statusInfo.AverageDataRate = ((statusInfo.TotalDataProcessed / 1024.0) / 1024.0) / (timeElapsed.ElapsedMilliseconds / 1000.0); // MB/s
                                     if (instantProcessData != 0) // anlık veri için 0 gelmesin diye
                                         statusInfo.InstantDataRate = ((instantProcessData / 1024.0) / 1024.0) / (passingTime.ElapsedMilliseconds / 1000.0); // MB/s
@@ -809,6 +820,8 @@ namespace DiskBackup.Business.Concrete
             _cancellationTokenSource.Remove(taskInfo.Id);
             if (result)
             {
+                statusInfo.TotalDataProcessed = statusInfo.DataProcessed;
+                _statusInfoDal.Update(statusInfo);
                 if (fullCount == taskInfo.Obje)
                 {
                     taskInfo.BackupTaskInfo.LastFullBackupDate = (taskInfo.LastWorkingDate - TimeSpan.FromSeconds(taskInfo.LastWorkingDate.Second)) - TimeSpan.FromMilliseconds(taskInfo.LastWorkingDate.Millisecond); // ms ve sn sıfırlamak için
