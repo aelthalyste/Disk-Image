@@ -172,7 +172,8 @@ typedef struct _nar_kernel_data {
 
     HANDLE* FileHandles;
 
-    
+    volatile int IsShutdownInitiated;
+
     HANDLE MetadataHandle;
     ULONG UserModePID;
     int OsDeviceID;
