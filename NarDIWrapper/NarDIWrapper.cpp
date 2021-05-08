@@ -163,6 +163,7 @@ namespace NarDIWrapper {
     DiskTracker::DiskTracker() {
         
         if(false == msInit){
+            SetupVSS();
             msInit = true;
             C = NarLoadBootState();
             
