@@ -46,8 +46,9 @@ namespace DiskBackup.TaskScheduler.Jobs
             _logger.Information("{@task} için Incremental-Differantial görevine başlandı.", task.Id + " " + task.Name);
 
             task.BackupStorageInfo = _backupStorageDal.Get(x => x.Id == task.BackupStorageInfoId);
-            task.StatusInfo = _statusInfoDal.Get(x => x.Id == task.StatusInfoId);
             task.BackupTaskInfo = _backupTaskDal.Get(x => x.Id == task.BackupTaskId);
+            task.StatusInfo = _statusInfoDal.Get(x => x.Id == task.StatusInfoId);
+            ResetStatusInfo(task);
 
             JobExecutionException exception = null;
             int result = 0;
@@ -170,6 +171,17 @@ namespace DiskBackup.TaskScheduler.Jobs
                 _logger.Information("{@task} için Incremental-Differantial görevi yeni zincir oluşturulamadığı için başlatılamadı. Sonuç: Başarısız.", task);
                 UpdateActivityAndTask(activityLog, task, StatusType.NewChainNotStarted);
             }
+        }
+
+        private void ResetStatusInfo(TaskInfo task)
+        {
+            task.StatusInfo.AverageDataRate = 0;
+            task.StatusInfo.DataProcessed = 0;
+            task.StatusInfo.FileName = "";
+            task.StatusInfo.InstantDataRate = 0;
+            task.StatusInfo.TimeElapsed = 0;
+            task.StatusInfo.TotalDataProcessed = 100;
+            _statusInfoDal.Update(task.StatusInfo);
         }
 
         private void UpdateActivityAndTask(ActivityLog activityLog, TaskInfo taskInfo, StatusType status)
