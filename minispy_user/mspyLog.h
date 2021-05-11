@@ -420,22 +420,15 @@ GenerateLogFilePath(char Letter);
 
 
 struct volume_backup_inf {
+    
     wchar_t Letter;
-    BOOLEAN FullBackupExists;
     BOOLEAN IsOSVolume;
     BOOLEAN INVALIDATEDENTRY; // If this flag is set, this entry is unusable. accessing its element wont give meaningful information to caller.
+    
     BackupType BT = BackupType::Inc;
     
-    struct {
-        BOOLEAN IsActive;
-    }FilterFlags;
     
-    // when backing up, we dont want to mess up with log file while setting up file pointers
-    // since msging thread has to append, but program itself may read from start, that will
-    // eventually cause bugs. This mutex ensures there are no more than one thread using LogHandle
-    HANDLE FileWriteMutex;
-    
-    INT32 Version;
+    int32_t Version;
     DWORD ClusterSize;    
     
     nar_backup_id BackupID;
@@ -453,6 +446,13 @@ struct volume_backup_inf {
     
     INT64 PossibleNewBackupRegionOffsetMark;
     
+    /*
+    Valid after diff-incremental setup. Stores all changes occured on disk, starting from latest incremental, or beginning if request was diff
+    Diff between this and RecordsMem, RecordsMem is just temporary buffer that stores live changes on the disk, and will be flushed to file after it's available
+    
+    This structure contains information to track stream head. After every read, ClusterIndex MUST be incremented accordingly and if read operation exceeds that region, RecIndex must be incremented too.
+    */
+    
     union {
         struct{
             INT64 BackupStartOffset;
@@ -465,23 +465,7 @@ struct volume_backup_inf {
     
     DWORD VolumeTotalClusterCount;
     
-    
-    
-    /*
-    Valid after diff-incremental setup. Stores all changes occured on disk, starting from latest incremental, or beginning if request was diff
-    Diff between this and RecordsMem, RecordsMem is just temporary buffer that stores live changes on the disk, and will be flushed to file after it's available
-    
-    This structure contains information to track stream head. After every read, ClusterIndex MUST be incremented accordingly and if read operation exceeds that region, RecIndex must be incremented too.
-    */
-    
     stream Stream;
-    
-    
-    //data_array<nar_record> MFTandINDXRegions;
-    
-    //
-    nar_record*  MFTLCN;
-    unsigned int MFTLCNCount;
     
     CComPtr<IVssBackupComponents> VSSPTR;
     VSS_ID SnapshotID;
@@ -675,7 +659,7 @@ backup_metadata
 ReadMetadata(nar_backup_id ID, int Version, std::wstring RootDir);
 
 BOOLEAN
-SaveMetadata(char Letter, int Version, int ClusterSize, BackupType BT, data_array<nar_record> BackupRegions, HANDLE VSSHandle, nar_record* MFTLCN, unsigned int MFTLCNCount, nar_backup_id BackupID, bool IsCompressed);
+SaveMetadata(char Letter, int Version, int ClusterSize, BackupType BT, data_array<nar_record> BackupRegions, nar_backup_id BackupID, bool IsCompressed);
 
 // Used to append recovery partition to metatadata file.
 BOOLEAN

@@ -71,8 +71,6 @@ struct restore_source{
             size_t  DecompressedSize;
             
             size_t ZSTDError;
-            
-        	ZSTD_DStream* DStream;
         };
         
         // useful if .net is going to feed us with network data

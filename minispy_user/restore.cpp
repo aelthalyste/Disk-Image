@@ -56,6 +56,7 @@ NarReadBackup(restore_source* Rs, size_t* AvailableBytes) {
     if(Rs->Regions[Rs->RegionIndice].Len == 0){
         Rs->RegionIndice++;
         Rs->ClusterIndice = 0;
+        return Rs->Read(Rs, AvailableBytes);
     }
     
     ASSERT(Rs->MaxAdvanceSize % 4096 == 0);
@@ -107,6 +108,9 @@ NarReadBackup(restore_source* Rs, size_t* AvailableBytes) {
                 Rs->Read    = NarReadZero;
                 return Rs->Read(Rs, AvailableBytes);
             }
+            else{
+                //printf("%8u %8u\n", Rs->CompressedSize, Rs->DecompressedSize);
+            }
             
             if(ZSTD_isError(Rs->CompressedSize)){
                 Rs->Error = RestoreSource_Errors::Error_DecompressionCompressedSize;
@@ -122,20 +126,8 @@ NarReadBackup(restore_source* Rs, size_t* AvailableBytes) {
                 return Rs->Read(Rs, AvailableBytes);
             }
             
-            
-            ZSTD_outBuffer output = {0};
-            ZSTD_inBuffer input = {0};
-            {
-                input.src   = NewFrame;
-                input.size  = Rs->CompressedSize;
-                input.pos   = 0;
-                
-                output.dst  = Rs->Bf;
-                output.size = Rs->BfSize;
-                output.pos  = 0;
-            }
-            
-            size_t ZSTD_RetCode = ZSTD_decompressStream(Rs->DStream, &output, &input);
+            size_t ZSTD_RetCode = ZSTD_decompress(Rs->Bf, Rs->BfSize, 
+                                                  NewFrame, Rs->CompressedSize);
             if(ZSTD_isError(ZSTD_RetCode)){
                 NAR_BREAK;
                 Rs->Error       = RestoreSource_Errors::Error_Decompression;
@@ -239,7 +231,6 @@ InitRestoreFileSource(StrType MetadataPath, nar_arena* Arena, size_t MaxAdvanceS
                     Result->IsCompressed = true;
                     Result->BfSize       = bm->FrameSize;
                     Result->Bf           = ArenaAllocate(Arena, bm->FrameSize + Megabyte(1));
-                    Result->DStream      = ZSTD_createDStream();
                 }
                 else{
                     // NOTE(Batuhan): nothing special here
@@ -367,10 +358,6 @@ FreeRestoreSource(restore_source* Rs) {
         if (Rs->Type == restore_source::Type_FileSource) {
             NarFreeFileView(Rs->Bin);
             NarFreeFileView(Rs->Metadata);
-            if (Rs->DStream) {
-                size_t RetCode = ZSTD_freeDStream(Rs->DStream);
-                ASSERT(!ZSTD_isError(RetCode));
-            }
         }
         else if (Rs->Type == restore_source::Type_NetworkSource) {
             // don't do anything
@@ -460,7 +447,7 @@ NarWriteVolume(restore_target* Rt, const void* Mem, size_t MemSize) {
         // success
     }
     else {
-        NAR_DEBUG("Unable to write %lu bytes to restore target\n");
+        NAR_DEBUG("Unable to write %lu bytes to restore target\n", MemSize);
     }
     
     return (size_t)BytesWritten;
