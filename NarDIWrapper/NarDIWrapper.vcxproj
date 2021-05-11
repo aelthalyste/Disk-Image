@@ -105,7 +105,7 @@
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>FltLib.lib;vssapi.lib;libzstd.dll.a;libzstd_static.lib</AdditionalDependencies>
+      <AdditionalDependencies>FltLib.lib;vssapi.lib;libzstd.lib;libzstd_static.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)\minispy_user\</AdditionalLibraryDirectories>
       <TreatLinkerWarningAsErrors>false</TreatLinkerWarningAsErrors>
       <GenerateDebugInformation>true</GenerateDebugInformation>

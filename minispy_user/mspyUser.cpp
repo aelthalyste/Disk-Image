@@ -4201,7 +4201,7 @@ bool SetDiskRestore(int DiskID, wchar_t Letter, size_t VolumeTotalSize, size_t E
 
 
 wchar_t**
-temp(char VolumeLetter, HANDLE VolumeHandle, wchar_t *Extension) {
+NarFindExtensions(char VolumeLetter, HANDLE VolumeHandle, wchar_t *Extension) {
     
     BOOLEAN JustExtractMFTRegions = FALSE;
     
@@ -4228,6 +4228,7 @@ temp(char VolumeLetter, HANDLE VolumeHandle, wchar_t *Extension) {
         }
         TotalFC *= 4;
         printf("Total file count is %I64u\n", TotalFC);
+        
         Result  = (wchar_t**)VirtualAlloc(0, TotalFC*8ull, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
         
         FileBuffer = (uint8_t*)VirtualAlloc(0, TotalFC * 1024, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
@@ -4235,6 +4236,7 @@ temp(char VolumeLetter, HANDLE VolumeHandle, wchar_t *Extension) {
         
         IndiceMap = (uint32_t*)VirtualAlloc(0, TotalFC*4, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
         IndiceArr = (uint32_t*)VirtualAlloc(0, TotalFC*2, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+        
     }
     
     uint32_t BufferStartFileID = 0;
@@ -4260,8 +4262,8 @@ temp(char VolumeLetter, HANDLE VolumeHandle, wchar_t *Extension) {
         }
         
         
-        double time_sec = NarTimeElapsed(start);
-        printf("Processed %8u files in %.5f sec, file per ms %.5f\n", TotalFC, time_sec, (double)TotalFC/time_sec/1000.0);
+        //double time_sec = NarTimeElapsed(start);
+        //printf("Processed %8u files in %.5f sec, file per ms %.5f\n", TotalFC, time_sec, (double)TotalFC/time_sec/1000.0);
     }
     
     TIMED_NAMED_BLOCK("after readfile");
@@ -4321,8 +4323,7 @@ temp(char VolumeLetter, HANDLE VolumeHandle, wchar_t *Extension) {
         
     }
     
-    double time_sec = NarTimeElapsed(start);
-    printf("Parser, %8u files in %.5f sec, file per ms %.5f\n", TotalFC, time_sec, (double)TotalFC/time_sec/1000.0);
+    double parser_time_sec = NarTimeElapsed(start);
     
     VirtualFree(FileBuffer, TotalFC * 1024ull, MEM_RELEASE);
     wchar_t **rr = (wchar_t**)VirtualAlloc(0, ArrLen*8, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
@@ -4359,20 +4360,27 @@ temp(char VolumeLetter, HANDLE VolumeHandle, wchar_t *Extension) {
         
     }
     
-    time_sec = NarTimeElapsed(start);
-    printf("Traverser %8u files in %.5f sec, file per ms %.5f\n", ArrLen, time_sec, (double)ArrLen/time_sec/1000.0);
+    double traverser_time_sec = NarTimeElapsed(start);
     
-    {
-        int hodl = 0;
-        printf("Match count %I64u\n", ArrLen);
-        scanf("%d", &hodl);
+    for(size_t i =0; i<ArrLen; i++){
+        printf("%S\n", rr[i]);
     }
+    
+    printf("Parser, %8u files in %.5f sec, file per ms %.5f\n", TotalFC, parser_time_sec, (double)TotalFC/parser_time_sec/1000.0);
+    printf("Traverser %8u files in %.5f sec, file per ms %.5f\n", ArrLen, traverser_time_sec, (double)ArrLen/traverser_time_sec/1000.0);
+    
+    printf("Match count %I64u\n", ArrLen);
+    
     NarFreeMFTRegionsByCommandLine(TempRecords);
     return Result;
 }
 
 int
-main(int argc, char* argv[]) {
+wmain(int argc, wchar_t* argv[]) {
+    
+    NarFindExtensions(argv[1][0], NarOpenVolume(argv[1][0]), argv[2]);
+    
+    return 0;
     
 #if 1    
     size_t RetCode = 0;
