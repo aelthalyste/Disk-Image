@@ -305,7 +305,7 @@ namespace NarDIWrapper {
             nar_arena Arena = ArenaInit(Mem, MemLen);
             TargetLetter = VolumeLetter;
             
-            if (NarSetVolumeSize((char)VolumeLetter, BM->VolumeTotalSize/1024u*1024u)) {
+            if (NarSetVolumeSize((char)VolumeLetter, BM->VolumeTotalSize/(1024ull*1024ull))) {
                 NarFormatVolume((char)VolumeLetter);
             }
             else {
