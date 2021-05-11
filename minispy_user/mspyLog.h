@@ -401,7 +401,6 @@ struct stream {
     void *CompressionBuffer;
     size_t BufferSize;
     ZSTD_CCtx* CCtx;
-    ZSTD_CStream* CStream;
     
     
 };

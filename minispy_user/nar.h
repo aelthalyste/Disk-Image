@@ -35,7 +35,7 @@
 #define MIN(a,b) ((a)<(b) ? (a) : (b))
 #define MAX(a,b) ((a)>(b) ? (a) : (b))
 
-#define NAR_COMPRESSION_FRAME_SIZE (1024ull*1024ull*4ull)
+#define NAR_COMPRESSION_FRAME_SIZE (1024ull*1024ull*16ull)
 
 #define NAR_INVALID_VOLUME_TRACK_ID (-1)
 #define NAR_INVALID_DISK_ID (-1)

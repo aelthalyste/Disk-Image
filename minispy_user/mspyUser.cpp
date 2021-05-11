@@ -1077,45 +1077,24 @@ ReadStream(volume_backup_inf* VolInf, void* CallerBuffer, unsigned int CallerBuf
     if(true == VolInf->Stream.ShouldCompress
        && Result > 0){
         
-        ZSTD_outBuffer output = {0};
-        ZSTD_inBuffer input = {0};
-        
-        {
-            output.dst  = CallerBuffer;
-            output.size = CallerBufferSize;
-            output.pos  = 0;
-            
-            input.src   = BufferToFill;
-            input.size  = Result;
-            input.pos   = 0;
-        }
-        
         size_t RetCode = 0;
         
-        while (input.size != input.pos) {
-            RetCode = ZSTD_compressStream2(VolInf->Stream.CCtx, &output, &input, ZSTD_e_end);
-            
-            if (RetCode == 0) {
-                break;
-            }
-            if (ZSTD_isError(RetCode)) {
-                break;
-            }
-            
-        }
+        RetCode = ZSTD_compress2(VolInf->Stream.CCtx, CallerBuffer, CallerBufferSize, BufferToFill, Result);
         
-        ASSERT(input.pos == input.size);
         ASSERT(!ZSTD_isError(RetCode));
         
-        if(!ZSTD_isError(RetCode) && input.pos == input.size){
-            Result = output.pos;
-            VolInf->Stream.BytesProcessed = input.size;
+        if(!ZSTD_isError(RetCode)){
+            VolInf->Stream.BytesProcessed = Result;
+            Result = RetCode;
         }
         else{
+#if 0
             if(input.pos != input.size){
                 printf("Input buffer size %u, input pos %u\n", input.size, input.pos);
                 printf("output buffer size %u, output pos %u\n", output.size, output.pos);
             }
+#endif
+            
             if (ZSTD_isError(RetCode)) {
                 printf("ZSTD Error description : %s\n", ZSTD_getErrorName(RetCode));
             }
@@ -1216,8 +1195,7 @@ TerminateBackup(volume_backup_inf* V, BOOLEAN Succeeded) {
         V->Stream.CompressionBuffer = NULL;
     }
     
-    if(NULL != V->Stream.CStream)  ZSTD_freeCStream(V->Stream.CStream);
-    if(NULL != V->Stream.CCtx)     ZSTD_freeCCtx(V->Stream.CCtx);
+    if(NULL != V->Stream.CCtx) ZSTD_freeCCtx(V->Stream.CCtx);
     
     
     if(V->Stream.Handle != INVALID_HANDLE_VALUE) {
@@ -1448,16 +1426,13 @@ SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, DotNetStreamInf* SI, boo
         if(ShouldCompress){
             
             VolInf->Stream.CompressionBuffer = malloc(NAR_COMPRESSION_FRAME_SIZE);
-            VolInf->Stream.BufferSize = NAR_COMPRESSION_FRAME_SIZE;
+            VolInf->Stream.BufferSize        = NAR_COMPRESSION_FRAME_SIZE;
             
             if(NULL != VolInf->Stream.CompressionBuffer){        
                 VolInf->Stream.ShouldCompress = true;
                 
                 VolInf->Stream.CCtx = ZSTD_createCCtx();
-                VolInf->Stream.CStream = ZSTD_createCStream();
-                
                 ASSERT(VolInf->Stream.CCtx);
-                ASSERT(VolInf->Stream.CStream);
                 
                 ZSTD_bounds ThreadBounds = ZSTD_cParam_getBounds(ZSTD_c_nbWorkers);
                 if(!ZSTD_isError(ThreadBounds.error)){
@@ -1468,6 +1443,10 @@ SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, DotNetStreamInf* SI, boo
                     printf("Couldn't query worker thread bounds for compression, zstd error code : %X\n", ThreadBounds.error);
                     ZSTD_CCtx_setParameter(VolInf->Stream.CCtx, ZSTD_c_nbWorkers, 0);
                 }
+                
+                size_t RetCode = ZSTD_CCtx_setParameter(VolInf->Stream.CCtx, ZSTD_c_compressionLevel, ZSTD_strategy::ZSTD_lazy);
+                ASSERT(!ZSTD_isError(RetCode));
+                
             }
             else{
                 VolInf->Stream.ShouldCompress = false;        
@@ -1779,9 +1758,8 @@ SetupVSS() {
      */
     
 #if 1
-#if (_MANAGED == 1)
-    return TRUE;
-#else
+    
+    
     BOOLEAN Return = TRUE;
     HRESULT hResult = 0;
     
@@ -1811,7 +1789,6 @@ SetupVSS() {
         Return = FALSE;
     }
     return Return;
-#endif
 #endif
     
 }
@@ -4397,40 +4374,64 @@ temp(char VolumeLetter, HANDLE VolumeHandle, wchar_t *Extension) {
 int
 main(int argc, char* argv[]) {
     
-#if 0
-    nar_file_view v = NarOpenFileView("C:\\Disk-Image\\minispy_user\\NB_M_0-E04260334.nbfsm");
-    backup_metadata *bm = (backup_metadata*)v.Data;
+#if 1    
+    size_t RetCode = 0;
     
-    nar_file_view f = NarOpenFileView("C:\\Disk-Image\\minispy_user\\NB_0-E04260334.nbfsf");
-    int hold_me_here = 235235;
+    auto ctx = ZSTD_createCCtx();
+    //RetCode = ZSTD_CCtx_setParameter(ctx, ZSTD_c_compressionLevel, ZSTD_strategy::ZSTD_btultra);
+    ASSERT(!ZSTD_isError(RetCode));
     
-    {
-        nar_record *records = (nar_record*)((char*)v.Data + bm->Offset.RegionsMetadata);
-        size_t count = bm->Size.RegionsMetadata/sizeof(nar_record);
-        int hold_me_here = 2315;
+    auto fv = NarOpenFileView("NB_FULL-E05110429.nbfsf");
+    auto trg = fopen("testfile", "wb");
+    
+    void* d = fv.Data;
+    size_t bs = Megabyte(16);
+    
+    void* dst = malloc(bs);
+    size_t br = 0;
+    for(int i = 0;;i++){
+        size_t opsize = MIN(Megabyte(8), fv.Len - br);
+        
+        RetCode = ZSTD_compressCCtx(ctx, dst, bs, (unsigned char*)d + i*Megabyte(8), opsize, 7);
+        fwrite(dst, RetCode, 1, trg);
+        
+        br += opsize;
+        if(br >= fv.Len)
+            break;
+        
+        ASSERT(!ZSTD_isError(RetCode));
+        int hodl = 235;
     }
     
+    fclose(trg);
+    return 0;
 #endif
+    
+    
 #if 0
     wchar_t drive[] = {(wchar_t)argv[1][0], ':', '\\'};
-    
     SetupVSS();
     CComPtr<IVssBackupComponents> ptr;
     wchar_t out[300];
     
-    GetShadowPath(drive, ptr, out, 300);
+    auto SnapshotID = GetShadowPath(drive, ptr, out, 300);
     
     HANDLE V = CreateFileW(out, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, NULL, NULL);
     if(V!= INVALID_HANDLE_VALUE){
-        GetMFTandINDXLCN(argv[1][0], V);
+        LONG Deleted=0;
+        VSS_ID NonDeleted;
+        HRESULT hr;
+        CComPtr<IVssAsync> async;
+        hr = ptr->BackupComplete(&async);
+        if(hr == S_OK){
+            async->Wait();
+        }
+        hr = ptr->DeleteSnapshots(SnapshotID, VSS_OBJECT_SNAPSHOT, TRUE, &Deleted, &NonDeleted);
     }
     else{
         printf("vss returned invalid handle value\n");
-        V = NarOpenVolume(argv[1][0]);
-        if(V != INVALID_HANDLE_VALUE)
-            GetMFTandINDXLCN(argv[1][0], V);
     }
-    PrintDebugRecords();
+    //PrintDebugRecords();
     
     printf("Done!\n");
     
@@ -4443,7 +4444,8 @@ main(int argc, char* argv[]) {
     
     LOG_CONTEXT C = {0};
     C.Port = INVALID_HANDLE_VALUE;
-    
+    //ConnectDriver(&C);
+    //AttachVolume('C');
     
     if(SetupVSS() && ConnectDriver(&C)){
         DotNetStreamInf inf = {0};
@@ -4512,6 +4514,8 @@ main(int argc, char* argv[]) {
                         NAR_BREAK;
                         TerminateBackup(v, NAR_FAILED);
                     }
+                    
+                    NarSaveBootState(&C);
                     
                     PrintDebugRecords();
                     
