@@ -4154,8 +4154,9 @@ NarFindExtensions(char VolumeLetter, HANDLE VolumeHandle, wchar_t *Extension) {
 int
 wmain(int argc, wchar_t* argv[]) {
     
-    DEBUG_Restore();
-    return 0;
+    //DEBUG_Restore();
+    //return 0;
+    
     //NarFindExtensions(argv[1][0], NarOpenVolume(argv[1][0]), argv[2]);
     
     //return 0;
@@ -4233,8 +4234,9 @@ wmain(int argc, wchar_t* argv[]) {
 #endif
     
     
-#if 0
-    wchar_t drive[] = {(wchar_t)argv[1][0], ':', '\\'};
+#if 1
+    //(wchar_t)argv[1][0]
+    wchar_t drive[] = {'C', ':', '\\'};
     SetupVSS();
     CComPtr<IVssBackupComponents> ptr;
     wchar_t out[300];
@@ -4246,6 +4248,11 @@ wmain(int argc, wchar_t* argv[]) {
         LONG Deleted=0;
         VSS_ID NonDeleted;
         HRESULT hr;
+        
+        printf("entera basarak vssi sonlandir\n");
+        int hodl;
+        scanf("%d", &hodl);
+        
         CComPtr<IVssAsync> async;
         hr = ptr->BackupComplete(&async);
         if(hr == S_OK){
@@ -4263,14 +4270,23 @@ wmain(int argc, wchar_t* argv[]) {
     return 0;
 #endif
     
+#if 0
+    {
+        LOG_CONTEXT C = {0};
+        C.Port = INVALID_HANDLE_VALUE;
+        ConnectDriver(&C);
+        AddVolumeToTrack(&C, argv[1][0], BackupType::Diff);
+        NarSaveBootState(&C);
+    }
+    
+    return 0;
+#endif
     
     size_t bsize = 64*1024*1024;
     void *MemBuf = malloc(bsize);
     
     LOG_CONTEXT C = {0};
     C.Port = INVALID_HANDLE_VALUE;
-    //ConnectDriver(&C);
-    //AttachVolume('C');
     
     if(SetupVSS() && ConnectDriver(&C)){
         DotNetStreamInf inf = {0};
@@ -4284,7 +4300,7 @@ wmain(int argc, wchar_t* argv[]) {
             printf("ENTER LETTER TO DO BACKUP \n");
             scanf("%c", &Volume);
             
-            BackupType bt = BackupType::Diff;
+            BackupType bt = BackupType::Inc;
             
             if(SetupStream(&C, (wchar_t)Volume, bt, &inf, true)){
                 

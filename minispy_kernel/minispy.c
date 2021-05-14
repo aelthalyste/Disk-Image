@@ -942,9 +942,9 @@ Return Value:
                             tp->Data    = NULL;
                             tp->DataLen = 0;
                             tp->FileID  = NarData.VolumeRegionBuffer[i].VolFileID;
-                            tp->ShouldFlush = FALSE;
-                            tp->ShouldQueryFileSize = FALSE;
-                            tp->ShouldDelete = TRUE;
+                            tp->ShouldFlush 		= FALSE;
+                            tp->ShouldQueryFileSize 	= FALSE;
+                            tp->ShouldDelete 		= TRUE;
                             
                             NarWriteLogsToFile(tp, 0);
                             
@@ -1310,24 +1310,17 @@ Return Value:
 
     KIRQL FIrql = KeGetCurrentIrql();
 
-    //if (!!NarData.IsShutdownInitiated) {
-    //    return FLT_PREOP_SUCCESS_NO_CALLBACK;
-    //}
-
-
 #if 1
     // that might deadlock the system
     // If system shutdown requested, dont bother to log changes
     if (Data->Iopb->MajorFunction == IRP_MJ_SHUTDOWN && FALSE == NarData.IsShutdownInitiated) {
         
-
         if (0 == _InterlockedCompareExchange(&NarData.IsShutdownInitiated, 1, 0)) {
             // it's ok
         } 
         else {
             return FLT_PREOP_SUCCESS_NO_CALLBACK;
         }
-
         
         for (int i = 0; i < NAR_MAX_VOLUME_COUNT; i++) {
             // ExAcquireFastMutex(&NarData.VolumeRegionBuffer[i].FastMutex);
@@ -1441,10 +1434,7 @@ Return Value:
                 }
             }
             
-
-
-
-            
+           
             
 #if 1
             ULONG BytesReturned = 0;
@@ -1461,7 +1451,6 @@ Return Value:
             memset(WholeFileMapBuffer, 0, WholeFileMapBufferSize);
             
             
-
             ClusterMapBuffer.StartingVcn.QuadPart = 0;
             StartingInputVCNBuffer.StartingVcn.QuadPart = 0;
             
@@ -1475,8 +1464,7 @@ Return Value:
             UINT32 NClustersToWrite = (WriteLen / (ClusterSize)+1);
             
             UINT32 ClusterWriteStartOffset = (UINT32)(WriteOffsetLargeInt.QuadPart / (LONGLONG)(ClusterSize));
-            
-            
+                        
 #define NAR_PREOP_MAX_RECORD_COUNT 100
             
             struct {
@@ -1634,12 +1622,10 @@ Return Value:
                 
                 
             }
-            
-            
+                        
             
             // TODO(BATUHAN): try one loop via KeTestSpinLock, to fast check if volume is available for fast access, if it is available and matches GUID, immidiately flush all regions and return, if not available test higher elements in list.
             char CompareBuffer[NAR_GUID_STR_SIZE];
-            
             ULONG SizeNeededForGUIDStr = 0;
             
             UNICODE_STRING GUIDStringNPaged;
