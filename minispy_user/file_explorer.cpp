@@ -910,6 +910,50 @@ NarFileExplorerPrint(nar_backup_file_explorer_context* Ctx) {
 }
 
 
+bool
+NarGetMFTRegionsFromBootSector(HANDLE Volume, 
+                               nar_record* Out, 
+                               uint32_t* OutLen, 
+                               uint32_t Capacity){
+    
+    BOOLEAN Result = false;
+    char bf[4096];
+    
+    if(NarSetFilePointer(Volume, 0)){
+        DWORD br = 0;
+        static_assert(sizeof(bf) == 4096);
+        ReadFile(Volume, bf, 4096, &br, 0);
+        if(br == sizeof(bf)){
+            
+            uint32_t MftClusterOffset = *(uint32_t*)NAR_OFFSET(bf, 48);
+            uint64_t MFTVolOffset = MftClusterOffset*4096ull;
+            if(NarSetFilePointer(Volume, MFTVolOffset)){
+                static_assert(sizeof(bf) >= 1024);
+                memset(bf, 0, 1024);
+                ReadFile(Volume, bf, 1024, &br, 0);
+                if(br == 1024){
+                    
+                    uint8_t *FileRecord = (uint8_t*)&bf[0];
+                    // lsn, lsa swap to not confuse further parsing stages.
+                    FileRecord[510] = *(uint8_t*)NAR_OFFSET(FileRecord, 50);
+                    FileRecord[511] = *(uint8_t*)NAR_OFFSET(FileRecord, 51);
+                    void* Indx = NarFindFileAttributeFromFileRecord(FileRecord, NAR_DATA_FLAG);
+                    if(Indx != NULL){
+                        NarParseIndexAllocationAttribute(Indx, Out, Capacity, OutLen, false);
+                        Result = true;
+                    }
+                    
+                }
+                
+            }
+            
+            
+        }
+    }
+    
+    return Result;
+}
+
 /*
        Caller MUST CALL NarFreeMFTRegionsByCommandLine to free memory allocated by this function, otherwise, it will be leaked
 */

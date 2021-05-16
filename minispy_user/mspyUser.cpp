@@ -401,13 +401,12 @@ GetMFTandINDXLCN(char VolumeLetter, HANDLE VolumeHandle) {
     
     uint32_t MEMORY_BUFFER_SIZE = 1024LL * 1024LL * 128;
     uint32_t ClusterExtractedBufferSize = 1024 * 1024 * 64;
+    uint32_t MaxOutputLen  = ClusterExtractedBufferSize/sizeof(nar_record);
+    uint32_t ClusterSize   = NarGetVolumeClusterSize(VolumeLetter);
     
-    uint32_t MaxOutputLen = ClusterExtractedBufferSize/sizeof(nar_record);
-    
-    INT32 ClusterSize = NarGetVolumeClusterSize(VolumeLetter);
-    
-    nar_record* ClustersExtracted = (nar_record*)malloc(ClusterExtractedBufferSize);
+    nar_record* ClustersExtracted      = (nar_record*)malloc(ClusterExtractedBufferSize);
     unsigned int ClusterExtractedCount = 0;
+    uint32_t MFTRegionCount            = 0;
     
     if (ClustersExtracted != 0) {
         memset(ClustersExtracted, 0, ClusterExtractedBufferSize);
@@ -461,13 +460,16 @@ GetMFTandINDXLCN(char VolumeLetter, HANDLE VolumeHandle) {
             DWORD BR = 0;
             
             unsigned int RecCountByCommandLine = 0;
-            nar_record* TempRecords = NarGetMFTRegionsByCommandLine(VolumeLetter, &RecCountByCommandLine);
-            if (TempRecords != 0 && RecCountByCommandLine != 0) {
-                printf("Parsed mft regions from command line !\n");
-                memcpy(ClustersExtracted, TempRecords, RecCountByCommandLine*sizeof(nar_record));
-                ClusterExtractedCount = RecCountByCommandLine;
+            if(NarGetMFTRegionsFromBootSector(VolumeHandle, ClustersExtracted, &MFTRegionCount, MaxOutputLen)){
+                ClusterExtractedCount += MFTRegionCount;
             }
-            NarFreeMFTRegionsByCommandLine(TempRecords);
+            else{
+                free(ClustersExtracted);
+                ClustersExtracted = 0;
+                ClusterExtractedCount = 0;
+                goto EARLY_TERMINATION;
+            }
+            
             
             // TODO (Batuhan): remove this after testing on windows server, looks like rest of the code finds some invalid regions on volume.
             if (JustExtractMFTRegions) {
@@ -3985,17 +3987,17 @@ NarFindExtensions(char VolumeLetter, HANDLE VolumeHandle, wchar_t *Extension, na
 	nar_arena ScratchArena         = {0};
     
     
-    uint64_t FileRecordSize   = 1024;
-    uint64_t TotalFC          = 0;
-    
-    nar_record* MFTRecords  = NULL;
-    wchar_t **NameMap       = NULL;
-    uint32_t *IndiceMap 	= NULL;
-    uint32_t *IndiceArr 	= NULL;
-    uint8_t  *FileBuffer    = NULL;
-    uint8_t  *FileNameSize  = NULL;
-    uint64_t FileBufferSize = Megabyte(128);
-    uint64_t ArrLen     	= 0;
+    uint32_t MFTRecordsCapacity = 256;
+    uint64_t FileRecordSize     = 1024;
+    uint64_t TotalFC            = 0;
+    nar_record* MFTRecords      = (nar_record*)ArenaAllocateAligned(Arena, MFTRecordsCapacity*sizeof(nar_record), sizeof(nar_arena));
+    wchar_t **NameMap           = NULL;
+    uint32_t *IndiceMap 	    = NULL;
+    uint32_t *IndiceArr 	    = NULL;
+    uint8_t  *FileBuffer        = NULL;
+    uint8_t  *FileNameSize      = NULL;
+    uint64_t FileBufferSize     = Megabyte(128);
+    uint64_t ArrLen     	    = 0;
     
     size_t ExtensionLen = wcslen(Extension);
     double ParserTotalTime    = 0;
@@ -4003,12 +4005,16 @@ NarFindExtensions(char VolumeLetter, HANDLE VolumeHandle, wchar_t *Extension, na
     int64_t ParserLoopCount    = 0;
     
     DWORD BR = 0;
-    unsigned int RecCountByCommandLine = 0;
-    MFTRecords = NarGetMFTRegionsByCommandLine(VolumeLetter, &RecCountByCommandLine);
+    unsigned int MFTRecordsCount  = 0;
     
-    {
+    bool tres = NarGetMFTRegionsFromBootSector(VolumeHandle, 
+                                               MFTRecords, 
+                                               &MFTRecordsCount, 
+                                               MFTRecordsCapacity);
+    
+    if(tres){
         TotalFC = 0;
-        for(unsigned int MFTOffsetIndex = 0; MFTOffsetIndex < RecCountByCommandLine; MFTOffsetIndex++){
+        for(unsigned int MFTOffsetIndex = 0; MFTOffsetIndex < MFTRecordsCount; MFTOffsetIndex++){
             TotalFC += MFTRecords[MFTOffsetIndex].Len;
         }
         TotalFC *= 4;
@@ -4024,108 +4030,112 @@ NarFindExtensions(char VolumeLetter, HANDLE VolumeHandle, wchar_t *Extension, na
         IndiceArr 	= (uint32_t*)ArenaAllocateAligned(&ScratchArena, TotalFC*4, sizeof(IndiceArr[0]));
     	FileNameSize  = (uint8_t*)ArenaAllocateAligned(&ScratchArena, TotalFC, 1);
     }
+    else{
+        return 0;
+    }
     
     uint32_t BufferStartFileID = 0;
     uint64_t VCNOffset = 0;
     
+    
+    
+    for (uint64_t MFTOffsetIndex = 0; 
+         MFTOffsetIndex < MFTRecordsCount; 
+         MFTOffsetIndex++) 
     {
         
-        for (uint64_t MFTOffsetIndex = 0; MFTOffsetIndex < RecCountByCommandLine; MFTOffsetIndex++) {
+        uint64_t ClusterSize    = 4096ull;
+        uint64_t FilePerCluster = ClusterSize / 1024ull;
+        uint64_t Offset = (uint64_t)MFTRecords[MFTOffsetIndex].StartPos * (uint64_t)ClusterSize;
+        
+        // set file pointer to actual records
+        if (NarSetFilePointer(VolumeHandle, Offset)) {
             
-            uint64_t ClusterSize    = 4096ull;
-            uint64_t FilePerCluster = ClusterSize / 1024ull;
-            uint64_t Offset = (uint64_t)MFTRecords[MFTOffsetIndex].StartPos * (uint64_t)ClusterSize;
-            
-            // set file pointer to actual records
-            if (NarSetFilePointer(VolumeHandle, Offset)) {
+            uint64_t FileRemaining   = (uint64_t)MFTRecords[MFTOffsetIndex].Len * (uint64_t)FilePerCluster;
+            while(FileRemaining){
                 
-                uint64_t FileRemaining   = (uint64_t)MFTRecords[MFTOffsetIndex].Len * (uint64_t)FilePerCluster;
-                while(FileRemaining){
+                uint64_t FBCount       = FileBufferSize/1024ull;
+                size_t TargetFileCount = MIN(FileRemaining, FBCount);
+                FileRemaining         -= TargetFileCount;
+                
+                ReadFile(VolumeHandle, 
+                         FileBuffer, 
+                         TargetFileCount*1024ull, 
+                         &BR, 0);
+                ASSERT(BR == TargetFileCount*1024);
+                
+                if(BR == TargetFileCount*1024ull){
                     
-                    uint64_t FBCount       = FileBufferSize/1024ull;
-                    size_t TargetFileCount = MIN(FileRemaining, FBCount);
-                    FileRemaining         -= TargetFileCount;
-                    
-                    ReadFile(VolumeHandle, 
-                             FileBuffer, 
-                             TargetFileCount*1024ull, 
-                             &BR, 0);
-                    ASSERT(BR == TargetFileCount*1024);
-                    
-                    if(BR == TargetFileCount*1024ull){
+                    int64_t start = NarGetPerfCounter();
+                    ParserLoopCount += TargetFileCount;
+                    for (uint64_t FileRecordIndex = 0; FileRecordIndex < TargetFileCount; FileRecordIndex++) {
                         
-                        int64_t start = NarGetPerfCounter();
-                        ParserLoopCount += TargetFileCount;
-                        for (uint64_t FileRecordIndex = 0; FileRecordIndex < TargetFileCount; FileRecordIndex++) {
+                        TIMED_NAMED_BLOCK("File record parser");
+                        void* FileRecord = (BYTE*)FileBuffer + (uint64_t)FileRecordSize * (uint64_t)FileRecordIndex;
+                        
+                        // file flags are at 22th offset in the record
+                        if (*(int32_t*)FileRecord != 'ELIF') {
+                            // block doesnt start with 'FILE0', skip
+                            continue;
+                        }
+                        
+                        FileRecordHeader *h = (FileRecordHeader*)FileRecord;
+                        if(h->inUse == 0){
+                            continue;
+                        }
+                        
+                        // lsn, lsa swap to not confuse further parsing stages.
+                        ((uint8_t*)FileRecord)[510] = *(uint8_t*)NAR_OFFSET(FileRecord, 50);
+                        ((uint8_t*)FileRecord)[511] = *(uint8_t*)NAR_OFFSET(FileRecord, 51);
+                        
+                        uint32_t FileID   = 0;
+                        uint32_t ParentID = 0;
+                        
+                        name_and_parent_id NamePID = NarGetFileNameAndParentID(FileRecord);
+                        
+                        if(NamePID.Name != 0){
+                            // NamePID.Name[0] != L'$'
+                            IndiceMap[NamePID.FileID] = NamePID.ParentFileID;
                             
-                            TIMED_NAMED_BLOCK("File record parser");
-                            void* FileRecord = (BYTE*)FileBuffer + (uint64_t)FileRecordSize * (uint64_t)FileRecordIndex;
+                            uint64_t NameSize = (NamePID.NameLen + 1) * 2; 
+                            NameMap[NamePID.FileID] = (wchar_t*)ArenaAllocate(&ScratchArena, NameSize);
                             
-                            // file flags are at 22th offset in the record
-                            if (*(int32_t*)FileRecord != 'ELIF') {
-                                // block doesnt start with 'FILE0', skip
-                                continue;
-                            }
+                            memcpy(NameMap[NamePID.FileID], NamePID.Name, NameSize - 2);
+                            FileNameSize[NamePID.FileID] = NamePID.NameLen + 1; // +1 for null termination
                             
-                            FileRecordHeader *h = (FileRecordHeader*)FileRecord;
-                            if(h->inUse == 0){
-                                continue;
-                            }
-                            
-                            // lsn, lsa swap to not confuse further parsing stages.
-                            ((uint8_t*)FileRecord)[510] = *(uint8_t*)NAR_OFFSET(FileRecord, 50);
-                            ((uint8_t*)FileRecord)[511] = *(uint8_t*)NAR_OFFSET(FileRecord, 51);
-                            
-                            uint32_t FileID   = 0;
-                            uint32_t ParentID = 0;
-                            
-                            name_and_parent_id NamePID = NarGetFileNameAndParentID(FileRecord);
-                            
-                            if(NamePID.Name != 0){
-                                // NamePID.Name[0] != L'$'
-                                IndiceMap[NamePID.FileID] = NamePID.ParentFileID;
+                            if(ExtensionLen < FileNameSize[NamePID.FileID]){
                                 
-                                uint64_t NameSize = (NamePID.NameLen + 1) * 2; 
-                                NameMap[NamePID.FileID] = (wchar_t*)ArenaAllocate(&ScratchArena, NameSize);
-                                
-                                memcpy(NameMap[NamePID.FileID], NamePID.Name, NameSize - 2);
-                                FileNameSize[NamePID.FileID] = NamePID.NameLen + 1; // +1 for null termination
-                                
-                                if(ExtensionLen < FileNameSize[NamePID.FileID]){
-                                    
-                                    wchar_t *LastChars = &NameMap[NamePID.FileID][FileNameSize[NamePID.FileID] - ExtensionLen - 1];
-                                    bool Add = true;
-                                    for(uint64_t wi = 0; wi < ExtensionLen; wi++){
-                                        if(LastChars[wi] != Extension[wi]){
-                                            Add = false;
-                                            break;
-                                        }
+                                wchar_t *LastChars = &NameMap[NamePID.FileID][FileNameSize[NamePID.FileID] - ExtensionLen - 1];
+                                bool Add = true;
+                                for(uint64_t wi = 0; wi < ExtensionLen; wi++){
+                                    if(LastChars[wi] != Extension[wi]){
+                                        Add = false;
+                                        break;
                                     }
-                                    
-                                    if(Add){
-                                        IndiceArr[ArrLen++] = NamePID.FileID;
-                                    }
-                                    
+                                }
+                                
+                                if(Add){
+                                    IndiceArr[ArrLen++] = NamePID.FileID;
                                 }
                                 
                             }
                             
                         }
                         
-                        ParserTotalTime += NarTimeElapsed(start);
-                        
-                    }
-                    else{
-                        //failed!
                     }
                     
+                    ParserTotalTime += NarTimeElapsed(start);
                     
+                }
+                else{
+                    //failed!
                 }
                 
                 
             }
+            
+            
         }
-        
     }
     
     TIMED_NAMED_BLOCK("after readfile");
@@ -4202,7 +4212,7 @@ NarFindExtensions(char VolumeLetter, HANDLE VolumeHandle, wchar_t *Extension, na
     TraverserTotalTime = NarTimeElapsed(TraverserStart);
     
     for(size_t i =0; i<ArrLen; i++){
-        printf("%S\n", Result[i]);
+        //printf("%S\n", Result[i]);
     }
     
     printf("Parser, %9u files in %.5f sec, file per ms %.5f\n", TotalFC, ParserTotalTime, (double)TotalFC/ParserTotalTime/1000.0);
@@ -4211,7 +4221,6 @@ NarFindExtensions(char VolumeLetter, HANDLE VolumeHandle, wchar_t *Extension, na
     printf("Match count %I64u\n", ArrLen);
 	
 	VirtualFree(ScratchMemory, ScratchArenaSize, MEM_RELEASE);
-    NarFreeMFTRegionsByCommandLine(MFTRecords);
     
     return Result;
 }

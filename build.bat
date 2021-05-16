@@ -3,7 +3,7 @@
 call :StartTimer
 
 set build_options= -DUNICODE -D_UNICODE -D_CRT_SECURE_NO_WARNINGS
-set compile_flags= -nologo /MT /EHsc /W0 /DEBUG:FULL /Zi /FC /Fa /Od /F 16777216
+set compile_flags= -nologo /MT /EHsc /W0 /DEBUG:FULL /Zi /FC /Fa /Od /F 16777216 /std:c++17
 rem /fsanitize=address
 rem /DEBUG:FULL /Zi /FC 
 rem /fsanitize=address
@@ -14,8 +14,8 @@ rem -ftime-trace
 set linker_flags= /INCREMENTAL:NO "fltLib.lib" "vssapi.lib" "libzstd_static.lib" "libzstd.lib"
 
 pushd minispy_user\
-rem if not exist precompiled.obj 
-cl /c  %compile_flags% /Yc"precompiled.h" "precompiled.cpp" 
+rem 
+if not exist precompiled.obj cl /c  %compile_flags% /Yc"precompiled.h" "precompiled.cpp" 
 
 cl /Yu"precompiled.h" "mspyUser.cpp" "precompiled.obj" %build_options% %compile_flags% /I"../inc" %linker_flags%
 

@@ -354,3 +354,10 @@ NarFreeMFTRegionsByCommandLine(nar_record *records);
 */
 nar_record*
 NarGetMFTRegionsByCommandLine(char Letter, unsigned int* OutRecordCount);
+
+
+bool
+NarGetMFTRegionsFromBootSector(HANDLE Volume, 
+                               nar_record* Out, 
+                               uint32_t* OutLen, 
+                               uint32_t Capacity);
