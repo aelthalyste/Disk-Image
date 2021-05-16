@@ -6,7 +6,7 @@ struct nar_arena{
 	size_t Capacity;
 };
 
-static inline nar_arena
+static  nar_arena
 ArenaInit(void* Memory, size_t MemSize){
 	nar_arena Result;
 	Result.Memory = (unsigned char*)Memory;
@@ -15,8 +15,8 @@ ArenaInit(void* Memory, size_t MemSize){
 	return Result;
 }
 
-static inline void*
-ArenaAllocate(nar_arena *Arena, size_t s){
+static void*
+ArenaAllocateAligned(nar_arena *Arena, size_t s, size_t aligment){
 	void* Result = 0;
     
 	if(!Arena) 
@@ -24,13 +24,28 @@ ArenaAllocate(nar_arena *Arena, size_t s){
     
 	size_t left = Arena->Capacity - Arena->Used;
 	if(s < left){
-		Result = Arena->Memory + Arena->Used;
+		uint64_t AligmentOff = (uintptr_t)((uint8_t*)Arena->Memory + Arena->Used) % aligment;
+		Result = Arena->Memory + Arena->Used + AligmentOff;
+		Arena->Used += AligmentOff;
 		Arena->Used += s;
 	}
 	return Result;
+	
 }
 
-static inline void
+static  void*
+ArenaAllocate(nar_arena *Arena, size_t s){
+    return ArenaAllocateAligned(Arena, s, 1);
+}
+
+static void
+ArenaReset(nar_arena *Arena){
+    //memset(Arena->Memory, 0, Arena->Used);
+    Arena->Used = 0;
+}
+
+
+static  void
 ArenaFreeBytes(nar_arena* Arena, size_t s){
 	if(!Arena){
 		if(s >= Arena->Used){
