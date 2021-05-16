@@ -1410,18 +1410,28 @@ GetVolumeRegionsFromBitmap(HANDLE VolumeHandle, uint32_t* OutRecordCount) {
     nar_record* Records = NULL;
     uint32_t RecordCount = 0;
     
-    
     STARTING_LCN_INPUT_BUFFER StartingLCN;
     StartingLCN.StartingLcn.QuadPart = 0;
     ULONGLONG MaxClusterCount = 0;
-    DWORD BufferSize = 1024 * 1024 * 64; //  megabytes
+    
+    // temporary allocation, will extend after determining exact size of the bitmap
+    DWORD BufferSize = sizeof(VOLUME_BITMAP_BUFFER); 
     
     VOLUME_BITMAP_BUFFER* Bitmap = (VOLUME_BITMAP_BUFFER*)malloc(BufferSize);
     
     if (Bitmap != NULL) {
         
+        int HitC = 0;
+        p:;
+        HitC++;
+        
         HRESULT R = DeviceIoControl(VolumeHandle, FSCTL_GET_VOLUME_BITMAP, &StartingLCN, sizeof(StartingLCN), Bitmap, BufferSize, 0, 0);
         if (SUCCEEDED(R)) {
+            
+            if(HitC == 1){
+                Bitmap = (VOLUME_BITMAP_BUFFER*)realloc(Bitmap, Bitmap->BitmapSize.QuadPart + sizeof(VOLUME_BITMAP_BUFFER) + 5);
+                goto p;
+            }
             
             MaxClusterCount = (ULONGLONG)Bitmap->BitmapSize.QuadPart;
             uint32_t ClusterIndex = 0;
@@ -4228,14 +4238,17 @@ NarFindExtensions(char VolumeLetter, HANDLE VolumeHandle, wchar_t *Extension, na
 int
 wmain(int argc, wchar_t* argv[]) {
     
+    uint32_t c= 0;
+    GetVolumeRegionsFromBitmap(NarOpenVolume('C'), &c);
+    return 0;
     
-    nar_arena Arena = ArenaInit(VirtualAlloc(0, 1024*1024*1024, MEM_COMMIT|MEM_RESERVE, PAGE_READWRITE), 1024*1024*1024);
+    //nar_arena Arena = ArenaInit(VirtualAlloc(0, 1024*1024*1024, MEM_COMMIT|MEM_RESERVE, PAGE_READWRITE), 1024*1024*1024);
     
     //DEBUG_Restore();
     //return 0;
     
-    NarFindExtensions(argv[1][0], NarOpenVolume(argv[1][0]), argv[2], &Arena);
-    return 0;
+    //NarFindExtensions(argv[1][0], NarOpenVolume(argv[1][0]), argv[2], &Arena);
+    //return 0;
     
 #if 0    
     size_t RetCode = 0;
@@ -4310,7 +4323,7 @@ wmain(int argc, wchar_t* argv[]) {
 #endif
     
     
-#if 1
+#if 0
     //(wchar_t)argv[1][0]
     wchar_t drive[] = {'C', ':', '\\'};
     SetupVSS();
