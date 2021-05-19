@@ -684,9 +684,6 @@ NarOpenVolume(char Letter);
 void
 NarCloseVolume(HANDLE V);
 
-inline BOOLEAN
-NarSetFilePointer(HANDLE File, ULONGLONG V);
-
 BOOLEAN
 NarGetVolumeGUIDKernelCompatible(wchar_t Letter, wchar_t* VolumeGUID);
 

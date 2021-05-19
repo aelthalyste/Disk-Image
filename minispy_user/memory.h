@@ -1,5 +1,8 @@
 #pragma once
 
+#include <stdint.h>
+#include <memory.h>
+
 struct nar_arena{
 	unsigned char* Memory;
 	size_t Used;
@@ -29,6 +32,7 @@ ArenaAllocateAligned(nar_arena *Arena, size_t s, size_t aligment){
 		Arena->Used += AligmentOff;
 		Arena->Used += s;
 	}
+    
 	return Result;
 	
 }
@@ -40,7 +44,7 @@ ArenaAllocate(nar_arena *Arena, size_t s){
 
 static void
 ArenaReset(nar_arena *Arena){
-    //memset(Arena->Memory, 0, Arena->Used);
+    memset(Arena->Memory, 0, Arena->Used);
     Arena->Used = 0;
 }
 

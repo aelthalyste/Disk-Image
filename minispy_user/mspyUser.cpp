@@ -408,9 +408,8 @@ GetMFTandINDXLCN(char VolumeLetter, HANDLE VolumeHandle) {
     unsigned int ClusterExtractedCount = 0;
     uint32_t MFTRegionCount            = 0;
     
-    if (ClustersExtracted != 0) {
+    if (ClustersExtracted != 0)
         memset(ClustersExtracted, 0, ClusterExtractedBufferSize);
-    }
     
     auto AutoCompressAndResizeOutput = [&](){
         if(ClusterExtractedCount >= MaxOutputLen/2){
@@ -509,12 +508,7 @@ GetMFTandINDXLCN(char VolumeLetter, HANDLE VolumeHandle) {
                         size_t TargetFileCount = MIN(FileBufferCount, FileRemaining);
                         FileRemaining -= TargetFileCount;
                         
-#if 1                        
-                        int64_t rstart = NarGetPerfCounter();
                         BOOL RFResult = ReadFile(VolumeHandle, FileBuffer, TargetFileCount * 1024ul, &BR, 0);
-                        double tsec = NarTimeElapsed(rstart);
-                        //printf("readfile elapsed %.5f\n", tsec);
-#endif
                         
                         if (RFResult && BR == (TargetFileCount * 1024ul)) {
 #if 1                          
@@ -2398,55 +2392,6 @@ NarIsFullBackup(int Version) {
 
 
 
-inline BOOLEAN
-NarSetFilePointer(HANDLE File, ULONGLONG V) {
-    LARGE_INTEGER MoveTo = { 0 };
-    MoveTo.QuadPart = V;
-    LARGE_INTEGER NewFilePointer = { 0 };
-    SetFilePointerEx(File, MoveTo, &NewFilePointer, FILE_BEGIN);
-    return MoveTo.QuadPart == NewFilePointer.QuadPart;
-}
-
-
-
-HANDLE
-NarOpenVolume(char Letter) {
-    char VolumePath[64];
-    snprintf(VolumePath, 64, "\\\\.\\%c:", Letter);
-    
-    HANDLE Volume = CreateFileA(VolumePath, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_WRITE | FILE_SHARE_READ | FILE_SHARE_DELETE, 0, OPEN_EXISTING, 0, 0);
-    if (Volume != INVALID_HANDLE_VALUE) {
-        
-        
-#if 0        
-        if (DeviceIoControl(Volume, FSCTL_LOCK_VOLUME, 0, 0, 0, 0, 0, 0)) {
-            
-        }
-        else {
-            // NOTE(Batuhan): this isnt an error, tho prohibiting volume access for other processes would be great.
-            printf("Couldn't lock volume %c\n", Letter);
-        }
-        
-        
-        if (DeviceIoControl(Volume, FSCTL_DISMOUNT_VOLUME, 0, 0, 0, 0, 0, 0)) {
-            
-        }
-        else {
-            // printf("Couldnt dismount volume\n");
-        }
-        
-#endif
-        
-        
-    }
-    else {
-        printf("Couldn't open volume %c\n", Letter);
-        DisplayError(GetLastError());
-    }
-    
-    return Volume;
-}
-
 void
 NarCloseVolume(HANDLE V) {
     DeviceIoControl(V, FSCTL_UNLOCK_VOLUME, 0, 0, 0, 0, 0, 0);
@@ -3411,27 +3356,6 @@ NarFreeRegionIntersection(nar_record* intersections) {
 }
 
 
-
-inline INT32
-NarGetVolumeClusterSize(char Letter){
-    
-    char V[] = "!:\\";
-    V[0] = Letter;
-    
-    INT32 Result = 0;
-    DWORD SectorsPerCluster = 0;
-    DWORD BytesPerSector = 0;
-    
-    if (GetDiskFreeSpaceA(V, &SectorsPerCluster, &BytesPerSector, 0, 0)){
-        Result = SectorsPerCluster * BytesPerSector;
-    }
-    else{
-        printf("Couldnt get disk free space for volume %c\n", Letter);
-    }
-    
-    return Result;
-}
-
 // asserts Buffer is large enough to hold all data needed, since caller has information about metadata this isnt problem at all
 inline BOOLEAN
 ReadMFTLCNFromMetadata(HANDLE FHandle, backup_metadata Metadata, void *Buffer){
@@ -3988,255 +3912,39 @@ bool SetDiskRestore(int DiskID, wchar_t Letter, size_t VolumeTotalSize, size_t E
 }
 
 
-wchar_t**
-NarFindExtensions(char VolumeLetter, HANDLE VolumeHandle, wchar_t *Extension, nar_arena *Arena) {
-    
-    BOOLEAN JustExtractMFTRegions  = FALSE;
-    uint64_t ScratchArenaSize 	 = 0;
-    void* ScratchMemory            = 0;
-	nar_arena ScratchArena         = {0};
-    
-    
-    uint32_t MFTRecordsCapacity = 256;
-    uint64_t FileRecordSize     = 1024;
-    uint64_t TotalFC            = 0;
-    nar_record* MFTRecords      = (nar_record*)ArenaAllocateAligned(Arena, MFTRecordsCapacity*sizeof(nar_record), sizeof(nar_arena));
-    wchar_t **NameMap           = NULL;
-    uint32_t *IndiceMap 	    = NULL;
-    uint32_t *IndiceArr 	    = NULL;
-    uint8_t  *FileBuffer        = NULL;
-    uint8_t  *FileNameSize      = NULL;
-    uint64_t FileBufferSize     = Megabyte(128);
-    uint64_t ArrLen     	    = 0;
-    
-    size_t ExtensionLen = wcslen(Extension);
-    double ParserTotalTime    = 0;
-    double TraverserTotalTime = 0;
-    int64_t ParserLoopCount    = 0;
-    
-    DWORD BR = 0;
-    unsigned int MFTRecordsCount  = 0;
-    
-    bool tres = NarGetMFTRegionsFromBootSector(VolumeHandle, 
-                                               MFTRecords, 
-                                               &MFTRecordsCount, 
-                                               MFTRecordsCapacity);
-    
-    if(tres){
-        TotalFC = 0;
-        for(unsigned int MFTOffsetIndex = 0; MFTOffsetIndex < MFTRecordsCount; MFTOffsetIndex++){
-            TotalFC += MFTRecords[MFTOffsetIndex].Len;
-        }
-        TotalFC *= 4;
-        printf("Total file count is %I64u\n", TotalFC);
-        
-        ScratchArenaSize 	 = (TotalFC*350 + FileBufferSize);
-        ScratchMemory         = VirtualAlloc(0, ScratchArenaSize, MEM_COMMIT|MEM_RESERVE, PAGE_READWRITE);  
-        ScratchArena         = ArenaInit(ScratchMemory, ScratchArenaSize);
-        
-        NameMap  	 = (wchar_t**)ArenaAllocateAligned(&ScratchArena, TotalFC*8ull, 8);        
-        FileBuffer    =  (uint8_t*)ArenaAllocateAligned(&ScratchArena, FileBufferSize, 16);
-        IndiceMap 	= (uint32_t*)ArenaAllocateAligned(&ScratchArena, TotalFC*4, sizeof(IndiceMap[0]));
-        IndiceArr 	= (uint32_t*)ArenaAllocateAligned(&ScratchArena, TotalFC*4, sizeof(IndiceArr[0]));
-    	FileNameSize  = (uint8_t*)ArenaAllocateAligned(&ScratchArena, TotalFC, 1);
-    }
-    else{
-        return 0;
-    }
-    
-    uint32_t BufferStartFileID = 0;
-    uint64_t VCNOffset = 0;
-    
-    
-    
-    for (uint64_t MFTOffsetIndex = 0; 
-         MFTOffsetIndex < MFTRecordsCount; 
-         MFTOffsetIndex++) 
-    {
-        
-        uint64_t ClusterSize    = 4096ull;
-        uint64_t FilePerCluster = ClusterSize / 1024ull;
-        uint64_t Offset = (uint64_t)MFTRecords[MFTOffsetIndex].StartPos * (uint64_t)ClusterSize;
-        
-        // set file pointer to actual records
-        if (NarSetFilePointer(VolumeHandle, Offset)) {
-            
-            uint64_t FileRemaining   = (uint64_t)MFTRecords[MFTOffsetIndex].Len * (uint64_t)FilePerCluster;
-            while(FileRemaining){
-                
-                uint64_t FBCount       = FileBufferSize/1024ull;
-                size_t TargetFileCount = MIN(FileRemaining, FBCount);
-                FileRemaining         -= TargetFileCount;
-                
-                ReadFile(VolumeHandle, 
-                         FileBuffer, 
-                         TargetFileCount*1024ull, 
-                         &BR, 0);
-                ASSERT(BR == TargetFileCount*1024);
-                
-                if(BR == TargetFileCount*1024ull){
-                    
-                    int64_t start = NarGetPerfCounter();
-                    ParserLoopCount += TargetFileCount;
-                    for (uint64_t FileRecordIndex = 0; FileRecordIndex < TargetFileCount; FileRecordIndex++) {
-                        
-                        TIMED_NAMED_BLOCK("File record parser");
-                        void* FileRecord = (BYTE*)FileBuffer + (uint64_t)FileRecordSize * (uint64_t)FileRecordIndex;
-                        
-                        // file flags are at 22th offset in the record
-                        if (*(int32_t*)FileRecord != 'ELIF') {
-                            // block doesnt start with 'FILE0', skip
-                            continue;
-                        }
-                        
-                        FileRecordHeader *h = (FileRecordHeader*)FileRecord;
-                        if(h->inUse == 0){
-                            continue;
-                        }
-                        
-                        // lsn, lsa swap to not confuse further parsing stages.
-                        ((uint8_t*)FileRecord)[510] = *(uint8_t*)NAR_OFFSET(FileRecord, 50);
-                        ((uint8_t*)FileRecord)[511] = *(uint8_t*)NAR_OFFSET(FileRecord, 51);
-                        
-                        uint32_t FileID   = 0;
-                        uint32_t ParentID = 0;
-                        
-                        name_and_parent_id NamePID = NarGetFileNameAndParentID(FileRecord);
-                        
-                        if(NamePID.Name != 0){
-                            // NamePID.Name[0] != L'$'
-                            IndiceMap[NamePID.FileID] = NamePID.ParentFileID;
-                            
-                            uint64_t NameSize = (NamePID.NameLen + 1) * 2; 
-                            NameMap[NamePID.FileID] = (wchar_t*)ArenaAllocate(&ScratchArena, NameSize);
-                            
-                            memcpy(NameMap[NamePID.FileID], NamePID.Name, NameSize - 2);
-                            FileNameSize[NamePID.FileID] = NamePID.NameLen + 1; // +1 for null termination
-                            
-                            if(ExtensionLen < FileNameSize[NamePID.FileID]){
-                                
-                                wchar_t *LastChars = &NameMap[NamePID.FileID][FileNameSize[NamePID.FileID] - ExtensionLen - 1];
-                                bool Add = true;
-                                for(uint64_t wi = 0; wi < ExtensionLen; wi++){
-                                    if(LastChars[wi] != Extension[wi]){
-                                        Add = false;
-                                        break;
-                                    }
-                                }
-                                
-                                if(Add){
-                                    IndiceArr[ArrLen++] = NamePID.FileID;
-                                }
-                                
-                            }
-                            
-                        }
-                        
-                    }
-                    
-                    ParserTotalTime += NarTimeElapsed(start);
-                    
-                }
-                else{
-                    //failed!
-                }
-                
-                
-            }
-            
-            
-        }
-    }
-    
-    TIMED_NAMED_BLOCK("after readfile");
-    
-    int64_t TraverserStart = NarGetPerfCounter();
-    
-    uint64_t SkippedFileCount = 0;
-    wchar_t** Result = (wchar_t**)ArenaAllocateAligned(Arena, ArrLen*8, 8);
-    uint32_t *stack = (uint32_t*)ArenaAllocateAligned(&ScratchArena, 1024*4, 4);
-    
-    for(uint64_t s = 0; s<ArrLen; s++){
-        
-        uint32_t si = 0;
-        uint16_t TotalFileSize = 0;
-        memset(&stack[0], 0, sizeof(stack));
-        
-        for(uint32_t ParentID = IndiceMap[IndiceArr[s]]; 
-            ParentID != 5 && ParentID != 0; 
-            ParentID    = IndiceMap[ParentID])
-        {
-            stack[si++] = ParentID;
-            _mm_prefetch((const char*)&IndiceMap[ParentID], _MM_HINT_T0);
-        }
-        
-        //TODO prefetch next element into the cache
-        for(uint32_t ParentID = IndiceMap[IndiceArr[s]]; 
-            ParentID != 5 && ParentID != 0; ParentID    = IndiceMap[ParentID]){
-            TotalFileSize += FileNameSize[ParentID];
-        }
-        
-        // additional memory for trailing backlashes
-        Result[s] = (wchar_t*)ArenaAllocate(Arena, TotalFileSize*2 + 400);
-        uint64_t WriteIndex = 0;
-        
-        {
-            wchar_t tmp[] = L"C:\\";
-            tmp[0] = (wchar_t)VolumeLetter;
-            memcpy(&Result[s][WriteIndex], &tmp[0], 6);
-            WriteIndex += 3;        
-        }
-        
-        
-        for(uint32_t i =0; i<si; i++){
-            if(stack[si - i - 1] != 5 
-               && stack[si - i - 1] != 0 
-               && FileNameSize[stack[si - i - 1]] != 0)
-            {
-                _mm_prefetch((const char*)&FileNameSize[stack[si - i - 1]], _MM_HINT_T0);
-                _mm_prefetch((const char*)&NameMap[stack[si - i - 1]], _MM_HINT_T0);
-                
-                if(!(FileNameSize[stack[si - i - 1]] != 0))
-                    NAR_BREAK;
-                
-                uint64_t FSize = FileNameSize[stack[si - i - 1]] - 1;// remove null termination
-                if(FSize == (uint64_t)-1){
-                    break;
-                }	
-                
-                memcpy(&Result[s][WriteIndex], NameMap[stack[si - i - 1]], FSize*2);
-                WriteIndex += FSize;
-                
-                memcpy(&Result[s][WriteIndex], L"\\", 2);
-                WriteIndex += 1;
-            }
-        }
-        
-        uint64_t FSize = FileNameSize[IndiceArr[s]] - 1;
-        memcpy(&Result[s][WriteIndex], NameMap[IndiceArr[s]], FSize*2);
-        WriteIndex += FSize;
-        Result[s][WriteIndex] = 0;        
-        
-    }
-    
-    TraverserTotalTime = NarTimeElapsed(TraverserStart);
-    
-    for(size_t i =0; i<ArrLen; i++){
-        //printf("%S\n", Result[i]);
-    }
-    
-    printf("Parser, %9u files in %.5f sec, file per ms %.5f\n", TotalFC, ParserTotalTime, (double)TotalFC/ParserTotalTime/1000.0);
-    printf("Traverser %8u files in %.5f sec, file per ms %.5f\n", ArrLen, TraverserTotalTime, (double)ArrLen/TraverserTotalTime/1000.0);
-    
-    printf("Match count %I64u\n", ArrLen);
-	
-	VirtualFree(ScratchMemory, ScratchArenaSize, MEM_RELEASE);
-    
-    return Result;
-}
-
 int
 wmain(int argc, wchar_t* argv[]) {
+    
+    void* Mem = VirtualAlloc(0, Megabyte(512), MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
+    if(Mem){
+        
+        nar_arena Arena = ArenaInit(Mem, Megabyte(512));
+        DWORD Drives = GetLogicalDrives();
+        // NOTE(Batuhan): skip volume A and B
+        for (int CurrentDriveIndex = 2; CurrentDriveIndex < 26; CurrentDriveIndex++) {
+            ArenaReset(&Arena);
+            
+            if (Drives & (1 << CurrentDriveIndex)) {
+                char letter = ('A' + (char)CurrentDriveIndex);
+                //wchar_t **r = NarFindExtensions(letter, NarOpenVolume(letter), &argv[1][0], &Arena);
+#if 0
+                for(size_t i =0; r[i] != 0; i++){
+                    printf("%S\n", r[i]);
+                } 
+#endif
+                
+            }
+            else {
+                
+            }
+        }
+        
+    }
+    else{
+        
+    }
+    
+    return 0;
     
     uint32_t c= 0;
     GetVolumeRegionsFromBitmap(NarOpenVolume('C'), &c);

@@ -8,6 +8,7 @@
 #include <vector>
 #include <winioctl.h>
 #include <emmintrin.h>
+#include <memory.h>
 
 #include <string>
 #include <vector>

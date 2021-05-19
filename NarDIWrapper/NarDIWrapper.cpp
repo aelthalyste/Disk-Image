@@ -13,98 +13,26 @@
 #include "mspyUser.cpp"
 #include "NarDIWrapper.h"
 
-
 using namespace System;
 
 #define CONVERT_TYPES(_in,_out) _out = msclr::interop::marshal_as<decltype(_out)>(_in);
 
-
-
-
+#if 1
 namespace NarDIWrapper {
     
     
     CSNarFileExplorer::CSNarFileExplorer(){
-        ctx = 0;
     }
     
     CSNarFileExplorer::~CSNarFileExplorer() {
-        this->CW_Free();
     }
     
     bool CSNarFileExplorer::CW_Init(System::String^ SysRootDir, System::String^ SysMetadataName){
-        
-        ctx = (nar_backup_file_explorer_context*)malloc(sizeof(nar_backup_file_explorer_context));
-        if(ctx == NULL){
-            printf("Couldnt allocate memory for file explorer context\n");
-        }
-        
-        wchar_t rootdir[1024];
-        wchar_t mname[1024];
-        memset(rootdir, 0, sizeof(rootdir));
-        memset(mname, 0, sizeof(mname));
-        
-        SystemStringToWCharPtr(SysRootDir, rootdir);
-        SystemStringToWCharPtr(SysMetadataName, mname);
-        
-        printf("Rootdir %S, name %S\n", rootdir, mname);
-        
-        return NarInitFileExplorerContext(ctx, rootdir, mname);
-        
+        return false;
     }
     
     List<CSNarFileEntry^>^ CSNarFileExplorer::CW_GetFilesInCurrentDirectory(){
-        
-        List<CSNarFileEntry^>^ Result = gcnew List<CSNarFileEntry^>;     
-        
-        ULARGE_INTEGER templargeinteger = { 0 };
-        FILETIME ft;
-        SYSTEMTIME st;
-        
-        for(int i = 0; i<ctx->EList.EntryCount; i++){
-            
-            CSNarFileEntry^ Entry = gcnew CSNarFileEntry;
-            Entry->Size = ctx->EList.Entries[i].Size;
-            Entry->ID = i;
-            Entry->Name = gcnew System::String(ctx->EList.Entries[i].Name);
-            
-            Entry->LastModifiedTime = gcnew CSNarFileTime;
-            Entry->CreationTime = gcnew CSNarFileTime;
-            
-            templargeinteger.QuadPart = ctx->EList.Entries[i].CreationTime;
-            ft.dwHighDateTime = templargeinteger.HighPart;
-            ft.dwLowDateTime =  templargeinteger.LowPart;
-            FileTimeToSystemTime(&ft, &st);
-            
-            Entry->CreationTime->Year = st.wYear;
-            Entry->CreationTime->Month = st.wMonth;
-            Entry->CreationTime->Day = st.wDay;
-            Entry->CreationTime->Hour = st.wHour;
-            Entry->CreationTime->Minute = st.wMinute;
-            Entry->CreationTime->Second = st.wSecond;
-            
-            
-            templargeinteger.QuadPart = ctx->EList.Entries[i].LastModifiedTime;
-            ft.dwHighDateTime = templargeinteger.HighPart;
-            ft.dwLowDateTime = templargeinteger.LowPart;
-            FileTimeToSystemTime(&ft, &st);
-            
-            Entry->LastModifiedTime->Year = st.wYear;
-            Entry->LastModifiedTime->Month = st.wMonth;
-            Entry->LastModifiedTime->Day = st.wDay;
-            Entry->LastModifiedTime->Hour = st.wHour;
-            Entry->LastModifiedTime->Minute = st.wMinute;
-            Entry->LastModifiedTime->Second = st.wSecond;
-            
-            Entry->IsDirectory = ctx->EList.Entries[i].IsDirectory;
-            Result->Add(Entry);
-            
-        }
-        
-        printf("Build file list with length %i\n", Result->Count);
-        
-        return Result;
-        
+        return gcnew List<CSNarFileEntry^>;
     }
     
     bool CSNarFileExplorer::CW_SelectDirectory(UINT64 ID){
@@ -113,49 +41,17 @@ namespace NarDIWrapper {
     }
     
     void CSNarFileExplorer::CW_PopDirectory(){
-        
-        //NarFileExplorerPopDirectory(ctx);
-        
     }
     
     void CSNarFileExplorer::CW_Free(){
         
-#if 1        
-        if (ctx) {
-            NarReleaseFileExplorerContext(ctx);
-            free(ctx);
-            ctx = 0;
-        }
-#endif
-        
     }
     
     void CSNarFileExplorer::CW_RestoreFile(INT64 ID, System::String^ SysBackupDirectory, System::String^ SysTargetDir) {
-        
-#if 0
-        if(ctx == NULL || ctx->EList.Entries == 0 || ctx->EList.EntryCount < ID){
-            if(!ctx) printf("File explorer context was null\n");
-            if(!ctx->EList.Entries) printf("File explorer's entry list was null\n");
-            if(ctx->EList.EntryCount  < ID) printf("Given file ID exceeds maximum file ID in entry list\n");
-            return;
-        }
-        
-        std::wstring SelectedFilePath = std::wstring(ctx->CurrentDirectory);
-        SelectedFilePath += ctx->EList.Entries[ID].Name;
-        
-        wchar_t TargetDirectory[512];
-        wchar_t RootDir[512];
-        SystemStringToWCharPtr(SysTargetDir, TargetDirectory);
-        SystemStringToWCharPtr(SysBackupDirectory, RootDir);
-        
-        NarRestoreFileFromBackups(RootDir, SelectedFilePath.c_str(), TargetDirectory, ctx->FEHandle.BMEX->M.ID, NAR_FULLBACKUP_VERSION);
-#endif   
-        
     }
     
     System::String^ CSNarFileExplorer::CW_GetCurrentDirectoryString() {
-        System::String^ result = gcnew System::String(ctx->CurrentDirectory);
-        return result;
+        return "";
     }
     
     
@@ -462,3 +358,5 @@ namespace NarDIWrapper {
     // TODO(Batuhan): helper functions, like which volume we are streaming etc.
     
 }
+
+#endif

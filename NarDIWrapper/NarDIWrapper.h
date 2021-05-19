@@ -2,23 +2,110 @@
 
 #include <msclr/marshal.h>
 
+#include "nar.h"
+#include "mspyLog.h"
+#include "memory.h"
+#include "file_explorer.h"
+
 using namespace System;
 using namespace System::Text;
 using namespace System::Collections::Generic;
 
+void
+SystemStringToWCharPtr(System::String^ SystemStr, wchar_t* Destination) {
 
+    pin_ptr<const wchar_t> wch = PtrToStringChars(SystemStr);
+    size_t ConvertedChars = 0;
+    size_t SizeInBytes = (SystemStr->Length + 1) * 2;
+    memcpy(Destination, wch, SizeInBytes);
+
+}
+
+namespace NarNative{
+    
+    public ref class ExtensionSearcher{
+        public:
+        
+        static List<System::String^>^ FindExtensionAllVolumes(System::String^ Extension){
+            uint64_t MemorySize = (300ull*1024ull *1024ull);
+            List<System::String^>^ Result = gcnew List<System::String^>;
+
+            wchar_t wchExt[256];
+            SystemStringToWCharPtr(Extension, wchExt);
+
+            void* Mem = VirtualAlloc(0, MemorySize, MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
+            if(Mem){
+                
+                nar_arena Arena = ArenaInit(Mem, MemorySize);
+                DWORD Drives = GetLogicalDrives();
+                // NOTE(Batuhan): skip volume A and B
+                for (int CurrentDriveIndex = 2; CurrentDriveIndex < 26; CurrentDriveIndex++) {
+                    
+                    if (Drives & (1 << CurrentDriveIndex)) {
+                        char letter = ('A' + (char)CurrentDriveIndex);
+                        HANDLE VolumeHandle = NarOpenVolume(letter);
+                        if(VolumeHandle != INVALID_HANDLE_VALUE){
+                            ArenaReset(&Arena);
+                            
+
+                            extension_search_result NativeResult = NarFindExtensions(letter, VolumeHandle, wchExt, &Arena);
+                            Result->Capacity = NativeResult.Len;
+                            for(size_t i =0; i<NativeResult.Len; i++){
+                                Result->Add(gcnew System::String(NativeResult.Files[i]));
+                            } 
+                        }
+                        
+                    }
+                    else {
+                        
+                    }
+                    
+                }
+                
+            }
+            else{
+                
+            }
+            
+            VirtualFree(Mem, MemorySize, MEM_RELEASE);
+            return Result;
+        }
+        
+        static List<System::String^>^ FindExtension(wchar_t VolumeLetter, System::String^ Extension){
+            uint64_t MemorySize = 300ull * 1024ull * 1024ull;
+            List<System::String^>^ Result = gcnew List<System::String^>;
+
+            wchar_t wchExt[256];
+            SystemStringToWCharPtr(Extension, wchExt);
+
+            void* Mem = VirtualAlloc(0, MemorySize, MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
+            if(Mem){
+                nar_arena Arena = ArenaInit(Mem, MemorySize);
+                HANDLE VolumeHandle = NarOpenVolume(VolumeLetter);
+                if(VolumeHandle != INVALID_HANDLE_VALUE){
+                    extension_search_result NativeResult = NarFindExtensions(VolumeLetter, VolumeHandle, wchExt, &Arena);
+                    for(size_t i =0; i<NativeResult.Len; i++){
+                        Result->Add(gcnew System::String(NativeResult.Files[i]));
+                    } 
+                }
+                
+            }
+            else{
+                
+            }
+            
+            VirtualFree(Mem, MemorySize, MEM_RELEASE);
+            return Result;
+        }
+        
+    };
+    
+};
+
+#if 1
 
 namespace NarDIWrapper {
-    
-    void
-        SystemStringToWCharPtr(System::String^ SystemStr, wchar_t* Destination) {
-        
-        pin_ptr<const wchar_t> wch = PtrToStringChars(SystemStr);
-        size_t ConvertedChars = 0;
-        size_t SizeInBytes = (SystemStr->Length + 1) * 2;
-        memcpy(Destination, wch, SizeInBytes);
-        
-    }
+
     
     public ref class StreamInfo {
         public:
@@ -166,7 +253,6 @@ namespace NarDIWrapper {
     
     public ref class CSNarFileExplorer {
         
-        nar_backup_file_explorer_context *ctx;
         
         public:
         
@@ -447,3 +533,6 @@ namespace NarDIWrapper {
     
     
 }
+
+
+#endif
