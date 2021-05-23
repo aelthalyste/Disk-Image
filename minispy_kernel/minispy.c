@@ -19,9 +19,7 @@ Environment:
 #define NAR_KERNEL 1
 
 #include "mspyKern.h"
-#include <stdio.h>
 #include <Ntstrsafe.h>
-#include <string.h>
 #define DbgPrint
 
 //
@@ -136,10 +134,9 @@ Return Value:
         // Initialize global data structures.
         //
         
-        NarData.NameQueryMethod = DEFAULT_NAME_QUERY_METHOD;
+        NarData.NameQueryMethod = FLT_FILE_NAME_QUERY_ALWAYS_ALLOW_CACHE_LOOKUP;
         
         NarData.DriverObject = DriverObject;
-        
         
         //
         //  Now that our global configuration is complete, register with FltMgr.
@@ -212,7 +209,7 @@ Return Value:
         UNICODE_STRING     FileName;
         OBJECT_ATTRIBUTES  objAttr;
         
-        void* UnicodeStringBuffer = ExAllocatePoolWithTag(PagedPool, 512, NAR_TAG);
+        unsigned char UnicodeStringBuffer[512];
         RtlInitEmptyUnicodeString(&FileName, UnicodeStringBuffer, 512);
         status = RtlUnicodeStringCatString(&FileName, L"\\SystemRoot\\");
         if (NT_SUCCESS(status)) {
@@ -294,8 +291,6 @@ Return Value:
             }
             
         }
-        
-        ExFreePoolWithTag(UnicodeStringBuffer, NAR_TAG);
         
 #endif
         
@@ -635,32 +630,8 @@ Return Value:
     return STATUS_SUCCESS;
 }
 
-NTSTATUS
-SpyTeardownStart(
-                 _In_ PCFLT_RELATED_OBJECTS FltObjects,
-                 _In_ FLT_INSTANCE_TEARDOWN_FLAGS Reason
-                 ) {
-    
-    UNREFERENCED_PARAMETER(FltObjects);
-    UNREFERENCED_PARAMETER(Reason);
-    DbgPrint("Teardownstart called\n");
-    
-    return STATUS_SUCCESS;
-}
 
 
-void
-SpyTeardownComplete(
-                    _In_ PCFLT_RELATED_OBJECTS FltObjects,
-                    _In_ FLT_INSTANCE_TEARDOWN_FLAGS Reason
-                    ) {
-    
-    UNREFERENCED_PARAMETER(FltObjects);
-    UNREFERENCED_PARAMETER(Reason);
-    DbgPrint("Teardown complete\n");
-    
-    return;
-}
 
 NTSTATUS
 SpyQueryTeardown(
@@ -1217,21 +1188,22 @@ NarLogThread(PVOID param) {
 BOOLEAN
 NTAPI
 NarSuffixUnicodeString(
-    _In_ PUNICODE_STRING String1,
-    _In_ PUNICODE_STRING String2,
+    _In_ PUNICODE_STRING Str,
+    _In_ PUNICODE_STRING Suffix,
     _In_ BOOLEAN CaseInSensitive
 )
 {
-    //
-    // RtlSuffixUnicodeString is not exported by ntoskrnl until Win10.
-    //
+    if (Suffix->Length > Str->Length) {
+        return FALSE;
+    }
 
-    return String2->Length >= String1->Length &&
-        RtlCompareUnicodeStrings(String2->Buffer + (String2->Length - String1->Length) / sizeof(WCHAR),
-            String1->Length / sizeof(WCHAR),
-            String1->Buffer,
-            String1->Length / sizeof(WCHAR),
-            CaseInSensitive) == 0;
+    return (RtlCompareUnicodeStrings(
+        Str->Buffer + (Str->Length - Suffix->Length)/2,
+        Suffix->Length/2,
+        Suffix->Buffer,
+        Suffix->Length/2,
+        TRUE
+    ) == 0);
 
 }
 
@@ -1249,7 +1221,6 @@ const UNICODE_STRING IgnoreSuffixTable[] = {
 };
 
 const UNICODE_STRING IgnoreMidStringTable[] = {
-    RTL_CONSTANT_STRING(L"$"),
     RTL_CONSTANT_STRING(L"\\AppData\\Local\\Temp"),
     RTL_CONSTANT_STRING(L"\\AppData\\Local\\Microsoft\\Windows\\Temporary Internet Files"),
     RTL_CONSTANT_STRING(L"\\AppData\\Google\\Chrome\\User Data\\Default\\Cache"),
@@ -1300,6 +1271,7 @@ Return Value:
 --*/
 {
 
+
     UNICODE_STRING defaultName;
     PUNICODE_STRING nameToUse;
     NTSTATUS status;
@@ -1307,8 +1279,12 @@ Return Value:
     UNREFERENCED_PARAMETER(defaultName);
     UNREFERENCED_PARAMETER(nameToUse);
     UNREFERENCED_PARAMETER(CompletionContext);
+    
+    CompletionContext = 0;
 
-    KIRQL FIrql = KeGetCurrentIrql();
+    if (Data->Iopb->MajorFunction != IRP_MJ_WRITE && Data->Iopb->MajorFunction != IRP_MJ_SHUTDOWN) {
+        return FLT_PREOP_SUCCESS_NO_CALLBACK;
+    }
 
 #if 1
     // that might deadlock the system
@@ -1371,14 +1347,15 @@ Return Value:
         if ((Data->Iopb->TargetFileObject->Flags & FO_TEMPORARY_FILE) == FO_TEMPORARY_FILE) {
             return  FLT_PREOP_SUCCESS_NO_CALLBACK;
         }
-
+    
         if ((Data->Iopb->TargetFileObject->Flags & FO_DELETE_ON_CLOSE) == FO_DELETE_ON_CLOSE) {
             return  FLT_PREOP_SUCCESS_NO_CALLBACK;
         }
-
+    
         if (Data->Iopb->MajorFunction != IRP_MJ_WRITE) {
             return FLT_PREOP_SUCCESS_NO_CALLBACK;
         }
+    
     }
     else {
         return FLT_PREOP_SUCCESS_NO_CALLBACK;
@@ -1391,7 +1368,7 @@ Return Value:
     
     
     
-    // if (Data->Iopb->MajorFunction != IRP_MJ_SHUTDOWN && FIrql == PASSIVE_LEVEL) {
+    // if (Data->Iopb->MajorFunction != IRP_MJ_SHUTDOWN) {
     //     FILE_STANDARD_INFORMATION fsi = { 0 };
     //     status = FltQueryInformationFile(FltObjects->Instance, FltObjects->FileObject, &fsi, sizeof(FILE_STANDARD_INFORMATION), FileStandardInformation, &LenReturned);
     //     if (NT_SUCCESS(status)) {
@@ -1403,38 +1380,49 @@ Return Value:
     //         DbgPrint("Failed to query information file\n");
     //     }
     // }
-    //return FLT_PREOP_SUCCESS_NO_CALLBACK;
+    // return FLT_PREOP_SUCCESS_NO_CALLBACK;
 
 
     PFLT_FILE_NAME_INFORMATION nameInfo = NULL;
-    
+
 #if 1
     
     unsigned char UnicodeStrBuffer[NAR_LOOKASIDE_SIZE];
-    
+
     if (FltObjects->FileObject != NULL) {
         
         status = FltGetFileNameInformation(Data,
                                            FLT_FILE_NAME_NORMALIZED |
                                            NarData.NameQueryMethod,
                                            &nameInfo);
-        if (NT_SUCCESS(status)) {
-            
+
+        if (NT_SUCCESS(status) && nameInfo->Name.Length != 0) {
+        
+            DbgPrint("2127 File name %wZ\n", &nameInfo->Name);
             for (size_t i = 0; 
                  i < sizeof(IgnoreSuffixTable) / sizeof(IgnoreSuffixTable[0]); 
-                 i++) {
-                if (NarSuffixUnicodeString(&IgnoreSuffixTable[i], &nameInfo->Name, TRUE)) {
+                 i++) 
+            {
+                if (NarSuffixUnicodeString(&nameInfo->Name, &IgnoreSuffixTable[i], TRUE)) {
+                    //NAR_ASSERT(i != 0);
+                    DbgPrint("2127sf Filtering out name %wZ\n", &nameInfo->Name);
                     goto NAR_PREOP_FAILED_END;
                 }
             }
             
-            for (size_t i = 0; i < sizeof(IgnoreMidStringTable) / sizeof(IgnoreMidStringTable[0]); i++) {
+            for (size_t i = 0; 
+                i < sizeof(IgnoreMidStringTable) / sizeof(IgnoreMidStringTable[0]); 
+                i++) 
+            {
                 if (NarSubMemoryExists(nameInfo->Name.Buffer, IgnoreMidStringTable[i].Buffer, nameInfo->Name.Length, IgnoreMidStringTable[i].Length)) {
+                    //NAR_ASSERT(i > 4);
+                    DbgPrint("2127sb Filtering out file %wZ\n", &nameInfo->Name);
                     goto NAR_PREOP_FAILED_END;
                 }
             }
-            
-           
+
+
+
             
 #if 1
             ULONG BytesReturned = 0;
@@ -1446,7 +1434,7 @@ Return Value:
 
             RETRIEVAL_POINTERS_BUFFER ClusterMapBuffer;
             
-            DWORD WholeFileMapBufferSize = sizeof(UnicodeStrBuffer);// sizeof(RETRIEVAL_POINTERS_BUFFER) * 128;
+            DWORD WholeFileMapBufferSize = sizeof(UnicodeStrBuffer);
             RETRIEVAL_POINTERS_BUFFER* WholeFileMapBuffer = (RETRIEVAL_POINTERS_BUFFER*)&UnicodeStrBuffer[0];
             memset(WholeFileMapBuffer, 0, WholeFileMapBufferSize);
             
@@ -1480,9 +1468,8 @@ Return Value:
             BOOLEAN HeadFound = FALSE;
             BOOLEAN CeilTest = FALSE;
             
-            NT_ASSERT(FIrql == PASSIVE_LEVEL);
-
-            status = FltFsControlFile(FltObjects->Instance,
+            
+            status = FltDeviceIoControlFile(FltObjects->Instance,
                          Data->Iopb->TargetFileObject,
                          FSCTL_GET_RETRIEVAL_POINTERS,
                          &StartingInputVCNBuffer,
@@ -1492,19 +1479,8 @@ Return Value:
                          &BytesReturned
                          );
 
+
             if (status != STATUS_END_OF_FILE && !NT_SUCCESS(status)) {
-
-                // invalid argument
-                //if (status == 0xC000000D) {
-                //    DbgPrint("FLT OBJ : %X\n", FltObjects->Instance              );
-                //    DbgPrint("DTF OBJ : %X\n", Data->Iopb->TargetFileObject      );
-                //    DbgPrint("SIV BUF : %X\n", &StartingInputVCNBuffer           );
-                //    DbgPrint("SIV SIZ : %I64u\n", sizeof(StartingInputVCNBuffer) );
-                //    DbgPrint("WFM BUF : %X\n", &WholeFileMapBuffer               );
-                //    DbgPrint("WFM SIZ : %I64u\n", WholeFileMapBufferSize         );
-                //    DbgPrint("BYT RET : %lu\n", BytesReturned                    );
-                //}
-
                 DbgPrint("FltFsControl failed with code %X,  file name %wZ\n", status, &nameInfo->Name);
                 
                 goto NAR_PREOP_FAILED_END;
@@ -1638,10 +1614,9 @@ Return Value:
                     DbgPrint("RECCOUNT WAS ZERO %wZ\n", &nameInfo->Name);
                 }
             }
-            
+
             if (RecCount > 0) {
                 
-                NT_ASSERT(FIrql == PASSIVE_LEVEL);
                 INT32 SizeNeededForMemoryBuffer = 2 * RecCount * sizeof(UINT32);
                 INT32 RemainingSizeOnBuffer = 0;
                 RtlInitEmptyUnicodeString(&GUIDStringNPaged, &CompareBuffer[0], NAR_GUID_STR_SIZE);
@@ -1661,9 +1636,9 @@ Return Value:
                         if (NarMemCompare(&CompareBuffer[0], NarData.VolumeRegionBuffer[i].GUIDStrVol.Buffer, NAR_GUID_STR_SIZE) == TRUE) {
                             RemainingSizeOnBuffer = NAR_MEMORYBUFFER_SIZE - NAR_MB_USED(NarData.VolumeRegionBuffer[i].MemoryBuffer);
                             
-                            for (size_t j = 0; j < RecCount; j++) {
-                                DbgPrint("Detected region : start %7u %7u\n", P[j].S, P[j].L);
-                            }
+                            //for (size_t j = 0; j < RecCount; j++) {
+                            //    DbgPrint("Detected region : start %7u %7u\n", P[j].S, P[j].L);
+                            //}
 
                             if (RemainingSizeOnBuffer >= SizeNeededForMemoryBuffer) {
                                 NAR_MB_PUSH(NarData.VolumeRegionBuffer[i].MemoryBuffer, &P[0], SizeNeededForMemoryBuffer);
@@ -1716,9 +1691,14 @@ Return Value:
             
         }
         else {
-            goto NAR_PREOP_FAILED_END;
+        if (nameInfo != 0) {
+            if (nameInfo->Name.Length == 0) {
+                DbgPrint("Fuck you microsoft\n");
+            }
         }
-        
+        goto NAR_PREOP_FAILED_END;
+        }
+
         
     }
     

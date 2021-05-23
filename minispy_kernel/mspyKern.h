@@ -24,14 +24,13 @@ Environment:
 
 
 #include <fltKernel.h>
-#include <suppress.h>
 #include "minispy.h"
 
 #pragma prefast(disable:__WARNING_ENCODE_MEMBER_FUNCTION_POINTER, "Not valid for kernel mode drivers")
 
 #define NAR_LOOKASIDE_SIZE 1024LL*2LL
 #define NAR_TAG 'RAN'
-
+#define NAR_ASSERT(expression) do{if(!(expression)) *(volatile int*)0 = 42;}while(0);
 
 #ifndef _DEBUG
 //#define DbgPrint(v)
@@ -55,33 +54,6 @@ Environment:
 
 #if MINISPY_VISTA
 
-//
-//  Dynamically imported Filter Mgr APIs
-//
-
-typedef NTSTATUS
-(*PFLT_SET_TRANSACTION_CONTEXT)(
-                                _In_ PFLT_INSTANCE Instance,
-                                _In_ PKTRANSACTION Transaction,
-                                _In_ FLT_SET_CONTEXT_OPERATION Operation,
-                                _In_ PFLT_CONTEXT NewContext,
-                                _Outptr_opt_ PFLT_CONTEXT* OldContext
-                                );
-
-typedef NTSTATUS
-(*PFLT_GET_TRANSACTION_CONTEXT)(
-                                _In_ PFLT_INSTANCE Instance,
-                                _In_ PKTRANSACTION Transaction,
-                                _Outptr_ PFLT_CONTEXT* Context
-                                );
-
-typedef NTSTATUS
-(*PFLT_ENLIST_IN_TRANSACTION)(
-                              _In_ PFLT_INSTANCE Instance,
-                              _In_ PKTRANSACTION Transaction,
-                              _In_ PFLT_CONTEXT TransactionContext,
-                              _In_ NOTIFICATION_MASK NotificationMask
-                              );
 
 //
 // Flags for the known ECPs
