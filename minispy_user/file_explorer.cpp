@@ -1,3 +1,4 @@
+#include "precompiled.h"
 #include "file_explorer.h"
 
 
@@ -130,7 +131,7 @@ NarFindFileAttributeFromFileRecord(void *FileRecord, INT32 AttributeID){
     return NULL;
 }
 
-inline void*
+void*
 NarGetBitmapAttributeData(void *BitmapAttributeStart){
     void *Result = 0;
     if(BitmapAttributeStart == NULL) return Result;
@@ -141,7 +142,7 @@ NarGetBitmapAttributeData(void *BitmapAttributeStart){
     return Result;
 }
 
-inline INT32
+int32_t
 NarGetBitmapAttributeDataLen(void *BitmapAttributeStart){
     INT32 Result = 0;
     if(BitmapAttributeStart == NULL) return Result;
@@ -427,6 +428,10 @@ NarFindExtensions(char VolumeLetter, HANDLE VolumeHandle, wchar_t *Extension, na
                             continue;
                         }
                         
+#if 0                        
+                        void *AttributeList = NarFindFileAttributeFromFileRecord(FileRecord, NAR_ATTRIBUTE_LIST);                        
+#endif
+                        
                         FileRecordHeader *h = (FileRecordHeader*)FileRecord;
                         if(h->inUse == 0){
                             continue;
@@ -442,6 +447,7 @@ NarFindExtensions(char VolumeLetter, HANDLE VolumeHandle, wchar_t *Extension, na
                         name_and_parent_id NamePID = NarGetFileNameAndParentID(FileRecord);
                         
                         if(NamePID.Name != 0){
+                            
                             // NamePID.Name[0] != L'$'
                             IndiceMap[NamePID.FileID] = NamePID.ParentFileID;
                             
@@ -468,6 +474,8 @@ NarFindExtensions(char VolumeLetter, HANDLE VolumeHandle, wchar_t *Extension, na
                                 
                             }
                             
+                        }
+                        else{
                         }
                         
                     }
@@ -550,6 +558,8 @@ NarFindExtensions(char VolumeLetter, HANDLE VolumeHandle, wchar_t *Extension, na
                     WriteIndex += 1;
                 }
                 
+            }
+            else{
             }
         }
         

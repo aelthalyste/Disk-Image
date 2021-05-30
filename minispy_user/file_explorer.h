@@ -93,10 +93,10 @@ inline BOOLEAN
 NarSetFilePointer(HANDLE File, ULONGLONG V);
 
 
-inline void*
+void*
 NarGetBitmapAttributeData(void *BitmapAttributeStart);
 
-inline INT32
+int32_t
 NarGetBitmapAttributeDataLen(void *BitmapAttributeStart);
 
 inline bool

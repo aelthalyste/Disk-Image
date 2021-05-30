@@ -5,6 +5,7 @@
 #include "nar.h"
 #include "mspyLog.h"
 #include "memory.h"
+#include "restore.h"
 #include "file_explorer.h"
 
 using namespace System;
@@ -27,9 +28,11 @@ namespace NarNative{
         public:
         
         static List<System::String^>^ FindExtensionAllVolumes(System::String^ Extension){
-            uint64_t MemorySize = (300ull*1024ull *1024ull);
+            
+            
+            uint64_t MemorySize = (768ull*1024ull *1024ull);
             List<System::String^>^ Result = gcnew List<System::String^>;
-
+            
             wchar_t wchExt[256];
             SystemStringToWCharPtr(Extension, wchExt);
 
@@ -49,7 +52,7 @@ namespace NarNative{
                             
 
                             extension_search_result NativeResult = NarFindExtensions(letter, VolumeHandle, wchExt, &Arena);
-                            Result->Capacity = NativeResult.Len;
+                            Result->Capacity += NativeResult.Len;
                             for(size_t i =0; i<NativeResult.Len; i++){
                                 Result->Add(gcnew System::String(NativeResult.Files[i]));
                             } 

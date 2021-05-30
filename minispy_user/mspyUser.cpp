@@ -29,11 +29,13 @@ _Analysis_mode_(_Analysis_code_type_user_code_)
 
 #include "mspyLog.h"
 #include "minispy.h"
+#include "memory.h"
+#include "file_explorer.h"
+#include "restore.h"
 
 #include <strsafe.h>
 #include <stdlib.h>
 #include <cstdio>
-
 
 
 #if 1
@@ -534,7 +536,8 @@ GetMFTandINDXLCN(char VolumeLetter, HANDLE VolumeHandle) {
                                 FileID = NarGetFileID(FileRecord);
                                 
                                 // manually insert $BITMAP & $LogFile data regions to stream.
-                                if(FileID == 2||
+                                if(FileID == 0||
+                                   FileID == 2||
                                    FileID == 6){
                                     void *attr = NarFindFileAttributeFromFileRecord(FileRecord, 0x80);
                                     if(attr){
@@ -556,6 +559,24 @@ GetMFTandINDXLCN(char VolumeLetter, HANDLE VolumeHandle) {
                                             printf("Unable to find data attribute of $LogFile\n");
                                         if(FileID == 6)
                                             printf("Unable to find data attribute of $BITMAP\n");
+                                        if(FileID == 0)
+                                            printf("Unable to find data attribute of $MFT\n");
+                                    }
+                                }
+                                
+                                if(FileID == 0){
+                                    void* MFTBitmap = NarFindFileAttributeFromFileRecord(FileRecord, 0xB0);
+                                    if(NULL != MFTBitmap){
+                                        uint32_t RegFound = 0;
+                                        uint8_t *DataRun = (uint8_t*)NAR_OFFSET(MFTBitmap, 64);
+                                        if(false == NarParseDataRun(DataRun, &ClustersExtracted[ClusterExtractedCount], MaxOutputLen - ClusterExtractedCount, &RegFound, false)){
+                                            printf("Error occured while parsing data run of special file case\n");
+                                        }
+                                        ClusterExtractedCount += RegFound;
+                                    }
+                                    else{
+                                        NAR_BREAK;
+                                        printf("Unable to find bitmap of mft!\n");
                                     }
                                 }
                                 
@@ -981,7 +1002,7 @@ ReadStream(volume_backup_inf* VolInf, void* CallerBuffer, unsigned int CallerBuf
         ULONGLONG FilePtrTarget = (ULONGLONG)VolInf->ClusterSize * ((ULONGLONG)VolInf->Stream.Records.Data[VolInf->Stream.RecIndex].StartPos + (ULONGLONG)VolInf->Stream.ClusterIndex);
         if (NarSetFilePointer(VolInf->Stream.Handle, FilePtrTarget)) {
             
-#if 0       
+#if 1
             ASSERT(ReadSize % 4096 == 0);
             ASSERT(FilePtrTarget % 4096 == 0);
             ASSERT(((char*)CurrentBufferOffset - (char*)BufferToFill) % 4096 == 0);
@@ -1107,6 +1128,7 @@ TerminateBackup(volume_backup_inf* V, BOOLEAN Succeeded) {
         }
     }
     else{
+        
     }
     
 #if 0    
@@ -1409,7 +1431,7 @@ GetVolumeRegionsFromBitmap(HANDLE VolumeHandle, uint32_t* OutRecordCount) {
     ULONGLONG MaxClusterCount = 0;
     
     // temporary allocation, will extend after determining exact size of the bitmap
-    DWORD BufferSize = sizeof(VOLUME_BITMAP_BUFFER); 
+    DWORD BufferSize = Megabyte(32); 
     
     VOLUME_BITMAP_BUFFER* Bitmap = (VOLUME_BITMAP_BUFFER*)malloc(BufferSize);
     
@@ -1423,8 +1445,10 @@ GetVolumeRegionsFromBitmap(HANDLE VolumeHandle, uint32_t* OutRecordCount) {
         if (SUCCEEDED(R)) {
             
             if(HitC == 1){
-                Bitmap = (VOLUME_BITMAP_BUFFER*)realloc(Bitmap, Bitmap->BitmapSize.QuadPart + sizeof(VOLUME_BITMAP_BUFFER) + 5);
-                goto p;
+                if(BufferSize < Bitmap->BitmapSize.QuadPart + sizeof(VOLUME_BITMAP_BUFFER)){
+                    Bitmap = (VOLUME_BITMAP_BUFFER*)realloc(Bitmap, Bitmap->BitmapSize.QuadPart + sizeof(VOLUME_BITMAP_BUFFER) + 5);
+                    goto p;
+                }
             }
             
             MaxClusterCount = (ULONGLONG)Bitmap->BitmapSize.QuadPart;
@@ -3712,8 +3736,7 @@ NarInitPool(void *Memory, int MemorySize, int PoolSize){
 
 #define loop for(;;)
 
-void
-DEBUG_Restore(){
+void DEBUG_Restore(){
     
     size_t MemLen = Megabyte(512);
     std::wstring MetadataPath = L"";
@@ -3768,26 +3791,6 @@ DEBUG_Restore(){
     
     std::cout<<"Done !\n";
     FreeRestoreStream(Stream);
-    
-}
-
-void
-DEBUG_FileExplorer(){
-    ASSERT(0);    
-}
-
-
-void
-DEBUG_FileRestore(){
-    ASSERT(0);    
-}
-
-
-
-
-void
-DEBUG_FileExplorerQuery(){
-    ASSERT(0);
     
 }
 
@@ -3915,157 +3918,8 @@ bool SetDiskRestore(int DiskID, wchar_t Letter, size_t VolumeTotalSize, size_t E
 int
 wmain(int argc, wchar_t* argv[]) {
     
-    void* Mem = VirtualAlloc(0, Megabyte(512), MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
-    if(Mem){
-        
-        nar_arena Arena = ArenaInit(Mem, Megabyte(512));
-        DWORD Drives = GetLogicalDrives();
-        // NOTE(Batuhan): skip volume A and B
-        for (int CurrentDriveIndex = 2; CurrentDriveIndex < 26; CurrentDriveIndex++) {
-            ArenaReset(&Arena);
-            
-            if (Drives & (1 << CurrentDriveIndex)) {
-                char letter = ('A' + (char)CurrentDriveIndex);
-                //wchar_t **r = NarFindExtensions(letter, NarOpenVolume(letter), &argv[1][0], &Arena);
-#if 0
-                for(size_t i =0; r[i] != 0; i++){
-                    printf("%S\n", r[i]);
-                } 
-#endif
-                
-            }
-            else {
-                
-            }
-        }
-        
-    }
-    else{
-        
-    }
-    
+    DEBUG_Restore();
     return 0;
-    
-    uint32_t c= 0;
-    GetVolumeRegionsFromBitmap(NarOpenVolume('C'), &c);
-    return 0;
-    
-    //nar_arena Arena = ArenaInit(VirtualAlloc(0, 1024*1024*1024, MEM_COMMIT|MEM_RESERVE, PAGE_READWRITE), 1024*1024*1024);
-    
-    //DEBUG_Restore();
-    //return 0;
-    
-    //NarFindExtensions(argv[1][0], NarOpenVolume(argv[1][0]), argv[2], &Arena);
-    //return 0;
-    
-#if 0    
-    size_t RetCode = 0;
-    
-    auto ctx = ZSTD_createCCtx();
-    //RetCode = ZSTD_CCtx_setParameter(ctx, ZSTD_c_compressionLevel, ZSTD_strategy::ZSTD_btultra);
-    ASSERT(!ZSTD_isError(RetCode));
-    
-    auto fv = NarOpenFileView("NB_FULL-E05110429.nbfsf");
-    auto trg = fopen("testfile", "wb");
-    
-    void* d = fv.Data;
-    size_t bs = Megabyte(16);
-    
-    void* dst = malloc(bs);
-    size_t br = 0;
-    for(int i = 0;;i++){
-        size_t opsize = MIN(Megabyte(8), fv.Len - br);
-        
-        RetCode = ZSTD_compressCCtx(ctx, dst, bs, (unsigned char*)d + i*Megabyte(8), opsize, 7);
-        fwrite(dst, RetCode, 1, trg);
-        
-        br += opsize;
-        if(br >= fv.Len)
-            break;
-        
-        ASSERT(!ZSTD_isError(RetCode));
-        int hodl = 235;
-    }
-    
-    fclose(trg);
-    return 0;
-#endif
-    
-#if 0
-    
-    auto fv = NarOpenFileView("NB_FULL-E05111631.nbfsf");
-    void* Data = fv.Data;
-    size_t br = 0;
-    uint8_t* needle = (uint8_t*)Data;
-    for(;;){
-        
-        size_t CompressedSize   = ZSTD_findFrameCompressedSize(needle, 
-                                                               fv.Len - (needle - Data));
-        
-        size_t DecompressedSize = ZSTD_getFrameContentSize(needle, 
-                                                           fv.Len - (needle - Data));
-        
-        if(ZSTD_CONTENTSIZE_UNKNOWN == DecompressedSize
-           || ZSTD_CONTENTSIZE_ERROR == DecompressedSize){
-            if(ZSTD_CONTENTSIZE_UNKNOWN == DecompressedSize){
-                NAR_BREAK;
-            }
-            if(ZSTD_CONTENTSIZE_ERROR == DecompressedSize){
-                NAR_BREAK;
-            }
-        }
-        
-        if(ZSTD_isError(CompressedSize)){
-            NAR_BREAK;
-        }
-        
-        
-        needle += CompressedSize;
-        if(needle >= (uint8_t*)Data + fv.Len){
-            break;
-        }
-    }
-    
-    
-    
-#endif
-    
-    
-#if 0
-    //(wchar_t)argv[1][0]
-    wchar_t drive[] = {'C', ':', '\\'};
-    SetupVSS();
-    CComPtr<IVssBackupComponents> ptr;
-    wchar_t out[300];
-    
-    auto SnapshotID = GetShadowPath(drive, ptr, out, 300);
-    
-    HANDLE V = CreateFileW(out, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, NULL, NULL);
-    if(V!= INVALID_HANDLE_VALUE){
-        LONG Deleted=0;
-        VSS_ID NonDeleted;
-        HRESULT hr;
-        
-        printf("entera basarak vssi sonlandir\n");
-        int hodl;
-        scanf("%d", &hodl);
-        
-        CComPtr<IVssAsync> async;
-        hr = ptr->BackupComplete(&async);
-        if(hr == S_OK){
-            async->Wait();
-        }
-        hr = ptr->DeleteSnapshots(SnapshotID, VSS_OBJECT_SNAPSHOT, TRUE, &Deleted, &NonDeleted);
-    }
-    else{
-        printf("vss returned invalid handle value\n");
-    }
-    //PrintDebugRecords();
-    
-    printf("Done!\n");
-    
-    return 0;
-#endif
     
 #if 0
     {

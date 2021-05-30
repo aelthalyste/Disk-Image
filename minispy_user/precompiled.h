@@ -33,6 +33,5 @@
 
 #include "iphlpapi.h"
 
-
 #include "nar.h"
 #include "../inc/minispy.h"

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.IO;
-using NarDIWrapper;
+using NarNative;
 
 namespace DotNetTest
 {
@@ -13,18 +13,19 @@ namespace DotNetTest
 
         static void Main(string[] args)
         {
-            DiskTracker dt = new DiskTracker();
-            StreamInfo streamInfo = new StreamInfo();
-            if (dt.CW_InitTracker())
+            
+            string extension = ".dll";
+            
+            List<string> resAllVolumes = NarNative.ExtensionSearcher.FindExtensionAllVolumes(extension);
+            List<string> resSingleVolume = NarNative.ExtensionSearcher.FindExtension('C', extension);
+
+            foreach (var f in resAllVolumes)
             {
-                Console.WriteLine("Everything is ok\n");
-            }
-            else {
-                Console.WriteLine("Unable to init tracker\n");
+                Console.WriteLine(f);
             }
 
-            Console.Read();
-
+            string b= Console.ReadLine();
+            Console.WriteLine(b);
             return;
 
         }

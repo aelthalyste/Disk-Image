@@ -1,3 +1,4 @@
+#include "precompiled.h"
 #include "platform_io.h"
 #include <string>	
 #include <stdlib.h>

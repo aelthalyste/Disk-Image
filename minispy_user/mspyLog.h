@@ -16,10 +16,18 @@
 #include <stdio.h>
 #endif
 
+#if 0
 #define TIMED_BLOCK__(NAME, Number, ...) timed_block timed_##Number(__COUNTER__, __LINE__, __FUNCTION__, NAME);
 #define TIMED_BLOCK_(NAME, Number, ...)  TIMED_BLOCK__(NAME, Number,  ## __VA__ARGS__)
 #define TIMED_BLOCK(...)                 TIMED_BLOCK_("UNNAMED", __LINE__, ## __VA__ARGS__)
 #define TIMED_NAMED_BLOCK(NAME, ...)     TIMED_BLOCK_(NAME, __LINE__, ## __VA__ARGS__)
+#else
+
+#define TIMED_BLOCK__(NAME, Number, ...)
+#define TIMED_BLOCK_(NAME, Number, ...)  
+#define TIMED_BLOCK(...)                 
+#define TIMED_NAMED_BLOCK(NAME, ...)     
+#endif
 
 struct debug_record {
     char* FunctionName;
@@ -198,7 +206,6 @@ NarLog(const char *str, ...){
 #endif
     
 #if 1    
-	
 	static bool fileinit = false;
 	static FILE *File = 0;
 	if(fileinit == false){
@@ -677,9 +684,6 @@ AppendMFTFile(HANDLE File, HANDLE VSSHANDLE, data_array<nar_record> MFTLCN, int 
 
 inline BOOLEAN
 IsGPTVolume(char Letter);
-
-HANDLE
-NarOpenVolume(char Letter);
 
 void
 NarCloseVolume(HANDLE V);

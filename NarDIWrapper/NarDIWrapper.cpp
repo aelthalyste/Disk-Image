@@ -10,8 +10,8 @@
 #include <stdio.h>
 
 
-#include "mspyUser.cpp"
 #include "NarDIWrapper.h"
+#include "mspyUser.cpp"
 
 using namespace System;
 

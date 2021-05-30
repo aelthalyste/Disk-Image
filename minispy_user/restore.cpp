@@ -1,25 +1,5 @@
+#include "precompiled.h"
 #include "restore.h"
-
-
-template<typename StrType>
-inline bool
-NarReadMetadata(StrType path, backup_metadata* bm) {
-    bool Result = false;
-    if (NULL == bm)
-        return Result;
-    
-    // TODO (Batuhan): I have to put crc32-like thing to validate metadata.
-    if (NarFileReadNBytes(path, bm, sizeof(backup_metadata))) {
-        Result = true;
-    }
-    else {
-        NAR_DEBUG("Unable to read file %s", path.c_str());
-    }
-    
-    return Result;
-}
-
-
 
 
 const void*
@@ -166,7 +146,7 @@ NarReadBackup(restore_source* Rs, size_t* AvailableBytes) {
     
     Rs->AbsoluteNeedleInBytes = DataOffset;
     
-    //printf("Restore write : volume offset %8I64u size %8I64u backup read offset %8I64u\n", Rs->AbsoluteNeedleInBytes/4096ull, *AvailableBytes/4096ull, ((uint64_t)Rs->AdvancedSoFar - (uint64_t)ClustersToRead * Rs->ClusterSize)/4096ull);
+    printf("Restore write : volume offset %8I64u size %8I64u backup read offset %8I64u\n", Rs->AbsoluteNeedleInBytes/4096ull, *AvailableBytes/4096ull, ((uint64_t)Rs->AdvancedSoFar - (uint64_t)ClustersToRead * Rs->ClusterSize)/4096ull);
     
     return Result;
 }
@@ -183,13 +163,8 @@ NarReadZero(restore_source* Rs, size_t *AvailableBytes){
     return Result;
 }
 
-// i hate templates
-static inline void
-narrestorefilesource_compilation_force_unit() {
-    InitRestoreFileSource(std::wstring(L"soem file"), 0);
-    InitRestoreFileSource(std::string("soem file"), 0);
-}
 
+#if 0
 template<typename StrType>
 restore_source*
 InitRestoreFileSource(StrType MetadataPath, nar_arena* Arena, size_t MaxAdvanceSize) {
@@ -258,8 +233,10 @@ InitRestoreFileSource(StrType MetadataPath, nar_arena* Arena, size_t MaxAdvanceS
     
     return Result;
 }
+#endif
 
 
+#if 0
 template<typename StrType>
 restore_stream*
 InitFileRestoreStream(StrType MetadataFile, restore_target* Target, nar_arena* Arena, size_t MaxAdvanceSize) {
@@ -336,6 +313,7 @@ InitFileRestoreStream(StrType MetadataFile, restore_target* Target, nar_arena* A
     
     return Result;
 }
+#endif
 
 
 void

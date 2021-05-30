@@ -170,9 +170,76 @@ NarReadZero(restore_source* Rs, size_t *AvailableBytes);
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 template<typename StrType>
 restore_source*
-InitRestoreFileSource(StrType MetadataPath, nar_arena* Arena, size_t MaxAdvanceSize = 1024ull * 1024ull * 64ull);
+InitRestoreFileSource(StrType MetadataPath, nar_arena* Arena, size_t MaxAdvanceSize) {
+    
+    restore_source* Result = (restore_source*)ArenaAllocate(Arena, sizeof(restore_source));
+    memset(Result, 0, sizeof(restore_source));
+    Result->Type            = restore_source::Type_FileSource;
+    Result->MaxAdvanceSize  = MaxAdvanceSize;
+    Result->Read  = NarReadBackup;
+    Result->Error = RestoreSource_Errors::Error_NoError;
+    
+    bool Error = true;
+    
+    Result->Metadata = NarOpenFileView(MetadataPath);
+    if (Result->Metadata.Data) {
+        backup_metadata* bm = (backup_metadata*)Result->Metadata.Data;
+        
+        Result->ClusterSize = bm->ClusterSize;
+        
+        Result->ClusterSize 	= bm->ClusterSize;
+        Result->IsCompressed 	= false;
+        Result->BytesToBeCopied = bm->Size.Regions;
+        
+        StrType BinName;
+        GenerateBinaryFileName(bm->ID, bm->Version, BinName);
+        
+        StrType Dir = NarGetFileDirectory(MetadataPath);
+        
+        Result->Bin = NarOpenFileView((Dir + BinName));
+        if (NULL != Result->Bin.Data) {
+            // check if backup is compressed
+            
+            ASSERT(bm->Offset.RegionsMetadata < Result->Metadata.Len);
+            if (bm->Offset.RegionsMetadata < Result->Metadata.Len) {
+                Result->Regions = (nar_record*)((unsigned char*)Result->Metadata.Data + bm->Offset.RegionsMetadata);
+                Result->RecordsLen = bm->Size.RegionsMetadata / sizeof(nar_record);
+                
+                if (bm->IsCompressed) {
+                    Result->IsCompressed = true;
+                    Result->BfSize       = bm->FrameSize;
+                    Result->Bf           = ArenaAllocate(Arena, bm->FrameSize + Megabyte(1));
+                }
+                else{
+                    // NOTE(Batuhan): nothing special here
+                }
+                
+                Error = false;
+            }
+            else {
+                printf("Error : Regions metadata < metadata.len\n");
+            }
+            
+            
+        }
+        else {
+            NarFreeFileView(Result->Metadata);
+        }
+    }
+    else{
+        printf("Unable to open metadata\n");
+    }
+    
+    if(true == Error){
+        Result->Read = NarReadZero;
+    }
+    
+    return Result;
+}
+
 
 void
 FreeRestoreSource(restore_source *Rs);
@@ -181,9 +248,84 @@ FreeRestoreSource(restore_source *Rs);
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 template<typename StrType>
 restore_stream*
-InitFileRestoreStream(StrType MetadataFile, restore_target* Target, nar_arena* Arena, size_t MaxAdvanceSize = 1024ull * 1024ull * 64ull);
+InitFileRestoreStream(StrType MetadataFile, restore_target* Target, nar_arena* Arena, size_t MaxAdvanceSize) {
+    
+    restore_stream* Result = NULL;
+    
+    Result = (restore_stream*)ArenaAllocate(Arena, sizeof(restore_stream));
+    Result->Target = Target;
+    
+    backup_metadata bm;
+    
+    StrType RootDir = NarGetFileDirectory(MetadataFile);
+    if (NarReadMetadata(MetadataFile, &bm)) {
+        size_t SourceFileCount = 1;
+        if (bm.Version != NAR_FULLBACKUP_VERSION) {
+            if (bm.BT == BackupType::Diff) {
+                SourceFileCount = 2;
+                
+                Result->Sources   = (restore_source**)ArenaAllocate(Arena, SourceFileCount * sizeof(restore_source*));
+                Result->SourceCap = SourceFileCount;
+                Result->CSI = 0;
+                
+                // nar_backup_id ID, int Version, StrType &Res
+                StrType fpath;
+                StrType dpath;
+                {
+                    GenerateMetadataName(bm.ID, NAR_FULLBACKUP_VERSION, fpath);
+                    GenerateMetadataName(bm.ID, bm.Version, dpath);
+                }
+                
+                Result->Sources[0] = InitRestoreFileSource(RootDir + fpath, Arena, MaxAdvanceSize);
+                Result->Sources[1] = InitRestoreFileSource(RootDir + dpath, Arena, MaxAdvanceSize);
+                Result->BytesToBeCopied += Result->Sources[0]->BytesToBeCopied;
+                Result->BytesToBeCopied += Result->Sources[1]->BytesToBeCopied;
+                
+                
+            }
+            else if (bm.BT == BackupType::Inc) {
+                
+                SourceFileCount   = bm.Version + SourceFileCount + 1;
+                Result->Sources   = (restore_source**)ArenaAllocate(Arena, SourceFileCount * sizeof(restore_source*));
+                Result->SourceCap = SourceFileCount;
+                Result->CSI       = 0;
+                
+                static_assert(NAR_FULLBACKUP_VERSION == -1, "Changing FULLBACKUP VERSION number breaks this loop, and probably many more hidden ones too");
+                
+                for (int i = NAR_FULLBACKUP_VERSION; i <= bm.Version; i++) {
+                    StrType fpath;
+                    GenerateMetadataName(bm.ID, i, fpath);
+                    printf("Inc backup file path : %S\n", fpath.c_str());
+                    Result->Sources[i + 1]   = InitRestoreFileSource(RootDir + fpath, Arena, MaxAdvanceSize);
+                    Result->BytesToBeCopied += Result->Sources[i + 1]->BytesToBeCopied;
+                }
+                
+            }
+            else {
+                // that shouldnt be possible
+                NAR_BREAK;
+            }
+            
+        }
+        else {
+            Result->Sources = (restore_source**)ArenaAllocate(Arena, 8);
+            Result->Sources[0] = InitRestoreFileSource(MetadataFile, Arena, MaxAdvanceSize);
+            Result->SourceCap = 1;
+            Result->CSI = 0;
+            Result->BytesToBeCopied = Result->Sources[0]->BytesToBeCopied;
+        }
+        
+    }
+    else {
+        Result = NULL;
+    }
+    
+    return Result;
+}
+
 
 void
 FreeRestoreStream(restore_stream *Stream);
@@ -194,8 +336,22 @@ const void*
 NarReadBackup(restore_source* Rs, size_t *AvailableBytes);
 
 template<typename StrType>
-inline bool
-NarReadMetadata(StrType path, backup_metadata *bm);
+bool
+NarReadMetadata(StrType path, backup_metadata* bm) {
+    bool Result = false;
+    if (NULL == bm)
+        return Result;
+    
+    // TODO (Batuhan): I have to put crc32-like thing to validate metadata.
+    if (NarFileReadNBytes(path, bm, sizeof(backup_metadata))) {
+        Result = true;
+    }
+    else {
+        NAR_DEBUG("Unable to read file %s", path.c_str());
+    }
+    
+    return Result;
+}
 
 #if _WIN32
 
