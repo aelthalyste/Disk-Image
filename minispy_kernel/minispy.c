@@ -20,7 +20,7 @@ Environment:
 
 #include "mspyKern.h"
 #include <Ntstrsafe.h>
-#define DbgPrint
+//#define DbgPrint
 
 //
 //  Global variables
@@ -152,7 +152,7 @@ Return Value:
             leave;
         }
         
-
+        
         status = FltBuildDefaultSecurityDescriptor(&sd, FLT_PORT_ALL_ACCESS);
         
         if (!NT_SUCCESS(status)) {
@@ -582,8 +582,8 @@ Return Value:
         DbgPrint("Unload called with FLTFL_FILTER_UNLOAD_MANDATORY Flags parameter\n");
     }
     
-
-
+    
+    
     //
     //  Close the server port. This will stop new connections.
     //
@@ -625,7 +625,7 @@ Return Value:
         ZwClose(NarData.FileHandles[i]);
     }
     ExFreePoolWithTag(NarData.FileHandles, NAR_TAG);
-
+    
     
     return STATUS_SUCCESS;
 }
@@ -976,21 +976,21 @@ NarMemCompare(const void* m1, const void* m2, size_t n) {
                 return FALSE;
             }
         }
-
+        
     }
     else {
         unsigned char *c1 = (unsigned char*)m1;
         unsigned char* c2 = (unsigned char*)m2;
-
-
+        
+        
         for (size_t i = 0; i < n; i++) {
             if (c1[i] != c2[i]) {
                 return FALSE;
             }
         }
-
+        
     }
-
+    
     return TRUE;
 }
 
@@ -1061,7 +1061,7 @@ NarWriteLogsToFile(nar_log_thread_params* tp, PETHREAD *OutTObject) {
     KIRQL oldirql = KeGetCurrentIrql();
     
     KeLowerIrql(PASSIVE_LEVEL);
-
+    
     HANDLE Thread = 0;
     PETHREAD ThreadObject = 0;
     NTSTATUS status = PsCreateSystemThread(&Thread, THREAD_ALL_ACCESS, 0, 0, 0, NarLogThread, tp);
@@ -1099,11 +1099,11 @@ NarWriteLogsToFile(nar_log_thread_params* tp, PETHREAD *OutTObject) {
         else {
             *OutTObject = ThreadObject;
         }
-
+        
     }
     
     KfRaiseIrql(oldirql);
-
+    
     return status;
     
 }
@@ -1188,29 +1188,29 @@ NarLogThread(PVOID param) {
 BOOLEAN
 NTAPI
 NarSuffixUnicodeString(
-    _In_ PUNICODE_STRING Str,
-    _In_ PUNICODE_STRING Suffix,
-    _In_ BOOLEAN CaseInSensitive
-)
+                       _In_ PUNICODE_STRING Str,
+                       _In_ PUNICODE_STRING Suffix,
+                       _In_ BOOLEAN CaseInSensitive
+                       )
 {
     if (Suffix->Length > Str->Length) {
         return FALSE;
     }
-
+    
     return (RtlCompareUnicodeStrings(
-        Str->Buffer + (Str->Length - Suffix->Length)/2,
-        Suffix->Length/2,
-        Suffix->Buffer,
-        Suffix->Length/2,
-        TRUE
-    ) == 0);
-
+                                     Str->Buffer + (Str->Length - Suffix->Length)/2,
+                                     Suffix->Length/2,
+                                     Suffix->Buffer,
+                                     Suffix->Length/2,
+                                     TRUE
+                                     ) == 0);
+    
 }
 
 const UNICODE_STRING IgnoreSuffixTable[] = {
-    RTL_CONSTANT_STRING(L"$Mft"),
-    RTL_CONSTANT_STRING(L"$LogFile"),
-    RTL_CONSTANT_STRING(L"$BitMap"),
+    RTL_CONSTANT_STRING(L"\\$Mft"),
+    RTL_CONSTANT_STRING(L"\\$LogFile"),
+    RTL_CONSTANT_STRING(L"\\$BitMap"),
     RTL_CONSTANT_STRING(L".tmp"),
     RTL_CONSTANT_STRING(L"~"),
     RTL_CONSTANT_STRING(L".tib.metadata"),
@@ -1221,6 +1221,9 @@ const UNICODE_STRING IgnoreSuffixTable[] = {
 };
 
 const UNICODE_STRING IgnoreMidStringTable[] = {
+    RTL_CONSTANT_STRING("\\$Mft::"),
+    RTL_CONSTANT_STRING(L"\\$LogFile::"),
+    RTL_CONSTANT_STRING(L"\\$BitMap::"),
     RTL_CONSTANT_STRING(L"\\AppData\\Local\\Temp"),
     RTL_CONSTANT_STRING(L"\\AppData\\Local\\Microsoft\\Windows\\Temporary Internet Files"),
     RTL_CONSTANT_STRING(L"\\AppData\\Google\\Chrome\\User Data\\Default\\Cache"),
@@ -1239,10 +1242,10 @@ const UNICODE_STRING IgnoreMidStringTable[] = {
 FLT_PREOP_CALLBACK_STATUS
 #pragma warning(suppress: 6262) // higher than usual stack usage is considered safe in this case
 SpyPreOperationCallback(
-    _Inout_ PFLT_CALLBACK_DATA Data,
-    _In_ PCFLT_RELATED_OBJECTS FltObjects,
-    _Flt_CompletionContext_Outptr_ PVOID* CompletionContext
-)
+                        _Inout_ PFLT_CALLBACK_DATA Data,
+                        _In_ PCFLT_RELATED_OBJECTS FltObjects,
+                        _Flt_CompletionContext_Outptr_ PVOID* CompletionContext
+                        )
 /*++
 
 Routine Description:
@@ -1270,8 +1273,8 @@ Return Value:
 
 --*/
 {
-
-
+    
+    
     UNICODE_STRING defaultName;
     PUNICODE_STRING nameToUse;
     NTSTATUS status;
@@ -1281,11 +1284,11 @@ Return Value:
     UNREFERENCED_PARAMETER(CompletionContext);
     
     CompletionContext = 0;
-
+    
     if (Data->Iopb->MajorFunction != IRP_MJ_WRITE && Data->Iopb->MajorFunction != IRP_MJ_SHUTDOWN) {
         return FLT_PREOP_SUCCESS_NO_CALLBACK;
     }
-
+    
 #if 1
     // that might deadlock the system
     // If system shutdown requested, dont bother to log changes
@@ -1301,30 +1304,30 @@ Return Value:
         for (int i = 0; i < NAR_MAX_VOLUME_COUNT; i++) {
             // ExAcquireFastMutex(&NarData.VolumeRegionBuffer[i].FastMutex);
             if (NarData.VolumeRegionBuffer[i].VolFileID != NAR_KERNEL_INVALID_FILE_ID) {
-
+                
                 if (NAR_MB_DATA_USED(NarData.VolumeRegionBuffer[i].MemoryBuffer) > 0) {
                     nar_log_thread_params* tp = (nar_log_thread_params*)ExAllocatePoolWithTag(NonPagedPoolNx, sizeof(nar_log_thread_params), NAR_TAG);
-
+                    
                     if (tp != NULL) {
-
+                        
                         memset(tp, 0, sizeof(*tp));
                         tp->Data                = NAR_MB_DATA(NarData.VolumeRegionBuffer[i].MemoryBuffer);
                         tp->DataLen             = NAR_MB_DATA_USED(NarData.VolumeRegionBuffer[i].MemoryBuffer);
                         tp->FileID              = NarData.VolumeRegionBuffer[i].VolFileID;
                         tp->ShouldFlush         = TRUE;
                         tp->ShouldQueryFileSize = FALSE;
-
+                        
                         status = NarWriteLogsToFile(tp, 0);
                         if (NT_SUCCESS(status)) {
-                        
+                            
                         }
                         else {
-                        
+                            
                         }
-
+                        
                         NAR_INIT_MEMORYBUFFER(NarData.VolumeRegionBuffer[i].MemoryBuffer);
                         ExFreePoolWithTag(tp, NAR_TAG);
-
+                        
                     }
                     else {
                         DbgPrint("Unable to allocate memory to flush logs at preoperation routine\n");
@@ -1333,96 +1336,86 @@ Return Value:
             }
             
             //ExReleaseFastMutex(&NarData.VolumeRegionBuffer[i].FastMutex);
-
+            
         }
-
+        
         return FLT_PREOP_SUCCESS_NO_CALLBACK;
     }
-
-
+    
+    
 #endif
-
+    
     if (Data && Data->Iopb && Data->Iopb->TargetFileObject) {
         // filter out temporary files and files that would be closed if last handle freed
         if ((Data->Iopb->TargetFileObject->Flags & FO_TEMPORARY_FILE) == FO_TEMPORARY_FILE) {
             return  FLT_PREOP_SUCCESS_NO_CALLBACK;
         }
-    
+        
         if ((Data->Iopb->TargetFileObject->Flags & FO_DELETE_ON_CLOSE) == FO_DELETE_ON_CLOSE) {
             return  FLT_PREOP_SUCCESS_NO_CALLBACK;
         }
-    
+        
         if (Data->Iopb->MajorFunction != IRP_MJ_WRITE) {
             return FLT_PREOP_SUCCESS_NO_CALLBACK;
         }
-    
+        
     }
     else {
         return FLT_PREOP_SUCCESS_NO_CALLBACK;
     }
-
-
+    
+    
     
     ULONG LenReturned = 0;
     // skip directories
     
     
     
-    // if (Data->Iopb->MajorFunction != IRP_MJ_SHUTDOWN) {
-    //     FILE_STANDARD_INFORMATION fsi = { 0 };
-    //     status = FltQueryInformationFile(FltObjects->Instance, FltObjects->FileObject, &fsi, sizeof(FILE_STANDARD_INFORMATION), FileStandardInformation, &LenReturned);
-    //     if (NT_SUCCESS(status)) {
-    //         if (fsi.Directory == TRUE) {
-    //             return FLT_PREOP_SUCCESS_NO_CALLBACK;
-    //         }
-    //     }
-    //     else {
-    //         DbgPrint("Failed to query information file\n");
-    //     }
-    // }
-    // return FLT_PREOP_SUCCESS_NO_CALLBACK;
-
-
+    
     PFLT_FILE_NAME_INFORMATION nameInfo = NULL;
-
+    
 #if 1
     
-    unsigned char UnicodeStrBuffer[NAR_LOOKASIDE_SIZE];
-
+    unsigned char UnicodeStrBuffer[4096];
+    
     if (FltObjects->FileObject != NULL) {
         
         status = FltGetFileNameInformation(Data,
                                            FLT_FILE_NAME_NORMALIZED |
                                            NarData.NameQueryMethod,
                                            &nameInfo);
-
-        if (NT_SUCCESS(status) && nameInfo->Name.Length != 0) {
         
-            DbgPrint("2127 File name %wZ\n", &nameInfo->Name);
+        if (NT_SUCCESS(status) && nameInfo->Name.Length != 0) {
+            
             for (size_t i = 0; 
                  i < sizeof(IgnoreSuffixTable) / sizeof(IgnoreSuffixTable[0]); 
                  i++) 
             {
                 if (NarSuffixUnicodeString(&nameInfo->Name, &IgnoreSuffixTable[i], TRUE)) {
-                    //NAR_ASSERT(i != 0);
-                    DbgPrint("2127sf Filtering out name %wZ\n", &nameInfo->Name);
+                    DbgPrint("SF file name %wZ\n", &nameInfo->Name);
                     goto NAR_PREOP_FAILED_END;
                 }
             }
             
             for (size_t i = 0; 
-                i < sizeof(IgnoreMidStringTable) / sizeof(IgnoreMidStringTable[0]); 
-                i++) 
+                 i < sizeof(IgnoreMidStringTable) / sizeof(IgnoreMidStringTable[0]); 
+                 i++) 
             {
                 if (NarSubMemoryExists(nameInfo->Name.Buffer, IgnoreMidStringTable[i].Buffer, nameInfo->Name.Length, IgnoreMidStringTable[i].Length)) {
-                    //NAR_ASSERT(i > 4);
-                    DbgPrint("2127sb Filtering out file %wZ\n", &nameInfo->Name);
+                    DbgPrint("SB file name %wZ\n", &nameInfo->Name);
                     goto NAR_PREOP_FAILED_END;
                 }
             }
-
-
-
+            
+            LARGE_INTEGER Size;
+            status = FsRtlGetFileSize(Data->Iopb->TargetFileObject, &Size);
+            if (!NT_SUCCESS(status)) {
+                DbgPrint("Size failed file name %wZ\n");
+            }
+            DbgPrint("Size success file name %wZ %I64d\n", &nameInfo->Name, Size.QuadPart);
+            if (Size.QuadPart < 1024) {
+                return FLT_PREOP_SUCCESS_NO_CALLBACK;
+            }
             
 #if 1
             ULONG BytesReturned = 0;
@@ -1431,17 +1424,16 @@ Return Value:
             
             STARTING_VCN_INPUT_BUFFER StartingInputVCNBuffer;
             memset(&StartingInputVCNBuffer, 0, sizeof(StartingInputVCNBuffer));
-
+            
             RETRIEVAL_POINTERS_BUFFER ClusterMapBuffer;
             
             DWORD WholeFileMapBufferSize = sizeof(UnicodeStrBuffer);
-            RETRIEVAL_POINTERS_BUFFER* WholeFileMapBuffer = (RETRIEVAL_POINTERS_BUFFER*)&UnicodeStrBuffer[0];
+            RETRIEVAL_POINTERS_BUFFER* WholeFileMapBuffer = &UnicodeStrBuffer[0]; // ExAllocatePoolWithTag(NonPagedPoolNx, 4096, NAR_TAG);
             memset(WholeFileMapBuffer, 0, WholeFileMapBufferSize);
             
             
             ClusterMapBuffer.StartingVcn.QuadPart = 0;
             StartingInputVCNBuffer.StartingVcn.QuadPart = 0;
-            
             
             UINT32 RegionLen = 0;
             
@@ -1450,9 +1442,9 @@ Return Value:
             LARGE_INTEGER WriteOffsetLargeInt = Data->Iopb->Parameters.Write.ByteOffset;
             ULONG WriteLen = Data->Iopb->Parameters.Write.Length;
             UINT32 NClustersToWrite = (WriteLen / (ClusterSize)+1);
-            
+            Data->Iopb->TargetFileObject->Size;
             UINT32 ClusterWriteStartOffset = (UINT32)(WriteOffsetLargeInt.QuadPart / (LONGLONG)(ClusterSize));
-                        
+            
 #define NAR_PREOP_MAX_RECORD_COUNT 100
             
             struct {
@@ -1465,24 +1457,23 @@ Return Value:
             
             UINT32 MaxIteration = 0;
             
-            BOOLEAN HeadFound = FALSE;
-            BOOLEAN CeilTest = FALSE;
+            BOOLEAN HeadFound   = FALSE;
+            BOOLEAN CeilTest    = FALSE;
+            
+            status = FltFsControlFile(FltObjects->Instance,
+                                      Data->Iopb->TargetFileObject,
+                                      FSCTL_GET_RETRIEVAL_POINTERS,
+                                      &StartingInputVCNBuffer,
+                                      sizeof(StartingInputVCNBuffer),
+                                      WholeFileMapBuffer,
+                                      WholeFileMapBufferSize,
+                                      &BytesReturned);
+            
+            // ExFreePoolWithTag(WholeFileMapBuffer, NAR_TAG);
             
             
-            status = FltDeviceIoControlFile(FltObjects->Instance,
-                         Data->Iopb->TargetFileObject,
-                         FSCTL_GET_RETRIEVAL_POINTERS,
-                         &StartingInputVCNBuffer,
-                         sizeof(StartingInputVCNBuffer),
-                         WholeFileMapBuffer,
-                         WholeFileMapBufferSize,
-                         &BytesReturned
-                         );
-
-
             if (status != STATUS_END_OF_FILE && !NT_SUCCESS(status)) {
                 DbgPrint("FltFsControl failed with code %X,  file name %wZ\n", status, &nameInfo->Name);
-                
                 goto NAR_PREOP_FAILED_END;
             }
             if (WholeFileMapBuffer->Extents[0].Lcn.QuadPart == (long long)-1) {
@@ -1598,7 +1589,7 @@ Return Value:
                 
                 
             }
-                        
+            
             
             // TODO(BATUHAN): try one loop via KeTestSpinLock, to fast check if volume is available for fast access, if it is available and matches GUID, immidiately flush all regions and return, if not available test higher elements in list.
             char CompareBuffer[NAR_GUID_STR_SIZE];
@@ -1614,7 +1605,7 @@ Return Value:
                     DbgPrint("RECCOUNT WAS ZERO %wZ\n", &nameInfo->Name);
                 }
             }
-
+            
             if (RecCount > 0) {
                 
                 INT32 SizeNeededForMemoryBuffer = 2 * RecCount * sizeof(UINT32);
@@ -1636,10 +1627,10 @@ Return Value:
                         if (NarMemCompare(&CompareBuffer[0], NarData.VolumeRegionBuffer[i].GUIDStrVol.Buffer, NAR_GUID_STR_SIZE) == TRUE) {
                             RemainingSizeOnBuffer = NAR_MEMORYBUFFER_SIZE - NAR_MB_USED(NarData.VolumeRegionBuffer[i].MemoryBuffer);
                             
-                            //for (size_t j = 0; j < RecCount; j++) {
-                            //    DbgPrint("Detected region : start %7u %7u\n", P[j].S, P[j].L);
-                            //}
-
+                            for (size_t j = 0; j < RecCount; j++) {
+                                DbgPrint("Detected region : start %7u end %7u\n", P[j].S, P[j].L);
+                            }
+                            
                             if (RemainingSizeOnBuffer >= SizeNeededForMemoryBuffer) {
                                 NAR_MB_PUSH(NarData.VolumeRegionBuffer[i].MemoryBuffer, &P[0], SizeNeededForMemoryBuffer);
                                 Added = TRUE;
@@ -1691,14 +1682,14 @@ Return Value:
             
         }
         else {
-        if (nameInfo != 0) {
-            if (nameInfo->Name.Length == 0) {
-                DbgPrint("Fuck you microsoft\n");
+            if (nameInfo != 0) {
+                if (nameInfo->Name.Length == 0) {
+                    DbgPrint("Fuck you microsoft\n");
+                }
             }
+            goto NAR_PREOP_FAILED_END;
         }
-        goto NAR_PREOP_FAILED_END;
-        }
-
+        
         
     }
     
@@ -1798,7 +1789,7 @@ SpyVolumeInstanceSetup(
     if ((Flags & FLTFL_INSTANCE_SETUP_MANUAL_ATTACHMENT)
         && VolumeFilesystemType == FLT_FSTYPE_NTFS
         && VolumeDeviceType == FILE_DEVICE_DISK_FILE_SYSTEM) {
-
+        
         return STATUS_SUCCESS;
         
     }
