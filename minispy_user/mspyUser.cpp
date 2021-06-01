@@ -37,12 +37,10 @@ _Analysis_mode_(_Analysis_code_type_user_code_)
 #include <stdlib.h>
 #include <cstdio>
 
-
-#if 1
+#include "zstd.h"
 #include "platform_io.cpp"
 #include "file_explorer.cpp"
 #include "restore.cpp"
-#endif
 
 #if 0
 inline void* 

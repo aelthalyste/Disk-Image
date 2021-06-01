@@ -759,4 +759,3 @@ NarGetBackupsInDirectory(const wchar_t* Directory, backup_metadata* B, int Buffe
 
 BOOLEAN
 ConnectDriver(PLOG_CONTEXT Ctx);
-
