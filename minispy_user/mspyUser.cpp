@@ -1002,7 +1002,7 @@ ReadStream(volume_backup_inf* VolInf, void* CallerBuffer, unsigned int CallerBuf
         ULONGLONG FilePtrTarget = (ULONGLONG)VolInf->ClusterSize * ((ULONGLONG)VolInf->Stream.Records.Data[VolInf->Stream.RecIndex].StartPos + (ULONGLONG)VolInf->Stream.ClusterIndex);
         if (NarSetFilePointer(VolInf->Stream.Handle, FilePtrTarget)) {
             
-#if 1
+#if 0
             ASSERT(ReadSize % 4096 == 0);
             ASSERT(FilePtrTarget % 4096 == 0);
             ASSERT(((char*)CurrentBufferOffset - (char*)BufferToFill) % 4096 == 0);
