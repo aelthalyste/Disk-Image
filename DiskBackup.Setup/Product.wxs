@@ -23,7 +23,7 @@
     <CustomAction Id="Uninstall" Directory="INSTALLFOLDER" ExeCommand="[SystemFolder]cmd.exe /c UninstallFile.bat" Execute="deferred" Impersonate="no" Return="ignore" />
     <CustomAction Id="Reinstall" BinaryKey="ReinstallCustomAction" DllEntry="VerifyReinstall" Return="check"/>
     <InstallUISequence>
-      <Custom Action='Reinstall' Before='PrepareDlg' />
+      <Custom Action='Reinstall' After='ProgressDlg' />
     </InstallUISequence>
     <InstallExecuteSequence>
       <Custom Action="Uninstall" Before="RemoveFiles">REMOVE~="ALL"</Custom>
