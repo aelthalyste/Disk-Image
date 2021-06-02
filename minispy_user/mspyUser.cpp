@@ -2660,8 +2660,8 @@ SaveMetadata(char Letter, int Version, int ClusterSize, BackupType BT,
     
     
 #if 1
-    
-    if(false){
+    if(BM.IsOSVolume){
+        
         GUID GUIDMSRPartition = { 0 }; // microsoft reserved partition guid
         GUID GUIDSystemPartition = { 0 }; // efi-system partition guid
         GUID GUIDRecoveryPartition = { 0 }; // recovery partition guid
@@ -2669,8 +2669,66 @@ SaveMetadata(char Letter, int Version, int ClusterSize, BackupType BT,
         StrToGUID("{e3c9e316-0b5c-4db8-817d-f92df00215ae}", &GUIDMSRPartition);
         StrToGUID("{c12a7328-f81f-11d2-ba4b-00a0c93ec93b}", &GUIDSystemPartition);
         StrToGUID("{de94bba4-06d1-4d40-a16a-bfd50179d6ac}", &GUIDRecoveryPartition);
+        
+        
+        int DiskID = NarGetVolumeDiskID(BM.Letter);
+        char DiskPath[128];
+        snprintf(DiskPath, sizeof(DiskPath), "\\\\?\\PhysicalDrive%i", DiskID);
+        HANDLE DiskHandle = CreateFileA(DiskPath, GENERIC_READ, FILE_SHARE_WRITE | FILE_SHARE_READ | FILE_SHARE_DELETE, 0, OPEN_EXISTING, 0, 0);
+        if(DiskHandle != INVALID_HANDLE_VALUE){
+            
+            DWORD DLSize = 1024*2;
+            DRIVE_LAYOUT_INFORMATION_EX *DL = (DRIVE_LAYOUT_INFORMATION_EX*)malloc(DLSize);
+            DWORD Hell = 0;
+            if (DeviceIoControl(DiskHandle, IOCTL_DISK_GET_DRIVE_LAYOUT_EX, 0, 0, DL, DLSize, &Hell, 0)) {
+                
+                if (DL->PartitionStyle == PARTITION_STYLE_GPT) {
+                    
+                    for (unsigned int PartitionIndex = 0; PartitionIndex < DL->PartitionCount; PartitionIndex++) {
+                        
+                        PARTITION_INFORMATION_EX* PI = &DL->PartitionEntry[PartitionIndex];
+                        // NOTE(Batuhan): Finding recovery partition via GUID
+                        if (IsEqualGUID(PI->Gpt.PartitionType, GUIDRecoveryPartition)) {
+                            BM.Size.Recovery = PI->PartitionLength.QuadPart;
+                        }
+                        if(IsEqualGUID(PI->Gpt.PartitionType, GUIDSystemPartition)){
+                            BM.GPT_EFIPartitionSize = PI->PartitionLength.QuadPart;
+                        }
+                        
+                    }
+                    
+                }
+                else if(DL->PartitionStyle == PARTITION_STYLE_MBR){
+                    
+                    for (unsigned int PartitionIndex = 0; PartitionIndex < DL->PartitionCount; ++PartitionIndex){
+                        
+                        PARTITION_INFORMATION_EX* PI = &DL->PartitionEntry[PartitionIndex];
+                        // System partition
+                        if (PI->Mbr.BootIndicator == TRUE) {
+                            BM.MBR_SystemPartitionSize = PI->PartitionLength.QuadPart;
+                            break;
+                        }
+                        
+                    }
+                    
+                }
+                
+                
+            }
+            else {
+                printf("DeviceIoControl with argument IOCTL_DISK_GET_DRIVE_LAYOUT_EX failed for drive %i, cant append recovery file to backup metadata\n", DiskID, Letter);
+                DisplayError(GetLastError());
+            }
+            
+            free(DL);
+            CloseHandle(DiskHandle);
+            
+        }
+        else{
+            printf("Couldn't open disk %i as file, for volume %c's metadata @ version %i\n", DiskID, BM.Letter, BM.Version);
+        }
+        
     }
-    
 #endif
     
     /*
