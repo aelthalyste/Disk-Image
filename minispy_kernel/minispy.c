@@ -599,7 +599,7 @@ Return Value:
     DbgPrint("Filter unregistered\n");
     
     
-    if(0){
+    if(1){
         for (int i = 0; i < NAR_MAX_VOLUME_COUNT; i++) {
             
             // since we just cancelled all pending operations, we dont have to acquire mutexes nor release them
@@ -1184,6 +1184,55 @@ NarLogThread(PVOID param) {
 }
 
 
+NTSTATUS
+NarGetFileSize(
+    _In_ PFLT_INSTANCE Instance,
+    _In_ PFILE_OBJECT FileObject,
+    _Out_ PLONGLONG Size
+)
+/*++
+
+Routine Description:
+
+    This routine obtains the size.
+
+Arguments:
+
+    Instance - Opaque filter pointer for the caller. This parameter is required and cannot be NULL.
+
+    FileObject - File object pointer for the file. This parameter is required and cannot be NULL.
+
+    Size - Pointer to a LONGLONG indicating the file size. This is the output.
+
+Return Value:
+
+    Returns statuses forwarded from FltQueryInformationFile.
+
+--*/
+{
+    NTSTATUS status = STATUS_SUCCESS;
+    FILE_STANDARD_INFORMATION standardInfo;
+
+    //
+    //  Querying for FileStandardInformation gives you the offset of EOF.
+    //
+
+    status = FltQueryInformationFile(Instance,
+        FileObject,
+        &standardInfo,
+        sizeof(FILE_STANDARD_INFORMATION),
+        FileStandardInformation,
+        NULL);
+
+    if (NT_SUCCESS(status)) {
+
+        *Size = standardInfo.EndOfFile.QuadPart;
+    }
+
+    return status;
+}
+
+
 // stupid suffix code
 BOOLEAN
 NTAPI
@@ -1288,7 +1337,11 @@ Return Value:
     if (Data->Iopb->MajorFunction != IRP_MJ_WRITE && Data->Iopb->MajorFunction != IRP_MJ_SHUTDOWN) {
         return FLT_PREOP_SUCCESS_NO_CALLBACK;
     }
-    
+    if (NarData.IsShutdownInitiated == TRUE) {
+        return FLT_PREOP_SUCCESS_NO_CALLBACK;
+    }
+
+
 #if 1
     // that might deadlock the system
     // If system shutdown requested, dont bother to log changes
@@ -1345,6 +1398,8 @@ Return Value:
     
 #endif
     
+
+
     if (Data && Data->Iopb && Data->Iopb->TargetFileObject) {
         // filter out temporary files and files that would be closed if last handle freed
         if ((Data->Iopb->TargetFileObject->Flags & FO_TEMPORARY_FILE) == FO_TEMPORARY_FILE) {
@@ -1364,8 +1419,7 @@ Return Value:
         return FLT_PREOP_SUCCESS_NO_CALLBACK;
     }
     
-    
-    
+
     ULONG LenReturned = 0;
     // skip directories
     
@@ -1407,15 +1461,25 @@ Return Value:
                 }
             }
             
-            LARGE_INTEGER Size;
-            status = FsRtlGetFileSize(Data->Iopb->TargetFileObject, &Size);
-            if (!NT_SUCCESS(status)) {
-                DbgPrint("Size failed file name %wZ\n");
+
+            PIRP irp = IoGetTopLevelIrp();
+            if (irp == NULL) {
+                LARGE_INTEGER Size;
+                status = NarGetFileSize(FltObjects->Instance, Data->Iopb->TargetFileObject, &Size);
+                if (!NT_SUCCESS(status)) {
+
+                }
+                if (NT_SUCCESS(status) && Size.QuadPart < 1024) {
+                    return FLT_PREOP_SUCCESS_NO_CALLBACK;
+                }
             }
-            DbgPrint("Size success file name %wZ %I64d\n", &nameInfo->Name, Size.QuadPart);
-            if (Size.QuadPart < 1024) {
+            else {
                 return FLT_PREOP_SUCCESS_NO_CALLBACK;
             }
+
+#if 1
+#endif
+
             
 #if 1
             ULONG BytesReturned = 0;

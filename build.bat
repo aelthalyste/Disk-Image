@@ -7,16 +7,17 @@ set compile_flags= -nologo /MT /EHsc /W0 /DEBUG:FULL /Zi /FC /Fa /Od /F 16777216
 rem /fsanitize=address
 rem /DEBUG:FULL /Zi /FC 
 rem /fsanitize=address
-rem /d2cgsummary
+rem /d2cgsummary /showIncludes
 rem /Bt
 rem -ftime-trace
 
 set linker_flags= /INCREMENTAL:NO "fltLib.lib" "vssapi.lib" "libzstd_static.lib" "libzstd.lib"
 
 pushd minispy_user\
-rem 
+rem if not exist precompiled.obj 
 if not exist precompiled.obj cl /c  %compile_flags% /Yc"precompiled.h" "precompiled.cpp" 
 
+rem "file_explorer.cpp" "restore.cpp" "platform_io.cpp"
 cl /Yu"precompiled.h" "mspyUser.cpp" "precompiled.obj" %build_options% %compile_flags% /I"../inc" %linker_flags%
 
 rem CLEANUP
