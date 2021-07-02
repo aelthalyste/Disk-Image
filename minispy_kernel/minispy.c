@@ -660,8 +660,8 @@ Return Value:
     PAGED_CODE();
     
     DbgPrint("Query Teardown called\n");
-    
-    return STATUS_SUCCESS;
+    return STATUS_FLT_DO_NOT_DETACH;
+    //return STATUS_SUCCESS;
 }
 
 

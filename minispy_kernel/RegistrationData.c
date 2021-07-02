@@ -270,27 +270,22 @@ const FLT_CONTEXT_REGISTRATION Contexts[] = {
 
 CONST FLT_REGISTRATION FilterRegistration = {
 
-    sizeof(FLT_REGISTRATION),               //  Size
-    FLT_REGISTRATION_VERSION,               //  Version   
-#if MINISPY_WIN8 
-    FLTFL_REGISTRATION_SUPPORT_NPFS_MSFS,   //  Flags
-#else
-    0,                                      //  Flags
-#endif // MINISPY_WIN8
+    sizeof(FLT_REGISTRATION),                       //  Size
+    FLT_REGISTRATION_VERSION,                       //  Version   
+    FLTFL_REGISTRATION_DO_NOT_SUPPORT_SERVICE_STOP, //  Flags
+    Contexts,                                       //  Context
+    Callbacks,                                      //  Operation callbacks
 
-    Contexts,                               //  Context
-    Callbacks,                              //  Operation callbacks
+    SpyFilterUnload,                                //  FilterUnload
 
-    SpyFilterUnload,                        //  FilterUnload
+    SpyVolumeInstanceSetup,                         //  InstanceSetup
+    SpyQueryTeardown,                               //  InstanceQueryTeardown
+    0,                                              //  InstanceTeardownStart
+    0,                                              //  InstanceTeardownComplete
 
-    SpyVolumeInstanceSetup,                 //  InstanceSetup
-    SpyQueryTeardown,                       //  InstanceQueryTeardown
-    0,                       //  InstanceTeardownStart
-    0,                    //  InstanceTeardownComplete
-
-    NULL,                                   //  GenerateFileName
-    NULL,                                   //  GenerateDestinationFileName
-    NULL                                    //  NormalizeNameComponent
+    NULL,                                           //  GenerateFileName
+    NULL,                                           //  GenerateDestinationFileName
+    NULL                                            //  NormalizeNameComponent
 
 };
 
