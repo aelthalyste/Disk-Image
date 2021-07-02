@@ -40,13 +40,16 @@
 #define NAR_FEXP_END_MARK -2
 #define NAR_FEXP_SUCCEEDED 1
 
-#define NAR_DATA_FLAG 0x80
-#define NAR_INDEX_ALLOCATION_FLAG 0xA0
-#define NAR_INDEX_ROOT_FLAG 0x90
-#define NAR_BITMAP_FLAG     0xB0
-#define NAR_ATTRIBUTE_LIST 0x20
 
-#define NAR_FE_DIRECTORY_FLAG 0x01
+
+#define NAR_ATTRIBUTE_LIST        0x20
+#define NAR_FILENAME_FLAG         0x30
+#define NAR_DATA_FLAG             0x80
+#define NAR_INDEX_ROOT_FLAG       0x90
+#define NAR_INDEX_ALLOCATION_FLAG 0xA0
+#define NAR_BITMAP_FLAG           0xB0
+
+#define NAR_FE_DIRECTORY_FLAG     0x01
 
 #define NAR_OFFSET(m, o) ((char*)(m) + (o))
 
@@ -75,17 +78,41 @@ struct FileRecordHeader {
 	uint32_t recordNumber;
 };
 
-struct name_and_parent_id{
+
+struct name_pid{
+    wchar_t *Name;
     uint32_t FileID;
     uint32_t ParentFileID;
-    uint8_t  NameLen; // not including whitespace
-    wchar_t *Name;
+    uint8_t  NameLen; // 
+};
+
+
+struct multiple_pid{
+    name_pid PIDS[16];
+    uint8_t Len = 0;
 };
 
 
 struct extension_search_result {
     wchar_t **Files;
     uint64_t Len;
+};
+
+
+struct extension_finder_memory{
+    nar_arena Arena;
+    linear_allocator StringAllocator;
+    
+    void*       FileBuffer;
+    uint64_t    FileBufferSize;
+    
+    nar_record* MFTRecords;
+    uint64_t    MFTRecordCount;
+    
+    void*       DirMappingMemory;
+    void*       PIDArrMemory;
+    
+    uint64_t    TotalFC;
 };
 
 
@@ -139,8 +166,15 @@ NarGetMFTRegionsFromBootSector(HANDLE Volume,
 
 
 
-name_and_parent_id
+multiple_pid
 NarGetFileNameAndParentID(void *FileRecord);
 
+extension_finder_memory
+NarSetupExtensionFinderMemory(HANDLE VolumeHandle);
+
+void
+NarFreeExtensionFinderMemory(extension_finder_memory *Memory);
+
 extension_search_result
-NarFindExtensions(char VolumeLetter, HANDLE VolumeHandle, wchar_t *Extension, nar_arena *Arena);
+NarFindExtensions(char VolumeLetter, HANDLE VolumeHandle, wchar_t *Extension, extension_finder_memory *Memory);
+

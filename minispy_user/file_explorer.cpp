@@ -7,6 +7,39 @@
 #define TIMED_BLOCK(...)                 
 #define TIMED_NAMED_BLOCK(NAME, ...)     
 
+double AllocatorTimeElapsed = 0.0f;
+uint64_t AllocationCount = 0;
+
+
+#if 0
+void*
+ProfileAllocator(linear_allocator *a, size_t n){
+    AllocationCount++;
+    int64_t start = NarGetPerfCounter();
+    void* Result = LinearAllocate(a, n);
+    AllocatorTimeElapsed += NarTimeElapsed(start);
+    return Result;
+}
+
+void*
+ProfileAllocatorAligned(linear_allocator *a, size_t n, size_t al){
+    AllocationCount++;
+    int64_t start = NarGetPerfCounter();
+    void *Result = LinearAllocateAligned(a, n, al);
+    AllocatorTimeElapsed += NarTimeElapsed(start);
+    return Result;
+}
+
+#define LinearAllocate(Allocator, Size) ProfileAllocator(Allocator, Size)
+#define LinearAllocateAligned(Allocator, Size, Align) ProfileAllocatorAligned(Allocator, Size, Align)
+#endif
+
+inline BOOL
+CompareWCharStrings(const void *v1, const void *v2){
+    wchar_t *str1 = *(wchar_t**)v1;
+    wchar_t *str2 = *(wchar_t**)v2;
+    return wcscmp(str1, str2);
+}
 
 /**/
 inline UINT64
@@ -325,102 +358,159 @@ NarGetMFTRegionsFromBootSector(HANDLE Volume,
     return Result;
 }
 
+void
+NarFreeExtensionFinderMemory(extension_finder_memory *Memory){
+    VirtualFree(Memory->Arena.Memory, 0, MEM_RELEASE);
+    NarFreeLinearAllocator(&Memory->StringAllocator);
+    memset(Memory, 0, sizeof(*Memory));
+}
 
-extension_search_result
-NarFindExtensions(char VolumeLetter, HANDLE VolumeHandle, wchar_t *Extension, nar_arena *Arena) {
-    extension_search_result Result = {0};
-    
-    BOOLEAN JustExtractMFTRegions  = FALSE;
-    uint64_t ScratchArenaSize 	 = 0;
-    void* ScratchMemory            = 0;
-	nar_arena ScratchArena         = {0};
+extension_finder_memory
+NarSetupExtensionFinderMemory(HANDLE VolumeHandle){
+    extension_finder_memory Result = {0};
     
     uint32_t MFTRecordsCapacity = 256;
-    uint64_t FileRecordSize     = 1024;
     uint64_t TotalFC            = 0;
-    nar_record* MFTRecords      = (nar_record*)ArenaAllocateAligned(Arena, MFTRecordsCapacity*sizeof(nar_record), sizeof(nar_arena));
-    wchar_t **NameMap           = NULL;
-    uint32_t *IndiceMap 	    = NULL;
-    uint32_t *IndiceArr 	    = NULL;
-    uint8_t  *FileBuffer        = NULL;
-    uint8_t  *FileNameSize      = NULL;
-    uint64_t FileBufferSize     = Megabyte(128);
-    uint64_t ArrLen     	    = 0;
+    nar_record* MFTRecords      = (nar_record*)calloc(1024, sizeof(nar_record));
     
+    uint64_t FileBufferSize        = Megabyte(128);
+    uint64_t ArenaSize             = 0;
+    uint64_t StringAllocatorSize   = 0;
+    
+    
+    void* ArenaMemory = 0;
+    
+    if(MFTRecords){
+        uint32_t MFTRecordsCount = 0;
+        bool tres = NarGetMFTRegionsFromBootSector(VolumeHandle, 
+                                                   MFTRecords, 
+                                                   &MFTRecordsCount, 
+                                                   MFTRecordsCapacity);
+        
+        if(tres){
+            for(unsigned int MFTOffsetIndex = 0; MFTOffsetIndex < MFTRecordsCount; MFTOffsetIndex++){
+                TotalFC += MFTRecords[MFTOffsetIndex].Len;
+            }
+            TotalFC*=4;
+        }
+        else{
+            
+        }
+        
+        ArenaSize  = TotalFC*2*sizeof(name_pid) + FileBufferSize + Megabyte(50);
+        
+        // At worst, all of the files might be extension we might looking for,
+        // so we better allocate 1gig extra for them + stack
+        StringAllocatorSize = 260*sizeof(wchar_t)*TotalFC + Megabyte(500);
+        
+        ArenaMemory = VirtualAlloc(0, ArenaSize, MEM_COMMIT|MEM_RESERVE, PAGE_READWRITE);
+        if(NULL ==ArenaMemory){
+            goto bail;
+        }
+        Result.Arena = ArenaInit(ArenaMemory, ArenaSize);
+        
+        Result.StringAllocator = NarCreateLinearAllocator(StringAllocatorSize, Megabyte(50));
+        if(Result.StringAllocator.Memory == NULL){
+            goto bail;
+        }
+        
+        Result.TotalFC  = TotalFC;
+        
+        Result.FileBuffer     = ArenaAllocate(&Result.Arena, FileBufferSize);
+        Result.FileBufferSize = FileBufferSize;
+        
+        Result.MFTRecords     = (nar_record*)ArenaAllocate(&Result.Arena, MFTRecordsCount*sizeof(nar_record));
+        Result.MFTRecordCount = MFTRecordsCount;
+        memcpy(Result.MFTRecords, MFTRecords, sizeof(nar_record)*MFTRecordsCount);
+        
+        Result.DirMappingMemory = ArenaAllocate(&Result.Arena, TotalFC*sizeof(name_pid));
+        Result.PIDArrMemory = ArenaAllocate(&Result.Arena, TotalFC*sizeof(name_pid));
+        
+        ASSERT(Result.PIDArrMemory);
+        ASSERT(Result.DirMappingMemory);
+        ASSERT(Result.MFTRecords);
+        ASSERT(Result.FileBuffer);
+        
+    }
+    
+    
+    if(MFTRecords != 0){
+        free(MFTRecords);
+    }
+    
+    return Result;
+    
+    bail:
+    if(0 != MFTRecords){
+        free(MFTRecords);
+    }
+    if(0 != ArenaMemory){
+        VirtualFree(ArenaMemory, 0, MEM_RELEASE);
+    }
+    if(0 != Result.StringAllocator.Memory){
+        NarFreeLinearAllocator(&Result.StringAllocator);
+    }
+    
+    return {0};
+}
+
+extension_search_result
+NarFindExtensions(char VolumeLetter, HANDLE VolumeHandle, wchar_t *Extension, extension_finder_memory *Memory) {
+    
+    extension_search_result Result = {0};
+    
+    
+    name_pid *DirectoryMapping  = (name_pid*)Memory->DirMappingMemory; 
+    name_pid *PIDResultArr      = (name_pid*)Memory->PIDArrMemory; 
+    uint64_t ArrLen     	    = 0;
+    uint64_t FileRecordSize     = 1024; 
     size_t ExtensionLen = wcslen(Extension);
     double ParserTotalTime    = 0;
     double TraverserTotalTime = 0;
     int64_t ParserLoopCount    = 0;
     
     DWORD BR = 0;
-    unsigned int MFTRecordsCount  = 0;
     
     uint64_t ClusterSize    = NarGetVolumeClusterSize(VolumeLetter);
-    
-    bool tres = NarGetMFTRegionsFromBootSector(VolumeHandle, 
-                                               MFTRecords, 
-                                               &MFTRecordsCount, 
-                                               MFTRecordsCapacity);
-    
-    if(tres){
-        TotalFC = 0;
-        for(unsigned int MFTOffsetIndex = 0; MFTOffsetIndex < MFTRecordsCount; MFTOffsetIndex++){
-            TotalFC += MFTRecords[MFTOffsetIndex].Len;
-        }
-        TotalFC *= 4;
-        printf("Total file count is %I64u\n", TotalFC);
-        
-        ScratchArenaSize 	 = (TotalFC*350 + FileBufferSize);
-        ScratchMemory         = VirtualAlloc(0, ScratchArenaSize, MEM_COMMIT|MEM_RESERVE, PAGE_READWRITE);  
-        ScratchArena         = ArenaInit(ScratchMemory, ScratchArenaSize);
-        
-        NameMap  	 = (wchar_t**)ArenaAllocateAligned(&ScratchArena, TotalFC*8ull, 8);        
-        FileBuffer    =  (uint8_t*)ArenaAllocateAligned(&ScratchArena, FileBufferSize, 16);
-        IndiceMap 	= (uint32_t*)ArenaAllocateAligned(&ScratchArena, TotalFC*4, sizeof(IndiceMap[0]));
-        IndiceArr 	= (uint32_t*)ArenaAllocateAligned(&ScratchArena, TotalFC*4, sizeof(IndiceArr[0]));
-    	FileNameSize  =  (uint8_t*)ArenaAllocateAligned(&ScratchArena, TotalFC, 1);
-    }
-    else{
-        return {0};
-    }
     
     uint32_t BufferStartFileID = 0;
     uint64_t VCNOffset = 0;
     
+    uint64_t DEBUG_I = 0;
     
     
     for (uint64_t MFTOffsetIndex = 0; 
-         MFTOffsetIndex < MFTRecordsCount; 
+         MFTOffsetIndex < Memory->MFTRecordCount; 
          MFTOffsetIndex++) 
     {
         
         
         uint64_t FilePerCluster = ClusterSize / 1024ull;
-        uint64_t Offset = (uint64_t)MFTRecords[MFTOffsetIndex].StartPos * (uint64_t)ClusterSize;
+        uint64_t Offset = (uint64_t)Memory->MFTRecords[MFTOffsetIndex].StartPos * (uint64_t)ClusterSize;
         
         // set file pointer to actual records
         if (NarSetFilePointer(VolumeHandle, Offset)) {
             
-            uint64_t FileRemaining   = (uint64_t)MFTRecords[MFTOffsetIndex].Len * (uint64_t)FilePerCluster;
+            uint64_t FileRemaining   = (uint64_t)Memory->MFTRecords[MFTOffsetIndex].Len * (uint64_t)FilePerCluster;
             while(FileRemaining){
                 
-                uint64_t FBCount       = FileBufferSize/1024ull;
+                uint64_t FBCount       = Memory->FileBufferSize/1024ull;
                 size_t TargetFileCount = MIN(FileRemaining, FBCount);
                 FileRemaining         -= TargetFileCount;
                 
                 ReadFile(VolumeHandle, 
-                         FileBuffer, 
+                         Memory->FileBuffer, 
                          TargetFileCount*1024ull, 
                          &BR, 0);
                 ASSERT(BR == TargetFileCount*1024);
                 
                 if(BR == TargetFileCount*1024ull){
                     
-                    //int64_t start = NarGetPerfCounter();
-                    //ParserLoopCount += TargetFileCount;
+                    int64_t start = NarGetPerfCounter();
+                    ParserLoopCount += TargetFileCount;
                     for (uint64_t FileRecordIndex = 0; FileRecordIndex < TargetFileCount; FileRecordIndex++) {
                         
-                        void* FileRecord = (BYTE*)FileBuffer + (uint64_t)FileRecordSize * (uint64_t)FileRecordIndex;
+                        void* FileRecord = (uint8_t*)Memory->FileBuffer + (uint64_t)FileRecordSize * (uint64_t)FileRecordIndex;
                         
                         // file flags are at 22th offset in the record
                         if (*(int32_t*)FileRecord != 'ELIF') {
@@ -428,59 +518,130 @@ NarFindExtensions(char VolumeLetter, HANDLE VolumeHandle, wchar_t *Extension, na
                             continue;
                         }
                         
-#if 0                        
-                        void *AttributeList = NarFindFileAttributeFromFileRecord(FileRecord, NAR_ATTRIBUTE_LIST);                        
-#endif
-                        
-                        FileRecordHeader *h = (FileRecordHeader*)FileRecord;
-                        if(h->inUse == 0){
-                            continue;
-                        }
                         
                         // lsn, lsa swap to not confuse further parsing stages.
                         ((uint8_t*)FileRecord)[510] = *(uint8_t*)NAR_OFFSET(FileRecord, 50);
                         ((uint8_t*)FileRecord)[511] = *(uint8_t*)NAR_OFFSET(FileRecord, 51);
                         
-                        uint32_t FileID   = 0;
+                        FileRecordHeader *r = (FileRecordHeader*)FileRecord;
+                        if(r->inUse == 0){
+                            continue;
+                        }
+                        
+                        
+                        uint32_t FileID      = NarGetFileID(FileRecord);;
+                        uint32_t IsDirectory = r->isDirectory;
                         uint32_t ParentID = 0;
                         
-                        name_and_parent_id NamePID = NarGetFileNameAndParentID(FileRecord);
                         
-                        if(NamePID.Name != 0){
+                        multiple_pid MultPIDs = NarGetFileNameAndParentID(FileRecord);
+                        
+                        void *AttributeList = NarFindFileAttributeFromFileRecord(FileRecord, NAR_ATTRIBUTE_LIST);
+                        
+                        for(size_t _pidi = 0; _pidi < MultPIDs.Len; _pidi++){
+                            name_pid NamePID = MultPIDs.PIDS[_pidi];
                             
-                            // NamePID.Name[0] != L'$'
-                            IndiceMap[NamePID.FileID] = NamePID.ParentFileID;
-                            
-                            uint64_t NameSize = (NamePID.NameLen + 1) * 2; 
-                            NameMap[NamePID.FileID] = (wchar_t*)ArenaAllocate(&ScratchArena, NameSize);
-                            
-                            memcpy(NameMap[NamePID.FileID], NamePID.Name, NameSize - 2);
-                            FileNameSize[NamePID.FileID] = NamePID.NameLen + 1; // +1 for null termination
-                            
-                            if(ExtensionLen < FileNameSize[NamePID.FileID]){
+                            if(NamePID.Name != 0){
                                 
-                                wchar_t *LastChars = &NameMap[NamePID.FileID][FileNameSize[NamePID.FileID] - ExtensionLen - 1];
-                                bool Add = true;
-                                for(uint64_t wi = 0; wi < ExtensionLen; wi++){
-                                    if(LastChars[wi] != Extension[wi]){
-                                        Add = false;
+                                // 
+                                if(IsDirectory){
+                                    DirectoryMapping[FileID] = NamePID;
+                                    uint32_t NameSize = (NamePID.NameLen + 1) * 2;
+                                    DirectoryMapping[FileID].Name = (wchar_t*)LinearAllocate(&Memory->StringAllocator, NameSize);
+                                    memcpy(DirectoryMapping[FileID].Name, NamePID.Name, NameSize - 2);
+                                    DirectoryMapping[FileID].NameLen = NamePID.NameLen + 1;
+                                }
+                                else{
+                                    /*
+    If it's not a directory, we don't need to save it for possible
+    future references, since we know no file has ever referenced to another file, but they rather reference their roots to  directories.
+    So we can skip at this phase, and check it at extension comparision stage. If it matches, then we add.
+                                   */
+                                }
+                                
+                                
+                                uint64_t NameSize = (NamePID.NameLen + 1)* 2;
+                                
+                                
+                                // NOTE(Batuhan): if _pidi > 0, we know that file name matches, if it wouldn't be we wouldn't even see _pidi =1, check below for break condition. 
+                                if(ExtensionLen <= NamePID.NameLen){
+                                    
+                                    wchar_t *LastChars = &NamePID.Name[NamePID.NameLen - ExtensionLen];
+                                    bool Add = true;
+                                    for(uint64_t wi = 0; wi < ExtensionLen; wi++){
+                                        if(towlower(LastChars[wi]) != towlower(Extension[wi])){
+                                            Add = false;
+                                            break;
+                                        }
+                                    }
+                                    
+                                    if(Add){
+                                        PIDResultArr[ArrLen] = NamePID;
+                                        uint64_t NameSize = (NamePID.NameLen + 1) * 2;
+                                        PIDResultArr[ArrLen].Name = (wchar_t*)LinearAllocate(&Memory->StringAllocator, NameSize);
+                                        memcpy(PIDResultArr[ArrLen].Name, NamePID.Name, NameSize - 2);
+                                        PIDResultArr[ArrLen].NameLen = NamePID.NameLen + 1;
+                                        ArrLen++;
+                                    }
+                                    
+                                    // NOTE(Batuhan): bail out if file name doesn't match, its same entry all the way down.
+                                    else{
                                         break;
                                     }
+                                    
                                 }
                                 
-                                if(Add){
-                                    IndiceArr[ArrLen++] = NamePID.FileID;
-                                }
+                            }
+                            else{
                                 
                             }
                             
                         }
-                        else{
+                        
+                        if(MultPIDs.Len == 0 
+                           && NULL != AttributeList
+                           && !!IsDirectory){
+                            // resolve the attribute list and
+                            // redirect this entry.
+                            
+                            // skip first 24 bytes, header.
+                            uint32_t AttrListLen       = *(uint32_t*)NAR_OFFSET(AttributeList, 16);
+                            uint32_t LenRemaining      = AttrListLen;
+                            uint8_t* CurrentAttrRecord = (uint8_t*)NAR_OFFSET(AttributeList, 24);
+                            
+                            while(LenRemaining){
+                                uint16_t RecordLen = *(uint16_t*)NAR_OFFSET(CurrentAttrRecord, 4);
+                                uint32_t Type      = *(uint32_t*)CurrentAttrRecord;
+                                
+                                
+                                if(Type == NAR_FILENAME_FLAG){
+                                    // found the filename attribute, but it might be referencing itself, if so scan for other filename entries.
+                                    uint32_t AttrListFileID = *(uint32_t*)NAR_OFFSET(CurrentAttrRecord, 16);
+                                    if(AttrListFileID != FileID){
+                                        
+                                        // found it, rereference the map to this id.
+                                        ASSERT(!!IsDirectory);
+                                        
+                                        DirectoryMapping[FileID] = {0};
+                                        DirectoryMapping[FileID].ParentFileID = AttrListFileID;
+                                        break;
+                                    }
+                                    else{
+                                        
+                                    }
+                                    
+                                }
+                                
+                                CurrentAttrRecord += RecordLen;
+                                LenRemaining      -= RecordLen;
+                            }
+                            
                         }
+                        
                         
                     }
                     
-                    //ParserTotalTime += NarTimeElapsed(start);
+                    ParserTotalTime += NarTimeElapsed(start);
                     
                 }
                 else{
@@ -495,34 +656,38 @@ NarFindExtensions(char VolumeLetter, HANDLE VolumeHandle, wchar_t *Extension, na
     }
     
     
-    //int64_t TraverserStart = NarGetPerfCounter();
+    int64_t TraverserStart = NarGetPerfCounter();
     
     uint64_t SkippedFileCount = 0;
-    wchar_t** FilenamesExtended = (wchar_t**)ArenaAllocateAligned(Arena, ArrLen*8, 8);
-    uint32_t *stack = (uint32_t*)ArenaAllocateAligned(&ScratchArena, 1024*4, 4);
+    wchar_t** FilenamesExtended = (wchar_t**)LinearAllocateAligned(&Memory->StringAllocator, ArrLen*8, 8);
+    uint32_t *stack = (uint32_t*)ArenaAllocateAligned(&Memory->Arena, 1024*4, 4);
+    uint32_t DuplicateStart = 0;
     
     for(uint64_t s = 0; s<ArrLen; s++){
         
         uint32_t si = 0;
-        uint16_t TotalFileSize = 0;
+        uint16_t TotalFileNameSize = 0;
         memset(&stack[0], 0, sizeof(stack));
         
-        for(uint32_t ParentID = IndiceMap[IndiceArr[s]]; 
-            ParentID != 5 && ParentID != 0; 
-            ParentID    = IndiceMap[ParentID])
-        {
-            stack[si++] = ParentID;
-            _mm_prefetch((const char*)&IndiceMap[ParentID], _MM_HINT_T0);
-        }
+        name_pid* TargetPID = &PIDResultArr[s];
         
-        //TODO prefetch next element into the cache
-        for(uint32_t ParentID = IndiceMap[IndiceArr[s]]; 
-            ParentID != 5 && ParentID != 0; ParentID    = IndiceMap[ParentID]){
-            TotalFileSize += FileNameSize[ParentID];
+        
+        for(uint32_t ParentID = TargetPID->ParentFileID;
+            ParentID != 5;
+            ParentID = DirectoryMapping[ParentID].ParentFileID)
+        {
+            if(DirectoryMapping[ParentID].Name == 0){
+                ASSERT(DirectoryMapping[ParentID].ParentFileID != 0);
+                continue;
+            }
+            stack[si++]    = ParentID;
+            TotalFileNameSize += DirectoryMapping[ParentID].NameLen;
+            ASSERT(DirectoryMapping[ParentID].FileID != 0);
+            _mm_prefetch((const char*)&DirectoryMapping[ParentID], _MM_HINT_T0);
         }
         
         // additional memory for trailing backlashes
-        FilenamesExtended[s] = (wchar_t*)ArenaAllocate(Arena, TotalFileSize*2 + 400);
+        FilenamesExtended[s] = (wchar_t*)LinearAllocate(&Memory->StringAllocator, TotalFileNameSize*2 + 200);
         uint64_t WriteIndex = 0;
         
         {
@@ -533,56 +698,45 @@ NarFindExtensions(char VolumeLetter, HANDLE VolumeHandle, wchar_t *Extension, na
         }
         
         
-        for(uint32_t i =0; i<si; i++){
-            if(stack[si - i - 1] != 5 
-               && stack[si - i - 1] != 0 
-               && FileNameSize[stack[si - i - 1]] != 0)
+        for(int64_t i = si - 1; i>=0; i--){
+            if(stack[i] != 5 
+               && stack[i] != 0)
             {
-                _mm_prefetch((const char*)&FileNameSize[stack[si - i - 1]], _MM_HINT_T0);
-                _mm_prefetch((const char*)&NameMap[stack[si - i - 1]], _MM_HINT_T0);
+                uint32_t FLen = DirectoryMapping[stack[i]].NameLen - 1;
+                memcpy(&FilenamesExtended[s][WriteIndex], 
+                       DirectoryMapping[stack[i]].Name, 
+                       FLen*2);
+                WriteIndex += FLen;
                 
-                if(!(FileNameSize[stack[si - i - 1]] != 0)){
-                    break;
-                }
-                
-                uint64_t FSize = FileNameSize[stack[si - i - 1]] - 1;// remove null termination
-                if(FSize == (uint64_t)-1){
-                    break;
-                }	
-                
-                {
-                    memcpy(&FilenamesExtended[s][WriteIndex], NameMap[stack[si - i - 1]], FSize*2);
-                    WriteIndex += FSize;
-                    
-                    memcpy(&FilenamesExtended[s][WriteIndex], L"\\", 2);
-                    WriteIndex += 1;
-                }
-                
-            }
-            else{
+                memcpy(&FilenamesExtended[s][WriteIndex], L"\\", 2);
+                WriteIndex += 1;
             }
         }
         
-        uint64_t FSize = FileNameSize[IndiceArr[s]] - 1;
-        memcpy(&FilenamesExtended[s][WriteIndex], NameMap[IndiceArr[s]], FSize*2);
+        uint64_t FSize = TargetPID->NameLen;
+        memcpy(&FilenamesExtended[s][WriteIndex], TargetPID->Name, FSize*2);
         WriteIndex += FSize;
         FilenamesExtended[s][WriteIndex] = 0;        
         
     }
     
-    //TraverserTotalTime = NarTimeElapsed(TraverserStart);
+    TraverserTotalTime = NarTimeElapsed(TraverserStart);
     
-#if 0    
+    //qsort(FilenamesExtended, ArrLen, 8, CompareWCharStrings);
+    
+#if 0
     for(size_t i =0; i<ArrLen; i++){
         //printf("%S\n", FilenamesExtended[i]);
     }
 #endif
     
-    //printf("Parser, %9u files in %.5f sec, file per ms %.5f\n", TotalFC, ParserTotalTime, (double)TotalFC/ParserTotalTime/1000.0);
-    //printf("Traverser %8u files in %.5f sec, file per ms %.5f\n", ArrLen, TraverserTotalTime, (double)ArrLen/TraverserTotalTime/1000.0);
-    //printf("Match count %I64u\n", ArrLen);
-	
-	VirtualFree(ScratchMemory, ScratchArenaSize, MEM_RELEASE);
+    printf("Parser, %9u files in %.5f sec, file per ms %.5f\n", Memory->TotalFC, ParserTotalTime, (double)Memory->TotalFC/ParserTotalTime/1000.0);
+    printf("Traverser %8u files in %.5f sec, file per ms %.5f\n", ArrLen, TraverserTotalTime, (double)ArrLen/TraverserTotalTime/1000.0);
+    //printf("Allocating count %8u in  %.5f sec, allocation per ms %.5f\n", AllocationCount, AllocatorTimeElapsed, (double)AllocationCount/AllocatorTimeElapsed/(1000.0));
+    
+    printf("Match count %I64u\n", ArrLen);
+    
+    
     Result.Files = FilenamesExtended;
     Result.Len   = ArrLen;
     
@@ -592,36 +746,59 @@ NarFindExtensions(char VolumeLetter, HANDLE VolumeHandle, wchar_t *Extension, na
 
 uint32_t
 NarGetFileID(void* FileRecord){
-    return *(uint32_t*)NAR_OFFSET(FileRecord, 44);
+    uint32_t Result = *(uint32_t*)NAR_OFFSET(FileRecord, 44);
+    return Result;
 }
 
-name_and_parent_id
+
+multiple_pid
 NarGetFileNameAndParentID(void *FileRecord){
+    multiple_pid Result = {0};
     
-    name_and_parent_id Result = {0};
-    Result.FileID = NarGetFileID(FileRecord);
+    uint32_t FileID = NarGetFileID(FileRecord);
     
     // doesnt matter if it's posix or normal file name attribute
     void* FNAttribute = NarFindFileAttributeFromFileRecord(FileRecord, 0x30);
+    uint32_t RemainingLen = 0;
+    
     if(FNAttribute){
-        // POSIX, skip
-        if(*(uint8_t*)NAR_OFFSET(FNAttribute, 89) == 2){
-            uint32_t AttLen = *(uint32_t*)NAR_OFFSET(FNAttribute, 4);
-            FNAttribute = NAR_OFFSET(FNAttribute, AttLen);
+        
+        uint32_t AttributeID = *(uint32_t*)FNAttribute;
+        
+        while(AttributeID == 0x30){
             
-            if(*(uint32_t*)FNAttribute != 0x30){
-                memset(&Result, 0, sizeof(Result));
-                goto bail;
+            AttributeID = *(uint32_t*)FNAttribute;
+            
+            if(AttributeID == 0x30){
+                
+                // if posix name, skip.
+                if(*(uint8_t*)NAR_OFFSET(FNAttribute, 89) != 2){
+                    Result.PIDS[Result.Len].FileID       = FileID;
+                    Result.PIDS[Result.Len].Name         = (wchar_t*)NAR_OFFSET(FNAttribute, 90);
+                    Result.PIDS[Result.Len].NameLen      = *(uint8_t*)NAR_OFFSET(FNAttribute, 88);
+                    Result.PIDS[Result.Len].ParentFileID = *(uint32_t*)NAR_OFFSET(FNAttribute, 24);
+                    Result.Len++;
+                    if(Result.Len == 16){
+                        NAR_BREAK;
+                    }
+                }
+                else{
+                    //skip
+                }
+                
             }
+            if(AttributeID > 0x30){
+                break;
+            }
+            
+            uint16_t AttrSize = *(uint16_t*)NAR_OFFSET(FNAttribute, 4);
+            FNAttribute       = NAR_OFFSET(FNAttribute, AttrSize);
             
         }
         
-        Result.Name = (wchar_t*)NAR_OFFSET(FNAttribute, 90);
-        Result.NameLen  = *(uint8_t*)NAR_OFFSET(FNAttribute, 88);
-        Result.ParentFileID = *(uint32_t*)NAR_OFFSET(FNAttribute, 24);
     }
     else{
-        int hodl = 25;
+        
     }
     
     bail:;

@@ -67,7 +67,6 @@ namespace NarDIWrapper {
             if (C == NULL) {
                 printf("Coulndt load from boot file, initializing new CONTEXT\n");
                 C = new LOG_CONTEXT;
-                memset(C, 0, sizeof(LOG_CONTEXT));
             }
             else {
                 // found old state
@@ -83,8 +82,6 @@ namespace NarDIWrapper {
     
     DiskTracker::~DiskTracker() {
         // We don't ever need to free anything, this class-object is supposed to be ALWAYS alive with program 
-        //free(C->Volumes.Data);
-        //delete C;
     }
     
     

@@ -3970,12 +3970,80 @@ bool SetDiskRestore(int DiskID, wchar_t Letter, size_t VolumeTotalSize, size_t E
     
 }
 
+#include <unordered_map>
+
+char* 
+ConsumeNextLine(char *Input, char* Out, size_t MaxBf, char* InpEnd){
+    size_t i =0;
+    char *Result = 0;
+    for(i =0; Input[i] != '\r' && Input + i < InpEnd; i++);
+    if(i<MaxBf){
+        memcpy(Out, Input, i);
+        Out[i] = 0;
+        if(Input + (i + 2) < InpEnd){
+            Result = &Input[i + 2];
+        }
+    }
+    return Result;
+}
 
 int
 wmain(int argc, wchar_t* argv[]) {
     
-    DEBUG_Restore();
+    HANDLE VolumeHandle = NarOpenVolume('C');
+    
+    extension_finder_memory ExMemory = NarSetupExtensionFinderMemory(VolumeHandle);
+    
+    extension_search_result result = NarFindExtensions('C', NarOpenVolume('C'), L".dll", &ExMemory);
+    
+    
+    std::unordered_map<std::wstring, int> NarResult;
+    
+#if 1    
+    for(size_t i =0; i<result.Len; i++){
+        NarResult[result.Files[i]] = 0;
+    }
+#endif
+    
+    file_read EverythingView = NarReadFile(L"C:\\Users\\bcbilisim\\Desktop\\everythingoutput.txt");
+    
+    char bf[4096*5];
+    char* Needle = (char*)(EverythingView.Data);
+    char* End    = (char*)EverythingView.Data + EverythingView.Len;
+    size_t Count = 0;
+    
+    wchar_t wcsbf[4096*5];
+    
+    for(;;){
+        memset(bf, 0, sizeof(bf));
+        memset(wcsbf, 0, sizeof(wcsbf));
+        
+        Needle = ConsumeNextLine(Needle, bf, sizeof(bf), End);
+        
+        mbstowcs(wcsbf, bf, sizeof(wcsbf)/2);
+        if(NarResult.find(wcsbf) == NarResult.end()){
+            printf("%S\n", wcsbf);
+        }
+        else{
+            NarResult[wcsbf]++;
+        }
+        
+        Count++;
+        if(NULL == Needle)
+            break;
+        
+    }
+    
+    for (auto& it: NarResult) {
+        if(it.second != 1){
+            printf("%S\n", it.first.c_str());
+        }
+    }
+    
     return 0;
+    
+    //DEBUG_Restore();
+    //return 0;
     
 #if 0
     {

@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.IO;
 using NarNative;
-
+using System.Diagnostics;
 namespace DotNetTest
 {
     class Program
@@ -14,20 +14,18 @@ namespace DotNetTest
         static void Main(string[] args)
         {
             
-            string extension = ".dll";
-            
-            List<string> resAllVolumes = NarNative.ExtensionSearcher.FindExtensionAllVolumes(extension);
-            List<string> resSingleVolume = NarNative.ExtensionSearcher.FindExtension('C', extension);
+            var start = Stopwatch.StartNew();
+            Console.ReadLine();
+            var result = ExtensionSearcher.FindExtension('C', ".dll");
 
-            foreach (var f in resAllVolumes)
-            {
-                Console.WriteLine(f);
-            }
+            Console.WriteLine(start.ElapsedMilliseconds);
 
-            string b= Console.ReadLine();
-            Console.WriteLine(b);
+//            foreach (var item in result)
+//            {
+//                Console.WriteLine(item);
+//            }
+            Console.ReadLine();
             return;
-
         }
 
     }

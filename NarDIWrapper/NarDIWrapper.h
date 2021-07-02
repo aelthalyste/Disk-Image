@@ -14,12 +14,12 @@ using namespace System::Collections::Generic;
 
 void
 SystemStringToWCharPtr(System::String^ SystemStr, wchar_t* Destination) {
-
+    
     pin_ptr<const wchar_t> wch = PtrToStringChars(SystemStr);
     size_t ConvertedChars = 0;
     size_t SizeInBytes = (SystemStr->Length + 1) * 2;
     memcpy(Destination, wch, SizeInBytes);
-
+    
 }
 
 namespace NarNative{
@@ -29,75 +29,75 @@ namespace NarNative{
         
         static List<System::String^>^ FindExtensionAllVolumes(System::String^ Extension){
             
-            
-            uint64_t MemorySize = (768ull*1024ull *1024ull);
             List<System::String^>^ Result = gcnew List<System::String^>;
             
             wchar_t wchExt[256];
             SystemStringToWCharPtr(Extension, wchExt);
-
-            void* Mem = VirtualAlloc(0, MemorySize, MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
-            if(Mem){
+            
+            
+            
+            DWORD Drives = GetLogicalDrives();
+            // NOTE(Batuhan): skip volume A and B
+            for (int CurrentDriveIndex = 2; CurrentDriveIndex < 26; CurrentDriveIndex++) {
                 
-                nar_arena Arena = ArenaInit(Mem, MemorySize);
-                DWORD Drives = GetLogicalDrives();
-                // NOTE(Batuhan): skip volume A and B
-                for (int CurrentDriveIndex = 2; CurrentDriveIndex < 26; CurrentDriveIndex++) {
-                    
-                    if (Drives & (1 << CurrentDriveIndex)) {
-                        char letter = ('A' + (char)CurrentDriveIndex);
-                        HANDLE VolumeHandle = NarOpenVolume(letter);
-                        if(VolumeHandle != INVALID_HANDLE_VALUE){
-                            ArenaReset(&Arena);
-                            
-
-                            extension_search_result NativeResult = NarFindExtensions(letter, VolumeHandle, wchExt, &Arena);
+                if (Drives & (1 << CurrentDriveIndex)) {
+                    char letter = ('A' + (char)CurrentDriveIndex);
+                    HANDLE VolumeHandle = NarOpenVolume(letter);
+                    if(VolumeHandle != INVALID_HANDLE_VALUE){
+                        
+                        extension_finder_memory ExMemory = NarSetupExtensionFinderMemory(VolumeHandle);
+                        
+                        if(ExMemory.MFTRecords != NULL){
+                            extension_search_result NativeResult = NarFindExtensions(letter, 
+                                                                                     VolumeHandle, 
+                                                                                     wchExt, 
+                                                                                     &ExMemory);
                             Result->Capacity += NativeResult.Len;
                             for(size_t i =0; i<NativeResult.Len; i++){
                                 Result->Add(gcnew System::String(NativeResult.Files[i]));
                             } 
+                            
+                            NarFreeExtensionFinderMemory(&ExMemory);
                         }
-                        
-                    }
-                    else {
                         
                     }
                     
                 }
-                
-            }
-            else{
-                
+                else {
+                    
+                }
             }
             
-            VirtualFree(Mem, MemorySize, MEM_RELEASE);
             return Result;
         }
         
         static List<System::String^>^ FindExtension(wchar_t VolumeLetter, System::String^ Extension){
-            uint64_t MemorySize = 300ull * 1024ull * 1024ull;
             List<System::String^>^ Result = gcnew List<System::String^>;
-
+            
             wchar_t wchExt[256];
             SystemStringToWCharPtr(Extension, wchExt);
-
-            void* Mem = VirtualAlloc(0, MemorySize, MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
-            if(Mem){
-                nar_arena Arena = ArenaInit(Mem, MemorySize);
-                HANDLE VolumeHandle = NarOpenVolume(VolumeLetter);
-                if(VolumeHandle != INVALID_HANDLE_VALUE){
-                    extension_search_result NativeResult = NarFindExtensions(VolumeLetter, VolumeHandle, wchExt, &Arena);
+            
+            
+            HANDLE VolumeHandle = NarOpenVolume(VolumeLetter);
+            if(VolumeHandle != INVALID_HANDLE_VALUE){
+                
+                extension_finder_memory ExMemory = NarSetupExtensionFinderMemory(VolumeHandle);
+                
+                if(ExMemory.MFTRecords != NULL){
+                    extension_search_result NativeResult = NarFindExtensions(VolumeLetter, 
+                                                                             VolumeHandle, 
+                                                                             wchExt, 
+                                                                             &ExMemory);
+                    Result->Capacity += NativeResult.Len;
+                    
                     for(size_t i =0; i<NativeResult.Len; i++){
                         Result->Add(gcnew System::String(NativeResult.Files[i]));
-                    } 
+                    }
                 }
                 
-            }
-            else{
-                
+                NarFreeExtensionFinderMemory(&ExMemory);
             }
             
-            VirtualFree(Mem, MemorySize, MEM_RELEASE);
             return Result;
         }
         
@@ -108,7 +108,7 @@ namespace NarNative{
 #if 1
 
 namespace NarDIWrapper {
-
+    
     
     public ref class StreamInfo {
         public:
@@ -341,6 +341,7 @@ namespace NarDIWrapper {
             int VolSizeMB = BM->VolumeTotalSize/(1024ull* 1024ull) + 1;
             int SysPartitionMB = BM->EFIPartSize / (1024ull * 1024ull);
             int RecPartitionMB = 0;
+            
             
             BootLetter = 0;
             {
