@@ -53,8 +53,9 @@
 
 
 #define ZSTD_DLL_IMPORT 1
-#include "zstd.h"
 
+#include "zstd.h"
+#include "zstd_errors.h"
 
 #if NAR_LINUX
 #define NAR_BREAK do{__builtin_trap();}while(0);

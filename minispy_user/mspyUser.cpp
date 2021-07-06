@@ -3505,30 +3505,32 @@ NarIsVolumeAvailable(char Letter){
 
 
 
-
 // input MUST be sorted
 // Finds point Offset in relative to Records structure, useful when converting absolue volume offsets to our binary backup data offsets.
 // returns NAR_POINT_OFFSET_FAILED if fails to find given offset, 
-inline INT64 
-FindPointOffsetInRecords(nar_record *Records, INT32 Len, INT64 Offset){
+inline point_offset 
+FindPointOffsetInRecords(nar_record *Records, uint64_t Len, int64_t Offset){
     
-    if(!Records) return NAR_POINT_OFFSET_FAILED;
+    if(!Records) return {0};
     
-    INT64 Result = 0;
+    point_offset Result = {0};
+    
     BOOLEAN Found = FALSE;
     
-    for(int i = 0; i < Len; i++){
+    for(uint64_t i = 0; i < Len; i++){
         
-        if(Offset <= (INT64)Records[i].StartPos + (INT64)Records[i].Len){
+        if(Offset <= (int64_t)Records[i].StartPos + (int64_t)Records[i].Len){
             
-            INT64 Diff = (Offset - (INT64)Records[i].StartPos);
+            int64_t Diff = (Offset - (INT64)Records[i].StartPos);
             if (Diff < 0) {
                 // Exceeded offset, this means we cant relate our Offset and Records data, return failcode
                 Found = FALSE;
             }
             else {
-                Result += Diff;
                 Found = TRUE;
+                Result.Offset        += Diff;
+                Result.Indice         = i;
+                Result.Readable       = (int64_t)Records[i].Len - Diff;
             }
             
             break;
@@ -3536,12 +3538,12 @@ FindPointOffsetInRecords(nar_record *Records, INT32 Len, INT64 Offset){
         }
         
         
-        Result += Records[i].Len;
+        Result.Offset += Records[i].Len;
         
     }
     
     
-    return (Found ? Result : NAR_POINT_OFFSET_FAILED);
+    return (Found ? Result : point_offset{0});
 }
 
 #if 1
@@ -3607,45 +3609,6 @@ NarEditTaskNameAndDescription(const wchar_t* FileName, const wchar_t* TaskName, 
 }
 
 #endif
-
-
-void
-TestFindPointOffsetInRecords(){
-    
-    nar_record* Recs = new nar_record[100];
-    memset(Recs, 0, sizeof(nar_record) * 100);
-    
-    Recs[0] = {0, 100};
-    Recs[1] = {150, 200};
-    Recs[2] = {520, 150};
-    Recs[3] = {1200, 55};
-    Recs[4] = {1300, 100};
-    Recs[5] = {1500, 75};
-    Recs[6] = {1700, 420};
-    Recs[7] = {5200, 500};
-    
-    INT64 Answer = FindPointOffsetInRecords(Recs, 8, 1350);
-    printf("HELL ==== %I64d\n", Answer);
-    
-    Answer = FindPointOffsetInRecords(Recs, 8, 1000);
-    printf("HELL ==== %I64d\n", Answer);
-    
-    Answer = FindPointOffsetInRecords(Recs, 8, 70);
-    printf("HELL ==== %I64d\n", Answer);
-    
-    Answer = FindPointOffsetInRecords(Recs, 8, 5400);
-    printf("HELL ==== %I64d\n", Answer);
-    
-    Answer = FindPointOffsetInRecords(Recs, 8, 2000);
-    printf("HELL ==== %I64d\n", Answer);
-    
-    Answer = FindPointOffsetInRecords(Recs, 8, 3000);
-    printf("HELL ==== %I64d\n", Answer);
-    
-    
-    return;
-    
-}
 
 
 struct{
@@ -3987,9 +3950,112 @@ ConsumeNextLine(char *Input, char* Out, size_t MaxBf, char* InpEnd){
     return Result;
 }
 
+#include <conio.h>
+
+int
+TestReadBackup(wchar_t *backup, wchar_t *metadata){
+    nar_file_view BView = NarOpenFileView(backup);
+    nar_file_view MView = NarOpenFileView(metadata);
+    
+    srand(time(NULL));
+    
+    backup_metadata *BM = (backup_metadata*)MView.Data;
+    
+    nar_record* Records  = (nar_record*)((uint8_t*)MView.Data + BM->Offset.RegionsMetadata);
+    uint64_t RecordCount = BM->Size.RegionsMetadata/sizeof(nar_record);
+    
+    uint64_t SelectedIndice = rand() % RecordCount;
+    uint64_t SelectedLen    = rand() % Records[SelectedIndice].Len;
+    
+    
+    void* FEBuffer = malloc(SelectedLen*4096);
+    void* RFBuffer = malloc(SelectedLen*4096);
+    
+    uint64_t FEResult = FEReadBackup(&BView, &MView, Records[SelectedIndice].StartPos, SelectedLen, FEBuffer, SelectedLen, 0, 0);
+    
+    ASSERT(FEResult == SelectedLen*4096);
+    
+    HANDLE VolumeHandle = NarOpenVolume('E');
+    NarSetFilePointer(VolumeHandle, (uint64_t)Records[SelectedIndice].StartPos*4096ull);
+    
+    DWORD BR = 0;
+    ReadFile(VolumeHandle, 
+             RFBuffer,
+             SelectedLen*4096ull,
+             &BR,
+             0);
+    
+    uint64_t UnmatchedCount = 0;
+    uint64_t TotalCount = SelectedLen*4096ull/8ull;
+    for(uint64_t i =0; i<TotalCount; i+=8){
+        if(*((uint64_t*)RFBuffer + i) == *((uint64_t*)FEBuffer + i)){
+            
+        }
+        else{
+            UnmatchedCount++;
+        }
+    }
+    ASSERT(UnmatchedCount == 0);
+    free(RFBuffer);
+    free(FEBuffer);
+    NarFreeFileView(BView);
+    NarFreeFileView(MView);
+    return 0;
+}
+
 int
 wmain(int argc, wchar_t* argv[]) {
+    for(int i =0; i<10; i++){
+        TestReadBackup(L"C:\\Disk-Image\\minispy_user\\NB_FULL-E07061346.nbfsf", L"C:\\Disk-Image\\minispy_user\\NB_M_FULL-E07061346.nbfsm");
+    }
     
+    return 0;
+#if 0    
+    if(SetupVSS())    
+    {
+        CComPtr<IVssBackupComponents> VSSPTR;
+        wchar_t ShadowPath[1024];
+        auto SnapshotID = GetShadowPath(argv[1], VSSPTR, ShadowPath, 1024);
+        HANDLE Volume = INVALID_HANDLE_VALUE;
+        if(ShadowPath != 0){
+            Volume = CreateFileW(ShadowPath, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, NULL, NULL);
+            
+            fprintf(stdout, "Press a key to STOP  VSS and do cleanup\n");
+            int randomvalue = 0;
+            scanf("%s", &randomvalue);
+            
+            LONG Deleted=0;
+            VSS_ID NonDeleted;
+            HRESULT hr;
+            CComPtr<IVssAsync> async;
+            hr = VSSPTR->BackupComplete(&async);
+            if(hr == S_OK){
+                async->Wait();
+                hr = VSSPTR->DeleteSnapshots(SnapshotID, VSS_OBJECT_SNAPSHOT, TRUE, &Deleted, &NonDeleted);
+                if(hr != S_OK){
+                    fprintf(stderr, "Delete snapshots FAILED\n");
+                }
+            }
+            else{
+                fprintf(stderr, "Backup complete failed\n");
+            }
+            
+            VSSPTR.Release();
+            
+            fprintf(stdout, "Success!\n");        
+        }
+        else{
+            fprintf(stderr, "Unable to open volume C's shadow path\n");
+        }
+        
+    }
+    {
+        fprintf(stderr, "Unable to set COM settings and privilages\n");
+    }
+    return 0;
+#endif
+    
+#if 0    
     HANDLE VolumeHandle = NarOpenVolume('C');
     
     extension_finder_memory ExMemory = NarSetupExtensionFinderMemory(VolumeHandle);
@@ -4041,9 +4107,8 @@ wmain(int argc, wchar_t* argv[]) {
     }
     
     return 0;
+#endif
     
-    //DEBUG_Restore();
-    //return 0;
     
 #if 0
     {

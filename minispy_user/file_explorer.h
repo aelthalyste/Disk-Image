@@ -1,6 +1,6 @@
 #pragma once
 
-//#include "nar.h"
+#include "nar.h"
 
 #define Kilobyte(val) ((val)*1024ll)
 
@@ -40,8 +40,7 @@
 #define NAR_FEXP_END_MARK -2
 #define NAR_FEXP_SUCCEEDED 1
 
-
-
+#define NAR_STANDART_FLAG         0x10
 #define NAR_ATTRIBUTE_LIST        0x20
 #define NAR_FILENAME_FLAG         0x30
 #define NAR_DATA_FLAG             0x80
@@ -116,6 +115,65 @@ struct extension_finder_memory{
 };
 
 
+
+struct file_explorer_file{
+    size_t   Size;
+    
+    wchar_t* Name; // Null terminated
+    uint8_t  NameLen;
+    
+    uint32_t FileID;
+    uint32_t ParentFileID;
+    
+    SYSTEMTIME LastModifiedTime;
+    SYSTEMTIME CreationTime;
+    
+    uint8_t  IsDirectory;
+};
+
+struct file_explorer_memory{
+    linear_allocator StringAllocator;
+    nar_arena        Arena;
+};
+
+struct file_explorer{
+    nar_file_view MetadataView;
+    const void* MFT;
+    size_t MFTSize;
+    size_t TotalFC;
+    
+    uint32_t DirectoryID;
+    
+    wchar_t* DirectoryPath;
+    wchar_t* FullPathBuffer;
+    uint64_t PathBufferSizes;
+    
+    file_explorer_file* Files;
+    
+    // used for fast searching.
+    uint32_t *ParentIDs;
+    uint64_t FileCount;
+    
+    file_explorer_memory Memory;
+    char VolumeLetter;
+    
+    uint64_t SearchNeedle;
+    uint32_t SearchID;
+};
+
+
+struct attribute_list_entry{
+    uint32_t EntryType;
+    uint32_t EntryFileID;
+};
+
+// Each entry is 8 byte, its ok to store them in stack.
+struct attribute_list_contents{
+    attribute_list_entry Entries[16];
+};
+
+
+
 inline BOOLEAN
 NarSetFilePointer(HANDLE File, ULONGLONG V);
 
@@ -149,13 +207,6 @@ NarOpenVolume(char Letter);
 inline void*
 NarFindFileAttributeFromFileRecord(void *FileRecord, INT32 AttributeID);
 
-// input MUST be sorted
-// Finds point Offset in relative to Records structure, useful when converting absolue volume offsets to our binary backup data offsets.
-// returns NAR_POINT_OFFSET_FAILED if fails to find given offset, 
-#define NAR_POINT_OFFSET_FAILED -1
-inline INT64 
-FindPointOffsetInRecords(nar_record *Records, uint32_t Len, uint64_t Offset);
-
 
 
 bool
@@ -178,3 +229,29 @@ NarFreeExtensionFinderMemory(extension_finder_memory *Memory);
 extension_search_result
 NarFindExtensions(char VolumeLetter, HANDLE VolumeHandle, wchar_t *Extension, extension_finder_memory *Memory);
 
+
+
+
+
+
+file_explorer_memory
+NarInitFileExplorerMemory(uint32_t TotalFC);
+
+void
+NarFreeFileExplorerMemory(file_explorer_memory *Memory);
+
+file_explorer
+NarInitFileExplorer(wchar_t *MetadataPath);
+
+
+file_explorer_file*
+FEStartParentSearch(file_explorer *FE, uint32_t ParentID);
+
+file_explorer_file*
+FENextParent(file_explorer *FE, file_explorer_file *CurrentFile);
+
+attribute_list_contents
+NarGetAttributeListContents(void* AttrListDataStart, uint64_t DataLen);
+
+
+bool IsValidAttrEntry(attribute_list_entry Entry);

@@ -236,7 +236,7 @@ NarLog(const char *str, ...){
     
 }
 
-#define printf(fmt, ...) NarLog(fmt, __VA_ARGS__)
+//#define printf(fmt, ...) NarLog(fmt, __VA_ARGS__)
 
 enum rec_or {
     LEFT = 0,
@@ -293,6 +293,7 @@ RecordEqual(nar_record* N1, nar_record* N2) {
 
 
 #define BUFFER_SIZE     4096
+
 
 
 #define MAX(v1,v2) ((v1)>(v2) ? (v1) : (v2))
@@ -520,6 +521,13 @@ struct volume_information {
     unsigned char DiskID;
     char DiskType;
     wchar_t VolumeName[MAX_PATH + 1];
+};
+
+
+struct point_offset{
+    int64_t  Offset;
+    uint64_t  Readable; // remaining region length
+    uint64_t Indice;        // region indice we just found
 };
 
 
@@ -759,3 +767,7 @@ NarGetBackupsInDirectory(const wchar_t* Directory, backup_metadata* B, int Buffe
 
 BOOLEAN
 ConnectDriver(PLOG_CONTEXT Ctx);
+
+
+inline point_offset
+FindPointOffsetInRecords(nar_record *Records, uint64_t Len, int64_t Offset);
