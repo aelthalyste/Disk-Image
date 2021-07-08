@@ -18,8 +18,7 @@
 
 
 #if _DEBUG || !_MANAGED 
-
-#define ASSERT(exp) do{if(!(exp)){*(volatile int*)0 = 42;}} while(0);
+#define ASSERT(exp) do{if(!(exp)){__debugbreak();}} while(0);
 #else
 #define ASSERT(exp)
 #endif

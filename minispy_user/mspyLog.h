@@ -1,33 +1,13 @@
 #pragma once
 
-#include <stdio.h>
 #include "minispy.h"
 
-#if 1
-#include <string>
-#include <vector>
-#include <atlbase.h>
 
-#include <vss.h>
-#include <vswriter.h>
-#include <vsbackup.h>
-#include <vsmgmt.h>
-
-#include <stdio.h>
-#endif
-
-#if 0
 #define TIMED_BLOCK__(NAME, Number, ...) timed_block timed_##Number(__COUNTER__, __LINE__, __FUNCTION__, NAME);
 #define TIMED_BLOCK_(NAME, Number, ...)  TIMED_BLOCK__(NAME, Number,  ## __VA__ARGS__)
 #define TIMED_BLOCK(...)                 TIMED_BLOCK_("UNNAMED", __LINE__, ## __VA__ARGS__)
 #define TIMED_NAMED_BLOCK(NAME, ...)     TIMED_BLOCK_(NAME, __LINE__, ## __VA__ARGS__)
-#else
 
-#define TIMED_BLOCK__(NAME, Number, ...)
-#define TIMED_BLOCK_(NAME, Number, ...)  
-#define TIMED_BLOCK(...)                 
-#define TIMED_NAMED_BLOCK(NAME, ...)     
-#endif
 
 struct debug_record {
     char* FunctionName;
@@ -46,7 +26,6 @@ struct timed_block {
     debug_record* mRecord;
     
     timed_block(int Counter, int LineNumber, char* FunctionName, char* Description) {
-        
         mRecord = GlobalDebugRecordArray + Counter;
         mRecord->FunctionName   = FunctionName;
         mRecord->Description = Description;
@@ -674,7 +653,7 @@ backup_metadata
 ReadMetadata(nar_backup_id ID, int Version, std::wstring RootDir);
 
 BOOLEAN
-SaveMetadata(char Letter, int Version, int ClusterSize, BackupType BT, data_array<nar_record> BackupRegions, nar_backup_id BackupID, bool IsCompressed);
+SaveMetadata(char Letter, int Version, int ClusterSize, BackupType BT, data_array<nar_record> BackupRegions, nar_backup_id BackupID, bool IsCompressed, HANDLE VSSHandle);
 
 // Used to append recovery partition to metatadata file.
 BOOLEAN

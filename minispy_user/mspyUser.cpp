@@ -1112,7 +1112,7 @@ TerminateBackup(volume_backup_inf* V, BOOLEAN Succeeded) {
     printf("Volume %c version %i backup operation will be terminated\n", V->Letter, V->Version);
     
     if(Succeeded){
-        if(!!SaveMetadata((char)V->Letter, V->Version, V->ClusterSize, V->BT, V->Stream.Records, V->BackupID, V->Stream.ShouldCompress)){
+        if(!!SaveMetadata((char)V->Letter, V->Version, V->ClusterSize, V->BT, V->Stream.Records, V->BackupID, V->Stream.ShouldCompress, V->Stream.Handle)){
             
             if(V->BT == BackupType::Inc){
                 V->IncLogMark.LastBackupRegionOffset = V->PossibleNewBackupRegionOffsetMark;
@@ -2535,7 +2535,7 @@ BackupRegions: Must have, this data determines how i must map binary data to the
 */
 BOOLEAN
 SaveMetadata(char Letter, int Version, int ClusterSize, BackupType BT,
-             data_array<nar_record> BackupRegions, nar_backup_id ID, bool IsCompressed) {
+             data_array<nar_record> BackupRegions, nar_backup_id ID, bool IsCompressed, HANDLE VSSHandle) {
     
     // TODO(Batuhan): convert letter to uppercase
     //Letter += ('A' - 'a');
@@ -2625,6 +2625,8 @@ SaveMetadata(char Letter, int Version, int ClusterSize, BackupType BT,
       */
     
     
+    
+    
     {
         // TODO(Batuhan): same problem mentioned in the codebase, we have to figure out reading more than 4gb at once(easy, but gotta replace lots of code probably)
         WriteFile(MetadataFile, BackupRegions.Data, BM.Size.RegionsMetadata, &BytesWritten, 0);
@@ -2633,6 +2635,23 @@ SaveMetadata(char Letter, int Version, int ClusterSize, BackupType BT,
             BM.Errors.RegionsMetadata = TRUE;
             BM.Size.RegionsMetadata = BytesWritten;
         }
+        
+        
+        uint32_t MFTRecordLen  = 0;
+        uint32_t Cap = 1024;
+        nar_record *MFTRecords = (nar_record*)calloc(Cap, sizeof(nar_record));
+        uint32_t MFTSize = 0;
+        bool MFTParseResult = NarGetMFTRegionsFromBootSector(VSSHandle, MFTRecords, &MFTRecordLen, Cap);
+        ASSERT(MFTParseResult);
+        ASSERT(MFTRecordLen > 0);
+        for(uint64_t mi =0; mi<MFTRecordLen; mi++){
+            BOOLEAN SFR = NarSetFilePointer(VSSHandle, (uint64_t)MFTRecords[mi].StartPos*(uint64_t)ClusterSize);
+            ASSERT(!!SFR);
+            CopyData(VSSHandle, MetadataFile, (uint64_t)MFTRecords[mi].Len*(uint64_t)ClusterSize);
+            MFTSize += (MFTRecords[mi].Len*ClusterSize);
+        }
+        
+        BM.Size.MFT = MFTSize;
     }
     
     
@@ -3512,6 +3531,7 @@ inline point_offset
 FindPointOffsetInRecords(nar_record *Records, uint64_t Len, int64_t Offset){
     
     if(!Records) return {0};
+    TIMED_BLOCK();
     
     point_offset Result = {0};
     
@@ -4005,11 +4025,12 @@ TestReadBackup(wchar_t *backup, wchar_t *metadata){
 
 int
 wmain(int argc, wchar_t* argv[]) {
-    for(int i =0; i<10; i++){
-        TestReadBackup(L"C:\\Disk-Image\\minispy_user\\NB_FULL-E07061346.nbfsf", L"C:\\Disk-Image\\minispy_user\\NB_M_FULL-E07061346.nbfsm");
-    }
     
-    return 0;
+    
+    NarInitFileExplorer(L"G:\\NB_M_FULL-C07071241.nbfsm", L"G:\\NB_FULL-C07071241.nbfsf");
+    PrintDebugRecords();
+    printf("Done!\n");
+    
 #if 0    
     if(SetupVSS())    
     {
@@ -4198,7 +4219,6 @@ wmain(int argc, wchar_t* argv[]) {
                     
                     NarSaveBootState(&C);
                     
-                    PrintDebugRecords();
                     
                 }
                 else{
@@ -4343,14 +4363,12 @@ double NarTimeElapsed(int64_t start){
 inline void
 PrintDebugRecords() {
     
-    int len = __COUNTER__;//sizeof(GlobalDebugRecordArray) / sizeof(debug_record);
+    int len = sizeof(GlobalDebugRecordArray)/sizeof(GlobalDebugRecordArray[0]);
     for (int i = 0; i < len; i++) {
-        
-        if(GlobalDebugRecordArray[i].FunctionName == NULL){
+        if(GlobalDebugRecordArray[i].FunctionName == 0){
             continue;
         }
-        
-        printf("FunctionName: %s\tdescription: %s\tavclocks: %.3f\tat line %i\thit count %i\n", GlobalDebugRecordArray[i].FunctionName, GlobalDebugRecordArray[i].Description, (double)GlobalDebugRecordArray[i].Clocks / GlobalDebugRecordArray[i].HitCount, GlobalDebugRecordArray[i].LineNumber, GlobalDebugRecordArray[i].HitCount);
+        printf("FunctionName: %s\tDescription: %s\tAVGclocks: %.3f\tat line %i\tHit count %i\n", GlobalDebugRecordArray[i].FunctionName, GlobalDebugRecordArray[i].Description, (double)GlobalDebugRecordArray[i].Clocks / GlobalDebugRecordArray[i].HitCount, GlobalDebugRecordArray[i].LineNumber, GlobalDebugRecordArray[i].HitCount);
         
     }
     
