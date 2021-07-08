@@ -115,7 +115,6 @@ struct extension_finder_memory{
 };
 
 
-
 struct file_explorer_file{
     size_t   Size;
     
@@ -131,6 +130,7 @@ struct file_explorer_file{
     uint8_t  IsDirectory;
 };
 
+
 struct file_explorer_memory{
     linear_allocator StringAllocator;
     nar_arena        Arena;
@@ -138,6 +138,8 @@ struct file_explorer_memory{
 
 struct file_explorer{
     nar_file_view MetadataView;
+    nar_file_view FullbackupView;
+    
     const void* MFT;
     size_t MFTSize;
     size_t TotalFC;
@@ -161,6 +163,10 @@ struct file_explorer{
     uint32_t SearchID;
 };
 
+struct attribute_list_data{
+    void*    Data;
+    uint32_t Len;
+};
 
 struct attribute_list_entry{
     uint32_t EntryType;
@@ -169,7 +175,7 @@ struct attribute_list_entry{
 
 // Each entry is 8 byte, its ok to store them in stack.
 struct attribute_list_contents{
-    attribute_list_entry Entries[16];
+    attribute_list_entry Entries[32];
 };
 
 
@@ -241,7 +247,7 @@ void
 NarFreeFileExplorerMemory(file_explorer_memory *Memory);
 
 file_explorer
-NarInitFileExplorer(wchar_t *MetadataPath);
+NarInitFileExplorer(wchar_t *MetadataPath, wchar_t *FullbackupPath);
 
 
 file_explorer_file*
@@ -255,3 +261,19 @@ NarGetAttributeListContents(void* AttrListDataStart, uint64_t DataLen);
 
 
 bool IsValidAttrEntry(attribute_list_entry Entry);
+
+attribute_list_contents
+GetAttributeListContents(void* AttrListDataStart, uint64_t DataLen);
+
+
+uint64_t
+SolveAttributeListReferences(const void* MFTStart,
+                             void* BaseFileRecord,
+                             attribute_list_contents Contents, file_explorer_file* Files,
+                             linear_allocator* StringAllocator
+                             );
+uint64_t
+FEReadBackup(nar_file_view *Backup, nar_file_view *Metadata, 
+             uint64_t AbsoluteClusterOffset, uint64_t ReadSizeInCluster, 
+             void *Output, uint64_t OutputMaxSize,
+             void *ZSTDBuffer, size_t ZSTDBufferSize);

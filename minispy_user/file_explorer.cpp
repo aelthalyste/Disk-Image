@@ -2,11 +2,6 @@
 #include "file_explorer.h"
 
 
-#define TIMED_BLOCK__(NAME, Number, ...) 
-#define TIMED_BLOCK_(NAME, Number, ...)  
-#define TIMED_BLOCK(...)                 
-#define TIMED_NAMED_BLOCK(NAME, ...)     
-
 double AllocatorTimeElapsed = 0.0f;
 uint64_t AllocationCount = 0;
 
@@ -612,7 +607,7 @@ NarFindExtensions(char VolumeLetter, HANDLE VolumeHandle, wchar_t *Extension, ex
                             uint32_t LenRemaining      = AttrListLen;
                             uint8_t* CurrentAttrRecord = (uint8_t*)NAR_OFFSET(AttributeList, 24);
                             
-                            for(uint64_t i =0; i<16; i++){
+                            for(uint64_t i =0; i<32; i++){
                                 attribute_list_entry Entry = Contents.Entries[i];
                                 if(false == IsValidAttrEntry(Entry)){
                                     break;
@@ -843,9 +838,9 @@ NarInitFileExplorerMemory(uint32_t TotalFC){
     file_explorer_memory Result = {0};
     
     uint64_t StringAllocatorSize     = TotalFC*520 + Megabyte(500);
-    linear_allocator StringAllocator = NarCreateLinearAllocator(StringAllocatorSize, Megabyte(16));
+    Result.StringAllocator = NarCreateLinearAllocator(StringAllocatorSize, Megabyte(16));
     
-    if(NULL != StringAllocator.Memory){
+    if(NULL != Result.StringAllocator.Memory){
         size_t ArenaSize   = TotalFC*sizeof(file_explorer_file) + Megabyte(50);
         void* ArenaMemory = VirtualAlloc(0, ArenaSize, MEM_COMMIT|MEM_RESERVE, PAGE_READWRITE);
         
@@ -881,10 +876,11 @@ NarFreeFileExplorerMemory(file_explorer_memory *Memory){
 }
 
 file_explorer
-NarInitFileExplorer(wchar_t *MetadataPath){
+NarInitFileExplorer(wchar_t *MetadataPath, wchar_t *FullbackupPath){
     
     file_explorer Result = {0};
-    Result.MetadataView = NarOpenFileView(MetadataPath);
+    Result.MetadataView   = NarOpenFileView(MetadataPath);
+    Result.FullbackupView = NarOpenFileView(FullbackupPath);
     if(NULL != Result.MetadataView.Data){
         backup_metadata* BM = (backup_metadata*)Result.MetadataView.Data;
         
@@ -898,11 +894,17 @@ NarInitFileExplorer(wchar_t *MetadataPath){
         Result.DirectoryPath = (wchar_t*)ArenaAllocate(&Result.Memory.Arena, Kilobyte(32));
         Result.ParentIDs     = (uint32_t*)ArenaAllocate(&Result.Memory.Arena, Result.TotalFC*sizeof(uint32_t)*2);
         
+        Result.Files = (file_explorer_file*)ArenaAllocate(&Result.Memory.Arena, Result.TotalFC*sizeof(file_explorer_file));
+        
         ASSERT(Result.ParentIDs);
         ASSERT(Result.DirectoryPath);
+        unsigned char FB[1024];
         
-        for(uint64_t i =0; i<Result.TotalFC; i++){
-            uint8_t *FileRecord = (uint8_t*)Result.MFT + 1024*i;
+        uint64_t ATLRefCount = 0;
+        for(uint64_t i = 40; i<120000; i++){
+            memcpy(&FB[0], (uint8_t*)Result.MFT + 1024*i, 1024);
+            uint8_t *FileRecord = &FB[0];
+            
             if(*(uint32_t*)FileRecord != 'ELIF'){
                 continue;
             }
@@ -916,6 +918,56 @@ NarInitFileExplorer(wchar_t *MetadataPath){
             if(Header->inUse == false){
                 continue;
             }
+            
+            
+            void* AttributeList = NarFindFileAttributeFromFileRecord(FileRecord, NAR_ATTRIBUTE_LIST);
+            if(AttributeList){
+                
+                ATLRefCount++;
+                
+                uint8_t ATLDataBuffer[4096];
+                
+                void*   ATLData = 0;
+                uint32_t ATLLen = 0;
+                uint8_t ATLNonResident = *(uint8_t*)NAR_OFFSET(AttributeList, 8);
+                if(ATLNonResident){
+                    TIMED_NAMED_BLOCK("Non resident attrlist!");
+                    void* DataRunStart = NAR_OFFSET(AttributeList, 64);;
+                    
+                    nar_record   Runs[16];
+                    uint32_t DataRunFound = 0;
+                    bool ParseResult = NarParseDataRun(DataRunStart, Runs, 16, &DataRunFound, false);
+                    ASSERT(ParseResult);
+                    ASSERT(DataRunFound == 1);
+                    
+                    uint32_t TargetCluster = Runs[0].StartPos;
+                    uint32_t FEResult = FEReadBackup(&Result.FullbackupView, &Result.MetadataView, TargetCluster, 1, ATLDataBuffer, 4096, 0, 0);
+                    
+                    ATLData = &ATLDataBuffer[0];
+                    ATLLen  = *(uint32_t*)NAR_OFFSET(AttributeList, 48);
+                    ASSERT(FEResult == 4096);
+                }
+                else{
+                    ATLData = NAR_OFFSET(AttributeList, 24);
+                    ATLLen  = *(uint32_t*)NAR_OFFSET(AttributeList, 16);
+                    ASSERT(ATLLen < 512);
+                }
+                
+                attribute_list_contents C  = GetAttributeListContents(ATLData, ATLLen);
+                file_explorer_file *Files = &Result.Files[Result.FileCount];
+                
+                uint64_t Found = SolveAttributeListReferences(Result.MFT, FileRecord, C, Files, &Result.Memory.StringAllocator);
+                ASSERT(Found > 0);
+                for(uint64_t fi = Result.FileCount; 
+                    fi<Result.FileCount+Found;
+                    fi++){
+                    Result.ParentIDs[fi] = Files[fi].ParentFileID;
+                }
+                
+                Result.FileCount += Found;
+                continue;
+            }
+            
             multiple_pid MultPIDs = NarGetFileNameAndParentID(FileRecord);
             uint32_t FileID       = NarGetFileID(FileRecord);
             
@@ -924,7 +976,6 @@ NarInitFileExplorer(wchar_t *MetadataPath){
             SYSTEMTIME WinFileModified = {0};
             void *StdAttr = NarFindFileAttributeFromFileRecord(FileRecord, NAR_STANDART_FLAG);
             if(NULL != StdAttr){
-                NAR_BREAK;
                 void* AttrData = NAR_OFFSET(StdAttr, 24);
                 
                 uint64_t FileCreated  = *(uint64_t*)NAR_OFFSET(AttrData, 0);
@@ -939,6 +990,7 @@ NarInitFileExplorer(wchar_t *MetadataPath){
                 
             }// if stdattr
             
+            
             //Extract file size if not directory
             uint64_t FileSize = 0;
             if(!Header->isDirectory){
@@ -952,6 +1004,7 @@ NarInitFileExplorer(wchar_t *MetadataPath){
                 _pidi < MultPIDs.Len; 
                 _pidi++)
             {
+                TIMED_NAMED_BLOCK("USUAL MULTPIDS");
                 name_pid NamePID = MultPIDs.PIDS[_pidi];
                 if(NamePID.Name == NULL){
                     continue;
@@ -963,7 +1016,7 @@ NarInitFileExplorer(wchar_t *MetadataPath){
                 File->Name = (wchar_t*)LinearAllocate(&Result.Memory.StringAllocator, NameSize);
                 
                 // +1 for null termination
-                memcpy(File->Name, NamePID.Name, FileSize - 2);
+                memcpy(File->Name, NamePID.Name, NameSize - 2);
                 File->NameLen      = NamePID.NameLen + 1;
                 File->Size         = FileSize;
                 File->FileID       = FileID;
@@ -978,63 +1031,6 @@ NarInitFileExplorer(wchar_t *MetadataPath){
                 Result.FileCount++;
             }
             
-            void* AttributeList = NarFindFileAttributeFromFileRecord(FileRecord, NAR_ATTRIBUTE_LIST);
-            if(MultPIDs.Len == 0 && 
-               NULL != AttributeList){
-                // resolve the attribute list and
-                // redirect this entry.
-                
-                // skip first 24 bytes, header.
-                uint32_t AttrListLen       = *(uint32_t*)NAR_OFFSET(AttributeList, 16);
-                uint32_t LenRemaining      = AttrListLen;
-                uint8_t* CurrentAttrRecord = (uint8_t*)NAR_OFFSET(AttributeList, 24);
-                
-                file_explorer_file *File = &Result.Files[Result.FileCount];
-                memset(File, 0, sizeof(*File));
-                Result.FileCount++;
-                
-                while(LenRemaining){
-                    uint16_t RecordLen = *(uint16_t*)NAR_OFFSET(CurrentAttrRecord, 4);
-                    uint32_t Type      = *(uint32_t*)CurrentAttrRecord;
-                    
-                    
-                    if(Type == NAR_FILENAME_FLAG){
-                        // found the filename attribute, but it might be referencing itself, if so scan for other filename entries.
-                        uint32_t AttrListFileID = *(uint32_t*)NAR_OFFSET(CurrentAttrRecord, 16);
-                        if(AttrListFileID != FileID){
-                            
-                            NAR_BREAK;
-                            
-                            // found it, rereference the map to this id.
-                            ASSERT(!!Header->isDirectory);
-                            
-                            File->IsDirectory  = Header->isDirectory;
-                            File->Size         = FileSize;
-                            File->FileID       = FileID;
-                            File->ParentFileID = AttrListFileID;
-                            File->IsDirectory  = Header->isDirectory;
-                            
-                            break;
-                        }
-                        else{
-                            
-                        }
-                        
-                    }
-                    
-                    // If we haven't extracted file size from entry, try to find it
-                    // from attribute list. 
-                    if(FileSize == 0 && 
-                       Type == NAR_DATA_FLAG){
-                        NAR_BREAK;
-                        // TODO(Batuhan): 
-                    }
-                    
-                    CurrentAttrRecord += RecordLen;
-                    LenRemaining      -= RecordLen;
-                }
-                
-            }
             
         }
         
@@ -1089,18 +1085,6 @@ FEGetFileFullPath(file_explorer* FE, file_explorer_file* File){
 
 bool IsValidAttrEntry(attribute_list_entry Entry){
     return (Entry.EntryType != 0);
-}
-
-
-/*
-Return value might be either fall in file record or in backup data. If last one,
-it will be duplicate of the binary data since we don't know if it's compressed or not, we better extract it from backup and copy it to new buffer.
-*/
-void*
-GetAttributeListData(file_explorer* FE, void* AttributeStart){
-    ASSERT(FALSE);
-    NAR_BREAK;
-    return 0;
 }
 
 
@@ -1168,15 +1152,74 @@ SolveAttributeListReferences(const void* MFTStart,
     uint64_t   FileSize = 0;
     
     FileRecordHeader *Header = (FileRecordHeader*)BaseFileRecord;
+    TIMED_BLOCK();
     
     uint32_t BaseFileID = NarGetFileID(BaseFileRecord);
     uint64_t FileCount = 0;
     
-    for(uint64_t i =0; i < 16; i++){
+    // find unique file ID's that contains file name attribute
+    uint32_t UniqueFileID[16];
+    uint32_t UniqueFileIDCount = 0;
+    for(uint64_t i =0; i < 32; i++){
+        
+        attribute_list_entry Entry = Contents.Entries[i];
+        
+        if(false == IsValidAttrEntry(Entry)){
+            break;
+        }
+        
+        if(i == 0 && Entry.EntryType == NAR_FILENAME_FLAG){
+            UniqueFileID[UniqueFileIDCount++] = Entry.EntryFileID;
+            continue;
+        }
+        
+        attribute_list_entry PrevEntry = Contents.Entries[i-1];
+        
+        if(Entry.EntryType == NAR_FILENAME_FLAG){
+            if(PrevEntry.EntryType == NAR_FILENAME_FLAG && Entry.EntryFileID == PrevEntry.EntryFileID){
+                
+            }
+            else{
+                UniqueFileID[UniqueFileIDCount++] = Entry.EntryFileID;
+            }
+        }
+        
+    }
+    
+    ASSERT(UniqueFileIDCount > 0);
+    
+    for(uint64_t i =0; i<UniqueFileIDCount; i++){
+        
+        void *EntryFileRecord = (uint8_t*)MFTStart + UniqueFileID[i] * 1024;
+        multiple_pid MultPIDs = NarGetFileNameAndParentID(EntryFileRecord);
+        
+        ASSERT(MultPIDs.Len > 0);
+        for(uint64_t _pidi = 0; _pidi<MultPIDs.Len; _pidi++){
+            name_pid NamePID  = MultPIDs.PIDS[_pidi];
+            uint32_t NameLen  = NamePID.NameLen;
+            wchar_t *Name     = NamePID.Name;
+            uint64_t NameSize = (NameLen+1)*2; 
+            
+            Files[FileCount].Name    = (wchar_t*)LinearAllocate(StringAllocator, NameSize);
+            Files[FileCount].NameLen = NameLen;
+            
+            memcpy(Files[FileCount].Name, Name, NameSize - 2);
+            FileCount++;
+        }
+    }
+    
+    
+    for(uint64_t i =0; i < 32; i++){
         attribute_list_entry Entry = Contents.Entries[i];
         if(false == IsValidAttrEntry(Entry)){
             break;
         }
+        
+        if(Entry.EntryType != NAR_DATA_FLAG
+           && Entry.EntryType != NAR_STANDART_FLAG){
+            continue;
+        }
+        
         
         void *EntryFileRecord = (uint8_t*)MFTStart + Entry.EntryFileID * 1024;
         void *Attr            = NarFindFileAttributeFromFileRecord(EntryFileRecord, Entry.EntryType);
@@ -1184,6 +1227,7 @@ SolveAttributeListReferences(const void* MFTStart,
         
         switch(Entry.EntryType){
             
+#if 0            
             case NAR_FILENAME_FLAG:{
                 //DOS FILE NAME
                 if(*(uint8_t*)NAR_OFFSET(Attr, 89) != 2){
@@ -1200,6 +1244,8 @@ SolveAttributeListReferences(const void* MFTStart,
                 
                 break;
             }
+#endif
+            
             case NAR_DATA_FLAG:{
                 if(FileSize != 0){
                     break;
@@ -1208,11 +1254,10 @@ SolveAttributeListReferences(const void* MFTStart,
                 break;
             }
             case NAR_STANDART_FLAG:{
-                NAR_BREAK;
+                //NAR_BREAK;
                 break;
             }
             default:{
-                ASSERT(FALSE);
                 break;
             }
         }
@@ -1248,7 +1293,7 @@ FEReadBackup(nar_file_view *Backup, nar_file_view *Metadata,
              void *ZSTDBuffer, size_t ZSTDBufferSize)
 {
     
-    
+    TIMED_BLOCK();
     if(NULL == Backup){
         return 0;
     }
