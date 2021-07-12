@@ -2,11 +2,12 @@
 
 #include "nar.h"
 
+#ifndef Kilobyte
 #define Kilobyte(val) ((val)*1024ll)
-
 #define Megabyte(val) (Kilobyte(val)*1024ll)
-
 #define Gigabyte(val) (Megabyte(val)*1024ll)
+#endif
+
 
 #define MIN(a,b) ((a)<(b) ? (a) : (b))
 
@@ -77,6 +78,19 @@ struct FileRecordHeader {
 	uint32_t recordNumber;
 };
 
+#pragma pack(push ,1)
+struct data_attr_header{
+    uint32_t Type;
+    uint32_t LenWithHeader;
+    uint8_t  NonResidentFlag;
+    uint8_t  NameLen;
+    uint16_t NameOffset;
+    uint16_t Compressed : 1;  //0th byte
+    uint16_t Empty      : 13; //
+    uint16_t Encrypted : 1;   //14th byte
+    uint16_t Sparse    : 1;   //15th byte
+};
+#pragma pack(pop)
 
 struct name_pid{
     wchar_t *Name;
@@ -198,8 +212,14 @@ bool
 NarParseDataRun(void* DatarunStart, nar_record *OutRegions, uint32_t MaxRegionLen, uint32_t *OutRegionsFound, bool BitmapCompatibleInsert = false);
 
 
-uint32_t
+inline uint32_t
 NarGetFileID(void* FileRecord);
+
+inline uint8_t
+NarIsFileLinked(void* FileRecord);
+
+inline uint32_t
+NarGetFileBaseID(void* FileRecord);
 
 inline INT32
 NarGetVolumeClusterSize(char Letter);
@@ -272,8 +292,3 @@ SolveAttributeListReferences(const void* MFTStart,
                              attribute_list_contents Contents, file_explorer_file* Files,
                              linear_allocator* StringAllocator
                              );
-uint64_t
-FEReadBackup(nar_file_view *Backup, nar_file_view *Metadata, 
-             uint64_t AbsoluteClusterOffset, uint64_t ReadSizeInCluster, 
-             void *Output, uint64_t OutputMaxSize,
-             void *ZSTDBuffer, size_t ZSTDBufferSize);

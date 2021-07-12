@@ -51,11 +51,6 @@
 #define NAR_RECOVERY_PARTITION_LETTER 'R'
 
 
-#define ZSTD_DLL_IMPORT 1
-
-#include "zstd.h"
-#include "zstd_errors.h"
-
 #if NAR_LINUX
 #define NAR_BREAK do{__builtin_trap();}while(0);
 #elif NAR_WINDOWS

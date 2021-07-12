@@ -1,8 +1,12 @@
 #pragma once
 
+#include "precompiled.h"
+#include "compression.h"
+#include "nar.h"
 #include "minispy.h"
+#include "file_explorer.h"
 
-
+#if 1
 #define TIMED_BLOCK__(NAME, Number, ...) timed_block timed_##Number(__COUNTER__, __LINE__, __FUNCTION__, NAME);
 #define TIMED_BLOCK_(NAME, Number, ...)  TIMED_BLOCK__(NAME, Number,  ## __VA__ARGS__)
 #define TIMED_BLOCK(...)                 TIMED_BLOCK_("UNNAMED", __LINE__, ## __VA__ARGS__)
@@ -41,6 +45,7 @@ struct timed_block {
     }
     
 };
+#endif
 
 
 inline void
@@ -750,3 +755,11 @@ ConnectDriver(PLOG_CONTEXT Ctx);
 
 inline point_offset
 FindPointOffsetInRecords(nar_record *Records, uint64_t Len, int64_t Offset);
+
+
+
+uint64_t
+ReadBackup(nar_file_view *Backup, nar_file_view *Metadata, 
+           uint64_t AbsoluteClusterOffset, uint64_t ReadSizeInCluster, 
+           void *Output, uint64_t OutputMaxSize,
+           void *ZSTDBuffer, size_t ZSTDBufferSize);

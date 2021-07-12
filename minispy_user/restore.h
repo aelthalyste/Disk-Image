@@ -3,8 +3,8 @@
 #include "memory.h"
 #include "platform_io.h"
 #include "nar.h"
-#include "../inc/minispy.h"
-
+//#include "../inc/minispy.h"
+#include "compression.h"
 #include <string>
 
 

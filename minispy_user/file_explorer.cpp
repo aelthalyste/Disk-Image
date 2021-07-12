@@ -1,6 +1,6 @@
-#include "precompiled.h"
+//#include "precompiled.h"
 #include "file_explorer.h"
-
+#include "platform_io.h"
 
 double AllocatorTimeElapsed = 0.0f;
 uint64_t AllocationCount = 0;
@@ -504,8 +504,8 @@ NarFindExtensions(char VolumeLetter, HANDLE VolumeHandle, wchar_t *Extension, ex
                 
                 if(BR == TargetFileCount*1024ull){
                     
-                    int64_t start = NarGetPerfCounter();
-                    ParserLoopCount += TargetFileCount;
+                    //int64_t start = NarGetPerfCounter();
+                    //ParserLoopCount += TargetFileCount;
                     for (uint64_t FileRecordIndex = 0; FileRecordIndex < TargetFileCount; FileRecordIndex++) {
                         
                         void* FileRecord = (uint8_t*)Memory->FileBuffer + (uint64_t)FileRecordSize * (uint64_t)FileRecordIndex;
@@ -531,11 +531,30 @@ NarFindExtensions(char VolumeLetter, HANDLE VolumeHandle, wchar_t *Extension, ex
                         uint32_t IsDirectory = r->isDirectory;
                         uint32_t ParentID = 0;
                         
-                        
+                        void* DataAttribute = NarFindFileAttributeFromFileRecord(FileRecord, NAR_DATA_FLAG);
+                        if(DataAttribute){
+                            data_attr_header *DAHeader = (data_attr_header*)DataAttribute;
+                        }
                         multiple_pid MultPIDs = NarGetFileNameAndParentID(FileRecord);
                         
                         void *AttributeList = NarFindFileAttributeFromFileRecord(FileRecord, NAR_ATTRIBUTE_LIST);
                         
+                        if(AttributeList){
+                            
+                            void*   ATLData = 0;
+                            uint32_t ATLLen = 0;
+                            uint8_t ATLNonResident = *(uint8_t*)NAR_OFFSET(AttributeList, 8);
+                            
+                            if(!ATLNonResident){
+                                ATLData = NAR_OFFSET(AttributeList, 24);
+                                ATLLen  = *(uint32_t*)NAR_OFFSET(AttributeList, 16);
+                                ASSERT(ATLLen < 512);
+                            }
+                            
+                        }
+                        if(!NarIsFileLinked(FileRecord)){
+                            ASSERT(NarFindFileAttributeFromFileRecord(FileRecord, NAR_STANDART_FLAG));
+                        }
                         
                         for(size_t _pidi = 0; _pidi < MultPIDs.Len; _pidi++){
                             name_pid NamePID = MultPIDs.PIDS[_pidi];
@@ -581,11 +600,6 @@ NarFindExtensions(char VolumeLetter, HANDLE VolumeHandle, wchar_t *Extension, ex
                                         memcpy(PIDResultArr[ArrLen].Name, NamePID.Name, NameSize - 2);
                                         PIDResultArr[ArrLen].NameLen = NamePID.NameLen + 1;
                                         ArrLen++;
-                                    }
-                                    
-                                    // NOTE(Batuhan): bail out if file name doesn't match, its same entry all the way down.
-                                    else{
-                                        break;
                                     }
                                     
                                 }
@@ -668,7 +682,7 @@ NarFindExtensions(char VolumeLetter, HANDLE VolumeHandle, wchar_t *Extension, ex
                         
                     }
                     
-                    ParserTotalTime += NarTimeElapsed(start);
+                    //ParserTotalTime += NarTimeElapsed(start);
                     
                 }
                 else{
@@ -683,7 +697,7 @@ NarFindExtensions(char VolumeLetter, HANDLE VolumeHandle, wchar_t *Extension, ex
     }
     
     
-    int64_t TraverserStart = NarGetPerfCounter();
+    //int64_t TraverserStart = NarGetPerfCounter();
     
     uint64_t SkippedFileCount = 0;
     wchar_t** FilenamesExtended = (wchar_t**)LinearAllocateAligned(&Memory->StringAllocator, ArrLen*8, 8);
@@ -747,7 +761,7 @@ NarFindExtensions(char VolumeLetter, HANDLE VolumeHandle, wchar_t *Extension, ex
         
     }
     
-    TraverserTotalTime = NarTimeElapsed(TraverserStart);
+    //TraverserTotalTime = NarTimeElapsed(TraverserStart);
     
     //qsort(FilenamesExtended, ArrLen, 8, CompareWCharStrings);
     
@@ -757,11 +771,11 @@ NarFindExtensions(char VolumeLetter, HANDLE VolumeHandle, wchar_t *Extension, ex
     }
 #endif
     
-    printf("Parser, %9u files in %.5f sec, file per ms %.5f\n", Memory->TotalFC, ParserTotalTime, (double)Memory->TotalFC/ParserTotalTime/1000.0);
-    printf("Traverser %8u files in %.5f sec, file per ms %.5f\n", ArrLen, TraverserTotalTime, (double)ArrLen/TraverserTotalTime/1000.0);
+    //printf("Parser, %9u files in %.5f sec, file per ms %.5f\n", Memory->TotalFC, ParserTotalTime, (double)Memory->TotalFC/ParserTotalTime/1000.0);
+    //printf("Traverser %8u files in %.5f sec, file per ms %.5f\n", ArrLen, TraverserTotalTime, (double)ArrLen/TraverserTotalTime/1000.0);
     //printf("Allocating count %8u in  %.5f sec, allocation per ms %.5f\n", AllocationCount, AllocatorTimeElapsed, (double)AllocationCount/AllocatorTimeElapsed/(1000.0));
     
-    printf("Match count %I64u\n", ArrLen);
+    //printf("Match count %I64u\n", ArrLen);
     
     
     Result.Files = FilenamesExtended;
@@ -771,9 +785,21 @@ NarFindExtensions(char VolumeLetter, HANDLE VolumeHandle, wchar_t *Extension, ex
 }
 
 
-uint32_t
+inline uint32_t
 NarGetFileID(void* FileRecord){
-    uint32_t Result = *(uint32_t*)NAR_OFFSET(FileRecord, 44);
+    uint32_t Result = *(uint64_t*)NAR_OFFSET(FileRecord, 44);
+    return Result;
+}
+
+inline uint8_t
+NarIsFileLinked(void* FileRecord){
+    uint32_t Result = NarGetFileBaseID(FileRecord);
+    return !(Result == 0);
+}
+
+inline uint32_t
+NarGetFileBaseID(void* FileRecord){
+    uint32_t Result = *(uint32_t*)NAR_OFFSET(FileRecord, 32);
     return Result;
 }
 
@@ -838,7 +864,7 @@ NarInitFileExplorerMemory(uint32_t TotalFC){
     file_explorer_memory Result = {0};
     
     uint64_t StringAllocatorSize     = TotalFC*520 + Megabyte(500);
-    Result.StringAllocator = NarCreateLinearAllocator(StringAllocatorSize, Megabyte(16));
+    Result.StringAllocator = NarCreateLinearAllocator(StringAllocatorSize, Megabyte(50));
     
     if(NULL != Result.StringAllocator.Memory){
         size_t ArenaSize   = TotalFC*sizeof(file_explorer_file) + Megabyte(50);
@@ -886,23 +912,35 @@ NarInitFileExplorer(wchar_t *MetadataPath, wchar_t *FullbackupPath){
         
         Result.MFT     = (uint8_t*)Result.MetadataView.Data + BM->Offset.MFT;
         Result.MFTSize = BM->Size.MFT;
-        Result.TotalFC = Result.MFTSize / (1024);
+        Result.TotalFC = (Result.MFTSize / (1024))*3/2;
         
         Result.Memory  = NarInitFileExplorerMemory(Result.TotalFC);
         
         Result.DirectoryID   = 5;
         Result.DirectoryPath = (wchar_t*)ArenaAllocate(&Result.Memory.Arena, Kilobyte(32));
-        Result.ParentIDs     = (uint32_t*)ArenaAllocate(&Result.Memory.Arena, Result.TotalFC*sizeof(uint32_t)*2);
+        Result.ParentIDs     = (uint32_t*)ArenaAllocateAligned(&Result.Memory.Arena, Result.TotalFC*sizeof(uint32_t)*2, 4);
         
-        Result.Files = (file_explorer_file*)ArenaAllocate(&Result.Memory.Arena, Result.TotalFC*sizeof(file_explorer_file));
+        Result.Files = (file_explorer_file*)ArenaAllocateAligned(&Result.Memory.Arena, Result.TotalFC*sizeof(file_explorer_file), 8);
         
         ASSERT(Result.ParentIDs);
         ASSERT(Result.DirectoryPath);
-        unsigned char FB[1024];
+        uint8_t* FB = (uint8_t*)ArenaAllocateAligned(&Result.Memory.Arena, 1024, 16);
         
         uint64_t ATLRefCount = 0;
-        for(uint64_t i = 40; i<120000; i++){
-            memcpy(&FB[0], (uint8_t*)Result.MFT + 1024*i, 1024);
+        
+        struct file_size_id_tuple{
+            uint64_t FileSize;
+            uint32_t FileID;
+        }*FileSizeTuple = 0;
+        
+        FileSizeTuple = (file_size_id_tuple*)ArenaAllocateAligned(&Result.Memory.Arena, sizeof(*FileSizeTuple)*Result.TotalFC/2, 8);
+        uint64_t FileSizeTupleCount = 0;
+        uint32_t *FileIDs = (uint32_t*)ArenaAllocateAligned(&Result.Memory.Arena, 4*Result.TotalFC, 4);
+        
+        
+        for(uint64_t _fi = 40; _fi<Result.MFTSize/1024; _fi++){
+            
+            memcpy(&FB[0], (uint8_t*)Result.MFT + 1024*_fi, 1024);
             uint8_t *FileRecord = &FB[0];
             
             if(*(uint32_t*)FileRecord != 'ELIF'){
@@ -919,64 +957,49 @@ NarInitFileExplorer(wchar_t *MetadataPath, wchar_t *FullbackupPath){
                 continue;
             }
             
-            
-            void* AttributeList = NarFindFileAttributeFromFileRecord(FileRecord, NAR_ATTRIBUTE_LIST);
-            if(AttributeList){
-                
-                ATLRefCount++;
-                
-                uint8_t ATLDataBuffer[4096];
-                
-                void*   ATLData = 0;
-                uint32_t ATLLen = 0;
-                uint8_t ATLNonResident = *(uint8_t*)NAR_OFFSET(AttributeList, 8);
-                if(ATLNonResident){
-                    TIMED_NAMED_BLOCK("Non resident attrlist!");
-                    void* DataRunStart = NAR_OFFSET(AttributeList, 64);;
-                    
-                    nar_record   Runs[16];
-                    uint32_t DataRunFound = 0;
-                    bool ParseResult = NarParseDataRun(DataRunStart, Runs, 16, &DataRunFound, false);
-                    ASSERT(ParseResult);
-                    ASSERT(DataRunFound == 1);
-                    
-                    uint32_t TargetCluster = Runs[0].StartPos;
-                    uint32_t FEResult = FEReadBackup(&Result.FullbackupView, &Result.MetadataView, TargetCluster, 1, ATLDataBuffer, 4096, 0, 0);
-                    
-                    ATLData = &ATLDataBuffer[0];
-                    ATLLen  = *(uint32_t*)NAR_OFFSET(AttributeList, 48);
-                    ASSERT(FEResult == 4096);
-                }
-                else{
-                    ATLData = NAR_OFFSET(AttributeList, 24);
-                    ATLLen  = *(uint32_t*)NAR_OFFSET(AttributeList, 16);
-                    ASSERT(ATLLen < 512);
-                }
-                
-                attribute_list_contents C  = GetAttributeListContents(ATLData, ATLLen);
-                file_explorer_file *Files = &Result.Files[Result.FileCount];
-                
-                uint64_t Found = SolveAttributeListReferences(Result.MFT, FileRecord, C, Files, &Result.Memory.StringAllocator);
-                ASSERT(Found > 0);
-                for(uint64_t fi = Result.FileCount; 
-                    fi<Result.FileCount+Found;
-                    fi++){
-                    Result.ParentIDs[fi] = Files[fi].ParentFileID;
-                }
-                
-                Result.FileCount += Found;
-                continue;
-            }
-            
+            uint64_t FileSize = 0;
             multiple_pid MultPIDs = NarGetFileNameAndParentID(FileRecord);
             uint32_t FileID       = NarGetFileID(FileRecord);
-            
-            // Extract file creation and modification time.
             SYSTEMTIME WinFileCreated  = {0};
             SYSTEMTIME WinFileModified = {0};
+            
+            
+            
+            void* DataAttribute = NarFindFileAttributeFromFileRecord(FileRecord, NAR_DATA_FLAG);
+            if(NULL != DataAttribute){
+                // TODO(Batuhan) : I don't know what to do with reparse points.
+                data_attr_header *DAHeader = (data_attr_header*)DataAttribute;
+                ASSERT(DAHeader->NameLen == 0);
+                
+                
+                if(!!DAHeader->NonResidentFlag){
+                    uint64_t FirstVCN = *(uint64_t*)NAR_OFFSET(DataAttribute, 16);
+                    uint64_t LastVCN  = *(uint64_t*)NAR_OFFSET(DataAttribute, 24); 
+                    //ASSERT(FirstVCN < 0xffffffffull);
+                    //ASSERT(LastVCN < 0xffffffffull);
+                    
+                    ASSERT(DAHeader->NameLen);
+                    if(DAHeader->NameLen > 0){
+                        
+                    }
+                    else{
+                        
+                    }
+                    
+                    FileSize = *(uint64_t*)NAR_OFFSET(DataAttribute, 48);
+                }
+                else{
+                    FileSize = *(uint32_t*)NAR_OFFSET(DataAttribute, 16);
+                }
+            }
+            
+            
+            // Extract file creation and modification time.
             void *StdAttr = NarFindFileAttributeFromFileRecord(FileRecord, NAR_STANDART_FLAG);
             if(NULL != StdAttr){
-                void* AttrData = NAR_OFFSET(StdAttr, 24);
+                uint32_t OffsetToData = *(uint32_t*)NAR_OFFSET(StdAttr, 20);
+                
+                void* AttrData = NAR_OFFSET(StdAttr, OffsetToData);
                 
                 uint64_t FileCreated  = *(uint64_t*)NAR_OFFSET(AttrData, 0);
                 uint64_t FileModified = *(uint64_t*)NAR_OFFSET(AttrData, 8);
@@ -991,12 +1014,23 @@ NarInitFileExplorer(wchar_t *MetadataPath, wchar_t *FullbackupPath){
             }// if stdattr
             
             
-            //Extract file size if not directory
-            uint64_t FileSize = 0;
-            if(!Header->isDirectory){
-                void* DataAttr = NarFindFileAttributeFromFileRecord(FileRecord, NAR_DATA_FLAG);
-                if(NULL != DataAttr){
-                    FileSize = *(uint64_t*)NAR_OFFSET(DataAttr, 48);
+            // If file has size information of an another base file, we must save it in file size array, after parsing whole FS, we must re-iterate those array and correct sizes of linked ids. 
+            if(!!NarIsFileLinked(FileRecord)){
+                // $DATA attribute of a file might be in different file records, but only
+                // first one, that represents first VCN, contains actual size. Remaining
+                // attributes has size of 0, while they point to where they belong in terms
+                // of VCN.
+                // and another point of not adding if FileSize is 0 is, it would make literally zero difference if we would have added it or not. Because original
+                // file's size is already 0!
+                if(FileSize != 0){
+                    uint32_t BaseID   = NarGetFileBaseID(FileRecord);
+                    ASSERT(BaseID < 0xffffffffull);
+                    FileID            = BaseID;
+                    
+                    FileSizeTuple[FileSizeTupleCount].FileSize = FileSize;
+                    FileSizeTuple[FileSizeTupleCount].FileID   = BaseID;
+                    FileSizeTupleCount++;
+                    ASSERT(FileSizeTupleCount < Result.TotalFC/2);
                 }
             }
             
@@ -1023,16 +1057,37 @@ NarInitFileExplorer(wchar_t *MetadataPath, wchar_t *FullbackupPath){
                 File->ParentFileID = NamePID.ParentFileID;
                 File->IsDirectory  = Header->isDirectory;
                 
-                
                 memcpy(&File->CreationTime, &WinFileCreated, sizeof(SYSTEMTIME));
                 memcpy(&File->LastModifiedTime, &WinFileModified, sizeof(SYSTEMTIME));
                 
                 Result.ParentIDs[Result.FileCount] = NamePID.ParentFileID;
+                FileIDs[Result.FileCount]          = NamePID.FileID;
                 Result.FileCount++;
+                ASSERT(FileID < 0xffffffffull);
+                ASSERT(Result.FileCount < Result.TotalFC);
             }
             
+        }// for i < Result.TotalFC;
+        
+        
+#if 1        
+        for(uint64_t _idc = 0; _idc < FileSizeTupleCount; _idc++){
+            ASSERT(FileSizeTuple[_idc].FileSize != 0);
+            ASSERT(FileSizeTuple[_idc].FileID > 0);
+            if(FileSizeTuple[_idc].FileID == 46){
+                NAR_BREAK;
+            }
+            uint64_t FileSize = FileSizeTuple[_idc].FileSize;
+            uint64_t BaseID   = FileSizeTuple[_idc].FileID;
             
+            for(uint64_t i =0; i<Result.FileCount; i++){
+                if(FileIDs[i] == BaseID) {
+                    ASSERT(Result.Files[i].Size == 0);
+                    Result.Files[i].Size = FileSize;
+                }
+            }
         }
+#endif
         
         
     }
@@ -1273,136 +1328,4 @@ SolveAttributeListReferences(const void* MFTStart,
     return FileCount;
 }
 
-
-/*
-Doesn't fail if reads less than ReadSiz, instead returns how many bytes it read.
-ARGS:
-Backup, Metadata: File views of according backup.
-AbsoluteClusterOffset: (in clusters) Absolute volume offset we are trying to read.
-ReadSizeInCluster    : (in clusters) How many clusters we should be reading.
-Output               : Output buffer we should fill.
-OutputMaxSize        : Max size of the output buffer.
-ZSTDBuffer           : If backup is compressed, this buffer will be used to temporarily store decompressed data. This value might be NULL, if so, function allocates its own buffer. 
-If buffer doesn't have enought space to contain decompressed data, function fails.
-ZSTDBufferSize       : Size of given buffer, if no buffer is given this value is ignored.
-*/
-uint64_t
-FEReadBackup(nar_file_view *Backup, nar_file_view *Metadata, 
-             uint64_t AbsoluteClusterOffset, uint64_t ReadSizeInCluster, 
-             void *Output, uint64_t OutputMaxSize,
-             void *ZSTDBuffer, size_t ZSTDBufferSize)
-{
-    
-    TIMED_BLOCK();
-    if(NULL == Backup){
-        return 0;
-    }
-    if(NULL == Metadata){
-        return 0;
-    }
-    
-    uint64_t Result = 0;
-    backup_metadata *BM = (backup_metadata*)Metadata->Data;
-    
-    nar_record* Records       = (nar_record*)((uint8_t*)Metadata->Data + BM->Offset.RegionsMetadata);
-    uint64_t RecordCount      = BM->Size.RegionsMetadata/sizeof(nar_record);
-    
-    point_offset OffsetResult = FindPointOffsetInRecords(Records, RecordCount, AbsoluteClusterOffset);
-    
-    uint64_t BackupOffsetInBytes = 0;
-    uint64_t AvailableBytes      = 0;
-    uint64_t ReadSizeInBytes     = 0;
-    
-    {
-        uint64_t BackupClusterOffset = OffsetResult.Offset;
-        uint64_t AvailableClusters   = OffsetResult.Readable;
-        if(AvailableClusters < ReadSizeInCluster){
-            printf("Requested bytes exceeds available region size in the backup! Requested %I64u, available %I64u\n", ReadSizeInCluster, AvailableClusters);
-            ReadSizeInCluster = AvailableClusters;
-        }
-        ReadSizeInBytes     = (uint64_t)BM->ClusterSize * ReadSizeInCluster;
-        BackupOffsetInBytes = (uint64_t)BM->ClusterSize * BackupClusterOffset;
-    }
-    
-    if(BM->IsCompressed){
-        
-        uint64_t CompressedSize      = 0;
-        uint64_t Remaining           = 0;
-        uint64_t DecompSize          = 0;
-        uint64_t DecompAdvancedSoFar = 0;
-        uint64_t BackupRemainingLen  = Backup->Len;
-        uint64_t RemainingReadSize   = ReadSizeInBytes;
-        uint8_t* DataNeedle          = Backup->Data;
-        
-        
-        for(;BackupRemainingLen>0 && RemainingReadSize > 0 ;)
-        {
-            
-            uint64_t DecompSize    = ZSTD_getFrameContentSize(DataNeedle, BackupRemainingLen);
-            size_t CompressedSize  = ZSTD_findFrameCompressedSize(DataNeedle, BackupRemainingLen);       
-            if(ZSTD_isError(DecompSize)){
-                ZSTD_ErrorCode ErrorCode = ZSTD_getErrorCode(DecompSize);
-                const char* ErrorString  = ZSTD_getErrorString(ErrorCode);
-                printf("ZSTD error when determining frame content size, error : %s\n", ErrorString); 
-                return 0;
-            }
-            if(ZSTD_isError(CompressedSize)){
-                ZSTD_ErrorCode ErrorCode = ZSTD_getErrorCode(DecompSize);
-                const char* ErrorString  = ZSTD_getErrorString(ErrorCode);
-                printf("ZSTD error when determining frame compressed size, error : %s\n", ErrorString); 
-                return 0;
-            }
-            
-            // found!
-            if(BackupOffsetInBytes < DecompAdvancedSoFar + DecompSize){
-                
-                bool ZSTDBufferLocal = (ZSTDBuffer == NULL);
-                if(ZSTDBufferLocal){
-                    ZSTDBuffer     = malloc(DecompSize);
-                    ZSTDBufferSize = DecompSize;
-                }
-                ASSERT(ZSTDBufferSize >= DecompSize);
-                ASSERT(NULL != ZSTDBuffer);
-                
-                
-                size_t ZSTD_RetCode = ZSTD_decompress(ZSTDBuffer, ZSTDBufferSize, DataNeedle, CompressedSize);
-                
-                ASSERT(!ZSTD_isError(ZSTD_RetCode));
-                
-                uint64_t BufferOffset        = BackupOffsetInBytes - DecompAdvancedSoFar;
-                uint64_t BufferReadableBytes = DecompSize - BufferOffset;
-                uint64_t CopySize            = MIN(RemainingReadSize, BufferReadableBytes);
-                
-                memcpy(Output, (uint8_t*)ZSTDBuffer + BufferOffset, CopySize);
-                Output = (uint8_t*)Output + CopySize;
-                
-                
-                BackupOffsetInBytes += CopySize;
-                RemainingReadSize   -= CopySize;
-                
-                if(ZSTDBufferLocal){
-                    free(ZSTDBuffer);
-                    ZSTDBuffer = 0;
-                }
-                
-            }
-            
-            DecompAdvancedSoFar += DecompSize;
-            
-            BackupRemainingLen -= CompressedSize;
-            DataNeedle          = DataNeedle + (CompressedSize);
-        }
-        
-        
-        
-        // decompress
-        
-    }
-    else{
-        memcpy(Output, (uint8_t*)Backup->Data + BackupOffsetInBytes, ReadSizeInBytes);
-    }
-    
-    
-    return ReadSizeInBytes;
-}
 
