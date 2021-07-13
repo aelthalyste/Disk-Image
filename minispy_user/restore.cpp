@@ -1,4 +1,6 @@
-#include "precompiled.h"
+//#include "precompiled.h"
+
+#include "nar.h"
 #include "restore.h"
 
 
@@ -355,7 +357,7 @@ AdvanceStream(restore_stream* Stream) {
     }
     
     if (Stream->CSI >= Stream->SourceCap) {
-        NAR_DEBUG("End of stream source pipe list");
+        //NAR_DEBUG("End of stream source pipe list");
         return Result;
     }
     
@@ -386,7 +388,7 @@ AdvanceStream(restore_stream* Stream) {
             Stream->Error = RestoreStream_Errors::Error_Read;
         }
         else{
-            NAR_DBG_ERR("Source %I64u is depleted, moving to next one\n", Stream->CSI);
+            NAR_DBG_ERR("Source %lu is depleted, moving to next one\n", Stream->CSI);
             Stream->CSI++;
             return AdvanceStream(Stream);
         }
@@ -492,36 +494,35 @@ FreeRestoreTarget(restore_target* Rt) {
 void
 FreeRestoreTarget(restore_target* Rt) {
     if (Rt) {
-        fclose(Rt->Impl);
+        fclose((FILE*)Rt->Impl);
     }
 }
 
 
 size_t
 NarWriteVolume(restore_target* Rt, const void* Mem, size_t MemSize) {
-    size_t Ret = fwrite(Mem, MemSize, 1, Rt->Impl);
+    size_t Ret = fwrite(Mem, MemSize, 1, (FILE*)Rt->Impl);
     ASSERT(Ret == 1);
     return MemSize;
 }
 
 size_t
 NarSetNeedleVolume(restore_target* Rt, size_t TargetFilePointer) {
-    int Ret = fseeko64(Rt->Impl, (off64_t)TargetFilePointer, 0);
+    int Ret = fseeko64((FILE*)Rt->Impl, (off64_t)TargetFilePointer, 0);
     ASSERT(Ret == 0);
     return TargetFilePointer;
 }
 
 restore_target*
 InitVolumeTarget(std::string VolumePath, nar_arena* Arena) {
-    static_assert(false, "not implemented");
     restore_target* Result = 0;
     
     FILE* F = fopen(VolumePath.c_str(), "rb");
     if (F) {
         Result = (restore_target*)ArenaAllocate(Arena, sizeof(restore_target));
         Result->Impl = F;
-        Result->Write = NarWriteVolume;
-        Result->SetNeedle = NarSetNeedleVolume;
+        Result->Write       = NarWriteVolume;
+        Result->SetNeedle   = NarSetNeedleVolume;
     }
     else {
         NAR_DEBUG("Unable to open volume %s\n", VolumePath.c_str());

@@ -11,7 +11,7 @@
 #   pacman -S --noconfirm --needed mingw-w64-x86_64-toolchain mingw-w64-x86_64-glfw
 #
 
-#CXX = g++
+CXX = g++
 #CXX = clang++
 
 EXE = nar_linux
@@ -23,8 +23,10 @@ OBJS = $(addsuffix .o, $(basename $(notdir $(SOURCES))))
 UNAME_S := $(shell uname -s)
 
 CXXFLAGS = -I$(IMGUI_DIR) -I$(IMGUI_DIR)/backends
-CXXFLAGS += -g -Wall -Werror -fms-extensions -pthread -lglfw3
+CXXFLAGS += -g -Wall -pthread -lglfw libzstd.a -Wno-missing-field-initializers -Wno-unused-function
 LIBS =
+
+#lglfw3
 # 
 ## ---------------------------------------
 ## NARBULUT 

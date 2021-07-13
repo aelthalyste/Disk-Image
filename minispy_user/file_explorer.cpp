@@ -1,4 +1,5 @@
 //#include "precompiled.h"
+#include "memory.h"
 #include "file_explorer.h"
 #include "platform_io.h"
 

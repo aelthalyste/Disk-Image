@@ -1,4 +1,4 @@
-#include "precompiled.h"
+//#include "precompiled.h"
 #include "platform_io.h"
 #include <string>	
 #include <stdlib.h>
@@ -267,7 +267,69 @@ NarDumpToFile(const char* FileName, void* Data, unsigned int Size) {
 
 #if __linux__
 
-#error linux mmap operations are not supported yet
+
+#include <sys/mman.h>
+#include <stdio.h>
+#include <linux/mman.h>
+
+struct imp_nar_file_view{
+    FILE* File;
+};
+
+nar_file_view
+NarOpenFileView(const std::wstring &fn){
+    return NarOpenFileView(wstr2str(fn));
+}
+
+nar_file_view
+NarOpenFileView(const std::string &fn){
+    nar_file_view Result = {};
+    FILE* File = fopen(fn.c_str(), "rb");
+    ASSERT(File);
+    if(File != 0){
+        int FD = fileno(File);    
+        size_t FileSize = NarGetFileSize(fn);
+        ASSERT(FileSize != 0);
+//MAP_HUGETLB | MAP_HUGE_2MB | 
+        void *FileMapMemory = mmap(0, FileSize, PROT_READ, MAP_SHARED_VALIDATE, FD, 0);
+        ASSERT(MAP_FAILED != FileMapMemory);
+        fclose(File);
+
+        if(FileMapMemory != 0){
+            Result.Data = (uint8_t*)FileMapMemory;
+            Result.Len  = FileSize;
+        }
+
+    }
+
+    return Result;
+}
+
+void
+NarFreeFileView(nar_file_view FV){
+    munmap(FV.Data, FV.Len);
+}
+
+
+#define _FILE_OFFSET_BITS 64
+
+inline size_t
+NarGetFileSize(const std::string &Path){
+    FILE *File = fopen(Path.c_str(), "rb");
+    off_t Result = 0;
+    if(NULL!=File){
+        fseek(File, 0L, SEEK_END);
+        Result = ftello(File);
+        fclose(File);
+    }
+    return Result;
+}
+
+inline size_t
+NarGetFileSize(const std::wstring& Path) {
+    return NarGetFileSize(wstr2str(Path));
+}
+
 
 std::string
 NarGetFileDirectory(const char *arg_fn){
@@ -280,22 +342,75 @@ NarGetFileDirectory(const char *arg_fn){
 
 std::wstring
 NarGetFileDirectory(const wchar_t *arg_fn){
-    return NarGetFileDirectory(wstr2str(arg_fn));
-    std::wstring fn(arg_fn);
-    auto indice = fn.rfind(L"/");
-    if(indice != std::wstring::npos)
-        return fn.substr(0, indice + 1);
-    return L"";
+    return str2wstr(NarGetFileDirectory(wstr2str(arg_fn)));
+}
+
+
+file_read
+NarReadFile(const char* FileName) {
+    file_read Result = { 0 };
+    size_t FileSize = NarGetFileSize(FileName);
+    if(FileSize > 0){
+        FILE *File = fopen(FileName, "rb");
+        if(File){
+            Result.Data = malloc(FileSize);
+            Result.Len  = FileSize;
+            ASSERT(Result.Data);
+            if(NULL != Result.Data){
+                if(1 == fread(Result.Data, FileSize, 1, File)){
+                    // success
+                }
+                else{
+                    ASSERT(0);
+                    FreeFileRead(Result);
+                    Result = {};
+                }
+            }
+            
+            fclose(File);    
+        }
+    }
+    else{
+
+    }
+    return Result;
+}
+
+file_read
+NarReadFile(const wchar_t* FileName){
+    return NarReadFile(wstr2str(FileName).c_str());
+}
+
+void
+FreeFileRead(file_read FR){
+    free(FR.Data);
 }
 
 file_read
 NarReadFileNBytes(const char *arg_fn){
-	
+        	
 }
 
 file_read
 NarReadFileNBytes(const wchar_t *arg_fn){
 	
+}
+
+
+std::string
+NarGetFileDirectory(const std::string& fn){
+    auto indice = fn.rfind("/");
+    if(indice != std::string::npos)
+        return fn.substr(0, indice + 1);
+    return "";
+}
+
+std::wstring
+NarGetFileDirectory(const std::wstring& fn){
+    auto indice = fn.rfind(L"/");
+    if(indice != std::wstring::npos)
+        return fn.substr(0, indice + 1);
+    return L"";
 }
 
 

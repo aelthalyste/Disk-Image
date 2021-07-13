@@ -7,7 +7,6 @@
 #include <stdint.h>
 #include <string>
 
-#include "../inc/minispy.h"
 
 
 #ifdef 	__linux__
@@ -16,9 +15,33 @@
 #define NAR_WINDOWS 1
 #endif
 
+#if NAR_WINDOWS
+#include "../inc/minispy.h"
+#else
+struct nar_backup_id{
+    union{
+        unsigned long long Q;
+        struct{
+            unsigned short Year;
+            unsigned char Month;
+            unsigned char Day;
+            unsigned char Hour;
+            unsigned char Min;
+            char Letter;
+        };
+    };
+};
+#endif
+
 
 #if _DEBUG || !_MANAGED 
+
+#if NAR_WINDOWS
 #define ASSERT(exp) do{if(!(exp)){__debugbreak();}} while(0);
+#else
+#define ASSERT(exp) do{if(!(exp)){__builtin_trap();}} while(0);
+#endif
+
 #else
 #define ASSERT(exp)
 #endif
@@ -57,11 +80,14 @@
 #define NAR_BREAK do{__debugbreak();}while(0);
 #endif
 
+
+#if NAR_WINDOWS
 #define NAR_DEBUG(fmt, ...) fprintf(stderr, fmt, __VA_ARGS__)
-
-
 #define NAR_DBG_ERR(fmt, ...) fprintf(stderr, fmt, __VA_ARGS__)
-
+#else
+#define NAR_DEBUG(fmt, ...) printf(fmt, __VA_ARGS__)
+#define NAR_DBG_ERR(fmt, ...) printf(fmt, __VA_ARGS__)
+#endif
 
 enum class BackupType : short {
     Diff,
@@ -284,9 +310,9 @@ NarGetVersionMidFix(int Version, std::wstring &Res){
 /////////////////////////////////////////////////////
 static inline void
 NarBackupIDToStr(nar_backup_id ID, std::wstring &Res){
-    wchar_t bf[64];
+    wchar_t bf[128];
     memset(bf, 0, sizeof(bf));
-    wsprintfW(bf, L"-%c%02d%02d%02d%02d", ID.Letter, ID.Month, ID.Day, ID.Hour, ID.Min);
+    swprintf(bf, 128, L"-%c%02d%02d%02d%02d", ID.Letter, ID.Month, ID.Day, ID.Hour, ID.Min);
     Res = std::wstring(bf);
 }
 

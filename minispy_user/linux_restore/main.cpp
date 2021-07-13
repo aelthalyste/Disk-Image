@@ -4,11 +4,16 @@
 // Read online: https://github.com/ocornut/imgui/tree/master/docs
 
 
+
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 
 #include <stdio.h>
+#include <vector>
+
+
+
 
 // About Desktop OpenGL function loaders:
 //  Modern desktop OpenGL doesn't have a standard portable header file to load OpenGL function pointers.
@@ -52,7 +57,10 @@ static void glfw_error_callback(int error, const char* description)
 }
 
 #include <cstdlib>
-#include "mspyUser.cpp"
+#include "../restore.h"
+#include "../restore.cpp"
+#include "../platform_io.h"
+#include "../platform_io.cpp"
 #include <sstream>
 #include <iostream>
 
@@ -126,43 +134,60 @@ GetDisks(){
 }
 
 
-
-
-static void*
-RestoreWorkerThread(void* thread_params){	
-	restore_inf *RestoreInf = ((restore_inf*)thread_params);
-	OfflineRestore(RestoreInf);	
-	return NULL;
+inline uint8_t
+NarFileNameExtensionCheck(const char *Path, const char *Extension){
+    size_t pl = strlen(Path);
+    size_t el = strlen(Extension);
+    if(pl <= el) return 0;
+    return (strcmp(&Path[pl - el], Extension) == 0);
 }
 
-pthread_t
-CallRestoreInThread(restore_inf Ri){
-	//       int pthread_create(pthread_t *thread, const pthread_attr_t *attr, void *(*start_routine) (void *), void *arg);
-	
-	pthread_t RestoreThread; 
-	pthread_attr_t ThreadAttributes;
-	memset(&ThreadAttributes, 0, sizeof(ThreadAttributes));
-	
-	pthread_attr_init(&ThreadAttributes);
-	
-	int tr = pthread_create(&RestoreThread, &ThreadAttributes, &RestoreWorkerThread, &Ri);
-	if(tr == 0){
-		fprintf(stdout, "Successfully created thread\n");
-	}
-	else{
-		if(tr == EINVAL){
-			fprintf(stderr, "Couldn't create thread, EINVAL\n");
-		}
-		if(tr == EPERM){
-			fprintf(stderr, "Couldn't create thread, EPERM\n");
-		}
-		if(tr == EAGAIN){
-			fprintf(stderr, "Couldn't create thread, EGAIN\n");
-		}
-	}
-	return RestoreThread;
-}
 
+std::vector<backup_metadata>
+NarGetBackupsInDirectory(const char *arg_dir){
+    
+    std::string dir = std::string(arg_dir);
+    if(dir.back() != '/')
+        dir += std::string("/");
+    
+    
+    std::string cmdstr = "ls -p \"" + std::string(dir) + "\" > lsresult.txt";
+    std::vector<backup_metadata> Result;
+    std::vector<std::string>    files;
+    files.reserve(1000);
+    Result.reserve(1000);
+    
+    system(cmdstr.c_str());
+    file_read fr = NarReadFile("lsresult.txt");
+    if(fr.Data != 0){
+        std::stringstream ss((char*)fr.Data);
+        std::string fname;
+        FreeFileRead(fr);
+        
+        while(ss >> fname)
+            if(fname.back() != '/')
+                files.push_back(fname);
+    }
+    
+    std::string MDExtension;
+    NarGetMetadataExtension(MDExtension);
+
+    for(auto &fname: files){
+        if(NarFileNameExtensionCheck(fname.c_str(), MDExtension.c_str())){
+            
+            FILE *F = fopen((std::string(dir) + fname).c_str(), "rb");
+            backup_metadata M;
+            if(NULL != F && 1 == fread(&M, sizeof(M), 1, F))
+                Result.emplace_back(M);             
+            
+            if(NULL != F) 
+                fclose(F);
+            
+        }
+    }
+    
+    return Result;
+}
 
 
 std::string
@@ -234,6 +259,8 @@ SelectPartition(){
 
 int main(int, char**)
 {
+	auto r = NarOpenFileView("Inconsolata-Bold.ttf");
+
 	if(0){
 		const char fn[] = "/media/lubuntu/New Volume/Disk-Image/build/minispy_user/NAR_M_0-F19704356773431269.narmd";	
 		FILE *F = fopen(fn, "rb");
@@ -373,8 +400,11 @@ int main(int, char**)
 			static std::vector<backup_metadata> Backups;
 			static int BackupButtonID = -1;
 			static std::string SelectedVolume = "/dev/!";
-			static restore_inf RestoreInf = {};
-			static pthread_t PThreadID;
+			static size_t TargetSize;
+			static nar_backup_id SelectedID;
+			static int SelectedVersion;
+			static std::string TargetPartition;
+
 			if(AppState == app_state_select_backup){
 				static bool debug_init = false;
 				if(false == debug_init){
@@ -382,15 +412,6 @@ int main(int, char**)
 					Backups.push_back({0, 2, 3});
 					Backups.push_back({0, 4, 5});
 					Backups.push_back({0, 0, 52});
-					Backups.push_back({0, 253, 253});
-					Backups.push_back({0, 253, 253});
-					Backups.push_back({0, 253, 253});
-					Backups.push_back({0, 253, 253});
-					Backups.push_back({0, 253, 253});
-					Backups.push_back({0, 253, 253});
-					Backups.push_back({0, 253, 253});
-					Backups.push_back({0, 253, 253});
-					Backups.push_back({0, 253, 253});
 					Backups.push_back({0, 253, 253});
 					Backups.push_back({0, 253, 253});
 					Backups.push_back({0, 253, 253});
@@ -404,7 +425,6 @@ int main(int, char**)
 				
 				if(ImGui::Button("Update")){
 					BackupButtonID = -1;
-					RestoreInf.RootDir = str2wstr(BackupDir);
 					Backups = NarGetBackupsInDirectory(BackupDir);
 				}
 				
@@ -427,12 +447,11 @@ int main(int, char**)
 						ImGui::TableNextRow();
 						ImGui::PushID(i);
 						
-						sprintf(bf, "##%d", i);
+						snprintf(bf, sizeof(bf), "##%d", i);
 						ImGui::TableNextColumn();
 						if(ImGui::RadioButton(bf, &BackupButtonID, i)){
-							RestoreInf.BackupID = Backups[BackupButtonID].ID;
-							RestoreInf.Version = Backups[BackupButtonID].Version;
-							std::cout<<wstr2str(GenerateMetadataName(Backups[BackupButtonID].ID, Backups[BackupButtonID].Version))<<"\n";
+							SelectedID 		= Backups[BackupButtonID].ID;
+							SelectedVersion =  Backups[BackupButtonID].Version;
 						}
 						
 						ImGui::TableNextColumn();
@@ -498,9 +517,9 @@ int main(int, char**)
 				
 				if(Backups[BackupButtonID].DiskType == NAR_DISKTYPE_MBR){
 
-					RestoreInf.TargetPartition = SelectPartition();
-					ImGui::Text("%s", RestoreInf.TargetPartition.c_str());
-					long int PartitionSize = GetFileSize(("/dev/" + RestoreInf.TargetPartition).c_str());
+					TargetPartition = SelectPartition();
+					ImGui::Text("%s", TargetPartition.c_str());
+					long int PartitionSize = GetFileSize(("/dev/" + TargetPartition).c_str());
 					static bool popup = false;				
 							
 					if(ImGui::Button("Restore")){
@@ -537,9 +556,8 @@ int main(int, char**)
 				
         	}
         	else if(AppState == app_state_select_volume){
-				RestoreInf.TargetPartition = SelectPartition();
-				ImGui::Text("%s", RestoreInf.TargetPartition.c_str());
-				long int PartitionSize = GetFileSize(("/dev/" + RestoreInf.TargetPartition).c_str());
+				//ImGui::Text("%s", RestoreInf.TargetPartition.c_str());
+				long int PartitionSize = GetFileSize(("/dev/" + TargetPartition).c_str());
 				static bool popup = false;				
 						
 				if(ImGui::Button("Restore")){
@@ -566,55 +584,12 @@ int main(int, char**)
         		
         	}
         	else if(AppState == app_state_restore){
-				
-				PThreadID = CallRestoreInThread(RestoreInf);
-				/*
-				OfflineRestore(&RestoreInf);
-				if(Backups[BackupButtonID].IsOSVolume && Backups[BackupButtonID].DiskType == NAR_DISKTYPE_MBR){
-					std::string cmd;
-					cmd = "sudo dd if=/usr/lib/syslinux/mbr.bin of=/dev/" + RestoreInf.TargetPartition;
-					system(cmd.c_str());
-					
-					cmd = "sudo install-mbr -i n -p D -t 0 /dev/" + RestoreInf.TargetPartition;
-					system(cmd.c_str());	
-				}
-				else if(Backups[BackupButtonID].IsOSVolume && Backups[BackupButtonID].DiskType == NAR_DISKTYPE_GPT){
-					// TODO(Batuhan)
-				}
-				*/
-				AppState = app_state_select_backup;
+		
 				
         	}
         	else if(AppState == app_state_restore_in_work){
         	
-        		ImGui::Text("Restore operation is in work, please wait\n");
-        		struct timespec ts;
-        		int s;
-        		if (clock_gettime(CLOCK_REALTIME, &ts) == -1) {
-               		/* Handle error */
-           		}
-		
-           		ts.tv_nsec += 1000;
-		
-           		s = pthread_timedjoin_np(PThreadID, NULL, &ts);
-           		if (s != 0) {
-               		//fprintf(stderr, "Timed join returned %d\n", s);
-           		}
-           		else{
-					fprintf(stdout, "Successfully restored!\n");
-					if(Backups[BackupButtonID].IsOSVolume && Backups[BackupButtonID].DiskType == NAR_DISKTYPE_MBR){
-						std::string cmd;
-						cmd = "sudo dd if=/usr/lib/syslinux/mbr.bin of=/dev/" + RestoreInf.TargetPartition;
-						system(cmd.c_str());
-						
-						cmd = "sudo install-mbr -i n -p D -t 0 /dev/" + RestoreInf.TargetPartition;
-						system(cmd.c_str());	
-					}
-					else if(Backups[BackupButtonID].IsOSVolume && Backups[BackupButtonID].DiskType == NAR_DISKTYPE_GPT){
-						// TODO(Batuhan)
-					}
-					AppState = app_state_done;
-           		}
+ 
            		
         	}
         	else if(AppState == app_state_done){

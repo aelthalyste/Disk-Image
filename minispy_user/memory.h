@@ -61,7 +61,7 @@ ArenaFreeBytes(nar_arena* Arena, size_t s){
 	}
 }
 
-
+#if 1
 #include <Windows.h>
 struct linear_allocator{
     void* Memory;
@@ -139,3 +139,4 @@ void
 NarFreeLinearAllocator(linear_allocator* Allocator){
     VirtualFree(Allocator->Memory, 0, MEM_RELEASE);
 }
+#endif

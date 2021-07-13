@@ -155,6 +155,29 @@ struct restore_stream{
 };
 
 
+
+const void*
+NarReadBackup(restore_source* Rs, size_t *AvailableBytes);
+
+template<typename StrType>
+bool
+NarReadMetadata(StrType path, backup_metadata* bm) {
+    bool Result = false;
+    if (NULL == bm)
+        return Result;
+    
+    // TODO (Batuhan): I have to put crc32-like thing to validate metadata.
+    if (NarFileReadNBytes(path, bm, sizeof(backup_metadata))) {
+        Result = true;
+    }
+    else {
+        NAR_DEBUG("Unable to read file %s", path.c_str());
+    }
+    
+    return Result;
+}
+
+
 // Returns how many bytes copied from source to target
 // 0 means either error or source(s) are deplated.
 size_t
@@ -332,26 +355,6 @@ FreeRestoreStream(restore_stream *Stream);
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-const void*
-NarReadBackup(restore_source* Rs, size_t *AvailableBytes);
-
-template<typename StrType>
-bool
-NarReadMetadata(StrType path, backup_metadata* bm) {
-    bool Result = false;
-    if (NULL == bm)
-        return Result;
-    
-    // TODO (Batuhan): I have to put crc32-like thing to validate metadata.
-    if (NarFileReadNBytes(path, bm, sizeof(backup_metadata))) {
-        Result = true;
-    }
-    else {
-        NAR_DEBUG("Unable to read file %s", path.c_str());
-    }
-    
-    return Result;
-}
 
 #if _WIN32
 
