@@ -11,7 +11,13 @@
 
 
 #include "NarDIWrapper.h"
-#include "mspyUser.cpp"
+//#include "mspyUser.cpp"
+
+#include "nar_win32.cpp"
+#include "platform_io.cpp"
+#include "file_explorer.cpp"
+#include "backup.cpp"
+#include "restore.cpp"
 
 using namespace System;
 

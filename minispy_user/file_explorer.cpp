@@ -1,11 +1,9 @@
 //#include "precompiled.h"
+
 #include "memory.h"
 #include "file_explorer.h"
 #include "platform_io.h"
-
-double AllocatorTimeElapsed = 0.0f;
-uint64_t AllocationCount = 0;
-
+#include "performance.h"
 
 #if 0
 void*
@@ -132,8 +130,6 @@ NarFindFileAttributeFromFileRecord(void *FileRecord, INT32 AttributeID){
     if(NULL == FileRecord) return 0;
     
     TIMED_BLOCK();
-    
-    void *Start = FileRecord;
     
     INT16 FirstAttributeOffset = (*(int16_t*)((BYTE*)FileRecord + 20));
     void* FileAttribute = (char*)FileRecord + FirstAttributeOffset;
@@ -466,16 +462,10 @@ NarFindExtensions(char VolumeLetter, HANDLE VolumeHandle, wchar_t *Extension, ex
     size_t ExtensionLen = wcslen(Extension);
     double ParserTotalTime    = 0;
     double TraverserTotalTime = 0;
-    int64_t ParserLoopCount    = 0;
-    
+    uint64_t ParserLoopCount  = 0;
     DWORD BR = 0;
     
     uint64_t ClusterSize    = NarGetVolumeClusterSize(VolumeLetter);
-    
-    uint32_t BufferStartFileID = 0;
-    uint64_t VCNOffset = 0;
-    
-    uint64_t DEBUG_I = 0;
     
     
     for (uint64_t MFTOffsetIndex = 0; 
@@ -505,8 +495,8 @@ NarFindExtensions(char VolumeLetter, HANDLE VolumeHandle, wchar_t *Extension, ex
                 
                 if(BR == TargetFileCount*1024ull){
                     
-                    //int64_t start = NarGetPerfCounter();
-                    //ParserLoopCount += TargetFileCount;
+                    int64_t start = NarGetPerfCounter();
+                    ParserLoopCount += TargetFileCount;
                     for (uint64_t FileRecordIndex = 0; FileRecordIndex < TargetFileCount; FileRecordIndex++) {
                         
                         void* FileRecord = (uint8_t*)Memory->FileBuffer + (uint64_t)FileRecordSize * (uint64_t)FileRecordIndex;
@@ -530,12 +520,7 @@ NarFindExtensions(char VolumeLetter, HANDLE VolumeHandle, wchar_t *Extension, ex
                         
                         uint32_t FileID      = NarGetFileID(FileRecord);;
                         uint32_t IsDirectory = r->isDirectory;
-                        uint32_t ParentID = 0;
                         
-                        void* DataAttribute = NarFindFileAttributeFromFileRecord(FileRecord, NAR_DATA_FLAG);
-                        if(DataAttribute){
-                            data_attr_header *DAHeader = (data_attr_header*)DataAttribute;
-                        }
                         multiple_pid MultPIDs = NarGetFileNameAndParentID(FileRecord);
                         
                         void *AttributeList = NarFindFileAttributeFromFileRecord(FileRecord, NAR_ATTRIBUTE_LIST);
@@ -577,9 +562,6 @@ NarFindExtensions(char VolumeLetter, HANDLE VolumeHandle, wchar_t *Extension, ex
     So we can skip at this phase, and check it at extension comparision stage. If it matches, then we add.
                                    */
                                 }
-                                
-                                
-                                uint64_t NameSize = (NamePID.NameLen + 1)* 2;
                                 
                                 
                                 // NOTE(Batuhan): if _pidi > 0, we know that file name matches, if it wouldn't be we wouldn't even see _pidi =1, check below for break condition. 
@@ -683,7 +665,7 @@ NarFindExtensions(char VolumeLetter, HANDLE VolumeHandle, wchar_t *Extension, ex
                         
                     }
                     
-                    //ParserTotalTime += NarTimeElapsed(start);
+                    ParserTotalTime += NarTimeElapsed(start);
                     
                 }
                 else{
@@ -698,12 +680,10 @@ NarFindExtensions(char VolumeLetter, HANDLE VolumeHandle, wchar_t *Extension, ex
     }
     
     
-    //int64_t TraverserStart = NarGetPerfCounter();
+    int64_t TraverserStart = NarGetPerfCounter();
     
-    uint64_t SkippedFileCount = 0;
     wchar_t** FilenamesExtended = (wchar_t**)LinearAllocateAligned(&Memory->StringAllocator, ArrLen*8, 8);
     uint32_t *stack = (uint32_t*)ArenaAllocateAligned(&Memory->Arena, 1024*4, 4);
-    uint32_t DuplicateStart = 0;
     
     for(uint64_t s = 0; s<ArrLen; s++){
         
@@ -762,7 +742,7 @@ NarFindExtensions(char VolumeLetter, HANDLE VolumeHandle, wchar_t *Extension, ex
         
     }
     
-    //TraverserTotalTime = NarTimeElapsed(TraverserStart);
+    TraverserTotalTime = NarTimeElapsed(TraverserStart);
     
     //qsort(FilenamesExtended, ArrLen, 8, CompareWCharStrings);
     
@@ -772,9 +752,9 @@ NarFindExtensions(char VolumeLetter, HANDLE VolumeHandle, wchar_t *Extension, ex
     }
 #endif
     
-    //printf("Parser, %9u files in %.5f sec, file per ms %.5f\n", Memory->TotalFC, ParserTotalTime, (double)Memory->TotalFC/ParserTotalTime/1000.0);
-    //printf("Traverser %8u files in %.5f sec, file per ms %.5f\n", ArrLen, TraverserTotalTime, (double)ArrLen/TraverserTotalTime/1000.0);
-    //printf("Allocating count %8u in  %.5f sec, allocation per ms %.5f\n", AllocationCount, AllocatorTimeElapsed, (double)AllocationCount/AllocatorTimeElapsed/(1000.0));
+    fprintf(stdout, "Parser, %9llu files in %.5f sec, file per ms %.5f\n", Memory->TotalFC, ParserTotalTime, (double)Memory->TotalFC/ParserTotalTime/1000.0);
+    fprintf(stdout, "Traverser %9llu files in %.5f sec, file per ms %.5f\n", ArrLen, TraverserTotalTime, (double)ArrLen/TraverserTotalTime/1000.0);
+    //fprintf(stdout, "Allocating count %8u in  %.5f sec, allocation per ms %.5f\n", AllocationCount, AllocatorTimeElapsed, (double)AllocationCount/AllocatorTimeElapsed/(1000.0));
     
     //printf("Match count %I64u\n", ArrLen);
     
@@ -813,7 +793,6 @@ NarGetFileNameAndParentID(void *FileRecord){
     
     // doesnt matter if it's posix or normal file name attribute
     void* FNAttribute = NarFindFileAttributeFromFileRecord(FileRecord, 0x30);
-    uint32_t RemainingLen = 0;
     
     if(FNAttribute){
         
@@ -853,8 +832,6 @@ NarGetFileNameAndParentID(void *FileRecord){
     else{
         
     }
-    
-    bail:;
     
     return Result;
 }
@@ -927,7 +904,6 @@ NarInitFileExplorer(wchar_t *MetadataPath, wchar_t *FullbackupPath){
         ASSERT(Result.DirectoryPath);
         uint8_t* FB = (uint8_t*)ArenaAllocateAligned(&Result.Memory.Arena, 1024, 16);
         
-        uint64_t ATLRefCount = 0;
         
         struct file_size_id_tuple{
             uint64_t FileSize;
@@ -964,34 +940,29 @@ NarInitFileExplorer(wchar_t *MetadataPath, wchar_t *FullbackupPath){
             SYSTEMTIME WinFileCreated  = {0};
             SYSTEMTIME WinFileModified = {0};
             
-            
+            if(FileID == 102561)
+                NAR_BREAK;
             
             void* DataAttribute = NarFindFileAttributeFromFileRecord(FileRecord, NAR_DATA_FLAG);
             if(NULL != DataAttribute){
                 // TODO(Batuhan) : I don't know what to do with reparse points.
                 data_attr_header *DAHeader = (data_attr_header*)DataAttribute;
-                ASSERT(DAHeader->NameLen == 0);
-                
-                
-                if(!!DAHeader->NonResidentFlag){
-                    uint64_t FirstVCN = *(uint64_t*)NAR_OFFSET(DataAttribute, 16);
-                    uint64_t LastVCN  = *(uint64_t*)NAR_OFFSET(DataAttribute, 24); 
-                    //ASSERT(FirstVCN < 0xffffffffull);
-                    //ASSERT(LastVCN < 0xffffffffull);
-                    
-                    ASSERT(DAHeader->NameLen);
-                    if(DAHeader->NameLen > 0){
-                        
+                if(DAHeader->NameLen == 0){
+                    if(!!DAHeader->NonResidentFlag){
+                        /*
+                        uint64_t FirstVCN = *(uint64_t*)NAR_OFFSET(DataAttribute, 16);
+                        uint64_t LastVCN  = *(uint64_t*)NAR_OFFSET(DataAttribute, 24); 
+                        ASSERT(FirstVCN < 0xffffffffull);
+                        ASSERT(LastVCN < 0xffffffffull);
+                        */
+                        FileSize = *(uint64_t*)NAR_OFFSET(DataAttribute, 48);
                     }
                     else{
-                        
+                        FileSize = *(uint32_t*)NAR_OFFSET(DataAttribute, 16);
                     }
-                    
-                    FileSize = *(uint64_t*)NAR_OFFSET(DataAttribute, 48);
                 }
-                else{
-                    FileSize = *(uint32_t*)NAR_OFFSET(DataAttribute, 16);
-                }
+                
+                
             }
             
             
@@ -1070,14 +1041,14 @@ NarInitFileExplorer(wchar_t *MetadataPath, wchar_t *FullbackupPath){
             
         }// for i < Result.TotalFC;
         
-        
-#if 1        
         for(uint64_t _idc = 0; _idc < FileSizeTupleCount; _idc++){
+            
             ASSERT(FileSizeTuple[_idc].FileSize != 0);
             ASSERT(FileSizeTuple[_idc].FileID > 0);
             if(FileSizeTuple[_idc].FileID == 46){
                 NAR_BREAK;
             }
+            
             uint64_t FileSize = FileSizeTuple[_idc].FileSize;
             uint64_t BaseID   = FileSizeTuple[_idc].FileID;
             
@@ -1088,8 +1059,14 @@ NarInitFileExplorer(wchar_t *MetadataPath, wchar_t *FullbackupPath){
                 }
             }
         }
-#endif
         
+#if 0        
+        for(uint64_t i =0; i<Result.FileCount; i++){
+            if(Result.Files[i].IsDirectory == 0 && Result.Files[i].Size == 0){
+                //printf("%S %u\n", Result.Files[i].Name, Result.Files[i].FileID);
+            }
+        }
+#endif
         
     }
     else{
@@ -1123,7 +1100,8 @@ FEStartParentSearch(file_explorer *FE, uint32_t ParentID){
 
 file_explorer_file*
 FENextFileInDir(file_explorer *FE, file_explorer_file *CurrentFile){
-    uint64_t StartIndice = (CurrentFile - &FE->Files[0])/sizeof(file_explorer_file);
+    uint64_t StartIndice = (CurrentFile - &FE->Files[0]);
+    StartIndice += 1;
     uint64_t ParentID    = CurrentFile->ParentFileID;
     for(uint64_t i = StartIndice; i<FE->FileCount; i++){
         if(FE->ParentIDs[i] == ParentID){
@@ -1157,10 +1135,6 @@ GetAttributeListContents(void* AttrListDataStart, uint64_t DataLen){
     // skip first 24 bytes, header.
     uint32_t LenRemaining      = DataLen;
     uint8_t* CurrentAttrRecord = (uint8_t*)AttrListDataStart;
-    
-    
-    uint32_t NameAttributeFileID = 0;
-    uint32_t DataAttributeFileID = 0;
     
     uint64_t Indice = 0;
     
@@ -1210,7 +1184,6 @@ SolveAttributeListReferences(const void* MFTStart,
     FileRecordHeader *Header = (FileRecordHeader*)BaseFileRecord;
     TIMED_BLOCK();
     
-    uint32_t BaseFileID = NarGetFileID(BaseFileRecord);
     uint64_t FileCount = 0;
     
     // find unique file ID's that contains file name attribute
@@ -1266,6 +1239,7 @@ SolveAttributeListReferences(const void* MFTStart,
     
     
     for(uint64_t i =0; i < 32; i++){
+        
         attribute_list_entry Entry = Contents.Entries[i];
         if(false == IsValidAttrEntry(Entry)){
             break;
@@ -1283,7 +1257,7 @@ SolveAttributeListReferences(const void* MFTStart,
         
         switch(Entry.EntryType){
             
-#if 0            
+#if 0     
             case NAR_FILENAME_FLAG:{
                 //DOS FILE NAME
                 if(*(uint8_t*)NAR_OFFSET(Attr, 89) != 2){
@@ -1328,5 +1302,53 @@ SolveAttributeListReferences(const void* MFTStart,
     
     return FileCount;
 }
+
+
+struct file_dep_stack{
+    int32_t     *Versions;
+    int32_t     VersionCount;
+    
+    int32_t __s_needle;
+    inline int32_t pop(){
+        if(__s_needle > 0){
+            return Versions[__s_needle--];
+        }
+        
+        return -2;
+    }
+    
+};
+
+struct file_disk_information{
+    uint64_t     TotalSize;
+    nar_record  *LCN;
+    uint32_t     LCNCount;
+};
+
+struct file_restore_source{
+    nar_file_view *Backup;
+    nar_file_view *Metadata;
+    
+    const nar_record *BackupLCN;
+    uint32_t   LCNCount;
+};
+
+#if 0
+struct file_restore{
+    FileDependencies    *Dependencies;
+    file_restore_source *Sources;
+};
+
+FileDependencies
+FindFileDependencies(file_explorer *FE, file_explorer_file* File){
+    
+}
+
+
+PrepareFileRestore(FileDependencies Dep){
+    
+}
+#endif
+
 
 

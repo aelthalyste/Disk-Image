@@ -290,18 +290,18 @@ NarOpenFileView(const std::string &fn){
         int FD = fileno(File);    
         size_t FileSize = NarGetFileSize(fn);
         ASSERT(FileSize != 0);
-//MAP_HUGETLB | MAP_HUGE_2MB | 
+        //MAP_HUGETLB | MAP_HUGE_2MB | 
         void *FileMapMemory = mmap(0, FileSize, PROT_READ, MAP_SHARED_VALIDATE, FD, 0);
         ASSERT(MAP_FAILED != FileMapMemory);
         fclose(File);
-
+        
         if(FileMapMemory != 0){
             Result.Data = (uint8_t*)FileMapMemory;
             Result.Len  = FileSize;
         }
-
+        
     }
-
+    
     return Result;
 }
 
@@ -371,7 +371,7 @@ NarReadFile(const char* FileName) {
         }
     }
     else{
-
+        
     }
     return Result;
 }
@@ -386,14 +386,18 @@ FreeFileRead(file_read FR){
     free(FR.Data);
 }
 
-file_read
-NarReadFileNBytes(const char *arg_fn){
-        	
+
+bool
+NarFileReadNBytes(std::string path, void *mem, size_t N){
+    FILE* File = fopen(path.c_str(), "rb");
+    bool Result = (1 == fread(mem, N, 1, File));
+    fclose(File);
+    return Result;
 }
 
-file_read
-NarReadFileNBytes(const wchar_t *arg_fn){
-	
+bool
+NarFileReadNBytes(std::wstring path, void *mem, size_t N){
+	return NarFileReadNBytes(wstr2str(path), mem, N);
 }
 
 

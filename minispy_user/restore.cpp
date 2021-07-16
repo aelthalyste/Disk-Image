@@ -502,7 +502,12 @@ FreeRestoreTarget(restore_target* Rt) {
 size_t
 NarWriteVolume(restore_target* Rt, const void* Mem, size_t MemSize) {
     size_t Ret = fwrite(Mem, MemSize, 1, (FILE*)Rt->Impl);
+    int NarErrorNo      = errno;
+    char* NarErrDesc    = 0; 
     ASSERT(Ret == 1);
+    if(Ret == 0){
+        NarErrDesc = strerror(NarErrorNo);
+    }
     return MemSize;
 }
 
@@ -517,7 +522,10 @@ restore_target*
 InitVolumeTarget(std::string VolumePath, nar_arena* Arena) {
     restore_target* Result = 0;
     
-    FILE* F = fopen(VolumePath.c_str(), "rb");
+    FILE* F = fopen(VolumePath.c_str(), "wb");
+    int NarFOPENError = errno;
+    char *NarErrDescription = NULL;
+    ASSERT(NULL != F);
     if (F) {
         Result = (restore_target*)ArenaAllocate(Arena, sizeof(restore_target));
         Result->Impl = F;
@@ -525,7 +533,7 @@ InitVolumeTarget(std::string VolumePath, nar_arena* Arena) {
         Result->SetNeedle   = NarSetNeedleVolume;
     }
     else {
-        NAR_DEBUG("Unable to open volume %s\n", VolumePath.c_str());
+   		NarErrDescription = strerror(NarFOPENError);
     }
     
     return Result;

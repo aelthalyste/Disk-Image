@@ -69,11 +69,26 @@ enum app_state{
 	app_state_select_restore_type, // disk or volume
 	app_state_select_disk,
 	app_state_select_volume,
-	app_state_restore,
+	app_state_restore_preview,
 	app_state_restore_in_work,
 	app_state_done,
 	app_state_count
 };
+
+app_state PrevState(app_state State){
+	static_assert(app_state_count == 7);
+	switch(State){
+		case(app_state_select_restore_type):
+			return app_state_select_backup;
+		case(app_state_select_disk):
+		case(app_state_select_volume):
+			return app_state_select_restore_type;
+		case(app_state_restore_preview):
+			return app_state_select_restore_type;		
+		default:
+			return app_state_select_backup;
+	}
+}
 
 struct linux_disks{
 	std::string DiskName; // sda, sdb etc..
@@ -259,7 +274,6 @@ SelectPartition(){
 
 int main(int, char**)
 {
-	auto r = NarOpenFileView("Inconsolata-Bold.ttf");
 
 	if(0){
 		const char fn[] = "/media/lubuntu/New Volume/Disk-Image/build/minispy_user/NAR_M_0-F19704356773431269.narmd";	
@@ -293,7 +307,7 @@ int main(int, char**)
 #endif
 
     // Create window with graphics context
-    GLFWwindow* window = glfwCreateWindow(1280, 720, "Dear ImGui GLFW+OpenGL3 example", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(1280, 720, "NAR BULUT DISK BACKUP SERVICE", NULL, NULL);
     if (window == NULL)
         return 1;
     glfwMakeContextCurrent(window);
@@ -357,8 +371,30 @@ int main(int, char**)
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
 	app_state AppState = app_state_select_backup;
-	io.Fonts->AddFontFromFileTTF("Inconsolata-Bold.ttf", 12);
+	//io.Fonts->AddFontFromFileTTF("Inconsolata-Bold.ttf", 12);
 	
+
+	char BackupDir[512];
+	memset(BackupDir, 0, sizeof(BackupDir));
+	std::vector<backup_metadata> Backups;
+	int BackupButtonID = -1;
+	std::string SelectedVolume = "/dev/!";
+	size_t TargetSize;
+	nar_backup_id SelectedID;
+	int SelectedVersion;
+	std::string TargetPartition;
+	nar_arena Arena = {0};
+	
+	size_t ArenaSize  = Megabyte(400);
+	void* ArenaMemory = malloc(ArenaSize);
+	ASSERT(ArenaSize);
+	Arena = ArenaInit(ArenaMemory, ArenaSize);
+
+	size_t RestoreBytesCopiedSoFar = 0;
+
+	restore_target *Target = NULL;
+	restore_stream *RestoreStream = NULL;
+
     // Main loop
     while (!glfwWindowShouldClose(window))
     {
@@ -396,29 +432,8 @@ int main(int, char**)
         
         {
 			ImGui::Begin("NARBULUT LINUX RESTORE WIZARD");
-        	static char BackupDir[512];
-			static std::vector<backup_metadata> Backups;
-			static int BackupButtonID = -1;
-			static std::string SelectedVolume = "/dev/!";
-			static size_t TargetSize;
-			static nar_backup_id SelectedID;
-			static int SelectedVersion;
-			static std::string TargetPartition;
 
 			if(AppState == app_state_select_backup){
-				static bool debug_init = false;
-				if(false == debug_init){
-					Backups.push_back({0, 1, 2});
-					Backups.push_back({0, 2, 3});
-					Backups.push_back({0, 4, 5});
-					Backups.push_back({0, 0, 52});
-					Backups.push_back({0, 253, 253});
-					Backups.push_back({0, 253, 253});
-					Backups.push_back({0, 253, 253});
-					
-					debug_init = true;
-				}
-				
 
 				ImGui::Text("Directory to look backups : ");
 				ImGui::InputText("", BackupDir, 512);
@@ -515,48 +530,8 @@ int main(int, char**)
         	}
         	else if(AppState == app_state_select_disk){
 				
-				if(Backups[BackupButtonID].DiskType == NAR_DISKTYPE_MBR){
-
-					TargetPartition = SelectPartition();
-					ImGui::Text("%s", TargetPartition.c_str());
-					long int PartitionSize = GetFileSize(("/dev/" + TargetPartition).c_str());
-					static bool popup = false;				
-							
-					if(ImGui::Button("Restore")){
-						
-						if((long long unsigned int)PartitionSize < Backups[BackupButtonID].VolumeTotalSize){
-							ImGui::OpenPopup("Size error!##");
-							popup = true;	
-						}
-						else{
-							AppState = app_state_restore;
-						}
-                		
-					}
-					
-					static ImVec2 PopupSize = {350, 120}; 
-					ImGui::SetNextWindowSize(PopupSize);
-					if (ImGui::BeginPopupModal("Size error!##", &popup, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse)){
-            			ImGui::Text("Backup can't fit that partition!");
-            			ImGui::Text("Select partition with at least %I64llu bytes.", Backups[BackupButtonID].VolumeTotalSize);
-            			if(ImGui::Button("Close##Size error"))
-							popup = false;
-            			ImGui::EndPopup();
-        			}
-	
-					
-					
-				}
-				else if(Backups[BackupButtonID].DiskType == NAR_DISKTYPE_GPT){
-					
-				}
-				
-				
-				
-				
-        	}
-        	else if(AppState == app_state_select_volume){
-				//ImGui::Text("%s", RestoreInf.TargetPartition.c_str());
+				TargetPartition = SelectPartition();
+				ImGui::Text("%s", TargetPartition.c_str());
 				long int PartitionSize = GetFileSize(("/dev/" + TargetPartition).c_str());
 				static bool popup = false;				
 						
@@ -567,7 +542,37 @@ int main(int, char**)
 						popup = true;	
 					}
 					else{
-						AppState = app_state_restore;
+						AppState = app_state_restore_preview;
+					}
+            		
+				}
+				
+				static ImVec2 PopupSize = {350, 120}; 
+				ImGui::SetNextWindowSize(PopupSize);
+				if (ImGui::BeginPopupModal("Size error!##", &popup, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse)){
+        			ImGui::Text("Backup can't fit that partition!");
+        			ImGui::Text("Select partition with at least %I64llu bytes.", Backups[BackupButtonID].VolumeTotalSize);
+        			if(ImGui::Button("Close##Size error"))
+						popup = false;
+        			ImGui::EndPopup();
+    			}
+					
+				
+        	}
+        	else if(AppState == app_state_select_volume){
+				//ImGui::Text("%s", RestoreInf.TargetPartition.c_str());
+				TargetPartition 		= SelectPartition();
+				long int PartitionSize 	= GetFileSize(("/dev/" + TargetPartition).c_str());
+				static bool popup = false;				
+						
+				if(ImGui::Button("Restore")){
+					
+					if((long long unsigned int)PartitionSize < Backups[BackupButtonID].VolumeTotalSize){
+						ImGui::OpenPopup("Size error!##");
+						popup = true;	
+					}
+					else{
+						AppState = app_state_restore_preview;
 					}
                 	
 				}
@@ -583,19 +588,51 @@ int main(int, char**)
         		}
         		
         	}
-        	else if(AppState == app_state_restore){
-		
-				
+        	else if(AppState == app_state_restore_preview){
+        		RestoreBytesCopiedSoFar = 0;
+
+				if(ImGui::Button("Start restore##go to restore in work")){
+					Arena 		= ArenaInit(ArenaMemory, ArenaSize);
+					Target 		= InitVolumeTarget("/dev/" + TargetPartition, &Arena);
+					AppState 	= app_state_restore_in_work;
+					std::string Path;
+					GenerateMetadataName(Backups[BackupButtonID].ID, Backups[BackupButtonID].Version, Path);
+
+					RestoreStream = InitFileRestoreStream(std::string(BackupDir) + "/" + Path, Target, &Arena, Megabyte(8));
+				}
         	}
         	else if(AppState == app_state_restore_in_work){
-        	
- 
+ 				
+
+ 				if(RestoreStream->Error == RestoreStream_Errors::Error_NoError){
+	        		size_t BytesProcessed = AdvanceStream(RestoreStream);
+	        		RestoreBytesCopiedSoFar += BytesProcessed;
+ 				}
+ 				// error occured
+ 				else{
+ 					char msg_buffer[128];
+ 					snprintf(msg_buffer, sizeof(msg_buffer), "Error occured, error codes: %d, %d\n", RestoreStream->Error, RestoreStream->SrcError);
+ 					ImGui::Text(msg_buffer);
+ 					ImGui::Text("Please report situation to destek@narbulut.com");
+ 					if(ImGui::Button("Start over")){
+ 						AppState = app_state_select_backup;
+ 					}
+ 				}
+ 				ImGui::Text("Bytes copied : %I64llu, left : %I64llu, percentage %.4f", 
+ 					RestoreBytesCopiedSoFar, 
+ 					RestoreStream->BytesToBeCopied- RestoreBytesCopiedSoFar, 
+ 					(double)RestoreBytesCopiedSoFar/(double)RestoreStream->BytesToBeCopied
+ 					);
            		
         	}
         	else if(AppState == app_state_done){
-        		ImGui::Text("done\n");
+        		ImGui::Text("Done\n");
         	}
 			
+			// TODO but that thing on bottom of the screen, left-bottom probably
+			if(ImGui::Button("Back")){
+				AppState = PrevState(AppState);
+			}
 
 
         	ImGui::End();

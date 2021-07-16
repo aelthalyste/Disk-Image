@@ -3,48 +3,12 @@
 #include "precompiled.h"
 #include "compression.h"
 #include "nar.h"
-#include "minispy.h"
+#include "../inc/minispy.h"
 #include "file_explorer.h"
 
 #if 1
-#define TIMED_BLOCK__(NAME, Number, ...) timed_block timed_##Number(__COUNTER__, __LINE__, __FUNCTION__, NAME);
-#define TIMED_BLOCK_(NAME, Number, ...)  TIMED_BLOCK__(NAME, Number,  ## __VA__ARGS__)
-#define TIMED_BLOCK(...)                 TIMED_BLOCK_("UNNAMED", __LINE__, ## __VA__ARGS__)
-#define TIMED_NAMED_BLOCK(NAME, ...)     TIMED_BLOCK_(NAME, __LINE__, ## __VA__ARGS__)
 
 
-struct debug_record {
-    char* FunctionName;
-    char* Description;
-    uint64_t Clocks;
-    
-    uint32_t ThreadIndex;
-    uint32_t LineNumber;
-    uint32_t HitCount;
-};
-
-debug_record GlobalDebugRecordArray[1000];
-
-struct timed_block {
-    
-    debug_record* mRecord;
-    
-    timed_block(int Counter, int LineNumber, char* FunctionName, char* Description) {
-        mRecord = GlobalDebugRecordArray + Counter;
-        mRecord->FunctionName   = FunctionName;
-        mRecord->Description = Description;
-        mRecord->LineNumber     = LineNumber;
-        mRecord->ThreadIndex    = 0;
-        mRecord->Clocks        -= __rdtsc();
-        mRecord->HitCount++;
-        
-    }
-    
-    ~timed_block() {
-        mRecord->Clocks += __rdtsc();
-    }
-    
-};
 #endif
 
 
@@ -177,7 +141,6 @@ NarLog(const char *str, ...){
     
     // safe cast
     DWORD Len = (DWORD)strlen(buf);
-    DWORD H = 0;
     
 #if 1    
     if(WaitForSingleObject(GlobalLogMutex, 25) == WAIT_OBJECT_0){
@@ -520,10 +483,13 @@ IsNumeric(char val) {
     return val >= '0' && val <= '9';
 }
 
-bool
+static inline bool
 CheckStreamCompletedSuccessfully(volume_backup_inf *V){
     if(V){
         return (V->Stream.Error == BackupStream_Errors::Error_NoError);
+    }
+    else{
+        return false;
     }
 }
 
@@ -533,19 +499,6 @@ NarSetVolumeSize(char Letter, int TargetSizeMB);
 BOOLEAN
 CreatePartition(int Disk, char Letter, unsigned size);
 
-inline BOOLEAN
-NarCreateCleanGPTBootablePartition(int DiskID, int VolumeSizeMB, int EFISizeMB, int RecoverySizeMB, char Letter, char BootPartitionLetter);
-
-inline BOOLEAN
-NarCreateCleanGPTPartition(int DiskID, int VolumeSizeMB, char Letter);
-
-BOOLEAN
-NarCreateCleanMBRPartition(int DiskID, char VolumeLetter, int VolumeSize);
-
-
-inline BOOLEAN
-NarCreateCleanMBRBootPartition(int DiskID, char VolumeLetter, int VolumeSizeMB, int SystemPartitionSizeMB, int RecoveryPartitionSizeMB,
-                               char BootPartitionLetter);
 
 inline char
 NarGetAvailableVolumeLetter();
@@ -559,17 +512,7 @@ NarRepairBoot(char Letter, char BootPartitionLetter);
 data_array<disk_information>
 NarGetDisks();
 
-data_array<volume_information>
-NarGetVolumes();
 
-ULONGLONG
-NarGetVolumeTotalSize(char Letter);
-
-inline int
-NarGetVolumeDiskType(char Letter);
-
-inline unsigned char
-NarGetVolumeDiskID(char Letter);
 
 inline BOOLEAN
 NarFormatVolume(char Letter);
@@ -578,56 +521,19 @@ inline void
 NarGetProductName(char* OutName);
 
 
-void
-MergeRegions(data_array<nar_record>* R);
-
-
-/*Returns negative ID if not found*/
-INT
-GetVolumeID(PLOG_CONTEXT C, wchar_t Letter);
-
 BOOLEAN
 CopyData(HANDLE S, HANDLE D, ULONGLONG Len, ULONGLONG FileOffset);
-
-BOOLEAN
-CopyData(HANDLE S, HANDLE D, ULONGLONG Len);
-
-inline void
-StrToGUID(const char* guid, GUID* G);
-
 
 
 VOID
 DisplayError(DWORD Code);
 
 
-UINT32
-ReadStream(volume_backup_inf* VolInf, void* Buffer, unsigned int Size);
-
-
 BOOLEAN
 WriteStream(volume_backup_inf* Inf, void* Buffer, int Size);
 
 BOOLEAN
-SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, DotNetStreamInf* SI = NULL, bool ShouldCompress = false);
-
-BOOLEAN
 SetupStreamHandle(volume_backup_inf* V);
-
-BOOLEAN
-SetFullRecords(volume_backup_inf* V);
-
-ULONGLONG
-NarGetLogFileSizeFromKernel(HANDLE CommPort, char Letter);
-
-BOOLEAN
-SetIncRecords(HANDLE CommPort, volume_backup_inf* VolInf);
-
-BOOLEAN
-SetDiffRecords(HANDLE CommPort, volume_backup_inf* VolInf);
-
-BOOLEAN
-TerminateBackup(volume_backup_inf* V, BOOLEAN Succeeded);
 
 BOOLEAN
 InitGPTPartition(int DiskID);
@@ -651,14 +557,9 @@ NarCreatePrimaryPartition(int DiskID, char Letter, unsigned SizeMB);
 BOOLEAN
 NarCreatePrimaryPartition(int DiskID, char Letter);
 
-BOOLEAN
-SetupVSS();
-
 backup_metadata
 ReadMetadata(nar_backup_id ID, int Version, std::wstring RootDir);
 
-BOOLEAN
-SaveMetadata(char Letter, int Version, int ClusterSize, BackupType BT, data_array<nar_record> BackupRegions, nar_backup_id BackupID, bool IsCompressed, HANDLE VSSHandle);
 
 // Used to append recovery partition to metatadata file.
 BOOLEAN
@@ -668,8 +569,6 @@ AppendRecoveryToFile(HANDLE File, char Letter);
 BOOLEAN
 NarTruncateFile(HANDLE F, ULONGLONG TargetSize);
 
-inline ULONGLONG
-NarGetFilePointer(HANDLE F);
 
 inline BOOLEAN
 AppendMFTFile(HANDLE File, HANDLE VSSHANDLE, data_array<nar_record> MFTLCN, int ClusterSize);
@@ -681,13 +580,7 @@ void
 NarCloseVolume(HANDLE V);
 
 BOOLEAN
-NarGetVolumeGUIDKernelCompatible(wchar_t Letter, wchar_t* VolumeGUID);
-
-BOOLEAN
 SaveMFT(volume_backup_inf* VolInf, HANDLE VSSHandle, data_array<nar_record>* MFTLCN);
-
-inline BOOLEAN
-InitVolumeInf(volume_backup_inf* VolInf, wchar_t Letter, BackupType Type);
 
 BOOLEAN
 SaveExtraPartitions(volume_backup_inf* V);
@@ -697,9 +590,6 @@ IsSameVolumes(const WCHAR* OpName, const WCHAR VolumeLetter);
 
 BOOL
 CompareNarRecords(const void* v1, const void* v2);
-
-wchar_t*
-GetShadowPath(std::wstring Drive, CComPtr<IVssBackupComponents>& ptr);
 
 inline BOOLEAN
 IsRegionsCollide(nar_record R1, nar_record R2);
@@ -735,22 +625,7 @@ Split(std::wstring str, std::wstring delimiter);
 
 
 BOOLEAN
-AddVolumeToTrack(PLOG_CONTEXT Context, wchar_t Letter, BackupType Type);
-
-BOOLEAN
-RemoveVolumeFromTrack(LOG_CONTEXT *Context, wchar_t Letter);
-
-inline BOOLEAN
-DetachVolume(volume_backup_inf* VolInf);
-
-inline BOOLEAN
-AttachVolume(volume_backup_inf* VolInf, BOOLEAN SetActive = TRUE);
-
-BOOLEAN
 NarGetBackupsInDirectory(const wchar_t* Directory, backup_metadata* B, int BufferSize, int* FoundCount);
-
-BOOLEAN
-ConnectDriver(PLOG_CONTEXT Ctx);
 
 
 inline point_offset

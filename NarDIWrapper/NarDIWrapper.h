@@ -4,9 +4,10 @@
 
 #include "nar.h"
 #include "mspyLog.h"
-#include "memory.h"
 #include "restore.h"
-#include "file_explorer.h"
+#include "memory.h"
+#include "backup.h"
+#include "nar_win32.h"
 
 using namespace System;
 using namespace System::Text;

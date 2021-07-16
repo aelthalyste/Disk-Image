@@ -18,6 +18,7 @@
 #if NAR_WINDOWS
 #include "../inc/minispy.h"
 #else
+
 struct nar_backup_id{
     union{
         unsigned long long Q;
@@ -38,8 +39,9 @@ struct nar_backup_id{
 
 #if NAR_WINDOWS
 #define ASSERT(exp) do{if(!(exp)){__debugbreak();}} while(0);
+
 #else
-#define ASSERT(exp) do{if(!(exp)){__builtin_trap();}} while(0);
+#define ASSERT(exp) do{if(!(exp)){__asm__("int3");}} while(0);
 #endif
 
 #else

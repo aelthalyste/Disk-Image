@@ -1,5 +1,4 @@
 /* date = July 12th 2021 1:18 pm */
-
 #ifndef COMPRESSION_H
 #define COMPRESSION_H
 

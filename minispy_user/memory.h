@@ -9,15 +9,17 @@ struct nar_arena{
 	unsigned char* Memory;
 	size_t Used;
 	size_t Capacity;
+    size_t Aligment;
 };
 
 static  nar_arena
-ArenaInit(void* Memory, size_t MemSize){
-	nar_arena Result;
+ArenaInit(void* Memory, size_t MemSize, size_t Aligment = 8){
+	nar_arena Result = {};
 	Result.Memory = (unsigned char*)Memory;
 	Result.Used = 0;
 	Result.Capacity = MemSize;
-	return Result;
+	Result.Aligment = Aligment;
+    return Result;
 }
 
 static void*
@@ -41,7 +43,7 @@ ArenaAllocateAligned(nar_arena *Arena, size_t s, size_t aligment){
 
 static  void*
 ArenaAllocate(nar_arena *Arena, size_t s){
-    return ArenaAllocateAligned(Arena, s, 1);
+    return ArenaAllocateAligned(Arena, s, Arena->Aligment);
 }
 
 static void
@@ -61,7 +63,44 @@ ArenaFreeBytes(nar_arena* Arena, size_t s){
 	}
 }
 
-#if 1
+
+struct nar_pool_entry{
+    nar_pool_entry *Next;
+};
+
+struct nar_memory_pool{
+    void *Memory;
+    nar_pool_entry *Entries;
+    int PoolSize;
+    int EntryCount;
+};
+
+
+static inline nar_memory_pool
+NarInitPool(void *Memory, int MemorySize, int PoolSize){
+    
+    if(Memory == NULL) return { 0 };
+    
+    nar_memory_pool Result = {0};
+    Result.Memory = Memory;
+    Result.PoolSize = PoolSize;
+    Result.EntryCount = MemorySize / PoolSize;
+    
+    for(size_t i = 0; i < Result.EntryCount - 1; i++){
+        nar_pool_entry *entry = (nar_pool_entry*)((char*)Memory + (PoolSize * i));
+        entry->Next = (nar_pool_entry*)((char*)entry + PoolSize);
+    }
+    
+    nar_pool_entry *entry = (nar_pool_entry*)((char*)Memory + (PoolSize * (Result.EntryCount - 1)));
+    entry->Next = 0;
+    Result.Entries = (nar_pool_entry*)Memory;
+    
+    return Result;
+}
+
+
+
+#if _WIN32
 #include <Windows.h>
 struct linear_allocator{
     void* Memory;
@@ -76,7 +115,8 @@ void*
 LinearAllocateAligned(linear_allocator* Allocator, size_t N, size_t Align){
     void* Result = 0;
     void* VirtualAllocResult = 0;
-	int64_t CommitLeft   = Allocator->Committed - Allocator->Used;
+	
+    int64_t CommitLeft   = Allocator->Committed - Allocator->Used;
 	int64_t ReservedLeft = Allocator->Reserved  - Allocator->Used;
     if(ReservedLeft <= N){
         return NULL;
