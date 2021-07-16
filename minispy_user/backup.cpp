@@ -1283,7 +1283,6 @@ GetMFTandINDXLCN(char VolumeLetter, HANDLE VolumeHandle) {
                         
                         if (RFResult && BR == (TargetFileCount * 1024ul)) {
 #if 1                          
-                            TIMED_NAMED_BLOCK("after readfile");
                             
                             int64_t start = NarGetPerfCounter();
                             
@@ -1362,6 +1361,29 @@ GetMFTandINDXLCN(char VolumeLetter, HANDLE VolumeHandle) {
                                                                      false);
                                     ClusterExtractedCount += RegFound;
                                 }
+                                
+                                // NOTE(Batuhan): EDGE CASE: Attributes that don't fit file record are stored in other file records, and attribute list 
+                                // attribute holds which attribute is in which file etc.
+                                // But, even attribute list may not fit original file record at all, meaning, it's data may be non-resident
+                                // Without this information, some of the files probably may not be accessible at all, or be corrupted.
+                                void* ATL = NarFindFileAttributeFromFileRecord(FileRecord, NAR_ATTRIBUTE_LIST);
+                                if(NULL != ATL){
+                                    uint8_t ATLNonResident = *(uint8_t*)NAR_OFFSET(ATL, 8);
+                                    if(ATLNonResident){
+                                        TIMED_NAMED_BLOCK("Non resident attrlist!");
+                                        void* DataRunStart     = NAR_OFFSET(ATL, 64);;
+                                        
+                                        uint32_t DataRunFound  = 0;
+                                        bool ParseResult       = NarParseDataRun(DataRunStart, 
+                                                                                 &ClustersExtracted[ClusterExtractedCount], 
+                                                                                 MaxOutputLen - ClusterExtractedCount, 
+                                                                                 &DataRunFound, 
+                                                                                 false);
+                                        
+                                        ClusterExtractedCount += DataRunFound;
+                                    }
+                                }
+                                
                                 
                             }
                             
