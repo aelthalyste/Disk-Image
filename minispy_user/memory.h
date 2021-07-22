@@ -4,6 +4,9 @@
 #include <memory.h>
 
 
+struct memory_restore_point{
+    size_t Used;
+};
 
 struct nar_arena{
 	unsigned char* Memory;
@@ -22,7 +25,7 @@ ArenaInit(void* Memory, size_t MemSize, size_t Aligment = 8){
     return Result;
 }
 
-static void*
+static inline void*
 ArenaAllocateAligned(nar_arena *Arena, size_t s, size_t aligment){
 	void* Result = 0;
     
@@ -41,6 +44,18 @@ ArenaAllocateAligned(nar_arena *Arena, size_t s, size_t aligment){
 	
 }
 
+static inline memory_restore_point 
+ArenaGetRestorePoint(nar_arena *Arena){
+    memory_restore_point Result = {};
+    Result.Used = Arena->Used;
+    return Result;
+}
+
+static inline void
+ArenaRestoreToPoint(nar_arena *Arena, memory_restore_point Point){
+    Arena->Used = Point.Used;
+}
+
 static  void*
 ArenaAllocate(nar_arena *Arena, size_t s){
     return ArenaAllocateAligned(Arena, s, Arena->Aligment);
@@ -53,7 +68,7 @@ ArenaReset(nar_arena *Arena){
 }
 
 
-static  void
+static inline void
 ArenaFreeBytes(nar_arena* Arena, size_t s){
 	if(!Arena){
 		if(s >= Arena->Used){
@@ -64,6 +79,8 @@ ArenaFreeBytes(nar_arena* Arena, size_t s){
 }
 
 
+
+// POOL
 struct nar_pool_entry{
     nar_pool_entry *Next;
 };
@@ -82,13 +99,13 @@ NarInitPool(void *Memory, int MemorySize, int PoolSize){
     if(Memory == NULL) return { 0 };
     
     nar_memory_pool Result = {0};
-    Result.Memory = Memory;
-    Result.PoolSize = PoolSize;
-    Result.EntryCount = MemorySize / PoolSize;
+    Result.Memory          = Memory;
+    Result.PoolSize        = PoolSize;
+    Result.EntryCount      = MemorySize / PoolSize;
     
     for(size_t i = 0; i < Result.EntryCount - 1; i++){
         nar_pool_entry *entry = (nar_pool_entry*)((char*)Memory + (PoolSize * i));
-        entry->Next = (nar_pool_entry*)((char*)entry + PoolSize);
+        entry->Next           = (nar_pool_entry*)((char*)entry + PoolSize);
     }
     
     nar_pool_entry *entry = (nar_pool_entry*)((char*)Memory + (PoolSize * (Result.EntryCount - 1)));
@@ -138,6 +155,7 @@ LinearAllocateAligned(linear_allocator* Allocator, size_t N, size_t Align){
     
     return Result;
 }
+
 
 
 void*

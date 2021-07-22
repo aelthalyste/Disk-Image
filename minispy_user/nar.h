@@ -98,9 +98,26 @@ enum class BackupType : short {
 
 
 struct nar_record{
-    unsigned int StartPos;
-    unsigned int Len;
+    uint32_t StartPos;
+    uint32_t Len;
 };
+
+struct RegionCoupleIter{
+    nar_record *R1;
+    nar_record *R2;
+    
+    size_t     R1Len;
+    size_t     R2Len;
+    
+    nar_record *R1End;
+    nar_record *R2End;
+    
+    nar_record *R1Iter;
+    nar_record *R2Iter;
+    
+    nar_record It;
+};
+
 
 
 #pragma pack(push ,1) // force 1 byte alignment
@@ -386,4 +403,29 @@ GenerateBinaryFileName(nar_backup_id ID, int Version, StrType &Res){
 	}
 }
 
+
+
+inline bool
+NarIsRegionIterValid(RegionCoupleIter *Iter);
+
+inline RegionCoupleIter
+NarInitRegionCoupleIter(nar_record *Base, nar_record *Ex, size_t BaseN, size_t ExN);
+
+inline bool
+NarIterateRegionCoupleUntilCollision(RegionCoupleIter *Iter);
+
+
+inline void
+NarNextExcludeIter(RegionCoupleIter *Iter);
+
+inline RegionCoupleIter
+NarStartExcludeIter(nar_record *Base, nar_record *Ex, size_t BaseN, size_t ExN);
+
+
+
+inline RegionCoupleIter
+NarStartRegionIntersectionIter(nar_record *R1, nar_record *R2, size_t R1Len, size_t R2Len);
+
+inline void
+NarNextRegionIntersection(RegionCoupleIter *Iter);
 

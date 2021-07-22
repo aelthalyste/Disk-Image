@@ -195,105 +195,7 @@ NarGetFileNameFromPath(const wchar_t *path, wchar_t* Out, size_t MaxOut){
 }
 
 
-
-/*
-    Gets the intersection of the r1 and r2 arrays, writes new array to dynamicall allocated r3 array, and sets intersections pointer to that pointers adress
-    after caller has done with that r3 array, caller MUST call NarFreeRegionIntersections with intersections parameter that has passed here. Otherwise memory will be leaked
-    ASSUMES R1 AND R2 ARE SORTED
-*/
-inline void
-NarGetRegionIntersection(nar_record* r1, nar_record* r2, nar_record** intersections, INT32 len1, INT32 len2, INT32 *IntersectionLen) {
-    
-    if (!r1 || !r2 || !intersections) return;
-    
-    int i1, i2, i3;
-    i1 = i2 = i3 = 0;
-    
-    //memset(r3, 0, len3 * sizeof(*r3));
-    uint32_t r3cap = len2;
-    nar_record* r3 = (nar_record*)malloc(r3cap * sizeof(nar_record));
-    
-    // logic behind iteration, ALWAYS iterate item that has LOWER END.
-    while (TRUE) {
-        
-        if (i1 >= len1 || i2 >= len2) {
-            break;
-        }
-        
-        if (i3 >= r3cap) {
-            r3cap *= 2;
-            r3 = (nar_record*)realloc(r3, r3cap * sizeof(nar_record));
-        }
-        
-        uint32_t r1end = r1[i1].StartPos + r1[i1].Len;
-        uint32_t r2end = r2[i2].StartPos + r2[i2].Len;
-        
-        /*
-       r2          -----------------
-       r1 -----
-       not touching, iterate r1
-        */
-        if (r1end < r2[i2].StartPos) {
-            i1++;
-            continue;
-        }
-        /*
-      r1          -----------------
-      r2 -----
-      not touching, iterate r2
-       */
-        
-        if (r2end < r1[i1].StartPos) {
-            i2++;
-            continue;
-        }
-        
-        /*
-        
-        condition 1:
-            --------------
-        -------                             MUST ITERATE THAT ONE
-    
-        condition 2:
-            -----------------               MUST ITERATE THAT ONE
-                        ------------
-    
-        condition 3:
-            ------------------
-                --------                    MUST ITERATE THAT ONE
-    
-        condition 4:
-            -----------------
-            -----------------
-                doesnt really matter which one you iterate, fits in algorithm below
-    
-        as you can see, if we would like to spot continuous colliding blocks, we must ALWAYS ITERATE THAT HAS LOWER END POINT, and their intersection WILL ALWAYS BE REPRESENTED AS
-        HIGH_START - LOW_END of both of them.
-        */
-        uint32_t IntersectionEnd   = MIN(r1end, r2end);
-        uint32_t IntersectionStart = MAX(r1[i1].StartPos, r2[i2].StartPos);
-        
-        r3[i3].StartPos = IntersectionStart;
-        r3[i3].Len = IntersectionEnd - IntersectionStart;
-        i3++;
-        
-        if (r1end < r2end) i1++;
-        else               i2++;
-        
-    }
-    
-    r3 = (nar_record*)realloc(r3, i3 * sizeof(nar_record));
-    *IntersectionLen = i3;
-    *intersections = r3;
-    
-}
-
-
-inline void
-NarFreeRegionIntersection(nar_record* intersections) {
-    if (intersections != NULL) free(intersections);
-}
-
+#endif
 
 
 
@@ -529,10 +431,10 @@ If buffer doesn't have enought space to contain decompressed data, function fail
 ZSTDBufferSize       : Size of given buffer, if no buffer is given this value is ignored.
 */
 uint64_t
-FEReadBackup(nar_file_view *Backup, nar_file_view *Metadata, 
-             uint64_t AbsoluteClusterOffset, uint64_t ReadSizeInCluster, 
-             void *Output, uint64_t OutputMaxSize,
-             void *ZSTDBuffer, size_t ZSTDBufferSize)
+NarReadBackup(nar_file_view *Backup, nar_file_view *Metadata, 
+              uint64_t AbsoluteClusterOffset, uint64_t ReadSizeInCluster, 
+              void *Output, uint64_t OutputMaxSize,
+              void *ZSTDBuffer, size_t ZSTDBufferSize)
 {
     
     TIMED_BLOCK();
@@ -635,10 +537,7 @@ FEReadBackup(nar_file_view *Backup, nar_file_view *Metadata,
             DataNeedle          = DataNeedle + (CompressedSize);
         }
         
-        
-        
         // decompress
-        
     }
     else{
         memcpy(Output, (uint8_t*)Backup->Data + BackupOffsetInBytes, ReadSizeInBytes);
@@ -671,8 +570,8 @@ TestReadBackup(wchar_t *backup, wchar_t *metadata){
     void* FEBuffer = malloc(SelectedLen*4096);
     void* RFBuffer = malloc(SelectedLen*4096);
     
-    uint64_t FEResult = FEReadBackup(&BView, &MView, Records[SelectedIndice].StartPos, SelectedLen, FEBuffer, SelectedLen, 0, 0);
-    
+    //uint64_t FEResult = FEReadBackup(&BView, &MView, Records[SelectedIndice].StartPos, SelectedLen, FEBuffer, SelectedLen, 0, 0);
+    uint64_t FEResult = 0;
     ASSERT(FEResult == SelectedLen*4096);
     
     HANDLE VolumeHandle = NarOpenVolume('E');
@@ -706,8 +605,14 @@ TestReadBackup(wchar_t *backup, wchar_t *metadata){
 int
 wmain(int argc, wchar_t* argv[]) {
     
+    
+    
+    
 #if 1
     file_explorer FE = NarInitFileExplorer(L"G:\\NB_M_FULL-C07131210.nbfsm", L"G:\\NB_FULL-C07131210.nbfsf");
+    
+    file_explorer_file *F = FEFindFileWithID(&FE, 716);
+    NarFindFileLayout(&FE, F, &FE.Memory.Arena);
     
     printf("Done!\n");
     
@@ -948,7 +853,6 @@ wmain(int argc, wchar_t* argv[]) {
     return 0;
 }
 
-#endif
 
 
 
