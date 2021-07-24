@@ -14,6 +14,7 @@ NarStartRegionIntersectionIter(nar_record *R1, nar_record *R2, size_t R1Len, siz
 inline void
 NarNextRegionIntersection(RegionCoupleIter *Iter){
     
+    Iter->It = {};
     if(NarIterateRegionCoupleUntilCollision(Iter)){
         uint32_t R1REnd = Iter->R1Iter->StartPos + Iter->R1Iter->Len;
         uint32_t R2REnd = Iter->R2Iter->StartPos + Iter->R2Iter->Len;
@@ -47,6 +48,7 @@ NarNextExcludeIter(RegionCoupleIter *Iter){
     
     // R1 == base regions
     // R2 == regions to exclude from base
+    Iter->It = {};
     
     nar_record Result = {0};
     if(NarIterateRegionCoupleUntilCollision(Iter)){

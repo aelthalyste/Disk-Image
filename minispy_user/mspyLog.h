@@ -207,6 +207,52 @@ struct data_array {
     
 };
 
+
+#if 0
+template<typename DATA_TYPE>
+struct array {
+    DATA_TYPE* Data;
+    uint32_t   Count;
+    uint32_t   ReserveCount;
+    nar_arena  Arena;
+    
+    array(){
+        Data         = 0;
+        Count        = 0;
+        ReserveCount = 0;
+        Arena        = {0};
+    }
+    
+    inline void Insert(const DATA_TYPE &Val) {
+        if(Count < ReserveCount){
+            memcpy(&Data[Count], &Val, sizeof(DATA_TYPE));
+            Count++;
+        }
+        else{
+            // TODO
+            ASSERT(FALSE);
+        }
+        ASSERT(FALSE);
+    }
+    
+    inline DATA_TYPE& operator[](uint64_t s){return Data[s];}
+    
+};
+
+template<typename DT> array<DT>
+InitArray(nar_arena *Arena, size_t InitalReserveCount){
+    
+    array<DT> Result;
+    memset(&Result, 0, sizeof(Result));
+    Result.Data         = (DT*)ArenaAllocateAligned(Arena, InitalReserveCount*sizeof(DT), sizeof(DT));
+    Result.Count        = 0;
+    Result.ReserveCount = InitalReserveCount;
+    
+    return Result;
+}
+
+#endif
+
 template<typename T>
 inline void Append(data_array<T> *Destination, data_array<T> App) {
     
@@ -591,7 +637,7 @@ IsSameVolumes(const WCHAR* OpName, const WCHAR VolumeLetter);
 BOOL
 CompareNarRecords(const void* v1, const void* v2);
 
-inline BOOLEAN
+inline bool
 IsRegionsCollide(nar_record R1, nar_record R2);
 
 
@@ -634,7 +680,8 @@ FindPointOffsetInRecords(nar_record *Records, uint64_t Len, int64_t Offset);
 
 
 uint64_t
-ReadBackup(nar_file_view *Backup, nar_file_view *Metadata, 
-           uint64_t AbsoluteClusterOffset, uint64_t ReadSizeInCluster, 
-           void *Output, uint64_t OutputMaxSize,
-           void *ZSTDBuffer, size_t ZSTDBufferSize);
+NarReadBackup(nar_file_view *Backup, nar_file_view *Metadata, 
+              uint64_t AbsoluteClusterOffset, uint64_t ReadSizeInCluster, 
+              void *Output, uint64_t OutputMaxSize,
+              void *ZSTDBuffer, size_t ZSTDBufferSize);
+

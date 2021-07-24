@@ -6,7 +6,7 @@
 
 #include <stdint.h>
 #include <string>
-
+#include "memory.h"
 
 
 #ifdef 	__linux__
@@ -94,6 +94,12 @@ struct nar_backup_id{
 enum class BackupType : short {
     Diff,
     Inc
+};
+
+struct NarUTF8{
+    uint8_t *Str;
+    uint32_t Len;
+    uint32_t Cap;
 };
 
 
@@ -246,6 +252,75 @@ template<typename StrType>
 static inline void
 GenerateBinaryFileName(nar_backup_id ID, int Version, StrType &Res);
 
+// If function is called with Result argument as NULL, it returns maximum bytes
+// needed to generate the name. Otherwise it returns how many bytes written to
+// Result.
+// Function silently overwrites Result string's length.
+static inline uint32_t
+GenerateMetadataNameUTF8(nar_backup_id ID, int32_t Version, NarUTF8 *Out){
+    
+    if(Out == NULL){
+        return 27;
+    }
+    uint32_t Result = 0;
+    
+    char Bf[1024];
+    char VersionBf[32];
+    if(Version == NAR_FULLBACKUP_VERSION){
+        snprintf(VersionBf, sizeof(VersionBf), "%s", "FULL");
+    }
+    else{
+        snprintf(VersionBf, sizeof(VersionBf), "%d", Version);
+    }
+    
+    // 27
+    int ChWritten = snprintf(Bf, sizeof(Bf), "NB_M_%s-%c%02d%02d%02d%02d.nbfsm", VersionBf, ID.Letter, ID.Month, ID.Day, ID.Hour, ID.Min);
+    ChWritten += 1;//null termination
+    ASSERT(ChWritten <= Out->Cap);
+    if(ChWritten <= Out->Cap){
+        memset(Out->Str, 0, Out->Cap);
+        memcpy(Out->Str, Bf, ChWritten);
+        Out->Len = ChWritten;
+        Result = ChWritten;
+    }
+    
+    return Result;
+}
+
+// If function is called with Result argument as NULL, it returns maximum bytes
+// needed to generate the name. Otherwise it returns how many bytes written to
+// Result.
+// Function silently overwrites Result string's length.
+static inline uint32_t
+GenerateBinaryFileNameUTF8(nar_backup_id ID, int32_t Version, NarUTF8 *Out){
+    
+    if(Out == NULL){
+        return 27;
+    }
+    uint32_t Result = 0;
+    
+    char Bf[1024];
+    char VersionBf[32];
+    if(Version == NAR_FULLBACKUP_VERSION){
+        snprintf(VersionBf, sizeof(VersionBf), "%s", "FULL");
+    }
+    else{
+        snprintf(VersionBf, sizeof(VersionBf), "%d", Version);
+    }
+    
+    // 27
+    int ChWritten = snprintf(Bf, sizeof(Bf), "NB_%s-%c%02d%02d%02d%02d.nbfsf", VersionBf, ID.Letter, ID.Month, ID.Day, ID.Hour, ID.Min);
+    ChWritten += 1;
+    ASSERT(ChWritten <= Out->Cap);
+    if(ChWritten <= Out->Cap){
+        memset(Out->Str, 0, Out->Cap);
+        memcpy(Out->Str, Bf, ChWritten);
+        Out->Len = ChWritten;
+        Result = Out->Len;
+    }
+    
+    return Result;
+}
 
 
 // FUNDAMENTAL FILE NAME DRAFTS

@@ -667,3 +667,42 @@ NarGetDiskTotalSize(int DiskID) {
     
     return Result;
 }
+
+
+
+inline wchar_t*
+NarUTF8ToWCHAR(NarUTF8 s, nar_arena *Arena){
+    wchar_t *Result = 0;
+    int ChNeeded = MultiByteToWideChar(CP_UTF8, 0, (LPCCH)s.Str, s.Len, 0, 0);
+    
+    ASSERT(ChNeeded != 0);
+    
+    uint32_t BytesNeeded = (ChNeeded + 1)*2; // +1 for null termination
+    ASSERT(BytesNeeded);
+    
+    Result = (wchar_t*)ArenaAllocate(Arena, BytesNeeded*2);
+    ASSERT(Result);
+    memset(Result, 0, BytesNeeded);
+    
+    int WResult = MultiByteToWideChar(CP_UTF8, 0, (LPCCH)s.Str, s.Len, Result, ChNeeded);
+    ASSERT(WResult == ChNeeded);
+    
+    return Result;
+}
+
+inline NarUTF8
+NarWCHARToUTF8(wchar_t *Str, nar_arena *Arena){
+    NarUTF8 Result = {};
+    size_t StrLen = wcslen(Str);
+    
+    Result.Len = WideCharToMultiByte(CP_UTF8, 0, Str, StrLen, NULL, 0, NULL, NULL) + 1;
+    
+    Result.Str = (uint8_t*)ArenaAllocate(Arena, Result.Len);
+    Result.Cap = Result.Len;
+    memset(Result.Str, 0, Result.Cap);
+    
+    WideCharToMultiByte(CP_UTF8, 0, Str, StrLen, (LPSTR)Result.Str, Result.Len, NULL, NULL);
+    
+    
+    return Result;
+}

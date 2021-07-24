@@ -128,7 +128,7 @@ struct linear_allocator{
 };
 
 
-void*
+static inline void*
 LinearAllocateAligned(linear_allocator* Allocator, size_t N, size_t Align){
     void* Result = 0;
     void* VirtualAllocResult = 0;
@@ -158,13 +158,13 @@ LinearAllocateAligned(linear_allocator* Allocator, size_t N, size_t Align){
 
 
 
-void*
+static inline void*
 LinearAllocate(linear_allocator* Allocator, size_t N){
     return LinearAllocateAligned(Allocator, N, 1);
 }
 
 
-linear_allocator
+static inline linear_allocator
 NarCreateLinearAllocator(size_t Capacity, 
                          size_t CommitStepSize = 16*1024*1024)
 {
@@ -185,7 +185,7 @@ NarCreateLinearAllocator(size_t Capacity,
     return Result;
 }
 
-void
+static inline void
 LinearCommitFirstN(linear_allocator* Allocator, size_t N){
     if(N > Allocator->Reserved){
         N = Allocator->Reserved;
@@ -193,7 +193,7 @@ LinearCommitFirstN(linear_allocator* Allocator, size_t N){
     VirtualAlloc(Allocator->Memory, N, MEM_COMMIT, PAGE_READWRITE);
 }
 
-void
+static inline void
 NarFreeLinearAllocator(linear_allocator* Allocator){
     VirtualFree(Allocator->Memory, 0, MEM_RELEASE);
 }
