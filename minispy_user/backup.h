@@ -364,7 +364,7 @@ void
 MergeRegions(data_array<nar_record>* R);
 
 
-inline BOOLEAN
+inline bool
 IsRegionsCollide(nar_record R1, nar_record R2);
 
 

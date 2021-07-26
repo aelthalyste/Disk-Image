@@ -47,12 +47,12 @@ struct timed_block {
 
 
 // some debug stuff
-int64_t NarGetPerfCounter(){
+inline int64_t NarGetPerfCounter(){
     LARGE_INTEGER li;
     QueryPerformanceCounter(&li);
     return li.QuadPart;
 }
-int64_t NarPerfFrequency(){
+inline int64_t NarPerfFrequency(){
     static int64_t cache = 0;
     if(cache == 0){
         LARGE_INTEGER i;

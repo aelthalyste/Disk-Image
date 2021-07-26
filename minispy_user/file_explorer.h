@@ -157,6 +157,7 @@ struct file_explorer{
     const void* MFT;
     size_t MFTSize;
     size_t TotalFC;
+    size_t ClusterSize;
     
     uint32_t DirectoryID;
     
@@ -177,6 +178,7 @@ struct file_explorer{
     uint32_t SearchID;
 };
 
+
 struct attribute_list_data{
     void*    Data;
     uint32_t Len;
@@ -192,6 +194,70 @@ struct attribute_list_contents{
     attribute_list_entry Entries[32];
 };
 
+
+#define IS_FILE_LAYOUT_RESIDENT(fdl) (fdl.Data != 0)
+struct file_disk_layout{
+    uint64_t     TotalSize;
+    nar_record  *LCN;
+    uint32_t     LCNCount;
+    uint32_t     MaxCount;
+    void        *Data;
+};
+
+struct file_restore_source{
+    nar_file_view Backup;
+    nar_file_view Metadata;
+    
+    const nar_record *BackupLCN;
+    uint32_t   LCNCount;
+    
+    int           Version;
+    nar_backup_id ID;
+};
+
+
+#ifdef  _MANAGED
+public
+#endif
+enum class FileRestore_Errors : int {
+    Error_NoError,
+    Error_EndOfBackups,
+    Error_InsufficentBufferSize,
+    Error_DecompressionUnknownContentSize,
+    Error_DecompressionErrorContentsize,
+    Error_DecompressionCompressedSize,
+    Error_Decompression,
+    Error_NullFileViews,
+    Error_Count
+};
+
+struct file_restore_ctx{
+    file_disk_layout    Layout;
+    file_restore_source Source;
+    
+    /* 
+    Intersection iter that keeps where we should fetch next region from
+    backup
+        */
+    RegionCoupleIter     IIter;
+    
+    size_t AdvancedSoFar;
+    size_t ClustersLeftInRegion;
+    
+    nar_record *RegionsToExtract;
+    size_t      RegionExtractCount;
+    size_t      RegionExtractMax;
+    
+    nar_memory_pool LCNPool;
+    void*           DecompBuffer;
+    size_t          DecompBufferSize;
+    nar_arena       StringAllocator;// less than 1mb 
+    NarUTF8         RootDir; // directory to look for backups
+    
+    FileRestore_Errors Error;
+    
+    size_t ClusterSize;
+};
 
 
 inline BOOLEAN
@@ -292,3 +358,5 @@ SolveAttributeListReferences(const void* MFTStart,
                              attribute_list_contents Contents, file_explorer_file* Files,
                              linear_allocator* StringAllocator
                              );
+
+

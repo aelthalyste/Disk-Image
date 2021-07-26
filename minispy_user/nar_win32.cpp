@@ -682,8 +682,8 @@ NarUTF8ToWCHAR(NarUTF8 s, nar_arena *Arena){
     
     Result = (wchar_t*)ArenaAllocate(Arena, BytesNeeded*2);
     ASSERT(Result);
-    memset(Result, 0, BytesNeeded);
     
+    memset(Result, 0, BytesNeeded);
     int WResult = MultiByteToWideChar(CP_UTF8, 0, (LPCCH)s.Str, s.Len, Result, ChNeeded);
     ASSERT(WResult == ChNeeded);
     

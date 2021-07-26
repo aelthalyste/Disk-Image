@@ -35,6 +35,7 @@ str2wstr(const std::string& s){
 #if _WIN32
 
 #include <windows.h>
+#include "nar_win32.h"
 
 struct imp_nar_file_view{
 	HANDLE MHandle;
@@ -64,13 +65,26 @@ NarOpenFileView(const std::string &fn){
 	return NarOpenFileView(str2wstr(fn));
 }
 
+inline nar_file_view
+NarOpenFileView(NarUTF8 String){
+    ASSERT(String.Len <= Megabyte(1));
+    
+    void *ArenaMem = malloc(String.Len*2);
+    nar_arena Arena = ArenaInit(ArenaMem, String.Len*2);
+    memset(ArenaMem, 0, String.Len * 2);
+    wchar_t *WSTR = NarUTF8ToWCHAR(String, &Arena);
+    nar_file_view Result = NarOpenFileView(WSTR);
+    free(ArenaMem);
+    return Result;
+}
+
 nar_file_view
 NarOpenFileView(const std::wstring &fn){
 	HANDLE MappingHandle = 	INVALID_HANDLE_VALUE;
-	HANDLE FileHandle = 	INVALID_HANDLE_VALUE;
-	size_t FileSize = 0;
-	void* FileView = NULL;
-	ULARGE_INTEGER vs = {0};
+	HANDLE FileHandle    = 	INVALID_HANDLE_VALUE;
+	size_t FileSize      = 0;
+	void* FileView       = NULL;
+	ULARGE_INTEGER vs    = {0};
 	
 	nar_file_view Result = {0};
 	

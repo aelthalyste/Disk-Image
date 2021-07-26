@@ -272,7 +272,7 @@ CONST FLT_REGISTRATION FilterRegistration = {
 
     sizeof(FLT_REGISTRATION),                       //  Size
     FLT_REGISTRATION_VERSION,                       //  Version   
-    FLTFL_REGISTRATION_DO_NOT_SUPPORT_SERVICE_STOP, //  Flags
+    0, //  Flags
     Contexts,                                       //  Context
     Callbacks,                                      //  Operation callbacks
 
