@@ -4,6 +4,7 @@
 #include <intrin.h>
 
 #define Assert(cond) do { if (!(cond)) __debugbreak(); } while (0)
+#define BUFFER_SIZE  (4096)
 
 static void CreateNamedPipePair(
                                 HANDLE* read,
@@ -37,8 +38,6 @@ static void CreateNamedPipePair(
                          NULL);
     Assert(*write != INVALID_HANDLE_VALUE);
 }
-
-#define BUFFER_SIZE 4096
 
 int main(int argc, char* argv[])
 {
@@ -167,4 +166,52 @@ int main(int argc, char* argv[])
         }
     }
     return 0;
+}
+
+
+
+
+/*
+        
+        condition 1:
+            --------------
+        -------                             MUST ITERATE THAT ONE
+    
+        condition 2:
+            -----------------               MUST ITERATE THAT ONE
+                        ------------
+    
+        condition 3:
+            ------------------
+                --------                    MUST ITERATE THAT ONE
+    
+        condition 4:
+            -----------------
+            -----------------
+                doesnt really matter which one you iterate, fits in algorithm below
+    
+        as you can see, if we would like to spot continuous colliding blocks, we must ALWAYS ITERATE THAT HAS LOWER END POINT, and their intersection WILL ALWAYS BE REPRESENTED AS
+        HIGH_START - LOW_END of both of them.
+*/
+if(EEnd >= Base[BI].StartPos && Ex[EI].StartPos <= Base[BI].StartPos){
+    Result.StartPos = EEnd;
+	Result.Len      = BEnd -EEnd;
+	EI++; // SAVE THIS!!!
+}
+else if(Ex[EI].StartPos <= BEnd && EEnd >= BEnd){
+    Result.StartPos = Base[BI].StartPos;
+	Result.Len      = BEnd - Ex[EI].StartPos;
+	BI++;
+}
+else if(Ex[EI].StartPos > Base[BI].StartPos && EEnd <= BEnd){
+    Result.StartPos = Base[BI].StartPos;
+	Result.Len      = Ex[EI].StartPos - Base[BI].StartPos;
+	EI++;
+}
+else if(EEnd == BEnd && Base[BI].StartPos == Ex[EI].StartPos){
+	EI++;
+	BI++;
+}
+else{
+	ASSERT(FALSE);
 }

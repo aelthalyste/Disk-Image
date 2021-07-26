@@ -76,6 +76,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DiskBackup.Communication", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DiskBackup.Reinstall", "DiskBackup.Reinstall\DiskBackup.Reinstall.csproj", "{B8F310FA-B6CE-44ED-8BBC-77E94CE6FAE2}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NarNativeHelpers", "NarNativeHelpers\NarNativeHelpers.vcxproj", "{1D49648C-D4D4-4530-BFE7-72F782A311FA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -698,6 +700,20 @@ Global
 		{B8F310FA-B6CE-44ED-8BBC-77E94CE6FAE2}.Release|x64.ActiveCfg = Release|x86
 		{B8F310FA-B6CE-44ED-8BBC-77E94CE6FAE2}.Release|x86.ActiveCfg = Release|x86
 		{B8F310FA-B6CE-44ED-8BBC-77E94CE6FAE2}.Release|x86.Build.0 = Release|x86
+		{1D49648C-D4D4-4530-BFE7-72F782A311FA}.Debug|Any CPU.ActiveCfg = Debug|Win32
+		{1D49648C-D4D4-4530-BFE7-72F782A311FA}.Debug|ARM.ActiveCfg = Debug|Win32
+		{1D49648C-D4D4-4530-BFE7-72F782A311FA}.Debug|ARM64.ActiveCfg = Debug|Win32
+		{1D49648C-D4D4-4530-BFE7-72F782A311FA}.Debug|x64.ActiveCfg = Debug|x64
+		{1D49648C-D4D4-4530-BFE7-72F782A311FA}.Debug|x64.Build.0 = Debug|x64
+		{1D49648C-D4D4-4530-BFE7-72F782A311FA}.Debug|x86.ActiveCfg = Debug|Win32
+		{1D49648C-D4D4-4530-BFE7-72F782A311FA}.Debug|x86.Build.0 = Debug|Win32
+		{1D49648C-D4D4-4530-BFE7-72F782A311FA}.Release|Any CPU.ActiveCfg = Release|Win32
+		{1D49648C-D4D4-4530-BFE7-72F782A311FA}.Release|ARM.ActiveCfg = Release|Win32
+		{1D49648C-D4D4-4530-BFE7-72F782A311FA}.Release|ARM64.ActiveCfg = Release|Win32
+		{1D49648C-D4D4-4530-BFE7-72F782A311FA}.Release|x64.ActiveCfg = Release|x64
+		{1D49648C-D4D4-4530-BFE7-72F782A311FA}.Release|x64.Build.0 = Release|x64
+		{1D49648C-D4D4-4530-BFE7-72F782A311FA}.Release|x86.ActiveCfg = Release|Win32
+		{1D49648C-D4D4-4530-BFE7-72F782A311FA}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -11,7 +11,7 @@ rem /d2cgsummary /showIncludes
 rem /Bt
 rem -ftime-trace
 
-set linker_flags= "fltLib.lib" "vssapi.lib" "libzstd_static.lib" "libzstd.lib"
+set linker_flags= /WX "fltLib.lib" "vssapi.lib" "libzstd_static.lib" "libzstd.lib"
 rem 
 
 pushd minispy_user\
@@ -30,6 +30,11 @@ call :DisplayTimerResult
 
 if exist *.ilk del *.ilk
 if exist *.exp del *.exp
+
+rem delete all .obj files except precompiled.obj one
+if exist precompiled.obj ren precompiled.obj precompiled.obj.keep
+if exist *.obj del *.obj
+if exist precompiled.obj.keep ren precompiled.obj.keep precompiled.obj
 
 popd
 

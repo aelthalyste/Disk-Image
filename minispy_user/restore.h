@@ -12,7 +12,8 @@
 In order to export these symbosl to .NET, we have to put public keyword before enum
 */
 
-#if _MANAGED
+
+#ifdef  _MANAGED
 public
 #endif
 
@@ -30,8 +31,9 @@ enum class RestoreSource_Errors: int{
 };
 
 
-#if _MANAGED
-public
+
+#ifdef  _MANAGED
+#define DOTNET_ENUM public
 #endif
 
 enum class RestoreStream_Errors: int{

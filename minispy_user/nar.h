@@ -101,6 +101,55 @@ struct NarUTF8{
     uint32_t Len;
     uint32_t Cap;
 };
+#define NARUTF8(ch) {ch, sizeof(ch), 0}
+
+static inline NarUTF8
+NarStringCopy(NarUTF8 Input, nar_arena *Arena){
+    NarUTF8 Result = {};
+    Result.Str = (uint8_t*)ArenaAllocate(Arena, Input.Len);
+    Result.Len = Input.Len;
+    Result.Cap = Input.Cap;
+    memcpy(Result.Str, Input.Str, Result.Len);
+    return Result;
+}
+
+static inline bool
+NarStringCopy(NarUTF8 *Destination, NarUTF8 Source){
+    if(Destination->Cap >= Source.Len){
+        memcpy(Destination->Str, Source.Str, Source.Len);
+        Destination->Len = Source.Len;
+        ASSERT(Destination->Str[Destination->Len] == 0); 
+        return true;
+    }
+    return false;
+}
+
+static inline bool
+NarStringConcatenate(NarUTF8 *Destination, NarUTF8 Append){
+    
+    // capacity with 0 means its immutable.
+    if(Destination->Cap == 0){
+        return false;
+    }
+    
+    ASSERT(Destination->Cap);
+    
+    ASSERT(Destination->Cap >= Destination->Len + Append.Len);
+    if(Destination->Cap < Destination->Len + Append.Len){
+        return false;
+    }
+    
+    for(size_t i = 0; 
+        i<Append.Len; 
+        i++)
+    {
+        Destination->Str[i + Destination->Len] = Append.Str[i];
+    }
+    Destination->Len += Append.Len;
+    Destination->Str[Destination->Len] = 0;// null termination
+    return true;
+}
+
 
 
 struct nar_record{
@@ -109,18 +158,19 @@ struct nar_record{
 };
 
 struct RegionCoupleIter{
-    nar_record *R1;
-    nar_record *R2;
+    const nar_record *R1;
+    const nar_record *R2;
     
     size_t     R1Len;
     size_t     R2Len;
     
-    nar_record *R1End;
-    nar_record *R2End;
+    const nar_record *R1End;
+    const nar_record *R2End;
     
-    nar_record *R1Iter;
-    nar_record *R2Iter;
+    const nar_record *R1Iter;
+    const nar_record *R2Iter;
     
+    nar_record __CompRegion;
     nar_record It;
 };
 
@@ -275,7 +325,6 @@ GenerateMetadataNameUTF8(nar_backup_id ID, int32_t Version, NarUTF8 *Out){
     
     // 27
     int ChWritten = snprintf(Bf, sizeof(Bf), "NB_M_%s-%c%02d%02d%02d%02d.nbfsm", VersionBf, ID.Letter, ID.Month, ID.Day, ID.Hour, ID.Min);
-    ChWritten += 1;//null termination
     ASSERT(ChWritten <= Out->Cap);
     if(ChWritten <= Out->Cap){
         memset(Out->Str, 0, Out->Cap);
@@ -310,7 +359,6 @@ GenerateBinaryFileNameUTF8(nar_backup_id ID, int32_t Version, NarUTF8 *Out){
     
     // 27
     int ChWritten = snprintf(Bf, sizeof(Bf), "NB_%s-%c%02d%02d%02d%02d.nbfsf", VersionBf, ID.Letter, ID.Month, ID.Day, ID.Hour, ID.Min);
-    ChWritten += 1;
     ASSERT(ChWritten <= Out->Cap);
     if(ChWritten <= Out->Cap){
         memset(Out->Str, 0, Out->Cap);
@@ -478,13 +526,20 @@ GenerateBinaryFileName(nar_backup_id ID, int Version, StrType &Res){
 	}
 }
 
+//mmap(0, length, PROT_READ|PROT_WRITE, MAP_ANON, 0, 0)
 
 
 inline bool
-NarIsRegionIterValid(RegionCoupleIter *Iter);
+NarIsRegionIterValid(RegionCoupleIter Iter);
+
+
+inline bool
+__NarIsRegionIterExpired(RegionCoupleIter Iter);
+
+
 
 inline RegionCoupleIter
-NarInitRegionCoupleIter(nar_record *Base, nar_record *Ex, size_t BaseN, size_t ExN);
+NarInitRegionCoupleIter(const nar_record *Base, const nar_record *Ex, size_t BaseN, size_t ExN);
 
 inline bool
 NarIterateRegionCoupleUntilCollision(RegionCoupleIter *Iter);
@@ -494,13 +549,12 @@ inline void
 NarNextExcludeIter(RegionCoupleIter *Iter);
 
 inline RegionCoupleIter
-NarStartExcludeIter(nar_record *Base, nar_record *Ex, size_t BaseN, size_t ExN);
-
+NarStartExcludeIter(const nar_record *Base, const nar_record *Ex, size_t BaseN, size_t ExN);
 
 
 inline RegionCoupleIter
-NarStartRegionIntersectionIter(nar_record *R1, nar_record *R2, size_t R1Len, size_t R2Len);
+NarStartIntersectionIter(const  nar_record *R1, const nar_record *R2, size_t R1Len, size_t R2Len);
 
 inline void
-NarNextRegionIntersection(RegionCoupleIter *Iter);
+NarNextIntersectionIter(RegionCoupleIter *Iter);
 

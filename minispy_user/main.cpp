@@ -602,11 +602,112 @@ TestReadBackup(wchar_t *backup, wchar_t *metadata){
     return 0;
 }
 
+bool
+TEST_RegionCoupleIter(){
+    
+    nar_record R1[] = {
+        {0, 100},
+        {400, 100},
+        {550, 50},
+        {1000, 800},
+        {2000, 400},
+        {2450, 40},
+    };
+    
+    nar_record R2[] = {
+        {90, 20},
+        {340, 120},
+        {490, 10},
+        {900, 400},
+        {2100, 100},
+        {2430, 100}
+    };
+    
+    for(
+        RegionCoupleIter Iter = NarStartIntersectionIter(R1, R2, sizeof(R1)/8, sizeof(R2)/8);
+        NarIsRegionIterValid(Iter);
+        NarNextIntersectionIter(&Iter)){
+        printf("%4d\t%4d\n", Iter.It.StartPos, Iter.It.Len);
+    }
+    printf("\n\n######\n\n");
+    
+    for(
+        RegionCoupleIter Iter = NarStartExcludeIter(R1, R2, sizeof(R1)/8, sizeof(R2)/8);
+        NarIsRegionIterValid(Iter);
+        NarNextExcludeIter(&Iter)){
+        printf("%4d\t%4d\n", Iter.It.StartPos, Iter.It.Len);
+    }
+    
+    
+    return true;
+}
+
 int
 wmain(int argc, wchar_t* argv[]) {
     
+    TEST_RegionCoupleIter();
+    return 0;
     
+#if 0    
+    nar_memory_pool Pool = NarInitPool(malloc(1024), 1024, 128);
     
+    printf("%X\n", PoolAllocate(&Pool));
+    printf("%X\n", PoolAllocate(&Pool));
+    printf("%X\n", PoolAllocate(&Pool));
+    printf("%X\n", PoolAllocate(&Pool));
+    void* mem1 = PoolAllocate(&Pool);
+    void* mem2 = PoolAllocate(&Pool);
+    PoolDeallocate(&Pool, mem1);
+    PoolDeallocate(&Pool, mem2);
+    void* mem3 = 0;
+    void* mem4 = 0;
+    printf("%X\n", PoolAllocate(&Pool));
+    printf("%X\n", PoolAllocate(&Pool));
+    printf("%X\n", PoolAllocate(&Pool));
+    printf("%X\n", mem3 = PoolAllocate(&Pool));
+    printf("%X\n", mem4 = PoolAllocate(&Pool));
+    printf("%X\n", PoolAllocate(&Pool));
+    
+    PoolDeallocate(&Pool, mem3);
+    PoolDeallocate(&Pool, mem4);
+#endif
+    
+#if 0    
+    std::string stds;
+    //NarUTF8 Str = {(uint8_t*)malloc(1024), 0, 1024};
+    
+    NarUTF8 First  = {(uint8_t*)malloc(1024), 0, 1024};
+    NarUTF8 Second = {(uint8_t*)malloc(1024), 0, 1024};
+    
+    nar_backup_id ID = {0};
+    ID.Year  = 2020;
+    ID.Month = 4; 
+    ID.Day   = 12;
+    ID.Hour  = 6;
+    ID.Min   = 4;
+    ID.Letter = 'C';
+    
+    int Version = -1;
+    
+    GenerateMetadataNameUTF8(ID, Version, &First);
+    GenerateMetadataName(ID, Version, stds);
+    printf("%s\n%s\n", First.Str, stds.c_str());
+    
+    GenerateBinaryFileNameUTF8(ID, Version, &Second);
+    GenerateBinaryFileName(ID, Version, stds);
+    printf("%s\n%s\n", Second.Str, stds.c_str());
+    
+    nar_arena Arena = ArenaInit(malloc(1024), 1024);
+    wchar_t *WSTR = NarUTF8ToWCHAR(First, &Arena);
+    printf("%S\n", WSTR);
+    NarUTF8 UTF8S = NarWCHARToUTF8(WSTR, &Arena);
+    printf("%s\n", UTF8S.Str);
+    
+    NarStringConcatenate(&First, Second);
+    printf("%s\n", First.Str);
+    
+    return 0;
+#endif
     
 #if 1
     file_explorer FE = NarInitFileExplorer(L"G:\\NB_M_FULL-C07131210.nbfsm", L"G:\\NB_FULL-C07131210.nbfsf");

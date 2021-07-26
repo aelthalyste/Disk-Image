@@ -47,15 +47,14 @@ MergeRegions(data_array<nar_record>* R) {
 }
 
 
-inline BOOLEAN
+inline bool
 IsRegionsCollide(nar_record R1, nar_record R2) {
     
-    BOOLEAN Result = FALSE;
     uint32_t R1EndPoint = R1.StartPos + R1.Len;
     uint32_t R2EndPoint = R2.StartPos + R2.Len;
     
     if (R1.StartPos == R2.StartPos && R1.Len == R2.Len) {
-        return TRUE;
+        return true;
     }
     
     
@@ -64,10 +63,10 @@ IsRegionsCollide(nar_record R1, nar_record R2) {
         || (R2EndPoint <= R1EndPoint
             && R2EndPoint >= R1.StartPos)
         ) {
-        Result = TRUE;
+        return true;
     }
     
-    return Result;
+    return false;
 }
 
 
