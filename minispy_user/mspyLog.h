@@ -342,11 +342,7 @@ struct stream {
     HANDLE Handle; //Used for streaming data to C#
     
     
-    // BackupStream_Errors Error;
-    
-#if 1    
     BackupStream_Errors Error;
-#endif
     
     const char* GetErrorDescription(){
         
@@ -470,6 +466,10 @@ struct volume_backup_inf {
     
     CComPtr<IVssBackupComponents> VSSPTR;
     VSS_ID SnapshotID;
+    
+    nar_record *CompInf;
+    size_t      CBII;
+    size_t      MaxCBI;
     
 };
 

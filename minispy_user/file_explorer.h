@@ -211,6 +211,7 @@ struct file_restore_source{
     const nar_record *BackupLCN;
     uint32_t   LCNCount;
     
+    BackupType    Type;
     int           Version;
     nar_backup_id ID;
 };
@@ -223,9 +224,13 @@ enum class FileRestore_Errors : int {
     Error_NoError,
     Error_EndOfBackups,
     Error_InsufficentBufferSize,
+    
+#if 0    
     Error_DecompressionUnknownContentSize,
     Error_DecompressionErrorContentsize,
     Error_DecompressionCompressedSize,
+#endif
+    
     Error_Decompression,
     Error_NullFileViews,
     Error_Count

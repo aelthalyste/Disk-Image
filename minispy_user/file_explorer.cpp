@@ -1489,7 +1489,7 @@ NarInitFileRestoreSource(NarUTF8 MetadataName, NarUTF8 BinaryName){
     Result.LCNCount  = BM->Size.RegionsMetadata/sizeof(nar_record);
     Result.ID        = BM->ID;
     Result.Version   = BM->Version;
-    
+    Result.Type      = BM->BT;
     return Result;
 }
 
@@ -1589,26 +1589,47 @@ NarAdvanceFileRestore(file_restore_ctx *ctx, void* Out, size_t OutSize){
         NarNextIntersectionIter(&ctx->IIter);
         
         nar_record FetchRegion = ctx->IIter.It;
+        
+        // check if end of IIter
         if(NarIsRegionIterValid(ctx->IIter)){
+            
             
             // exclude found backups from layout.
             {
-                nar_record *Exclude = (nar_record*)PoolAllocate(&ctx->LCNPool);
-                size_t i =0;
+                nar_record *ExcludedLCN = (nar_record*)PoolAllocate(&ctx->LCNPool);
+                size_t i = 0;
                 
                 for(RegionCoupleIter Iter = NarStartExcludeIter(ctx->Layout.LCN, ctx->Source.BackupLCN, ctx->Layout.LCNCount, ctx->Source.LCNCount);
                     NarIsRegionIterValid(Iter);
                     NarNextExcludeIter(&Iter)
                     )
                 {
-                    Exclude[i++] = Iter.It; 
+                    ExcludedLCN[i++] = Iter.It; 
+                }
+                
+                if(ctx->Source.Version == NAR_FULLBACKUP_VERSION){
+                    ASSERT(i == 0);
                 }
                 
                 PoolDeallocate(&ctx->LCNPool, ctx->Layout.LCN);
-                ctx->Layout.LCN      = Exclude;
+                ctx->Layout.LCN      = ExcludedLCN;
                 ctx->Layout.LCNCount = i;
+                
+                
+                if(ctx->Source.Version == NAR_FULLBACKUP_VERSION && i == 0) {
+                    return 0;
+                }
+                if(ctx->Source.Version == NAR_FULLBACKUP_VERSION && i != 0){
+                    ctx->Error = FileRestore_Errors::Error_EndOfBackups;
+                    return 0;
+                }
+                
             }
             
+            
+            
+            int NewVersion = NAR_INVALID_BACKUP_VERSION;
+            NarGetPreviousBackupInfo(ctx->Source.Version, ctx->Source.Type, &NewVersion);
             
             // initialize parameters for a new restore source
             { 
@@ -1623,7 +1644,7 @@ NarAdvanceFileRestore(file_restore_ctx *ctx, void* Out, size_t OutSize){
                 else{
                     ctx->Source = NarInitFileRestoreSource(ctx->RootDir, 
                                                            ctx->Source.ID, 
-                                                           ctx->Source.Version - 1, 
+                                                           NewVersion, 
                                                            &ctx->StringAllocator);
                     
                     // here, we have to do extraction iter...

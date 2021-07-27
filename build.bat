@@ -15,10 +15,10 @@ set linker_flags= /WX "fltLib.lib" "vssapi.lib" "libzstd_static.lib" "libzstd.li
 rem 
 
 pushd minispy_user\
- 
+
 rem  if not exist precompiled.obj 
-cl /c  %compile_flags% /Yc"precompiled.h" "precompiled.cpp" 
- 
+cl /c %compile_flags% /Yc"precompiled.h" "precompiled.cpp" 
+
 rem "file_explorer.cpp" "restore.cpp" "platform_io.cpp"
 cl /Yu"precompiled.h" "main.cpp" "precompiled.obj" %build_options% %compile_flags% /I"../inc" %linker_flags%
 
@@ -31,7 +31,7 @@ call :DisplayTimerResult
 if exist *.ilk del *.ilk
 if exist *.exp del *.exp
 
-rem delete all .obj files except precompiled.obj one
+REM delete all .obj files except precompiled.obj one
 if exist precompiled.obj ren precompiled.obj precompiled.obj.keep
 if exist *.obj del *.obj
 if exist precompiled.obj.keep ren precompiled.obj.keep precompiled.obj

@@ -70,7 +70,8 @@ struct nar_backup_id{
 #define NAR_DISKTYPE_MBR 'M'
 #define NAR_DISKTYPE_RAW 'R'
 
-#define NAR_FULLBACKUP_VERSION -1
+#define NAR_FULLBACKUP_VERSION     (-1)
+#define NAR_INVALID_BACKUP_VERSION (-2)
 
 #define NAR_EFI_PARTITION_LETTER 'S'
 #define NAR_RECOVERY_PARTITION_LETTER 'R'
@@ -152,9 +153,15 @@ NarStringConcatenate(NarUTF8 *Destination, NarUTF8 Append){
 
 
 
-struct nar_record{
-    uint32_t StartPos;
-    uint32_t Len;
+union nar_record{
+    struct{
+        uint32_t StartPos;
+        uint32_t Len;
+    };
+    struct{
+        uint32_t CompressedSize;
+        uint32_t DecompressedSize;
+    };
 };
 
 struct RegionCoupleIter{
@@ -265,6 +272,9 @@ struct backup_metadata {
         	
         	unsigned char IsCompressed;
         	unsigned int FrameSize;
+            
+            size_t   CompressionInfoOffset;
+            uint32_t CompressionInfoCount;
             
         };
     };
@@ -557,4 +567,9 @@ NarStartIntersectionIter(const  nar_record *R1, const nar_record *R2, size_t R1L
 
 inline void
 NarNextIntersectionIter(RegionCoupleIter *Iter);
+
+
+inline void
+NarGetPreviousBackupInfo(int32_t Version, BackupType Type, int32_t *OutVersion);
+
 
