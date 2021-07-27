@@ -44,6 +44,7 @@ NarStartExcludeIter(const nar_record *Base, const nar_record *Ex, size_t BaseN, 
 }
 
 
+
 inline void
 NarNextExcludeIter(RegionCoupleIter *Iter){
     
@@ -52,7 +53,7 @@ NarNextExcludeIter(RegionCoupleIter *Iter){
     
     Iter->It = {};
     
-    while(1){
+    for(;;){
         
         if(Iter->R1Iter == Iter->R1End){
             return;
@@ -115,7 +116,7 @@ for from middle : return left one, make __compregion right one
 for overshadow  : loop till end of collision
 */
     
-    while(1){
+    for(;;){
         
         uint32_t BEnd = Iter->__CompRegion.StartPos + Iter->__CompRegion.Len;
         uint32_t EEnd = Iter->R2Iter->StartPos + Iter->R2Iter->Len;
@@ -130,8 +131,10 @@ for overshadow  : loop till end of collision
         if((Iter->__CompRegion.StartPos < Iter->R2Iter->StartPos && BEnd < Iter->R2Iter->StartPos)
            || (Iter->__CompRegion.StartPos > EEnd))
         {
+            Iter->R1Iter++;
+            Iter->__CompRegion = Iter->R1Iter != Iter->R1End ? *Iter->R1Iter : nar_record{};
             // no collision
-            break;
+            return;
         }
         
         // collision from left
@@ -171,6 +174,7 @@ for overshadow  : loop till end of collision
             Iter->__CompRegion = Iter->R1Iter != Iter->R1End ? *Iter->R1Iter : nar_record{};
         }
         else{
+            ASSERT(FALSE);
             break;
         }
         
