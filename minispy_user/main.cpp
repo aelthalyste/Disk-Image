@@ -501,10 +501,12 @@ NarReadBackup(nar_file_view *Backup, nar_file_view *Metadata,
             if(BackupOffsetInBytes < DecompAdvancedSoFar + DecompSize){
                 
                 bool ZSTDBufferLocal = (ZSTDBuffer == NULL);
+                
                 if(ZSTDBufferLocal){
                     ZSTDBuffer     = malloc(DecompSize);
                     ZSTDBufferSize = DecompSize;
                 }
+                
                 ASSERT(ZSTDBufferSize >= DecompSize);
                 ASSERT(NULL != ZSTDBuffer);
                 

@@ -244,3 +244,29 @@ __NarIsRegionIterExpired(RegionCoupleIter Iter){
     return (Iter.R1Iter == Iter.R1End || Iter.R2Iter == Iter.R2End);
 }
 
+
+inline void
+NarGetPreviousBackupInfo(int32_t Version, BackupType Type, int32_t *OutVersion){
+    
+    ASSERT(OutVersion);
+    if(Type == BackupType::Diff){
+        if(Version != NAR_FULLBACKUP_VERSION){
+            *OutVersion = NAR_FULLBACKUP_VERSION;
+        }
+        else{
+            *OutVersion = NAR_INVALID_BACKUP_VERSION;
+        }
+    }
+    else if(Type == BackupType::Inc){
+        if(Version == NAR_FULLBACKUP_VERSION){
+            *OutVersion = NAR_INVALID_BACKUP_VERSION;
+        }
+        else{
+            *OutVersion = --Version;
+        }
+    }
+    else{
+        ASSERT(FALSE);
+    }
+    
+}

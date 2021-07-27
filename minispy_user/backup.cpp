@@ -642,7 +642,6 @@ SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, DotNetStreamInf* SI, boo
             V->Stream.Records.Data = 
                 (nar_record*)realloc(V->Stream.Records.Data, (TruncateIndex + 1)*sizeof(nar_record));            
             V->Stream.Records.Count = TruncateIndex + 1;
-            
         }
         
     }
@@ -679,6 +678,14 @@ SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, DotNetStreamInf* SI, boo
                 size_t RetCode = ZSTD_CCtx_setParameter(VolInf->Stream.CCtx, ZSTD_c_compressionLevel, ZSTD_strategy::ZSTD_lazy);
                 ASSERT(!ZSTD_isError(RetCode));
                 
+                size_t BackupSize = (uint64_t)SI->ClusterCount*(uint64_t)SI->ClusterSize;
+                
+                VolInf->MaxCBI  = BackupSize/(NAR_COMPRESSION_FRAME_SIZE);
+                
+                VolInf->CompInf  = (nar_record*)calloc(VolInf->MaxCBI, sizeof(nar_record));
+                
+                VolInf->CBII   = 0;
+                
             }
             else{
                 VolInf->Stream.ShouldCompress = false;        
@@ -705,7 +712,7 @@ TerminateBackup(volume_backup_inf* V, BOOLEAN Succeeded) {
     printf("Volume %c version %i backup operation will be terminated\n", V->Letter, V->Version);
     
     if(Succeeded){
-        if(!!SaveMetadata((char)V->Letter, V->Version, V->ClusterSize, V->BT, V->Stream.Records, V->BackupID, V->Stream.ShouldCompress, V->Stream.Handle)){
+        if(!!SaveMetadata((char)V->Letter, V->Version, V->ClusterSize, V->BT, V->Stream.Records, V->BackupID, V->Stream.ShouldCompress, V->Stream.Handle, V->CompInf, V->CBII)){
             
             if(V->BT == BackupType::Inc){
                 V->IncLogMark.LastBackupRegionOffset = V->PossibleNewBackupRegionOffsetMark;
@@ -743,11 +750,17 @@ TerminateBackup(volume_backup_inf* V, BOOLEAN Succeeded) {
     }
     if(V->Stream.Handle != INVALID_HANDLE_VALUE) {
         CloseHandle(V->Stream.Handle);
+        V->Stream.Handle = INVALID_HANDLE_VALUE;
     }
     if(V->Stream.Records.Data != NULL){
         FreeDataArray(&V->Stream.Records);
     }
-    
+    if(V->CompInf != 0){
+        free(V->CompInf);
+        V->CompInf = 0;
+        V->CBII   = 0;
+        V->MaxCBI = 0;
+    }
     
     V->Stream.Records.Count = 0;
     V->Stream.RecIndex = 0;
@@ -774,7 +787,7 @@ TerminateBackup(volume_backup_inf* V, BOOLEAN Succeeded) {
 
 // Assumes CallerBufferSize >= NAR_COMPRESSION_FRAME_SIZE
 uint32_t
-ReadStream(volume_backup_inf* VolInf, void* CallerBuffer, unsigned int CallerBufferSize) {
+ReadStream(volume_backup_inf* VolInf, void* CallerBuffer, uint32_t CallerBufferSize) {
     
     //TotalSize MUST be multiple of cluster size
     uint32_t Result = 0;
@@ -832,6 +845,7 @@ ReadStream(volume_backup_inf* VolInf, void* CallerBuffer, unsigned int CallerBuf
             Result += BytesReadAfterOperation;
             ASSERT(BytesReadAfterOperation == ReadSize);
             
+            
             if (!OperationResult || BytesReadAfterOperation != ReadSize) {
                 printf("STREAM ERROR: Couldnt read %lu bytes, instead read %lu, error code %i\n", ReadSize, BytesReadAfterOperation, OperationResult);
                 printf("rec_index % i rec_count % i, remaining bytes %I64u, offset at disk %I64u\n", VolInf->Stream.RecIndex, VolInf->Stream.Records.Count, ClustersRemainingByteSize, FilePtrTarget);
@@ -870,8 +884,9 @@ ReadStream(volume_backup_inf* VolInf, void* CallerBuffer, unsigned int CallerBuf
         }
         
         ASSERT(Result % 4096 == 0);
-        if(Result % 4096 != 0)
+        if(Result % 4096 != 0){
             NAR_BREAK;
+        }
         
         RemainingSize      -= BytesReadAfterOperation;
         CurrentBufferOffset = (char*)BufferToFill + (Result);
@@ -888,10 +903,21 @@ ReadStream(volume_backup_inf* VolInf, void* CallerBuffer, unsigned int CallerBuf
         ASSERT(!ZSTD_isError(RetCode));
         
         if(!ZSTD_isError(RetCode)){
+            nar_record CompInfo;
+            CompInfo.CompressedSize   = RetCode;
+            CompInfo.DecompressedSize = Result;
+            
+            if(VolInf->MaxCBI > VolInf->CBII){
+                VolInf->CompInf[VolInf->CBII++] = CompInfo;
+            }
+            
+            ASSERT(VolInf->MaxCBI > VolInf->CBII);
+            
             VolInf->Stream.BytesProcessed = Result;
             Result = RetCode;
         }
         else{
+            
 #if 0
             if(input.pos != input.size){
                 printf("Input buffer size %u, input pos %u\n", input.size, input.pos);
@@ -1700,7 +1726,7 @@ BackupRegions: Must have, this data determines how i must map binary data to the
 */
 BOOLEAN
 SaveMetadata(char Letter, int Version, int ClusterSize, BackupType BT,
-             data_array<nar_record> BackupRegions, nar_backup_id ID, bool IsCompressed, HANDLE VSSHandle) {
+             data_array<nar_record> BackupRegions, nar_backup_id ID, bool IsCompressed, HANDLE VSSHandle, nar_record *CompInfo, size_t CompInfoCount) {
     
     // TODO(Batuhan): convert letter to uppercase
     //Letter += ('A' - 'a');
@@ -1915,6 +1941,28 @@ SaveMetadata(char Letter, int Version, int ClusterSize, BackupType BT,
     }
 #endif
     
+    BM.CompressionInfoCount  = CompInfo ? CompInfoCount : 0;
+    {
+        if(CompInfo != NULL){
+            ASSERT((uint64_t)CompInfoCount*8ull <= Gigabyte(4));
+            DWORD BW = 0;
+            
+            if(!WriteFile(VSSHandle, CompInfo, CompInfoCount*8, &BW, 0)
+               || BW != CompInfoCount*8){
+                ASSERT(FALSE);
+                printf("Error occured while saving compression information to backup metadata. Volume %c, version %d, id %I64u\n", BM.Letter, BM.Version, BM.ID.Q);
+            }
+            
+            
+        }
+        
+        LARGE_INTEGER liOfs={0};
+        LARGE_INTEGER liNew={0};
+        SetFilePointerEx(VSSHandle, liOfs, &liNew, FILE_CURRENT);
+        BM.CompressionInfoOffset = liNew.QuadPart;
+    }
+    
+    SetFilePointer(MetadataFile, 0, 0, FILE_BEGIN);
     /*
     // NOTE(Batuhan): fill BM.Offset struct
     offset[n] = offset[n-1] + size[n-1]
