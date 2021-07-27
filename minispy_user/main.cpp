@@ -447,6 +447,12 @@ NarReadBackup(nar_file_view *Backup, nar_file_view *Metadata,
     
     uint64_t Result = 0;
     backup_metadata *BM = (backup_metadata*)Metadata->Data;
+    ASSERT(BM);
+    
+    nar_record *CompInfo = BM->CompressionInfoOffset ? (nar_record*)((uint8_t*)Metadata->Data + BM->CompressionInfoOffset) : 0;
+    size_t CompInfoCount = BM->CompressionInfoCount;
+    ASSERT(BM->CompressionInfoCount > 0);
+    ASSERT(CompInfo);
     
     nar_record* Records       = (nar_record*)((uint8_t*)Metadata->Data + BM->Offset.RegionsMetadata);
     uint64_t RecordCount      = BM->Size.RegionsMetadata/sizeof(nar_record);
@@ -479,23 +485,33 @@ NarReadBackup(nar_file_view *Backup, nar_file_view *Metadata,
         uint8_t* DataNeedle          = Backup->Data;
         
         
-        for(;BackupRemainingLen>0 && RemainingReadSize > 0 ;)
+        for(size_t CII = 0;BackupRemainingLen>0 && RemainingReadSize > 0 ; CII++)
         {
+            uint64_t DecompSize   = 0;
+            size_t CompressedSize = 0;
+            ASSERT(CompInfo);
             
-            uint64_t DecompSize    = ZSTD_getFrameContentSize(DataNeedle, BackupRemainingLen);
-            size_t CompressedSize  = ZSTD_findFrameCompressedSize(DataNeedle, BackupRemainingLen);       
-            if(ZSTD_isError(DecompSize)){
-                ZSTD_ErrorCode ErrorCode = ZSTD_getErrorCode(DecompSize);
-                const char* ErrorString  = ZSTD_getErrorString(ErrorCode);
-                printf("ZSTD error when determining frame content size, error : %s\n", ErrorString); 
-                return 0;
+            if(CompInfo){
+                DecompSize     = CompInfo[CII].DecompressedSize;
+                CompressedSize = CompInfo[CII].CompressedSize;
             }
-            if(ZSTD_isError(CompressedSize)){
-                ZSTD_ErrorCode ErrorCode = ZSTD_getErrorCode(DecompSize);
-                const char* ErrorString  = ZSTD_getErrorString(ErrorCode);
-                printf("ZSTD error when determining frame compressed size, error : %s\n", ErrorString); 
-                return 0;
+            else{
+                DecompSize    = ZSTD_getFrameContentSize(DataNeedle, BackupRemainingLen);
+                CompressedSize  = ZSTD_findFrameCompressedSize(DataNeedle, BackupRemainingLen);       
+                if(ZSTD_isError(DecompSize)){
+                    ZSTD_ErrorCode ErrorCode = ZSTD_getErrorCode(DecompSize);
+                    const char* ErrorString  = ZSTD_getErrorString(ErrorCode);
+                    printf("ZSTD error when determining frame content size, error : %s\n", ErrorString); 
+                    return 0;
+                }
+                if(ZSTD_isError(CompressedSize)){
+                    ZSTD_ErrorCode ErrorCode = ZSTD_getErrorCode(DecompSize);
+                    const char* ErrorString  = ZSTD_getErrorString(ErrorCode);
+                    printf("ZSTD error when determining frame compressed size, error : %s\n", ErrorString); 
+                    return 0;
+                }
             }
+            
             
             // found!
             if(BackupOffsetInBytes < DecompAdvancedSoFar + DecompSize){
