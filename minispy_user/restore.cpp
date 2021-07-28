@@ -5,7 +5,7 @@
 
 
 const void*
-NarReadBackup(restore_source* Rs, size_t* AvailableBytes) {
+NarRestoreReadBackup(restore_source* Rs, size_t* AvailableBytes) {
     //Rs->Regions[RegionIndice];		
     const void* Result = 0;
     
@@ -175,7 +175,7 @@ InitRestoreFileSource(StrType MetadataPath, nar_arena* Arena, size_t MaxAdvanceS
     memset(Result, 0, sizeof(restore_source));
     Result->Type            = restore_source::Type_FileSource;
     Result->MaxAdvanceSize  = MaxAdvanceSize;
-    Result->Read  = NarReadBackup;
+    Result->Read  = NarRestoreReadBackup;
     Result->Error = RestoreSource_Errors::Error_NoError;
     
     bool Error = true;
@@ -533,7 +533,7 @@ InitVolumeTarget(std::string VolumePath, nar_arena* Arena) {
         Result->SetNeedle   = NarSetNeedleVolume;
     }
     else {
-   		NarErrDescription = strerror(NarFOPENError);
+        NarErrDescription = strerror(NarFOPENError);
     }
     
     return Result;

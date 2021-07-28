@@ -4,6 +4,7 @@
 #include "file_explorer.h"
 #include "platform_io.h"
 #include "performance.h"
+#include "nar_win32.h"
 
 #if 0
 void*
@@ -1581,7 +1582,7 @@ NarInitFileRestoreCtx(file_disk_layout Layout, NarUTF8 RootDir, nar_backup_id ID
 inline size_t
 NarAdvanceFileRestore(file_restore_ctx *ctx, void* Out, size_t OutSize){
     
-    //FileRestore_Errors Result = FileRestore_Errors:Error_NoError;
+    // FileRestore_Errors Result = FileRestore_Errors:Error_NoError;
     // fetch next region if this one is depleted
     
     if(ctx->ClustersLeftInRegion == 0){
@@ -1670,7 +1671,6 @@ NarAdvanceFileRestore(file_restore_ctx *ctx, void* Out, size_t OutSize){
     size_t ReadOffset     = ctx->IIter.It.StartPos + ctx->AdvancedSoFar;
     ASSERT(ClustersToRead != 0);
     
-    
     uint64_t BytesRead    = NarReadBackup(&ctx->Source.Backup, &ctx->Source.Metadata, 
                                           ReadOffset, ClustersToRead, 
                                           Out, OutSize,
@@ -1681,8 +1681,6 @@ NarAdvanceFileRestore(file_restore_ctx *ctx, void* Out, size_t OutSize){
     
     return BytesRead; 
 }
-
-
 
 
 

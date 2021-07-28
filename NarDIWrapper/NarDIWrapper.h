@@ -228,12 +228,14 @@ namespace NarDIWrapper {
         UINT64 LastModifiedTime;
         
         wchar_t Name[MAX_PATH + 1]; // max path + 1 for null termination
+        System::String ^Name; 
     };
     
     
     public ref class CSNarFileEntry {
         public:
         CSNarFileEntry() {
+            
         }
         
         bool IsDirectory;
@@ -243,6 +245,12 @@ namespace NarDIWrapper {
         CSNarFileTime^ CreationTime;
         CSNarFileTime^ LastModifiedTime;
         System::String^ Name;
+        void *Part;
+        
+        uint32_t __DirStack[128];
+        uint32_t __DSI;
+        uint32_t __CurrentDir;
+        
     };
     
     

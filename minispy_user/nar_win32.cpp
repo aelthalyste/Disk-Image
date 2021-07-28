@@ -1,4 +1,6 @@
+#include "performance.h"
 #include "nar_win32.h"
+#include "compression.h"
 
 inline BOOLEAN
 NarRemoveLetter(char Letter){
@@ -705,4 +707,154 @@ NarWCHARToUTF8(wchar_t *Str, nar_arena *Arena){
     
     
     return Result;
+}
+
+
+
+
+/*
+Doesn't fail if reads less than ReadSiz, instead returns how many bytes it read.
+ARGS:
+Backup, Metadata: File views of according backup.
+AbsoluteClusterOffset: (in clusters) Absolute volume offset we are trying to read.
+ReadSizeInCluster    : (in clusters) How many clusters we should be reading.
+Output               : Output buffer we should fill.
+OutputMaxSize        : Max size of the output buffer.
+ZSTDBuffer           : If backup is compressed, this buffer will be used to temporarily store decompressed data. This value might be NULL, if so, function allocates its own buffer. 
+If buffer doesn't have enought space to contain decompressed data, function fails.
+ZSTDBufferSize       : Size of given buffer, if no buffer is given this value is ignored.
+*/
+uint64_t
+NarReadBackup(nar_file_view *Backup, nar_file_view *Metadata, 
+              uint64_t AbsoluteClusterOffset, uint64_t ReadSizeInCluster, 
+              void *Output, uint64_t OutputMaxSize,
+              void *ZSTDBuffer, size_t ZSTDBufferSize)
+{
+    
+    TIMED_BLOCK();
+    if(NULL == Backup){
+        return 0;
+    }
+    if(NULL == Metadata){
+        return 0;
+    }
+    
+    uint64_t Result = 0;
+    backup_metadata *BM = (backup_metadata*)Metadata->Data;
+    ASSERT(BM);
+    
+    nar_record *CompInfo = BM->CompressionInfoOffset ? (nar_record*)((uint8_t*)Metadata->Data + BM->CompressionInfoOffset) : 0;
+    size_t CompInfoCount = BM->CompressionInfoCount;
+    ASSERT(BM->CompressionInfoCount > 0);
+    ASSERT(CompInfo);
+    
+    nar_record* Records       = (nar_record*)((uint8_t*)Metadata->Data + BM->Offset.RegionsMetadata);
+    uint64_t RecordCount      = BM->Size.RegionsMetadata/sizeof(nar_record);
+    
+    point_offset OffsetResult = FindPointOffsetInRecords(Records, RecordCount, AbsoluteClusterOffset);
+    
+    uint64_t BackupOffsetInBytes = 0;
+    uint64_t AvailableBytes      = 0;
+    uint64_t ReadSizeInBytes     = 0;
+    
+    {
+        uint64_t BackupClusterOffset = OffsetResult.Offset;
+        uint64_t AvailableClusters   = OffsetResult.Readable;
+        if(AvailableClusters < ReadSizeInCluster){
+            printf("Requested bytes exceeds available region size in the backup! Requested %I64u, available %I64u\n", ReadSizeInCluster, AvailableClusters);
+            ReadSizeInCluster = AvailableClusters;
+        }
+        ReadSizeInBytes     = (uint64_t)BM->ClusterSize * ReadSizeInCluster;
+        BackupOffsetInBytes = (uint64_t)BM->ClusterSize * BackupClusterOffset;
+    }
+    
+    if(BM->IsCompressed){
+        
+        uint64_t CompressedSize      = 0;
+        uint64_t Remaining           = 0;
+        uint64_t DecompSize          = 0;
+        uint64_t DecompAdvancedSoFar = 0;
+        uint64_t BackupRemainingLen  = Backup->Len;
+        uint64_t RemainingReadSize   = ReadSizeInBytes;
+        uint8_t* DataNeedle          = Backup->Data;
+        
+        
+        for(size_t CII = 0;BackupRemainingLen>0 && RemainingReadSize > 0 ; CII++)
+        {
+            uint64_t DecompSize   = 0;
+            size_t CompressedSize = 0;
+            ASSERT(CompInfo);
+            
+            if(CompInfo){
+                DecompSize     = CompInfo[CII].DecompressedSize;
+                CompressedSize = CompInfo[CII].CompressedSize;
+            }
+            else{
+                DecompSize    = ZSTD_getFrameContentSize(DataNeedle, BackupRemainingLen);
+                CompressedSize  = ZSTD_findFrameCompressedSize(DataNeedle, BackupRemainingLen);       
+                if(ZSTD_isError(DecompSize)){
+                    ZSTD_ErrorCode ErrorCode = ZSTD_getErrorCode(DecompSize);
+                    const char* ErrorString  = ZSTD_getErrorString(ErrorCode);
+                    printf("ZSTD error when determining frame content size, error : %s\n", ErrorString); 
+                    return 0;
+                }
+                if(ZSTD_isError(CompressedSize)){
+                    ZSTD_ErrorCode ErrorCode = ZSTD_getErrorCode(DecompSize);
+                    const char* ErrorString  = ZSTD_getErrorString(ErrorCode);
+                    printf("ZSTD error when determining frame compressed size, error : %s\n", ErrorString); 
+                    return 0;
+                }
+            }
+            
+            
+            // found!
+            if(BackupOffsetInBytes < DecompAdvancedSoFar + DecompSize){
+                
+                bool ZSTDBufferLocal = (ZSTDBuffer == NULL);
+                
+                if(ZSTDBufferLocal){
+                    ZSTDBuffer     = malloc(DecompSize);
+                    ZSTDBufferSize = DecompSize;
+                }
+                
+                ASSERT(ZSTDBufferSize >= DecompSize);
+                ASSERT(NULL != ZSTDBuffer);
+                
+                
+                size_t ZSTD_RetCode = ZSTD_decompress(ZSTDBuffer, ZSTDBufferSize, DataNeedle, CompressedSize);
+                
+                ASSERT(!ZSTD_isError(ZSTD_RetCode));
+                
+                uint64_t BufferOffset        = BackupOffsetInBytes - DecompAdvancedSoFar;
+                uint64_t BufferReadableBytes = DecompSize - BufferOffset;
+                uint64_t CopySize            = MIN(RemainingReadSize, BufferReadableBytes);
+                
+                memcpy(Output, (uint8_t*)ZSTDBuffer + BufferOffset, CopySize);
+                Output = (uint8_t*)Output + CopySize;
+                
+                
+                BackupOffsetInBytes += CopySize;
+                RemainingReadSize   -= CopySize;
+                
+                if(ZSTDBufferLocal){
+                    free(ZSTDBuffer);
+                    ZSTDBuffer = 0;
+                }
+                
+            }
+            
+            DecompAdvancedSoFar += DecompSize;
+            
+            BackupRemainingLen -= CompressedSize;
+            DataNeedle          = DataNeedle + (CompressedSize);
+        }
+        
+        // decompress
+    }
+    else{
+        memcpy(Output, (uint8_t*)Backup->Data + BackupOffsetInBytes, ReadSizeInBytes);
+    }
+    
+    
+    return ReadSizeInBytes;
 }

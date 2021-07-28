@@ -93,10 +93,16 @@ VolumeGUID MUST have size of 98 bytes, (49 unicode char)
 BOOLEAN
 NarGetVolumeGUIDKernelCompatible(wchar_t Letter, wchar_t *VolumeGUID);
 
-
-
 inline wchar_t*
 NarUTF8ToWCHAR(NarUTF8 s, nar_arena *Arena);
 
 inline NarUTF8
 NarWCHARToUTF8(wchar_t *Str, nar_arena *Arena);
+
+
+uint64_t
+NarReadBackup(nar_file_view *Backup, nar_file_view *Metadata, 
+              uint64_t AbsoluteClusterOffset, uint64_t ReadSizeInCluster, 
+              void *Output, uint64_t OutputMaxSize,
+              void *ZSTDBuffer, size_t ZSTDBufferSize);
+

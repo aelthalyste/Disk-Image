@@ -23,6 +23,8 @@ struct file_read {
     int Len;
 };
 
+nar_file_view 
+NarOpenFileView(NarUTF8 fn);
 
 nar_file_view 
 NarOpenFileView(const std::string &fn);

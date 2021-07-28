@@ -1,6 +1,5 @@
 #pragma once
 
-#include "nar.h"
 
 #ifndef Kilobyte
 #define Kilobyte(val) ((val)*1024ll)
@@ -12,10 +11,7 @@
 #define MIN(a,b) ((a)<(b) ? (a) : (b))
 
 
-#ifndef ASSERT
-#define ASSERT(exp)
-#endif
-
+#include "nar.h"
 #include "memory.h"
 #include "platform_io.h"
 
