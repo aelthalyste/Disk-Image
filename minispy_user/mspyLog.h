@@ -60,12 +60,14 @@ _NarInternalMemoryOp(int OpCode, size_t Size) {
     return Result;
 }
 
+#if 0
 // some debug stuff
 int64_t NarGetPerfCounter();
 int64_t NarGetPerfFrequency();
 
 // time elapsed in ms
 double NarTimeElapsed(int64_t start);
+#endif
 
 static inline void*
 NarScratchAllocate(size_t Size) {
@@ -97,9 +99,9 @@ struct nar_log{
     //unsigned int LineNumber;
     nar_log_time Time;
     char *LogString;
-}GlobalLogs[512];
-int GlobalLogCount = 0;
-HANDLE GlobalLogMutex = 0;
+}static GlobalLogs[512];
+static int GlobalLogCount = 0;
+static HANDLE GlobalLogMutex = 0;
 
 
 /*
@@ -678,10 +680,4 @@ inline point_offset
 FindPointOffsetInRecords(nar_record *Records, uint64_t Len, int64_t Offset);
 
 
-
-uint64_t
-NarReadBackup(nar_file_view *Backup, nar_file_view *Metadata, 
-              uint64_t AbsoluteClusterOffset, uint64_t ReadSizeInCluster, 
-              void *Output, uint64_t OutputMaxSize,
-              void *ZSTDBuffer, size_t ZSTDBufferSize);
 

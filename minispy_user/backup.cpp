@@ -213,8 +213,12 @@ SetIncRecords(HANDLE CommPort, volume_backup_inf* V) {
         }
         
         if(Result == TRUE){
+            
+#if 0            
             qsort(V->Stream.Records.Data, V->Stream.Records.Count, sizeof(nar_record), CompareNarRecords);
             MergeRegions(&V->Stream.Records);
+#endif
+            
         }
         
     }
@@ -318,8 +322,12 @@ SetDiffRecords(HANDLE CommPort ,volume_backup_inf* V) {
         }
         
         if(Result == TRUE){
+            
+#if 0            
             qsort(V->Stream.Records.Data, V->Stream.Records.Count, sizeof(nar_record), CompareNarRecords);
             MergeRegions(&V->Stream.Records);
+#endif
+            
         }
         
     }
@@ -427,6 +435,7 @@ GetVolumeRegionsFromBitmap(HANDLE VolumeHandle, uint32_t* OutRecordCount) {
                     BitmapIndex++;
                 }
                 ClusterIndex++;
+                
             }
             
             printf("Successfully set fullbackup records\n");
@@ -765,6 +774,7 @@ TerminateBackup(volume_backup_inf* V, BOOLEAN Succeeded) {
     V->Stream.Records.Count = 0;
     V->Stream.RecIndex = 0;
     V->Stream.ClusterIndex = 0;
+    
     {
         LONG Deleted=0;
         VSS_ID NonDeleted;
@@ -1208,6 +1218,7 @@ GetMFTandINDXLCN(char VolumeLetter, HANDLE VolumeHandle) {
         memset(ClustersExtracted, 0, ClusterExtractedBufferSize);
     
     auto AutoCompressAndResizeOutput = [&](){
+        
         if(ClusterExtractedCount >= MaxOutputLen/2){
             TIMED_NAMED_BLOCK("Autocompression stuff");
             
@@ -1224,8 +1235,8 @@ GetMFTandINDXLCN(char VolumeLetter, HANDLE VolumeHandle) {
             MaxOutputLen *= 2;
             ClustersExtracted = temp.Data;
             ClusterExtractedCount = temp.Count;
-            
         }
+        
     };
     
     void* FileBuffer = malloc(MEMORY_BUFFER_SIZE);
@@ -1952,8 +1963,6 @@ SaveMetadata(char Letter, int Version, int ClusterSize, BackupType BT,
                 ASSERT(FALSE);
                 printf("Error occured while saving compression information to backup metadata. Volume %c, version %d, id %I64u\n", BM.Letter, BM.Version, BM.ID.Q);
             }
-            
-            
         }
         
         LARGE_INTEGER liOfs={0};

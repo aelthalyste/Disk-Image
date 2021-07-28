@@ -28,9 +28,11 @@ namespace NarDIWrapper {
     
     
     CSNarFileExplorer::CSNarFileExplorer(){
+        
     }
     
     CSNarFileExplorer::~CSNarFileExplorer() {
+        
     }
     
     bool CSNarFileExplorer::CW_Init(System::String^ SysRootDir, System::String^ SysMetadataName){
@@ -38,15 +40,48 @@ namespace NarDIWrapper {
     }
     
     List<CSNarFileEntry^>^ CSNarFileExplorer::CW_GetFilesInCurrentDirectory(){
+        
+        List<CSNarFileEntry^>^ Result = gcnew List<CSNarFileEntry^>;
+        
+        
+        struct file_explorer_file{
+            size_t   Size;
+            
+            wchar_t* Name; // Null terminated
+            uint8_t  NameLen;
+            
+            uint32_t FileID;
+            uint32_t ParentFileID;
+            
+            SYSTEMTIME LastModifiedTime;
+            SYSTEMTIME CreationTime;
+            
+            uint8_t  IsDirectory;
+        };
+        
+        for(){
+            CSNarFileEntry^ F = gcnew CSNarFileEntry;
+            F->IsDirectory = File->IsDirectory;
+            F->Size        = File->Size;
+            F->ID          = File->ID;
+            
+            F->CreationTime = 0;
+            F->LastModifiedTime = 0;
+            F->Name = gcnew System::String;
+        }
+        
         return gcnew List<CSNarFileEntry^>;
     }
     
-    bool CSNarFileExplorer::CW_SelectDirectory(UINT64 ID){
-        //NarFileExplorerPushDirectory(ctx, ID);
+    bool CSNarFileExplorer::CW_SelectDirectory(CSNarFileEntry^ Entry){
+        __CurrentDir = (__DirStack[__DSI++] = Entry->ID);
         return true;
     }
     
     void CSNarFileExplorer::CW_PopDirectory(){
+        if(__DSI != 0){
+            __CurrentDir = --__DSI;
+        }
     }
     
     void CSNarFileExplorer::CW_Free(){

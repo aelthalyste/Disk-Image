@@ -1,16 +1,28 @@
 /* date = July 15th 2021 4:36 pm */
+#pragma once
 
-#ifndef PERFORMANCE_H
-#define PERFORMANCE_H
+#include <stdint.h>
 
 #if _WIN32
 
+#include <windows.h>
+
+
+#if 0
 #define TIMED_BLOCK__(NAME, Number, ...) timed_block timed_##Number(__COUNTER__, __LINE__, __FUNCTION__, NAME);
 #define TIMED_BLOCK_(NAME, Number, ...)  TIMED_BLOCK__(NAME, Number,  ## __VA__ARGS__)
 #define TIMED_BLOCK(...)                 TIMED_BLOCK_("UNNAMED", __LINE__, ## __VA__ARGS__)
 #define TIMED_NAMED_BLOCK(NAME, ...)     TIMED_BLOCK_(NAME, __LINE__, ## __VA__ARGS__)
+#else
+#define TIMED_BLOCK__(NAME, Number, ...) 
+#define TIMED_BLOCK_(NAME, Number, ...)  
+#define TIMED_BLOCK(...)                 
+#define TIMED_NAMED_BLOCK(NAME, ...)     
+#endif
 
 
+
+#if 0
 struct debug_record {
     char* FunctionName;
     char* Description;
@@ -43,16 +55,17 @@ struct timed_block {
     }
     
 };
+#endif
 
 
 
 // some debug stuff
-inline int64_t NarGetPerfCounter(){
+static inline int64_t NarGetPerfCounter(){
     LARGE_INTEGER li;
     QueryPerformanceCounter(&li);
     return li.QuadPart;
 }
-inline int64_t NarPerfFrequency(){
+static inline int64_t NarPerfFrequency(){
     static int64_t cache = 0;
     if(cache == 0){
         LARGE_INTEGER i;
@@ -63,7 +76,7 @@ inline int64_t NarPerfFrequency(){
 }
 
 // time elapsed in ms
-double NarTimeElapsed(int64_t start){
+static inline double NarTimeElapsed(int64_t start){
     return ((double)NarGetPerfCounter() - (double)start)/(double)NarPerfFrequency();
 }
 #endif
@@ -76,4 +89,3 @@ double NarTimeElapsed(int64_t start){
 
 
 
-#endif //PERFORMANCE_H
