@@ -200,47 +200,6 @@ NarGetFileNameFromPath(const wchar_t *path, wchar_t* Out, size_t MaxOut){
 
 
 
-// input MUST be sorted
-// Finds point Offset in relative to Records structure, useful when converting absolue volume offsets to our binary backup data offsets.
-// returns NAR_POINT_OFFSET_FAILED if fails to find given offset, 
-inline point_offset 
-FindPointOffsetInRecords(nar_record *Records, uint64_t Len, int64_t Offset){
-    
-    if(!Records) return {0};
-    TIMED_BLOCK();
-    
-    point_offset Result = {0};
-    
-    BOOLEAN Found = FALSE;
-    
-    for(uint64_t i = 0; i < Len; i++){
-        
-        if(Offset <= (int64_t)Records[i].StartPos + (int64_t)Records[i].Len){
-            
-            int64_t Diff = (Offset - (INT64)Records[i].StartPos);
-            if (Diff < 0) {
-                // Exceeded offset, this means we cant relate our Offset and Records data, return failcode
-                Found = FALSE;
-            }
-            else {
-                Found = TRUE;
-                Result.Offset        += Diff;
-                Result.Indice         = i;
-                Result.Readable       = (int64_t)Records[i].Len - Diff;
-            }
-            
-            break;
-            
-        }
-        
-        
-        Result.Offset += Records[i].Len;
-        
-    }
-    
-    
-    return (Found ? Result : point_offset{0});
-}
 
 #if 1
 
@@ -423,20 +382,83 @@ ConsumeNextLine(char *Input, char* Out, size_t MaxBf, char* InpEnd){
 
 #include <conio.h>
 
+typedef struct { uint64_t state;  uint64_t inc; } pcg32_random_t;
+
+uint32_t pcg32_random_r(pcg32_random_t* rng)
+{
+    uint64_t oldstate = rng->state;
+    // Advance internal state
+    rng->state = oldstate * 6364136223846793005ULL + (rng->inc|1);
+    // Calculate output function (XSH RR), uses old state for max ILP
+    uint32_t xorshifted = ((oldstate >> 18u) ^ oldstate) >> 27u;
+    uint32_t rot = oldstate >> 59u;
+    return (xorshifted >> rot) | (xorshifted << ((-rot) & 31));
+}
+
 int
-TestReadBackup(wchar_t *backup, wchar_t *metadata){
+TEST_ReadBackupCrossed(wchar_t *cb, wchar_t *cm, wchar_t* db, wchar_t* dm, pcg32_random_t *state){
+    
+    nar_file_view CompressedBackupView = NarOpenFileView(cb);
+    nar_file_view CompressedMetadataView = NarOpenFileView(cm);
+    
+    nar_file_view DecompressedBackupView = NarOpenFileView(db);
+    nar_file_view DecompressedMetadataView = NarOpenFileView(dm);
+    
+    ASSERT(CompressedMetadataView.Data);
+    ASSERT(DecompressedMetadataView.Data);
+    ASSERT(CompressedBackupView.Data);
+    ASSERT(DecompressedBackupView.Data);
+    
+    
+    backup_metadata *BM = (backup_metadata*)CompressedMetadataView.Data;
+    
+    nar_record* Records  = (nar_record*)((uint8_t*)CompressedMetadataView.Data + BM->Offset.RegionsMetadata);
+    uint64_t RecordCount = BM->Size.RegionsMetadata/sizeof(nar_record);
+    
+    uint64_t SelectedIndice  = 2;//pcg32_random_r(state) % RecordCount;
+    uint64_t ClusterReadSize = 310910;//pcg32_random_r(state) % Records[SelectedIndice].Len;
+    
+    nar_arena Arena = ArenaInit(malloc(ClusterReadSize*4096*4), ClusterReadSize*4096*4);
+    
+    void* CompressedBuffer   = ArenaAllocateAligned(&Arena, ClusterReadSize*4096, 16);
+    void* DecompressedBuffer = ArenaAllocateAligned(&Arena, ClusterReadSize*4096, 16);
+    
+    
+    int CReadSize = NarReadBackup(&CompressedBackupView, &CompressedMetadataView, 
+                                  Records[SelectedIndice].StartPos, ClusterReadSize, 
+                                  CompressedBuffer, ClusterReadSize*4096, 
+                                  0, 0);
+    
+    int DReadSize = NarReadBackup(&DecompressedBackupView, &DecompressedMetadataView, 
+                                  Records[SelectedIndice].StartPos, ClusterReadSize, DecompressedBuffer, ClusterReadSize*4096, 
+                                  0, 0);
+    
+    
+    ASSERT(DReadSize == ClusterReadSize*4096);
+    ASSERT(CReadSize == ClusterReadSize*4096);
+    ASSERT(CReadSize == DReadSize);
+    
+    ASSERT(memcmp(CompressedBuffer, DecompressedBuffer, ClusterReadSize*4096) == 0);
+    
+    free(Arena.Memory);
+    return 0;
+}
+
+
+
+int
+TEST_ReadBackup(wchar_t *backup, wchar_t *metadata, pcg32_random_t *state){
     nar_file_view BView = NarOpenFileView(backup);
     nar_file_view MView = NarOpenFileView(metadata);
     
-    srand(time(NULL));
     
     backup_metadata *BM = (backup_metadata*)MView.Data;
     
     nar_record* Records  = (nar_record*)((uint8_t*)MView.Data + BM->Offset.RegionsMetadata);
     uint64_t RecordCount = BM->Size.RegionsMetadata/sizeof(nar_record);
     
-    uint64_t SelectedIndice = rand() % RecordCount;
-    uint64_t SelectedLen    = rand() % Records[SelectedIndice].Len;
+    uint64_t SelectedIndice = 2;//pcg32_random_r(state) % RecordCount;
+    uint64_t SelectedLen    = 500;//pcg32_random_r(state) % Records[SelectedIndice].Len;
     
     
     void* FEBuffer = malloc(SelectedLen*4096);
@@ -445,7 +467,7 @@ TestReadBackup(wchar_t *backup, wchar_t *metadata){
     uint64_t FEResult = NarReadBackup(&BView, &MView, Records[SelectedIndice].StartPos, SelectedLen, FEBuffer, SelectedLen, 0, 0);
     ASSERT(FEResult == SelectedLen*4096);
     
-    HANDLE VolumeHandle = NarOpenVolume('C');
+    HANDLE VolumeHandle = NarOpenVolume('D');
     NarSetFilePointer(VolumeHandle, (uint64_t)Records[SelectedIndice].StartPos*4096ull);
     
     DWORD BR = 0;
@@ -457,19 +479,50 @@ TestReadBackup(wchar_t *backup, wchar_t *metadata){
     
     uint64_t UnmatchedCount = 0;
     uint64_t TotalCount = SelectedLen*4096ull/8ull;
-    for(uint64_t i =0; i<TotalCount; i+=8){
-        if(*((uint64_t*)RFBuffer + i) == *((uint64_t*)FEBuffer + i)){
-            
+    for(uint64_t i =0; i<SelectedLen; i++){
+        uint8_t *TRFBuffer = (uint8_t*)RFBuffer + 4096*i;
+        uint8_t *TFEBuffer = (uint8_t*)FEBuffer + 4096*i;
+        int32_t BCount = 0;
+        for(int j = 0; j<4096; j++){
+            if(*(TRFBuffer + j) == *(TFEBuffer + j)){
+                
+            }
+            else{
+                BCount++;
+            }
         }
-        else{
-            UnmatchedCount++;
-        }
+        
+        //ASSERT(BCount != 4096);
     }
-    ASSERT(UnmatchedCount == 0);
+    
+    ASSERT((float)UnmatchedCount/TotalCount < 0.21f);
+    printf("%.4f\n", (float)UnmatchedCount/TotalCount);
+    
     free(RFBuffer);
     free(FEBuffer);
     NarFreeFileView(BView);
     NarFreeFileView(MView);
+    return 0;
+}
+
+bool
+TEST_LCNTOVCN(){
+    
+    nar_record R1[] = {
+        {0, 100},
+        {400, 100},
+        {550, 50},
+        {1000, 800},
+        {2000, 400},
+        {2450, 40},
+        {2500, 40},
+        {2600, 400}
+    };
+    
+    size_t Offset = 580;
+    size_t Result = NarLCNToVCN(R1, sizeof(R1)/8, Offset);
+    int hold_m_here = 23423;
+    
     return 0;
 }
 
@@ -515,81 +568,73 @@ TEST_RegionCoupleIter(){
     return true;
 }
 
+
+
 int
 wmain(int argc, wchar_t* argv[]) {
+    //TEST_LCNTOVCN();
     
     
-#if 0    
-    nar_memory_pool Pool = NarInitPool(malloc(1024), 1024, 128);
-    
-    printf("%X\n", PoolAllocate(&Pool));
-    printf("%X\n", PoolAllocate(&Pool));
-    printf("%X\n", PoolAllocate(&Pool));
-    printf("%X\n", PoolAllocate(&Pool));
-    void* mem1 = PoolAllocate(&Pool);
-    void* mem2 = PoolAllocate(&Pool);
-    PoolDeallocate(&Pool, mem1);
-    PoolDeallocate(&Pool, mem2);
-    void* mem3 = 0;
-    void* mem4 = 0;
-    printf("%X\n", PoolAllocate(&Pool));
-    printf("%X\n", PoolAllocate(&Pool));
-    printf("%X\n", PoolAllocate(&Pool));
-    printf("%X\n", mem3 = PoolAllocate(&Pool));
-    printf("%X\n", mem4 = PoolAllocate(&Pool));
-    printf("%X\n", PoolAllocate(&Pool));
-    
-    PoolDeallocate(&Pool, mem3);
-    PoolDeallocate(&Pool, mem4);
+#if 1    
+    auto f1 = NarOpenFileView(L"G:\\NB_M_2-C07291017.nbfsm");
 #endif
     
-#if 0    
-    std::string stds;
-    //NarUTF8 Str = {(uint8_t*)malloc(1024), 0, 1024};
     
-    NarUTF8 First  = {(uint8_t*)malloc(1024), 0, 1024};
-    NarUTF8 Second = {(uint8_t*)malloc(1024), 0, 1024};
     
-    nar_backup_id ID = {0};
-    ID.Year  = 2020;
-    ID.Month = 4; 
-    ID.Day   = 12;
-    ID.Hour  = 6;
-    ID.Min   = 4;
-    ID.Letter = 'C';
+#if 1
     
-    int Version = -1;
+    nar_arena Arena = ArenaInit(malloc(1024*1024*512), 1024*1024*512);
     
-    GenerateMetadataNameUTF8(ID, Version, &First);
-    GenerateMetadataName(ID, Version, stds);
-    printf("%s\n%s\n", First.Str, stds.c_str());
+    NarUTF8 CompletePath = NARUTF8("testfile.txt");
+    NarUTF8 Root2 = NarGetRootPath(CompletePath, &Arena);
     
-    GenerateBinaryFileNameUTF8(ID, Version, &Second);
-    GenerateBinaryFileName(ID, Version, stds);
-    printf("%s\n%s\n", Second.Str, stds.c_str());
     
-    nar_arena Arena = ArenaInit(malloc(1024), 1024);
-    wchar_t *WSTR = NarUTF8ToWCHAR(First, &Arena);
-    printf("%S\n", WSTR);
-    NarUTF8 UTF8S = NarWCHARToUTF8(WSTR, &Arena);
-    printf("%s\n", UTF8S.Str);
+    file_explorer FE = NarInitFileExplorer(NARUTF8("G:\\NB_M_2-C07291017.nbfsm"));
     
-    NarStringConcatenate(&First, Second);
-    printf("%s\n", First.Str);
+    file_explorer_file *Target = FEFindFileWithID(&FE, 76831);
     
+    printf("%S\n", FEGetFileFullPath(&FE, Target));
+    file_explorer_file *R = FEStartParentSearch(&FE, 5);
+    
+    nar_backup_id ID = {};
+    ID.Q        = 18877558573959141;
+    int Version = 2;
+    
+    
+    NarUTF8 Root;
+    Root.Str = (uint8_t*)"G:\\";
+    Root.Len = 3;
+    Root.Cap = 0;
+    
+    file_restore_ctx Ctx= NarInitFileRestoreCtx(&FE, Target, &Arena);
+    size_t FCMSize = Megabyte(2);
+    void* FCM = ArenaAllocateAligned(&Arena, FCMSize, 8);
+    
+    HANDLE File = CreateFileA("output", GENERIC_WRITE | GENERIC_READ, 0, 0, CREATE_ALWAYS, 0, 0);
+    ASSERT(File != INVALID_HANDLE_VALUE);
+    for(;;){
+        auto Result = NarAdvanceFileRestore(&Ctx, FCM, FCMSize);
+        if(Result.Len == 0){
+            break;
+        }
+        DWORD R = SetFilePointer(File, Result.Offset, 0, FILE_BEGIN);
+        DWORD BytesWritten = 0;
+        
+        if(!WriteFile(File, FCM, Result.Len, &BytesWritten, 0) || BytesWritten!=Result.Len){
+            ASSERT(FALSE);
+            printf("Error code %X\n", GetLastError());
+        }
+        else{
+            printf("%8u\t%8u  MAIN\n", Result.Offset/4096, Result.Len/4096);
+        }
+        
+    }
+    
+    CloseHandle(File);
+    NAR_BREAK;
     return 0;
-#endif
     
-#if 0
-    file_explorer FE = NarInitFileExplorer(L"G:\\NB_M_FULL-C07131210.nbfsm", L"G:\\NB_FULL-C07131210.nbfsf");
-    
-    file_explorer_file *F = FEFindFileWithID(&FE, 716);
-    NarFindFileLayout(&FE, F, &FE.Memory.Arena);
-    
-    printf("Done!\n");
-    
-    uint32_t UserGivenID = 5;
-    
+#if 0    
     while(1){
         uint32_t FileFound = 0;
         for(file_explorer_file *File = FEStartParentSearch(&FE, UserGivenID);
@@ -601,11 +646,12 @@ wmain(int argc, wchar_t* argv[]) {
         
         printf("\nFound %u files\n", FileFound);
         
-        scanf("%u\n", &UserGivenID);
+        scanf("%u \n", &UserGivenID);
         printf("\n\n#############\n\n");
     }
+#endif
     
-    PrintDebugRecords();
+    
 #endif
     
     
@@ -740,7 +786,7 @@ wmain(int argc, wchar_t* argv[]) {
             
             BackupType bt = BackupType::Inc;
             
-            if(SetupStream(&C, (wchar_t)Volume, bt, &inf, true)){
+            if(SetupStream(&C, (wchar_t)Volume, bt, &inf, false)){
                 
                 int id = GetVolumeID(&C, (wchar_t)Volume);
                 volume_backup_inf *v = &C.Volumes.Data[id];
@@ -756,11 +802,15 @@ wmain(int argc, wchar_t* argv[]) {
                                           CREATE_ALWAYS, 
                                           0, 0);
                 if(file != INVALID_HANDLE_VALUE){
+                    uint64_t ucs = 0;
                     
 #if 1                    
                     loop{
                         int Read = ReadStream(v, MemBuf, bsize);
                         TotalRead += Read;
+                        
+                        ucs += v->Stream.BytesProcessed;
+                        
                         if(Read == 0){
                             break;
                         }
@@ -794,8 +844,6 @@ wmain(int argc, wchar_t* argv[]) {
                     }
                     
                     NarSaveBootState(&C);
-                    
-                    
                 }
                 else{
                     // NOTE(Batuhan): couldnt create file to save backup

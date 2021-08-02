@@ -682,7 +682,7 @@ NarUTF8ToWCHAR(NarUTF8 s, nar_arena *Arena){
     uint32_t BytesNeeded = (ChNeeded + 1)*2; // +1 for null termination
     ASSERT(BytesNeeded);
     
-    Result = (wchar_t*)ArenaAllocate(Arena, BytesNeeded*2);
+    Result = (wchar_t*)ArenaAllocate(Arena, BytesNeeded);
     ASSERT(Result);
     
     memset(Result, 0, BytesNeeded);
@@ -745,8 +745,8 @@ NarReadBackup(nar_file_view *Backup, nar_file_view *Metadata,
     
     nar_record *CompInfo = BM->CompressionInfoOffset ? (nar_record*)((uint8_t*)Metadata->Data + BM->CompressionInfoOffset) : 0;
     size_t CompInfoCount = BM->CompressionInfoCount;
-    ASSERT(BM->CompressionInfoCount > 0);
-    ASSERT(CompInfo);
+    // ASSERT(BM->CompressionInfoCount > 0);
+    // ASSERT(CompInfo);
     
     nar_record* Records       = (nar_record*)((uint8_t*)Metadata->Data + BM->Offset.RegionsMetadata);
     uint64_t RecordCount      = BM->Size.RegionsMetadata/sizeof(nar_record);
@@ -785,7 +785,7 @@ NarReadBackup(nar_file_view *Backup, nar_file_view *Metadata,
             size_t CompressedSize = 0;
             ASSERT(CompInfo);
             
-            if(CompInfo){
+            if(false){
                 DecompSize     = CompInfo[CII].DecompressedSize;
                 CompressedSize = CompInfo[CII].CompressedSize;
             }

@@ -360,8 +360,12 @@ VOID
 DisplayError(DWORD Code);
 
 
-void
+inline void
 MergeRegions(data_array<nar_record>* R);
+
+inline void
+MergeRegionsWithoutRealloc(data_array<nar_record>* R);
+
 
 
 inline bool

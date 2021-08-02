@@ -139,7 +139,7 @@ for overshadow  : loop till end of collision
         
         // collision from left
         if(Iter->__CompRegion.StartPos >= Iter->R2Iter->StartPos &&
-           EEnd >= Iter->R2Iter->StartPos && EEnd <= BEnd){
+           EEnd >= Iter->R2Iter->StartPos && EEnd < BEnd){
             Iter->It.StartPos = EEnd;
             Iter->It.Len      = BEnd -EEnd;
             ASSERT(BEnd > EEnd);
@@ -147,7 +147,7 @@ for overshadow  : loop till end of collision
             Iter->R2Iter++;
         }
         // collision from right
-        else if(Iter->R2Iter->StartPos >= Iter->__CompRegion.StartPos && 
+        else if(Iter->R2Iter->StartPos > Iter->__CompRegion.StartPos && 
                 Iter->R2Iter->StartPos <= BEnd && EEnd >= BEnd){
             Iter->It.StartPos = Iter->__CompRegion.StartPos;
             Iter->It.Len      = Iter->R2Iter->StartPos - Iter->__CompRegion.StartPos;
@@ -172,6 +172,7 @@ for overshadow  : loop till end of collision
             Iter->It.StartPos = Iter->__CompRegion.StartPos;
             Iter->R1Iter++;
             Iter->__CompRegion = Iter->R1Iter != Iter->R1End ? *Iter->R1Iter : nar_record{};
+            return NarNextExcludeIter(Iter);
         }
         else{
             ASSERT(FALSE);
@@ -269,4 +270,211 @@ NarGetPreviousBackupInfo(int32_t Version, BackupType Type, int32_t *OutVersion){
         ASSERT(FALSE);
     }
     
+}
+
+
+
+inline void
+NarConvertBackupMetadataToUncompressed(NarUTF8 Metadata){
+    nar_file_view MView = NarOpenFileView(Metadata);
+    
+#if 0    
+    backup_metadata *BM = (backup_metadata*)Metadata->Data;
+    backup_metadata NewBM;
+    memcpy(&NewBM, BM, sizeof(*BM));
+    NarFreeFileView(MView);
+#endif
+    
+}
+
+
+
+size_t
+inline NarLCNToVCN(nar_record *LCN, size_t LCNCount, size_t Offset){
+    bool Found = false;
+    size_t Acc = 0;
+    for(size_t i = 0; i<LCNCount; i++){
+        
+        if(Offset>= LCN[i].StartPos && Offset < LCN[i].StartPos + LCN[i].Len){
+            ASSERT(Offset >= LCN[i].StartPos);
+            uint32_t DiffToStart =  Offset - LCN[i].StartPos;
+            Acc += DiffToStart;
+            Found = true;
+            break;
+        }
+        
+        ASSERT(i != LCNCount - 1);
+        Acc += LCN[i].Len;
+    }
+    
+    ASSERT(Found == true);
+    
+    return Acc;
+}
+
+
+
+/*
+    ASSUMES RECORDS ARE SORTED
+THIS FUNCTION REALLOCATES MEMORY VIA realloc(), DO NOT PUT MEMORY OTHER THAN ALLOCATED BY MALLOC, OTHERWISE IT WILL CRASH THE PROGRAM
+*/
+inline void
+MergeRegions(data_array<nar_record>* R) {
+    
+    TIMED_BLOCK();
+    
+    uint32_t MergedRecordsIndex = 0;
+    uint32_t CurrentIter = 0;
+    
+    for (;;) {
+        if (CurrentIter >= R->Count) {
+            break;
+        }
+        
+        uint32_t EndPointTemp = R->Data[CurrentIter].StartPos + R->Data[CurrentIter].Len;
+        
+        if (IsRegionsCollide(R->Data[MergedRecordsIndex], R->Data[CurrentIter])) {
+            uint32_t EP1 = R->Data[CurrentIter].StartPos + R->Data[CurrentIter].Len;
+            uint32_t EP2 = R->Data[MergedRecordsIndex].StartPos + R->Data[MergedRecordsIndex].Len;
+            
+            EndPointTemp = MAX(EP1, EP2);
+            R->Data[MergedRecordsIndex].Len = EndPointTemp - R->Data[MergedRecordsIndex].StartPos;
+            
+            CurrentIter++;
+        }
+        else {
+            MergedRecordsIndex++;
+            R->Data[MergedRecordsIndex] = R->Data[CurrentIter];
+        }
+        
+        
+    }
+    
+    R->Count = MergedRecordsIndex + 1;
+    R->Data = (nar_record*)realloc(R->Data, sizeof(nar_record) * R->Count);
+}
+
+
+/*
+*/
+inline void
+MergeRegionsWithoutRealloc(data_array<nar_record>* R) {
+    
+    TIMED_BLOCK();
+    
+    uint32_t MergedRecordsIndex = 0;
+    uint32_t CurrentIter = 0;
+    
+    for (;;) {
+        if (CurrentIter >= R->Count) {
+            break;
+        }
+        
+        uint32_t EndPointTemp = R->Data[CurrentIter].StartPos + R->Data[CurrentIter].Len;
+        
+        if (IsRegionsCollide(R->Data[MergedRecordsIndex], R->Data[CurrentIter])) {
+            uint32_t EP1 = R->Data[CurrentIter].StartPos + R->Data[CurrentIter].Len;
+            uint32_t EP2 = R->Data[MergedRecordsIndex].StartPos + R->Data[MergedRecordsIndex].Len;
+            
+            EndPointTemp = MAX(EP1, EP2);
+            R->Data[MergedRecordsIndex].Len = EndPointTemp - R->Data[MergedRecordsIndex].StartPos;
+            
+            CurrentIter++;
+        }
+        else {
+            MergedRecordsIndex++;
+            R->Data[MergedRecordsIndex] = R->Data[CurrentIter];
+        }
+        
+        
+    }
+    
+    R->Count = MergedRecordsIndex + 1;
+    //R->Data = (nar_record*)realloc(R->Data, sizeof(nar_record) * R->Count);
+}
+
+
+inline bool
+IsRegionsCollide(nar_record R1, nar_record R2) {
+    
+    uint32_t R1EndPoint = R1.StartPos + R1.Len;
+    uint32_t R2EndPoint = R2.StartPos + R2.Len;
+    
+    if (R1.StartPos == R2.StartPos && R1.Len == R2.Len) {
+        return true;
+    }
+    
+    
+    if ((R1EndPoint <= R2EndPoint
+         && R1EndPoint >= R2.StartPos)
+        || (R2EndPoint <= R1EndPoint
+            && R2EndPoint >= R1.StartPos)
+        ) {
+        return true;
+    }
+    
+    return false;
+}
+
+
+
+inline NarUTF8
+NarGetRootPath(NarUTF8 FileName, nar_arena *Arena){
+    NarUTF8 Result = {};
+    for(uint32_t i = FileName.Len; i>0; i--){
+        if(FileName.Str[i] == '\\' || FileName.Str[i] == '/'){
+            Result.Str = (uint8_t*)ArenaAllocateZero(Arena, i + 1);
+            Result.Len = i + 1;
+            memcpy(Result.Str, FileName.Str, Result.Len);
+            return Result;
+        }
+    }
+    
+    Result.Str = (uint8_t*)ArenaAllocateZero(Arena, 1);
+    Result.Len = 1;
+    Result.Cap = 1;
+    return Result;
+}
+
+
+// input MUST be sorted
+// Finds point Offset in relative to Records structure, useful when converting absolue volume offsets to our binary backup data offsets.
+// returns NAR_POINT_OFFSET_FAILED if fails to find given offset, 
+inline point_offset 
+FindPointOffsetInRecords(nar_record *Records, uint64_t Len, int64_t Offset){
+    
+    if(!Records) return {0};
+    TIMED_BLOCK();
+    
+    point_offset Result = {0};
+    
+    BOOLEAN Found = FALSE;
+    
+    for(uint64_t i = 0; i < Len; i++){
+        
+        if(Offset <= (int64_t)Records[i].StartPos + (int64_t)Records[i].Len){
+            
+            int64_t Diff = (Offset - (INT64)Records[i].StartPos);
+            if (Diff < 0) {
+                // Exceeded offset, this means we cant relate our Offset and Records data, return failcode
+                Found = FALSE;
+            }
+            else {
+                Found = TRUE;
+                Result.Offset        += Diff;
+                Result.Indice         = i;
+                Result.Readable       = (int64_t)Records[i].Len - Diff;
+            }
+            
+            break;
+            
+        }
+        
+        
+        Result.Offset += Records[i].Len;
+        
+    }
+    
+    
+    return (Found ? Result : point_offset{0});
 }

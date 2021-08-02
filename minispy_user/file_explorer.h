@@ -165,10 +165,16 @@ struct file_explorer{
     
     // used for fast searching.
     uint32_t *ParentIDs;
+    uint32_t *FileIDs;
     uint64_t FileCount;
     
     file_explorer_memory Memory;
     char VolumeLetter;
+    
+    NarUTF8 RootDir;
+    
+    int Version;
+    nar_backup_id ID;
     
     uint64_t SearchNeedle;
     uint32_t SearchID;
@@ -194,10 +200,14 @@ struct attribute_list_contents{
 #define IS_FILE_LAYOUT_RESIDENT(fdl) (fdl.Data != 0)
 struct file_disk_layout{
     uint64_t     TotalSize;
-    nar_record  *LCN;
-    uint32_t     LCNCount;
+    
     uint32_t     MaxCount;
-    void        *Data;
+    
+    void        *ResidentData;
+    
+    nar_record  *LCN;
+    nar_record  *SortedLCN;
+    uint32_t     LCNCount;
 };
 
 struct file_restore_source{
@@ -220,7 +230,7 @@ enum class FileRestore_Errors : int {
     Error_NoError,
     Error_EndOfBackups,
     Error_InsufficentBufferSize,
-    
+    Error_LCNToVCNMap, 
 #if 0    
     Error_DecompressionUnknownContentSize,
     Error_DecompressionErrorContentsize,
@@ -245,20 +255,27 @@ struct file_restore_ctx{
     size_t AdvancedSoFar;
     size_t ClustersLeftInRegion;
     
-    nar_record *RegionsToExtract;
-    size_t      RegionExtractCount;
-    size_t      RegionExtractMax;
-    
     nar_memory_pool LCNPool;
     void*           DecompBuffer;
     size_t          DecompBufferSize;
     nar_arena       StringAllocator;// less than 1mb 
     NarUTF8         RootDir; // directory to look for backups
     
+    nar_record *ActiveLCN;
+    size_t      ActiveLCNCount;
+    
     FileRestore_Errors Error;
     
     size_t ClusterSize;
 };
+
+
+struct file_restore_advance_result{
+    size_t Offset;
+    size_t Len;
+};
+
+
 
 
 inline BOOLEAN
@@ -334,7 +351,7 @@ void
 NarFreeFileExplorerMemory(file_explorer_memory *Memory);
 
 file_explorer
-NarInitFileExplorer(wchar_t *MetadataPath, wchar_t *FullbackupPath);
+NarInitFileExplorer(NarUTF8 MetadataPath);
 
 
 file_explorer_file*
@@ -361,3 +378,22 @@ SolveAttributeListReferences(const void* MFTStart,
                              );
 
 
+
+inline file_restore_ctx
+NarInitFileRestoreCtx(file_explorer *FE, file_explorer_file *Target, NarUTF8 RootDir, nar_backup_id ID, int Version, nar_arena *Arena);
+
+inline file_restore_ctx
+NarInitFileRestoreCtx(file_explorer *FE, file_explorer_file* Target, nar_arena *Arena);
+
+
+inline void
+NarFreeFileRestoreCtx(file_restore_ctx *Ctx);
+
+
+
+inline file_restore_advance_result
+NarAdvanceFileRestore(file_restore_ctx *ctx, void* Out, size_t OutSize);
+
+
+file_explorer_file*
+FEFindFileWithID(file_explorer* FE, uint32_t ID);

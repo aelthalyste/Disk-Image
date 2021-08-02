@@ -12,6 +12,7 @@
 using namespace System;
 using namespace System::Text;
 using namespace System::Collections::Generic;
+using namespace System::Collections;
 
 void
 SystemStringToWCharPtr(System::String^ SystemStr, wchar_t* Destination) {
@@ -142,6 +143,15 @@ namespace NarDIWrapper {
             Minute = pMinute;
             Second = pSecond;
         }
+
+        CSNarFileTime(SYSTEMTIME Time) {
+            Year    = Time.wYear;
+            Month   = Time.wMonth;
+            Day     = Time.wDay;
+            Hour    = Time.wHour;
+            Minute  = Time.wMinute;
+            Second  = Time.wSecond;
+        }
         
         WORD Year;
         WORD Month;
@@ -216,26 +226,21 @@ namespace NarDIWrapper {
     };
     
     
-    // could be either file or dir
-    struct NarFileEntry {
-        
-        BOOLEAN Flags;
-        
-        UINT64 MFTFileIndex;
-        UINT64 Size; // file size in bytes
-        
-        UINT64 CreationTime;
-        UINT64 LastModifiedTime;
-        
-        wchar_t Name[MAX_PATH + 1]; // max path + 1 for null termination
-        System::String ^Name; 
-    };
-    
     
     public ref class CSNarFileEntry {
         public:
         CSNarFileEntry() {
             
+        }
+
+        CSNarFileEntry(file_explorer_file *File) {
+            IsDirectory = File->IsDirectory;
+            Size        = File->Size;
+            ID          = File->FileID;
+            Name        = gcnew System::String(File->Name);
+            Ref         = File;
+            CreationTime        = gcnew CSNarFileTime(File->CreationTime);
+            LastModifiedTime    = gcnew CSNarFileTime(File->LastModifiedTime);
         }
         
         bool IsDirectory;
@@ -245,12 +250,7 @@ namespace NarDIWrapper {
         CSNarFileTime^ CreationTime;
         CSNarFileTime^ LastModifiedTime;
         System::String^ Name;
-        void *Part;
-        
-        uint32_t __DirStack[128];
-        uint32_t __DSI;
-        uint32_t __CurrentDir;
-        
+        file_explorer_file *Ref;
     };
     
     
@@ -263,36 +263,87 @@ namespace NarDIWrapper {
     };
     
     
-    public ref class CSNarFileExplorer {
+    
+    ref class CSNarFileExplorer;
+
+    public ref class CSNarFileExportStream {
+    private:
+        file_restore_ctx* Ctx;
+        void* Memory;
+        size_t MemorySize;
+
+
+    public:
         
+        
+        CSNarFileExportStream(CSNarFileExplorer^ FileExplorer, CSNarFileEntry^ Target);
+        ~CSNarFileExportStream();        
+
+        /*
+            Returns false is stream terminates. Caller must check Error enum to determine if restore completed successfully.
+            If it returns true, caller must set it's output stream's output position to TargetWriteOffset then must write exactly as 
+            TargetWriteSize.
+        */
+        bool AdvanceStream(void* Buffer, size_t BufferSize);
+        
+        void FreeStreamResources();
+        
+
+        bool IsInit();
+
+        size_t TargetWriteOffset;
+        size_t TargetWriteSize;
+        
+        size_t TargetFileSize;
+
+        FileRestore_Errors Error;
+
+    };
+
+    public ref class CSNarFileExplorer {
+        private:
+            
+        file_explorer_file **__DirStack;
+        file_explorer_file *__CurrentDir;
+        uint32_t __DirStackMax;
+        uint32_t __DSI;
+        void* RestoreMemory;
+        size_t RestoreMemorySize;
+
+        nar_arena *Arena;
         
         public:
-        
+
+        file_explorer* FE;
+
+
         ~CSNarFileExplorer();
-        CSNarFileExplorer();
-        /*
-
-          C++ Side = INT32 HandleOptions, char Letter, int Version, wchar_t *RootDir
-          TODO(Batuhan): HandleOptions parameter will be removed in next builds, its just here for debugging purposes, just like in C++ side.
-
-        */
-        //NOTE im not sure about if RootDir is going to be converted to string for managed code
-        bool CW_Init(System::String^ SysRootDir, System::String^ SysMetadataName);
+        CSNarFileExplorer(System::String^ MetadataFullPath);
         
+        bool CW_IsInit();
         
+        // Returns list of files-directories in current directory. It doesn't follow any order, caller is free to sort them in any order
+        // they want.
         List<CSNarFileEntry^>^ CW_GetFilesInCurrentDirectory();
         
+        // Set's current directory as given file entry.
         // Entry should be directory, otherwise function doesnt do anything and returns false
-        bool CW_SelectDirectory(UINT64 ID);
+        bool CW_SelectDirectory(CSNarFileEntry^ Entry);
         
-        // Pops directory stack by one, which is equal to "up to" button in file explorer
+        // Pops up to upper directory, if possible.
+        // Is equal to "up to" button in file explorer
         void CW_PopDirectory();
         
         // deconstructor calls this, but in managed code object disposing may be delayed by GC. if caller want to release memory early, it can do by this utility function. 
         void CW_Free();
         
-        void CW_RestoreFile(INT64 ID, System::String^ BackupDirectory, System::String^ TargetDir);
-        
+        // Initiates export stream for given Target file entry.
+        CSNarFileExportStream^ CW_SetupFileRestore(CSNarFileEntry^ Target);
+
+        // DEBUG function for specific usage areas.
+        CSNarFileExportStream^ CW_DEBUG_SetupFileRestore(int FileID);
+
+        // Returns the current directory string
         System::String^ CW_GetCurrentDirectoryString();
         
     };

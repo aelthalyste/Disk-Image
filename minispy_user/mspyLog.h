@@ -195,20 +195,6 @@ enum rec_or {
     SPLIT = 4,
 };
 
-template<typename DATA_TYPE>
-struct data_array {
-    DATA_TYPE* Data;
-    UINT Count;
-    UINT ReserveCount = 0;
-    
-    inline void Insert(DATA_TYPE Val) {
-        Data = (DATA_TYPE*)realloc(Data, sizeof(Val) * ((ULONGLONG)Count + 1));
-        memcpy(&Data[Count], &Val, sizeof(DATA_TYPE));
-        Count++;
-    }
-    
-};
-
 
 #if 0
 template<typename DATA_TYPE>
@@ -518,12 +504,6 @@ struct volume_information {
     wchar_t VolumeName[MAX_PATH + 1];
 };
 
-
-struct point_offset{
-    int64_t  Offset;
-    uint64_t  Readable; // remaining region length
-    uint64_t Indice;        // region indice we just found
-};
 
 
 inline BOOLEAN
