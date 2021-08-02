@@ -5,70 +5,6 @@
 
 
 
-/*
-    ASSUMES RECORDS ARE SORTED
-THIS FUNCTION REALLOCATES MEMORY VIA realloc(), DO NOT PUT MEMORY OTHER THAN ALLOCATED BY MALLOC, OTHERWISE IT WILL CRASH THE PROGRAM
-*/
-inline void
-MergeRegions(data_array<nar_record>* R) {
-    
-    TIMED_BLOCK();
-    
-    uint32_t MergedRecordsIndex = 0;
-    uint32_t CurrentIter = 0;
-    
-    for (;;) {
-        if (CurrentIter >= R->Count) {
-            break;
-        }
-        
-        uint32_t EndPointTemp = R->Data[CurrentIter].StartPos + R->Data[CurrentIter].Len;
-        
-        if (IsRegionsCollide(R->Data[MergedRecordsIndex], R->Data[CurrentIter])) {
-            uint32_t EP1 = R->Data[CurrentIter].StartPos + R->Data[CurrentIter].Len;
-            uint32_t EP2 = R->Data[MergedRecordsIndex].StartPos + R->Data[MergedRecordsIndex].Len;
-            
-            EndPointTemp = MAX(EP1, EP2);
-            R->Data[MergedRecordsIndex].Len = EndPointTemp - R->Data[MergedRecordsIndex].StartPos;
-            
-            CurrentIter++;
-        }
-        else {
-            MergedRecordsIndex++;
-            R->Data[MergedRecordsIndex] = R->Data[CurrentIter];
-        }
-        
-        
-    }
-    
-    R->Count = MergedRecordsIndex + 1;
-    R->Data = (nar_record*)realloc(R->Data, sizeof(nar_record) * R->Count);
-    
-}
-
-
-inline bool
-IsRegionsCollide(nar_record R1, nar_record R2) {
-    
-    uint32_t R1EndPoint = R1.StartPos + R1.Len;
-    uint32_t R2EndPoint = R2.StartPos + R2.Len;
-    
-    if (R1.StartPos == R2.StartPos && R1.Len == R2.Len) {
-        return true;
-    }
-    
-    
-    if ((R1EndPoint <= R2EndPoint
-         && R1EndPoint >= R2.StartPos)
-        || (R2EndPoint <= R1EndPoint
-            && R2EndPoint >= R1.StartPos)
-        ) {
-        return true;
-    }
-    
-    return false;
-}
-
 
 BOOLEAN
 ConnectDriver(PLOG_CONTEXT Ctx) {
@@ -689,11 +625,9 @@ SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, DotNetStreamInf* SI, boo
                 
                 size_t BackupSize = (uint64_t)SI->ClusterCount*(uint64_t)SI->ClusterSize;
                 
-                VolInf->MaxCBI  = BackupSize/(NAR_COMPRESSION_FRAME_SIZE);
-                
+                VolInf->MaxCBI   = 2*BackupSize/(NAR_COMPRESSION_FRAME_SIZE);
                 VolInf->CompInf  = (nar_record*)calloc(VolInf->MaxCBI, sizeof(nar_record));
-                
-                VolInf->CBII   = 0;
+                VolInf->CBII     = 0;
                 
             }
             else{
@@ -1827,8 +1761,6 @@ SaveMetadata(char Letter, int Version, int ClusterSize, BackupType BT,
       */
     
     
-    
-    
     {
         // TODO(Batuhan): same problem mentioned in the codebase, we have to figure out reading more than 4gb at once(easy, but gotta replace lots of code probably)
         WriteFile(MetadataFile, BackupRegions.Data, BM.Size.RegionsMetadata, &BytesWritten, 0);
@@ -1958,17 +1890,19 @@ SaveMetadata(char Letter, int Version, int ClusterSize, BackupType BT,
             ASSERT((uint64_t)CompInfoCount*8ull <= Gigabyte(4));
             DWORD BW = 0;
             
-            if(!WriteFile(VSSHandle, CompInfo, CompInfoCount*8, &BW, 0)
+            LARGE_INTEGER liOfs={0};
+            LARGE_INTEGER liNew={0};
+            SetFilePointerEx(MetadataFile, liOfs, &liNew, FILE_CURRENT);
+            BM.CompressionInfoOffset = liNew.QuadPart;
+            
+            if(!WriteFile(MetadataFile, CompInfo, CompInfoCount*8, &BW, 0)
                || BW != CompInfoCount*8){
                 ASSERT(FALSE);
                 printf("Error occured while saving compression information to backup metadata. Volume %c, version %d, id %I64u\n", BM.Letter, BM.Version, BM.ID.Q);
             }
         }
         
-        LARGE_INTEGER liOfs={0};
-        LARGE_INTEGER liNew={0};
-        SetFilePointerEx(VSSHandle, liOfs, &liNew, FILE_CURRENT);
-        BM.CompressionInfoOffset = liNew.QuadPart;
+        
     }
     
     SetFilePointer(MetadataFile, 0, 0, FILE_BEGIN);

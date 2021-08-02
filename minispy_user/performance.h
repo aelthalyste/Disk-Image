@@ -79,6 +79,8 @@ static inline int64_t NarPerfFrequency(){
 static inline double NarTimeElapsed(int64_t start){
     return ((double)NarGetPerfCounter() - (double)start)/(double)NarPerfFrequency();
 }
+
+
 #endif
 
 

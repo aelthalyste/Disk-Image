@@ -18,7 +18,7 @@
 #include "file_explorer.cpp"
 #include "backup.cpp"
 #include "restore.cpp"
-
+#include "nar.cpp"
 using namespace System;
 
 #define CONVERT_TYPES(_in,_out) _out = msclr::interop::marshal_as<decltype(_out)>(_in);
@@ -27,75 +27,136 @@ using namespace System;
 namespace NarDIWrapper {
     
     
-    CSNarFileExplorer::CSNarFileExplorer(){
+    CSNarFileExplorer::CSNarFileExplorer(System::String^ MetadataFullPath){
+        Arena  = (nar_arena*)calloc(1, sizeof(*Arena));
+        *Arena = ArenaInit(calloc(Kilobyte(64), 1), Kilobyte(64), 4);
         
+        wchar_t *WSTR  = (wchar_t*)ArenaAllocateZeroAligned(Arena, MetadataFullPath->Length + 2, 2);
+        
+        SystemStringToWCharPtr(MetadataFullPath, WSTR);
+        
+        __DirStackMax = 1024;
+        __DirStack = (file_explorer_file**)ArenaAllocate(Arena, __DirStackMax);
+        
+        NarUTF8 MetadataPath = NarWCHARToUTF8(WSTR, Arena);
+        FE  = (file_explorer*)ArenaAllocate(Arena, sizeof(*FE));
+        *FE = NarInitFileExplorer(MetadataPath);
+        __DSI = 0;
+        __CurrentDir = (__DirStack[__DSI] = FEFindFileWithID(FE, 5));
     }
     
     CSNarFileExplorer::~CSNarFileExplorer() {
-        
+        NarFreeFileExplorer(FE);
+        free(Arena->Memory);
+        free(Arena);
     }
     
-    bool CSNarFileExplorer::CW_Init(System::String^ SysRootDir, System::String^ SysMetadataName){
-        return false;
+    bool CSNarFileExplorer::CW_IsInit(){
+        return (FE->MetadataView.Data != 0);
     }
+    
+
     
     List<CSNarFileEntry^>^ CSNarFileExplorer::CW_GetFilesInCurrentDirectory(){
         
         List<CSNarFileEntry^>^ Result = gcnew List<CSNarFileEntry^>;
         
-        
-        struct file_explorer_file{
-            size_t   Size;
-            
-            wchar_t* Name; // Null terminated
-            uint8_t  NameLen;
-            
-            uint32_t FileID;
-            uint32_t ParentFileID;
-            
-            SYSTEMTIME LastModifiedTime;
-            SYSTEMTIME CreationTime;
-            
-            uint8_t  IsDirectory;
-        };
-        
-        for(){
-            CSNarFileEntry^ F = gcnew CSNarFileEntry;
-            F->IsDirectory = File->IsDirectory;
-            F->Size        = File->Size;
-            F->ID          = File->ID;
-            
-            F->CreationTime = 0;
-            F->LastModifiedTime = 0;
-            F->Name = gcnew System::String;
+        for(file_explorer_file *File = FEStartParentSearch(FE, __CurrentDir->FileID); 
+            File != 0;
+            File = FENextFileInDir(FE, File))
+        {
+            CSNarFileEntry^ F = gcnew CSNarFileEntry(File);
+            Result->Add(F);
         }
         
-        return gcnew List<CSNarFileEntry^>;
+        return Result;
     }
     
     bool CSNarFileExplorer::CW_SelectDirectory(CSNarFileEntry^ Entry){
-        __CurrentDir = (__DirStack[__DSI++] = Entry->ID);
+        __CurrentDir = (__DirStack[++__DSI] = Entry->Ref);
         return true;
     }
     
     void CSNarFileExplorer::CW_PopDirectory(){
         if(__DSI != 0){
-            __CurrentDir = --__DSI;
+            __CurrentDir =  __DirStack[--__DSI];
         }
     }
     
     void CSNarFileExplorer::CW_Free(){
-        
+        if (RestoreMemory) {
+            free(RestoreMemory);
+        }
     }
     
-    void CSNarFileExplorer::CW_RestoreFile(INT64 ID, System::String^ SysBackupDirectory, System::String^ SysTargetDir) {
+    CSNarFileExportStream^ CSNarFileExplorer::CW_SetupFileRestore(CSNarFileEntry ^Target) {
+        CSNarFileExportStream^ Result = gcnew CSNarFileExportStream(this, Target);
+        return Result;
     }
-    
+
+    CSNarFileExportStream^ CSNarFileExplorer::CW_DEBUG_SetupFileRestore(int FileID) {
+        file_explorer_file* File = FEFindFileWithID(FE, FileID);
+        CSNarFileEntry^ Entry = gcnew CSNarFileEntry(File);
+        return gcnew CSNarFileExportStream(this, Entry);
+    }
+
     System::String^ CSNarFileExplorer::CW_GetCurrentDirectoryString() {
-        return "";
+        wchar_t *WSTR = FEGetFileFullPath(FE, __CurrentDir);
+        return gcnew System::String(WSTR);
     }
     
+
+
+
+
+    CSNarFileExportStream::CSNarFileExportStream(CSNarFileExplorer^ FileExplorer, CSNarFileEntry^ Target) {
+        MemorySize = Megabyte(40);
+        Memory = VirtualAlloc(0, MemorySize, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+        if (Memory) {
+            nar_arena TempArena = ArenaInit(Memory, MemorySize);
+            Ctx = (file_restore_ctx*)ArenaAllocateZero(&TempArena, sizeof(*Ctx));
+            *Ctx = NarInitFileRestoreCtx(FileExplorer->FE, Target->Ref, &TempArena);
+            TargetFileSize = Target->Size;
+            uint8_t CmpBuffer[sizeof(*Ctx)];
+            memset(CmpBuffer, 0, sizeof(*Ctx));
+            if (memcmp(Ctx, CmpBuffer, sizeof(*Ctx)) == 0) {
+                VirtualFree(Memory, MemorySize, MEM_RELEASE);
+                Memory = 0;
+            }
+
+        }
+    }
+
+    CSNarFileExportStream::~CSNarFileExportStream() {
+        FreeStreamResources();
+    }
+
+    bool CSNarFileExportStream::IsInit() {
+        return (Memory != 0);
+    }
     
+    bool CSNarFileExportStream::AdvanceStream(void* Buffer, size_t BufferSize) {
+        if (Memory) {
+            file_restore_advance_result Result = NarAdvanceFileRestore(Ctx, Buffer, BufferSize);
+            TargetWriteOffset = Result.Offset;
+            TargetWriteSize = Result.Len;
+            Error = Ctx->Error;
+            return (Error == FileRestore_Errors::Error_NoError && TargetWriteSize != 0);
+        }
+        return false;
+    }
+
+    void CSNarFileExportStream::FreeStreamResources() {
+        if (Memory) {
+            NarFreeFileRestoreCtx(Ctx);
+            VirtualFree(Memory, MemorySize, MEM_RELEASE);
+            Ctx = 0;
+            Memory = 0;
+        }
+    }
+
+
+
     
     DiskTracker::DiskTracker() {
         

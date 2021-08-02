@@ -69,9 +69,9 @@ inline nar_file_view
 NarOpenFileView(NarUTF8 String){
     ASSERT(String.Len <= Megabyte(1));
     
-    void *ArenaMem = malloc(String.Len*2);
-    nar_arena Arena = ArenaInit(ArenaMem, String.Len*2);
-    memset(ArenaMem, 0, String.Len * 2);
+    void *ArenaMem = malloc(String.Len*4);
+    nar_arena Arena = ArenaInit(ArenaMem, String.Len*4);
+    memset(ArenaMem, 0, String.Len*4);
     wchar_t *WSTR = NarUTF8ToWCHAR(String, &Arena);
     nar_file_view Result = NarOpenFileView(WSTR);
     free(ArenaMem);

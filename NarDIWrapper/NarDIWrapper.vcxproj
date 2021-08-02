@@ -143,11 +143,10 @@
       </CallingConvention>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>FltLib.lib;vssapi.lib;</AdditionalDependencies>
+      <AdditionalDependencies>FltLib.lib;vssapi.lib;libzstd_static.lib;libzstd.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>
       </AdditionalLibraryDirectories>
-      <TreatLinkerWarningAsErrors>
-      </TreatLinkerWarningAsErrors>
+      <TreatLinkerWarningAsErrors>false</TreatLinkerWarningAsErrors>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
