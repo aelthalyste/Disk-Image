@@ -911,6 +911,7 @@ NarInitFileExplorer(NarUTF8 MetadataPath){
         Result.Version      = BM->Version;
         Result.ID           = BM->ID;
         
+<<<<<<< HEAD
         
         Result.RootDir = NarGetRootPath(MetadataPath, &Result.Memory.Arena);
         
@@ -935,6 +936,32 @@ NarInitFileExplorer(NarUTF8 MetadataPath){
         
         
         
+=======
+        
+        Result.RootDir = NarGetRootPath(MetadataPath, &Result.Memory.Arena);
+        
+        {
+            auto restore = ArenaGetRestorePoint(&Result.Memory.Arena);
+            defer({ArenaRestoreToPoint(&Result.Memory.Arena, restore);});
+            
+            uint32_t SpaceNeeded = Result.RootDir.Len + GenerateBinaryFileNameUTF8(BM->ID, BM->Version, 0);
+            
+            NarUTF8 FullBinaryPath = NarUTF8Init(ArenaAllocateZero(&Result.Memory.Arena, SpaceNeeded), SpaceNeeded);
+            
+            NarUTF8 Name = NarUTF8Init(ArenaAllocateZero(&Result.Memory.Arena, SpaceNeeded), SpaceNeeded);
+            
+            
+            GenerateBinaryFileNameUTF8(BM->ID, BM->Version, &Name);
+            
+            NarStringConcatenate(&FullBinaryPath, Result.RootDir);
+            NarStringConcatenate(&FullBinaryPath, Name);
+            
+            Result.FullbackupView = NarOpenFileView(FullBinaryPath);
+        }
+        
+        
+        
+>>>>>>> sideup
         Result.ClusterSize = BM->ClusterSize;
         Result.DirectoryID   = 5;
         Result.DirectoryPath = (wchar_t*)ArenaAllocate(&Result.Memory.Arena, Kilobyte(32));
@@ -1004,6 +1031,9 @@ NarInitFileExplorer(NarUTF8 MetadataPath){
                         FileSize = *(uint32_t*)NAR_OFFSET(DataAttribute, 16);
                         //NAR_BREAK;
                     }
+                }
+                else{
+                    NAR_BREAK;
                 }
                 
 #if 0                
@@ -1486,6 +1516,11 @@ NarFindFileLayout(file_explorer *FE, file_explorer_file *File, nar_arena *Arena)
     uint32_t FilesToVisit[80];
     uint32_t FTVCount        = 0;
     
+<<<<<<< HEAD
+=======
+    auto FullRestorePoint = ArenaGetRestorePoint(Arena);
+    
+>>>>>>> sideup
     Result.MaxCount = 1024;
     
     // if attribute list is not resident
@@ -1496,6 +1531,7 @@ NarFindFileLayout(file_explorer *FE, file_explorer_file *File, nar_arena *Arena)
     memcpy(FileRecord, NAR_OFFSET(FE->MFT, File->FileID*1024), 1024);
     ((uint8_t*)FileRecord)[510] = *(uint8_t*)NAR_OFFSET(FileRecord, 50);
     ((uint8_t*)FileRecord)[511] = *(uint8_t*)NAR_OFFSET(FileRecord, 51);
+<<<<<<< HEAD
     
     memory_restore_point RestorePoint = ArenaGetRestorePoint(Arena);
     Result.LCN = (nar_record*)ArenaAllocateAligned(Arena, Result.MaxCount*sizeof(nar_record), 8);
@@ -1649,8 +1685,181 @@ NarFindFileLayout(file_explorer *FE, file_explorer_file *File, nar_arena *Arena)
                 break;
             }
             
+=======
+    
+    memory_restore_point RestorePoint = ArenaGetRestorePoint(Arena);
+    Result.LCN = (nar_record*)ArenaAllocateAligned(Arena, Result.MaxCount*sizeof(nar_record), 8);
+    
+    void* ATL  = NarFindFileAttributeFromFileRecord(FileRecord, NAR_ATTRIBUTE_LIST);
+    
+    
+    if(NULL != ATL){
+        
+        uint8_t* ATLDataBuffer = (uint8_t*)ArenaAllocateAligned(&FE->Memory.Arena, FE->ClusterSize, 8);
+        ASSERT(ATLDataBuffer != 0);
+        
+        void* ATLData = 0;
+        size_t ATLLen = 0;
+        
+        uint8_t ATLNonResident = *(uint8_t*)NAR_OFFSET(ATL, 8);
+        if(ATLNonResident){
+            void* DataRunStart = NAR_OFFSET(ATL, 64);;
+            nar_record Runs[64];
+            uint32_t DataRunFound = 0;
+            
+            bool ParseResult = NarParseDataRun(DataRunStart, 
+                                               Runs, 
+                                               sizeof(Runs)/sizeof(nar_record), 
+                                               &DataRunFound, 
+                                               false);
+            
+            ASSERT(ParseResult);
+            ASSERT(DataRunFound == 1);
+            
+            uint32_t TargetCluster = Runs[0].StartPos;
+            uint32_t FEResult = NarReadBackup(&FE->FullbackupView, &FE->MetadataView, TargetCluster, 1, ATLDataBuffer, FE->ClusterSize, 0, 0);
+            
+            ATLData = &ATLDataBuffer[0];
+            ATLLen  = *(uint32_t*)NAR_OFFSET(ATL, 48);
+            ASSERT(FEResult == 4096);
+            
+        }
+        else{
+            ATLData = NAR_OFFSET(ATL, 24);
+            ATLLen  = *(uint32_t*)NAR_OFFSET(ATL, 16);
         }
         
+        uint32_t RemainingLen = ATLLen;
+        void *CurrentRecord   = ATLData;
+        uint32_t PrevID = 0;
+        while(RemainingLen){
+            uint32_t Len   = *(uint16_t*)NAR_OFFSET(CurrentRecord, 4);
+            uint32_t Type  = *(uint32_t*)CurrentRecord;
+            
+            if(Type == NAR_DATA_FLAG){
+                uint32_t AttrListFileID = *(uint32_t*)NAR_OFFSET(CurrentRecord, 16);
+                if(PrevID != AttrListFileID){
+                    FilesToVisit[FTVCount++] = AttrListFileID;
+                    PrevID                   = AttrListFileID;
+                    ASSERT(FTVCount < sizeof(FilesToVisit)/4);
+                }
+            }
+            
+            RemainingLen  -= Len;
+            CurrentRecord = NAR_OFFSET(CurrentRecord, Len);
+            
+        }
+        
+        for(int i = 0; i<FTVCount;i++){
+            void* FileRecord = (uint8_t*)FE->MFT + 1024*FilesToVisit[i];
+            // there might be more than 1 $DATA attribute.
+            
+            INT16 FirstAttributeOffset = (*(int16_t*)((BYTE*)FileRecord + 20));
+            
+            for(void* FileAttribute = (uint8_t*)FileRecord + FirstAttributeOffset;
+                FileAttribute != 0;
+                FileAttribute = NarNextAttribute(FileAttribute))
+            {
+                
+                uint32_t AttributeID = *(uint32_t*)FileAttribute;
+                
+                if(AttributeID > NAR_DATA_FLAG){
+                    break;
+                }
+                
+                if(AttributeID == NAR_DATA_FLAG){
+                    data_attr_header *DAHeader = (data_attr_header*)FileAttribute;
+                    ASSERT(DAHeader->NameLen == 0);
+                    
+                    uint32_t Of = *(uint16_t*)NAR_OFFSET(DAHeader, 32);
+                    
+                    void* DRStart = NAR_OFFSET(DAHeader, Of);
+                    uint32_t RegionFound = 0;
+                    bool r = NarParseDataRun(DRStart, &Result.LCN[Result.LCNCount], Result.MaxCount - Result.LCNCount, &RegionFound, false);
+                    
+                    
+                    Result.LCNCount += RegionFound;
+                    
+                    ASSERT(Result.LCNCount < Result.MaxCount);
+                    ASSERT(r);
+                    
+                    if(Result.LCNCount >= Result.MaxCount){
+                        goto G_FAIL;
+                    }
+                    
+                }
+                
+            }
+            
+        }
+    }
+    else{
+        INT16 FirstAttributeOffset = (*(int16_t*)((BYTE*)FileRecord + 20));
+        void* FileAttribute = (char*)FileRecord + FirstAttributeOffset;
+        
+        for(void* FileAttribute = (uint8_t*)FileRecord + FirstAttributeOffset;
+            FileAttribute != 0;
+            FileAttribute = NarNextAttribute(FileAttribute)){
+            
+            uint32_t AttributeID = *(uint32_t*)FileAttribute;
+            if(AttributeID == NAR_DATA_FLAG){
+                data_attr_header *DAHeader = (data_attr_header*)FileAttribute;
+                if(DAHeader->Sparse != 0){
+                    goto G_FAIL;
+                }
+                
+                ASSERT(DAHeader->NameLen == 0);
+                
+                if(DAHeader->NonResidentFlag == 0 && DAHeader->NameLen == 0){
+                    ArenaRestoreToPoint(Arena, RestorePoint);
+                    
+                    uint16_t OffsetToData = *(uint16_t*)NAR_OFFSET(FileAttribute, 20);
+                    Result.TotalSize = *(uint32_t*)NAR_OFFSET(FileAttribute, 16);
+                    
+                    Result.ResidentData = ArenaAllocate(Arena, Result.TotalSize);
+                    memcpy(Result.ResidentData, NAR_OFFSET(FileAttribute, OffsetToData), Result.TotalSize);
+                    
+                    break;
+                }
+                
+                uint32_t Of = *(uint16_t*)NAR_OFFSET(DAHeader, 32);
+                
+                void* DRStart = NAR_OFFSET(DAHeader, Of);
+                uint32_t RegionFound = 0;
+                bool r = NarParseDataRun(DRStart, &Result.LCN[Result.LCNCount], Result.MaxCount - Result.LCNCount, &RegionFound, false);
+                
+                
+                Result.LCNCount += RegionFound;
+                
+                ASSERT(Result.LCNCount < Result.MaxCount);
+                ASSERT(r);
+                
+                if(Result.LCNCount >= Result.MaxCount){
+                    goto G_FAIL;
+                }
+            }
+            
+            if(AttributeID > NAR_DATA_FLAG){
+                break;
+            }
+            
+        }
+        
+    }
+    
+    
+    
+    if(Result.ResidentData == 0){
+        ASSERT(Result.TotalSize == 0);
+        
+        Result.TotalSize = 0;
+        for(uint64_t i = 0; i<Result.LCNCount; i++){
+            Result.TotalSize += Result.LCN[i].Len*FE->ClusterSize;
+>>>>>>> sideup
+        }
+        Result.SortedLCN = (nar_record*)ArenaAllocateAligned(Arena, Result.LCNCount*sizeof(nar_record), 8);
+        
+<<<<<<< HEAD
     }
     
     
@@ -1672,6 +1881,17 @@ NarFindFileLayout(file_explorer *FE, file_explorer_file *File, nar_arena *Arena)
     return Result;
     
     G_FAIL:
+=======
+        // it is guarenteed there wont be colliding blocks, no need to call mergeregionswithoutrealloc
+        memcpy(Result.SortedLCN, Result.LCN, Result.LCNCount*sizeof(nar_record));
+        qsort(Result.SortedLCN, Result.LCNCount, sizeof(nar_record), CompareNarRecords);
+    }
+    
+    return Result;
+    
+    G_FAIL:
+    ArenaRestoreToPoint(Arena, FullRestorePoint);
+>>>>>>> sideup
     return {0};
 }
 
@@ -1691,9 +1911,15 @@ NarInitFileRestoreSource(NarUTF8 MetadataName, NarUTF8 BinaryName){
     
     ASSERT(Result.Metadata.Data);
     ASSERT(Result.Backup.Data);
+<<<<<<< HEAD
     
     backup_metadata *BM = (backup_metadata*)Result.Metadata.Data;
     
+=======
+    
+    backup_metadata *BM = (backup_metadata*)Result.Metadata.Data;
+    
+>>>>>>> sideup
     Result.BackupLCN = (nar_record*)((uint8_t*)Result.Metadata.Data + BM->Offset.RegionsMetadata);
     Result.LCNCount  = BM->Size.RegionsMetadata/sizeof(nar_record);
     Result.ID        = BM->ID;
@@ -1705,6 +1931,7 @@ NarInitFileRestoreSource(NarUTF8 MetadataName, NarUTF8 BinaryName){
 
 inline file_restore_source 
 NarInitFileRestoreSource(NarUTF8 RootDir, nar_backup_id ID, int32_t Version, nar_arena *StringArena){
+<<<<<<< HEAD
     
     bool StringResult = false;
     memory_restore_point Restore = ArenaGetRestorePoint(StringArena);
@@ -1787,11 +2014,98 @@ NarInitFileRestoreCtx(file_disk_layout Layout, NarUTF8 RootDir, nar_backup_id ID
     Result.IIter   = NarInitRegionCoupleIter(Result.ActiveLCN, Result.Source.BackupLCN, Result.ActiveLCNCount, Result.Source.LCNCount);
     
     ASSERT(Result.ActiveLCNCount <= PoolSize);
+=======
+    
+    bool StringResult = false;
+    memory_restore_point Restore = ArenaGetRestorePoint(StringArena);
+    file_restore_source Result = {};
+    
+    uint32_t BForMN = GenerateMetadataNameUTF8(ID, Version, 0);
+    uint32_t BForBN = GenerateBinaryFileNameUTF8(ID, Version, 0);
+    NarUTF8 MetadataRelative = {};
+    NarUTF8 BinaryRelative   = {};
+    
+    
+    { // initialize relative paths 
+        MetadataRelative = {(uint8_t*)ArenaAllocateZero(StringArena, BForMN), 0, BForMN};
+        GenerateMetadataNameUTF8(ID, Version, &MetadataRelative);
+        
+        BinaryRelative   = {(uint8_t*)ArenaAllocateZero(StringArena, BForMN), 0, BForMN};
+        GenerateBinaryFileNameUTF8(ID, Version, &BinaryRelative);
+    }
+    
+    BForMN += RootDir.Len + 20;
+    BForBN += RootDir.Len + 20;
+    
+    // allocate memory for full paths
+    NarUTF8 MetadataName = {(uint8_t*)ArenaAllocateZero(StringArena, BForMN), 0, BForMN};
+    NarUTF8 BinaryName   = {(uint8_t*)ArenaAllocateZero(StringArena, BForBN), 0, BForBN};
+    
+    { // Initialize both full paths as RootDir
+        StringResult = NarStringCopy(&MetadataName, RootDir);
+        ASSERT(StringResult == true);
+        
+        StringResult = NarStringCopy(&BinaryName, RootDir);
+        ASSERT(StringResult == true);
+    }
+    
+    
+    { // append relative paths to root dir
+        StringResult = NarStringConcatenate(&MetadataName, MetadataRelative);
+        ASSERT(StringResult == true);
+        
+        StringResult = NarStringConcatenate(&BinaryName, BinaryRelative);
+        ASSERT(StringResult == true);
+    }
+    
+    Result = NarInitFileRestoreSource(MetadataName, BinaryName);
+    
+    ArenaRestoreToPoint(StringArena, Restore);
+>>>>>>> sideup
     
     return Result;
 }
 
 inline file_restore_ctx
+<<<<<<< HEAD
+=======
+NarInitFileRestoreCtx(file_disk_layout Layout, NarUTF8 RootDir, nar_backup_id ID, int Version, nar_arena *Arena){
+    
+    file_restore_ctx Result = {};
+    
+    Result.Layout = Layout;
+    Result.Source = NarInitFileRestoreSource(RootDir, ID, Version, Arena);
+    
+    size_t PoolMemSize = Megabyte(1);
+    size_t PoolSize    = PoolMemSize/4;
+    
+    void *PoolMem   = ArenaAllocateAligned(Arena, PoolMemSize, 8);
+    
+    Result.ClusterSize = ((backup_metadata*)Result.Source.Metadata.Data)->ClusterSize;
+    
+    Result.LCNPool         = NarInitPool(PoolMem, PoolMemSize, PoolSize);
+    Result.StringAllocator = ArenaInit(ArenaAllocate(Arena, Kilobyte(400)), Kilobyte(400));
+    
+    Result.DecompBufferSize  = NAR_COMPRESSION_FRAME_SIZE*2;
+    Result.DecompBuffer      = ArenaAllocate(Arena, Result.DecompBufferSize);
+    
+    
+    Result.ActiveLCN      = (nar_record*)PoolAllocate(&Result.LCNPool);
+    Result.ActiveLCNCount = Result.Layout.LCNCount;
+    
+    memcpy(Result.ActiveLCN, Result.Layout.SortedLCN, Result.Layout.LCNCount*sizeof(nar_record));
+    
+    
+    Result.RootDir = NarStringCopy(RootDir, &Result.StringAllocator);
+    Result.IIter   = NarInitRegionCoupleIter(Result.ActiveLCN, Result.Source.BackupLCN, Result.ActiveLCNCount, Result.Source.LCNCount);
+    
+    ASSERT(Result.ActiveLCNCount <= PoolSize);
+    
+    return Result;
+}
+
+inline file_restore_ctx
+>>>>>>> sideup
 NarInitFileRestoreCtx(file_explorer *FE, file_explorer_file* Target, nar_arena *Arena){
     file_disk_layout Layout = NarFindFileLayout(FE, Target, Arena);
     file_restore_ctx Result = {};
@@ -1821,6 +2135,7 @@ NarAdvanceFileRestore(file_restore_ctx *ctx, void* Out, size_t OutSize){
         }
         return Result;
     }
+<<<<<<< HEAD
     
     if(ctx->ClustersLeftInRegion == 0){
         
@@ -1904,6 +2219,91 @@ NarAdvanceFileRestore(file_restore_ctx *ctx, void* Out, size_t OutSize){
     
     
     
+=======
+    
+    if(ctx->ClustersLeftInRegion == 0){
+        
+        NarNextIntersectionIter(&ctx->IIter);
+        
+        nar_record FetchRegion = ctx->IIter.It;
+        
+        // check if end of IIter
+        if(!NarIsRegionIterValid(ctx->IIter)){
+            
+            // exclude found backups from layout.
+            {
+                nar_record *ExcludedLCN = (nar_record*)PoolAllocate(&ctx->LCNPool);
+                size_t i = 0;
+                
+                
+                for(RegionCoupleIter Iter = NarStartExcludeIter(ctx->ActiveLCN, ctx->Source.BackupLCN, ctx->ActiveLCNCount, ctx->Source.LCNCount);
+                    NarIsRegionIterValid(Iter);
+                    NarNextExcludeIter(&Iter)
+                    )
+                {
+                    printf("Ex reg :%8u\t%8u\n", Iter.It.StartPos, Iter.It.Len);
+                    ExcludedLCN[i++] = Iter.It; 
+                }
+                
+                if(ctx->Source.Version == NAR_FULLBACKUP_VERSION){
+                    ASSERT(i == 0);
+                }
+                
+                PoolDeallocate(&ctx->LCNPool, ctx->ActiveLCN);
+                ctx->ActiveLCN      = ExcludedLCN;
+                ctx->ActiveLCNCount = i;
+                
+                
+                if(i == 0) {
+                    return {};
+                }
+                if(ctx->Source.Version == NAR_FULLBACKUP_VERSION && i != 0){
+                    ctx->Error = FileRestore_Errors::Error_EndOfBackups;
+                    return {};
+                }
+                
+            }
+            
+            
+            
+            int NewVersion = NAR_INVALID_BACKUP_VERSION;
+            NarGetPreviousBackupInfo(ctx->Source.Version, ctx->Source.Type, &NewVersion);
+            
+            // initialize parameters for a new restore source
+            { 
+                NarFreeFileRestoreSource(&ctx->Source);
+                ASSERT(ctx->Source.Version != NAR_FULLBACKUP_VERSION);
+                
+                // That was last backup, return error.
+                if(ctx->Source.Version == NAR_FULLBACKUP_VERSION){
+                    ctx->Error = FileRestore_Errors::Error_EndOfBackups;
+                    return {};
+                }
+                else{
+                    ctx->Source = NarInitFileRestoreSource(ctx->RootDir, 
+                                                           ctx->Source.ID, 
+                                                           NewVersion, 
+                                                           &ctx->StringAllocator);
+                    
+                    // here, we have to do extraction iter...
+                    ctx->IIter = NarInitRegionCoupleIter(ctx->ActiveLCN, 
+                                                         ctx->Source.BackupLCN, 
+                                                         ctx->ActiveLCNCount, 
+                                                         ctx->Source.LCNCount);
+                    return NarAdvanceFileRestore(ctx, Out, OutSize);
+                }
+            }
+            
+            // move to next backup if possible
+        }
+        
+        ctx->ClustersLeftInRegion = ctx->IIter.It.Len;
+        ctx->AdvancedSoFar        = 0;
+    }
+    
+    
+    
+>>>>>>> sideup
     size_t ClustersToRead = MIN(ctx->ClustersLeftInRegion, OutSize/ctx->ClusterSize);
     size_t ReadOffset     = ctx->IIter.It.StartPos + ctx->AdvancedSoFar;
     ASSERT(ClustersToRead != 0);

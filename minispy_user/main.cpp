@@ -419,6 +419,7 @@ TEST_ReadBackupCrossed(wchar_t *cb, wchar_t *cm, wchar_t* db, wchar_t* dm, pcg32
     uint64_t ClusterReadSize = 310910;//pcg32_random_r(state) % Records[SelectedIndice].Len;
     
     nar_arena Arena = ArenaInit(malloc(ClusterReadSize*4096*4), ClusterReadSize*4096*4);
+<<<<<<< HEAD
     
     void* CompressedBuffer   = ArenaAllocateAligned(&Arena, ClusterReadSize*4096, 16);
     void* DecompressedBuffer = ArenaAllocateAligned(&Arena, ClusterReadSize*4096, 16);
@@ -440,6 +441,29 @@ TEST_ReadBackupCrossed(wchar_t *cb, wchar_t *cm, wchar_t* db, wchar_t* dm, pcg32
     
     ASSERT(memcmp(CompressedBuffer, DecompressedBuffer, ClusterReadSize*4096) == 0);
     
+=======
+    
+    void* CompressedBuffer   = ArenaAllocateAligned(&Arena, ClusterReadSize*4096, 16);
+    void* DecompressedBuffer = ArenaAllocateAligned(&Arena, ClusterReadSize*4096, 16);
+    
+    
+    int CReadSize = NarReadBackup(&CompressedBackupView, &CompressedMetadataView, 
+                                  Records[SelectedIndice].StartPos, ClusterReadSize, 
+                                  CompressedBuffer, ClusterReadSize*4096, 
+                                  0, 0);
+    
+    int DReadSize = NarReadBackup(&DecompressedBackupView, &DecompressedMetadataView, 
+                                  Records[SelectedIndice].StartPos, ClusterReadSize, DecompressedBuffer, ClusterReadSize*4096, 
+                                  0, 0);
+    
+    
+    ASSERT(DReadSize == ClusterReadSize*4096);
+    ASSERT(CReadSize == ClusterReadSize*4096);
+    ASSERT(CReadSize == DReadSize);
+    
+    ASSERT(memcmp(CompressedBuffer, DecompressedBuffer, ClusterReadSize*4096) == 0);
+    
+>>>>>>> sideup
     free(Arena.Memory);
     return 0;
 }
@@ -574,13 +598,36 @@ int
 wmain(int argc, wchar_t* argv[]) {
     //TEST_LCNTOVCN();
     
+    {
+        nar_backup_id ID = {};
+        ID.Q = 123442343;
+        ID.Letter = 'C';
+        
+        auto Ctx = NarSetupVSSListen(ID);
+        wchar_t VSSPath[512];
+        
+        if(NarGetVSSPath(&Ctx, VSSPath)){
+            fprintf(stdout, "VSS PATH :%S\n", VSSPath);
+            NarTerminateVSS(&Ctx, 1);
+            NarFreeProcessListen(&Ctx);
+        }
+        else{
+            fprintf(stderr, "Unable to get vss path\n");
+        }
+    }
     
+<<<<<<< HEAD
 #if 1    
     auto f1 = NarOpenFileView(L"G:\\NB_M_2-C07291017.nbfsm");
 #endif
     
+=======
+#if 1
+>>>>>>> sideup
     
+    nar_arena Arena = ArenaInit(malloc(1024*1024*512), 1024*1024*512);
     
+<<<<<<< HEAD
 #if 1
     
     nar_arena Arena = ArenaInit(malloc(1024*1024*512), 1024*1024*512);
@@ -601,6 +648,24 @@ wmain(int argc, wchar_t* argv[]) {
     int Version = 2;
     
     
+=======
+    NarUTF8 CompletePath = NARUTF8("testfile.txt");
+    NarUTF8 Root2 = NarGetRootPath(CompletePath, &Arena);
+    
+    
+    file_explorer FE = NarInitFileExplorer(NARUTF8("G:\\NB_M_2-C07291017.nbfsm"));
+    
+    file_explorer_file *Target = FEFindFileWithID(&FE, 76831);
+    
+    //printf("%S\n", FEGetFileFullPath(&FE, Target));
+    file_explorer_file *R = FEStartParentSearch(&FE, 5);
+    
+    nar_backup_id ID = {};
+    ID.Q        = 18877558573959141;
+    int Version = 2;
+    
+    
+>>>>>>> sideup
     NarUTF8 Root;
     Root.Str = (uint8_t*)"G:\\";
     Root.Len = 3;

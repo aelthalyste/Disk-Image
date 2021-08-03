@@ -403,6 +403,7 @@ inline std::wstring
 GenerateLogFilePath(char Letter);
 
 
+<<<<<<< HEAD
 
 struct volume_backup_inf {
     
@@ -460,6 +461,9 @@ struct volume_backup_inf {
     size_t      MaxCBI;
     
 };
+=======
+;
+>>>>>>> sideup
 
 struct LOG_CONTEXT {
     HANDLE Port;
@@ -509,16 +513,6 @@ struct volume_information {
 inline BOOLEAN
 IsNumeric(char val) {
     return val >= '0' && val <= '9';
-}
-
-static inline bool
-CheckStreamCompletedSuccessfully(volume_backup_inf *V){
-    if(V){
-        return (V->Stream.Error == BackupStream_Errors::Error_NoError);
-    }
-    else{
-        return false;
-    }
 }
 
 BOOLEAN
