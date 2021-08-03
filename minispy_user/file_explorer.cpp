@@ -1005,6 +1005,9 @@ NarInitFileExplorer(NarUTF8 MetadataPath){
                         //NAR_BREAK;
                     }
                 }
+                else{
+                    NAR_BREAK;
+                }
                 
 #if 0                
                 uint32_t Flag = (DAHeader->NonResidentFlag == 0 && DAHeader->NameLen == 0);
@@ -1486,6 +1489,8 @@ NarFindFileLayout(file_explorer *FE, file_explorer_file *File, nar_arena *Arena)
     uint32_t FilesToVisit[80];
     uint32_t FTVCount        = 0;
     
+    auto FullRestorePoint = ArenaGetRestorePoint(Arena);
+    
     Result.MaxCount = 1024;
     
     // if attribute list is not resident
@@ -1614,6 +1619,10 @@ NarFindFileLayout(file_explorer *FE, file_explorer_file *File, nar_arena *Arena)
             uint32_t AttributeID = *(uint32_t*)FileAttribute;
             if(AttributeID == NAR_DATA_FLAG){
                 data_attr_header *DAHeader = (data_attr_header*)FileAttribute;
+                if(DAHeader->Sparse != 0){
+                    goto G_FAIL;
+                }
+                
                 ASSERT(DAHeader->NameLen == 0);
                 
                 if(DAHeader->NonResidentFlag == 0 && DAHeader->NameLen == 0){
@@ -1672,6 +1681,7 @@ NarFindFileLayout(file_explorer *FE, file_explorer_file *File, nar_arena *Arena)
     return Result;
     
     G_FAIL:
+    ArenaRestoreToPoint(Arena, FullRestorePoint);
     return {0};
 }
 
