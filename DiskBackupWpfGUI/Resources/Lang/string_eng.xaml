@@ -306,6 +306,10 @@
     <system:String x:Key="SameRootDirectory">Same Root Directory</system:String>
     <system:String x:Key="PhysicalMachine">Physical Machine</system:String>
     <system:String x:Key="VirtualMachine">Virtual Machine</system:String>
+    <system:String x:Key="StatusOfRestoredFilesWindow">Status Of Restored Files</system:String>
+    <system:String x:Key="RestoreFailed">Restore Failed</system:String>
+    <system:String x:Key="RestoreSuccessful">Restore Successful</system:String>
+    <system:String x:Key="RestoreFailedToStart">Restore Failed To Start</system:String>
     
     <!--MessageBox Info-->
     <system:String x:Key="notNullMB">Please do not leave the relevant fields blank.</system:String>

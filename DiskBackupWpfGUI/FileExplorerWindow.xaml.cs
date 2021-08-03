@@ -13,6 +13,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
+using Autofac;
 using DiskBackup.Business.Abstract;
 using DiskBackup.Business.Concrete;
 using DiskBackup.DataAccess.Abstract;
@@ -32,38 +33,38 @@ namespace DiskBackupWpfGUI
         private readonly IBackupStorageDal _backupStorageDal;
         private readonly ILogger _logger;
         private readonly IConfigurationDataDal _configurationDataDal;
+        private readonly ILifetimeScope _scope;
 
         private List<FilesInBackup> _filesInBackupList = new List<FilesInBackup>();
-        private BackupInfo _backupInfo;
 
         private bool _fileAllControl;
 
-        public FileExplorerWindow(IBackupService backupManager, BackupInfo backupInfo, IBackupStorageDal backupStorageDal, ILogger logger, IConfigurationDataDal configurationDataDal)
+        public FileExplorerWindow(IBackupService backupManager, BackupInfo backupInfo, IBackupStorageDal backupStorageDal, ILogger logger, IConfigurationDataDal configurationDataDal, ILifetimeScope scope = null)
         {
             InitializeComponent();
             _backupStorageDal = backupStorageDal;
             _backupManager = backupManager;
-            _backupInfo = backupInfo;
             _configurationDataDal = configurationDataDal;
             _logger = logger.ForContext<FileExplorerWindow>();
 
             SetApplicationLanguage(_configurationDataDal.Get(x => x.Key == "lang").Value);
 
-            //try
-            //{
-            //    _backupManager.InitFileExplorer(backupInfo);
-            //    _filesInBackupList = _backupManager.GetFileInfoList();
-            //    RemoveSystemFiles();
-            //    listViewFileExplorer.ItemsSource = _filesInBackupList;
-            //    SortItems();
-            //    txtfileExplorerPath.Text = _backupManager.GetCurrentDirectory();
-            //}
-            //catch (Exception ex)
-            //{
-            //    _logger.Error(ex, "Beklenmedik hatadan dolayı file explorer açılamıyor.");
-            //    MessageBox.Show(Resources["unexpectedErrorMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
-            //    return;
-            //}
+            try
+            {
+                _backupManager.InitFileExplorer(backupInfo);
+                _filesInBackupList = _backupManager.GetFileInfoList();
+                RemoveSystemFiles();
+                listViewFileExplorer.ItemsSource = _filesInBackupList;
+                SortItems();
+                txtfileExplorerPath.Text = _backupManager.GetCurrentDirectory();
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "Beklenmedik hatadan dolayı file explorer açılamıyor.");
+                MessageBox.Show(Resources["unexpectedErrorMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+            _scope = scope;
         }
 
         #region Title Bar
@@ -126,7 +127,7 @@ namespace DiskBackupWpfGUI
 
         private void listViewFileExplorer_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
-            if (listViewFileExplorer.SelectedIndex != -1)
+            if (listViewFileExplorer.SelectedIndex != -1 && ((FilesInBackup)listViewFileExplorer.SelectedItem).Type == FileType.Folder)
             {
                 FilesInBackup filesInBackup = (FilesInBackup)listViewFileExplorer.SelectedItem;
 
@@ -218,23 +219,34 @@ namespace DiskBackupWpfGUI
         {
             if (listViewFileExplorer.SelectedItems.Count != 0)
             {
-                Task.Run(() =>
+                using (var scope = _scope.BeginLifetimeScope())
                 {
-                    MessageBox.Show(Resources["filesRestoreStartedMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Information);
-                });
-
-                foreach (FilesInBackup item in listViewFileExplorer.SelectedItems)
-                {
-                    try
+                    var filesInBackups = new List<FilesInBackup>();
+                    foreach (FilesInBackup item in listViewFileExplorer.SelectedItems)
                     {
-                        _backupManager.RestoreFilesInBackup(item.Id, _backupInfo.BackupStorageInfo.Path, txtFolderPath.Text + @"\");
+                        filesInBackups.Add(item);
                     }
-                    catch (Exception ex)
-                    {
-                        _logger.Error(ex, $"Dosya restore işlemi gerçekleştirilemedi. {"item.Id: " + item.Id + " txtFolderPath.Text: " + txtFolderPath.Text}");
-                        MessageBox.Show(Resources["unexpectedErrorMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
-                    }
+                    StatusOfRestoredFilesWindow statusOfRestoredFilesWindow = scope.Resolve<StatusOfRestoredFilesWindow>(new TypedParameter(filesInBackups.GetType(), filesInBackups), new TypedParameter(txtFolderPath.Text.GetType(), txtFolderPath.Text + @"\"));
+                    statusOfRestoredFilesWindow.ShowDialog();
                 }
+                //Task.Run(() =>
+                //{
+                //    MessageBox.Show(Resources["filesRestoreStartedMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Information);
+                //});
+
+                //foreach (FilesInBackup item in listViewFileExplorer.SelectedItems)
+                //{
+                //    try
+                //    {
+                //        var result = _backupManager.RestoreFilesInBackup(item, txtFolderPath.Text + @"\");
+                //        MessageBox.Show($"{item.Name} {result}", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+                //    }
+                //    catch (Exception ex)
+                //    {
+                //        _logger.Error(ex, $"Dosya restore işlemi gerçekleştirilemedi. {"item.Id: " + item.Id + " txtFolderPath.Text: " + txtFolderPath.Text}");
+                //        MessageBox.Show(Resources["unexpectedErrorMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+                //    }
+                //}
             }
         }
 
@@ -260,6 +272,14 @@ namespace DiskBackupWpfGUI
                 btnRestore.IsEnabled = true;
             else
                 btnRestore.IsEnabled = false;
+            foreach (FilesInBackup item in listViewFileExplorer.SelectedItems) // değiştir sunumdan sonra
+            {
+                if (item.Type == FileType.Folder)
+                {
+                    btnRestore.IsEnabled = false;
+                    break;
+                }
+            }
         }
 
         public void SetApplicationLanguage(string option)

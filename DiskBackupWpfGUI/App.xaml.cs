@@ -65,6 +65,7 @@ namespace DiskBackupWpfGUI
             builder.RegisterType<ValidateNASWindow>();
             builder.RegisterType<LicenseControllerWindow>();
             builder.RegisterType<EMailSettingsWindow>();
+            builder.RegisterType<StatusOfRestoredFilesWindow>();
             builder.RegisterType<EMailOperations>().As<IEMailOperations>();
             builder.RegisterType<LicenseService>().As<ILicenseService>();
             _container = builder.Build();

@@ -1,0 +1,96 @@
+﻿<Window x:Class="DiskBackupWpfGUI.StatusOfRestoredFilesWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:DiskBackupWpfGUI"
+        mc:Ignorable="d"
+        Title="Statuses" 
+        Height="450" 
+        Width="800"
+        WindowStartupLocation="CenterScreen" 
+        ResizeMode="CanMinimize" 
+        BorderBrush="#194771" 
+        BorderThickness="1" 
+        Icon="Resources/Icon/NarBulut_PNG_Icon_White_V3.png" 
+        WindowStyle="None">
+    <!--<Window.Resources>
+        <ResourceDictionary Source="Resources\Lang\string_eng.xaml"/>
+    </Window.Resources>-->
+    <Grid
+        Background="#F2F2F2">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="30"/>
+            <RowDefinition Height="100"/>
+            <RowDefinition/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Panel.ZIndex="1" Orientation="Horizontal" MouseDown="MyTitleBar_MouseDown" Margin="10,0">
+            <Image Source="Resources/Icon/NarBulut_PNG_Icon_White_V3.png" Margin="0,0,5,0" Height="26" Width="26"/>
+            <TextBlock Name="txtTitleBar" Style="{StaticResource TitleBarText}" Text="{DynamicResource StatusOfRestoredFilesWindow}"/>
+        </StackPanel>
+
+        <StackPanel Name="MyTitleBar" VerticalAlignment="Top" MouseDown="MyTitleBar_MouseDown" Grid.Row="0">
+            <Border Background="#27527B" Height="30">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button Name="btnRestoreFileClose" Content="🗙" Margin="0,-2,0,0" Click="btnRestoreFileClose_Click" Style="{StaticResource TitleButton}" Width="40" />
+                </StackPanel>
+            </Border>
+        </StackPanel>
+
+        <StackPanel Grid.Row="1" Margin="10">
+            <TextBlock Name="txtFileName" Text="WindowsUpdate.txt" Margin="0,10"/>
+            <ProgressBar Name="pbTotalDataProcessed" Minimum="0" Maximum="100" Value="0" Height="30" >
+                <ProgressBar.Foreground>
+                    <LinearGradientBrush EndPoint="0,1" StartPoint="1,0">
+                        <GradientStop Color="#093C59" Offset="0.2"/>
+                        <GradientStop Color="#B9DEF0" Offset="1"/>
+                    </LinearGradientBrush>
+                </ProgressBar.Foreground>
+            </ProgressBar>
+            <TextBlock Name="txtLocalPercentage" Text="0%" FontSize="20" Margin="0,-30,0,0" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="White" FontWeight="Bold"/>
+        </StackPanel>
+
+        <DockPanel Grid.Row="2" Margin="10">
+            <ListView Name="listViewRestoreFiles" MinHeight="290" VerticalAlignment="Top">
+                <ListView.View>
+                    <GridView>
+                        <GridViewColumn Width="50">
+                            <GridViewColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Image Style="{StaticResource RestoreFileListViewItemImage}" />
+                                </DataTemplate>
+                            </GridViewColumn.CellTemplate>
+                        </GridViewColumn>
+                        <GridViewColumn Width="320" >
+                            <GridViewColumn.Header>
+                                <GridViewColumnHeader Content="{DynamicResource fileName}" Tag="FileName"/>
+                            </GridViewColumn.Header>
+                            <GridViewColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding FileName}" TextAlignment="Center"/>
+                                </DataTemplate>
+                            </GridViewColumn.CellTemplate>
+                        </GridViewColumn>
+                        <GridViewColumn Width="180" >
+                            <GridViewColumn.Header>
+                                <GridViewColumnHeader Content="{DynamicResource statu}" Tag="Status"/>
+                            </GridViewColumn.Header>
+                            <GridViewColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding StrStatus}" TextAlignment="Center"/>
+                                </DataTemplate>
+                            </GridViewColumn.CellTemplate>
+                        </GridViewColumn>
+                    </GridView>
+                </ListView.View>
+                <ListView.ItemContainerStyle>
+                    <Style TargetType="ListViewItem">
+                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                    </Style>
+                </ListView.ItemContainerStyle>
+            </ListView>
+        </DockPanel>
+
+    </Grid>
+</Window>
