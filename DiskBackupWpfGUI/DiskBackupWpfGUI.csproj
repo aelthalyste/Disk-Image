@@ -197,6 +197,9 @@
     <Compile Include="StatusesWindow.xaml.cs">
       <DependentUpon>StatusesWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="StatusOfRestoredFilesWindow.xaml.cs">
+      <DependentUpon>StatusOfRestoredFilesWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Utils\SortAdorner.cs" />
     <Compile Include="ValidateNASWindow.xaml.cs">
       <DependentUpon>ValidateNASWindow.xaml</DependentUpon>
@@ -258,6 +261,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="StatusesWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="StatusOfRestoredFilesWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

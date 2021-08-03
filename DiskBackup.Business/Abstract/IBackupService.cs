@@ -51,7 +51,7 @@ namespace DiskBackup.Business.Abstract
         bool IsVolumeAvailable(char letter);
 
         [OperationContract]
-        void RestoreFilesInBackup(long fileId, string backupDirectory, string targetDirectory);
+        FileRestoreResult RestoreFilesInBackup(FilesInBackup file, string targetDirectory);
         [OperationContract]
         void PopDirectory(); //Üst dizine çıkma methodu
         [OperationContract]

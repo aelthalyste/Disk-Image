@@ -23,7 +23,7 @@ namespace DiskBackup.Business.Concrete
     public class BackupService : IBackupService
     {
         private DiskTracker _diskTracker = new DiskTracker();
-        private CSNarFileExplorer _cSNarFileExplorer = new CSNarFileExplorer();
+        private CSNarFileExplorer _cSNarFileExplorer;
 
         private Dictionary<int, ManualResetEvent> _taskEventMap = new Dictionary<int, ManualResetEvent>(); // aynı işlem Stopwatch ve cancellationtoken source için de yapılacak ancak Quartz'ın pause, resume ve cancel işlemleri düzgün çalışıyorsa kullanılmayacak
         private Dictionary<int, CancellationTokenSource> _cancellationTokenSource = new Dictionary<int, CancellationTokenSource>();
@@ -121,11 +121,11 @@ namespace DiskBackup.Business.Concrete
 
             try
             {
-                _cSNarFileExplorer.CW_Init(backupInfo.BackupStorageInfo.Path, backupInfo.MetadataFileName); // isim eklenmesi gerekmeli gibi
+                _cSNarFileExplorer = new CSNarFileExplorer(backupInfo.BackupStorageInfo.Path + backupInfo.MetadataFileName);
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "_cSNarFileExplorer.CW_Init() gerçekleştirilemedi.");
+                _logger.Error(ex, $"Yeni CSNarFileExplorer oluşturulamadı. Path: {backupInfo.BackupStorageInfo.Path + backupInfo.MetadataFileName}");
             }
         }
 
@@ -353,7 +353,7 @@ namespace DiskBackup.Business.Concrete
                                     instantProcessData = 0;
                                     passingTime.Restart();
                                 }
-                            }                            
+                            }
 
                             if (read == 0) // 0 dönerse restore bitti demektir
                             {
@@ -506,7 +506,7 @@ namespace DiskBackup.Business.Concrete
 
                             var read = restoreStream.CW_AdvanceStream();
                             bytesReadSoFar += read;
-                            
+
                             instantProcessData += (long)read; // anlık veri için
                             if (passingTime.ElapsedMilliseconds > 500)
                             {
@@ -777,7 +777,8 @@ namespace DiskBackup.Business.Concrete
                                     }
                                 }
 
-                                if (readStream.WriteSize == 0 || !_diskTracker.CW_CheckStreamStatus(letter)) {
+                                if (readStream.WriteSize == 0 || !_diskTracker.CW_CheckStreamStatus(letter))
+                                {
                                     _logger.Information($"readStream.WriteSize: {readStream.WriteSize} - readStream.Error: {readStream.Error} - _diskTracker.CW_CheckStreamStatus({letter}): {_diskTracker.CW_CheckStreamStatus(letter)}");
                                     break;
                                 }
@@ -1020,16 +1021,27 @@ namespace DiskBackup.Business.Concrete
         public bool GetSelectedFileInfo(FilesInBackup filesInBackup)
         {
             _logger.Verbose("GetSelectedFileInfo metodu çağırıldı");
-
             CSNarFileEntry cSNarFileEntry = new CSNarFileEntry();
-            cSNarFileEntry.ID = (ulong)filesInBackup.Id;
-            cSNarFileEntry.IsDirectory = Convert.ToBoolean(filesInBackup.Type);
-            cSNarFileEntry.Name = filesInBackup.Name;
-            cSNarFileEntry.Size = (ulong)filesInBackup.Size;
-            //tarihler eklenecek. oluşturma tarihi önemli mi?
             try
             {
-                return _cSNarFileExplorer.CW_SelectDirectory((ulong)cSNarFileEntry.ID);
+                var resultList = _cSNarFileExplorer.CW_GetFilesInCurrentDirectory();
+                foreach (var item in resultList)
+                {
+                    if (item.ID == (ulong)filesInBackup.Id)
+                    {
+                        cSNarFileEntry = item;
+                        break;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "_cSNarFileExplorer.CW_GetFilesInCurrentDirectory() gerçekleştirilemedi.");
+            }
+
+            try
+            {
+                return _cSNarFileExplorer.CW_SelectDirectory(cSNarFileEntry);
             }
             catch (Exception ex)
             {
@@ -1088,17 +1100,65 @@ namespace DiskBackup.Business.Concrete
             return logList;
         }
 
-        public void RestoreFilesInBackup(long fileId, string backupDirectory, string targetDirectory) // batuhan hangi backup olduğunu nasıl anlayacak? backup directoryde backup ismi almıyor
+        public FileRestoreResult RestoreFilesInBackup(FilesInBackup file, string targetDirectory) // batuhan hangi backup olduğunu nasıl anlayacak? backup directoryde backup ismi almıyor
         {
             _logger.Verbose("RestoreFilesInBackup metodu çağırıldı");
             try
             {
-                _cSNarFileExplorer.CW_RestoreFile(fileId, backupDirectory, targetDirectory);
+                CSNarFileEntry SelectedEntry = new CSNarFileEntry();
+                var resultList = _cSNarFileExplorer.CW_GetFilesInCurrentDirectory();
+                foreach (var item in resultList)
+                {
+                    if (item.ID == (ulong)file.Id)
+                    {
+                        SelectedEntry = item;
+                        break;
+                    }
+                }
+
+                CSNarFileExportStream Stream = new CSNarFileExportStream(_cSNarFileExplorer, SelectedEntry);
+
+                if (Stream.IsInit())
+                {
+                    FileStream Output = File.Create(targetDirectory + SelectedEntry.Name); // başına kullanıcının seçtiği path gelecek {targetPath + @"\" + SelectedEntry.Name}
+                    unsafe
+                    {
+                        ulong buffersize = 1024 * 1024 * 64;
+                        byte[] buffer = new byte[buffersize];
+                        fixed (byte* baddr = &buffer[0])
+                        {
+                            while (Stream.AdvanceStream(baddr, buffersize))
+                            {
+                                Output.Seek((long)Stream.TargetWriteOffset, SeekOrigin.Begin);
+                                Output.Write(buffer, 0, (int)Stream.TargetWriteSize);
+                            }
+
+                            if (Stream.Error != FileRestore_Errors.Error_NoError)
+                            {
+                                // warn user that something went wrong    
+                                return FileRestoreResult.RestoreFailed;
+                            }
+                            if (Stream.Error == FileRestore_Errors.Error_NoError)
+                            {
+                                // SUCCESS!
+                                return FileRestoreResult.RestoreSuccessful;
+                            }
+                        }
+                    }
+                    Output.SetLength((long)Stream.TargetFileSize); 
+                    Output.Close();
+                }
+                else
+                {
+                    // indirilemiyor
+                    return FileRestoreResult.RestoreFailedToStart;
+                }
             }
             catch (Exception ex)
             {
                 _logger.Error(ex, "_cSNarFileExplorer.CW_RestoreFile() gerçekleştirilemedi.");
             }
+            return FileRestoreResult.Fail;
         }
 
         private BackupInfo ConvertToBackupInfo(BackupStorageInfo backupStorageItem, BackupMetadata backupMetadata)

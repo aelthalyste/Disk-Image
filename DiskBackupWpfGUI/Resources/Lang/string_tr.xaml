@@ -293,7 +293,11 @@
     <system:String x:Key="SameRootDirectory">Aynı Kök Dizin</system:String>
     <system:String x:Key="PhysicalMachine">Fiziksel Makine</system:String>
     <system:String x:Key="VirtualMachine">Sanal Makine</system:String>
-
+    <system:String x:Key="StatusOfRestoredFilesWindow">Geri Yüklenen Dosyaların Durumu</system:String>
+    <system:String x:Key="RestoreFailed">Geri Yükleme Başarısız</system:String>
+    <system:String x:Key="RestoreSuccessful">Geri Yükleme Başarılı</system:String>
+    <system:String x:Key="RestoreFailedToStart">Geri Yükleme Başlatılamadı</system:String>
+    
     <!--MessageBox Info-->
     <system:String x:Key="notNullMB">İlgili alanları lütfen boş geçmeyiniz.</system:String>
     <system:String x:Key="validateDirectoryMB">Lütfen geçerli bir dizin giriniz.</system:String>
