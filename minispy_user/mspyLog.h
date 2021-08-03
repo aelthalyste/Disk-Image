@@ -403,63 +403,7 @@ inline std::wstring
 GenerateLogFilePath(char Letter);
 
 
-
-struct volume_backup_inf {
-    
-    wchar_t Letter;
-    BOOLEAN IsOSVolume;
-    BOOLEAN INVALIDATEDENTRY; // If this flag is set, this entry is unusable. accessing its element wont give meaningful information to caller.
-    
-    BackupType BT = BackupType::Inc;
-    
-    
-    int32_t Version;
-    DWORD ClusterSize;    
-    
-    nar_backup_id BackupID;
-    
-    // HANDLE LogHandle; //Handle to file that is logging volume's changes.
-    
-    ////Incremental change count of the volume, this value will be reseted after every SUCCESSFUL backup operation
-    // this value times sizeof(nar_record) indicates how much data appended since last backup, useful when doing incremental backups
-    // we dont need that actually, possiblenewbackupregionoffsetmark - lastbackupoffset is equal to that thing
-    //UINT32 IncRecordCount;  // IGNORED IF DIFF BACKUP
-    
-    // Indicates where last backup regions end in local metadata. bytes after that offset is non-backed up parts of the volume.
-    // this value + increcordcount*sizeof(nar_record) is PossibleNewBackupRegionOffsetMark
-    
-    
-    INT64 PossibleNewBackupRegionOffsetMark;
-    
-    /*
-    Valid after diff-incremental setup. Stores all changes occured on disk, starting from latest incremental, or beginning if request was diff
-    Diff between this and RecordsMem, RecordsMem is just temporary buffer that stores live changes on the disk, and will be flushed to file after it's available
-    
-    This structure contains information to track stream head. After every read, ClusterIndex MUST be incremented accordingly and if read operation exceeds that region, RecIndex must be incremented too.
-    */
-    
-    union {
-        struct{
-            INT64 BackupStartOffset;
-        }DiffLogMark;
-        
-        struct{
-            INT64 LastBackupRegionOffset;
-        }IncLogMark;
-    };
-    
-    DWORD VolumeTotalClusterCount;
-    
-    stream Stream;
-    
-    CComPtr<IVssBackupComponents> VSSPTR;
-    VSS_ID SnapshotID;
-    
-    nar_record *CompInf;
-    size_t      CBII;
-    size_t      MaxCBI;
-    
-};
+;
 
 struct LOG_CONTEXT {
     HANDLE Port;
@@ -509,16 +453,6 @@ struct volume_information {
 inline BOOLEAN
 IsNumeric(char val) {
     return val >= '0' && val <= '9';
-}
-
-static inline bool
-CheckStreamCompletedSuccessfully(volume_backup_inf *V){
-    if(V){
-        return (V->Stream.Error == BackupStream_Errors::Error_NoError);
-    }
-    else{
-        return false;
-    }
 }
 
 BOOLEAN
