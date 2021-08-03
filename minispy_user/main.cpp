@@ -574,12 +574,23 @@ int
 wmain(int argc, wchar_t* argv[]) {
     //TEST_LCNTOVCN();
     
-    
-#if 1    
-    auto f1 = NarOpenFileView(L"G:\\NB_M_2-C07291017.nbfsm");
-#endif
-    
-    
+    {
+        nar_backup_id ID = {};
+        ID.Q = 123442343;
+        ID.Letter = 'C';
+        
+        auto Ctx = NarSetupVSSListen(ID);
+        wchar_t VSSPath[512];
+        
+        if(NarGetVSSPath(&Ctx, VSSPath)){
+            fprintf(stdout, "VSS PATH :%S\n", VSSPath);
+            NarTerminateVSS(&Ctx, 1);
+            NarFreeProcessListen(&Ctx);
+        }
+        else{
+            fprintf(stderr, "Unable to get vss path\n");
+        }
+    }
     
 #if 1
     
@@ -593,7 +604,7 @@ wmain(int argc, wchar_t* argv[]) {
     
     file_explorer_file *Target = FEFindFileWithID(&FE, 76831);
     
-    printf("%S\n", FEGetFileFullPath(&FE, Target));
+    //printf("%S\n", FEGetFileFullPath(&FE, Target));
     file_explorer_file *R = FEStartParentSearch(&FE, 5);
     
     nar_backup_id ID = {};

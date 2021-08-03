@@ -1,6 +1,9 @@
-#include "nar.h"
+
+
 #include "backup.h"
+
 #include "performance.h"
+#include "nar.h"
 #include "nar_win32.h"
 
 
@@ -476,11 +479,19 @@ SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, DotNetStreamInf* SI, boo
     BOOL WapiResult = FlushFileBuffers(TmpVolHandle);
     CloseHandle(TmpVolHandle);
     
+#if 0    
     VolInf->SnapshotID = GetShadowPath(Temp, VolInf->VSSPTR, ShadowPath, sizeof(ShadowPath)/sizeof(ShadowPath[0]));
+#endif
     
-    if (ShadowPath == NULL) {
-        printf("Can't get shadowpath from VSS\n");
-        Return = FALSE;
+    VolInf->PLCtx = NarSetupVSSListen(VolInf->BackupID);
+    if(VolInf->PLCtx.ReadBuffer == 0){
+        printf("Unable to setup and connect process\n");
+        return FALSE;
+    }
+    
+    if(!NarGetVSSPath(&VolInf->PLCtx, ShadowPath)){
+        printf("Unable to get vss path from process\n");
+        return  FALSE;
     }
     
     // no overheat for attaching volume again and again
@@ -488,6 +499,7 @@ SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, DotNetStreamInf* SI, boo
         printf("Cant attach volume\n");
         Return = FALSE;
     }
+    
     
     VolInf->Stream.Handle = CreateFileW(ShadowPath, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, NULL, NULL);
     if (VolInf->Stream.Handle == INVALID_HANDLE_VALUE) {
@@ -709,6 +721,9 @@ TerminateBackup(volume_backup_inf* V, BOOLEAN Succeeded) {
     V->Stream.RecIndex = 0;
     V->Stream.ClusterIndex = 0;
     
+    NarTerminateVSS(&V->PLCtx, 1);
+    
+#if 0    
     {
         LONG Deleted=0;
         VSS_ID NonDeleted;
@@ -721,6 +736,7 @@ TerminateBackup(volume_backup_inf* V, BOOLEAN Succeeded) {
         hr = V->VSSPTR->DeleteSnapshots(V->SnapshotID, VSS_OBJECT_SNAPSHOT, TRUE, &Deleted, &NonDeleted);
         V->VSSPTR.Release();
     }
+#endif
     
     
     return Return;
