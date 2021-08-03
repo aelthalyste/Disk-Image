@@ -857,6 +857,7 @@ NarReadBackup(nar_file_view *Backup, nar_file_view *Metadata,
     
     
     return ReadSizeInBytes;
+
 }
 
 
@@ -1010,3 +1011,4 @@ NarTerminateVSS(process_listen_ctx *Ctx, uint8_t Success){
     }
     
 }
+

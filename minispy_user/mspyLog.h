@@ -403,7 +403,7 @@ inline std::wstring
 GenerateLogFilePath(char Letter);
 
 
-;
+
 
 struct LOG_CONTEXT {
     HANDLE Port;

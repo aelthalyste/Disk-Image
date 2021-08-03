@@ -132,6 +132,7 @@ NarReadBackup(nar_file_view *Backup, nar_file_view *Metadata,
 
 
 
+
 HANDLE 
 NarCreateVSSPipe(uint32_t BufferSize, uint64_t Seed, char *Name, size_t MaxNameCb);
 
@@ -146,3 +147,4 @@ NarGetVSSPath(process_listen_ctx *Ctx, wchar_t *Out);
 
 inline void 
 NarTerminateVSS(process_listen_ctx *Ctx, uint8_t Success);
+

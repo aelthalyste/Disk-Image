@@ -6,7 +6,9 @@
 
 #define Assert(cond) do { if (!(cond)) __debugbreak(); } while (0)
 #define BUFFER_SIZE  (4096)
+
 #define ASSERT(exp) (exp)
+
 
 static void CreateNamedPipePair(
                                 HANDLE* PipeHandle,
@@ -47,6 +49,7 @@ static void CreateNamedPipePair(
     }
     
 }
+
 
 
 
@@ -126,7 +129,7 @@ SetupVSSListen(char Letter){
     Result.OutBuffer = (char*)malloc(Result.BufferSize);
     Result.ErrBuffer = (char*)malloc(Result.BufferSize);
     
-    BOOL ok;
+
     
     SECURITY_ATTRIBUTES sattr = {};
     sattr.nLength = sizeof(sattr);
@@ -332,6 +335,5 @@ int main(int argc, char* argv[])
     
     return 0;
 }
-
 
 

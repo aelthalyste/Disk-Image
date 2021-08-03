@@ -911,6 +911,7 @@ NarInitFileExplorer(NarUTF8 MetadataPath){
         Result.Version      = BM->Version;
         Result.ID           = BM->ID;
         
+
         
         Result.RootDir = NarGetRootPath(MetadataPath, &Result.Memory.Arena);
         
@@ -934,7 +935,7 @@ NarInitFileExplorer(NarUTF8 MetadataPath){
         }
         
         
-        
+       
         Result.ClusterSize = BM->ClusterSize;
         Result.DirectoryID   = 5;
         Result.DirectoryPath = (wchar_t*)ArenaAllocate(&Result.Memory.Arena, Kilobyte(32));
@@ -1489,8 +1490,9 @@ NarFindFileLayout(file_explorer *FE, file_explorer_file *File, nar_arena *Arena)
     uint32_t FilesToVisit[80];
     uint32_t FTVCount        = 0;
     
+
     auto FullRestorePoint = ArenaGetRestorePoint(Arena);
-    
+
     Result.MaxCount = 1024;
     
     // if attribute list is not resident
@@ -1501,6 +1503,7 @@ NarFindFileLayout(file_explorer *FE, file_explorer_file *File, nar_arena *Arena)
     memcpy(FileRecord, NAR_OFFSET(FE->MFT, File->FileID*1024), 1024);
     ((uint8_t*)FileRecord)[510] = *(uint8_t*)NAR_OFFSET(FileRecord, 50);
     ((uint8_t*)FileRecord)[511] = *(uint8_t*)NAR_OFFSET(FileRecord, 51);
+
     
     memory_restore_point RestorePoint = ArenaGetRestorePoint(Arena);
     Result.LCN = (nar_record*)ArenaAllocateAligned(Arena, Result.MaxCount*sizeof(nar_record), 8);
@@ -1670,9 +1673,11 @@ NarFindFileLayout(file_explorer *FE, file_explorer_file *File, nar_arena *Arena)
         Result.TotalSize = 0;
         for(uint64_t i = 0; i<Result.LCNCount; i++){
             Result.TotalSize += Result.LCN[i].Len*FE->ClusterSize;
+
         }
         Result.SortedLCN = (nar_record*)ArenaAllocateAligned(Arena, Result.LCNCount*sizeof(nar_record), 8);
         
+
         // it is guarenteed there wont be colliding blocks, no need to call mergeregionswithoutrealloc
         memcpy(Result.SortedLCN, Result.LCN, Result.LCNCount*sizeof(nar_record));
         qsort(Result.SortedLCN, Result.LCNCount, sizeof(nar_record), CompareNarRecords);
@@ -1682,6 +1687,7 @@ NarFindFileLayout(file_explorer *FE, file_explorer_file *File, nar_arena *Arena)
     
     G_FAIL:
     ArenaRestoreToPoint(Arena, FullRestorePoint);
+
     return {0};
 }
 
@@ -1701,9 +1707,10 @@ NarInitFileRestoreSource(NarUTF8 MetadataName, NarUTF8 BinaryName){
     
     ASSERT(Result.Metadata.Data);
     ASSERT(Result.Backup.Data);
+
     
     backup_metadata *BM = (backup_metadata*)Result.Metadata.Data;
-    
+
     Result.BackupLCN = (nar_record*)((uint8_t*)Result.Metadata.Data + BM->Offset.RegionsMetadata);
     Result.LCNCount  = BM->Size.RegionsMetadata/sizeof(nar_record);
     Result.ID        = BM->ID;
@@ -1715,6 +1722,7 @@ NarInitFileRestoreSource(NarUTF8 MetadataName, NarUTF8 BinaryName){
 
 inline file_restore_source 
 NarInitFileRestoreSource(NarUTF8 RootDir, nar_backup_id ID, int32_t Version, nar_arena *StringArena){
+
     
     bool StringResult = false;
     memory_restore_point Restore = ArenaGetRestorePoint(StringArena);
@@ -1761,6 +1769,7 @@ NarInitFileRestoreSource(NarUTF8 RootDir, nar_backup_id ID, int32_t Version, nar
     Result = NarInitFileRestoreSource(MetadataName, BinaryName);
     
     ArenaRestoreToPoint(StringArena, Restore);
+
     
     return Result;
 }
@@ -1831,6 +1840,7 @@ NarAdvanceFileRestore(file_restore_ctx *ctx, void* Out, size_t OutSize){
         }
         return Result;
     }
+
     
     if(ctx->ClustersLeftInRegion == 0){
         
@@ -1914,6 +1924,7 @@ NarAdvanceFileRestore(file_restore_ctx *ctx, void* Out, size_t OutSize){
     
     
     
+
     size_t ClustersToRead = MIN(ctx->ClustersLeftInRegion, OutSize/ctx->ClusterSize);
     size_t ReadOffset     = ctx->IIter.It.StartPos + ctx->AdvancedSoFar;
     ASSERT(ClustersToRead != 0);

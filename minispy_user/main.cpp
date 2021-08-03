@@ -419,6 +419,7 @@ TEST_ReadBackupCrossed(wchar_t *cb, wchar_t *cm, wchar_t* db, wchar_t* dm, pcg32
     uint64_t ClusterReadSize = 310910;//pcg32_random_r(state) % Records[SelectedIndice].Len;
     
     nar_arena Arena = ArenaInit(malloc(ClusterReadSize*4096*4), ClusterReadSize*4096*4);
+
     
     void* CompressedBuffer   = ArenaAllocateAligned(&Arena, ClusterReadSize*4096, 16);
     void* DecompressedBuffer = ArenaAllocateAligned(&Arena, ClusterReadSize*4096, 16);
@@ -440,6 +441,10 @@ TEST_ReadBackupCrossed(wchar_t *cb, wchar_t *cm, wchar_t* db, wchar_t* dm, pcg32
     
     ASSERT(memcmp(CompressedBuffer, DecompressedBuffer, ClusterReadSize*4096) == 0);
     
+
+  
+    
+
     free(Arena.Memory);
     return 0;
 }
@@ -592,10 +597,14 @@ wmain(int argc, wchar_t* argv[]) {
         }
     }
     
-#if 1
+
+    auto f1 = NarOpenFileView(L"G:\\NB_M_2-C07291017.nbfsm");
+#endif
+    
     
     nar_arena Arena = ArenaInit(malloc(1024*1024*512), 1024*1024*512);
     
+
     NarUTF8 CompletePath = NARUTF8("testfile.txt");
     NarUTF8 Root2 = NarGetRootPath(CompletePath, &Arena);
     
@@ -612,6 +621,7 @@ wmain(int argc, wchar_t* argv[]) {
     int Version = 2;
     
     
+
     NarUTF8 Root;
     Root.Str = (uint8_t*)"G:\\";
     Root.Len = 3;
