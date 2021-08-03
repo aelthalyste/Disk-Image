@@ -3,6 +3,29 @@
 #pragma once 
 
 #include "mspyLog.h"
+#include "nar.h"
+
+
+enum ProcessCommandType{
+    ProcessCommandType_GetVSSPath,
+    ProcessCommandType_TerminateVSS,
+    ProcessCommandType_TerminateProcess
+};
+
+
+struct process_listen_ctx{
+    char *ReadBuffer;
+    char *WriteBuffer;
+    uint16_t BufferSize;
+    
+    OVERLAPPED ReadOverlapped;
+    OVERLAPPED WriteOverlapped;
+    
+    PROCESS_INFORMATION PInfo;
+    
+    HANDLE PipeHandle;
+};
+
 
 inline BOOLEAN
 NarRemoveLetter(char Letter);
@@ -105,4 +128,23 @@ NarReadBackup(nar_file_view *Backup, nar_file_view *Metadata,
               uint64_t AbsoluteClusterOffset, uint64_t ReadSizeInCluster, 
               void *Output, uint64_t OutputMaxSize,
               void *ZSTDBuffer, size_t ZSTDBufferSize);
+
+
+
+
+
+HANDLE 
+NarCreateVSSPipe(uint32_t BufferSize, uint64_t Seed, char *Name, size_t MaxNameCb);
+
+inline process_listen_ctx
+NarSetupVSSListen(nar_backup_id ID);
+
+inline void
+NarFreeProcessListen(process_listen_ctx *Ctx);
+
+inline bool
+NarGetVSSPath(process_listen_ctx *Ctx, wchar_t *Out);
+
+inline void 
+NarTerminateVSS(process_listen_ctx *Ctx, uint8_t Success);
 

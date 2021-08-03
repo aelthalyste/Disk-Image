@@ -857,4 +857,158 @@ NarReadBackup(nar_file_view *Backup, nar_file_view *Metadata,
     
     
     return ReadSizeInBytes;
+
 }
+
+
+
+
+HANDLE 
+NarCreateVSSPipe(uint32_t BufferSize, uint64_t Seed, char *Name, size_t MaxNameCb)
+{
+    static DWORD id = 0;
+    
+    snprintf(Name, MaxNameCb, "\\\\.\\Pipe\\NARBULUT_PIPE.%08x.%08llx", GetCurrentProcessId(), Seed);
+    
+    SECURITY_ATTRIBUTES SAttr = {};
+    SAttr.nLength = sizeof(SAttr);
+    SAttr.bInheritHandle = TRUE;
+    
+    HANDLE Result = CreateNamedPipeA(
+                                     Name,
+                                     PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED,
+                                     PIPE_TYPE_BYTE | PIPE_WAIT,
+                                     10,
+                                     BufferSize,
+                                     BufferSize,
+                                     0,
+                                     &SAttr);
+    
+    if(Result == INVALID_HANDLE_VALUE){
+        fprintf(stderr, "CreateNamedPipeA error %d\n", GetLastError());
+    }
+    ASSERT(Result != INVALID_HANDLE_VALUE);
+    return Result;
+    
+}
+
+inline process_listen_ctx
+NarSetupVSSListen(nar_backup_id ID){
+    
+    process_listen_ctx Result = {};
+    Result.BufferSize   = 512;
+    char NameBF[MAX_PATH];
+    
+    Result.PipeHandle   = NarCreateVSSPipe(Result.BufferSize, ID.Q, NameBF, sizeof(NameBF));
+    
+    if(Result.PipeHandle != INVALID_HANDLE_VALUE){
+        Result.ReadBuffer   = (char*)malloc(Result.BufferSize);
+        Result.WriteBuffer  = (char*)malloc(Result.BufferSize);
+        
+        STARTUPINFOA sinfo = {};
+        sinfo.cb = sizeof(sinfo);
+        
+        char CmdLine[MAX_PATH + 5];
+        
+        snprintf(CmdLine, sizeof(CmdLine), "%s %c", NameBF, ID.Letter);
+        
+        BOOL OK = CreateProcessA("standalone_vss.exe", CmdLine, NULL, NULL, TRUE, CREATE_NO_WINDOW | CREATE_SUSPENDED, NULL, NULL, &sinfo, &Result.PInfo);
+        
+        if(!OK){
+            goto FAIL;
+        }
+        
+        DWORD Resume = ResumeThread(Result.PInfo.hThread);
+        ASSERT(Resume);
+        if(!Resume){
+            goto FAIL;
+        }
+        
+        
+        OVERLAPPED ov = {};
+        OK = ConnectNamedPipe(Result.PipeHandle, &ov);
+        bool Connected = false;
+        // poll for 2.5s
+        DWORD Garbage = 0;
+        if(!GetOverlappedResultEx(Result.PipeHandle, &ov, &Garbage, 200, FALSE)){
+            goto FAIL;
+        }
+        
+    }
+    else{
+        Result = {};
+    }
+    
+    return Result;
+    
+    FAIL:
+    NarFreeProcessListen(&Result);
+}
+
+inline void
+NarFreeProcessListen(process_listen_ctx *Ctx){
+    free(Ctx->ReadBuffer);
+    free(Ctx->WriteBuffer);
+    CloseHandle(Ctx->PipeHandle);
+    CloseHandle(Ctx->PInfo.hThread);
+    CloseHandle(Ctx->PInfo.hProcess);
+    
+    memset(Ctx, 0, sizeof(*Ctx));
+    return;
+}
+
+inline bool
+NarGetVSSPath(process_listen_ctx *Ctx, wchar_t *Out){
+    
+    bool Result = false;
+    memset(Ctx->WriteBuffer, 0, Ctx->BufferSize);
+    *(uint32_t*)Ctx->WriteBuffer = ProcessCommandType_GetVSSPath;
+    WriteFile(Ctx->PipeHandle, Ctx->WriteBuffer, Ctx->BufferSize, 0, &Ctx->WriteOverlapped);
+    DWORD Garbage = 0;
+    
+    if(GetOverlappedResultEx(Ctx->PipeHandle, &Ctx->WriteOverlapped, &Garbage, 200, FALSE)){
+        ASSERT(Garbage == Ctx->BufferSize);
+        Garbage = 0;
+        
+        ReadFile(Ctx->PipeHandle, Ctx->ReadBuffer, Ctx->BufferSize, 0, &Ctx->ReadOverlapped);
+        if(GetOverlappedResultEx(Ctx->PipeHandle, &Ctx->ReadOverlapped, &Garbage, 5000, FALSE)){
+            wchar_t *Needle = (wchar_t*)Ctx->ReadBuffer;
+            for(int i =0; *Needle !=0; i++){
+                Out[i] = *Needle++;
+            }
+            
+            Result = true;
+        }
+    }
+    
+    if(Result == false){
+        Out[0] = 0;
+    }
+    
+    return Result;
+}
+
+inline void 
+NarTerminateVSS(process_listen_ctx *Ctx, uint8_t Success){
+    
+    bool Result = false;
+    memset(Ctx->WriteBuffer, 0, Ctx->BufferSize);
+    
+    *(uint32_t*)Ctx->WriteBuffer       = ProcessCommandType_TerminateVSS;
+    *((uint32_t*)Ctx->WriteBuffer + 1) = (uint32_t)Success;
+    
+    WriteFile(Ctx->PipeHandle, Ctx->WriteBuffer, Ctx->BufferSize, 0, &Ctx->WriteOverlapped);
+    DWORD Garbage = 0;
+    
+    if(GetOverlappedResultEx(Ctx->PipeHandle, &Ctx->WriteOverlapped, &Garbage, 200, FALSE)){
+        ASSERT(Garbage == Ctx->BufferSize);
+        Garbage = 0;
+        
+        ReadFile(Ctx->PipeHandle, Ctx->ReadBuffer, Ctx->BufferSize, 0, &Ctx->ReadOverlapped);
+        if(GetOverlappedResultEx(Ctx->PipeHandle, &Ctx->ReadOverlapped, &Garbage, 5000, FALSE)){
+            
+        }
+    }
+    
+}
+
