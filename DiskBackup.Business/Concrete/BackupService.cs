@@ -1146,19 +1146,19 @@ namespace DiskBackup.Business.Concrete
                             }
                             sizeOfRestoredFilesConfiguration.Value = sizeOfRestoredFiles.ToString();
                             _configurationDataDal.Update(sizeOfRestoredFilesConfiguration);
+                            file.SetLength((long)Stream.TargetFileSize);
+                            file.Close();
 
                             if (Stream.Error != FileRestore_Errors.Error_NoError)
                             {
                                 return FileRestoreResult.RestoreFailed;
                             }
-                            if (Stream.Error == FileRestore_Errors.Error_NoError)
+                            else if (Stream.Error == FileRestore_Errors.Error_NoError)
                             {
                                 return FileRestoreResult.RestoreSuccessful;
                             }
                         }
                     }
-                    file.SetLength((long)Stream.TargetFileSize);
-                    file.Close();
                 }
                 else
                 {
