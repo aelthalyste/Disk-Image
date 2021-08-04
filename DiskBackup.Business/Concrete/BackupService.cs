@@ -371,7 +371,6 @@ namespace DiskBackup.Business.Concrete
                             }
                         }
                         restoreStream.TerminateRestore();
-                        _logger.Information($"restoreStream.StreamError: {restoreStream.StreamError} - restoreStream.SrcError: {restoreStream.SrcError}");
                         timeElapsed.Stop();
                         _timeElapsedMap.Remove(taskInfo.Id);
 
@@ -540,7 +539,6 @@ namespace DiskBackup.Business.Concrete
                             }
                         }
                         restoreStream.TerminateRestore();
-                        _logger.Information($"restoreStream.StreamError: {restoreStream.StreamError} - restoreStream.SrcError: {restoreStream.SrcError}");
                         timeElapsed.Stop();
                         _timeElapsedMap.Remove(taskInfo.Id);
 

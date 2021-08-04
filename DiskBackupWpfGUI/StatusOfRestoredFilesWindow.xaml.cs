@@ -104,7 +104,6 @@ namespace DiskBackupWpfGUI
                         StrStatus = Resources[result.ToString()].ToString()
                     });
                     listViewRestoreFiles.Items.Refresh();
-                    MessageBox.Show($"{item.Name} {result}", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
                 }
                 catch (Exception ex)
                 {
