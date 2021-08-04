@@ -37,17 +37,19 @@ namespace DiskBackup.Business.Concrete
         private readonly ITaskInfoDal _taskInfoDal; // status bilgilerini veritabanına yazabilmek için gerekli
         private readonly IBackupStorageDal _backupStorageDal;
         private readonly IBackupTaskDal _backupTaskDal;
+        private readonly IConfigurationDataDal _configurationDataDal;
         private readonly ILogger _logger;
 
         private NetworkConnection _nc;
 
-        public BackupService(IStatusInfoDal statusInfoRepository, ITaskInfoDal taskInfoDal, ILogger logger, IBackupStorageDal backupStorageDal, IBackupTaskDal backupTaskDal)
+        public BackupService(IStatusInfoDal statusInfoRepository, ITaskInfoDal taskInfoDal, ILogger logger, IBackupStorageDal backupStorageDal, IBackupTaskDal backupTaskDal, IConfigurationDataDal configurationDataDal)
         {
             _statusInfoDal = statusInfoRepository;
             _taskInfoDal = taskInfoDal;
             _logger = logger.ForContext<BackupService>();
             _backupStorageDal = backupStorageDal;
             _backupTaskDal = backupTaskDal;
+            _configurationDataDal = configurationDataDal;
         }
 
         public bool InitTracker()
@@ -1100,16 +1102,21 @@ namespace DiskBackup.Business.Concrete
             return logList;
         }
 
-        public FileRestoreResult RestoreFilesInBackup(FilesInBackup file, string targetDirectory) // batuhan hangi backup olduğunu nasıl anlayacak? backup directoryde backup ismi almıyor
+        public FileRestoreResult RestoreFilesInBackup(FilesInBackup filesInBackup, string targetDirectory) // batuhan hangi backup olduğunu nasıl anlayacak? backup directoryde backup ismi almıyor
         {
             _logger.Verbose("RestoreFilesInBackup metodu çağırıldı");
             try
             {
+                var sizeOfRestoredFilesConfiguration = _configurationDataDal.Get(x => x.Key == "sizeOfRestoredFiles");
+                var sizeOfRestoredFiles = Convert.ToInt64(sizeOfRestoredFilesConfiguration.Value);
+                Stopwatch passingTime = new Stopwatch();
+                passingTime.Start();
+
                 CSNarFileEntry SelectedEntry = new CSNarFileEntry();
                 var resultList = _cSNarFileExplorer.CW_GetFilesInCurrentDirectory();
                 foreach (var item in resultList)
                 {
-                    if (item.ID == (ulong)file.Id)
+                    if (item.ID == (ulong)filesInBackup.Id)
                     {
                         SelectedEntry = item;
                         break;
@@ -1120,7 +1127,7 @@ namespace DiskBackup.Business.Concrete
 
                 if (Stream.IsInit())
                 {
-                    FileStream Output = File.Create(targetDirectory + SelectedEntry.Name); // başına kullanıcının seçtiği path gelecek {targetPath + @"\" + SelectedEntry.Name}
+                    FileStream file = File.Create(targetDirectory + SelectedEntry.Name); // başına kullanıcının seçtiği path gelecek {targetPath + @"\" + SelectedEntry.Name}
                     unsafe
                     {
                         ulong buffersize = 1024 * 1024 * 64;
@@ -1129,28 +1136,34 @@ namespace DiskBackup.Business.Concrete
                         {
                             while (Stream.AdvanceStream(baddr, buffersize))
                             {
-                                Output.Seek((long)Stream.TargetWriteOffset, SeekOrigin.Begin);
-                                Output.Write(buffer, 0, (int)Stream.TargetWriteSize);
+                                file.Seek((long)Stream.TargetWriteOffset, SeekOrigin.Begin);
+                                file.Write(buffer, 0, (int)Stream.TargetWriteSize);
+                                sizeOfRestoredFiles += (int)Stream.TargetWriteSize;
+                                if (passingTime.ElapsedMilliseconds > 500)
+                                {
+                                    sizeOfRestoredFilesConfiguration.Value = sizeOfRestoredFiles.ToString();
+                                    _configurationDataDal.Update(sizeOfRestoredFilesConfiguration);
+                                    passingTime.Restart();
+                                }
                             }
+                            sizeOfRestoredFilesConfiguration.Value = sizeOfRestoredFiles.ToString();
+                            _configurationDataDal.Update(sizeOfRestoredFilesConfiguration);
 
                             if (Stream.Error != FileRestore_Errors.Error_NoError)
                             {
-                                // warn user that something went wrong    
                                 return FileRestoreResult.RestoreFailed;
                             }
                             if (Stream.Error == FileRestore_Errors.Error_NoError)
                             {
-                                // SUCCESS!
                                 return FileRestoreResult.RestoreSuccessful;
                             }
                         }
                     }
-                    Output.SetLength((long)Stream.TargetFileSize); 
-                    Output.Close();
+                    file.SetLength((long)Stream.TargetFileSize);
+                    file.Close();
                 }
                 else
                 {
-                    // indirilemiyor
                     return FileRestoreResult.RestoreFailedToStart;
                 }
             }
