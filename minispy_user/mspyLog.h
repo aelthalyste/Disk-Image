@@ -34,7 +34,7 @@ _NarInternalMemoryOp(int OpCode, size_t Size) {
     void* Result = 0;
     
     if (!MemArena.Memory) {
-        MemArena.Reserve = 1024LL * 1024LL * 1024LL * 64LL; // Reserve 64GB
+        MemArena.Reserve = 1024LL * 1024LL * 64LL; // Reserve 64GB
         MemArena.Used = 0;
         MemArena.Memory = VirtualAlloc(0, MemArena.Reserve, MEM_RESERVE, PAGE_READWRITE);
     }
@@ -120,9 +120,9 @@ NarLog(const char *str, ...){
     
 #define MAX_BUF_LEN 1024*2
     
-    static char buf[MAX_BUF_LEN];
-    static SYSTEMTIME Time = { 0 };
-    static nar_log_time NarTime = {0};
+    char buf[MAX_BUF_LEN];
+    SYSTEMTIME Time = { 0 };
+    nar_log_time NarTime = {0};
     
     memset(buf, 0, sizeof(buf));
     GetLocalTime(&Time);
@@ -177,7 +177,6 @@ NarLog(const char *str, ...){
 		OutputDebugStringA(buf);
         printf(buf);
     }
-    
 #endif
     
     
@@ -185,7 +184,7 @@ NarLog(const char *str, ...){
     
 }
 
-//#define printf(fmt, ...) NarLog(fmt, __VA_ARGS__)
+#define printf(fmt, ...) NarLog(fmt, __VA_ARGS__)
 
 enum rec_or {
     LEFT = 0,

@@ -38,13 +38,22 @@ struct nar_backup_id{
 #if _DEBUG || !_MANAGED 
 
 #if NAR_WINDOWS
+
 #define ASSERT(exp) do{if(!(exp)){__debugbreak();}} while(0);
-#else
+#define NAR_BREAK do{__debugbreak();}while(0);
+
+#else // IF NAR WINDOWS
+
 #define ASSERT(exp) do{if(!(exp)){__asm__("int3");}} while(0);
-#endif
+#define NAR_BREAK do{__builtin_trap();}while(0);
+
+#endif // IF NAR WINDWOS END
 
 #else
+
 #define ASSERT(exp)
+#define NAR_BREAK
+
 #endif
 
 
@@ -76,11 +85,6 @@ struct nar_backup_id{
 #define NAR_RECOVERY_PARTITION_LETTER 'R'
 
 
-#if NAR_LINUX
-#define NAR_BREAK do{__builtin_trap();}while(0);
-#elif NAR_WINDOWS
-#define NAR_BREAK do{__debugbreak();}while(0);
-#endif
 
 
 #if NAR_WINDOWS

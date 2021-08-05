@@ -71,11 +71,6 @@ narvirtualalloc(void* m, size_t len, DWORD f1, DWORD f2){
 #endif
 
 
-
-
-
-
-
 backup_metadata
 ReadMetadata(nar_backup_id ID, int Version, std::wstring RootDir) {
     
@@ -138,73 +133,6 @@ NarTruncateFile(HANDLE F, ULONGLONG TargetSize) {
     return FALSE;
     
 }
-
-
-
-
-
-
-
-#if 1
-
-
-// Path: any path name that contains trailing backslash
-// like = C:\\somedir\\thatfile.exe    or    \\relativedirectory\\dir2\\dir3\\ourfile.exe
-// OutName: output buffer
-// OutMaxLen: in characters
-inline void
-NarGetFileNameFromPath(const wchar_t* Path, wchar_t *OutName, INT32 OutMaxLen) {
-    
-    if (!Path || !OutName) return;
-    
-    memset(OutName, 0, OutMaxLen);
-    
-    size_t PathLen = wcslen(Path);
-    
-    if (PathLen > OutMaxLen) return;
-    
-    int TrimPoint = PathLen - 1;
-    {
-        while (Path[TrimPoint] != L'\\' && --TrimPoint != 0);
-    }
-    
-    if (TrimPoint < 0) TrimPoint = 0;
-    
-    memcpy(OutName, &Path[TrimPoint], 2 * (PathLen - TrimPoint));
-    
-}
-
-
-/*
-path = path to the file, may be relative or absolute
-Out, user given buffer to write filename with extension
-Maxout, max character can be written to Out
-*/
-inline void
-NarGetFileNameFromPath(const wchar_t *path, wchar_t* Out, size_t MaxOut){
-    size_t pl = wcslen(path);
-    
-    size_t it = pl - 1;
-    for(; path[it] != L'\\' && it > 0; it--);
-    
-    // NOTE(Batuhan): cant fit given buffer, 
-    if(pl - it > MaxOut) Out[0] = 0;
-    else{
-        wcscpy(Out, &path[it]);
-    }
-}
-
-
-#endif
-
-
-
-
-
-#if 1
-
-
-#endif
 
 
 struct{
@@ -292,8 +220,6 @@ Test_NarGetRegionIntersection() {
 
 
 
-
-
 #define NAR_FAILED 0
 #define NAR_SUCC   1
 
@@ -309,7 +235,7 @@ void DEBUG_Restore(){
     std::cout<<"Enter metadata path\n";
     std::wcin>>MetadataPath;
     
-#if 0    
+#if 1    
     std::cout<<"Enter disk id\n";
     std::cin>>DiskID;
 #endif
@@ -574,6 +500,7 @@ int
 wmain(int argc, wchar_t* argv[]) {
     //TEST_LCNTOVCN();
     
+#if 0    
     {
         nar_backup_id ID = {};
         ID.Q = 123442343;
@@ -591,8 +518,9 @@ wmain(int argc, wchar_t* argv[]) {
             fprintf(stderr, "Unable to get vss path\n");
         }
     }
+#endif
     
-#if 1
+#if 0
     
     nar_arena Arena = ArenaInit(malloc(1024*1024*512), 1024*1024*512);
     
@@ -720,11 +648,6 @@ wmain(int argc, wchar_t* argv[]) {
     
     return 0;
     std::unordered_map<std::wstring, int> NarResult;
-#if 0    
-    for(size_t i =0; i<result.Len; i++){
-        NarResult[result.Files[i]] = 0;
-    }
-#endif
     
     file_read EverythingView = NarReadFile(L"C:\\Users\\bcbilisim\\Desktop\\everythingoutput.txt");
     
@@ -814,7 +737,7 @@ wmain(int argc, wchar_t* argv[]) {
                                           0, 0);
                 if(file != INVALID_HANDLE_VALUE){
                     uint64_t ucs = 0;
-                    
+                    printf("starting backup\n");
 #if 1                    
                     loop{
                         int Read = ReadStream(v, MemBuf, bsize);
@@ -829,8 +752,6 @@ wmain(int argc, wchar_t* argv[]) {
                             DWORD BytesWritten = 0;
                             if(WriteFile(file, MemBuf, Read, &BytesWritten, 0) && BytesWritten == Read){
                                 TotalWritten += BytesWritten;
-                                // NOTE(Batuhan): copied successfully
-                                //FlushFileBuffers(file);
                             }
                             else{
                                 NAR_BREAK;

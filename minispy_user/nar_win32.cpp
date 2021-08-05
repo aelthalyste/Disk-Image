@@ -884,9 +884,11 @@ NarCreateVSSPipe(uint32_t BufferSize, uint64_t Seed, char *Name, size_t MaxNameC
                                      &SAttr);
     
     if(Result == INVALID_HANDLE_VALUE){
-        fprintf(stderr, "CreateNamedPipeA error %d\n", GetLastError());
+        fprintf(stderr, "CreateNamedPipeA error %d, path %s\n", GetLastError(), Name);
     }
-    ASSERT(Result != INVALID_HANDLE_VALUE);
+    else{
+        printf("Named pipe : %s\n", Name);
+    }
     return Result;
     
 }
@@ -911,15 +913,17 @@ NarSetupVSSListen(nar_backup_id ID){
         
         snprintf(CmdLine, sizeof(CmdLine), "%s %c", NameBF, ID.Letter);
         
-        BOOL OK = CreateProcessA("standalone_vss.exe", CmdLine, NULL, NULL, TRUE, CREATE_NO_WINDOW | CREATE_SUSPENDED, NULL, NULL, &sinfo, &Result.PInfo);
+        BOOL OK = CreateProcessA("C:\\Program Files\\NarDiskBackup\\standalone_vss.exe", CmdLine, NULL, NULL, TRUE, CREATE_NO_WINDOW | CREATE_SUSPENDED, NULL, NULL, &sinfo, &Result.PInfo);
         
         if(!OK){
+            printf("CreateProcessA failed with code %d\n", GetLastError());
             goto FAIL;
         }
         
         DWORD Resume = ResumeThread(Result.PInfo.hThread);
         ASSERT(Resume);
         if(!Resume){
+            printf("ResumeThread failed with code %d\n", GetLastError());
             goto FAIL;
         }
         
@@ -929,12 +933,15 @@ NarSetupVSSListen(nar_backup_id ID){
         bool Connected = false;
         // poll for 2.5s
         DWORD Garbage = 0;
-        if(!GetOverlappedResultEx(Result.PipeHandle, &ov, &Garbage, 200, FALSE)){
+        uint32_t WaitMs = 200;
+        if(!GetOverlappedResultEx(Result.PipeHandle, &ov, &Garbage, WaitMs, FALSE)){
+            printf("Couldn't estabilish connection to process in %u ms, failed, error code : %d\n", WaitMs, GetLastError());
             goto FAIL;
         }
         
     }
     else{
+        printf("Unable to create pipe\n");
         Result = {};
     }
     
@@ -970,14 +977,21 @@ NarGetVSSPath(process_listen_ctx *Ctx, wchar_t *Out){
         Garbage = 0;
         
         ReadFile(Ctx->PipeHandle, Ctx->ReadBuffer, Ctx->BufferSize, 0, &Ctx->ReadOverlapped);
-        if(GetOverlappedResultEx(Ctx->PipeHandle, &Ctx->ReadOverlapped, &Garbage, 5000, FALSE)){
+        if(GetOverlappedResultEx(Ctx->PipeHandle, &Ctx->ReadOverlapped, &Garbage, 9000, FALSE)){
             wchar_t *Needle = (wchar_t*)Ctx->ReadBuffer;
-            for(int i =0; *Needle !=0; i++){
+            int i = 0;
+            for(i =0; *Needle !=0; i++){
                 Out[i] = *Needle++;
             }
-            
+            Out[i] = 0;
             Result = true;
         }
+        else{
+            printf("Process didn't answer in given time(5s), abandoning standalone_vss.exe\n");
+        }
+    }
+    else{
+        printf("Process didn't answer in given time(200ms), abandoning standalone_vss.exe\n");
     }
     
     if(Result == false){

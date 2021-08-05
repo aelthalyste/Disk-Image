@@ -480,10 +480,6 @@ SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, DotNetStreamInf* SI, boo
     CloseHandle(TmpVolHandle);
     
 #if 1    
-    VolInf->SnapshotID = GetShadowPath(Temp, VolInf->VSSPTR, ShadowPath, sizeof(ShadowPath)/sizeof(ShadowPath[0]));
-#endif
-    
-#if 0    
     VolInf->PLCtx = NarSetupVSSListen(VolInf->BackupID);
     if(VolInf->PLCtx.ReadBuffer == 0){
         printf("Unable to setup and connect process\n");
@@ -494,7 +490,10 @@ SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, DotNetStreamInf* SI, boo
         printf("Unable to get vss path from process\n");
         return  FALSE;
     }
+#else  
+    VolInf->SnapshotID = GetShadowPath(Temp, VolInf->VSSPTR, ShadowPath, sizeof(ShadowPath)/sizeof(ShadowPath[0]));
 #endif
+    
     
     // no overheat for attaching volume again and again
     if(FALSE == AttachVolume(VolInf->Letter)){
@@ -723,9 +722,10 @@ TerminateBackup(volume_backup_inf* V, BOOLEAN Succeeded) {
     V->Stream.RecIndex = 0;
     V->Stream.ClusterIndex = 0;
     
-    //NarTerminateVSS(&V->PLCtx, 1);
+#if 1
+    NarTerminateVSS(&V->PLCtx, 1);
     
-#if 1    
+#else   
     {
         LONG Deleted=0;
         VSS_ID NonDeleted;
