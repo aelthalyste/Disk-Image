@@ -338,5 +338,7 @@
     <system:String x:Key="sameRootDirectoryMB">Görevler ile yedekleme alanları aynı kök dizine sahip olamaz.</system:String>
     <system:String x:Key="filesRestoreStartedMB">Geri yükleme işlemi başlatıldı.</system:String>
     <system:String x:Key="taskBackupOverlappingAffectedMB">Seçili volumelerde görev oluşturmanız aşağıdaki görevleri etkileyecektir. Onaylıyor musunuz?</system:String>
+    <system:String x:Key="filesRestoreSuccessfullyMB">Dosya geri yükleme işlemi sona erdi. Geri yüklenen yol: </system:String>
+    <system:String x:Key="filesRestoreFailedMB">Dosyalar geri yüklenemedi.</system:String>
 
 </ResourceDictionary>

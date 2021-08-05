@@ -229,24 +229,6 @@ namespace DiskBackupWpfGUI
                     StatusOfRestoredFilesWindow statusOfRestoredFilesWindow = scope.Resolve<StatusOfRestoredFilesWindow>(new TypedParameter(filesInBackups.GetType(), filesInBackups), new TypedParameter(txtFolderPath.Text.GetType(), txtFolderPath.Text + @"\"));
                     statusOfRestoredFilesWindow.ShowDialog();
                 }
-                //Task.Run(() =>
-                //{
-                //    MessageBox.Show(Resources["filesRestoreStartedMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Information);
-                //});
-
-                //foreach (FilesInBackup item in listViewFileExplorer.SelectedItems)
-                //{
-                //    try
-                //    {
-                //        var result = _backupManager.RestoreFilesInBackup(item, txtFolderPath.Text + @"\");
-                //        MessageBox.Show($"{item.Name} {result}", Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
-                //    }
-                //    catch (Exception ex)
-                //    {
-                //        _logger.Error(ex, $"Dosya restore işlemi gerçekleştirilemedi. {"item.Id: " + item.Id + " txtFolderPath.Text: " + txtFolderPath.Text}");
-                //        MessageBox.Show(Resources["unexpectedErrorMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
-                //    }
-                //}
             }
         }
 
