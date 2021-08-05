@@ -88,9 +88,11 @@
     <Content Include="Images\favicon_mavi.ico" />
     <Content Include="Images\narbulut_setup_mini.png" />
     <Content Include="Images\Narbulut_v3_setup.png" />
+    <Content Include="libzstd.dll" />
     <Content Include="minispy.inf" />
     <Content Include="minispy.sys" />
     <Content Include="son_kullanici_lisans_sozlesmesi.rtf" />
+    <Content Include="standalone_vss.exe" />
     <Content Include="UninstallFile.bat" />
   </ItemGroup>
   <ItemGroup>
