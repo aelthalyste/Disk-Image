@@ -1,7 +1,6 @@
-//#include "precompiled.h"
+#include "precompiled.h"
 #include "platform_io.h"
-#include <string>	
-#include <stdlib.h>
+
 
 
 static std::string
@@ -34,6 +33,7 @@ str2wstr(const std::string& s){
 // windows implementation
 #if _WIN32
 
+
 #include <windows.h>
 #include "nar_win32.h"
 
@@ -65,7 +65,7 @@ NarOpenFileView(const std::string &fn){
 	return NarOpenFileView(str2wstr(fn));
 }
 
-inline nar_file_view
+nar_file_view
 NarOpenFileView(NarUTF8 String){
     ASSERT(String.Len <= Megabyte(1));
     

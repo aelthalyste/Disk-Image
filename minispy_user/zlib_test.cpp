@@ -1,3 +1,4 @@
+#if 0
 #include <iostream>
 #include <stdio.h>
 #include <windows.h>
@@ -221,3 +222,4 @@ int main(){
 	return 0;	
 }
 
+#endif

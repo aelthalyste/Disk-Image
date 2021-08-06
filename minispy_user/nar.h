@@ -1,13 +1,5 @@
 #pragma once
 
-#if _MSC_VER
-#include <windows.h>
-#endif
-
-#include <stdint.h>
-#include <string>
-#include "memory.h"
-
 
 #ifdef 	__linux__
 #define NAR_LINUX   1
@@ -16,8 +8,10 @@
 #endif
 
 #if NAR_WINDOWS
+#include <windows.h>
 #include "../inc/minispy.h"
 #else
+
 
 struct nar_backup_id{
     union{
@@ -33,7 +27,6 @@ struct nar_backup_id{
     };
 };
 #endif
-
 
 #if _DEBUG || !_MANAGED 
 
@@ -85,6 +78,11 @@ struct nar_backup_id{
 #define NAR_RECOVERY_PARTITION_LETTER 'R'
 
 
+#include "precompiled.h"
+#include "memory.h"
+#include "narstring.h"
+
+
 
 
 #if NAR_WINDOWS
@@ -118,76 +116,6 @@ enum class BackupType : short {
     Inc
 };
 
-struct NarUTF8{
-    uint8_t *Str;
-    uint32_t Len;
-    uint32_t Cap;
-};
-#define NARUTF8(ch) NarUTF8{(uint8_t*)ch, sizeof(ch) - 1, 0}
-
-
-static inline NarUTF8
-NarStringCopy(NarUTF8 Input, nar_arena *Arena){
-    NarUTF8 Result = {};
-    Result.Str = (uint8_t*)ArenaAllocate(Arena, Input.Len);
-    Result.Len = Input.Len;
-    Result.Cap = Input.Cap;
-    memcpy(Result.Str, Input.Str, Result.Len);
-    ASSERT(Result.Str[Result.Len] == 0);
-    return Result;
-}
-
-static inline bool
-NarStringCopy(NarUTF8 *Destination, NarUTF8 Source){
-    if(Destination->Cap >= Source.Len){
-        memcpy(Destination->Str, Source.Str, Source.Len);
-        Destination->Len = Source.Len;
-        Destination->Str[Destination->Len] = 0;
-        ASSERT(Destination->Str[Destination->Len] == 0); 
-        return true;
-    }
-    return false;
-}
-
-
-static inline bool
-NarStringConcatenate(NarUTF8 *Destination, NarUTF8 Append){
-    
-    // capacity with 0 means its immutable.
-    if(Destination->Cap == 0){
-        return false;
-    }
-    
-    ASSERT(Destination->Cap);
-    
-    ASSERT(Destination->Cap >= Destination->Len + Append.Len);
-    if(Destination->Cap < Destination->Len + Append.Len){
-        return false;
-    }
-    
-    for(size_t i = 0; 
-        i<Append.Len; 
-        i++)
-    {
-        Destination->Str[i + Destination->Len] = Append.Str[i];
-    }
-    Destination->Len += Append.Len;
-    Destination->Str[Destination->Len] = 0;// null termination
-    return true;
-}
-
-static inline NarUTF8
-NarUTF8Init(void *Memory, uint32_t Len){
-    NarUTF8 Result;
-    Result.Str = (uint8_t*)Memory;
-    Result.Len = 0;
-    Result.Cap = Len;
-    return Result;
-}
-
-inline NarUTF8
-NarGetRootPath(NarUTF8 FileName, nar_arena *Arena);
-
 
 
 union nar_record{
@@ -205,16 +133,39 @@ union nar_record{
 template<typename DATA_TYPE>
 struct data_array {
     DATA_TYPE* Data;
-    UINT Count;
-    UINT ReserveCount = 0;
+    uint32_t Count;
+    uint32_t ReserveCount = 0;
     
     inline void Insert(DATA_TYPE Val) {
-        Data = (DATA_TYPE*)realloc(Data, sizeof(Val) * ((ULONGLONG)Count + 1));
+        Data = (DATA_TYPE*)realloc(Data, sizeof(Val) * ((size_t)Count + 1));
         memcpy(&Data[Count], &Val, sizeof(DATA_TYPE));
         Count++;
     }
     
 };
+
+template<typename T> inline void
+FreeDataArray(data_array<T>* V) {
+    if (V != NULL) {
+        free(V->Data);
+        V->Data = 0;
+        V->Count = 0;
+    }
+}
+
+template<typename T>
+inline void Append(data_array<T> *Destination, data_array<T> App) {
+    
+    if (App.Data == 0) {
+        return;
+    }
+    
+    uint64_t NewSize = sizeof(T)* ((uint64_t)App.Count + (uint64_t)Destination->Count);
+    Destination->Data = (T*)realloc(Destination->Data, NewSize);
+    memcpy(&Destination->Data[Destination->Count], App.Data, App.Count * sizeof(T));
+    Destination->Count += App.Count;
+    
+}
 
 
 struct RegionCoupleIter{
@@ -599,11 +550,11 @@ GenerateBinaryFileName(nar_backup_id ID, int Version, StrType &Res){
 //mmap(0, length, PROT_READ|PROT_WRITE, MAP_ANON, 0, 0)
 
 
-inline bool
+bool
 NarIsRegionIterValid(RegionCoupleIter Iter);
 
 
-inline bool
+bool
 __NarIsRegionIterExpired(RegionCoupleIter Iter);
 
 
@@ -618,25 +569,25 @@ NarIterateRegionCoupleUntilCollision(RegionCoupleIter *Iter);
 inline void
 NarNextExcludeIter(RegionCoupleIter *Iter);
 
-inline RegionCoupleIter
+RegionCoupleIter
 NarStartExcludeIter(const nar_record *Base, const nar_record *Ex, size_t BaseN, size_t ExN);
 
 
-inline RegionCoupleIter
+RegionCoupleIter
 NarStartIntersectionIter(const  nar_record *R1, const nar_record *R2, size_t R1Len, size_t R2Len);
 
-inline void
+void
 NarNextIntersectionIter(RegionCoupleIter *Iter);
 
 
-inline void
+void
 NarGetPreviousBackupInfo(int32_t Version, BackupType Type, int32_t *OutVersion);
 
-inline void
+void
 NarConvertBackupMetadataToUncompressed(NarUTF8 Metadata);
 
 
-inline size_t
+size_t
 NarLCNToVCN(nar_record *LCN, size_t LCNCount, size_t Offset);
 
 
@@ -644,19 +595,29 @@ NarLCNToVCN(nar_record *LCN, size_t LCNCount, size_t Offset);
     ASSUMES RECORDS ARE SORTED
 THIS FUNCTION REALLOCATES MEMORY VIA realloc(), DO NOT PUT MEMORY OTHER THAN ALLOCATED BY MALLOC, OTHERWISE IT WILL CRASH THE PROGRAM
 */
-inline void
+void
 MergeRegions(data_array<nar_record>* R);
 
-inline void
+void
 MergeRegionsWithoutRealloc(data_array<nar_record>* R);
 
 
-inline bool
+bool
 IsRegionsCollide(nar_record R1, nar_record R2);
 
 
 // input MUST be sorted
 // Finds point Offset in relative to Records structure, useful when converting absolue volume offsets to our binary backup data offsets.
 // returns NAR_POINT_OFFSET_FAILED if fails to find given offset, 
-inline point_offset 
+point_offset 
 FindPointOffsetInRecords(nar_record *Records, uint64_t Len, int64_t Offset);
+
+
+int32_t
+CompareNarRecords(const void* v1, const void* v2);
+
+
+static inline int8_t
+IsNumeric(char val) {
+    return val >= '0' && val <= '9';
+}

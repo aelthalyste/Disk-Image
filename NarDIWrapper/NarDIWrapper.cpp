@@ -11,14 +11,17 @@
 
 
 #include "NarDIWrapper.h"
-//#include "mspyUser.cpp"
+#include "mspyLog.h"
 
-#include "nar_win32.cpp"
+#if 0
+#include "nar.cpp"
 #include "platform_io.cpp"
 #include "file_explorer.cpp"
-#include "backup.cpp"
 #include "restore.cpp"
-#include "nar.cpp"
+#include "backup.cpp"
+#include "narstring.cpp"
+#endif
+
 using namespace System;
 
 #define CONVERT_TYPES(_in,_out) _out = msclr::interop::marshal_as<decltype(_out)>(_in);
@@ -55,7 +58,7 @@ namespace NarDIWrapper {
         return (FE->MetadataView.Data != 0);
     }
     
-
+    
     
     List<CSNarFileEntry^>^ CSNarFileExplorer::CW_GetFilesInCurrentDirectory(){
         
@@ -93,22 +96,22 @@ namespace NarDIWrapper {
         CSNarFileExportStream^ Result = gcnew CSNarFileExportStream(this, Target);
         return Result;
     }
-
+    
     CSNarFileExportStream^ CSNarFileExplorer::CW_DEBUG_SetupFileRestore(int FileID) {
         file_explorer_file* File = FEFindFileWithID(FE, FileID);
         CSNarFileEntry^ Entry = gcnew CSNarFileEntry(File);
         return gcnew CSNarFileExportStream(this, Entry);
     }
-
+    
     System::String^ CSNarFileExplorer::CW_GetCurrentDirectoryString() {
         wchar_t *WSTR = FEGetFileFullPath(FE, __CurrentDir);
         return gcnew System::String(WSTR);
     }
     
-
-
-
-
+    
+    
+    
+    
     CSNarFileExportStream::CSNarFileExportStream(CSNarFileExplorer^ FileExplorer, CSNarFileEntry^ Target) {
         MemorySize = Megabyte(40);
         Memory = VirtualAlloc(0, MemorySize, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
@@ -123,14 +126,14 @@ namespace NarDIWrapper {
                 VirtualFree(Memory, MemorySize, MEM_RELEASE);
                 Memory = 0;
             }
-
+            
         }
     }
-
+    
     CSNarFileExportStream::~CSNarFileExportStream() {
         FreeStreamResources();
     }
-
+    
     bool CSNarFileExportStream::IsInit() {
         return (Memory != 0);
     }
@@ -145,7 +148,7 @@ namespace NarDIWrapper {
         }
         return false;
     }
-
+    
     void CSNarFileExportStream::FreeStreamResources() {
         if (Memory) {
             NarFreeFileRestoreCtx(Ctx);
@@ -154,9 +157,9 @@ namespace NarDIWrapper {
             Memory = 0;
         }
     }
-
-
-
+    
+    
+    
     
     DiskTracker::DiskTracker() {
         

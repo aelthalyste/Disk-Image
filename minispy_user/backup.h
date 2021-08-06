@@ -1,26 +1,122 @@
 /* date = July 15th 2021 0:12 pm */
 #pragma once
 
+#include "narstring.h"
 #include "precompiled.h"
-#include "mspyLog.h"
-#include "strsafe.h"
+#include "compression.h"
 #include "nar_win32.h"
-#include "performance.h"
-#include "nar.h"
 
 
+
+#define MINISPY_NAME  L"MiniSpy"
+
+
+struct volume_backup_inf;
+
+
+struct DotNetStreamInf {
+    int32_t ClusterSize; //Size of clusters, requester has to call readstream with multiples of this size
+    int32_t ClusterCount; //In clusters
+    std::wstring FileName;
+    std::wstring MetadataFileName;
+};
+
+
+
+
+#if _MANAGED
+public
+#endif
+
+enum class BackupStream_Errors: int{
+    Error_NoError,
+    Error_Read,
+    Error_SetFP,
+    Error_SizeOvershoot,
+    Error_Compression,
+    Error_Count
+};
+
+
+struct stream {
+    
+    data_array<nar_record> Records;
+    INT32 RecIndex;
+    INT32 ClusterIndex;
+    HANDLE Handle; //Used for streaming data to C#
+    
+    
+    BackupStream_Errors Error;
+    
+    const char* GetErrorDescription(){
+        
+        static const struct {
+            BackupStream_Errors val;
+            const char* desc;
+        }
+        Table[] = {
+            {
+                BackupStream_Errors::Error_NoError,
+                "No error occured during stream\n"
+            },
+            {
+                BackupStream_Errors::Error_Read,
+                "Error occured while reading shadow copy\n"
+            },
+            {
+                BackupStream_Errors::Error_SetFP,
+                "Error occured while setting volume file pointer\n"
+            },
+            {
+                BackupStream_Errors::Error_SizeOvershoot,
+                "Logical cluster exceeds volume size\n"
+            },
+            {
+                BackupStream_Errors::Error_Compression,
+                "Internal compression error occured\n"
+            },
+            {
+                BackupStream_Errors::Error_Count,
+                "Error_Count is not an error. This is placeholder\n"
+            }
+        };
+        
+        const int TableElCount  =sizeof(Table)/sizeof(Table[0]);
+        static_assert(TableElCount - 1 == (int)BackupStream_Errors::Error_Count, "There must be same number of descriptions as error count\n");
+        
+        for(size_t i =0; i<TableElCount; i++){
+            if(Table[i].val == this->Error){
+                return Table[i].desc;
+            }
+        }
+        
+        return "Couldn't find error code in table, you must not be able to see this message\n";
+    }
+    
+    
+    // If compression enabled, this value is equal to uncompressed size of the resultant compression job
+    // otherwise it's equal to readstream's return value
+    uint32_t BytesProcessed;
+    
+    bool ShouldCompress;
+    void *CompressionBuffer;
+    size_t BufferSize;
+    ZSTD_CCtx* CCtx;
+    
+    
+};
 
 struct volume_backup_inf {
     
     wchar_t Letter;
-    BOOLEAN IsOSVolume;
-    BOOLEAN INVALIDATEDENTRY; // If this flag is set, this entry is unusable. accessing its element wont give meaningful information to caller.
+    int32_t IsOSVolume;
+    int32_t INVALIDATEDENTRY; // If this flag is set, this entry is unusable. accessing its element wont give meaningful information to caller.
     
     BackupType BT = BackupType::Inc;
     
     
     int32_t Version;
-    DWORD ClusterSize;    
+    int32_t ClusterSize;    
     
     nar_backup_id BackupID;
     
@@ -35,7 +131,7 @@ struct volume_backup_inf {
     // this value + increcordcount*sizeof(nar_record) is PossibleNewBackupRegionOffsetMark
     
     
-    INT64 PossibleNewBackupRegionOffsetMark;
+    int64_t PossibleNewBackupRegionOffsetMark;
     
     /*
     Valid after diff-incremental setup. Stores all changes occured on disk, starting from latest incremental, or beginning if request was diff
@@ -46,15 +142,15 @@ struct volume_backup_inf {
     
     union {
         struct{
-            INT64 BackupStartOffset;
+            int64_t BackupStartOffset;
         }DiffLogMark;
         
         struct{
-            INT64 LastBackupRegionOffset;
+            int64_t LastBackupRegionOffset;
         }IncLogMark;
     };
     
-    DWORD VolumeTotalClusterCount;
+    int32_t VolumeTotalClusterCount;
     
     stream Stream;
     
@@ -69,6 +165,13 @@ struct volume_backup_inf {
 };
 
 
+struct LOG_CONTEXT {
+    void* Port;
+    data_array<volume_backup_inf> Volumes;
+};
+typedef LOG_CONTEXT* PLOG_CONTEXT;
+
+
 
 static inline bool
 CheckStreamCompletedSuccessfully(volume_backup_inf *V){
@@ -80,15 +183,11 @@ CheckStreamCompletedSuccessfully(volume_backup_inf *V){
     }
 }
 
-BOOLEAN
+int32_t
 ConnectDriver(PLOG_CONTEXT Ctx);
 
 
-BOOLEAN
-SetupVSS();
-
-
-BOOLEAN
+int32_t
 SetIncRecords(HANDLE CommPort, volume_backup_inf* V);
 
 
@@ -97,12 +196,12 @@ ULONGLONG
 NarGetLogFileSizeFromKernel(HANDLE CommPort, char Letter);
 
 
-BOOLEAN
+int32_t
 SetDiffRecords(HANDLE CommPort ,volume_backup_inf* V);
 
 
 
-BOOLEAN
+int32_t
 SetFullRecords(volume_backup_inf* V);
 
 
@@ -118,13 +217,13 @@ GetVolumeRegionsFromBitmap(HANDLE VolumeHandle, uint32_t* OutRecordCount);
 
 /*
 */
-BOOLEAN
+int32_t
 SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, DotNetStreamInf* SI, bool ShouldCompress);
 
 
 
-BOOLEAN
-TerminateBackup(volume_backup_inf* V, BOOLEAN Succeeded);
+int32_t
+TerminateBackup(volume_backup_inf* V, int32_t Succeeded);
 
 
 
@@ -140,30 +239,30 @@ ReadStream(volume_backup_inf* VolInf, void* CallerBuffer, unsigned int CallerBuf
 Attachs filter
 SetActive: default value is TRUE
 */
-inline BOOLEAN
+inline int32_t
 AttachVolume(char Letter);
 
 
-BOOLEAN
+int32_t
 DetachVolume(volume_backup_inf* VolInf);
 
 
-BOOLEAN
-RemoveVolumeFromTrack(LOG_CONTEXT *C, wchar_t L);
+int32_t
+RemoveVolumeFromTrack(PLOG_CONTEXT C, wchar_t L);
 
 
 
 /*
  Just removes volume entry from kernel memory, does not unattaches it.
 */
-inline BOOLEAN
+inline int32_t
 NarRemoveVolumeFromKernelList(wchar_t Letter, HANDLE CommPort);
 
 
 
 
 
-BOOLEAN
+int32_t
 GetVolumesOnTrack(PLOG_CONTEXT C, volume_information* Out, unsigned int BufferSize, int* OutCount);
 
 INT32
@@ -173,7 +272,7 @@ GetVolumeID(PLOG_CONTEXT C, wchar_t Letter);
 This operation just adds volume to list, does not starts to filter it,
 until it's fullbackup is requested. After fullbackup, call AttachVolume to start filtering
 */
-BOOLEAN
+int32_t
 AddVolumeToTrack(PLOG_CONTEXT Context, wchar_t Letter, BackupType Type);
 
 
@@ -185,29 +284,26 @@ VSS_ID
 GetShadowPath(std::wstring Drive, CComPtr<IVssBackupComponents>& ptr, wchar_t* OutShadowPath, size_t MaxOutCh);
 
 
-inline BOOLEAN
+inline int32_t
 InitVolumeInf(volume_backup_inf* VolInf, wchar_t Letter, BackupType Type);
 
 
-BOOLEAN
+int32_t
 CopyData(HANDLE S, HANDLE D, ULONGLONG Len);
 
 
-BOOLEAN
+int32_t
 SaveMetadata(char Letter, int Version, int ClusterSize, BackupType BT, data_array<nar_record> BackupRegions, nar_backup_id BackupID, bool IsCompressed, HANDLE VSSHandle, nar_record *, size_t);
 
 
 
-inline int
-NarGetVolumeDiskType(char Letter);
-
-inline unsigned char
+unsigned char
 NarGetVolumeDiskID(char Letter);
 
 
 
 
-inline BOOLEAN
+inline int32_t
 NarIsOSVolume(char Letter) {
     char windir[256];
     GetWindowsDirectoryA(windir, 256);
@@ -220,116 +316,7 @@ NarIsOSVolume(char Letter) {
 Its not best way to initialize a struct
 */
 LOG_CONTEXT*
-NarLoadBootState() {
-    
-    printf("Entered NarLoadBootState\n");
-    LOG_CONTEXT* Result;
-    BOOLEAN bResult = FALSE;
-    Result = new LOG_CONTEXT;
-    memset(Result, 0, sizeof(LOG_CONTEXT));
-    
-    Result->Port = INVALID_HANDLE_VALUE;
-    Result->Volumes = { 0,0 };
-    
-    char FileNameBuffer[64];
-    if (GetWindowsDirectoryA(FileNameBuffer, 64)) {
-        
-        strcat(FileNameBuffer, "\\");
-        strcat(FileNameBuffer, NAR_BOOTFILE_NAME);
-        HANDLE File = CreateFileA(FileNameBuffer, GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
-        if (File != INVALID_HANDLE_VALUE) {
-            
-            // Check aligment, not a great way to check integrity of file
-            DWORD Size = GetFileSize(File, 0);
-            if (Size > sizeof(nar_boot_track_data) * NAR_MAX_VOLUME_COUNT) {
-                printf("Bootfile too large, might be corrupted\n");
-            }
-            else if (Size % sizeof(nar_boot_track_data) != 0) {
-                printf("Bootfile is not aligned\n");
-            }
-            else {
-                
-                printf("Found previous backup files, will initialize CONTEXT accordingly\n");
-                
-                DWORD BR = 0;
-                nar_boot_track_data* BootTrackData = (nar_boot_track_data*)malloc(Size);
-                if (BootTrackData != NULL) {
-                    
-                    if (ReadFile(File, BootTrackData, Size, &BR, 0) && BR == Size) {
-                        
-                        volume_backup_inf VolInf;
-                        memset(&VolInf, 0, sizeof(VolInf));
-                        int BootTrackDataCount = (int)(Size / (DWORD)sizeof(BootTrackData[0]));
-                        
-                        for (int i = 0; i < BootTrackDataCount; i++) {
-                            
-                            bResult = InitVolumeInf(&VolInf, (char)BootTrackData[i].Letter, (BackupType)BootTrackData[i].BackupType);
-                            
-                            if (!!bResult) {
-                                
-                                VolInf.BackupID = {0};
-                                VolInf.BackupID = BootTrackData[i].BackupID;
-                                
-                                VolInf.Version  = BootTrackData[i].Version;
-                                
-                                // NOTE(Batuhan): Diff backups only need to know file pointer position they started backing up. For single-tracking system we use now, that's 0
-                                if((BackupType)BootTrackData[i].BackupType == BackupType::Diff){
-                                    // NOTE(Batuhan): We don't support different volume track units yet, 
-                                    // for multi-tracked system this value may be different for each unit
-                                    VolInf.DiffLogMark.BackupStartOffset = 0;
-                                }
-                                else{
-                                    // Incremental backups needs to know where they left off
-                                    VolInf.IncLogMark.LastBackupRegionOffset = BootTrackData[i].LastBackupOffset;
-                                }
-                                
-                                Result->Volumes.Insert(VolInf);
-                                
-                                printf("BOOTFILELOADER : Added volume %c, version %u, lko %I64u to track list.", VolInf.Letter, VolInf.Version, VolInf.IncLogMark.LastBackupRegionOffset);
-                                
-                            }
-                            else{
-                                printf("Couldnt initialize volume backup inf for volume %c\n", BootTrackData[i].Letter);
-                            }
-                            
-                        }
-                        
-                    }
-                    else {
-                        printf("Couldnt read boot file, read %i, file size was %i\n", BR, Size);
-                        DisplayError(GetLastError());
-                    }
-                    
-                }
-                else {
-                    printf("Couldnt allocate memory for nar_boot_track_data \n");
-                    BootTrackData = 0;
-                }
-                
-                free(BootTrackData);
-                
-            }
-            
-        }
-        else {
-            printf("File %s doesnt exist\n", FileNameBuffer);
-            // File doesnt exist
-        }
-        
-        CloseHandle(File);
-        
-    }
-    else {
-        printf("Couldnt get windows directory, error %i\n", GetLastError());
-    }
-    
-    if (!Result) {
-        delete Result;
-        Result = NULL;
-    }
-    
-    return Result;
-}
+NarLoadBootState();
 
 
 
@@ -344,78 +331,16 @@ NarLoadBootState() {
         - LastBackupRegionOffset (user)
 */
 
-BOOLEAN
-NarSaveBootState(LOG_CONTEXT* CTX) {
-    
-    if (CTX == NULL || CTX->Volumes.Data == NULL){
-        printf("Either CTX or its volume data was NULL, terminating NarSaveBootState\n");
-        return FALSE;
-    }
-    
-    BOOLEAN Result = TRUE;
-    nar_boot_track_data Pack;
-    
-    char FileNameBuffer[64];
-    if (GetWindowsDirectoryA(FileNameBuffer, 64)) {
-        strcat(FileNameBuffer, "\\");
-        strcat(FileNameBuffer, NAR_BOOTFILE_NAME);
-        
-        HANDLE File = CreateFileA(FileNameBuffer, GENERIC_WRITE, 0, 0, CREATE_ALWAYS, 0, 0);
-        if (File != INVALID_HANDLE_VALUE) {
-            printf("Created file to write boot information\n");
-            for (unsigned int i = 0; i < CTX->Volumes.Count; i++) {
-                Pack.Letter = 0;
-                Pack.Version = -2;
-                
-                if (!CTX->Volumes.Data[i].INVALIDATEDENTRY) {
-                    
-                    Pack.Letter = (char)CTX->Volumes.Data[i].Letter;
-                    Pack.Version = (char)CTX->Volumes.Data[i].Version; // for testing purposes, 128 version looks like fine
-                    Pack.BackupType = (char)CTX->Volumes.Data[i].BT;
-                    Pack.LastBackupOffset = (uint64_t)CTX->Volumes.Data[i].IncLogMark.LastBackupRegionOffset;
-                    
-                    DWORD BR = 0;
-                    
-                    if (WriteFile(File, &Pack, sizeof(Pack), &BR, 0) && BR == sizeof(Pack)) {
-                        printf("Successfully saved volume [%c]'s [%i]th version information to boot file\n", Pack.Letter, Pack.Version);
-                    }
-                    else {
-                        printf("Coulndt save volume [%c]'s [%i]th version information to boot file\n", Pack.Letter, Pack.Version);
-                        Result = FALSE;
-                    }
-                    
-                }
-                else{
-                    continue;    
-                }
-                
-                
-            }
-            
-            
-        }
-        else {
-            printf("Couldnt open file %s, can not save boot information\n", FileNameBuffer);
-            Result = FALSE;
-        }
-        
-        CloseHandle(File);
-        
-    }
-    
-    
-    return Result;
-    
-}
+int32_t
+NarSaveBootState(LOG_CONTEXT* CTX);
 
 
 data_array<volume_information>
 NarGetVolumes();
 
 
-inline BOOLEAN
+int32_t
 NarEditTaskNameAndDescription(const wchar_t* FileName, const wchar_t* TaskName, const wchar_t* TaskDescription);
-
 
 
 
@@ -423,16 +348,12 @@ inline nar_backup_id
 NarGenerateBackupID(char Letter);
 
 
-BOOLEAN
+int32_t
 NarGetBackupsInDirectory(const wchar_t* Directory, backup_metadata* B, int BufferSize, int* FoundCount);
 
 
-inline BOOLEAN
+inline int32_t
 NarFileNameExtensionCheck(const wchar_t *Path, const wchar_t *Extension);
-
-VOID
-DisplayError(DWORD Code);
-
 
 inline void
 MergeRegions(data_array<nar_record>* R);
@@ -448,3 +369,8 @@ IsRegionsCollide(nar_record R1, nar_record R2);
 
 int
 CompareNarRecords(const void* v1, const void* v2);
+
+
+inline void
+NarGetProductName(char* OutName);
+

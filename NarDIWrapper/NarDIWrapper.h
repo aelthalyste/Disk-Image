@@ -2,12 +2,14 @@
 
 #include <msclr/marshal.h>
 
-#include "nar.h"
-#include "mspyLog.h"
-#include "restore.h"
-#include "memory.h"
-#include "backup.h"
+
 #include "nar_win32.h"
+#include "platform_io.h"
+#include "file_explorer.h"
+#include "backup.h"
+#include "restore.h"
+#include "nar.h"
+
 
 using namespace System;
 using namespace System::Text;
@@ -143,7 +145,7 @@ namespace NarDIWrapper {
             Minute = pMinute;
             Second = pSecond;
         }
-
+        
         CSNarFileTime(SYSTEMTIME Time) {
             Year    = Time.wYear;
             Month   = Time.wMonth;
@@ -232,7 +234,7 @@ namespace NarDIWrapper {
         CSNarFileEntry() {
             
         }
-
+        
         CSNarFileEntry(file_explorer_file *File) {
             IsDirectory = File->IsDirectory;
             Size        = File->Size;
@@ -265,20 +267,20 @@ namespace NarDIWrapper {
     
     
     ref class CSNarFileExplorer;
-
+    
     public ref class CSNarFileExportStream {
-    private:
+        private:
         file_restore_ctx* Ctx;
         void* Memory;
         size_t MemorySize;
-
-
-    public:
+        
+        
+        public:
         
         
         CSNarFileExportStream(CSNarFileExplorer^ FileExplorer, CSNarFileEntry^ Target);
         ~CSNarFileExportStream();        
-
+        
         /*
             Returns false is stream terminates. Caller must check Error enum to determine if restore completed successfully.
             If it returns true, caller must set it's output stream's output position to TargetWriteOffset then must write exactly as 
@@ -288,35 +290,35 @@ namespace NarDIWrapper {
         
         void FreeStreamResources();
         
-
+        
         bool IsInit();
-
+        
         size_t TargetWriteOffset;
         size_t TargetWriteSize;
         
         size_t TargetFileSize;
-
+        
         FileRestore_Errors Error;
-
+        
     };
-
+    
     public ref class CSNarFileExplorer {
         private:
-            
+        
         file_explorer_file **__DirStack;
         file_explorer_file *__CurrentDir;
         uint32_t __DirStackMax;
         uint32_t __DSI;
         void* RestoreMemory;
         size_t RestoreMemorySize;
-
+        
         nar_arena *Arena;
         
         public:
-
+        
         file_explorer* FE;
-
-
+        
+        
         ~CSNarFileExplorer();
         CSNarFileExplorer(System::String^ MetadataFullPath);
         
@@ -339,10 +341,10 @@ namespace NarDIWrapper {
         
         // Initiates export stream for given Target file entry.
         CSNarFileExportStream^ CW_SetupFileRestore(CSNarFileEntry^ Target);
-
+        
         // DEBUG function for specific usage areas.
         CSNarFileExportStream^ CW_DEBUG_SetupFileRestore(int FileID);
-
+        
         // Returns the current directory string
         System::String^ CW_GetCurrentDirectoryString();
         
@@ -498,6 +500,7 @@ namespace NarDIWrapper {
                     NarRemoveLetter(BootLetter);
                 }
                 VirtualFree(Mem, MemLen, MEM_RELEASE);
+                printf("Freed restore stream memory and handles.(Target volume %c)\n", TargetLetter);
             }
             Stream = 0;
             Mem = 0;

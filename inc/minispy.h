@@ -67,7 +67,7 @@ struct nar_log_thread_params {
     void* Data;
     size_t FileSize;
     long InternalError; // NTSTATUS = LONG
-    INT DataLen;
+    int DataLen;
     int FileID;
     int ShouldFlush;
     int ShouldQueryFileSize;
@@ -99,7 +99,7 @@ NarWriteLogsToFile(nar_log_thread_params* tp, PETHREAD* OutTObject);
 typedef struct nar_backup_id nar_backup_id;
 
 typedef struct _nar_boot_track_data{
-    UINT64 LastBackupOffset;
+    uint64_t LastBackupOffset;
     char Letter;
     char Version;
     char BackupType;

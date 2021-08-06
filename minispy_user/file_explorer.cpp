@@ -1,8 +1,7 @@
-//#include "precompiled.h"
-
-#include "memory.h"
+#include "precompiled.h"
 #include "file_explorer.h"
-#include "platform_io.h"
+#include <string.h>
+#include <stdint.h>
 #include "performance.h"
 #include "nar_win32.h"
 
@@ -29,7 +28,7 @@ ProfileAllocatorAligned(linear_allocator *a, size_t n, size_t al){
 #define LinearAllocateAligned(Allocator, Size, Align) ProfileAllocatorAligned(Allocator, Size, Align)
 #endif
 
-inline BOOL
+inline int
 CompareWCharStrings(const void *v1, const void *v2){
     wchar_t *str1 = *(wchar_t**)v1;
     wchar_t *str2 = *(wchar_t**)v2;
@@ -1692,7 +1691,7 @@ NarFreeFileRestoreSource(file_restore_source *Src){
 }
 
 
-inline file_restore_source
+file_restore_source
 NarInitFileRestoreSource(NarUTF8 MetadataName, NarUTF8 BinaryName){
     file_restore_source Result = {};
     
@@ -1713,7 +1712,7 @@ NarInitFileRestoreSource(NarUTF8 MetadataName, NarUTF8 BinaryName){
 }
 
 
-inline file_restore_source 
+file_restore_source 
 NarInitFileRestoreSource(NarUTF8 RootDir, nar_backup_id ID, int32_t Version, nar_arena *StringArena){
     
     bool StringResult = false;
@@ -1765,7 +1764,7 @@ NarInitFileRestoreSource(NarUTF8 RootDir, nar_backup_id ID, int32_t Version, nar
     return Result;
 }
 
-inline file_restore_ctx
+file_restore_ctx
 NarInitFileRestoreCtx(file_disk_layout Layout, NarUTF8 RootDir, nar_backup_id ID, int Version, nar_arena *Arena){
     
     file_restore_ctx Result = {};
@@ -1801,7 +1800,7 @@ NarInitFileRestoreCtx(file_disk_layout Layout, NarUTF8 RootDir, nar_backup_id ID
     return Result;
 }
 
-inline file_restore_ctx
+file_restore_ctx
 NarInitFileRestoreCtx(file_explorer *FE, file_explorer_file* Target, nar_arena *Arena){
     file_disk_layout Layout = NarFindFileLayout(FE, Target, Arena);
     file_restore_ctx Result = {};
@@ -1809,13 +1808,13 @@ NarInitFileRestoreCtx(file_explorer *FE, file_explorer_file* Target, nar_arena *
     return Result;
 }
 
-inline void
+void
 NarFreeFileRestoreCtx(file_restore_ctx *Ctx){
     NarFreeFileRestoreSource(&Ctx->Source);
 }
 
 
-inline file_restore_advance_result
+file_restore_advance_result
 NarAdvanceFileRestore(file_restore_ctx *ctx, void* Out, size_t OutSize){
     
     // FileRestore_Errors Result = FileRestore_Errors:Error_NoError;
@@ -1940,7 +1939,6 @@ NarAdvanceFileRestore(file_restore_ctx *ctx, void* Out, size_t OutSize){
     
     return Result; 
 }
-
 
 
 

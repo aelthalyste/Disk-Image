@@ -1,8 +1,10 @@
-#include "performance.h"
+#include "precompiled.h"
 #include "nar_win32.h"
+#include "performance.h"
 #include "compression.h"
+#include "narstring.h"
 
-inline BOOLEAN
+BOOLEAN
 NarRemoveLetter(char Letter){
     char Buffer[128];
     
@@ -26,7 +28,7 @@ NarRemoveLetter(char Letter){
 
 
 
-inline BOOLEAN
+BOOLEAN
 NarFormatVolume(char Letter) {
     
     char Buffer[2096];
@@ -51,7 +53,7 @@ NarFormatVolume(char Letter) {
 
 
 
-inline void
+void
 NarRepairBoot(char OSVolumeLetter, char BootPartitionLetter) {
     char Buffer[128];
     snprintf(Buffer, sizeof(Buffer), 
@@ -163,7 +165,7 @@ NarGetVolumeUsedSize(char Letter){
 
 
 
-inline BOOLEAN
+BOOLEAN
 NarCreateCleanGPTBootablePartition(int DiskID, int VolumeSizeMB, int EFISizeMB, int RecoverySizeMB, char VolumeLetter, char BootVolumeLetter) {
     
     char Buffer[2096];
@@ -219,7 +221,7 @@ NarCreateCleanGPTBootablePartition(int DiskID, int VolumeSizeMB, int EFISizeMB, 
     
 }
 
-inline BOOLEAN
+BOOLEAN
 NarCreateCleanGPTPartition(int DiskID, int VolumeSizeMB, char Letter) {
     char Buffer[2096];
     memset(Buffer, 0, 2096);
@@ -230,7 +232,6 @@ NarCreateCleanGPTPartition(int DiskID, int VolumeSizeMB, char Letter) {
         printf("Not enough space to create partition\n");
         return FALSE;
     }
-    
     
     snprintf(Buffer, sizeof(Buffer),
              ""
@@ -284,7 +285,7 @@ NarCreateCleanMBRPartition(int DiskID, char VolumeLetter, int VolumeSize) {
 }
 
 
-inline BOOLEAN
+BOOLEAN
 NarCreateCleanMBRBootPartition(int DiskID, char VolumeLetter, int VolumeSizeMB, int SystemPartitionSizeMB, int RecoveryPartitionSizeMB,
                                char BootPartitionLetter) {
     
@@ -365,7 +366,7 @@ NarGetVolumeGUIDKernelCompatible(wchar_t Letter, wchar_t *VolumeGUID) {
 }
 
 
-inline unsigned char
+unsigned char
 NarGetVolumeDiskID(char Letter) {
     
     wchar_t VolPath[512];
@@ -404,7 +405,6 @@ NarGetVolumeDiskID(char Letter) {
     }
     else{
         printf("Couldnt get kernel compatible volume GUID\n");
-        DisplayError(GetLastError());
     }
     
     VirtualFree(Ext, 0, MEM_RELEASE);
@@ -420,7 +420,7 @@ Returns:
 'M'BR
 'G'PT
 */
-inline int
+int
 NarGetVolumeDiskType(char Letter) {
     char VolPath[512];
     char Vol[] = "!:\\";
@@ -463,7 +463,6 @@ NarGetVolumeDiskType(char Letter) {
                 }
                 else {
                     printf("DeviceIOControl GET_DRIVE_LAYOUT_EX failed\n");
-                    DisplayError(GetLastError());
                 }
                 
             }
@@ -490,7 +489,7 @@ NarGetVolumeDiskType(char Letter) {
 /*
 Expects Letter to be uppercase
 */
-inline BOOLEAN
+BOOLEAN
 NarIsVolumeAvailable(char Letter){
     DWORD Drives = GetLogicalDrives();
     return !(Drives & (1 << (Letter - 'A')));
@@ -501,7 +500,7 @@ NarIsVolumeAvailable(char Letter){
 /*
     Returns first available volume letter that is not used by system
 */
-inline char
+char
 NarGetAvailableVolumeLetter() {
     
     DWORD Drives = GetLogicalDrives();
@@ -609,7 +608,7 @@ Unlike generatemetadata, binary functions, this one generates absolute path of t
 under windows folder
 C:\Windows\Log....
 */
-inline std::wstring
+std::wstring
 GenerateLogFilePath(char Letter) {
     wchar_t NameTemp[]= L"NAR_LOG_FILE__.nlfx";
     NameTemp[13] = (wchar_t)Letter;
@@ -623,7 +622,7 @@ GenerateLogFilePath(char Letter) {
 
 #pragma warning(push)
 #pragma warning(disable:4477)
-inline void
+void
 StrToGUID(const char* guid, GUID* G) {
     if (!G) return;
     sscanf(guid, "{%8X-%4hX-%4hX-%2hX%2hX-%2hX%2hX%2hX%2hX%2hX%2hX}", &G->Data1, &G->Data2, &G->Data3, &G->Data4[0], &G->Data4[1], &G->Data4[2], &G->Data4[3], &G->Data4[4], &G->Data4[5], &G->Data4[6], &G->Data4[7]);
@@ -632,7 +631,7 @@ StrToGUID(const char* guid, GUID* G) {
 
 
 
-ULONGLONG
+uint64_t
 NarGetDiskTotalSize(int DiskID) {
     
     ULONGLONG Result = 0;
@@ -672,7 +671,7 @@ NarGetDiskTotalSize(int DiskID) {
 
 
 
-inline wchar_t*
+wchar_t*
 NarUTF8ToWCHAR(NarUTF8 s, nar_arena *Arena){
     wchar_t *Result = 0;
     int ChNeeded = MultiByteToWideChar(CP_UTF8, 0, (LPCCH)s.Str, s.Len, 0, 0);
@@ -692,7 +691,7 @@ NarUTF8ToWCHAR(NarUTF8 s, nar_arena *Arena){
     return Result;
 }
 
-inline NarUTF8
+NarUTF8
 NarWCHARToUTF8(wchar_t *Str, nar_arena *Arena){
     NarUTF8 Result = {};
     size_t StrLen = wcslen(Str);
@@ -704,7 +703,6 @@ NarWCHARToUTF8(wchar_t *Str, nar_arena *Arena){
     memset(Result.Str, 0, Result.Cap);
     
     WideCharToMultiByte(CP_UTF8, 0, Str, StrLen, (LPSTR)Result.Str, Result.Len, NULL, NULL);
-    
     
     return Result;
 }
@@ -893,7 +891,7 @@ NarCreateVSSPipe(uint32_t BufferSize, uint64_t Seed, char *Name, size_t MaxNameC
     
 }
 
-inline process_listen_ctx
+process_listen_ctx
 NarSetupVSSListen(nar_backup_id ID){
     
     process_listen_ctx Result = {};
@@ -951,7 +949,7 @@ NarSetupVSSListen(nar_backup_id ID){
     NarFreeProcessListen(&Result);
 }
 
-inline void
+void
 NarFreeProcessListen(process_listen_ctx *Ctx){
     free(Ctx->ReadBuffer);
     free(Ctx->WriteBuffer);
@@ -963,7 +961,7 @@ NarFreeProcessListen(process_listen_ctx *Ctx){
     return;
 }
 
-inline bool
+bool
 NarGetVSSPath(process_listen_ctx *Ctx, wchar_t *Out){
     
     bool Result = false;
@@ -1001,7 +999,7 @@ NarGetVSSPath(process_listen_ctx *Ctx, wchar_t *Out){
     return Result;
 }
 
-inline void 
+void 
 NarTerminateVSS(process_listen_ctx *Ctx, uint8_t Success){
     
     bool Result = false;
@@ -1022,5 +1020,45 @@ NarTerminateVSS(process_listen_ctx *Ctx, uint8_t Success){
             
         }
     }
+    
+}
+
+
+
+BOOLEAN
+SetupVSS() {
+    /* 
+        NOTE(Batuhan): in managed code we dont need to initialize these stuff. since i am shipping code as textual to wrapper, i can detect clr compilation and switch to correct way to initialize
+        vss stuff
+     */
+    
+    
+    BOOLEAN Return = TRUE;
+    HRESULT hResult = 0;
+    
+    // TODO (Batuhan): Remove that thing if 
+    hResult = CoInitializeEx(NULL, COINIT_MULTITHREADED);
+    if (!SUCCEEDED(hResult)) {
+        printf("Failed CoInitialize function %d\n", hResult);
+        Return = FALSE;
+    }
+    
+    hResult = CoInitializeSecurity(
+                                   NULL,                           //  Allow *all* VSS writers to communicate back!
+                                   -1,                             //  Default COM authentication service
+                                   NULL,                           //  Default COM authorization service
+                                   NULL,                           //  reserved parameter
+                                   RPC_C_AUTHN_LEVEL_PKT_PRIVACY,  //  Strongest COM authentication level
+                                   RPC_C_IMP_LEVEL_IMPERSONATE,    //  Minimal impersonation abilities
+                                   NULL,                           //  Default COM authentication settings
+                                   EOAC_DYNAMIC_CLOAKING,          //  Cloaking
+                                   NULL                            //  Reserved parameter
+                                   );
+    
+    if (!SUCCEEDED(hResult)) {
+        printf("Failed CoInitializeSecurity function %d\n", hResult);
+        Return = FALSE;
+    }
+    return Return;
     
 }

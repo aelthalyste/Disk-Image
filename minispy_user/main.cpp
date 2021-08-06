@@ -33,9 +33,14 @@ _Analysis_mode_(_Analysis_code_type_user_code_)
 #include <strsafe.h>
 #include <stdlib.h>
 #include <cstdio>
-
+#include "restore.h"
 #include "zstd.h"
-#include "nar_build_include.cpp"
+#include "nar_win32.h"
+#include "platform_io.h"
+#include "nar.h"
+#include "file_explorer.h"
+#include "backup.h"
+//#include "nar_build_include.cpp"
 
 #if 0
 inline void* 
@@ -69,50 +74,6 @@ narvirtualalloc(void* m, size_t len, DWORD f1, DWORD f2){
 #define realloc      narrealloc
 #define VirtualAlloc narvirtualalloc
 #endif
-
-
-backup_metadata
-ReadMetadata(nar_backup_id ID, int Version, std::wstring RootDir) {
-    
-    if (RootDir.length() > 0) {
-        if (RootDir[RootDir.length() - 1] != L'\\') {
-            RootDir += L"\\";
-        }
-    }
-    
-    BOOLEAN ErrorOccured = 0;
-    DWORD BytesOperated = 0;
-    std::wstring FileName; 
-    {
-        std::wstring Garbage;
-        GenerateMetadataName(ID, Version, Garbage);
-        FileName = RootDir + Garbage;
-    }
-    
-    backup_metadata BM = { 0 };
-    
-    HANDLE F = CreateFileW(FileName.c_str(), GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, 0, 0);
-    if (F != INVALID_HANDLE_VALUE) {
-        if (ReadFile(F, &BM, sizeof(BM), &BytesOperated, 0) && BytesOperated == sizeof(BM)) {
-            ErrorOccured = FALSE;
-        }
-        else {
-            ErrorOccured = TRUE;
-            printf("Unable to read metadata, read %i bytes instead of %i\n", BytesOperated, (uint32_t)sizeof(BM));
-            memset(&BM, 0, sizeof(BM));
-            memset(&BM.Errors, 1, sizeof(BM.Errors)); // Set all error flags
-        }
-    }
-    else {
-        printf("Unable to open metadata file %S\n", FileName.c_str());
-        memset(&BM, 0, sizeof(BM));
-        memset(&BM.Errors, 1, sizeof(BM.Errors)); // Set all error flags
-    }
-    
-    CloseHandle(F);
-    return BM;
-}
-
 
 
 // NOTE(Batuhan): truncates file F to size TargetSize
@@ -181,41 +142,6 @@ NarEndPerfCounter(){
     NarPerfCounter.WorkCounter = GetClock();
 }
 
-
-inline BOOLEAN
-Test_NarGetRegionIntersection() {
-    
-    BOOLEAN Result = FALSE;
-    
-    nar_record r1[16], r2[16];
-    r1[0] = { 0, 200 };
-    r1[1] = { 300, 200 };
-    r1[2] = { 800, 100 };
-    r1[3] = { 1200, 800 };
-    r1[4] = { 2100, 200 };
-    
-    r2[0] = { 80, 70 };
-    r2[1] = { 250, 100 };
-    r2[2] = { 700, 50 };
-    r2[3] = { 1100, 300 };
-    r2[4] = { 1500, 50 };
-    r2[5] = { 1600, 800 };
-    
-    INT32 found = 0;
-    nar_record* r3 = 0;
-    NarGetRegionIntersection(r1, r2, &r3, 5, 6, &found);
-    for (int i = 0; i < found; i++) {
-        printf("%i\t%i\n", r3[i].StartPos, r3[i].Len);
-    }
-    NarFreeRegionIntersection(r3);
-    
-    for (int i = 0; i < found; i++) {
-        printf("%i\t%i\n", r3[i].StartPos, r3[i].Len);
-    }
-    
-    
-    return Result;
-}
 
 
 
@@ -321,6 +247,8 @@ uint32_t pcg32_random_r(pcg32_random_t* rng)
     return (xorshifted >> rot) | (xorshifted << ((-rot) & 31));
 }
 
+
+#if 0
 int
 TEST_ReadBackupCrossed(wchar_t *cb, wchar_t *cm, wchar_t* db, wchar_t* dm, pcg32_random_t *state){
     
@@ -369,6 +297,7 @@ TEST_ReadBackupCrossed(wchar_t *cb, wchar_t *cm, wchar_t* db, wchar_t* dm, pcg32
     free(Arena.Memory);
     return 0;
 }
+#endif
 
 
 
@@ -499,7 +428,6 @@ TEST_RegionCoupleIter(){
 int
 wmain(int argc, wchar_t* argv[]) {
     //TEST_LCNTOVCN();
-    
 #if 0    
     {
         nar_backup_id ID = {};
@@ -779,7 +707,7 @@ wmain(int argc, wchar_t* argv[]) {
                 }
                 else{
                     // NOTE(Batuhan): couldnt create file to save backup
-                    NAR_BREAK_CODE();
+                    NAR_BREAK;
                     int ret = TerminateBackup(v, NAR_FAILED);
                     ret++;// to inspect ret in debugging
                 }
@@ -788,20 +716,19 @@ wmain(int argc, wchar_t* argv[]) {
                 
             }
             else{
-                NAR_BREAK_CODE();
+                NAR_BREAK;
                 printf("couldnt setup stream\n");
             }
         }
     }
     else{
-        NAR_BREAK_CODE();
+        NAR_BREAK;
     }
     
     return 0;
     
     UNREFERENCED_PARAMETER(argc);
     UNREFERENCED_PARAMETER(argv);
-    
     return 0;
 }
 

@@ -1,6 +1,9 @@
 #pragma once
 
+#include "precompiled.h"
 #include <string>
+#include "nar.h"
+#include "narstring.h"
 
 struct imp_nar_file_view;
 

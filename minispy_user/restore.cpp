@@ -1,7 +1,6 @@
-//#include "precompiled.h"
-
-#include "nar.h"
+#include "precompiled.h"
 #include "restore.h"
+#include "nar.h"
 
 
 const void*

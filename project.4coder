@@ -34,9 +34,9 @@ commands = {
 .save_dirty_files = true,
 .cursor_at_end = true,
 },
-.run = {
-.win = "run.bat",
-.out = "run",
+.wrapper_build = {
+.win = "wrapper_build.bat",
+.out = "wrapper",
 .footer_panel = true,
 .save_dirty_files = false,
 .cursor_at_end = true,
@@ -52,7 +52,7 @@ commands = {
 
 fkey_command = {
 .F1 = "build",
-.F2 = "run",
+.F2 = "wrapper_build",
 .F3 = "build_large",
 };
 

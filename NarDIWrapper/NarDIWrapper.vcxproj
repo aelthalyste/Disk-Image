@@ -93,6 +93,7 @@
     <OutDir>$(SolutionDir)\build\$(ProjectName)\$(Platform)\$(ConfigurationName)\</OutDir>
     <IntDir>$(SolutionDir)\bin\$(ProjectName)\$(Platform)\$(ConfigurationName)\</IntDir>
     <LinkIncremental>false</LinkIncremental>
+    <SourcePath>$(VC_SourcePath);C:\helpme</SourcePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -107,6 +108,7 @@
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <CallingConvention>
       </CallingConvention>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <AdditionalDependencies>FltLib.lib;vssapi.lib;libzstd.lib;libzstd_static.lib</AdditionalDependencies>
@@ -141,6 +143,7 @@
       <LanguageStandard>stdcpp17</LanguageStandard>
       <CallingConvention>
       </CallingConvention>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <AdditionalDependencies>FltLib.lib;vssapi.lib;libzstd_static.lib;libzstd.lib</AdditionalDependencies>
@@ -170,6 +173,14 @@
     <ClInclude Include="Resource.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\minispy_user\backup.cpp" />
+    <ClCompile Include="..\minispy_user\file_explorer.cpp" />
+    <ClCompile Include="..\minispy_user\nar.cpp" />
+    <ClCompile Include="..\minispy_user\narstring.cpp" />
+    <ClCompile Include="..\minispy_user\nar_win32.cpp" />
+    <ClCompile Include="..\minispy_user\platform_io.cpp" />
+    <ClCompile Include="..\minispy_user\process_listener.cpp" />
+    <ClCompile Include="..\minispy_user\restore.cpp" />
     <ClCompile Include="AssemblyInfo.cpp" />
     <ClCompile Include="NarDIWrapper.cpp" />
     <ClCompile Include="pch.cpp">

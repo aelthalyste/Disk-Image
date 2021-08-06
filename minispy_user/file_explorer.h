@@ -10,13 +10,10 @@
 
 #define MIN(a,b) ((a)<(b) ? (a) : (b))
 
-
+#include "platform_io.h"
 #include "nar.h"
 #include "memory.h"
-#include "platform_io.h"
-
-#include <stdint.h>
-#include <windows.h>
+#include "narstring.h"
 
 #define NAR_POSIX                2
 #define NAR_ENTRY_SIZE_OFFSET    8
@@ -379,21 +376,39 @@ SolveAttributeListReferences(const void* MFTStart,
 
 
 
-inline file_restore_ctx
+file_restore_ctx
 NarInitFileRestoreCtx(file_explorer *FE, file_explorer_file *Target, NarUTF8 RootDir, nar_backup_id ID, int Version, nar_arena *Arena);
 
-inline file_restore_ctx
+file_restore_ctx
 NarInitFileRestoreCtx(file_explorer *FE, file_explorer_file* Target, nar_arena *Arena);
 
 
-inline void
+void
 NarFreeFileRestoreCtx(file_restore_ctx *Ctx);
 
 
 
-inline file_restore_advance_result
+file_restore_advance_result
 NarAdvanceFileRestore(file_restore_ctx *ctx, void* Out, size_t OutSize);
 
 
 file_explorer_file*
 FEFindFileWithID(file_explorer* FE, uint32_t ID);
+
+file_explorer_file*
+FENextFileInDir(file_explorer *FE, file_explorer_file *CurrentFile);
+
+
+void
+NarFreeFileExplorer(file_explorer* FileExplorer);
+
+wchar_t*
+FEGetFileFullPath(file_explorer* FE, file_explorer_file* BaseFile);
+
+
+file_restore_source
+NarInitFileRestoreSource(NarUTF8 MetadataName, NarUTF8 BinaryName);
+
+
+file_restore_source 
+NarInitFileRestoreSource(NarUTF8 RootDir, nar_backup_id ID, int32_t Version, nar_arena *StringArena);

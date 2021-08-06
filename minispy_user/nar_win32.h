@@ -1,9 +1,8 @@
 /* date = July 15th 2021 5:12 pm */
-
 #pragma once 
 
-#include "mspyLog.h"
-#include "nar.h"
+
+#include "platform_io.h"
 
 
 enum ProcessCommandType{
@@ -27,13 +26,43 @@ struct process_listen_ctx{
 };
 
 
-inline BOOLEAN
+struct disk_information {
+    ULONGLONG Size; //In bytes!
+    ULONGLONG UnallocatedGB; // IN GB!
+    char Type; // first character of {RAW,GPT,MBR}
+    int ID;
+};
+
+
+
+/*
+example output of diskpart list volume command
+Volume ###  Ltr  Label        Fs     Type        Size     Status     Info
+  ----------  ---  -----------  -----  ----------  -------  ---------  --------
+  Volume 0     N                NTFS   Simple      5000 MB  Healthy
+  Volume 1     D   HDD          NTFS   Simple       926 GB  Healthy    Pagefile
+  Volume 2     C                NTFS   Partition    230 GB  Healthy    Boot
+  Volume 3                      FAT32  Partition    100 MB  Healthy    System
+*/
+struct volume_information {
+    uint64_t TotalSize;
+    uint64_t FreeSize;
+    int32_t Bootable; // Healthy && NTFS && !Boot
+    char Letter;
+    unsigned char DiskID;
+    char DiskType;
+    wchar_t VolumeName[MAX_PATH + 1];
+};
+
+
+
+BOOLEAN
 NarRemoveLetter(char Letter);
 
-inline BOOLEAN
+BOOLEAN
 NarFormatVolume(char Letter);
 
-inline void
+void
 NarRepairBoot(char OSVolumeLetter, char BootPartitionLetter);
 
 BOOLEAN
@@ -43,10 +72,10 @@ BOOLEAN
 CreatePartition(int Disk, char Letter, unsigned size);
 
 
-inline BOOLEAN
+BOOLEAN
 NarCreateCleanGPTBootablePartition(int DiskID, int VolumeSizeMB, int EFISizeMB, int RecoverySizeMB, char VolumeLetter, char BootVolumeLetter);
 
-inline BOOLEAN
+BOOLEAN
 NarCreateCleanGPTPartition(int DiskID, int VolumeSizeMB, char Letter);
 
 
@@ -54,7 +83,7 @@ BOOLEAN
 NarCreateCleanMBRPartition(int DiskID, char VolumeLetter, int VolumeSize);
 
 
-inline BOOLEAN
+BOOLEAN
 NarCreateCleanMBRBootPartition(int DiskID, char VolumeLetter, int VolumeSizeMB, int SystemPartitionSizeMB, int RecoveryPartitionSizeMB,
                                char BootPartitionLetter);
 
@@ -64,24 +93,24 @@ NarGetVolumeTotalSize(char Letter);
 ULONGLONG
 NarGetVolumeUsedSize(char Letter);
 
-inline int
+int
 NarGetVolumeDiskType(char Letter);
 
-inline unsigned char
+unsigned char
 NarGetVolumeDiskID(char Letter);
 
 
 /*
 Expects Letter to be uppercase
 */
-inline BOOLEAN
+BOOLEAN
 NarIsVolumeAvailable(char Letter);
 
 
 /*
     Returns first available volume letter that is not used by system
 */
-inline char
+char
 NarGetAvailableVolumeLetter();
 
 
@@ -95,14 +124,14 @@ Unlike generatemetadata, binary functions, this one generates absolute path of t
 under windows folder
 C:\Windows\Log....
 */
-inline std::wstring
+std::wstring
 GenerateLogFilePath(char Letter);
 
 
-inline void
+void
 StrToGUID(const char* guid, GUID* G);
 
-ULONGLONG
+uint64_t
 NarGetDiskTotalSize(int DiskID);
 
 
@@ -116,10 +145,10 @@ VolumeGUID MUST have size of 98 bytes, (49 unicode char)
 BOOLEAN
 NarGetVolumeGUIDKernelCompatible(wchar_t Letter, wchar_t *VolumeGUID);
 
-inline wchar_t*
+wchar_t*
 NarUTF8ToWCHAR(NarUTF8 s, nar_arena *Arena);
 
-inline NarUTF8
+NarUTF8
 NarWCHARToUTF8(wchar_t *Str, nar_arena *Arena);
 
 
@@ -135,14 +164,17 @@ NarReadBackup(nar_file_view *Backup, nar_file_view *Metadata,
 HANDLE 
 NarCreateVSSPipe(uint32_t BufferSize, uint64_t Seed, char *Name, size_t MaxNameCb);
 
-inline process_listen_ctx
+process_listen_ctx
 NarSetupVSSListen(nar_backup_id ID);
 
-inline void
+void
 NarFreeProcessListen(process_listen_ctx *Ctx);
 
-inline bool
+bool
 NarGetVSSPath(process_listen_ctx *Ctx, wchar_t *Out);
 
-inline void 
+void 
 NarTerminateVSS(process_listen_ctx *Ctx, uint8_t Success);
+
+BOOLEAN
+SetupVSS();

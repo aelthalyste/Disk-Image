@@ -1,17 +1,18 @@
+#include "precompiled.h"
 #include "nar.h"
 
 /*
 setups iter for finding intersections of two regions. 
 Assumes both regions are sorted.
 */
-inline RegionCoupleIter
+RegionCoupleIter
 NarStartIntersectionIter(const nar_record *R1, const nar_record *R2, size_t R1Len, size_t R2Len){
     RegionCoupleIter Result = NarInitRegionCoupleIter(R1, R2, R1Len, R2Len);
     NarNextIntersectionIter(&Result);
     return Result;
 }
 
-inline void
+void
 NarNextIntersectionIter(RegionCoupleIter *Iter){
     
     Iter->It = {};
@@ -35,7 +36,7 @@ NarNextIntersectionIter(RegionCoupleIter *Iter){
 /*
 Setups Iter for finding exclusion of Ex from Base.
 */
-inline RegionCoupleIter
+RegionCoupleIter
 NarStartExcludeIter(const nar_record *Base, const nar_record *Ex, size_t BaseN, size_t ExN){
     RegionCoupleIter Result = NarInitRegionCoupleIter(Base, Ex, BaseN, ExN);
     Result.__CompRegion = *Result.R1Iter;
@@ -45,7 +46,7 @@ NarStartExcludeIter(const nar_record *Base, const nar_record *Ex, size_t BaseN, 
 
 
 
-inline void
+void
 NarNextExcludeIter(RegionCoupleIter *Iter){
     
     // R1 == base regions
@@ -175,7 +176,7 @@ for overshadow  : loop till end of collision
             return NarNextExcludeIter(Iter);
         }
         else{
-            ASSERT(FALSE);
+            ASSERT(false);
             break;
         }
         
@@ -205,7 +206,7 @@ NarInitRegionCoupleIter(const nar_record *Base, const nar_record *Ex, size_t Bas
 
 // returns true if it finds valid collision block. false is it depletes 
 // Iter
-inline bool
+bool
 NarIterateRegionCoupleUntilCollision(RegionCoupleIter *Iter){
     
     for(;;){
@@ -234,19 +235,19 @@ NarIterateRegionCoupleUntilCollision(RegionCoupleIter *Iter){
 }
 
 
-inline bool
+bool
 NarIsRegionIterValid(RegionCoupleIter Iter){
     return (Iter.It.Len != 0);
 }
 
 
-inline bool
+bool
 __NarIsRegionIterExpired(RegionCoupleIter Iter){
     return (Iter.R1Iter == Iter.R1End || Iter.R2Iter == Iter.R2End);
 }
 
 
-inline void
+void
 NarGetPreviousBackupInfo(int32_t Version, BackupType Type, int32_t *OutVersion){
     
     ASSERT(OutVersion);
@@ -267,30 +268,14 @@ NarGetPreviousBackupInfo(int32_t Version, BackupType Type, int32_t *OutVersion){
         }
     }
     else{
-        ASSERT(FALSE);
+        ASSERT(false);
     }
     
 }
 
 
-
-inline void
-NarConvertBackupMetadataToUncompressed(NarUTF8 Metadata){
-    nar_file_view MView = NarOpenFileView(Metadata);
-    
-#if 0    
-    backup_metadata *BM = (backup_metadata*)Metadata->Data;
-    backup_metadata NewBM;
-    memcpy(&NewBM, BM, sizeof(*BM));
-    NarFreeFileView(MView);
-#endif
-    
-}
-
-
-
 size_t
-inline NarLCNToVCN(nar_record *LCN, size_t LCNCount, size_t Offset){
+NarLCNToVCN(nar_record *LCN, size_t LCNCount, size_t Offset){
     bool Found = false;
     size_t Acc = 0;
     for(size_t i = 0; i<LCNCount; i++){
@@ -318,10 +303,9 @@ inline NarLCNToVCN(nar_record *LCN, size_t LCNCount, size_t Offset){
     ASSUMES RECORDS ARE SORTED
 THIS FUNCTION REALLOCATES MEMORY VIA realloc(), DO NOT PUT MEMORY OTHER THAN ALLOCATED BY MALLOC, OTHERWISE IT WILL CRASH THE PROGRAM
 */
-inline void
+void
 MergeRegions(data_array<nar_record>* R) {
     
-    TIMED_BLOCK();
     
     uint32_t MergedRecordsIndex = 0;
     uint32_t CurrentIter = 0;
@@ -357,10 +341,9 @@ MergeRegions(data_array<nar_record>* R) {
 
 /*
 */
-inline void
+void
 MergeRegionsWithoutRealloc(data_array<nar_record>* R) {
     
-    TIMED_BLOCK();
     
     uint32_t MergedRecordsIndex = 0;
     uint32_t CurrentIter = 0;
@@ -418,49 +401,30 @@ IsRegionsCollide(nar_record R1, nar_record R2) {
 
 
 
-inline NarUTF8
-NarGetRootPath(NarUTF8 FileName, nar_arena *Arena){
-    NarUTF8 Result = {};
-    for(uint32_t i = FileName.Len; i>0; i--){
-        if(FileName.Str[i] == '\\' || FileName.Str[i] == '/'){
-            Result.Str = (uint8_t*)ArenaAllocateZero(Arena, i + 1);
-            Result.Len = i + 1;
-            memcpy(Result.Str, FileName.Str, Result.Len);
-            return Result;
-        }
-    }
-    
-    Result.Str = (uint8_t*)ArenaAllocateZero(Arena, 1);
-    Result.Len = 1;
-    Result.Cap = 1;
-    return Result;
-}
-
 
 // input MUST be sorted
 // Finds point Offset in relative to Records structure, useful when converting absolue volume offsets to our binary backup data offsets.
 // returns NAR_POINT_OFFSET_FAILED if fails to find given offset, 
-inline point_offset 
+point_offset 
 FindPointOffsetInRecords(nar_record *Records, uint64_t Len, int64_t Offset){
     
     if(!Records) return {0};
-    TIMED_BLOCK();
     
     point_offset Result = {0};
     
-    BOOLEAN Found = FALSE;
+    bool Found = false;
     
     for(uint64_t i = 0; i < Len; i++){
         
         if(Offset <= (int64_t)Records[i].StartPos + (int64_t)Records[i].Len){
             
-            int64_t Diff = (Offset - (INT64)Records[i].StartPos);
+            int64_t Diff = (Offset - (int64_t)Records[i].StartPos);
             if (Diff < 0) {
                 // Exceeded offset, this means we cant relate our Offset and Records data, return failcode
-                Found = FALSE;
+                Found = false;
             }
             else {
-                Found = TRUE;
+                Found = true;
                 Result.Offset        += Diff;
                 Result.Indice         = i;
                 Result.Readable       = (int64_t)Records[i].Len - Diff;
@@ -478,3 +442,37 @@ FindPointOffsetInRecords(nar_record *Records, uint64_t Len, int64_t Offset){
     
     return (Found ? Result : point_offset{0});
 }
+
+
+
+int
+CompareNarRecords(const void* v1, const void* v2) {
+    
+    nar_record* n1 = (nar_record*)v1;
+    nar_record* n2 = (nar_record*)v2;
+    
+#if 0    
+    if(n1->StartPos == n2->StartPos){
+        return (int)((int64_t)n1->Len - (int64_t)n2->Len);
+    }
+    else{
+        return (int)((int64_t)n1->StartPos - (int64_t)n2->StartPos);
+    }
+#endif
+    
+#if 1    
+    // old version
+    if (n1->StartPos == n2->StartPos && n2->Len < n1->Len) {
+        return 1;
+    }
+    
+    if (n1->StartPos > n2->StartPos) {
+        return 1;
+    }
+    
+    return -1;
+#endif
+    
+}
+
+
