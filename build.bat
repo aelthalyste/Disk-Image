@@ -1,7 +1,7 @@
 @echo off
 
 set build_options= -DUNICODE -D_UNICODE -D_CRT_SECURE_NO_WARNINGS
-set compile_flags= -nologo /MT /EHsc /W0 /O2 /DEBUG:FULL /Zi /FC /F 16777216 /std:c++17 /MP
+set compile_flags= -nologo /MT /EHsc /W0 /Od /DEBUG:FULL /Zi /FC /F 16777216 /std:c++17 /MP
 rem /fsanitize=address /DEBUG:FULL /Zi /FC /Fa 
 rem 
 rem /fsanitize=address
@@ -22,6 +22,9 @@ rem "file_explorer.cpp" "restore.cpp" "platform_io.cpp"
 ctime.exe -begin DiskImageNative  
 
 cl /Yu"precompiled.h" main.cpp backup.cpp file_explorer.cpp platform_io.cpp restore.cpp nar_win32.cpp nar.cpp narstring.cpp "precompiled.obj" %build_options% %compile_flags% /I"../inc" %linker_flags%
+
+REM UNITY BUILD
+rem cl /Yu"precompiled.h" main.cpp "precompiled.obj" %build_options% %compile_flags% /I"../inc" %linker_flags%
 
 ctime.exe -end DiskImageNative
 

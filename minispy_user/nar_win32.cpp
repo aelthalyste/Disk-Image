@@ -970,12 +970,12 @@ NarGetVSSPath(process_listen_ctx *Ctx, wchar_t *Out){
     WriteFile(Ctx->PipeHandle, Ctx->WriteBuffer, Ctx->BufferSize, 0, &Ctx->WriteOverlapped);
     DWORD Garbage = 0;
     
-    if(GetOverlappedResultEx(Ctx->PipeHandle, &Ctx->WriteOverlapped, &Garbage, 200, FALSE)){
+    if(GetOverlappedResultEx(Ctx->PipeHandle, &Ctx->WriteOverlapped, &Garbage, 1000, FALSE)){
         ASSERT(Garbage == Ctx->BufferSize);
         Garbage = 0;
         
         ReadFile(Ctx->PipeHandle, Ctx->ReadBuffer, Ctx->BufferSize, 0, &Ctx->ReadOverlapped);
-        if(GetOverlappedResultEx(Ctx->PipeHandle, &Ctx->ReadOverlapped, &Garbage, 9000, FALSE)){
+        if(GetOverlappedResultEx(Ctx->PipeHandle, &Ctx->ReadOverlapped, &Garbage, 30000, FALSE)){
             wchar_t *Needle = (wchar_t*)Ctx->ReadBuffer;
             int i = 0;
             for(i =0; *Needle !=0; i++){
@@ -985,11 +985,11 @@ NarGetVSSPath(process_listen_ctx *Ctx, wchar_t *Out){
             Result = true;
         }
         else{
-            printf("Process didn't answer in given time(5s), abandoning standalone_vss.exe\n");
+            printf("Process didn't answer in given time(30s), abandoning standalone_vss.exe\n");
         }
     }
     else{
-        printf("Process didn't answer in given time(200ms), abandoning standalone_vss.exe\n");
+        printf("Process didn't answer in given time(1s), abandoning standalone_vss.exe\n");
     }
     
     if(Result == false){

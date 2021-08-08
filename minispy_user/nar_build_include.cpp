@@ -6,3 +6,4 @@
 #include "backup.cpp"
 #include "nar_win32.cpp"
 #include "nar.cpp"
+#include "narstring.cpp"
