@@ -359,12 +359,8 @@ GetVolumeRegionsFromBitmap(HANDLE VolumeHandle, uint32_t* OutRecordCount) {
 int32_t
 SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, DotNetStreamInf* SI, bool ShouldCompress) {
     
-    TIMED_BLOCK();
-    
-#if _MANAGED
-    // #error remove this stuff
-#endif
-    
+	printf("SetupStream (%X, %c, %d, %X, %d)\n", C, L, Type, SI, ShouldCompress);   
+
     int32_t Return = FALSE;
     int ID = GetVolumeID(C, L);
     
@@ -373,8 +369,9 @@ SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, DotNetStreamInf* SI, boo
         printf("Couldnt find volume %c in list, adding it for stream setup\n", L);
         AddVolumeToTrack(C, L, Type);
         ID = GetVolumeID(C, L);
-        if (ID < 0) {
-            return FALSE;
+        if (ID < 0) {           
+	    	printf("Unable to add volume %c to tracklist\n", L);
+	    	return FALSE;
         }
     }
     
@@ -421,10 +418,7 @@ SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, DotNetStreamInf* SI, boo
     Temp[0] = VolInf->Letter;
     wchar_t ShadowPath[256];
     
-    HANDLE TmpVolHandle = NarOpenVolume(VolInf->Letter);
-    BOOL WapiResult = FlushFileBuffers(TmpVolHandle);
-    CloseHandle(TmpVolHandle);
-    
+
 #if 1    
     VolInf->PLCtx = NarSetupVSSListen(VolInf->BackupID);
     if(VolInf->PLCtx.ReadBuffer == 0){
@@ -629,16 +623,7 @@ TerminateBackup(volume_backup_inf* V, int32_t Succeeded) {
     else{
         
     }
-    
-#if 0    
-    //Termination of fullbackup
-    //neccecary for incremental backup
-    if(V->BT == BackupType::Inc){
-        V->IncLogMark.LastBackupRegionOffset = 0;
-        V->PossibleNewBackupRegionOffsetMark = 0;
-    }
-#endif
-    
+   
     
     if(NULL != V->Stream.CompressionBuffer){
         V->Stream.BufferSize = 0;
@@ -669,7 +654,7 @@ TerminateBackup(volume_backup_inf* V, int32_t Succeeded) {
     
 #if 1
     NarTerminateVSS(&V->PLCtx, 1);
-    
+    NarFreeProcessListen(&V->PLCtx);
 #else   
     {
         LONG Deleted=0;

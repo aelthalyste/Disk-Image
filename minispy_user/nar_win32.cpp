@@ -951,6 +951,13 @@ NarSetupVSSListen(nar_backup_id ID){
 
 void
 NarFreeProcessListen(process_listen_ctx *Ctx){
+
+	BOOL OK =  TerminateProcess(Ctx->PInfo.hProcess, 0);
+	if(!OK){
+		printf("Unable to terminate vss process, ret code %d, error code %d\n", GetLastError());
+	}
+	
+
     free(Ctx->ReadBuffer);
     free(Ctx->WriteBuffer);
     CloseHandle(Ctx->PipeHandle);
@@ -1019,7 +1026,11 @@ NarTerminateVSS(process_listen_ctx *Ctx, uint8_t Success){
         if(GetOverlappedResultEx(Ctx->PipeHandle, &Ctx->ReadOverlapped, &Garbage, 5000, FALSE)){
             
         }
+        else{
+        	printf("VSS process didn't respond in given time(5s), terminate process failed\n");
+        }
     }
+
     
 }
 

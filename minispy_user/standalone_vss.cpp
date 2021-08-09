@@ -166,9 +166,10 @@ int AlternateMain(int argc, char *argv[]){
     HANDLE PipeHandle = INVALID_HANDLE_VALUE;
     CComPtr<IVssBackupComponents> VSSPTR;
     char MsgBuffer[512];
-    FILE *Log = fopen("standalonevss.txt", "wb");
+    FILE *Log = fopen("C:\\ProgramData\\NarDiskBackup\\standalonevss.txt", "wb");
     defer({fclose(Log);});
-    
+
+    fprintf(Log, "Started!\n");
     if(argc != 2){
         fprintf(Log, "Argument count must be 2\n");
         return 0;
@@ -210,11 +211,11 @@ int AlternateMain(int argc, char *argv[]){
                 memset(MsgBuffer, 0, sizeof(MsgBuffer));
                 memcpy(MsgBuffer, OutShadowPath, wcslen(OutShadowPath)*2);
                 if(WriteFile(PipeHandle, MsgBuffer, sizeof(MsgBuffer), &Garbage, 0) &&  Garbage == sizeof(MsgBuffer)){
+                    fprintf(Log, "Succesfully send VSS path to server\n");
                     // success!
                 }
                 else{
-                    fprintf(Log, "");
-                    
+                    fprintf(Log, "Unable to send vss path to server!\n");
                 }
                 
             }
@@ -227,7 +228,12 @@ int AlternateMain(int argc, char *argv[]){
                 hr = VSSPTR->BackupComplete(&async);
                 if(hr == S_OK){
                     async->Wait();
+                	fprintf(Log, "VSS backup complete successfull!\n");
                 }
+                else{
+                	fprintf(Log, "VSS backup complete failed\n");
+                }
+
                 hr = VSSPTR->DeleteSnapshots(VSSID, VSS_OBJECT_SNAPSHOT, TRUE, &Deleted, &NonDeleted);
                 VSSPTR.Release();
                 WriteFile(PipeHandle, MsgBuffer, sizeof(MsgBuffer), &Garbage, 0);
@@ -238,6 +244,7 @@ int AlternateMain(int argc, char *argv[]){
         
     }
     
+    fprintf(Log, "Terminating process!\n");
     return 0;
 }
 

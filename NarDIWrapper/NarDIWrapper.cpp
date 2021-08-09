@@ -206,11 +206,11 @@ namespace NarDIWrapper {
                 Result = TRUE;
             }
             else{
-                printf("Failed to save state of the program\n");
+                printf("WRAPPER : Failed to save state of the program\n");
             }
         }
         else{
-            printf("Failed to remove volume %c from track list\n", Letter);
+            printf("WRAPPER : Failed to remove volume %c from track list\n", Letter);
         }
         return Result;
     }
@@ -225,6 +225,9 @@ namespace NarDIWrapper {
             StrInf->MetadataFileName = gcnew String(SI.MetadataFileName.c_str());
             StrInf->CopySize         = (UINT64)StrInf->ClusterSize * (UINT64)StrInf->ClusterCount;
             return true;
+        }
+        else{
+        	printf("WRAPPER: Setupstream returned false!\n");
         }
         
         return false;
