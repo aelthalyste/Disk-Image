@@ -16,7 +16,9 @@ namespace DotNetTest
         static void Main(string[] args)
         {
 
-            CSNarFileExplorer FE = new CSNarFileExplorer("G:\\NB_M_2-C07291017.nbfsm");
+            Console.WriteLine("Selected metadata is ", args[0]);
+
+            CSNarFileExplorer FE = new CSNarFileExplorer(args[0]);
             while (true)
             {
                 var list = FE.CW_GetFilesInCurrentDirectory();
@@ -76,7 +78,7 @@ namespace DotNetTest
                             {
                                 // After each AdvanceStream call, Stream object determines where caller must seek on it's output pipe,
                                 // and how many bytes it must write. Caller is responsible for applying seek and write.
-                                
+
                                 while (Stream.AdvanceStream(baddr, buffersize))
                                 {
                                     // seek to desired offset and write to it
@@ -85,10 +87,14 @@ namespace DotNetTest
                                 }
 
                                 // Check if any error occured during stream. Termination may be due to some internal error.
-                                if (Stream.Error != FileRestore_Errors.Error_NoError) { 
+                                if (Stream.Error != FileRestore_Errors.Error_NoError)
+                                {
+                                    Console.WriteLine("Unable to restore!");
                                     // warn user that something went wrong    
                                 }
-                                if (Stream.Error == FileRestore_Errors.Error_NoError) { 
+                                if (Stream.Error == FileRestore_Errors.Error_NoError)
+                                {
+                                    Console.WriteLine("Successfully restored!");
                                     // SUCCESS!
                                 }
 
@@ -99,6 +105,9 @@ namespace DotNetTest
                         Output.SetLength((long)Stream.TargetFileSize); // save to cast long(assuming long is a 64bit type)
                         Output.Close();
 
+                    }
+                    else {
+                        Console.WriteLine("Unable to setup stream!\n");
                     }
 
 

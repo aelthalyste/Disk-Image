@@ -42,6 +42,7 @@ _Analysis_mode_(_Analysis_code_type_user_code_)
 #include "backup.h"
 //#include "nar_build_include.cpp"
 
+
 #if 0
 inline void* 
 narmalloc(size_t len){
@@ -423,11 +424,30 @@ TEST_RegionCoupleIter(){
     return true;
 }
 
+void TEST_STRINGS(){
+	
+	nar_arena Arena = ArenaInit(malloc(1024), 1024);
 
+	NarUTF8 MainStr = NARUTF8("RANDOM_FILE_NAME");
+
+	auto LongStr = NarUTF8Init(ArenaAllocate(&Arena, 400), 400);
+
+	auto Root = NarGetRootPath(MainStr, &Arena);
+	NarStringConcatenate(&LongStr, Root);
+	NarStringConcatenate(&LongStr, NARUTF8("my other file name"));
+	NarStringConcatenate(&LongStr, NARUTF8("\\some other file"));
+	NarStringConcatenate(&LongStr, NARUTF8("\\124234"));
+	NarStringConcatenate(&LongStr, NARUTF8("\\fasjdflasdklasjfhd"));
+	
+	printf("%s\n", LongStr.Str);
+	return;
+}
 
 int
 wmain(int argc, wchar_t* argv[]) {
-    //TEST_LCNTOVCN();
+
+	TEST_STRINGS();
+
 #if 0    
     {
         nar_backup_id ID = {};
@@ -617,6 +637,7 @@ wmain(int argc, wchar_t* argv[]) {
     
     
 #if 0
+	// CREATE NARBOOTFILE
     {
         LOG_CONTEXT C = {0};
         C.Port = INVALID_HANDLE_VALUE;
@@ -643,9 +664,9 @@ wmain(int argc, wchar_t* argv[]) {
             
             memset(&inf, 0, sizeof(inf));
             
-            printf("ENTER LETTER TO DO BACKUP \n");
-            scanf("%c", &Volume);
-            
+            printf("ENTER LETTER TO DO BACKUP\n");
+            std::cin>>Volume;
+
             BackupType bt = BackupType::Inc;
             
             if(SetupStream(&C, (wchar_t)Volume, bt, &inf, false)){
@@ -666,7 +687,7 @@ wmain(int argc, wchar_t* argv[]) {
                 if(file != INVALID_HANDLE_VALUE){
                     uint64_t ucs = 0;
                     printf("starting backup\n");
-#if 1                    
+#if 0                    
                     loop{
                         int Read = ReadStream(v, MemBuf, bsize);
                         TotalRead += Read;

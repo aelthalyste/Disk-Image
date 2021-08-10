@@ -99,7 +99,7 @@ NarWriteLogsToFile(nar_log_thread_params* tp, PETHREAD* OutTObject);
 typedef struct nar_backup_id nar_backup_id;
 
 typedef struct _nar_boot_track_data{
-    uint64_t LastBackupOffset;
+    unsigned long long LastBackupOffset;
     char Letter;
     char Version;
     char BackupType;

@@ -23,8 +23,8 @@ OBJS = $(addsuffix .o, $(basename $(notdir $(SOURCES))))
 UNAME_S := $(shell uname -s)
 
 CXXFLAGS = -I$(IMGUI_DIR) -I$(IMGUI_DIR)/backends
-CXXFLAGS += -g -Wall -pthread -lglfw libzstd.a -Wno-missing-field-initializers -Wno-unused-function
-LIBS =
+CXXFLAGS += -g -Wall -pthread -lglfw libzstd.a -Wno-missing-field-initializers -Wno-unused-function 
+LIBS = 
 
 #lglfw3
 # 
@@ -68,7 +68,7 @@ CXXFLAGS += -I$(IMGUI_DIR)/libs/gl3w -DIMGUI_IMPL_OPENGL_LOADER_GL3W
 ##---------------------------------------------------------------------
 
 ECHO_MESSAGE = "Linux"
-LIBS += -lGL `pkg-config --static --libs glfw3`
+LIBS += -ldl -lGL `pkg-config --static --libs glfw3`
 
 CXXFLAGS += `pkg-config --cflags glfw3`
 CFLAGS = $(CXXFLAGS)

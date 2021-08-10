@@ -1341,18 +1341,22 @@ Return Value:
         return FLT_PREOP_SUCCESS_NO_CALLBACK;
     }
 
+    if (!!NarData.IsShutdownInitiated) {
+        return FLT_PREOP_SUCCESS_NO_CALLBACK;
+    }
 
 #if 1
     // that might deadlock the system
     // If system shutdown requested, dont bother to log changes
-    if (Data->Iopb->MajorFunction == IRP_MJ_SHUTDOWN && FALSE == NarData.IsShutdownInitiated) {
+    if (Data->Iopb->MajorFunction == IRP_MJ_SHUTDOWN) {
         
-        if (0 == _InterlockedCompareExchange(&NarData.IsShutdownInitiated, 1, 0)) {
-            // it's ok
-        } 
-        else {
-            return FLT_PREOP_SUCCESS_NO_CALLBACK;
-        }
+        //if (0 == _InterlockedCompareExchange(&NarData.IsShutdownInitiated, 1, 0)) {
+        //    // it's ok
+        //} 
+        //else {
+        //    return FLT_PREOP_SUCCESS_NO_CALLBACK;
+        //}
+        InterlockedAdd(&NarData.IsShutdownInitiated, 1);
         
         for (int i = 0; i < NAR_MAX_VOLUME_COUNT; i++) {
             // ExAcquireFastMutex(&NarData.VolumeRegionBuffer[i].FastMutex);

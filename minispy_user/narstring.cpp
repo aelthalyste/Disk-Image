@@ -34,6 +34,9 @@ NarStringConcatenate(NarUTF8 *Destination, NarUTF8 Append){
     if(Destination->Cap == 0){
         return false;
     }
+    if(Append.Len <= 1){
+    	return true;
+    }
     
     ASSERT(Destination->Cap);
     
