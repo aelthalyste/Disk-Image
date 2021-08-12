@@ -977,7 +977,7 @@ namespace DiskBackup.Business.Concrete
                 foreach (var item in resultList)
                 {
                     FilesInBackup filesInBackup = new FilesInBackup();
-                    filesInBackup.Id = item.ID;
+                    filesInBackup.Id = item.UniqueID;
                     filesInBackup.Name = item.Name;
                     filesInBackup.Type = (FileType)Convert.ToInt16(item.IsDirectory); //Directory ise 1 
                     filesInBackup.Size = (long)item.Size;
