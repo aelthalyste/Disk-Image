@@ -545,7 +545,7 @@ NarFindExtensions(char VolumeLetter, HANDLE VolumeHandle, wchar_t *Extension, ex
                             if(!ATLNonResident){
                                 ATLData = NAR_OFFSET(AttributeList, 24);
                                 ATLLen  = *(uint32_t*)NAR_OFFSET(AttributeList, 16);
-                                ASSERT(ATLLen < 512);
+                                //ASSERT(ATLLen < 512);
                             }
                             
                         }
@@ -716,15 +716,15 @@ NarFindExtensions(char VolumeLetter, HANDLE VolumeHandle, wchar_t *Extension, ex
             stack[si++]    = ParentID;
             TotalFileNameSize += DirectoryMapping[ParentID].NameLen;
             ASSERT(DirectoryMapping[ParentID].FileID != 0);
-            _mm_prefetch((const char*)&DirectoryMapping[ParentID], _MM_HINT_T0);
         }
         
         // additional memory for trailing backlashes
         FilenamesExtended[s] = (wchar_t*)LinearAllocate(&Memory->StringAllocator, TotalFileNameSize*2 + 200);
         uint64_t WriteIndex = 0;
         
+        
         {
-            wchar_t tmp[] = L"C:\\";
+            wchar_t tmp[] = L"!:\\";
             tmp[0] = (wchar_t)VolumeLetter;
             memcpy(&FilenamesExtended[s][WriteIndex], &tmp[0], 6);
             WriteIndex += 3;        
@@ -763,7 +763,10 @@ NarFindExtensions(char VolumeLetter, HANDLE VolumeHandle, wchar_t *Extension, ex
     }
 #endif
     
-    fprintf(stdout, "Parser, %9llu files in %.5f sec, file per ms %.5f\n", Memory->TotalFC, ParserTotalTime, (double)Memory->TotalFC/ParserTotalTime/1000.0);
+    double ParserFilePerMs    = (double)Memory->TotalFC/ParserTotalTime/1000.0;
+    double TraverserFilePerms = (double)ArrLen/TraverserTotalTime/1000.0;
+    
+    fprintf(stdout, "Parser, %9llu files in %.5f sec, file per ms %.5f, throughput : %.4f GB/s \n", Memory->TotalFC, ParserTotalTime, (double)Memory->TotalFC/ParserTotalTime/1000.0, ParserFilePerMs*1000.0*1024.0/Gigabyte(1));
     fprintf(stdout, "Traverser %9llu files in %.5f sec, file per ms %.5f\n", ArrLen, TraverserTotalTime, (double)ArrLen/TraverserTotalTime/1000.0);
     //fprintf(stdout, "Allocating count %8u in  %.5f sec, allocation per ms %.5f\n", AllocationCount, AllocatorTimeElapsed, (double)AllocationCount/AllocatorTimeElapsed/(1000.0));
     
@@ -1572,7 +1575,7 @@ NarFindFileLayout(file_explorer *FE, file_explorer_file *File, nar_arena *Arena)
             void* FileRecord = (uint8_t*)FE->MFT + 1024*FilesToVisit[i];
             // there might be more than 1 $DATA attribute.
             
-            INT16 FirstAttributeOffset = (*(int16_t*)((BYTE*)FileRecord + 20));
+            int16_t FirstAttributeOffset = (*(int16_t*)((BYTE*)FileRecord + 20));
             
             for(void* FileAttribute = (uint8_t*)FileRecord + FirstAttributeOffset;
                 FileAttribute != 0;
@@ -1587,6 +1590,11 @@ NarFindFileLayout(file_explorer *FE, file_explorer_file *File, nar_arena *Arena)
                 
                 if(AttributeID == NAR_DATA_FLAG){
                     data_attr_header *DAHeader = (data_attr_header*)FileAttribute;
+                    
+                    if(DAHeader->NameLen == 0){
+                        goto G_FAIL;
+                    }
+                    
                     ASSERT(DAHeader->NameLen == 0);
                     
                     uint32_t Of = *(uint16_t*)NAR_OFFSET(DAHeader, 32);
@@ -1622,7 +1630,11 @@ NarFindFileLayout(file_explorer *FE, file_explorer_file *File, nar_arena *Arena)
             uint32_t AttributeID = *(uint32_t*)FileAttribute;
             if(AttributeID == NAR_DATA_FLAG){
                 data_attr_header *DAHeader = (data_attr_header*)FileAttribute;
+                
                 if(DAHeader->Sparse != 0){
+                    goto G_FAIL;
+                }
+                if(DAHeader->NameLen == 0){
                     goto G_FAIL;
                 }
                 
