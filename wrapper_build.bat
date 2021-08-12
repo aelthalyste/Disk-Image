@@ -1,8 +1,8 @@
 @echo off
 
 set build_options= -DUNICODE -D_UNICODE -D_CRT_SECURE_NO_WARNINGS
-set compile_flags= -nologo /clr /MD /W0 /O2 /INCREMENTAL:NO /F 16777216 /GL /std:c++17 /MP /Gs- /GS-
-set linker_flags= /WX "fltLib.lib" "vssapi.lib" "libzstd_static.lib" "libzstd.lib" /LD
+set compile_flags= -nologo /clr /MDd /W0 /Od /INCREMENTAL:NO /F 16777216 /GL- /std:c++17 /MP /Gs- /GS-
+set linker_flags= /WX "fltLib.lib" "vssapi.lib" "libzstd.lib" "libzstd.lib" /LD
 
 cd NarDIWrapper
 

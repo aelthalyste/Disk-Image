@@ -468,7 +468,7 @@ NarFindExtensions(char VolumeLetter, HANDLE VolumeHandle, wchar_t *Extension, ex
     
     name_pid *DirectoryMapping  = (name_pid*)Memory->DirMappingMemory; 
     name_pid *PIDResultArr      = (name_pid*)Memory->PIDArrMemory; 
-    uint64_t ArrLen     	    = 0;
+    uint64_t ArrLen             = 0;
     uint64_t FileRecordSize     = 1024; 
     size_t ExtensionLen = wcslen(Extension);
     double ParserTotalTime    = 0;
@@ -893,7 +893,7 @@ NarFreeFileExplorerMemory(file_explorer_memory *Memory){
 file_explorer
 NarInitFileExplorer(NarUTF8 MetadataPath){
     
-	printf("File explorer initializing with metadata %s\n", MetadataPath.Str);
+    printf("File explorer initializing with metadata %s\n", MetadataPath.Str);
 
     file_explorer Result = {0};
     
@@ -934,7 +934,7 @@ NarInitFileExplorer(NarUTF8 MetadataPath){
             printf("File explorer backup view initializing with name %s\n", FullBinaryPath.Str);
 
             Result.FullbackupView = NarOpenFileView(FullBinaryPath);
-		}
+        }
         
         
         
@@ -1701,20 +1701,20 @@ NarInitFileRestoreSource(NarUTF8 MetadataName, NarUTF8 BinaryName){
     
     Result.Metadata = NarOpenFileView(MetadataName);
     
-	if(NULL != Result.Metadata.Data){
-		Result.Backup   = NarOpenFileView(BinaryName);
-		if(NULL != Result.Backup.Data){
-				
-		}
-		else{
-			printf("Unable to open backup binary file, name %s\n", BinaryName.Str);
-			goto FAIL;
-		}
-	}
-	else{
-		printf("Unable to open backup metadata file, name %s\n", MetadataName.Str);
-		goto FAIL;
-	}
+    if(NULL != Result.Metadata.Data){
+        Result.Backup   = NarOpenFileView(BinaryName);
+        if(NULL != Result.Backup.Data){
+                
+        }
+        else{
+            printf("Unable to open backup binary file, name %s\n", BinaryName.Str);
+            goto FAIL;
+        }
+    }
+    else{
+        printf("Unable to open backup metadata file, name %s\n", MetadataName.Str);
+        goto FAIL;
+    }
 
     ASSERT(Result.Metadata.Data);
     ASSERT(Result.Backup.Data);
@@ -1787,9 +1787,9 @@ NarInitFileRestoreSource(NarUTF8 RootDir, nar_backup_id ID, int32_t Version, nar
 
 template<typename Type> bool
 IsValid(const Type& v){
-	Type ZeroStruct = {};
-	memset(&ZeroStruct, 0, sizeof(ZeroStruct));
-	return (memcmp(&v, &ZeroStruct, sizeof(Type)) == 0);
+    Type ZeroStruct = {};
+    memset(&ZeroStruct, 0, sizeof(ZeroStruct));
+    return !(memcmp(&v, &ZeroStruct, sizeof(Type)) == 0);
 }
 
 file_restore_ctx
@@ -1799,10 +1799,11 @@ NarInitFileRestoreCtx(file_disk_layout Layout, NarUTF8 RootDir, nar_backup_id ID
     
     Result.Layout = Layout;
     Result.Source = NarInitFileRestoreSource(RootDir, ID, Version, Arena);
-	
-	if(!IsValid(Result.Source)){
-		return {};
-	}
+    
+    if(!IsValid(Result.Source)){
+        printf("File restore source was invalid!\n");
+        return {};
+    }
 
     size_t PoolMemSize = Megabyte(1);
     size_t PoolSize    = PoolMemSize/4;

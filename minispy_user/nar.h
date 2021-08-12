@@ -1,9 +1,9 @@
 #pragma once
 
 
-#ifdef 	__linux__
+#ifdef  __linux__
 #define NAR_LINUX   1
-#elif 	_WIN32
+#elif   _WIN32
 #define NAR_WINDOWS 1
 #endif
 
@@ -28,11 +28,10 @@ struct nar_backup_id{
 };
 #endif
 
-#if _DEBUG || !_MANAGED 
-
+#if 1 || _DEBUG && !_MANAGED 
 #if NAR_WINDOWS
 
-#define ASSERT(exp) do{if(!(exp)){__debugbreak();}} while(0);
+#define ASSERT(exp) do{if(!(exp)){printf("### !ASSERT! ###\nFILE : %s\nFUNCTION & LINE : %s %d\nDATE : [%s] : [%s]\n", __FILE__, __FUNCTION__, __LINE__, __DATE__, __TIME__); __debugbreak();}} while(0);
 #define NAR_BREAK do{__debugbreak();}while(0);
 
 #else // IF NAR WINDOWS
@@ -95,14 +94,14 @@ struct nar_backup_id{
 
 template <typename F>
 struct privDefer {
-	F f;
-	privDefer(F f) : f(f) {}
-	~privDefer() { f(); }
+    F f;
+    privDefer(F f) : f(f) {}
+    ~privDefer() { f(); }
 };
 
 template <typename F>
 privDefer<F> defer_func(F f) {
-	return privDefer<F>(f);
+    return privDefer<F>(f);
 }
 
 #define DEFER_1(x, y) x##y
@@ -259,8 +258,8 @@ struct backup_metadata {
         struct {
             //FOR MBR things
             union{
-            	int64_t GPT_EFIPartitionSize;
-            	int64_t MBR_SystemPartitionSize;
+                int64_t GPT_EFIPartitionSize;
+                int64_t MBR_SystemPartitionSize;
             };
             
 #if NAR_LINUX
@@ -280,9 +279,9 @@ struct backup_metadata {
 #endif
             
             nar_backup_id ID;
-        	
-        	unsigned char IsCompressed;
-        	unsigned int FrameSize;
+            
+            unsigned char IsCompressed;
+            unsigned int FrameSize;
             
             size_t   CompressionInfoOffset;
             uint32_t CompressionInfoCount;
@@ -396,24 +395,24 @@ GenerateBinaryFileNameUTF8(nar_backup_id ID, int32_t Version, NarUTF8 *Out){
 /////////////////////////////////////////////////////
 static inline void
 NarGetMetadataDraft(std::string &Res){
-	Res = std::string("NB_M_");
+    Res = std::string("NB_M_");
 }
 
 static inline void
 NarGetMetadataDraft(std::wstring &Res){
-	Res = std::wstring(L"NB_M_");
+    Res = std::wstring(L"NB_M_");
 }
 /////////////////////////////////////////////////////
 
 /////////////////////////////////////////////////////
 static inline void
 NarGetBinaryDraft(std::string &Res){
-	Res = std::string("NB_");
+    Res = std::string("NB_");
 }
 
 static inline void
 NarGetBinaryDraft(std::wstring &Res){
-	Res = std::wstring(L"NB_");
+    Res = std::wstring(L"NB_");
 }
 /////////////////////////////////////////////////////
 
@@ -421,12 +420,12 @@ NarGetBinaryDraft(std::wstring &Res){
 /////////////////////////////////////////////////////
 static inline void
 NarGetMetadataExtension(std::string &Res){
-	Res = std::string(".nbfsm");
+    Res = std::string(".nbfsm");
 }
 
 static inline void
 NarGetMetadataExtension(std::wstring &Res){
-	Res = std::wstring(L".nbfsm");
+    Res = std::wstring(L".nbfsm");
 }
 /////////////////////////////////////////////////////
 
@@ -434,12 +433,12 @@ NarGetMetadataExtension(std::wstring &Res){
 /////////////////////////////////////////////////////
 static inline void
 NarGetBinaryExtension(std::string &Res){
-	Res = std::string(".nbfsf");
+    Res = std::string(".nbfsf");
 }
 
 static inline void
 NarGetBinaryExtension(std::wstring &Res){
-	Res = std::wstring(L".nbfsf");
+    Res = std::wstring(L".nbfsf");
 }
 /////////////////////////////////////////////////////
 
@@ -450,20 +449,20 @@ NarGetBinaryExtension(std::wstring &Res){
 static inline void
 NarGetVersionMidFix(int Version, std::string &Res){
     if(Version == NAR_FULLBACKUP_VERSION){
-    	Res = "FULL";
+        Res = "FULL";
     }
-	else{
-		Res = std::to_string(Version);
-	}
+    else{
+        Res = std::to_string(Version);
+    }
 }
 
 static inline void
 NarGetVersionMidFix(int Version, std::wstring &Res){
     if(Version == NAR_FULLBACKUP_VERSION){
-		Res = L"FULL";
+        Res = L"FULL";
     }
     else{
-		Res = std::to_wstring(Version);
+        Res = std::to_wstring(Version);
     }
 }
 /////////////////////////////////////////////////////
@@ -492,59 +491,59 @@ NarBackupIDToStr(nar_backup_id ID, std::string &Res){
 template<typename StrType>
 static inline void
 GenerateMetadataName(nar_backup_id ID, int Version, StrType &Res){
-	NarGetMetadataDraft(Res);
-	
-	// VERSION NUMBER EMBEDDED AS STRING
-	{
-    	StrType garbage;
-		NarGetVersionMidFix(Version, garbage);
-		Res += garbage;
-	}
+    NarGetMetadataDraft(Res);
     
-    
-	// BACKUP ID
-	{
-		// LETTER IS BEING SILENTLY APPENDED HERE
+    // VERSION NUMBER EMBEDDED AS STRING
+    {
         StrType garbage;
-		NarBackupIDToStr(ID, garbage);
-		Res += garbage;
-	}
+        NarGetVersionMidFix(Version, garbage);
+        Res += garbage;
+    }
     
-	// EXTENSION
-	{
-		StrType garbage;
-		NarGetMetadataExtension(garbage);
-		Res += garbage;
-	}
-	// done;
+    
+    // BACKUP ID
+    {
+        // LETTER IS BEING SILENTLY APPENDED HERE
+        StrType garbage;
+        NarBackupIDToStr(ID, garbage);
+        Res += garbage;
+    }
+    
+    // EXTENSION
+    {
+        StrType garbage;
+        NarGetMetadataExtension(garbage);
+        Res += garbage;
+    }
+    // done;
 }
 
 template<typename StrType>
 static inline void
 GenerateBinaryFileName(nar_backup_id ID, int Version, StrType &Res){
-	NarGetBinaryDraft(Res);
-	
-	// VERSION NUMBER EMBEDDED AS STRING
-	{
-    	StrType garbage;
-		NarGetVersionMidFix(Version, garbage);
-		Res += garbage;
-	}
+    NarGetBinaryDraft(Res);
     
-	// BACKUP ID
-	{
-		// LETTER IS BEING SILENTLY APPENDED HERE
+    // VERSION NUMBER EMBEDDED AS STRING
+    {
         StrType garbage;
-		NarBackupIDToStr(ID, garbage);
-		Res += garbage;
-	}
+        NarGetVersionMidFix(Version, garbage);
+        Res += garbage;
+    }
     
-	// EXTENSION
-	{
-		StrType garbage;
-		NarGetBinaryExtension(garbage);
-		Res += garbage;
-	}
+    // BACKUP ID
+    {
+        // LETTER IS BEING SILENTLY APPENDED HERE
+        StrType garbage;
+        NarBackupIDToStr(ID, garbage);
+        Res += garbage;
+    }
+    
+    // EXTENSION
+    {
+        StrType garbage;
+        NarGetBinaryExtension(garbage);
+        Res += garbage;
+    }
 }
 
 //mmap(0, length, PROT_READ|PROT_WRITE, MAP_ANON, 0, 0)

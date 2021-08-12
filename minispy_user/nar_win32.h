@@ -27,8 +27,8 @@ struct process_listen_ctx{
 
 
 struct disk_information {
-    ULONGLONG Size; //In bytes!
-    ULONGLONG UnallocatedGB; // IN GB!
+    uint64_t Size; //In bytes!
+    uint64_t UnallocatedGB; // IN GB!
     char Type; // first character of {RAW,GPT,MBR}
     int ID;
 };
@@ -54,6 +54,23 @@ struct volume_information {
     wchar_t VolumeName[MAX_PATH + 1];
 };
 
+struct disk_information_ex{
+    uint64_t TotalSize;
+    uint64_t UnusedSize;
+    
+    uint8_t DiskID;
+    uint8_t VolumeCount;
+    char DiskType;
+    
+    volume_information *Volumes;
+};
+
+struct nar_partition_info{
+    uint64_t PartitionInfo;
+    uint8_t DiskID;
+    char Letter;
+    char DiskType;
+};
 
 
 BOOLEAN
@@ -160,7 +177,6 @@ NarReadBackup(nar_file_view *Backup, nar_file_view *Metadata,
 
 
 
-
 HANDLE 
 NarCreateVSSPipe(uint32_t BufferSize, uint64_t Seed, char *Name, size_t MaxNameCb);
 
@@ -178,3 +194,20 @@ NarTerminateVSS(process_listen_ctx *Ctx, uint8_t Success);
 
 BOOLEAN
 SetupVSS();
+
+
+//Returns # of volumes detected
+data_array<volume_information>
+NarGetVolumes();
+
+
+
+disk_information_ex*
+NarGetPartitions(nar_arena *Arena, size_t* OutCount);
+
+
+void
+GUIDToStr(char *Out, GUID G);
+
+char
+NarGetVolumeLetterFromGUID(GUID G);

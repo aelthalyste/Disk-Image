@@ -369,7 +369,7 @@ NarGetVolumeGUIDKernelCompatible(wchar_t Letter, wchar_t *VolumeGUID) {
 unsigned char
 NarGetVolumeDiskID(char Letter) {
     
-    wchar_t VolPath[512];
+    wchar_t VolPath[MAX_PATH];
     wchar_t Vol[] = L"!:\\";
     Vol[0] = Letter;
     
@@ -377,7 +377,7 @@ NarGetVolumeDiskID(char Letter) {
     DWORD BS = 1024 * 2; //1 KB
     DWORD T = 0;
     
-    VOLUME_DISK_EXTENTS* Ext = (VOLUME_DISK_EXTENTS*)VirtualAlloc(0, BS, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+    VOLUME_DISK_EXTENTS* Ext = (VOLUME_DISK_EXTENTS*)malloc(BS);
     
     // TODO : We probably don't need kernel GUID at all... fix this
     if(NarGetVolumeGUIDKernelCompatible((wchar_t)Letter,VolPath)){
@@ -407,7 +407,7 @@ NarGetVolumeDiskID(char Letter) {
         printf("Couldnt get kernel compatible volume GUID\n");
     }
     
-    VirtualFree(Ext, 0, MEM_RELEASE);
+    free(Ext);
     
     return Result;
 }
@@ -540,6 +540,7 @@ NarGetDisks() {
     char StrBuf[255];
     int Found = 0;
     DWORD HELL;
+    
     for (unsigned int DiskID = 0; DiskID < 32; DiskID++){
         
         snprintf(StrBuf, sizeof(StrBuf), "\\\\?\\PhysicalDrive%i", DiskID);
@@ -601,6 +602,141 @@ NarGetDisks() {
     return Result;
     
 }
+
+// returns 0 if one is not found
+char NarVolumeNameGUIDToLetter(wchar_t* VolumeName, wchar_t *Out, size_t MaxOutCount)
+{
+    
+    BOOL   Success   = FALSE;
+    
+    //
+    //  Obtain all of the paths
+    //  for this volume.
+    //Success = GetVolumePathNamesForVolumeNameW(VolumeName, Out, MaxOutCount, &MaxOutCount);
+    
+    if (!Success) 
+    {
+        printf("GetVolumePathNamesForVolumeNameW failed for volume %s with error code %d\n", VolumeName, GetLastError());
+        return 0 ;
+    }
+    
+}
+
+
+#if 1
+disk_information_ex*
+NarGetPartitions(nar_arena *Arena, size_t* OutCount) {
+    
+    disk_information_ex *Result = (disk_information_ex*)ArenaAllocateZeroAligned(Arena, 32*sizeof(*Result), 8);
+    
+    size_t Found = 0;
+    DWORD DriveLayoutSize = 1024 * 4;
+    int DGEXSize = 1024 * 4;
+    
+    DWORD MemorySize = DriveLayoutSize + DGEXSize;
+    void* Memory = malloc(MemorySize);
+    
+    DRIVE_LAYOUT_INFORMATION_EX* DriveLayout = (DRIVE_LAYOUT_INFORMATION_EX*)(Memory);
+    DISK_GEOMETRY_EX* DGEX = (DISK_GEOMETRY_EX*)((char*)Memory + DriveLayoutSize);    
+    
+    char StrBuf[255];
+    DWORD HELL;
+    
+    for (unsigned int DiskID = 0; DiskID < 32; DiskID++){
+        
+        snprintf(StrBuf, sizeof(StrBuf), "\\\\?\\PhysicalDrive%i", DiskID);
+        HANDLE Disk = CreateFileA(StrBuf, GENERIC_READ, FILE_SHARE_READ|FILE_SHARE_DELETE|FILE_SHARE_WRITE, 0, OPEN_EXISTING, 0,0);
+        if(Disk == INVALID_HANDLE_VALUE){
+            continue;
+        }
+        
+        disk_information_ex *Insert = &Result[Found++];
+        Insert->DiskID = DiskID;
+        
+        
+        if (DeviceIoControl(Disk, IOCTL_DISK_GET_DRIVE_GEOMETRY_EX, 0, 0, DGEX, (DWORD)DGEXSize, &HELL, 0)) {
+            Insert->TotalSize = (ULONGLONG)DGEX->DiskSize.QuadPart;
+        }
+        else {
+            printf("Can't get drive layout for disk %s\n", StrBuf);
+        }
+        
+        
+        if (DeviceIoControl(Disk, IOCTL_DISK_GET_DRIVE_LAYOUT_EX, 0, 0, DriveLayout, DriveLayoutSize, &HELL, 0)) {
+            
+            if (DriveLayout->PartitionStyle == PARTITION_STYLE_MBR) {
+                Insert->DiskType = NAR_DISKTYPE_MBR;
+            }
+            if (DriveLayout->PartitionStyle == PARTITION_STYLE_GPT) {
+                Insert->DiskType = NAR_DISKTYPE_GPT;
+            }
+            if (DriveLayout->PartitionStyle == PARTITION_STYLE_RAW) {
+                Insert->DiskType = NAR_DISKTYPE_RAW;
+            }
+            
+            if(DriveLayout->PartitionStyle != PARTITION_STYLE_RAW
+               && DriveLayout->PartitionStyle != PARTITION_STYLE_GPT
+               && DriveLayout->PartitionStyle != PARTITION_STYLE_MBR){
+                printf("Drive layout style was undefined, %s\n", StrBuf);
+                continue;
+            }
+            
+            if(DriveLayout->PartitionCount == 0 || DriveLayout->PartitionStyle == PARTITION_STYLE_RAW){
+                continue;
+            }
+            
+            Insert->Volumes = (volume_information*)ArenaAllocateZero(Arena, DriveLayout->PartitionCount * sizeof(volume_information));
+            
+            Insert->UnusedSize = Insert->TotalSize;
+            Insert->VolumeCount = DriveLayout->PartitionCount;
+            
+            for(size_t PartitionID = 0;
+                PartitionID < DriveLayout->PartitionCount;
+                PartitionID++)
+            {
+                auto PLayout = DriveLayout->PartitionEntry[PartitionID];
+                Insert->UnusedSize -= PLayout.PartitionLength.QuadPart;
+                
+                Insert->Volumes[PartitionID].TotalSize = PLayout.PartitionLength.QuadPart;
+                Insert->Volumes[PartitionID].DiskID    = Insert->DiskID;
+                Insert->Volumes[PartitionID].DiskType  = Insert->DiskType;
+                Insert->Volumes[PartitionID].Letter    = PLayout.PartitionNumber;
+                
+                if(Insert->DiskType == NAR_DISKTYPE_GPT){
+                    wcscpy(Insert->Volumes[PartitionID].VolumeName, PLayout.Gpt.Name);
+                    char TempLetter = NarGetVolumeLetterFromGUID(PLayout.Gpt.PartitionId);
+                    if(TempLetter != 0){
+                        Insert->Volumes[PartitionID].Letter = TempLetter;
+                    }
+                }
+                if(Insert->DiskType == NAR_DISKTYPE_MBR){
+                    
+                }
+                
+            }
+            
+            
+        }
+        else {
+            printf("Can't get drive layout for disk %s\n", StrBuf);
+        }
+        
+        
+        CloseHandle(Disk);
+        memset(Memory, 0, MemorySize);
+        Found++;
+    }
+    
+    
+    free(Memory);
+    if(OutCount){
+        *OutCount = Found;
+    }
+    
+    
+    return Result;
+}
+#endif
 
 
 /*
@@ -951,13 +1087,13 @@ NarSetupVSSListen(nar_backup_id ID){
 
 void
 NarFreeProcessListen(process_listen_ctx *Ctx){
-
+    
 	BOOL OK =  TerminateProcess(Ctx->PInfo.hProcess, 0);
 	if(!OK){
 		printf("Unable to terminate vss process, ret code %d, error code %d\n", GetLastError());
 	}
 	
-
+    
     free(Ctx->ReadBuffer);
     free(Ctx->WriteBuffer);
     CloseHandle(Ctx->PipeHandle);
@@ -982,7 +1118,7 @@ NarGetVSSPath(process_listen_ctx *Ctx, wchar_t *Out){
         Garbage = 0;
         
         ReadFile(Ctx->PipeHandle, Ctx->ReadBuffer, Ctx->BufferSize, 0, &Ctx->ReadOverlapped);
-        if(GetOverlappedResultEx(Ctx->PipeHandle, &Ctx->ReadOverlapped, &Garbage, 30000, FALSE)){
+        if(GetOverlappedResultEx(Ctx->PipeHandle, &Ctx->ReadOverlapped, &Garbage, 120000, FALSE)){
             wchar_t *Needle = (wchar_t*)Ctx->ReadBuffer;
             int i = 0;
             for(i =0; *Needle !=0; i++){
@@ -992,11 +1128,11 @@ NarGetVSSPath(process_listen_ctx *Ctx, wchar_t *Out){
             Result = true;
         }
         else{
-            printf("Process didn't answer in given time(30s), abandoning standalone_vss.exe\n");
+            printf("Process didn't answer in given time(120s), abandoning standalone_vss.exe, err code %d\n", GetLastError());
         }
     }
     else{
-        printf("Process didn't answer in given time(1s), abandoning standalone_vss.exe\n");
+        printf("Process didn't answer in given time(1s), abandoning standalone_vss.exe, err : %d\n", GetLastError());
     }
     
     if(Result == false){
@@ -1030,7 +1166,7 @@ NarTerminateVSS(process_listen_ctx *Ctx, uint8_t Success){
         	printf("VSS process didn't respond in given time(5s), terminate process failed\n");
         }
     }
-
+    
     
 }
 
@@ -1072,4 +1208,86 @@ SetupVSS() {
     }
     return Return;
     
+}
+
+
+//Returns # of volumes detected
+data_array<volume_information>
+NarGetVolumes() {
+    
+    data_array<volume_information> Result = { 0,0 };
+    wchar_t VolumeString[] = L"!:\\";
+    char WindowsLetter = 'C';
+    {
+        char WindowsDir[512];
+        GetWindowsDirectoryA(WindowsDir, 512);
+        WindowsLetter = WindowsDir[0];
+    }
+    
+    DWORD Drives = GetLogicalDrives();
+    
+    for (int CurrentDriveIndex = 0; CurrentDriveIndex < 26; CurrentDriveIndex++) {
+        
+        if (Drives & (1 << CurrentDriveIndex)) {
+            
+            VolumeString[0] = (wchar_t)('A' + (char)CurrentDriveIndex);
+            ULARGE_INTEGER TotalSize = { 0 };
+            ULARGE_INTEGER FreeSize = { 0 };
+            
+            volume_information T = { 0 };
+            
+            if (GetDiskFreeSpaceExW(VolumeString, 0, &TotalSize, &FreeSize)) {
+                T.Letter = 'A' + (char)CurrentDriveIndex;
+                T.TotalSize = TotalSize.QuadPart;
+                T.FreeSize = FreeSize.QuadPart;
+                
+                T.Bootable = (WindowsLetter == T.Letter);
+                T.DiskType = (char)NarGetVolumeDiskType(T.Letter);
+                T.DiskID = NarGetVolumeDiskID(T.Letter);
+                
+                {
+                    WCHAR fileSystemName[MAX_PATH + 1] = { 0 };
+                    DWORD serialNumber = 0;
+                    DWORD maxComponentLen = 0;
+                    DWORD fileSystemFlags = 0;
+                    GetVolumeInformationW(VolumeString, T.VolumeName, sizeof(T.VolumeName), &serialNumber, &maxComponentLen, &fileSystemFlags, fileSystemName, sizeof(fileSystemName));
+                }
+                
+                Result.Insert(T);
+            }
+            
+            
+        }
+        
+    }
+    
+    return Result;
+    
+}
+
+
+void
+GUIDToStr(char *Out, GUID guid){
+    sprintf(Out, "{%08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x}", guid.Data1, guid.Data2, guid.Data3, guid.Data4[0], guid.Data4[1], guid.Data4[2], guid.Data4[3], guid.Data4[4], guid.Data4[5], guid.Data4[6], guid.Data4[7]);
+}
+
+
+char
+NarGetVolumeLetterFromGUID(GUID G){
+    
+    wchar_t TempVolumeName[128];
+    wchar_t GStr[50];
+    
+    StringFromGUID2(G,
+                    GStr,
+                    50);
+    
+    wsprintfW(TempVolumeName, L"\\\\?\\Volume%s", GStr);
+    TempVolumeName[wcslen(TempVolumeName)] = L'\\';
+    wchar_t Result[64];
+    memset(Result,0,sizeof(Result));
+    DWORD T;
+    GetVolumePathNamesForVolumeNameW(TempVolumeName, Result, 64, &T);
+    
+    return Result[0];
 }

@@ -1,8 +1,6 @@
 #include <Windows.h>
 #include <stdio.h>
 #include <string>
-
-
 #include <atlbase.h>
 #include <vds.h>
 #include <vss.h>
@@ -13,6 +11,9 @@
 #include "iphlpapi.h"
 
 char G_PipeBuffer[512];
+FILE *Log = 0;
+#define LOG(fmt, ...) do{fprintf(Log, fmt, __VA_ARGS__); fflush(Log); }while(0);
+#define WINAPI_LOG(str) do{fprintf(Log, "%s, Err code %d\n", str, GetLastError());}while(0);
 
 BOOLEAN
 SetupVSS() {
@@ -29,7 +30,7 @@ SetupVSS() {
     // TODO (Batuhan): Remove that thing if 
     hResult = CoInitializeEx(NULL, COINIT_MULTITHREADED);
     if (!SUCCEEDED(hResult)) {
-        printf("Failed CoInitialize function %d\n", hResult);
+        LOG("Failed CoInitialize function %d\n", hResult);
         Return = FALSE;
     }
     
@@ -46,7 +47,7 @@ SetupVSS() {
                                    );
     
     if (!SUCCEEDED(hResult)) {
-        printf("Failed CoInitializeSecurity function %d\n", hResult);
+        LOG("Failed CoInitializeSecurity function %d\n", hResult);
         Return = FALSE;
     }
     return Return;
@@ -64,7 +65,7 @@ GetShadowPath(std::wstring Drive, CComPtr<IVssBackupComponents>& ptr, wchar_t* O
     res = CreateVssBackupComponents(&ptr);
     
     if(nullptr == ptr){
-        printf("createbackup components returned %X\n", res);
+        LOG("createbackup components returned %X\n", res);
         return sid;
         // early termination
     }
@@ -86,35 +87,35 @@ GetShadowPath(std::wstring Drive, CComPtr<IVssBackupComponents>& ptr, wchar_t* O
                                     Error = FALSE;
                                 }
                                 else{
-                                    printf("DoSnapshotSet failed\n");
+                                    WINAPI_LOG("DoSnapshotSet failed\n");
                                 }
                             }
                             else{
-                                printf("PrepareForBackup failed\n");
+                                WINAPI_LOG("PrepareForBackup failed\n");
                             }
                         }
                         else{
-                            printf("AddToSnapshotSet failed\n");
+                            WINAPI_LOG("AddToSnapshotSet failed\n");
                         }
                     }
                     else{
-                        printf("StartSnapshotSet failed\n");
+                        WINAPI_LOG("StartSnapshotSet failed\n");
                     }
                 }
                 else{
-                    printf("GatherWriterMetadata failed\n");
+                    WINAPI_LOG("GatherWriterMetadata failed\n");
                 }
             }
             else{
-                printf("SetBackupState failed\n");
+                WINAPI_LOG("SetBackupState failed\n");
             }
         }
         else{
-            printf("SetContext failed\n");
+            WINAPI_LOG("SetContext failed\n");
         }
     }
     else{
-        printf("InitializeForBackup failed\n");
+        WINAPI_LOG("InitializeForBackup failed\n");
     }
     
     if (!Error) {
@@ -126,7 +127,7 @@ GetShadowPath(std::wstring Drive, CComPtr<IVssBackupComponents>& ptr, wchar_t* O
             wcscpy(OutShadowPath, SnapshotProp.m_pwszSnapshotDeviceObject);
         }
         else{
-            printf("Shadow path can't fit given string buffer\n");
+            LOG("Shadow path can't fit given string buffer\n");
         }
     }
     
@@ -142,23 +143,6 @@ enum ProcessCommandType{
 };
 
 
-template <typename F>
-struct privDefer {
-	F f;
-	privDefer(F f) : f(f) {}
-	~privDefer() { f(); }
-};
-
-template <typename F>
-privDefer<F> defer_func(F f) {
-	return privDefer<F>(f);
-}
-
-#define DEFER_1(x, y) x##y
-#define DEFER_2(x, y) DEFER_1(x, y)
-#define DEFER_3(x)    DEFER_2(x, __COUNTER__)
-#define defer(code)   auto DEFER_3(_defer_) = defer_func([&](){code;})
-
 
 int AlternateMain(int argc, char *argv[]){
     
@@ -166,12 +150,9 @@ int AlternateMain(int argc, char *argv[]){
     HANDLE PipeHandle = INVALID_HANDLE_VALUE;
     CComPtr<IVssBackupComponents> VSSPTR;
     char MsgBuffer[512];
-    FILE *Log = fopen("C:\\ProgramData\\NarDiskBackup\\standalonevss.txt", "wb");
-    defer({fclose(Log);});
-
-    fprintf(Log, "Started!\n");
+    LOG("Started!\n");
     if(argc != 2){
-        fprintf(Log, "Argument count must be 2\n");
+        LOG("Argument count must be 2\n");
         return 0;
     }
     
@@ -189,7 +170,7 @@ int AlternateMain(int argc, char *argv[]){
                              NULL);
     
     if(PipeHandle == INVALID_HANDLE_VALUE){
-        fprintf(Log, "Unable to open pipe\n");
+        LOG("Unable to open pipe\n");
         return 0;
     }
     
@@ -211,11 +192,11 @@ int AlternateMain(int argc, char *argv[]){
                 memset(MsgBuffer, 0, sizeof(MsgBuffer));
                 memcpy(MsgBuffer, OutShadowPath, wcslen(OutShadowPath)*2);
                 if(WriteFile(PipeHandle, MsgBuffer, sizeof(MsgBuffer), &Garbage, 0) &&  Garbage == sizeof(MsgBuffer)){
-                    fprintf(Log, "Succesfully send VSS path to server\n");
+                    LOG("Succesfully send VSS path to server\n");
                     // success!
                 }
                 else{
-                    fprintf(Log, "Unable to send vss path to server!\n");
+                    LOG("Unable to send vss path to server!\n");
                 }
                 
             }
@@ -228,15 +209,16 @@ int AlternateMain(int argc, char *argv[]){
                 hr = VSSPTR->BackupComplete(&async);
                 if(hr == S_OK){
                     async->Wait();
-                	fprintf(Log, "VSS backup complete successfull!\n");
+                    LOG("VSS backup complete successfull!\n");
                 }
                 else{
-                	fprintf(Log, "VSS backup complete failed\n");
+                    LOG("VSS backup complete failed\n");
                 }
 
                 hr = VSSPTR->DeleteSnapshots(VSSID, VSS_OBJECT_SNAPSHOT, TRUE, &Deleted, &NonDeleted);
                 VSSPTR.Release();
                 WriteFile(PipeHandle, MsgBuffer, sizeof(MsgBuffer), &Garbage, 0);
+                fclose(Log);
                 return 0;
             }
             
@@ -244,10 +226,12 @@ int AlternateMain(int argc, char *argv[]){
         
     }
     
-    fprintf(Log, "Terminating process!\n");
+    LOG("Terminating process!\n");
     return 0;
 }
 
 int main(int argc, char *argv[]){
-    ExitProcess(AlternateMain(argc, argv));
+    Log = fopen("C:\\ProgramData\\NarDiskBackup\\standalonevss.txt", "wb");
+    AlternateMain(argc, argv);
+    fclose(Log);
 }

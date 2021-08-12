@@ -360,7 +360,7 @@ int32_t
 SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, DotNetStreamInf* SI, bool ShouldCompress) {
     
 	printf("SetupStream (%X, %c, %d, %X, %d)\n", C, L, Type, SI, ShouldCompress);   
-
+    
     int32_t Return = FALSE;
     int ID = GetVolumeID(C, L);
     
@@ -418,7 +418,7 @@ SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, DotNetStreamInf* SI, boo
     Temp[0] = VolInf->Letter;
     wchar_t ShadowPath[256];
     
-
+    
 #if 1    
     VolInf->PLCtx = NarSetupVSSListen(VolInf->BackupID);
     if(VolInf->PLCtx.ReadBuffer == 0){
@@ -623,7 +623,7 @@ TerminateBackup(volume_backup_inf* V, int32_t Succeeded) {
     else{
         
     }
-   
+    
     
     if(NULL != V->Stream.CompressionBuffer){
         V->Stream.BufferSize = 0;
@@ -1876,59 +1876,6 @@ SaveMetadata(char Letter, int Version, int ClusterSize, BackupType BT,
 
 
 
-//Returns # of volumes detected
-data_array<volume_information>
-NarGetVolumes() {
-    
-    data_array<volume_information> Result = { 0,0 };
-    wchar_t VolumeString[] = L"!:\\";
-    char WindowsLetter = 'C';
-    {
-        char WindowsDir[512];
-        GetWindowsDirectoryA(WindowsDir, 512);
-        WindowsLetter = WindowsDir[0];
-    }
-    
-    DWORD Drives = GetLogicalDrives();
-    
-    for (int CurrentDriveIndex = 0; CurrentDriveIndex < 26; CurrentDriveIndex++) {
-        
-        if (Drives & (1 << CurrentDriveIndex)) {
-            
-            VolumeString[0] = (wchar_t)('A' + (char)CurrentDriveIndex);
-            ULARGE_INTEGER TotalSize = { 0 };
-            ULARGE_INTEGER FreeSize = { 0 };
-            
-            volume_information T = { 0 };
-            
-            if (GetDiskFreeSpaceExW(VolumeString, 0, &TotalSize, &FreeSize)) {
-                T.Letter = 'A' + (char)CurrentDriveIndex;
-                T.TotalSize = TotalSize.QuadPart;
-                T.FreeSize = FreeSize.QuadPart;
-                
-                T.Bootable = (WindowsLetter == T.Letter);
-                T.DiskType = (char)NarGetVolumeDiskType(T.Letter);
-                T.DiskID = NarGetVolumeDiskID(T.Letter);
-                
-                {
-                    WCHAR fileSystemName[MAX_PATH + 1] = { 0 };
-                    DWORD serialNumber = 0;
-                    DWORD maxComponentLen = 0;
-                    DWORD fileSystemFlags = 0;
-                    GetVolumeInformationW(VolumeString, T.VolumeName, sizeof(T.VolumeName), &serialNumber, &maxComponentLen, &fileSystemFlags, fileSystemName, sizeof(fileSystemName));
-                }
-                
-                Result.Insert(T);
-            }
-            
-            
-        }
-        
-    }
-    
-    return Result;
-    
-}
 
 
 

@@ -427,11 +427,11 @@ TEST_RegionCoupleIter(){
 void TEST_STRINGS(){
 	
 	nar_arena Arena = ArenaInit(malloc(1024), 1024);
-
+    
 	NarUTF8 MainStr = NARUTF8("RANDOM_FILE_NAME");
-
+    
 	auto LongStr = NarUTF8Init(ArenaAllocate(&Arena, 400), 400);
-
+    
 	auto Root = NarGetRootPath(MainStr, &Arena);
 	NarStringConcatenate(&LongStr, Root);
 	NarStringConcatenate(&LongStr, NARUTF8("my other file name"));
@@ -445,9 +445,55 @@ void TEST_STRINGS(){
 
 int
 wmain(int argc, wchar_t* argv[]) {
-
-	TEST_STRINGS();
-
+    
+    auto TempArena = ArenaInit(malloc(1024*1024), 1024*1024);
+    size_t Out = 0;
+    auto Disks = NarGetPartitions(&TempArena, &Out);
+    
+    for(int i =0; i<Out; i++){
+        
+        printf("ID : %d\n", Disks[i].DiskID);
+        printf("Size : %d\n", Disks[i].TotalSize);
+        printf("Unused size %d\n", Disks[i].UnusedSize);
+        
+        for(int j =0; j<Disks[i].VolumeCount; j++){
+            
+            if(Disks[i].Volumes[j].Letter > L'A' && Disks[i].Volumes[j].Letter < L'Z'){
+                printf("\tPartition : %c\n", Disks[i].Volumes[j].Letter);
+            }
+            else{
+                printf("\tPartition : %d\n", Disks[i].Volumes[j].Letter);
+            }
+            
+            if(Disks[i].Volumes[j].VolumeName){
+                printf("\tName : %S\n", Disks[i].Volumes[j].VolumeName);
+            }
+            
+        }
+        
+        
+    }
+    
+    
+    return 0;
+    
+#if 0    
+    {
+        char Bf[1024];
+        memset(Bf, 0, 1024);
+        HANDLE Iter = FindFirstVolumeA(Bf, 1024); 
+        for(;;){
+            printf("%s\n", Bf);
+            if(!FindNextVolumeA(Iter,Bf, 1024)){
+                break;
+            }
+        }
+        FindVolumeClose(Iter); 
+    }
+#endif
+    
+    return 0;
+    
 #if 0    
     {
         nar_backup_id ID = {};
@@ -637,7 +683,7 @@ wmain(int argc, wchar_t* argv[]) {
     
     
 #if 0
-	// CREATE NARBOOTFILE
+    // CREATE NARBOOTFILE
     {
         LOG_CONTEXT C = {0};
         C.Port = INVALID_HANDLE_VALUE;
@@ -666,7 +712,7 @@ wmain(int argc, wchar_t* argv[]) {
             
             printf("ENTER LETTER TO DO BACKUP\n");
             std::cin>>Volume;
-
+            
             BackupType bt = BackupType::Inc;
             
             if(SetupStream(&C, (wchar_t)Volume, bt, &inf, false)){
@@ -687,7 +733,7 @@ wmain(int argc, wchar_t* argv[]) {
                 if(file != INVALID_HANDLE_VALUE){
                     uint64_t ucs = 0;
                     printf("starting backup\n");
-#if 0                    
+#if 1                    
                     loop{
                         int Read = ReadStream(v, MemBuf, bsize);
                         TotalRead += Read;
