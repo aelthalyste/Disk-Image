@@ -977,7 +977,7 @@ namespace DiskBackup.Business.Concrete
                 foreach (var item in resultList)
                 {
                     FilesInBackup filesInBackup = new FilesInBackup();
-                    filesInBackup.Id = (long)item.ID;
+                    filesInBackup.Id = item.UniqueID;
                     filesInBackup.Name = item.Name;
                     filesInBackup.Type = (FileType)Convert.ToInt16(item.IsDirectory); //Directory ise 1 
                     filesInBackup.Size = (long)item.Size;
@@ -992,6 +992,7 @@ namespace DiskBackup.Business.Concrete
                         ((item.LastModifiedTime.Minute < 10) ? 0 + item.LastModifiedTime.Minute.ToString() : item.LastModifiedTime.Minute.ToString());
 
                     filesInBackupList.Add(filesInBackup);
+                    _logger.Debug($"{filesInBackup.Name} : {filesInBackup.Id}");
                 }
             }
             catch (Exception ex)
@@ -1018,30 +1019,14 @@ namespace DiskBackup.Business.Concrete
             }
         }
 
-        public bool GetSelectedFileInfo(FilesInBackup filesInBackup)
+        public bool GetSelectedFileInfo(ulong filesInBackupId)
         {
             _logger.Verbose("GetSelectedFileInfo metodu çağırıldı");
-            CSNarFileEntry cSNarFileEntry = new CSNarFileEntry();
             try
             {
-                var resultList = _cSNarFileExplorer.CW_GetFilesInCurrentDirectory();
-                foreach (var item in resultList)
-                {
-                    if (item.ID == (ulong)filesInBackup.Id)
-                    {
-                        cSNarFileEntry = item;
-                        break;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.Error(ex, "_cSNarFileExplorer.CW_GetFilesInCurrentDirectory() gerçekleştirilemedi.");
-            }
-
-            try
-            {
-                return _cSNarFileExplorer.CW_SelectDirectory(cSNarFileEntry);
+                var result = _cSNarFileExplorer.CW_SelectDirectory(filesInBackupId);
+                _logger.Information($"_cSNarFileExplorer.CW_SelectDirectory({filesInBackupId}) işlemi sonucu: {result}");
+                return result;
             }
             catch (Exception ex)
             {
@@ -1103,6 +1088,7 @@ namespace DiskBackup.Business.Concrete
         public FileRestoreResult RestoreFilesInBackup(FilesInBackup filesInBackup, string targetDirectory) // batuhan hangi backup olduğunu nasıl anlayacak? backup directoryde backup ismi almıyor
         {
             _logger.Verbose("RestoreFilesInBackup metodu çağırıldı");
+            _logger.Information($"{filesInBackup.Name} isimli, {filesInBackup.Id} id'li dosya için indirme işlemi {targetDirectory} dizinine başlatılıyor");
             try
             {
                 var sizeOfRestoredFilesConfiguration = _configurationDataDal.Get(x => x.Key == "sizeOfRestoredFiles");
@@ -1110,22 +1096,11 @@ namespace DiskBackup.Business.Concrete
                 Stopwatch passingTime = new Stopwatch();
                 passingTime.Start();
 
-                CSNarFileEntry SelectedEntry = new CSNarFileEntry();
-                var resultList = _cSNarFileExplorer.CW_GetFilesInCurrentDirectory();
-                foreach (var item in resultList)
-                {
-                    if (item.ID == (ulong)filesInBackup.Id)
-                    {
-                        SelectedEntry = item;
-                        break;
-                    }
-                }
-
-                CSNarFileExportStream Stream = new CSNarFileExportStream(_cSNarFileExplorer, SelectedEntry);
+                CSNarFileExportStream Stream = new CSNarFileExportStream(_cSNarFileExplorer, filesInBackup.Id);
 
                 if (Stream.IsInit())
                 {
-                    FileStream file = File.Create(targetDirectory + SelectedEntry.Name); // başına kullanıcının seçtiği path gelecek {targetPath + @"\" + SelectedEntry.Name}
+                    FileStream file = File.Create(targetDirectory + filesInBackup.Name); // başına kullanıcının seçtiği path gelecek {targetPath + @"\" + SelectedEntry.Name}
                     unsafe
                     {
                         ulong buffersize = 1024 * 1024 * 64;
