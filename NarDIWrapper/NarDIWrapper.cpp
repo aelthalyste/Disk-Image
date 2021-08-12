@@ -173,7 +173,7 @@ namespace NarDIWrapper {
             
             // when loading, always check for old states, if one is not presented, create new one from scratch
             if (C == NULL) {
-                printf("Coulndt load from boot file, initializing new CONTEXT\n");
+                printf("Couldn't load from boot file, initializing new CONTEXT\n");
                 C = new LOG_CONTEXT;
             }
             else {
@@ -195,7 +195,10 @@ namespace NarDIWrapper {
     
     
     bool DiskTracker::CW_InitTracker() {
-        return ConnectDriver(C);
+        if(C->Port == INVALID_HANDLE_VALUE){
+            return ConnectDriver(C);
+        }
+        return true;
     }
     
     bool DiskTracker::CW_AddToTrack(wchar_t L, int Type) {
