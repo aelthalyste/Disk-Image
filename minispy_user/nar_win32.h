@@ -209,5 +209,5 @@ NarGetPartitions(nar_arena *Arena, size_t* OutCount);
 void
 GUIDToStr(char *Out, GUID G);
 
-char
+char 
 NarGetVolumeLetterFromGUID(GUID G);

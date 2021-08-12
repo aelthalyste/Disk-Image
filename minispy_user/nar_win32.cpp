@@ -655,7 +655,7 @@ NarGetPartitions(nar_arena *Arena, size_t* OutCount) {
         
         
         if (DeviceIoControl(Disk, IOCTL_DISK_GET_DRIVE_GEOMETRY_EX, 0, 0, DGEX, (DWORD)DGEXSize, &HELL, 0)) {
-            Insert->TotalSize = (ULONGLONG)DGEX->DiskSize.QuadPart;
+            Insert->TotalSize = DGEX->DiskSize.QuadPart;
         }
         else {
             printf("Can't get drive layout for disk %s\n", StrBuf);
@@ -706,6 +706,15 @@ NarGetPartitions(nar_arena *Arena, size_t* OutCount) {
                     wcscpy(Insert->Volumes[PartitionID].VolumeName, PLayout.Gpt.Name);
                     char TempLetter = NarGetVolumeLetterFromGUID(PLayout.Gpt.PartitionId);
                     if(TempLetter != 0){
+                        char VolumeString[] = "!:\\";
+                        VolumeString[0] = TempLetter;
+                        ULARGE_INTEGER TotalSize = { 0 };
+                        ULARGE_INTEGER FreeSize = { 0 };
+                        
+                        GetDiskFreeSpaceExA(VolumeString, 0, &TotalSize, &FreeSize);
+                        
+                        Insert->Volumes[PartitionID].FreeSize = FreeSize.QuadPart;
+                        
                         Insert->Volumes[PartitionID].Letter = TempLetter;
                     }
                 }
