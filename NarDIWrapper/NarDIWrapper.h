@@ -125,8 +125,8 @@ namespace NarDIWrapper {
     
     public ref class DiskInfo {
         public:
-        UINT64 Size;
-        wchar_t Type; // MBR, RAW, GPT
+        uint64_t Size;
+        wchar_t  Type; // MBR, RAW, GPT
         int ID;
     };
     
@@ -239,6 +239,7 @@ namespace NarDIWrapper {
             IsDirectory = File->IsDirectory;
             Size        = File->Size;
             ID          = File->FileID;
+            UniqueID    = reinterpret_cast<uintptr_t>(File);
             Name        = gcnew System::String(File->Name);
             Ref         = File;
             CreationTime        = gcnew CSNarFileTime(File->CreationTime);
@@ -246,8 +247,9 @@ namespace NarDIWrapper {
         }
         
         bool IsDirectory;
-        UINT64 Size;
-        UINT64 ID;
+        uint64_t Size;
+        uint64_t ID;
+        uint64_t UniqueID;
         
         CSNarFileTime^ CreationTime;
         CSNarFileTime^ LastModifiedTime;
@@ -278,7 +280,7 @@ namespace NarDIWrapper {
         public:
         
         
-        CSNarFileExportStream(CSNarFileExplorer^ FileExplorer, CSNarFileEntry^ Target);
+        CSNarFileExportStream(CSNarFileExplorer^ FileExplorer, uint64_t UniqueTargetID);
         ~CSNarFileExportStream();        
         
         /*
@@ -330,7 +332,7 @@ namespace NarDIWrapper {
         
         // Set's current directory as given file entry.
         // Entry should be directory, otherwise function doesnt do anything and returns false
-        bool CW_SelectDirectory(CSNarFileEntry^ Entry);
+        bool CW_SelectDirectory(uint64_t UniqueFileID);
         
         // Pops up to upper directory, if possible.
         // Is equal to "up to" button in file explorer
@@ -340,7 +342,7 @@ namespace NarDIWrapper {
         void CW_Free();
         
         // Initiates export stream for given Target file entry.
-        CSNarFileExportStream^ CW_SetupFileRestore(CSNarFileEntry^ Target);
+        CSNarFileExportStream^ CW_SetupFileRestore(uint64_t UniqueTargetID);
         
         // DEBUG function for specific usage areas.
         CSNarFileExportStream^ CW_DEBUG_SetupFileRestore(int FileID);

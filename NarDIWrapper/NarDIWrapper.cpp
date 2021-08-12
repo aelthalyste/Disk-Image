@@ -75,8 +75,8 @@ namespace NarDIWrapper {
         return Result;
     }
     
-    bool CSNarFileExplorer::CW_SelectDirectory(CSNarFileEntry^ Entry){
-        __CurrentDir = (__DirStack[++__DSI] = Entry->Ref);
+    bool CSNarFileExplorer::CW_SelectDirectory(uint64_t UniqueTargetID){
+        __CurrentDir = (__DirStack[++__DSI] = (file_explorer_file*)reinterpret_cast<void*>(UniqueTargetID));
         return true;
     }
     
@@ -92,15 +92,15 @@ namespace NarDIWrapper {
         }
     }
     
-    CSNarFileExportStream^ CSNarFileExplorer::CW_SetupFileRestore(CSNarFileEntry ^Target) {
-        CSNarFileExportStream^ Result = gcnew CSNarFileExportStream(this, Target);
+    CSNarFileExportStream^ CSNarFileExplorer::CW_SetupFileRestore(uint64_t UniqueTargetID) {
+        CSNarFileExportStream^ Result = gcnew CSNarFileExportStream(this, UniqueTargetID);
         return Result;
     }
     
     CSNarFileExportStream^ CSNarFileExplorer::CW_DEBUG_SetupFileRestore(int FileID) {
         file_explorer_file* File = FEFindFileWithID(FE, FileID);
-        CSNarFileEntry^ Entry = gcnew CSNarFileEntry(File);
-        return gcnew CSNarFileExportStream(this, Entry);
+        //CSNarFileEntry^ Entry = gcnew CSNarFileEntry(File);
+        return gcnew CSNarFileExportStream(this, reinterpret_cast<uintptr_t>(File));
     }
     
     System::String^ CSNarFileExplorer::CW_GetCurrentDirectoryString() {
@@ -112,13 +112,16 @@ namespace NarDIWrapper {
     
     
     
-    CSNarFileExportStream::CSNarFileExportStream(CSNarFileExplorer^ FileExplorer, CSNarFileEntry^ Target) {
+    CSNarFileExportStream::CSNarFileExportStream(CSNarFileExplorer^ FileExplorer, uint64_t UniqueTargetID) {
         MemorySize = Megabyte(40);
         Memory = VirtualAlloc(0, MemorySize, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+        
+        file_explorer_file *Target = (file_explorer_file*)reinterpret_cast<void*>(UniqueTargetID);
+        
         if (Memory) {
             nar_arena TempArena = ArenaInit(Memory, MemorySize);
             Ctx = (file_restore_ctx*)ArenaAllocateZero(&TempArena, sizeof(*Ctx));
-            *Ctx = NarInitFileRestoreCtx(FileExplorer->FE, Target->Ref, &TempArena);
+            *Ctx = NarInitFileRestoreCtx(FileExplorer->FE, Target, &TempArena);
             TargetFileSize = Target->Size;
             uint8_t CmpBuffer[sizeof(*Ctx)];
             memset(CmpBuffer, 0, sizeof(*Ctx));
@@ -342,7 +345,7 @@ namespace NarDIWrapper {
         printf("Found %i disks on the system\n", CResult.Count);
         for (int i = 0; i < CResult.Count; i++) {
             DiskInfo^ temp = gcnew DiskInfo;
-            temp->ID = CResult.Data[i].ID;
+            temp->ID   = CResult.Data[i].ID;
             temp->Size = CResult.Data[i].Size;
             temp->Type = CResult.Data[i].Type;
             Result->Add(temp);
