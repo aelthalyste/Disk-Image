@@ -22,7 +22,7 @@ namespace DiskBackup.Business.Abstract
         [OperationContract]
         List<ActivityDownLog> GetDownLogList(); //Böyle bir uç yapılacağı konuşuldu
         [OperationContract]
-        bool GetSelectedFileInfo(FilesInBackup filesInBackup);
+        bool GetSelectedFileInfo(ulong filesInBackupId);
 
         [OperationContract]
         void PauseTask(TaskInfo taskInfo);

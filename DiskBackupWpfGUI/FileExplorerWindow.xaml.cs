@@ -119,7 +119,7 @@ namespace DiskBackupWpfGUI
                 SortItems();
                 txtfileExplorerPath.Text = _backupManager.GetCurrentDirectory();
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 _logger.Error(ex, "Beklenmedik hata oluştuğu için file explorerda geri gidilemiyor");
             }
@@ -131,25 +131,25 @@ namespace DiskBackupWpfGUI
             {
                 FilesInBackup filesInBackup = (FilesInBackup)listViewFileExplorer.SelectedItem;
 
-                foreach (var item in _filesInBackupList)
+                try
                 {
-                    if (item.Name.Equals(filesInBackup.Name) && item.StrSize.Equals(filesInBackup.StrSize))
+                    if (_backupManager.GetSelectedFileInfo(filesInBackup.Id))
                     {
-                        try
-                        {
-                            _backupManager.GetSelectedFileInfo(item);
-                            _filesInBackupList = _backupManager.GetFileInfoList();
-                            RemoveSystemFiles();
-                            listViewFileExplorer.ItemsSource = _filesInBackupList;
-                            SortItems();
-                            txtfileExplorerPath.Text = _backupManager.GetCurrentDirectory();
-                        }
-                        catch(Exception ex)
-                        {
-                            _logger.Error(ex, "Beklenmedik hata oluştuğu için file explorerda içine girilemiyor");
-                        }
-                        break;
+                        _filesInBackupList = _backupManager.GetFileInfoList();
+                        RemoveSystemFiles();
+                        listViewFileExplorer.ItemsSource = _filesInBackupList;
+                        SortItems();
+                        txtfileExplorerPath.Text = _backupManager.GetCurrentDirectory();
                     }
+                    else
+                    {
+                        MessageBox.Show(Resources["unexpectedErrorMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.Error(ex, "Beklenmedik hata oluştuğu için file explorerda içine girilemiyor");
+                    MessageBox.Show(Resources["unexpectedErrorMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
         }

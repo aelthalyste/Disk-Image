@@ -10,7 +10,7 @@ namespace DiskBackup.Entities.Concrete
     public class FilesInBackup : IEntity
     {
         //File Explorer penceresinde bulunan listview'a gelecek model
-        public long Id { get; set; }
+        public ulong Id { get; set; }
         public FileType Type { get; set; }
         public string Name { get; set; }
         public string UpdatedDate { get; set; }
