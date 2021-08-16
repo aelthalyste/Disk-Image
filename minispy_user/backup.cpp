@@ -359,7 +359,9 @@ GetVolumeRegionsFromBitmap(HANDLE VolumeHandle, uint32_t* OutRecordCount) {
 int32_t
 SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, DotNetStreamInf* SI, bool ShouldCompress) {
     
-	printf("SetupStream (%X, %c, %d, %X, %d)\n", C, L, Type, SI, ShouldCompress);   
+    if(C == 0){
+        printf("Setupstream called with context zero\n");
+    }
     
     int32_t Return = FALSE;
     int ID = GetVolumeID(C, L);
@@ -375,6 +377,7 @@ SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, DotNetStreamInf* SI, boo
         }
     }
     
+    printf("test %d!\n", __LINE__);
     volume_backup_inf* VolInf = &C->Volumes.Data[ID];
     
     printf("Entered setup stream for volume %c, version %i\n", (char)L, VolInf->Version);
@@ -601,7 +604,7 @@ SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, DotNetStreamInf* SI, boo
 int32_t
 TerminateBackup(volume_backup_inf* V, int32_t Succeeded) {
     
-    int32_t Return = FALSE;
+    int32_t Result = TRUE;
     if (!V) return FALSE;
     
     printf("Volume %c version %i backup operation will be terminated\n", V->Letter, V->Version);
@@ -618,6 +621,7 @@ TerminateBackup(volume_backup_inf* V, int32_t Succeeded) {
         }
         else{
             printf("Couldn't save metadata. Version %i volume %c\n", V->Version, V->Letter);
+            Result = FALSE;
         }
     }
     else{
@@ -652,26 +656,10 @@ TerminateBackup(volume_backup_inf* V, int32_t Succeeded) {
     V->Stream.RecIndex = 0;
     V->Stream.ClusterIndex = 0;
     
-#if 1
     NarTerminateVSS(&V->PLCtx, 1);
     NarFreeProcessListen(&V->PLCtx);
-#else   
-    {
-        LONG Deleted=0;
-        VSS_ID NonDeleted;
-        HRESULT hr;
-        CComPtr<IVssAsync> async;
-        hr = V->VSSPTR->BackupComplete(&async);
-        if(hr == S_OK){
-            async->Wait();
-        }
-        hr = V->VSSPTR->DeleteSnapshots(V->SnapshotID, VSS_OBJECT_SNAPSHOT, TRUE, &Deleted, &NonDeleted);
-        V->VSSPTR.Release();
-    }
-#endif
     
-    
-    return Return;
+    return Result;
 }
 
 
@@ -2101,7 +2089,7 @@ LOG_CONTEXT*
 NarLoadBootState() {
     
     printf("Entered NarLoadBootState\n");
-    LOG_CONTEXT* Result;
+    LOG_CONTEXT* Result = 0 ;
     int32_t bResult = FALSE;
     Result = new LOG_CONTEXT;
     memset(Result, 0, sizeof(LOG_CONTEXT));
@@ -2114,6 +2102,7 @@ NarLoadBootState() {
         
         strcat(FileNameBuffer, "\\");
         strcat(FileNameBuffer, NAR_BOOTFILE_NAME);
+        printf("Boot file full path %s\n", FileNameBuffer);
         HANDLE File = CreateFileA(FileNameBuffer, GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
         if (File != INVALID_HANDLE_VALUE) {
             
@@ -2200,7 +2189,7 @@ NarLoadBootState() {
         printf("Couldnt get windows directory, error %i\n", GetLastError());
     }
     
-    if (!Result) {
+    if (!bResult) {
         delete Result;
         Result = NULL;
     }

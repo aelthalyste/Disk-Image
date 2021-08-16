@@ -567,7 +567,6 @@ NarGetDisks() {
                && DriveLayout->PartitionStyle != PARTITION_STYLE_GPT
                && DriveLayout->PartitionStyle != PARTITION_STYLE_MBR){
                 printf("Drive layout style was undefined, %s\n", StrBuf);
-                continue;
             }
             
         }
@@ -642,9 +641,16 @@ NarGetPartitions(nar_arena *Arena, size_t* OutCount) {
     char StrBuf[255];
     DWORD HELL;
     
-    for (unsigned int DiskID = 0; DiskID < 32; DiskID++){
+    uint32_t Disks = NarGetDiskListFromDiskPart();
+    
+    for (uint32_t DiskID = 0; DiskID < 32; DiskID++){
+        
+        if(!(Disks & (1<<DiskID))){
+            continue;
+        }
         
         snprintf(StrBuf, sizeof(StrBuf), "\\\\?\\PhysicalDrive%i", DiskID);
+        
         HANDLE Disk = CreateFileA(StrBuf, GENERIC_READ, FILE_SHARE_READ|FILE_SHARE_DELETE|FILE_SHARE_WRITE, 0, OPEN_EXISTING, 0,0);
         if(Disk == INVALID_HANDLE_VALUE){
             continue;
@@ -714,7 +720,6 @@ NarGetPartitions(nar_arena *Arena, size_t* OutCount) {
                         GetDiskFreeSpaceExA(VolumeString, 0, &TotalSize, &FreeSize);
                         
                         Insert->Volumes[PartitionID].FreeSize = FreeSize.QuadPart;
-                        
                         Insert->Volumes[PartitionID].Letter = TempLetter;
                     }
                 }
@@ -1076,7 +1081,7 @@ NarSetupVSSListen(nar_backup_id ID){
         bool Connected = false;
         // poll for 2.5s
         DWORD Garbage = 0;
-        uint32_t WaitMs = 200;
+        uint32_t WaitMs = 1000;
         if(!GetOverlappedResultEx(Result.PipeHandle, &ov, &Garbage, WaitMs, FALSE)){
             printf("Couldn't estabilish connection to process in %u ms, failed, error code : %d\n", WaitMs, GetLastError());
             goto FAIL;
@@ -1300,3 +1305,143 @@ NarGetVolumeLetterFromGUID(GUID G){
     
     return Result[0];
 }
+
+
+
+char* 
+NarConsumeNextLine(char *Input, char* Out, size_t MaxBf, char* InpEnd){
+    size_t i =0;
+    char *Result = 0;
+    for(i =0; Input[i] != '\r' && Input + i < InpEnd; i++);
+    if(i<MaxBf){
+        memcpy(Out, Input, i);
+        Out[i] = 0;
+        if(Input + (i + 2) < InpEnd){
+            Result = &Input[i + 2];
+        }
+    }
+    return Result;
+}
+
+char*
+NarConsumeNextToken(char *Input, char *Out, size_t MaxBf, char* End){
+    
+    char* ResultEnd   = 0;
+    char* ResultStart = 0;
+    
+    while(Input < End){
+        if(*Input == ' ' || *Input == '\t' || *Input == '\n' || *Input == '\r') {
+            Input++;
+        }
+        else {
+            ResultStart = Input;
+            break;
+        }
+    }
+    
+    while(Input < End){
+        if(*Input == ' ' && *Input != '\t' && *Input != '\n' && *Input != '\r') {
+            Input++;
+        }
+        else {
+            ResultEnd = Input;
+            break;
+        }
+    }
+    
+    
+    ASSERT(ResultEnd && ResultStart);
+    //success
+    if(ResultEnd && ResultStart){
+        size_t Size = (ResultEnd - ResultStart);
+        if(Size <= MaxBf){
+            memcpy(Out, ResultStart, Size);
+            Out[Size] = 0;
+        }
+    }
+    else{
+        
+    }
+    
+    
+    return ++Input;
+}
+
+
+/*
+Returns array of bits that represents availability. 
+First bit corresponds disk with id0,
+second corresponds disk with id 1 etc ect. 
+*/
+uint32_t
+NarGetDiskListFromDiskPart() {
+    
+    uint32_t Result = 0;
+    char InputFN[] = "DiskPartListDiskCmd";
+    char OutputFN[] = "DiskpartListDiskOutput";
+    char DPCommand[] = "list disk";
+    char Token[64];
+    char Cmd[128];
+    
+    size_t DataLen = 512;
+    char *Data = (char*)malloc(DataLen);
+    defer({free(Data);});
+    
+    snprintf(Cmd, sizeof(Cmd), "diskpart /s %s > %s", InputFN, OutputFN);
+    
+    
+    
+    if(NarDumpToFile(InputFN, DPCommand, sizeof(DPCommand))){
+        system(Cmd);
+        
+        file_read Read = NarReadFile(OutputFN);
+        if(Read.Data != 0){
+            
+            
+            if(Read.Len > 512){
+                DataLen = Read.Len + 1;
+                Data = (char*)realloc(Data, DataLen);
+            }
+            
+            memset(Data, 0, DataLen);
+            memcpy(Data, Read.Data, Read.Len);
+            FreeFileRead(Read);
+            
+            char *Start = (char*)Data;
+            char *End   = (char*)Data + Read.Len;
+            char *Needle = Start;
+            
+            char Line[128];
+            
+            snprintf(Token, sizeof(Token), "Disk 0");
+            Needle = strstr(Start, "Disk 0");
+            
+            if(Needle != 0){
+                
+                Result |= 0x1;
+                Needle++;
+                
+                while( (Needle = strstr(Needle, "Disk")) != 0 && *Needle != 0){
+                    int DiskID = atoi(Needle + 5);
+                    Result |= (1<<DiskID);
+                    Needle++;
+                }
+                
+            }
+            
+            
+        }
+        else{
+            // TODO(Batuhan): log
+        }
+    }
+    else{
+        // TODO(Batuhan): 
+    }
+    
+    
+    return Result;
+}
+
+
+

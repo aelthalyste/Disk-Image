@@ -214,20 +214,6 @@ void DEBUG_Restore(){
 
 #include <unordered_map>
 
-char* 
-ConsumeNextLine(char *Input, char* Out, size_t MaxBf, char* InpEnd){
-    size_t i =0;
-    char *Result = 0;
-    for(i =0; Input[i] != '\r' && Input + i < InpEnd; i++);
-    if(i<MaxBf){
-        memcpy(Out, Input, i);
-        Out[i] = 0;
-        if(Input + (i + 2) < InpEnd){
-            Result = &Input[i + 2];
-        }
-    }
-    return Result;
-}
 
 
 
@@ -443,8 +429,16 @@ void TEST_STRINGS(){
 	return;
 }
 
+void TEST_ExtensionFinder(){
+    HANDLE Vol = NarOpenVolume('C');
+    auto Mem = NarSetupExtensionFinderMemory(Vol);
+    NarFindExtensions('C', Vol, L".dll", &Mem);
+}
+
 int
 wmain(int argc, wchar_t* argv[]) {
+    
+    //NarGetDiskListFromDiskPart();
     
     auto TempArena = ArenaInit(malloc(1024*1024), 1024*1024);
     size_t Out = 0;
@@ -452,25 +446,38 @@ wmain(int argc, wchar_t* argv[]) {
     
     for(int i =0; i<Out; i++){
         
-        printf("ID : %d\n", Disks[i].DiskID);
-        printf("Size : %d\n", Disks[i].TotalSize);
-        printf("Unused size %d\n", Disks[i].UnusedSize);
+        if(Disks[i].DiskID == 0 && i != 0){
+            continue;
+        }
         
+        printf("Disk ID : %d\n", Disks[i].DiskID);
+        printf("Size(GB) : %.5f\n", (double)Disks[i].TotalSize/Gigabyte(1));
+        printf("Unused size(GB) : %.5f\n", (double)Disks[i].UnusedSize/Gigabyte(1));
+        printf("PARTITIONS ####\n");
         for(int j =0; j<Disks[i].VolumeCount; j++){
             
             if(Disks[i].Volumes[j].Letter > L'A' && Disks[i].Volumes[j].Letter < L'Z'){
                 printf("\tPartition : %c\n", Disks[i].Volumes[j].Letter);
             }
             else{
-                printf("\tPartition : %d\n", Disks[i].Volumes[j].Letter);
+                printf("\tPartition ID: %d\n", Disks[i].Volumes[j].Letter);
             }
             
             if(Disks[i].Volumes[j].VolumeName){
-                printf("\tName : %S\n", Disks[i].Volumes[j].VolumeName);
+                printf("\tPartition Name : %S\n", Disks[i].Volumes[j].VolumeName);
             }
+            
+            printf("\tPartition Size(MB) %.5f\n", (double)Disks[i].Volumes[j].TotalSize/Megabyte(1));
+            if(Disks[i].Volumes[j].Letter > L'A' && Disks[i].Volumes[j].Letter < L'Z'){
+                printf("\tPartition free size(MB) : %.5f\n", (double)Disks[i].Volumes[j].FreeSize);
+            }
+            
+            printf("\n");
+            //printf("##########\n\n");
             
         }
         
+        printf("######\n");
         
     }
     
@@ -656,7 +663,7 @@ wmain(int argc, wchar_t* argv[]) {
         memset(bf, 0, sizeof(bf));
         memset(wcsbf, 0, sizeof(wcsbf));
         
-        Needle = ConsumeNextLine(Needle, bf, sizeof(bf), End);
+        Needle = NarConsumeNextLine(Needle, bf, sizeof(bf), End);
         
         mbstowcs(wcsbf, bf, sizeof(wcsbf)/2);
         if(NarResult.find(wcsbf) == NarResult.end()){

@@ -166,8 +166,8 @@ namespace NarDIWrapper {
     
     DiskTracker::DiskTracker() {
         
-        if(false == msInit){
-            SetupVSS();
+        
+        if(msInit == 0){
             msInit = true;
             C = NarLoadBootState();
             
@@ -179,9 +179,15 @@ namespace NarDIWrapper {
             else {
                 // found old state
                 printf("Succ loaded boot state from file\n");
+                for(int i =0; i<C->Volumes.Count; i++){
+                    printf("WR BOOT LOAD : Volume %c, version %d, type %d\n", C->Volumes.Data[i].Letter, C->Volumes.Data[i].Version, C->Volumes.Data[i].BT);
+                }
             }
             
             C->Port = INVALID_HANDLE_VALUE;
+            int32_t CDResult = ConnectDriver(C);
+            msIsDriverConnected = CDResult;
+            
         }
         
         
@@ -195,10 +201,15 @@ namespace NarDIWrapper {
     
     
     bool DiskTracker::CW_InitTracker() {
-        if(C->Port == INVALID_HANDLE_VALUE){
-            return ConnectDriver(C);
+        return msIsDriverConnected;
+    }
+    
+    bool DiskTracker::CW_RetryDriverConnection() {
+        if (C == 0) {
+            int32_t CDResult = ConnectDriver(C);
+            msIsDriverConnected = CDResult;
         }
-        return true;
+        return msIsDriverConnected;
     }
     
     bool DiskTracker::CW_AddToTrack(wchar_t L, int Type) {
@@ -224,6 +235,7 @@ namespace NarDIWrapper {
     bool DiskTracker::CW_SetupStream(wchar_t L, int BT, StreamInfo^ StrInf, bool ShouldCompress) {
         
         DotNetStreamInf SI = { 0 };
+        printf("WRAPPER : SETUP STREAM CALLED, LETTER %c\n", L);
         if (SetupStream(C, L, (BackupType)BT, &SI, ShouldCompress)) {
             StrInf->ClusterCount     = SI.ClusterCount;
             StrInf->ClusterSize      = SI.ClusterSize;
@@ -293,6 +305,9 @@ namespace NarDIWrapper {
         if(VolID != NAR_INVALID_VOLUME_TRACK_ID){
             if(TerminateBackup(&C->Volumes.Data[VolID], Succeeded)){
                 return NarSaveBootState(C);
+            }
+            else{
+                printf("WRAPPER : Terminate backup failed!\n");
             }
         }
         
@@ -454,7 +469,7 @@ namespace NarDIWrapper {
                 Result->Add(Log);
             }
             
-            NarScratchReset();
+            ArenaReset(&GlobalMemoryArena);
             GlobalLogCount = 0;
             
             ReleaseMutex(GlobalLogMutex);

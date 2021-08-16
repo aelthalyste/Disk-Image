@@ -166,8 +166,8 @@ struct volume_backup_inf {
 
 
 struct LOG_CONTEXT {
-    void* Port;
-    data_array<volume_backup_inf> Volumes;
+    void* Port = INVALID_HANDLE_VALUE;
+    data_array<volume_backup_inf> Volumes = {};
 };
 typedef LOG_CONTEXT* PLOG_CONTEXT;
 

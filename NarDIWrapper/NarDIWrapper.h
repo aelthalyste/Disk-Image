@@ -566,7 +566,8 @@ namespace NarDIWrapper {
         static List<VolumeInformation^>^ CW_GetVolumes();
         
         bool CW_InitTracker();
-        
+        bool DiskTracker::CW_RetryDriverConnection();
+
         bool CW_AddToTrack(wchar_t Letter, int Type);
         
         bool CW_RemoveFromTrack(wchar_t Letter);
@@ -591,7 +592,8 @@ namespace NarDIWrapper {
         
         private:
         
-        static bool msInit    = false;
+        static volatile SHORT msInit    = 0;
+        static volatile SHORT msIsDriverConnected = 0;
         static LOG_CONTEXT* C = nullptr;
         
         

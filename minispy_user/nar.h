@@ -45,8 +45,10 @@ struct nar_backup_id{
 
 #define ASSERT(exp)
 #define NAR_BREAK
-
 #endif
+
+
+
 
 
 #define BOOLEAN char
@@ -80,7 +82,7 @@ struct nar_backup_id{
 #include "precompiled.h"
 #include "memory.h"
 #include "narstring.h"
-
+#include "memory.h"
 
 
 
@@ -91,6 +93,123 @@ struct nar_backup_id{
 #define NAR_DEBUG(fmt, ...) printf(fmt, __VA_ARGS__)
 #define NAR_DBG_ERR(fmt, ...) printf(fmt, __VA_ARGS__)
 #endif
+
+
+
+
+//volatile SHORT G_WrapperIsInit            = 0;
+//volatile SHORT G_WrapperIsDriverConnected = 0;
+
+
+struct nar_log_time{
+    BYTE YEAR; // 2000 + YEAR is the actual value
+    BYTE MONTH;
+    BYTE DAY;
+    BYTE HOUR;
+    BYTE MIN;
+    BYTE SEC;
+    // 6 bytes
+};
+
+struct nar_log{
+    //char         *FunctionName;
+    //unsigned int LineNumber;
+    nar_log_time Time;
+    char *LogString;
+}static GlobalLogs[512];
+static int GlobalLogCount = 0;
+static HANDLE GlobalLogMutex = 0;
+static nar_arena GlobalMemoryArena = {};
+
+/*
+
+*/
+static void
+NarLog(const char *str, ...){
+    
+    static BOOLEAN Init = FALSE;
+    static nar_arena Arena = {};
+    if (Init == FALSE) {
+        GlobalLogMutex = CreateMutexA(NULL, FALSE, NULL);
+        GlobalMemoryArena = ArenaInit(malloc(Megabyte(8)), Megabyte(8));
+        Init = TRUE;
+    }
+    
+    va_list ap;
+    
+#define MAX_BUF_LEN 1024*2
+    
+    char buf[MAX_BUF_LEN];
+    SYSTEMTIME Time = { 0 };
+    nar_log_time NarTime = {0};
+    
+    memset(buf, 0, sizeof(buf));
+    GetLocalTime(&Time);
+    
+    NarTime.YEAR  = (BYTE)(Time.wYear % 100);
+    NarTime.MONTH = (BYTE)Time.wMonth;
+    NarTime.DAY   = (BYTE)Time.wDay;
+    NarTime.HOUR  = (BYTE)Time.wHour;
+    NarTime.MIN   = (BYTE)Time.wMinute;
+    NarTime.SEC   = (BYTE)Time.wSecond;
+	
+    
+#if 1
+    va_start(ap, str);
+    vsprintf(buf, str, ap);
+    va_end(ap);
+#endif
+    
+    // safe cast
+    DWORD Len = (DWORD)strlen(buf);
+    
+#if 1    
+    if(WaitForSingleObject(GlobalLogMutex, 25) == WAIT_OBJECT_0){
+        GlobalLogs[GlobalLogCount].LogString = (char*)ArenaAllocate(&GlobalMemoryArena, (Len + 1)*sizeof(buf[0]));
+        memcpy(GlobalLogs[GlobalLogCount].LogString, &buf[0], (Len + 1)*sizeof(buf[0]));
+        memcpy(&GlobalLogs[GlobalLogCount].Time, &NarTime, sizeof(NarTime));
+        GlobalLogCount++;
+        ReleaseMutex(GlobalLogMutex);
+    }
+#endif
+    
+#if 1    
+	static bool fileinit = false;
+	static FILE *File = 0;
+	if(fileinit == false){
+		File = fopen("C:\\ProgramData\\NarDiskBackup\\NAR_APP_LOG_FILE.txt", "a");
+		//File = fopen("NAR_APP_LOG_FILE.txt", "a");
+        fileinit = true;
+	}	
+	if(File){
+	    static char time_buf[200];
+	    snprintf(time_buf, sizeof(time_buf), "%s : [%02d/%02d/%04d | %02d:%02d:%02d] : ", __TIME__, NarTime.DAY, NarTime.MONTH, 2000 + NarTime.YEAR, NarTime.HOUR, NarTime.MIN, NarTime.SEC);
+        char big_buffer[1024];
+        
+        big_buffer[0] = 0;
+        strcat(big_buffer, time_buf);
+        strcat(big_buffer, buf);
+        fwrite(big_buffer, 1, strlen(big_buffer), File);		
+		fflush(File);
+        printf(buf);
+    }
+	else{
+		OutputDebugStringA(buf);
+        printf(buf);
+    }
+#endif
+    
+    
+#undef MAX_BUF_LEN
+    
+}
+
+#define printf(fmt, ...) NarLog(fmt, __VA_ARGS__)
+
+
+
+
+
 
 template <typename F>
 struct privDefer {

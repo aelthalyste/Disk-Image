@@ -211,3 +211,13 @@ GUIDToStr(char *Out, GUID G);
 
 char 
 NarGetVolumeLetterFromGUID(GUID G);
+
+char*
+NarConsumeNextToken(char *Input, char *Out, size_t MaxBf, char* End);
+
+char* 
+NarConsumeNextLine(char *Input, char* Out, size_t MaxBf, char* InpEnd);
+
+
+uint32_t
+NarGetDiskListFromDiskPart();
