@@ -354,14 +354,17 @@ Return Value:
                     ULONG BufferNeeded = 0;
                     status = FltGetVolumeGuidName(Volume, &NarData.VolumeRegionBuffer[i].GUIDStrVol, &BufferNeeded);
                     
+                    
+                    
                     if (NT_SUCCESS(status)) {
                         
                         DbgPrint("Before fltattach \n");
                         status = FltAttachVolume(NarData.Filter, Volume, NULL, NULL);
                         DbgPrint("After FltAttachVolume, status %X\n", status);
                         if (status == STATUS_SUCCESS) {
+                            NarData.VolumeRegionBuffer[i].Letter = TrackedVolumes[i].Letter;
                             
-                            DbgPrint("Successfully attached volume (%c) GUID : (%wZ)\n", TrackedVolumes[i].Letter, &NarData.VolumeRegionBuffer[i].GUIDStrVol);
+                            DbgPrint("Successfully attached volume (%c) GUID : (%wZ)\n", NarData.VolumeRegionBuffer[i].Letter, &NarData.VolumeRegionBuffer[i].GUIDStrVol);
                             DbgPrint("GUID len %i, max len %i\n", NarData.VolumeRegionBuffer[i].GUIDStrVol.Length, NarData.VolumeRegionBuffer[i].GUIDStrVol.MaximumLength);
                             NarData.VolumeRegionBuffer[i].VolFileID = NAR_KERNEL_GEN_FILE_ID(TrackedVolumes[i].Letter);
                             
@@ -774,7 +777,7 @@ Return Value:
                                 
                                 NarWriteLogsToFile(tp, 0);
                                 
-                                li->CurrentSize = tp->FileSize;
+                                li->CurrentSize  = tp->FileSize;
                                 li->ErrorOccured = !NT_SUCCESS(tp->InternalError);
                                 
                                 NAR_INIT_MEMORYBUFFER(NarData.VolumeRegionBuffer[i].MemoryBuffer);
@@ -913,9 +916,9 @@ Return Value:
                             tp->Data    = NULL;
                             tp->DataLen = 0;
                             tp->FileID  = NarData.VolumeRegionBuffer[i].VolFileID;
-                            tp->ShouldFlush 		= FALSE;
-                            tp->ShouldQueryFileSize 	= FALSE;
-                            tp->ShouldDelete 		= TRUE;
+                            tp->ShouldFlush         = FALSE;
+                            tp->ShouldQueryFileSize     = FALSE;
+                            tp->ShouldDelete        = TRUE;
                             
                             NarWriteLogsToFile(tp, 0);
                             
@@ -1186,10 +1189,10 @@ NarLogThread(PVOID param) {
 
 NTSTATUS
 NarGetFileSize(
-    _In_ PFLT_INSTANCE Instance,
-    _In_ PFILE_OBJECT FileObject,
-    _Out_ PLONGLONG Size
-)
+               _In_ PFLT_INSTANCE Instance,
+               _In_ PFILE_OBJECT FileObject,
+               _Out_ PLONGLONG Size
+               )
 /*++
 
 Routine Description:
@@ -1212,23 +1215,23 @@ Return Value:
 {
     NTSTATUS status = STATUS_SUCCESS;
     FILE_STANDARD_INFORMATION standardInfo;
-
+    
     //
     //  Querying for FileStandardInformation gives you the offset of EOF.
     //
-
+    
     status = FltQueryInformationFile(Instance,
-        FileObject,
-        &standardInfo,
-        sizeof(FILE_STANDARD_INFORMATION),
-        FileStandardInformation,
-        NULL);
-
+                                     FileObject,
+                                     &standardInfo,
+                                     sizeof(FILE_STANDARD_INFORMATION),
+                                     FileStandardInformation,
+                                     NULL);
+    
     if (NT_SUCCESS(status)) {
-
+        
         *Size = standardInfo.EndOfFile.QuadPart;
     }
-
+    
     return status;
 }
 
@@ -1340,11 +1343,11 @@ Return Value:
     if (NarData.IsShutdownInitiated == TRUE) {
         return FLT_PREOP_SUCCESS_NO_CALLBACK;
     }
-
+    
     if (!!NarData.IsShutdownInitiated) {
         return FLT_PREOP_SUCCESS_NO_CALLBACK;
     }
-
+    
 #if 1
     // that might deadlock the system
     // If system shutdown requested, dont bother to log changes
@@ -1402,8 +1405,8 @@ Return Value:
     
 #endif
     
-
-
+    
+    
     if (Data && Data->Iopb && Data->Iopb->TargetFileObject) {
         // filter out temporary files and files that would be closed if last handle freed
         if ((Data->Iopb->TargetFileObject->Flags & FO_TEMPORARY_FILE) == FO_TEMPORARY_FILE) {
@@ -1423,7 +1426,7 @@ Return Value:
         return FLT_PREOP_SUCCESS_NO_CALLBACK;
     }
     
-
+    
     ULONG LenReturned = 0;
     // skip directories
     
@@ -1465,13 +1468,13 @@ Return Value:
                 }
             }
             
-
+            
             PIRP irp = IoGetTopLevelIrp();
             if (irp == NULL) {
                 LARGE_INTEGER Size;
                 status = NarGetFileSize(FltObjects->Instance, Data->Iopb->TargetFileObject, &Size);
                 if (!NT_SUCCESS(status)) {
-
+                    
                 }
                 if (NT_SUCCESS(status) && Size.QuadPart < 1024) {
                     return FLT_PREOP_SUCCESS_NO_CALLBACK;
@@ -1480,10 +1483,10 @@ Return Value:
             else {
                 return FLT_PREOP_SUCCESS_NO_CALLBACK;
             }
-
+            
 #if 1
 #endif
-
+            
             
 #if 1
             ULONG BytesReturned = 0;
@@ -1695,9 +1698,9 @@ Return Value:
                         if (NarMemCompare(&CompareBuffer[0], NarData.VolumeRegionBuffer[i].GUIDStrVol.Buffer, NAR_GUID_STR_SIZE) == TRUE) {
                             RemainingSizeOnBuffer = NAR_MEMORYBUFFER_SIZE - NAR_MB_USED(NarData.VolumeRegionBuffer[i].MemoryBuffer);
                             
-                            for (size_t j = 0; j < RecCount; j++) {
-                                DbgPrint("Detected region : start %7u end %7u\n", P[j].S, P[j].L);
-                            }
+                            //for (size_t j = 0; j < RecCount; j++) {
+                            //    DbgPrint("Detected region : start %7u end %7u\n", P[j].S, P[j].L);
+                            //}
                             
                             if (RemainingSizeOnBuffer >= SizeNeededForMemoryBuffer) {
                                 NAR_MB_PUSH(NarData.VolumeRegionBuffer[i].MemoryBuffer, &P[0], SizeNeededForMemoryBuffer);

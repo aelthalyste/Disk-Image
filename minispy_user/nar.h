@@ -153,7 +153,6 @@ NarLog(const char *str, ...){
     NarTime.MIN   = (BYTE)Time.wMinute;
     NarTime.SEC   = (BYTE)Time.wSecond;
 	
-    
 #if 1
     va_start(ap, str);
     vsprintf(buf, str, ap);
@@ -163,12 +162,15 @@ NarLog(const char *str, ...){
     // safe cast
     DWORD Len = (DWORD)strlen(buf);
     
+    char NotEnoughLogMemory[] = "RAN OUT OF LOG MEMORY!\n";
 #if 1    
     if(WaitForSingleObject(GlobalLogMutex, 25) == WAIT_OBJECT_0){
         GlobalLogs[GlobalLogCount].LogString = (char*)ArenaAllocate(&GlobalMemoryArena, (Len + 1)*sizeof(buf[0]));
-        memcpy(GlobalLogs[GlobalLogCount].LogString, &buf[0], (Len + 1)*sizeof(buf[0]));
-        memcpy(&GlobalLogs[GlobalLogCount].Time, &NarTime, sizeof(NarTime));
-        GlobalLogCount++;
+        if(GlobalLogs[GlobalLogCount].LogString != NULL){
+            memcpy(GlobalLogs[GlobalLogCount].LogString, &buf[0], (Len + 1)*sizeof(buf[0]));
+            memcpy(&GlobalLogs[GlobalLogCount].Time, &NarTime, sizeof(NarTime));
+            GlobalLogCount++;
+        }
         ReleaseMutex(GlobalLogMutex);
     }
 #endif
@@ -180,10 +182,17 @@ NarLog(const char *str, ...){
 		File = fopen("C:\\ProgramData\\NarDiskBackup\\NAR_APP_LOG_FILE.txt", "a");
 		//File = fopen("NAR_APP_LOG_FILE.txt", "a");
         fileinit = true;
-	}	
+	}
+	
 	if(File){
-	    static char time_buf[200];
-	    snprintf(time_buf, sizeof(time_buf), "%s : [%02d/%02d/%04d | %02d:%02d:%02d] : ", __TIME__, NarTime.DAY, NarTime.MONTH, 2000 + NarTime.YEAR, NarTime.HOUR, NarTime.MIN, NarTime.SEC);
+        
+	    if(GlobalLogs[GlobalLogCount-1].LogString == 0){
+            fwrite(NotEnoughLogMemory, 1, strlen(NotEnoughLogMemory), File);
+            return;
+        }
+        
+        static char time_buf[128];
+	    snprintf(time_buf, sizeof(time_buf), "[%02d/%02d/%04d | %02d:%02d:%02d] : ", __TIME__, NarTime.DAY, NarTime.MONTH, 2000 + NarTime.YEAR, NarTime.HOUR, NarTime.MIN, NarTime.SEC);
         char big_buffer[1024];
         
         big_buffer[0] = 0;
