@@ -376,6 +376,18 @@ namespace DiskBackupWpfGUI
                     storageItem.StrCloudUsedSize = FormatBytes(storageItem.CloudUsedSize);
                     storageItem.StrCloudFreeSize = FormatBytes(storageItem.CloudFreeSize);
                 }
+
+                if (storageItem.Type == BackupStorageType.NAS) //Nas boyut bilgisi hesaplama
+                {
+                    var _backupStorageService = _scope.Resolve<IBackupStorageService>();
+                    var nasConnection = _backupStorageService.GetNasCapacityAndSize((storageItem.Path.Substring(0, storageItem.Path.Length - 1)), storageItem.Username, storageItem.Password, storageItem.Domain);
+                    storageItem.Capacity = Convert.ToInt64(nasConnection[0]);
+                    storageItem.UsedSize = Convert.ToInt64(nasConnection[0]) - Convert.ToInt64(nasConnection[1]);
+                    storageItem.FreeSize = Convert.ToInt64(nasConnection[1]);
+                    storageItem.StrCapacity = FormatBytes(Convert.ToInt64(nasConnection[0]));
+                    storageItem.StrUsedSize = FormatBytes(Convert.ToInt64(nasConnection[0]) - Convert.ToInt64(nasConnection[1]));
+                    storageItem.StrFreeSize = FormatBytes(Convert.ToInt64(nasConnection[1]));
+                }
             }
 
             listViewBackupStorage.ItemsSource = backupStorageInfoList;
@@ -746,8 +758,7 @@ namespace DiskBackupWpfGUI
         }
 
         #endregion
-
-
+        
         #endregion
 
 
@@ -1855,11 +1866,9 @@ namespace DiskBackupWpfGUI
 
         #region Backup Storage Tab
 
-        public List<BackupStorageInfo> GetBackupStorages(List<VolumeInfo> volumeList, List<BackupStorageInfo> backupStorageInfoList)
+        public List<BackupStorageInfo> GetBackupStorages(List<VolumeInfo> volumeList, List<BackupStorageInfo> backupStorageInfoList) //eyüp
         {
-            //List<BackupStorageInfo> backupStorageInfoList = _backupStorageService.BackupStorageInfoList();
             string backupStorageLetter;
-
             foreach (var storageItem in backupStorageInfoList)
             {
                 backupStorageLetter = storageItem.Path.Substring(0, storageItem.Path.Length - (storageItem.Path.Length - 1));
@@ -1876,7 +1885,6 @@ namespace DiskBackupWpfGUI
                         storageItem.UsedSize = volumeItem.Size - volumeItem.FreeSize;
                     }
                 }
-
                 if (storageItem.IsCloud) // cloud bilgileri alınıp hibritse burada doldurulacak
                 {
                     storageItem.CloudCapacity = 107374182400;
@@ -1886,9 +1894,26 @@ namespace DiskBackupWpfGUI
                     storageItem.StrCloudUsedSize = FormatBytes(storageItem.CloudUsedSize);
                     storageItem.StrCloudFreeSize = FormatBytes(storageItem.CloudFreeSize);
                 }
+                if (storageItem.Type == BackupStorageType.NAS) //Nas boyut bilgisi hesaplama
+                {
+                    var _backupStorageService = _scope.Resolve<IBackupStorageService>();
+                    var nasConnection = _backupStorageService.GetNasCapacityAndSize((storageItem.Path.Substring(0, storageItem.Path.Length - 1)), storageItem.Username, storageItem.Password, storageItem.Domain);
+                    storageItem.Capacity = Convert.ToInt64(nasConnection[0]);
+                    storageItem.UsedSize = Convert.ToInt64(nasConnection[0]) - Convert.ToInt64(nasConnection[1]);
+                    storageItem.FreeSize = Convert.ToInt64(nasConnection[1]);
+                    storageItem.StrCapacity = FormatBytes(Convert.ToInt64(nasConnection[0]));
+                    storageItem.StrUsedSize = FormatBytes(Convert.ToInt64(nasConnection[0]) - Convert.ToInt64(nasConnection[1]));
+                    storageItem.StrFreeSize = FormatBytes(Convert.ToInt64(nasConnection[1]));
+                }
             }
 
             return backupStorageInfoList;
+        }
+
+        private void btnRefreshBackupAreas_Click(object sender, RoutedEventArgs e)
+        {
+            var backupStorageService = _scope.Resolve<IBackupStorageService>();
+            listViewBackupStorage.ItemsSource = GetBackupStorages(_volumeList, backupStorageService.BackupStorageInfoList());
         }
 
         private void btnBackupStorageAdd_Click(object sender, RoutedEventArgs e)

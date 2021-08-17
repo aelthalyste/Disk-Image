@@ -9,7 +9,6 @@ namespace DiskBackup.Entities.Concrete
 {
     public class BackupStorageInfo : IEntity
     {
-        //ListView'e doldururken üzerinden tekrar düşün sorun olursa
         //Yedekleme alanları & ekle 
         public int Id { get; set; }
         public string StorageName { get; set; }
@@ -22,7 +21,7 @@ namespace DiskBackup.Entities.Concrete
         public string StrFreeSize { get; set; }
         public long FreeSize { get; set; }
         public string Path { get; set; }
-        public bool IsCloud { get; set; }   //true olduğunda aslında modelimiz hybrit oluyor
+        public bool IsCloud { get; set; }   //true olduğunda modelimiz hybrit oluyor
         public string Domain { get; set; } 
         public string Username { get; set; }
         public string Password { get; set; }

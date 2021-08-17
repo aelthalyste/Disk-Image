@@ -22,5 +22,7 @@ namespace DiskBackup.Business.Abstract
         bool UpdateBackupStorage(BackupStorageInfo backupStorageInfo);
         [OperationContract]
         bool ValidateNasConnection(string nasAddr, string userName, string password, string domain);
+        [OperationContract]
+        string[] GetNasCapacityAndSize(string nasAddr, string userName, string password, string domain);
     }
 }

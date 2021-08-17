@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.ServiceModel;
 using System.Text;
 using System.Threading.Tasks;
@@ -75,6 +76,35 @@ namespace DiskBackup.Business.Concrete
             else
             {
                 return false;
+            }
+        }
+
+        [DllImport("kernel32")]
+        public static extern int GetDiskFreeSpaceEx(string lpDirectoryName, ref long lpFreeBytesAvailable, ref long lpTotalNumberOfBytes, ref long lpTotalNumberOfFreeBytes);
+
+        public string[] GetNasCapacityAndSize(string nasAddr, string userName, string password, string domain)
+        {
+            _logger.Error("GetNasCapacityAndSize çağırıldı");
+
+            try
+            {
+                using (new NetworkConnection(nasAddr, new System.Net.NetworkCredential(userName, password, domain)))
+                {
+                    long freeBytesAvailable = 0;
+                    long totalNumberOfBytes = 0;
+                    long totalNumberOfFreeBytes = 0;
+
+                    GetDiskFreeSpaceEx(nasAddr, ref freeBytesAvailable, ref totalNumberOfBytes, ref totalNumberOfFreeBytes);
+
+                    var firstString = (totalNumberOfBytes + "_" + totalNumberOfFreeBytes).ToString();
+                    return firstString.Split('_');
+                }
+
+            }
+            catch (Exception ex)
+            {
+                _logger.Error("Nas boyut bilgileri alınırken bir hata oluştu" + ex.Message);
+                throw ex;
             }
         }
 
