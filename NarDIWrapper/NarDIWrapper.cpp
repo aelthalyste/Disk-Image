@@ -294,7 +294,7 @@ namespace NarDIWrapper {
     }
     
     int DiskTracker::CW_HintBufferSize() {
-        return NAR_COMPRESSION_FRAME_SIZE + Megabyte(1);
+        return NAR_COMPRESSION_FRAME_SIZE + Megabyte(4);
     }
     
     
@@ -478,6 +478,7 @@ namespace NarDIWrapper {
             printf("Couldnt lock log mutex\n");
         }
         
+        printf("WRAPPER : Flushed logs to service side !\n");
         return Result;
     }
     

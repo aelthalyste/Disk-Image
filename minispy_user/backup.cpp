@@ -62,7 +62,7 @@ SetIncRecords(HANDLE CommPort, volume_backup_inf* V) {
     printf("PNBRO : %I64u\n", V->PossibleNewBackupRegionOffsetMark);
     printf("SIR: Volume %c, lko %I64u\n", V->Letter, V->IncLogMark.LastBackupRegionOffset);
     
-    ASSERT((uint64_t)V->IncLogMark.LastBackupRegionOffset < (uint64_t)V->PossibleNewBackupRegionOffsetMark);
+    ASSERT((uint64_t)V->IncLogMark.LastBackupRegionOffset <= (uint64_t)V->PossibleNewBackupRegionOffsetMark);
     
     DWORD TargetReadSize = (DWORD)(V->PossibleNewBackupRegionOffsetMark - V->IncLogMark.LastBackupRegionOffset);
     
@@ -127,20 +127,19 @@ NarGetLogFileSizeFromKernel(HANDLE CommPort, char Letter){
     
     NAR_COMMAND Cmd = {};
     Cmd.Letter = Letter;
-    Cmd.Type = NarCommandType_FlushLog;
+    Cmd.Type   = NarCommandType_FlushLog;
     
     if(NarGetVolumeGUIDKernelCompatible(Letter, &Cmd.VolumeGUIDStr[0])){
         
         DWORD BR = 0;
         NAR_LOG_INF Respond = {0};
-        
         HRESULT hResult = FilterSendMessage(CommPort, &Cmd, sizeof(NAR_COMMAND), &Respond, sizeof(Respond), &BR);
         if(SUCCEEDED(hResult) && FALSE == Respond.ErrorOccured){
             Result = Respond.CurrentSize;
-            printf("KERNEL RESPOND: Log size of volume %c is %I64u\n", Letter, Result);
+            printf("KERNEL RESPONSE: Log size of volume %c is %I64u\n", Letter, Result);
         }
         else{
-            printf("FilterSendMessage failed, couldnt remove volume from kernel side, err %i\n", hResult);
+            printf("FilterSendMessage failed, couldnt get log size from kernel side, err %i\n", hResult);
         }
         
     }
@@ -1461,7 +1460,7 @@ InitVolumeInf(volume_backup_inf* VolInf, wchar_t Letter, BackupType Type) {
     if(VolInf == NULL) return FALSE;
     *VolInf = {0};
     
-    int32_t Return = FALSE;
+    int32_t Result = TRUE;
     
     VolInf->Letter = Letter;
     VolInf->INVALIDATEDENTRY = FALSE;
@@ -1509,7 +1508,7 @@ InitVolumeInf(volume_backup_inf* VolInf, wchar_t Letter, BackupType Type) {
     // VolInf->IsOSVolume = FALSE;
     
     
-    return Return;
+    return Result;
 }
 
 
@@ -2090,9 +2089,10 @@ NarLoadBootState() {
     
     printf("Entered NarLoadBootState\n");
     LOG_CONTEXT* Result = 0 ;
-    int32_t bResult = FALSE;
     Result = new LOG_CONTEXT;
     memset(Result, 0, sizeof(LOG_CONTEXT));
+    
+    bool FoundAny = false;
     
     Result->Port = INVALID_HANDLE_VALUE;
     Result->Volumes = { 0,0 };
@@ -2130,7 +2130,7 @@ NarLoadBootState() {
                         
                         for (int i = 0; i < BootTrackDataCount; i++) {
                             
-                            bResult = InitVolumeInf(&VolInf, (char)BootTrackData[i].Letter, (BackupType)BootTrackData[i].BackupType);
+                            int32_t bResult = InitVolumeInf(&VolInf, (char)BootTrackData[i].Letter, (BackupType)BootTrackData[i].BackupType);
                             
                             if (!!bResult) {
                                 
@@ -2138,7 +2138,7 @@ NarLoadBootState() {
                                 VolInf.BackupID = BootTrackData[i].BackupID;
                                 
                                 VolInf.Version  = BootTrackData[i].Version;
-                                
+                                FoundAny = true;
                                 // NOTE(Batuhan): Diff backups only need to know file pointer position they started backing up. For single-tracking system we use now, that's 0
                                 if((BackupType)BootTrackData[i].BackupType == BackupType::Diff){
                                     // NOTE(Batuhan): We don't support different volume track units yet, 
@@ -2189,7 +2189,7 @@ NarLoadBootState() {
         printf("Couldnt get windows directory, error %i\n", GetLastError());
     }
     
-    if (!bResult) {
+    if (false == FoundAny) {
         delete Result;
         Result = NULL;
     }
@@ -2239,6 +2239,7 @@ NarSaveBootState(LOG_CONTEXT* CTX) {
                     Pack.Version = (char)CTX->Volumes.Data[i].Version; // for testing purposes, 128 version looks like fine
                     Pack.BackupType = (char)CTX->Volumes.Data[i].BT;
                     Pack.LastBackupOffset = (uint64_t)CTX->Volumes.Data[i].IncLogMark.LastBackupRegionOffset;
+                    Pack.BackupID         = CTX->Volumes.Data[i].BackupID;
                     
                     DWORD BR = 0;
                     

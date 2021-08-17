@@ -358,6 +358,8 @@ NarGetVolumeGUIDKernelCompatible(wchar_t Letter, wchar_t *VolumeGUID) {
         if(VolumeGUID[48] == L'\\'){
             VolumeGUID[48] = '\0'; 
         }
+        printf("Volume %c's GUID %S\n", Letter, VolumeGUID);
+        
         Result = TRUE;
     }
     
