@@ -1654,6 +1654,12 @@ namespace DiskBackupWpfGUI
             }
         }
 
+        private void btnRefreshBackups_Click(object sender, RoutedEventArgs e)
+        {
+            var backupService = _scope.Resolve<IBackupService>();
+            RefreshBackups(backupService);
+        }
+
         private void btnFilesDelete_Click(object sender, RoutedEventArgs e)
         {
             var backupService = _scope.Resolve<IBackupService>();
@@ -2645,8 +2651,9 @@ namespace DiskBackupWpfGUI
                 listViewBackups.ItemsSource = _backupsItems;
                 listViewRestore.ItemsSource = _backupsItems;
             }
-            catch
+            catch (Exception ex)
             {
+                _logger.Error("RefreshBackups methodu çağırılırken hata oluştu. Hata:" + ex.Message);
             }
         }
 
@@ -2927,8 +2934,8 @@ namespace DiskBackupWpfGUI
         }
 
 
-        #endregion
 
+        #endregion
 
     }
 }

@@ -42,6 +42,7 @@
     <system:String x:Key="paste">Paste</system:String>
     <system:String x:Key="delete">Delete</system:String>
     <system:String x:Key="refresh">Refresh</system:String>
+    <system:String x:Key="refreshBackups">Refresh Backups</system:String>
     <system:String x:Key="refreshDisks">Refresh Disks</system:String>
     <system:String x:Key="browse">Browse</system:String>
     <system:String x:Key="filesName">Files Name</system:String>

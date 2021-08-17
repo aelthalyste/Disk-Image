@@ -177,6 +177,7 @@ namespace DiskBackup.Communication
             string body = string.Empty;
 
             body = ChangeLang(lang, taskInfo);
+            body = body.Replace("{PCName}", Dns.GetHostName());
 
             body = body.Replace("{TaskName}", taskInfo.StatusInfo.TaskName);
             body = body.Replace("{FileName}", taskInfo.StatusInfo.FileName);
@@ -243,6 +244,7 @@ namespace DiskBackup.Communication
                 body = body.Replace("{Dear}", "Dear");
                 body = body.Replace("{ListTextLang}", "The list below shows details of the task;");
                 body = body.Replace("{StatusInfoLang}", "Status Information");
+                body = body.Replace("{PCNameLang}", "Pc Name");
                 body = body.Replace("{TaskNameLang}", "Task Name");
                 body = body.Replace("{FileNameLang}", "File Name");
                 body = body.Replace("{DurationLang}", "Duration");
@@ -275,6 +277,7 @@ namespace DiskBackup.Communication
                 body = body.Replace("{Dear}", "Sayın");
                 body = body.Replace("{ListTextLang}", "Aşağıdaki listede görevle ilgili detaylar gösterilmektedir;");
                 body = body.Replace("{StatusInfoLang}", "Durum Bilgisi");
+                body = body.Replace("{PCNameLang}", "Bilgisayar Adı");
                 body = body.Replace("{TaskNameLang}", "Görev Adı");
                 body = body.Replace("{FileNameLang}", "Dosya Adı");
                 body = body.Replace("{DurationLang}", "Süre");
@@ -390,6 +393,11 @@ namespace DiskBackup.Communication
                                                 </tr>
                                             </thead>
                                             <tbody>
+                                            <tr>
+                                                <td style=""text-align:left; padding:8px; font-weight:bold; width:24%;"">{PCNameLang}</td>
+                                                <td style=""text-align:left; padding:8px; font-weight:bold; width:1%;"">:</td>
+                                                <td style=""text-align:left; padding:8px; width:75%; word-break:break-all;"">{PCName}</td>
+                                            </tr>
                                             <tr>
                                                 <td style=""text-align:left; padding:8px; font-weight:bold; width:24%;"">{TaskNameLang}</td>
                                                 <td style=""text-align:left; padding:8px; font-weight:bold; width:1%;"">:</td>

@@ -39,6 +39,7 @@
     <system:String x:Key="paste">Yapıştır</system:String>
     <system:String x:Key="delete">Sil</system:String>
     <system:String x:Key="refresh">Yenile</system:String>
+    <system:String x:Key="refreshBackups">Yedek Dosyalarını Yenile</system:String>
     <system:String x:Key="refreshDisks">Diskleri Yenile</system:String>
     <system:String x:Key="browse">Gözat</system:String>
     <system:String x:Key="filesName">Dosya Adı</system:String>
