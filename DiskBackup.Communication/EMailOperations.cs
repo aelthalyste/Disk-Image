@@ -3,14 +3,9 @@ using DiskBackup.Entities.Concrete;
 using Serilog;
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using System.Net;
 using System.Net.Mail;
-using System.Reflection;
-using System.Resources;
 using System.Text;
-using System.Threading.Tasks;
 
 
 namespace DiskBackup.Communication
@@ -107,7 +102,31 @@ namespace DiskBackup.Communication
             }
         }
 
-        public void SendEMail(TaskInfo taskInfo)
+        public bool SendFeedback(string feedbackMessage, string feedbackType)
+        {
+            using (var message = new MailMessage()
+            {
+                IsBodyHtml = true,
+                Body = feedbackMessage,
+                From = new MailAddress("diskbackup@narbulut.com", "DiskImage Destek Talebi")
+            })
+
+            try
+            {
+                message.Bcc.Add("diskbackup@narbulut.com");
+                message.To.Add("destek@narbulut.com");
+                smtp.Send(message);
+                
+                    return true;
+            }
+            catch (SmtpException ex)
+            {
+                _logger.Error(ex, "E-Mail gönderimi başarısız." + ex);
+                    return false;
+            }
+        }
+
+        public void SendStatusEMail(TaskInfo taskInfo)
         {
             var emailList = _emailInfoDal.GetList();
 
@@ -126,7 +145,7 @@ namespace DiskBackup.Communication
                 {
                     EMailSender(emailList, taskInfo);
                 }
-                else if ((taskInfo.StatusInfo.Status != StatusType.Success && taskInfo.StatusInfo.Status != StatusType.Fail && taskInfo.StatusInfo.Status != StatusType.Cancel) && emailCritical.Value == "True")
+                else if (taskInfo.StatusInfo.Status != StatusType.Success && taskInfo.StatusInfo.Status != StatusType.Fail && taskInfo.StatusInfo.Status != StatusType.Cancel && emailCritical.Value == "True")
                 {
                     EMailSender(emailList, taskInfo);
                 }
@@ -517,6 +536,7 @@ namespace DiskBackup.Communication
 
             return ($"{dblSByte:0.##} {Suffix[i]}");
         }
+
         #endregion
 
     }
