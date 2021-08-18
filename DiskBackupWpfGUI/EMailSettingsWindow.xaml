@@ -31,7 +31,7 @@
             <Border Background="#27527B" Height="30">
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                     <Button Name="btnEMSMin" Content="—" Margin="0,-2,0,0" VerticalContentAlignment="Top" FontWeight="Bold" Click="btnEMSMin_Click" Style="{StaticResource TitleButton}" Width="40" ></Button>
-                    <Button Name="btnEMSClose" Content="🗙" Margin="0,-2,0,0" Click="btnEMSClose_Click" Style="{StaticResource TitleButton}" Width="40" ></Button>
+                    <Button Name="btnEMSClose" Content="X" Margin="0,-2,0,0" Click="btnEMSClose_Click" Style="{StaticResource TitleButton}" Width="40" ></Button>
                 </StackPanel>
             </Border>
         </StackPanel>

@@ -35,7 +35,7 @@
             <Border Background="#27527B" Height="30">
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                     <Button Name="btnRestoreMin" Content="—" Margin="0,-2,0,0"  Click="btnRestoreMin_Click" VerticalContentAlignment="Top" FontWeight="Bold"  Style="{StaticResource TitleButton}" Width="40" ></Button>
-                    <Button Name="btnRestoreClose" Content="🗙" Margin="0,-2,0,0" Click="btnRestoreClose_Click" Style="{StaticResource TitleButton}" Width="40" ></Button>
+                    <Button Name="btnRestoreClose" Content="X" Margin="0,-2,0,0" Click="btnRestoreClose_Click" Style="{StaticResource TitleButton}" Width="40" ></Button>
                 </StackPanel>
             </Border>
         </StackPanel>

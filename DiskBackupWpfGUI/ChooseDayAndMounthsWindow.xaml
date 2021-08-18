@@ -31,7 +31,7 @@
         <StackPanel Name="MyTitleBar" VerticalAlignment="Top" MouseDown="MyTitleBar_MouseDown">
             <Border Background="#27527B" Height="30">
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                    <Button Name="btnChooseDayAndMounthsClose" Content="🗙" Margin="0,-2,0,0" Click="btnChooseDayAndMounthsClose_Click" Style="{StaticResource TitleButton}" Width="40" ></Button>
+                    <Button Name="btnChooseDayAndMounthsClose" Content="X" Margin="0,-2,0,0" Click="btnChooseDayAndMounthsClose_Click" Style="{StaticResource TitleButton}" Width="40" ></Button>
                 </StackPanel>
             </Border>
         </StackPanel>
