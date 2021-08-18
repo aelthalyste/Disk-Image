@@ -64,7 +64,6 @@ namespace DiskBackupWpfGUI
         private ILicenseService _licenseService;
         private readonly ILifetimeScope _scope;
         private readonly ILogger _logger;
-        private IEMailOperations _emailOperations;
 
         public MainWindow(ILifetimeScope scope, ITaskInfoDal taskInfoDal, IBackupStorageDal backupStorageDal, IBackupTaskDal backupTaskDal, IStatusInfoDal statusInfoDal, IActivityLogDal activityLogDal, ILogger logger, IRestoreTaskDal restoreTaskDal, IConfigurationDataDal configurationDataDal, ILicenseService licenseService, IEMailOperations emailOperations)
         {
@@ -82,7 +81,6 @@ namespace DiskBackupWpfGUI
             _configurationDataDal = configurationDataDal;
             _scope = scope;
             _licenseService = licenseService;
-            _emailOperations = emailOperations;
 
             var backupService = _scope.Resolve<IBackupService>();
             var backupStorageService = _scope.Resolve<IBackupStorageService>();
@@ -2477,9 +2475,14 @@ namespace DiskBackupWpfGUI
                 feedbackType = "Hata Bildirimi";
             else if (cbFeedbackMessageType.SelectedIndex == 2)
                 feedbackType = "Şikayet";
-            var mailSendOperaitonResponse = mailOperations.SendFeedback(feedbackTxt.Text, feedbackType);
+
+            bool mailSendOperaitonResponse = mailOperations.SendFeedback(feedbackTxt.Text, feedbackType, _licenseService.GetLicenseUserInfo());
+
             if (mailSendOperaitonResponse)
+            {
                 MessageBox.Show("Mail gönderimi başarılı");
+                feedbackTxt.Text = "";
+            }
             else
                 MessageBox.Show("Mail gönderilemedi");
         }

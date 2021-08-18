@@ -207,7 +207,7 @@ namespace DiskBackup.TaskScheduler.Jobs
             try
             {
                 taskInfo.StatusInfo = resultTaskStatusInfo;
-                _emailOperations.SendStatusEMail(taskInfo);
+                _emailOperations.SendTaskStatusEMail(taskInfo);
             }
             catch (Exception ex)
             {

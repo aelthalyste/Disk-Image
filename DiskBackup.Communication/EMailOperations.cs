@@ -3,6 +3,7 @@ using DiskBackup.Entities.Concrete;
 using Serilog;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Net;
 using System.Net.Mail;
 using System.Text;
@@ -41,7 +42,7 @@ namespace DiskBackup.Communication
             using (var message = new MailMessage()
             {
                 IsBodyHtml = true,
-                Body = ChangeBody(lang.Value, taskInfo),
+                Body = ChangeTaskStatusBody(lang.Value, taskInfo),
                 From = lang.Value == "tr" ? new MailAddress("diskbackup@narbulut.com", "Narbulut Bilgilendirme") : new MailAddress("diskbackup@narbulut.com", "Narbulut Information")
             })
 
@@ -102,12 +103,14 @@ namespace DiskBackup.Communication
             }
         }
 
-        public bool SendFeedback(string feedbackMessage, string feedbackType)
+        public bool SendFeedback(string feedbackMessage, string feedbackType, string[] licenseInformations)
         {
+            _logger.Error("SendFeedBack => msj = " + feedbackMessage + "type = ", feedbackType);
+
             using (var message = new MailMessage()
             {
                 IsBodyHtml = true,
-                Body = feedbackMessage,
+                Body = ChangeFeedbackBody(feedbackMessage, feedbackType, licenseInformations),
                 From = new MailAddress("diskbackup@narbulut.com", "DiskImage Destek Talebi")
             })
 
@@ -126,7 +129,7 @@ namespace DiskBackup.Communication
             }
         }
 
-        public void SendStatusEMail(TaskInfo taskInfo)
+        public void SendTaskStatusEMail(TaskInfo taskInfo)
         {
             var emailList = _emailInfoDal.GetList();
 
@@ -191,13 +194,12 @@ namespace DiskBackup.Communication
             return lang;
         }
 
-        private string ChangeBody(string lang, TaskInfo taskInfo)
+        private string ChangeTaskStatusBody(string lang, TaskInfo taskInfo)
         {
             string body = string.Empty;
 
             body = ChangeLang(lang, taskInfo);
             body = body.Replace("{PCName}", Dns.GetHostName());
-
             body = body.Replace("{TaskName}", taskInfo.StatusInfo.TaskName);
             body = body.Replace("{FileName}", taskInfo.StatusInfo.FileName);
             body = body.Replace("{SourceInfo}", taskInfo.StatusInfo.SourceObje);
@@ -217,6 +219,29 @@ namespace DiskBackup.Communication
             return body;
         }
 
+        private string ChangeFeedbackBody(string feedbackMessage, string feedbackType, string[] licenseInformations)
+        {
+            string body = GetFeedBackBody();
+            body = body.Replace("{feedbackType}", feedbackType);
+
+            _logger.Error("ChangeFeedbackBody => msj = " + feedbackMessage + "type = ", feedbackType);
+
+
+            body = body.Replace("{customerName}", _configurationDataDal.Get(x => x.Key == "customerName").Value);
+            body = body.Replace("{AuthorizedPerson}", licenseInformations[2]);
+            body = body.Replace("{DealerName}", licenseInformations[0]);
+            body = body.Replace("{PCName}", Dns.GetHostName());
+            body = body.Replace("{SupportExpireDate}", Convert.ToDateTime(licenseInformations[4], CultureInfo.CreateSpecificCulture("tr-TR")).ToString());
+            body = body.Replace("{daysLeft}", (Convert.ToDateTime(licenseInformations[4], CultureInfo.CreateSpecificCulture("tr-TR")) - DateTime.Now).Days.ToString()) + " gün kaldı";
+            body = body.Replace("{VerificationKey}", _configurationDataDal.Get(x => x.Key == "uniqKey").Value);
+            body = body.Replace("{Version}", licenseInformations[6]);
+            body = body.Replace("{MachineType}", licenseInformations[5]);
+
+            body = body.Replace("{message}", feedbackMessage);
+
+            return body;
+        }
+        
         private string ChangeTestBody(string lang)
         {
             string body = string.Empty;
@@ -470,6 +495,78 @@ namespace DiskBackup.Communication
                                 </p>
                             </div>
                         </div>
+                    </body>
+                    </html>";
+        }
+
+        private string GetFeedBackBody()
+        {
+            return @"<!DOCTYPE html>
+                    <html>
+                    <head>
+                        <meta http-equiv=""Content-Type"" content=""text/html; charset=utf-8"">
+                        <style>
+                            * {
+                                text-decoration: none;
+                            }
+                        </style>
+                    </head>
+                    <body bgcolor=""#F2F4F6"">
+                        <p style=""text-align:center; padding-top:50px;"">
+                            <span>
+                                <a href=""http://panel.narbulut.com"" target=""_blank"" rel=""noopener noreferrer"" data-auth=""NotApplicable"">
+                                    <img src=""https://panel.narbulut.com/img/slider/Logoü.png"" alt=""Narbulut Logo""/>
+                                </a>
+                            </span>
+                        </p>
+                        <div style=""padding:0px 25% 0px 25%;"">
+                            <table style=""background-color:white; border-collapse:collapse; width:90%;"" align=""center"">
+                                <tr>
+                                    <th>
+                                        <h2>{feedbackType}</h1>
+                                    </th>
+                                </tr>
+                                <tr>
+                                    <th style=""font-family:Arial, sans-serif, serif, EmojiFont; color: black; text-align:left; padding:20px;"">Kullanıcı Bilgileri:</th>
+                                </tr>
+                                <tr>
+                                    <td style=""font-family:Arial, sans-serif, serif, EmojiFont; color:slategray; text-align:left; padding:0px 0px 10px 20px;"">Müşteri Adı: {customerName}</td>
+                                </tr>
+                                <tr>
+                                    <td style=""font-family:Arial, sans-serif, serif, EmojiFont; color:slategray; text-align:left; padding:0px 0px 10px 20px;"">Yetkili Kişi: {AuthorizedPerson}</td>
+                                </tr>
+                                <tr>
+                                    <td style=""font-family:Arial, sans-serif, serif, EmojiFont; color:slategray; text-align:left; padding:0px 0px 10px 20px;"">Bayi Adı: {DealerName}</td>
+                                </tr>
+                                <tr>
+                                    <td style=""font-family:Arial, sans-serif, serif, EmojiFont; color:slategray; text-align:left; padding:0px 0px 10px 20px;"">Bilgisayar Adı: {PCName}</td>
+                                </tr>
+                                <tr>
+                                    <td style=""font-family:Arial, sans-serif, serif, EmojiFont; color:slategray; text-align:left; padding:0px 0px 10px 20px;"">Destek Bitiş Tarihi: {SupportExpireDate} ({daysLeft} gün kaldı)</td>
+                                </tr>
+                                <tr>
+                                    <td style=""font-family:Arial, sans-serif, serif, EmojiFont; color:slategray; text-align:left; padding:0px 0px 10px 20px;"">Doğrulama Anahtarı: {VerificationKey}</td>
+                                </tr>
+                                <tr>
+                                    <td style=""font-family:Arial, sans-serif, serif, EmojiFont; color:slategray; text-align:left; padding:0px 0px 10px 20px;"">Versiyon: {Version} ({MachineType})</td>
+                                </tr>
+                                <tr>
+                                    <th style=""font-family:Arial, sans-serif, serif, EmojiFont; color: black; text-align:left; padding: 10px 20px;"">Mesaj:</th>
+                                </tr>
+                                <tr>
+                                    <td style=""font -family:Arial, sans-serif, serif, EmojiFont; color: black; text-align:left; padding:5px 20px 40px 30px;"">{message}</td>
+                                </tr>
+                            </table>
+                               <div style=""padding:18.75pt 0;"">
+                                <p align=""center"" style=""text-align:center; margin-top:0; line-height:18.0pt;"">
+                                    <span style=""color:#74787E;font-size:9pt;"">
+                                        <a href=""http://panel.narbulut.com"" target=""_blank"" rel=""noopener noreferrer"" data-auth=""NotApplicable"">
+                                            <span style=""color:#3869D4;"">Copyright Narbulut © 2017</span>
+                                        </a>| {AllRightReservedLang}
+                                    </span>
+                                </p>
+                            </div>
+                            </div>
                     </body>
                     </html>";
         }
