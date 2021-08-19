@@ -221,20 +221,6 @@ void DEBUG_Restore(){
 
 #include <conio.h>
 
-typedef struct { uint64_t state;  uint64_t inc; } pcg32_random_t;
-
-uint32_t pcg32_random_r(pcg32_random_t* rng)
-{
-    uint64_t oldstate = rng->state;
-    // Advance internal state
-    rng->state = oldstate * 6364136223846793005ULL + (rng->inc|1);
-    // Calculate output function (XSH RR), uses old state for max ILP
-    uint32_t xorshifted = ((oldstate >> 18u) ^ oldstate) >> 27u;
-    uint32_t rot = oldstate >> 59u;
-    return (xorshifted >> rot) | (xorshifted << ((-rot) & 31));
-}
-
-
 #if 0
 int
 TEST_ReadBackupCrossed(wchar_t *cb, wchar_t *cm, wchar_t* db, wchar_t* dm, pcg32_random_t *state){
@@ -435,53 +421,65 @@ void TEST_ExtensionFinder(){
     NarFindExtensions('C', Vol, L".dll", &Mem);
 }
 
+void
+TEST_MockSaveBootState(){
+    
+    LOG_CONTEXT C = {0};
+    C.Port = INVALID_HANDLE_VALUE;
+    volume_backup_inf Temp = {};
+    Temp.Letter = 'C';
+    Temp.Version = 2;
+    Temp.BT  = BackupType::Inc;
+    Temp.IncLogMark.LastBackupRegionOffset = Kilobyte(30);
+    nar_backup_id ID;
+    
+    ID.Q = 2893749281;
+    ID.Letter = 'C';
+    
+    Temp.BackupID  = ID;
+    C.Volumes.Insert(Temp);
+    NarSaveBootState(&C);
+    
+    
+}
+
+
+
 int
 wmain(int argc, wchar_t* argv[]) {
     
-    //NarGetDiskListFromDiskPart();
-    
-    auto TempArena = ArenaInit(malloc(1024*1024), 1024*1024);
-    size_t Out = 0;
-    auto Disks = NarGetPartitions(&TempArena, &Out);
-    
-    for(int i =0; i<Out; i++){
-        
-        if(Disks[i].DiskID == 0 && i != 0){
-            continue;
+#if 0    
+    uint32_t s1, s2;
+    auto vh = NarOpenVolume('C');
+    auto r1 = OLD_GetVolumeRegionsFromBitmap(vh, &s1);
+    auto r2 = GetVolumeRegionsFromBitmap(vh, &s2);
+    ASSERT(s1 == s2);
+    for(int i =0; i<s1 && i<s2; i++){
+        ASSERT(memcmp(&r1[i], &r2[i], 8) == 0);
+    }
+    printf("Done!\n");
+    return 0;
+#endif
+    {
+        auto Ctx = SetupFullOnlyStream('C', new DotNetStreamInf, false, true);
+        void *tb = malloc(Megabyte(32));
+        size_t br = 0;
+        while(1){
+            auto v = ReadStream(&Ctx.Stream, tb, Megabyte(32));
+            br += v;
+            if(v == 0){
+                NAR_BREAK;
+                break;
+            }
         }
-        
-        printf("Disk ID : %d\n", Disks[i].DiskID);
-        printf("Size(GB) : %.5f\n", (double)Disks[i].TotalSize/Gigabyte(1));
-        printf("Unused size(GB) : %.5f\n", (double)Disks[i].UnusedSize/Gigabyte(1));
-        printf("PARTITIONS ####\n");
-        for(int j =0; j<Disks[i].VolumeCount; j++){
-            
-            if(Disks[i].Volumes[j].Letter > L'A' && Disks[i].Volumes[j].Letter < L'Z'){
-                printf("\tPartition : %c\n", Disks[i].Volumes[j].Letter);
-            }
-            else{
-                printf("\tPartition ID: %d\n", Disks[i].Volumes[j].Letter);
-            }
-            
-            if(Disks[i].Volumes[j].VolumeName){
-                printf("\tPartition Name : %S\n", Disks[i].Volumes[j].VolumeName);
-            }
-            
-            printf("\tPartition Size(MB) %.5f\n", (double)Disks[i].Volumes[j].TotalSize/Megabyte(1));
-            if(Disks[i].Volumes[j].Letter > L'A' && Disks[i].Volumes[j].Letter < L'Z'){
-                printf("\tPartition free size(MB) : %.5f\n", (double)Disks[i].Volumes[j].FreeSize);
-            }
-            
-            printf("\n");
-            //printf("##########\n\n");
-            
-        }
-        
-        printf("######\n");
+        TerminateFullOnlyStream(&Ctx, false);
         
     }
     
     
+    //TEST_MockSaveBootState();
+    return 0;
+    auto Ctx = NarLoadBootState();
     return 0;
     
 #if 0    
@@ -689,18 +687,6 @@ wmain(int argc, wchar_t* argv[]) {
 #endif
     
     
-#if 0
-    // CREATE NARBOOTFILE
-    {
-        LOG_CONTEXT C = {0};
-        C.Port = INVALID_HANDLE_VALUE;
-        ConnectDriver(&C);
-        AddVolumeToTrack(&C, argv[1][0], BackupType::Diff);
-        NarSaveBootState(&C);
-    }
-    
-    return 0;
-#endif
     
     size_t bsize = 64*1024*1024;
     void *MemBuf = malloc(bsize);
@@ -742,7 +728,7 @@ wmain(int argc, wchar_t* argv[]) {
                     printf("starting backup\n");
 #if 1                    
                     loop{
-                        int Read = ReadStream(v, MemBuf, bsize);
+                        int Read = ReadStream(&v->Stream, MemBuf, bsize);
                         TotalRead += Read;
                         
                         ucs += v->Stream.BytesProcessed;

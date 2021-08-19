@@ -262,6 +262,7 @@ namespace NarDIWrapper {
         return NarIsVolumeAvailable(Letter);
     }
     
+    
     BackupReadResult^ DiskTracker::CW_ReadStream(void* Data, wchar_t VolumeLetter, int Size) {
         
         BackupReadResult ^Res = gcnew BackupReadResult;
@@ -269,7 +270,7 @@ namespace NarDIWrapper {
         int VolID = GetVolumeID(C, VolumeLetter);
         if(VolID != NAR_INVALID_VOLUME_TRACK_ID){
             
-            uint32_t WriteSize     = ReadStream(&C->Volumes.Data[VolID], Data, Size);
+            uint32_t WriteSize     = ReadStream(&C->Volumes.Data[VolID].Stream, Data, Size);
             Res->WriteSize        = WriteSize;
             Res->DecompressedSize = 0;
             
@@ -283,6 +284,72 @@ namespace NarDIWrapper {
         // couldnt find volume in the Context, which shoudlnt happen at all
         
         return Res;
+    }
+    
+    uint64_t DiskTracker::CW_SetupFullOnlyStream(StreamInfo^ StrInf, wchar_t Letter, bool ShouldCompress){
+        
+        DotNetStreamInf SI = {};
+        uint64_t Result = 0;
+        full_only_backup_ctx Ctx = SetupFullOnlyStream(Letter, &SI, ShouldCompress);
+        
+        if(Ctx.InitSuccess){
+            StrInf->ClusterCount     = SI.ClusterCount;
+            StrInf->ClusterSize      = SI.ClusterSize;
+            StrInf->FileName         = gcnew String(SI.FileName.c_str());
+            StrInf->MetadataFileName = gcnew String(SI.MetadataFileName.c_str());
+            StrInf->CopySize         = (UINT64)StrInf->ClusterSize * (UINT64)StrInf->ClusterCount;
+            
+            full_only_backup_ctx *Temp = (full_only_backup_ctx*)malloc(sizeof(*Temp));
+            memcpy(Temp, &Ctx, sizeof(Ctx));
+            Result = reinterpret_cast<uintptr_t>(Temp);
+            return Result;
+        }
+        
+        return 0;
+    }
+    
+    uint64_t DiskTracker::CW_SetupDiskCloneStream(StreamInfo^ StrInf, wchar_t Letter){
+        DotNetStreamInf SI = {};
+        uint64_t Result = 0;
+        full_only_backup_ctx Ctx = SetupFullOnlyStream(Letter, &SI, false, true);
+        
+        if(Ctx.InitSuccess){
+            StrInf->ClusterCount     = SI.ClusterCount;
+            StrInf->ClusterSize      = SI.ClusterSize;
+            StrInf->FileName         = gcnew String(SI.FileName.c_str());
+            StrInf->MetadataFileName = gcnew String(SI.MetadataFileName.c_str());
+            StrInf->CopySize         = (UINT64)StrInf->ClusterSize * (UINT64)StrInf->ClusterCount;
+            
+            full_only_backup_ctx *Temp = (full_only_backup_ctx*)malloc(sizeof(*Temp));
+            memcpy(Temp, &Ctx, sizeof(Ctx));
+            Result = reinterpret_cast<uintptr_t>(Temp);
+            return Result;
+        }
+        return 0;
+    }
+    
+    BackupReadResult^ DiskTracker::CW_ReadFullOnlyStream(uint64_t BackupID, void *Data, uint32_t Size){
+        
+        BackupReadResult ^Res = gcnew BackupReadResult;
+        auto Ctx = (full_only_backup_ctx*)reinterpret_cast<void*>(BackupID);
+        
+        uint32_t WriteSize    = ReadStream(&Ctx->Stream, Data, Size);
+        Res->WriteSize        = WriteSize;
+        Res->DecompressedSize = 0;
+        
+        if(true == Ctx->Stream.ShouldCompress){
+            Res->DecompressedSize = Ctx->Stream.BytesProcessed;
+        }
+        
+        Res->ReadOffset = Ctx->Stream.BytesReadOffset;
+        Res->Error = Ctx->Stream.Error;
+        return Res;
+    }
+    
+    void DiskTracker::CW_TerminateFullOnlyBackup(uint64_t BackupID, bool ShouldSaveMetadata){
+        auto Ctx = (full_only_backup_ctx*)reinterpret_cast<void*>(BackupID);
+        TerminateFullOnlyStream(Ctx, ShouldSaveMetadata);
+        free(Ctx);
     }
     
     // returns false if internal error occured
@@ -478,11 +545,13 @@ namespace NarDIWrapper {
             printf("Couldnt lock log mutex\n");
         }
         
-        printf("WRAPPER : Flushed logs to service side !\n");
         return Result;
     }
     
-    // TODO(Batuhan): helper functions, like which volume we are streaming etc.
+    
+    
+    
+    
     
 }
 

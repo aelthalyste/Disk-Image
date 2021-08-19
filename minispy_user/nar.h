@@ -334,13 +334,16 @@ to file, mft itself will be marked as corrupt because i wont have anything to ma
 */
 
 // NOTE(Batuhan): nar binary file contains backup data, mft, and recovery
-static const int GlobalBackupMetadataVersion = 1;
+
+// 0xfff1 - first draft
+// 
+static const int GlobalBackupMetadataMagicNumber = 0xfff1;
 struct backup_metadata {
     
     struct {
         int Size = sizeof(backup_metadata); // Size of this struct
         // NOTE(Batuhan): structure may change over time(hope it wont), this value hold which version it is so i can identify and cast accordingly
-        int Version;
+        int MagicNumber = 0xfff1;
     }MetadataInf;
     
     struct {
@@ -414,6 +417,7 @@ struct backup_metadata {
             size_t   CompressionInfoOffset;
             uint32_t CompressionInfoCount;
             
+            
         };
     };
     
@@ -425,6 +429,7 @@ struct backup_metadata {
     
     int Version; // -1 for full backup
     int ClusterSize; // 4096 default
+    
     
     char Letter;
     uint8_t DiskType;
@@ -747,4 +752,37 @@ CompareNarRecords(const void* v1, const void* v2);
 static inline int8_t
 IsNumeric(char val) {
     return val >= '0' && val <= '9';
+}
+
+
+// *Really* minimal PCG32 code / (c) 2014 M.E. O'Neill / pcg-random.org
+// Licensed under Apache License 2.0 (NO WARRANTY, etc. see website)
+
+typedef struct { uint64_t state;  uint64_t inc; } pcg32_random_t;
+
+static inline uint32_t 
+pcg32_random_r(pcg32_random_t* rng)
+{
+    uint64_t oldstate = rng->state;
+    // Advance internal state
+    rng->state = oldstate * 6364136223846793005ULL + (rng->inc|1);
+    // Calculate output function (XSH RR), uses old state for max ILP
+    uint32_t xorshifted = ((oldstate >> 18u) ^ oldstate) >> 27u;
+    uint32_t rot = oldstate >> 59u;
+    return (xorshifted >> rot) | (xorshifted << ((-rot) & 31));
+}
+
+
+
+static inline bool
+NarIsFullOnlyBackup(nar_backup_id ID){
+    return (ID.Q & (1<<15));
+}
+
+
+static inline nar_backup_id
+NarSetAsFullOnlyBackup(nar_backup_id ID){
+    nar_backup_id Result = ID;
+    Result.Q |= (1<<15);
+    return Result;
 }

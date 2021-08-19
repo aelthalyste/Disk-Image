@@ -12,9 +12,94 @@ namespace DotNetTest
     class Program
     {
 
+        public int CompareTo(CSNarFileEntry other) {
+            return 1;
+        }
+
+        static public void TEST_FULL() {
+            Console.WriteLine("Waiting input(letter): ");
+            var inp = Console.ReadLine();
+            StreamInfo Inf = new StreamInfo();
+
+            var ID = DiskTracker.CW_SetupFullOnlyStream(Inf, inp[0], true);
+            var Output = File.Create(Inf.FileName);
+            unsafe
+            {
+                uint buffersize = 1024 * 1024 * 64;
+                byte[] buffer = new byte[buffersize];
+                fixed (byte* baddr = &buffer[0])
+                {
+                    while (true)
+                    {
+                        var ReadResult = DiskTracker.CW_ReadFullOnlyStream(ID, baddr, buffersize);
+                        if (ReadResult.Error != BackupStream_Errors.Error_NoError)
+                        {
+                            break;
+                        }
+                        if (ReadResult.WriteSize == 0)
+                        {
+                            break;
+                        }
+                        Output.Write(buffer, 0, (int)ReadResult.WriteSize);
+                    }
+                }
+            }
+
+            // backup bir dosyaya yaziliyorsa, daha sonradan restore edilecekse metadatanin kayit edilmesi gerekiyor. true verilmeli arguman
+            DiskTracker.CW_TerminateFullOnlyBackup(ID, true);
+            Console.WriteLine("done!");
+        }
+
+        static public void TEST_FULL_CLONE()
+        {
+            Console.WriteLine("Waiting input(letter): ");
+            var inp = Console.ReadLine();
+            StreamInfo Inf = new StreamInfo();
+
+            var ID = DiskTracker.CW_SetupDiskCloneStream(Inf, inp[0]);
+            
+            // Volume a yazmak icin acmaniz lazim, nasil olur bilmiyorum .NET de, gerekli kodu file.create ile degistirirsiniz.
+            var Output = File.Create(Inf.FileName); 
+            unsafe
+            {
+                uint buffersize = 1024 * 1024 * 64;
+                byte[] buffer = new byte[buffersize];
+                fixed (byte* baddr = &buffer[0])
+                {
+                    while (true)
+                    {
+                        var ReadResult = DiskTracker.CW_ReadFullOnlyStream(ID, baddr, buffersize);
+                        if (ReadResult.Error != BackupStream_Errors.Error_NoError)
+                        {
+                            break;
+                        }
+                        if (ReadResult.WriteSize == 0)
+                        {
+                            break;
+                        }
+
+                        Output.Seek((long)ReadResult.ReadOffset, SeekOrigin.Begin);
+                        Output.Write(buffer, 0, (int)ReadResult.WriteSize);
+                    }
+                }
+            }
+
+            // disk klonlaniyorsa metadatanin kayit edilmesine gerek yok, false verilerek hizlica tamamlanabilir islem.
+            DiskTracker.CW_TerminateFullOnlyBackup(ID, false);
+            Console.WriteLine("done!");
+        }
 
         static void Main(string[] args)
         {
+            TEST_FULL();
+            return;
+
+            //var disklist = DiskTracker.CW_GetDisksOnSystem();
+            //foreach (var disk in disklist)
+            //{
+            //    Console.WriteLine("{0} {1} {2}", disk.Type, disk.Size, disk.ID);
+            //}
+            //return;
 
             Console.WriteLine("Selected metadata is ", args[0]);
 
@@ -25,13 +110,14 @@ namespace DotNetTest
                 
                 // list files in directory
                 int i = 0;
+
                 foreach (var item in list)
                 {
                     Console.Write(i++);
                     Console.Write("\t\t");
-                    Console.WriteLine(item.Name);
+                    Console.WriteLine("{0} {1} (mb : {2})",item.Name, item.Size, item.Size/(1024*1024));
                 }
-
+                
                 // silly way to get input.
                 string line = Console.ReadLine();
                 int selection = Convert.ToInt32(line);
@@ -46,7 +132,7 @@ namespace DotNetTest
                 
                 CSNarFileEntry SelectedEntry = list[selection];
                 if(SelectedEntry.IsDirectory){
-                    FE.CW_SelectDirectory(SelectedEntry);
+                    FE.CW_SelectDirectory(SelectedEntry.UniqueID);
                 }
                 if (SelectedEntry.IsDirectory == false) {
 
@@ -57,12 +143,12 @@ namespace DotNetTest
                     CSNarFileExportStream Stream = null;
                     // First method: Create export stream directly from file explorer 
                     {
-                        Stream = FE.CW_SetupFileRestore(SelectedEntry);
+                        Stream = FE.CW_SetupFileRestore(SelectedEntry.UniqueID);
                     }
 
                     // Second method: Create export stream by passing file explorer object to it's constructor
                     {
-                        Stream = new CSNarFileExportStream(FE, SelectedEntry);
+                        Stream = new CSNarFileExportStream(FE, SelectedEntry.UniqueID);
                     }
 
                     // rest of the operation is simple. Call advance stream until it returns false. After  advance stream returns true,

@@ -38,15 +38,32 @@ enum class BackupStream_Errors: int{
 };
 
 
-struct stream {
+struct backup_stream {
     
     data_array<nar_record> Records;
-    INT32 RecIndex;
-    INT32 ClusterIndex;
-    HANDLE Handle; //Used for streaming data to C#
+    int32_t RecIndex;
+    int32_t ClusterIndex;
+    HANDLE Handle;
     
+    // If compression enabled, this value is equal to uncompressed size of the resultant compression job
+    // otherwise it's equal to readstream's return value
+    uint32_t BytesProcessed;
+    uint64_t BytesReadOffset;
     
+    bool ShouldCompress;
+    
+    // if set, forbids ReadStream to add more than one region per call. Useful when cloning a disk-volume
+    bool RegionLock;
+    
+    void *CompressionBuffer;
+    size_t BufferSize;
+    ZSTD_CCtx* CCtx;
+    uint32_t ClusterSize;
     BackupStream_Errors Error;
+    
+    nar_record *CompInf;
+    size_t      CBII;
+    size_t      MaxCBI;
     
     const char* GetErrorDescription(){
         
@@ -94,17 +111,18 @@ struct stream {
     }
     
     
-    // If compression enabled, this value is equal to uncompressed size of the resultant compression job
-    // otherwise it's equal to readstream's return value
-    uint32_t BytesProcessed;
-    
-    bool ShouldCompress;
-    void *CompressionBuffer;
-    size_t BufferSize;
-    ZSTD_CCtx* CCtx;
-    
-    
 };
+
+
+struct full_only_backup_ctx{
+    backup_stream      Stream;
+    process_listen_ctx PLCtx;
+    nar_backup_id BackupID;
+    char Letter;
+    bool InitSuccess;
+    int32_t VolumeTotalClusterCount;
+};
+
 
 struct volume_backup_inf {
     
@@ -152,14 +170,7 @@ struct volume_backup_inf {
     
     int32_t VolumeTotalClusterCount;
     
-    stream Stream;
-    
-    CComPtr<IVssBackupComponents> VSSPTR;
-    VSS_ID SnapshotID;
-    
-    nar_record *CompInf;
-    size_t      CBII;
-    size_t      MaxCBI;
+    backup_stream Stream;
     
     process_listen_ctx PLCtx;
 };
@@ -215,11 +226,28 @@ nar_record*
 GetVolumeRegionsFromBitmap(HANDLE VolumeHandle, uint32_t* OutRecordCount);
 
 
+
+/*
+  From given volume handle, extracts region information from volume
+  Handle can be VSS handle or normal volume handle. VSS is preferred since volume information might change over time
+  returns NULL if any error occurs
+*/
+nar_record*
+OLD_GetVolumeRegionsFromBitmap(HANDLE VolumeHandle, uint32_t* OutRecordCount);
+
+full_only_backup_ctx
+SetupFullOnlyStream(wchar_t Letter, DotNetStreamInf *SI, bool ShouldCompress, bool RegionLock = false);
+
 /*
 */
 int32_t
 SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, DotNetStreamInf* SI, bool ShouldCompress);
 
+
+
+
+void
+TerminateFullOnlyStream(full_only_backup_ctx *Ctx, bool ShouldSaveMetadata = true);
 
 
 int32_t
@@ -230,7 +258,7 @@ TerminateBackup(volume_backup_inf* V, int32_t Succeeded);
 
 // Assumes CallerBufferSize >= NAR_COMPRESSION_FRAME_SIZE
 uint32_t
-ReadStream(volume_backup_inf* VolInf, void* CallerBuffer, unsigned int CallerBufferSize);
+ReadStream(backup_stream* Stream, void* CallerBuffer, unsigned int CallerBufferSize);
 
 
 

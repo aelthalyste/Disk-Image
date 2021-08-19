@@ -1,32 +1,32 @@
 @echo off
 
 set build_options= -DUNICODE -D_UNICODE -D_CRT_SECURE_NO_WARNINGS
-set compile_flags= -nologo /MT /EHsc /W0 /Od /DEBUG:FULL /Zi /FC /F 16777216 /std:c++17 /MP
+set compile_flags= -nologo /GS- /MT /EHsc /W0 /Od /F 16777216 /Zi /FC /FAs /std:c++17 /MP 
 rem /fsanitize=address /DEBUG:FULL /Zi /FC /Fa 
-rem 
+rem /FAs
 rem /fsanitize=address
 rem /d2cgsummary /showIncludes
 rem /Bt
 rem -ftime-trace
 
-set linker_flags= /WX "fltLib.lib" "vssapi.lib" "libzstd_static.lib" "libzstd.lib"
+set linker_flags= /WX "fltLib.lib" "vssapi.lib" "libzstd.lib"
 rem 
 
 pushd minispy_user\
 
 rem if not exist precompiled.obj 
-if not exist precompiled.obj cl /c %compile_flags% /Yc"precompiled.h" "precompiled.cpp" 
+cl /c %compile_flags% /Yc"precompiled.h" "precompiled.cpp" 
 
 rem "file_explorer.cpp" "restore.cpp" "platform_io.cpp"
 
-ctime.exe -begin DiskImageNative  
+rem ctime.exe -begin DiskImageNative  
 
 cl /Yu"precompiled.h" main.cpp backup.cpp file_explorer.cpp platform_io.cpp restore.cpp nar_win32.cpp nar.cpp narstring.cpp "precompiled.obj" %build_options% %compile_flags% /I"../inc" %linker_flags%
 
 REM UNITY BUILD
 rem cl /Yu"precompiled.h" main.cpp "precompiled.obj" %build_options% %compile_flags% /I"../inc" %linker_flags%
 
-ctime.exe -end DiskImageNative
+rem ctime.exe -end DiskImageNative
 
 rem CLEANUP
 

@@ -367,7 +367,8 @@ namespace NarDIWrapper {
             
         }
         
-        uint32_t WriteSize = 0;
+        uint64_t ReadOffset = 0;
+        uint32_t WriteSize  = 0;
         uint32_t DecompressedSize = 0;
         BackupStream_Errors Error = BackupStream_Errors::Error_NoError;
     };
@@ -556,6 +557,13 @@ namespace NarDIWrapper {
         
     };
     
+    
+    static uint64_t CW_SetupFullOnlyStream(StreamInfo^ StrInf, wchar_t Letter, bool ShouldCompress, bool RegionLock);
+    static BackupReadResult^ CW_ReadFullOnlyStream(uint64_t BackupID, void* Data, uint32_t Size);
+    
+    static void CW_TerminateFullOnlyBackup(uint64_t BackupID, bool ShouldSaveMetadata);
+    
+    
     public ref class DiskTracker
     {
         public:
@@ -567,12 +575,13 @@ namespace NarDIWrapper {
         
         bool CW_InitTracker();
         bool DiskTracker::CW_RetryDriverConnection();
-
+        
         bool CW_AddToTrack(wchar_t Letter, int Type);
         
         bool CW_RemoveFromTrack(wchar_t Letter);
         
         bool CW_SetupStream(wchar_t L, int BT, StreamInfo^ StrInf, bool ShouldCompress);
+        
         
         BackupReadResult^ CW_ReadStream(void* Data, wchar_t VolumeLetter, int Size);
         bool CW_CheckStreamStatus(wchar_t Letter);
@@ -588,6 +597,15 @@ namespace NarDIWrapper {
         static bool CW_IsVolumeAvailable(wchar_t Letter);
         static int CW_HintBufferSize();
         
+        
+        static uint64_t CW_SetupFullOnlyStream(StreamInfo^ StrInf, wchar_t Letter, bool ShouldCompress);
+        
+        static uint64_t CW_SetupDiskCloneStream(StreamInfo^ StrInf, wchar_t Letter);
+        
+        static BackupReadResult^ CW_ReadFullOnlyStream(uint64_t BackupID, void* Data, uint32_t Size);
+        
+        static void CW_TerminateFullOnlyBackup(uint64_t BackupID, bool ShouldSaveMetadata);
+        
         static List<CSLog^>^ CW_GetLogs();
         
         private:
@@ -595,9 +613,6 @@ namespace NarDIWrapper {
         static volatile SHORT msInit    = 0;
         static volatile SHORT msIsDriverConnected = 0;
         static LOG_CONTEXT* C = nullptr;
-        
-        
-        
     };
     
     
