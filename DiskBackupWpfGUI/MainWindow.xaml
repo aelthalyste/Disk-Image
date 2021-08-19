@@ -13,9 +13,9 @@
         BorderBrush="#194771" BorderThickness="1"
         Height="730" Width="1294"
         ResizeMode="CanMinimize">
-    <!--<Window.Resources>
+    <Window.Resources>
         <ResourceDictionary Source="Resources\Lang\string_tr.xaml"/>
-    </Window.Resources>-->
+    </Window.Resources>
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="30"/>
@@ -1163,7 +1163,23 @@
                     </DockPanel>
                     <DockPanel Grid.Column="1" VerticalAlignment="Top" Height="415" Background="#F2F2F2">
                         <StackPanel HorizontalAlignment="Center">
-                            <Button Name="btnBackupStorageAdd" ToolTip="{DynamicResource add}" Click="btnBackupStorageAdd_Click" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,25,0,5" Style="{StaticResource ImageButton}" Grid.Column="1">
+                            <Button Name="btnRefreshBackupAreas" ToolTip="{DynamicResource refreshBackups}" Click="btnRefreshBackupAreas_Click" Width="32" Height="32" Margin="0,25,0,5" Style="{StaticResource ImageButton}">
+                                <Button.Content>
+                                    <Image Height="28">
+                                        <Image.Style>
+                                            <Style TargetType="Image">
+                                                <Setter Property="Source" Value="Resources/Icon/icons8_refresh.ico" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsEnabled, RelativeSource={RelativeSource AncestorType=Button}}" Value="False">
+                                                        <Setter Property="Source" Value="Resources/Icon/icons8_synchronize_disable.ico"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Image.Style>
+                                    </Image>
+                                </Button.Content>
+                            </Button>
+                            <Button Name="btnBackupStorageAdd" ToolTip="{DynamicResource add}" Click="btnBackupStorageAdd_Click" Width="32" Height="32" Margin="0,5" Style="{StaticResource ImageButton}" Grid.Column="1">
                                 <Button.Content>
                                     <Image Height="30" Width="30" HorizontalAlignment="Center" VerticalAlignment="Center">
                                         <Image.Style>
@@ -1174,8 +1190,7 @@
                                     </Image>
                                 </Button.Content>
                             </Button>
-                            <Button Name="btnBackupStorageEdit" ToolTip="{DynamicResource edit}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5" 
-                                    Style="{StaticResource ImageButton}" Grid.Column="1" IsEnabled="False" Click="btnBackupStorageEdit_Click">
+                            <Button Name="btnBackupStorageEdit" ToolTip="{DynamicResource edit}" Width="32" Height="32" Margin="0,5" Style="{StaticResource ImageButton}" Grid.Column="1" IsEnabled="False" Click="btnBackupStorageEdit_Click">
                                 <Button.Content>
                                     <Image Height="25" Width="25" HorizontalAlignment="Center" VerticalAlignment="Center">
                                         <Image.Style>
@@ -1191,8 +1206,7 @@
                                     </Image>
                                 </Button.Content>
                             </Button>
-                            <Button Name="btnBackupStorageDelete" ToolTip="{DynamicResource delete}" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5" 
-                                    Style="{StaticResource ImageButton}" Grid.Column="1" IsEnabled="False" Click="btnBackupStorageDelete_Click">
+                            <Button Name="btnBackupStorageDelete" ToolTip="{DynamicResource delete}" Width="32" Height="32" Margin="0,5" Style="{StaticResource ImageButton}" Grid.Column="1" IsEnabled="False" Click="btnBackupStorageDelete_Click">
                                 <Button.Content>
                                     <Image HorizontalAlignment="Center" VerticalAlignment="Center">
                                         <Image.Style>
@@ -1730,14 +1744,14 @@
                         <TextBlock Text="{DynamicResource contactUs}" FontSize="16" FontWeight="SemiBold" Margin="15,0,0,0"/>
                         <TextBlock Text="{DynamicResource contactUsContent}" FontSize="14" Foreground="#A1A1A1" Margin="15,5,0,0" />
                         <TextBlock Text="{DynamicResource msgType}" FontSize="14" Margin="15,15,0,0" />
-                        <ComboBox Name="cbMessageType" FontSize="14" Height="30" VerticalContentAlignment="Center" SelectedIndex="0" Width="300" HorizontalAlignment="Left" Margin="15,15,0,0">
+                        <ComboBox Name="cbFeedbackMessageType" FontSize="14" Height="30" VerticalContentAlignment="Center" SelectedIndex="0" Width="300" HorizontalAlignment="Left" Margin="15,15,0,0">
                             <ComboBoxItem Content="{DynamicResource suggestion}"/>
                             <ComboBoxItem Content="{DynamicResource bugReport}"/>
                             <ComboBoxItem Content="{DynamicResource report}"/>
                         </ComboBox>
                         <TextBlock Text="{DynamicResource message}" FontSize="14" Margin="15,15,0,0" />
-                        <TextBox Name="bodyTexBox" ScrollViewer.VerticalScrollBarVisibility="Auto" Height="300" FontSize="14" VerticalContentAlignment="Top" Width="600" HorizontalAlignment="Left" Margin="15,15,0,0" TextWrapping="Wrap" AcceptsReturn="True" MinLines="16" />
-                        <Button Name="btnSendFeedBack" Style="{StaticResource WhiteButton}" Content="{DynamicResource send}" Height="30" Width="70" Margin="545,15,10,0" HorizontalAlignment="Left" FontSize="14"/>
+                        <TextBox Name="feedbackTxt" ScrollViewer.VerticalScrollBarVisibility="Auto" Height="300" FontSize="14" VerticalContentAlignment="Top" Width="600" HorizontalAlignment="Left" Margin="15,15,0,0" TextWrapping="Wrap" AcceptsReturn="True" MinLines="16" />
+                        <Button Name="btnSendFeedBack" Click="btnSendFeedBack_Click" Style="{StaticResource WhiteButton}" Content="{DynamicResource send}" Height="30" Width="70" Margin="545,15,10,0" HorizontalAlignment="Left" FontSize="14"/>
                     </StackPanel>
                 </Grid>
             </TabItem>

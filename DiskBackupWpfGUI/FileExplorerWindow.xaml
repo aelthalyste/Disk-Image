@@ -33,7 +33,7 @@
             <Border Background="#27527B" Height="30">
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                     <Button Name="btnMin" Content="—" Margin="0,-2,0,0" VerticalContentAlignment="Top" FontWeight="Bold" Click="btnMin_Click" Style="{StaticResource TitleButton}" Width="40" ></Button>
-                    <Button Name="btnClose" Content="🗙" Margin="0,-2,0,0" Click="btnClose_Click" Style="{StaticResource TitleButton}" Width="40" ></Button>
+                    <Button Name="btnClose" Content="X" Margin="0,-2,0,0" Click="btnClose_Click" Style="{StaticResource TitleButton}" Width="40" ></Button>
                 </StackPanel>
             </Border>
         </StackPanel>

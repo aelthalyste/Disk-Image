@@ -717,7 +717,7 @@ namespace DiskBackupWpfGUI
                     if (((BackupStorageInfo)cbTargetBackupArea.SelectedItem).Id == item.Id)
                     {
                         //yerel disk - nas
-                        if (item.Type == BackupStorageType.Windows)
+                        if (item.Type == BackupStorageType.Windows || item.Type == BackupStorageType.NAS)
                         {
                             var totalSize = item.StrCapacity.Split(' ');
                             lblTargetTotalSize.Text = totalSize.First();
@@ -1229,6 +1229,18 @@ namespace DiskBackupWpfGUI
                     storageItem.StrCloudCapacity = FormatBytes(storageItem.CloudCapacity);
                     storageItem.StrCloudUsedSize = FormatBytes(storageItem.CloudUsedSize);
                     storageItem.StrCloudFreeSize = FormatBytes(storageItem.CloudFreeSize);
+                }
+
+                if (storageItem.Type == BackupStorageType.NAS) //Nas boyut bilgisi hesaplama
+                {
+                    var _backupStorageService = _scope.Resolve<IBackupStorageService>();
+                    var nasConnection = _backupStorageService.GetNasCapacityAndSize((storageItem.Path.Substring(0, storageItem.Path.Length - 1)), storageItem.Username, storageItem.Password, storageItem.Domain);
+                    storageItem.Capacity = Convert.ToInt64(nasConnection[0]);
+                    storageItem.UsedSize = Convert.ToInt64(nasConnection[0]) - Convert.ToInt64(nasConnection[1]);
+                    storageItem.FreeSize = Convert.ToInt64(nasConnection[1]);
+                    storageItem.StrCapacity = FormatBytes(Convert.ToInt64(nasConnection[0]));
+                    storageItem.StrUsedSize = FormatBytes(Convert.ToInt64(nasConnection[0]) - Convert.ToInt64(nasConnection[1]));
+                    storageItem.StrFreeSize = FormatBytes(Convert.ToInt64(nasConnection[1]));
                 }
             }
 

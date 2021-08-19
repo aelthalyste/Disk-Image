@@ -31,7 +31,7 @@
         <StackPanel Name="MyTitleBar" VerticalAlignment="Top" MouseDown="MyTitleBar_MouseDown">
             <Border Background="#27527B" Height="30">
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                    <Button Name="btnValidateNASClose" Content="🗙" Margin="0,-2,0,0" Click="btnValidateNASClose_Click" Style="{StaticResource TitleButton}" Width="40" ></Button>
+                    <Button Name="btnValidateNASClose" Content="X" Margin="0,-2,0,0" Click="btnValidateNASClose_Click" Style="{StaticResource TitleButton}" Width="40" ></Button>
                 </StackPanel>
             </Border>
         </StackPanel>

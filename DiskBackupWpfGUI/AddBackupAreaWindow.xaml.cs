@@ -240,7 +240,7 @@ namespace DiskBackupWpfGUI
                         IsCloud = cbBackupToCloud.IsChecked.Value,
                     };
 
-                    if (!(txtSettingsFolderPath.Text.Last().Equals('\\'))) // equals kontrolüne bak
+                    if (!txtSettingsFolderPath.Text.Last().Equals('\\')) // equals kontrolüne bak
                         backupStorageInfo.Path = txtSettingsFolderPath.Text + @"\";
                     else
                         backupStorageInfo.Path = txtSettingsFolderPath.Text;
@@ -256,7 +256,7 @@ namespace DiskBackupWpfGUI
                     {
                         //update
                         backupStorageInfo.Id = _updateId;
-                        if (!(txtSettingsFolderPath.Text.Last().Equals('\\'))) // equals kontrolüne bak
+                        if (!txtSettingsFolderPath.Text.Last().Equals('\\')) // equals kontrolüne bak
                             backupStorageInfo.Path = txtSettingsFolderPath.Text + @"\";
                         else
                             backupStorageInfo.Path = txtSettingsFolderPath.Text;

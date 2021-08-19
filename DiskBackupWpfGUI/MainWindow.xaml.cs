@@ -1,10 +1,9 @@
 ﻿using Autofac;
-using Autofac.Core.Lifetime;
 using DiskBackup.Business.Abstract;
+using DiskBackup.Communication;
 using DiskBackup.DataAccess.Abstract;
 using DiskBackup.Entities.Concrete;
 using DiskBackup.TaskScheduler;
-using DiskBackup.TaskScheduler.Jobs;
 using DiskBackupWpfGUI.Utils;
 using Serilog;
 using System;
@@ -14,7 +13,6 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -23,15 +21,10 @@ using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace DiskBackupWpfGUI
 {
-    /// <summary>
-    /// Interaction logic for MainWindow.xaml
-    /// </summary>
     public partial class MainWindow : Window
     {
         private int _diskExpenderIndex = 0;
@@ -72,7 +65,7 @@ namespace DiskBackupWpfGUI
         private readonly ILifetimeScope _scope;
         private readonly ILogger _logger;
 
-        public MainWindow(ILifetimeScope scope, ITaskInfoDal taskInfoDal, IBackupStorageDal backupStorageDal, IBackupTaskDal backupTaskDal, IStatusInfoDal statusInfoDal, IActivityLogDal activityLogDal, ILogger logger, IRestoreTaskDal restoreTaskDal, IConfigurationDataDal configurationDataDal, ILicenseService licenseService)
+        public MainWindow(ILifetimeScope scope, ITaskInfoDal taskInfoDal, IBackupStorageDal backupStorageDal, IBackupTaskDal backupTaskDal, IStatusInfoDal statusInfoDal, IActivityLogDal activityLogDal, ILogger logger, IRestoreTaskDal restoreTaskDal, IConfigurationDataDal configurationDataDal, ILicenseService licenseService, IEMailOperations emailOperations)
         {
             InitializeComponent();
 
@@ -375,6 +368,18 @@ namespace DiskBackupWpfGUI
                     storageItem.StrCloudCapacity = FormatBytes(storageItem.CloudCapacity);
                     storageItem.StrCloudUsedSize = FormatBytes(storageItem.CloudUsedSize);
                     storageItem.StrCloudFreeSize = FormatBytes(storageItem.CloudFreeSize);
+                }
+
+                if (storageItem.Type == BackupStorageType.NAS) //Nas boyut bilgisi hesaplama
+                {
+                    var _backupStorageService = _scope.Resolve<IBackupStorageService>();
+                    var nasConnection = _backupStorageService.GetNasCapacityAndSize((storageItem.Path.Substring(0, storageItem.Path.Length - 1)), storageItem.Username, storageItem.Password, storageItem.Domain);
+                    storageItem.Capacity = Convert.ToInt64(nasConnection[0]);
+                    storageItem.UsedSize = Convert.ToInt64(nasConnection[0]) - Convert.ToInt64(nasConnection[1]);
+                    storageItem.FreeSize = Convert.ToInt64(nasConnection[1]);
+                    storageItem.StrCapacity = FormatBytes(Convert.ToInt64(nasConnection[0]));
+                    storageItem.StrUsedSize = FormatBytes(Convert.ToInt64(nasConnection[0]) - Convert.ToInt64(nasConnection[1]));
+                    storageItem.StrFreeSize = FormatBytes(Convert.ToInt64(nasConnection[1]));
                 }
             }
 
@@ -746,8 +751,7 @@ namespace DiskBackupWpfGUI
         }
 
         #endregion
-
-
+        
         #endregion
 
 
@@ -1855,11 +1859,9 @@ namespace DiskBackupWpfGUI
 
         #region Backup Storage Tab
 
-        public List<BackupStorageInfo> GetBackupStorages(List<VolumeInfo> volumeList, List<BackupStorageInfo> backupStorageInfoList)
+        public List<BackupStorageInfo> GetBackupStorages(List<VolumeInfo> volumeList, List<BackupStorageInfo> backupStorageInfoList) //eyüp
         {
-            //List<BackupStorageInfo> backupStorageInfoList = _backupStorageService.BackupStorageInfoList();
             string backupStorageLetter;
-
             foreach (var storageItem in backupStorageInfoList)
             {
                 backupStorageLetter = storageItem.Path.Substring(0, storageItem.Path.Length - (storageItem.Path.Length - 1));
@@ -1876,7 +1878,6 @@ namespace DiskBackupWpfGUI
                         storageItem.UsedSize = volumeItem.Size - volumeItem.FreeSize;
                     }
                 }
-
                 if (storageItem.IsCloud) // cloud bilgileri alınıp hibritse burada doldurulacak
                 {
                     storageItem.CloudCapacity = 107374182400;
@@ -1886,9 +1887,26 @@ namespace DiskBackupWpfGUI
                     storageItem.StrCloudUsedSize = FormatBytes(storageItem.CloudUsedSize);
                     storageItem.StrCloudFreeSize = FormatBytes(storageItem.CloudFreeSize);
                 }
+                if (storageItem.Type == BackupStorageType.NAS) //Nas boyut bilgisi hesaplama
+                {
+                    var _backupStorageService = _scope.Resolve<IBackupStorageService>();
+                    var nasConnection = _backupStorageService.GetNasCapacityAndSize((storageItem.Path.Substring(0, storageItem.Path.Length - 1)), storageItem.Username, storageItem.Password, storageItem.Domain);
+                    storageItem.Capacity = Convert.ToInt64(nasConnection[0]);
+                    storageItem.UsedSize = Convert.ToInt64(nasConnection[0]) - Convert.ToInt64(nasConnection[1]);
+                    storageItem.FreeSize = Convert.ToInt64(nasConnection[1]);
+                    storageItem.StrCapacity = FormatBytes(Convert.ToInt64(nasConnection[0]));
+                    storageItem.StrUsedSize = FormatBytes(Convert.ToInt64(nasConnection[0]) - Convert.ToInt64(nasConnection[1]));
+                    storageItem.StrFreeSize = FormatBytes(Convert.ToInt64(nasConnection[1]));
+                }
             }
 
             return backupStorageInfoList;
+        }
+
+        private void btnRefreshBackupAreas_Click(object sender, RoutedEventArgs e)
+        {
+            var backupStorageService = _scope.Resolve<IBackupStorageService>();
+            listViewBackupStorage.ItemsSource = GetBackupStorages(_volumeList, backupStorageService.BackupStorageInfoList());
         }
 
         private void btnBackupStorageAdd_Click(object sender, RoutedEventArgs e)
@@ -2445,6 +2463,28 @@ namespace DiskBackupWpfGUI
                 Process.Start(e.Uri.AbsoluteUri);
 
             e.Handled = true;
+        }
+
+        private void btnSendFeedBack_Click(object sender, RoutedEventArgs e)
+        {
+            var mailOperations = _scope.Resolve<IEMailOperations>();
+            string feedbackType = "";
+            if (cbFeedbackMessageType.SelectedIndex == 0)
+                feedbackType = "Öneri";
+            else if (cbFeedbackMessageType.SelectedIndex == 1)
+                feedbackType = "Hata Bildirimi";
+            else if (cbFeedbackMessageType.SelectedIndex == 2)
+                feedbackType = "Şikayet";
+
+            bool mailSendOperaitonResponse = mailOperations.SendFeedback(feedbackTxt.Text, feedbackType, _licenseService.GetLicenseUserInfo());
+
+            if (mailSendOperaitonResponse)
+            {
+                MessageBox.Show("Mail gönderimi başarılı");
+                feedbackTxt.Text = "";
+            }
+            else
+                MessageBox.Show("Mail gönderilemedi");
         }
 
         #endregion
