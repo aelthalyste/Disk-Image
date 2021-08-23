@@ -517,10 +517,17 @@ namespace NarDIWrapper {
         return NarEditTaskNameAndDescription(wcMetadataFileName, wcTaskName, wcTaskDescription);
     }
     
+    void DiskTracker::TEST_LOG(){
+        for(int i =0; i<1000;i++){
+            printf("%150d%150d%150d%150d\n", 1, 1, 1, 1);
+        }
+    }
+    
     List<CSLog^>^ DiskTracker::CW_GetLogs(){
         
         List<CSLog^> ^Result = gcnew List<CSLog^>;
         
+#if 0        
         if(WaitForSingleObject(GlobalLogMutex, 100) == WAIT_OBJECT_0){
             for(int i = 0; i<GlobalLogCount; i++){
                 CSLog^ Log = gcnew CSLog;
@@ -544,6 +551,7 @@ namespace NarDIWrapper {
         else{
             printf("Couldnt lock log mutex\n");
         }
+#endif
         
         return Result;
     }
