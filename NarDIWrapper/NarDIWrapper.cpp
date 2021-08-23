@@ -517,12 +517,6 @@ namespace NarDIWrapper {
         return NarEditTaskNameAndDescription(wcMetadataFileName, wcTaskName, wcTaskDescription);
     }
     
-    void DiskTracker::TEST_LOG(){
-        for(int i =0; i<1000;i++){
-            printf("%150d%150d%150d%150d\n", 1, 1, 1, 1);
-        }
-    }
-    
     List<CSLog^>^ DiskTracker::CW_GetLogs(){
         
         List<CSLog^> ^Result = gcnew List<CSLog^>;

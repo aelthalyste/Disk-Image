@@ -607,7 +607,6 @@ namespace NarDIWrapper {
         static void CW_TerminateFullOnlyBackup(uint64_t BackupID, bool ShouldSaveMetadata);
         
         static List<CSLog^>^ CW_GetLogs();
-        static void TEST_LOG();
         
         private:
         
