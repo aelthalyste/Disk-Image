@@ -28,7 +28,7 @@ struct nar_backup_id{
 };
 #endif
 
-#if 1 || _DEBUG && !_MANAGED 
+#if _DEBUG && !_MANAGED 
 #if NAR_WINDOWS
 
 #define ASSERT(exp) do{if(!(exp)){printf("### !ASSERT! ###\nFILE : %s\nFUNCTION & LINE : %s %d\nDATE : [%s] : [%s]\n", __FILE__, __FUNCTION__, __LINE__, __DATE__, __TIME__); __debugbreak();}} while(0);
@@ -112,17 +112,15 @@ static HANDLE GlobalLogMutex = 0;
 static void
 NarLog(const char *str, ...){
     
-    char buf[2048];
+    char buf[1024];
     
     memset(buf, 0, sizeof(buf));
     
     
-    // printf
-    va_list ap;
-    va_start(ap, str);
-    vsprintf(buf, str, ap);
-    va_end(ap);
-    
+    va_list args;
+    va_start(args, str);
+    vsnprintf(buf, sizeof(buf), str, args);
+    va_end(args);
     
     
     char time_buf[128];
@@ -133,9 +131,9 @@ NarLog(const char *str, ...){
         snprintf(time_buf, sizeof(time_buf), "[%02d/%02d/%04d | %02d:%02d:%02d] : ", Time.wDay, Time.wMonth, Time.wYear, Time.wHour, Time.wMinute, Time.wSecond);
     }
     
-    char big_buffer[1024];
+    char big_buffer[2048];
     memset(big_buffer, 0, sizeof(big_buffer));
-    int WriteSize = snprintf(big_buffer, sizeof(big_buffer), "%s %s\n", time_buf, str);
+    int WriteSize = snprintf(big_buffer, sizeof(big_buffer), "%s %s", time_buf, buf);
     
     static bool fileinit = false;
     static FILE *File = 0;
@@ -148,15 +146,17 @@ NarLog(const char *str, ...){
     if(File){
         fwrite(big_buffer, 1, WriteSize, File);		
         fflush(File);
-    }
-    else{
         OutputDebugStringA(buf);
     }
+    else{
+        printf(buf);
+    }
     
-    printf(buf);
+    
     
     
 }
+
 
 #define printf(fmt, ...) NarLog(fmt, __VA_ARGS__)
 
