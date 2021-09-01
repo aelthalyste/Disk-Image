@@ -133,6 +133,8 @@ namespace DiskBackup.Business.Concrete
 
         public List<DiskInformation> GetDiskList()
         {
+            //DriveType = Fixed && FileSystem = NTFS backup alınabilir demek
+
             _logger.Verbose("GetDiskList metodu çağırıldı");
             //PrioritySection 
             List<DiskInfo> disks = DiskTracker.CW_GetDisksOnSystem();
