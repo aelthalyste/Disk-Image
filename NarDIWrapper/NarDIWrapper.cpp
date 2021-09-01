@@ -108,6 +108,9 @@ namespace NarDIWrapper {
         return gcnew System::String(WSTR);
     }
     
+    wchar_t DiskTracker::GetDiskType(int DiskId){
+        return L'R';
+    }
     
     
     

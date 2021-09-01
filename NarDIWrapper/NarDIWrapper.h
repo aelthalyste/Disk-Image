@@ -594,19 +594,19 @@ namespace NarDIWrapper {
         static List<BackupMetadata^>^ CW_GetBackupsInDirectory(System::String^ RootDir);
         static List<DiskInfo^>^ CW_GetDisksOnSystem();
         static BOOLEAN CW_MetadataEditTaskandDescriptionField(System::String^ MetadataFileName, System::String^ TaskName, System::String^ TaskDescription);
+        
         static bool CW_IsVolumeAvailable(wchar_t Letter);
         static int CW_HintBufferSize();
-        
         
         static uint64_t CW_SetupFullOnlyStream(StreamInfo^ StrInf, wchar_t Letter, bool ShouldCompress);
         
         static uint64_t CW_SetupDiskCloneStream(StreamInfo^ StrInf, wchar_t Letter);
-        
         static BackupReadResult^ CW_ReadFullOnlyStream(uint64_t BackupID, void* Data, uint32_t Size);
-        
         static void CW_TerminateFullOnlyBackup(uint64_t BackupID, bool ShouldSaveMetadata);
-        
         static List<CSLog^>^ CW_GetLogs();
+        
+        static wchar_t GetDiskType(int DiskID);
+        
         
         private:
         
