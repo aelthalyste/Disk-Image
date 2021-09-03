@@ -10,7 +10,7 @@ Signature   = "$Windows NT$"
 Class       = "ActivityMonitor"                         ;This is determined by the work this filter driver does
 ClassGuid   = {b86dff51-a31e-4bac-b3cf-e8cfe75c9fc2}    ;This value is determined by the Class
 Provider    = %ProviderString%
-DriverVer = 12/23/2020,15.14.48.730
+DriverVer = 09/03/2021,9.33.19.407
 CatalogFile = minispy.cat
 
 
@@ -68,6 +68,8 @@ HKR,"Instances\"%Instance2.Name%,"Altitude",0x00000000,%Instance2.Altitude%
 HKR,"Instances\"%Instance2.Name%,"Flags",0x00010001,%Instance2.Flags%
 HKR,"Instances\"%Instance3.Name%,"Altitude",0x00000000,%Instance3.Altitude%
 HKR,"Instances\"%Instance3.Name%,"Flags",0x00010001,%Instance3.Flags%
+
+
 
 ;
 ; Copy Files
