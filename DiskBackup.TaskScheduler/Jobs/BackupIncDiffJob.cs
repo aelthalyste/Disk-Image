@@ -199,6 +199,7 @@ namespace DiskBackup.TaskScheduler.Jobs
             _logger.Verbose("SchedulerId: {@schedulerId}.", taskInfo.ScheduleId);
             taskInfo.ScheduleId = taskInfo.ScheduleId.Split('*')[0];
             _logger.Verbose("Yeni SchedulerId: {@newscheduler}", taskInfo.ScheduleId);
+            taskInfo.BackupTaskInfo = _backupTaskDal.Get(x => x.Id == taskInfo.BackupTaskId);
             _taskInfoDal.Update(taskInfo);
             _backupService.RefreshIncDiffTaskFlag(true);
             _backupService.RefreshIncDiffLogFlag(true);

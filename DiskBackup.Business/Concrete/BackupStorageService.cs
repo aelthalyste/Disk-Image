@@ -84,7 +84,7 @@ namespace DiskBackup.Business.Concrete
 
         public string[] GetNasCapacityAndSize(string nasAddr, string userName, string password, string domain)
         {
-            _logger.Error("GetNasCapacityAndSize çağırıldı");
+            _logger.Verbose("GetNasCapacityAndSize çağırıldı");
 
             try
             {
