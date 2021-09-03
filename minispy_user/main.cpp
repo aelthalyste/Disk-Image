@@ -448,6 +448,11 @@ TEST_MockSaveBootState(){
 int
 wmain(int argc, wchar_t* argv[]) {
     
+    //TEST_MockSaveBootState();
+    
+    return 0;
+    printf("hello world %s\n", "ajklsdfhakjsdf");
+    
 #if 0    
     uint32_t s1, s2;
     auto vh = NarOpenVolume('C');
@@ -460,6 +465,7 @@ wmain(int argc, wchar_t* argv[]) {
     printf("Done!\n");
     return 0;
 #endif
+    
     {
         auto Ctx = SetupFullOnlyStream('C', new DotNetStreamInf, false, true);
         void *tb = malloc(Megabyte(32));
@@ -472,12 +478,13 @@ wmain(int argc, wchar_t* argv[]) {
                 break;
             }
         }
-        TerminateFullOnlyStream(&Ctx, false);
+        TerminateFullOnlyStream(&Ctx, false, 0);
         
     }
     
     
     //TEST_MockSaveBootState();
+    
     return 0;
     auto Ctx = NarLoadBootState();
     return 0;
@@ -756,11 +763,11 @@ wmain(int argc, wchar_t* argv[]) {
                     
                     
                     if(CheckStreamCompletedSuccessfully(v)){
-                        TerminateBackup(v, NAR_SUCC);
+                        TerminateBackup(v, NAR_SUCC, 0);
                     }
                     else{
                         NAR_BREAK;
-                        TerminateBackup(v, NAR_FAILED);
+                        TerminateBackup(v, NAR_FAILED, 0);
                     }
                     
                     NarSaveBootState(&C);
@@ -768,7 +775,7 @@ wmain(int argc, wchar_t* argv[]) {
                 else{
                     // NOTE(Batuhan): couldnt create file to save backup
                     NAR_BREAK;
-                    int ret = TerminateBackup(v, NAR_FAILED);
+                    int ret = TerminateBackup(v, NAR_FAILED, 0);
                     ret++;// to inspect ret in debugging
                 }
                 

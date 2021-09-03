@@ -112,6 +112,9 @@ namespace NarDIWrapper {
         return L'R';
     }
     
+    wchar_t DiskTracker::GetVolumeType(wchar_t VolumeLetter){
+        return NarGetVolumeDiskType(VolumeLetter);
+    }
     
     
     
@@ -349,9 +352,13 @@ namespace NarDIWrapper {
         return Res;
     }
     
-    void DiskTracker::CW_TerminateFullOnlyBackup(uint64_t BackupID, bool ShouldSaveMetadata){
+    void DiskTracker::CW_TerminateFullOnlyBackup(uint64_t BackupID, bool ShouldSaveMetadata, System::String^ MetadataPath) {
+        
+        wchar_t path[512];
+        SystemStringToWCharPtr(MetadataPath, path);
+
         auto Ctx = (full_only_backup_ctx*)reinterpret_cast<void*>(BackupID);
-        TerminateFullOnlyStream(Ctx, ShouldSaveMetadata);
+        TerminateFullOnlyStream(Ctx, ShouldSaveMetadata, path);
         free(Ctx);
     }
     
@@ -368,12 +375,15 @@ namespace NarDIWrapper {
     }
     
     
-    bool DiskTracker::CW_TerminateBackup(bool Succeeded, wchar_t VolumeLetter) {
-        
+    bool DiskTracker::CW_TerminateBackup(bool Succeeded, wchar_t VolumeLetter, System::String^ MetadataDirectory) {
+
+        wchar_t path[512];
+        SystemStringToWCharPtr(MetadataDirectory, path);
+
         INT32 VolID = GetVolumeID(C, VolumeLetter);
         
         if(VolID != NAR_INVALID_VOLUME_TRACK_ID){
-            if(TerminateBackup(&C->Volumes.Data[VolID], Succeeded)){
+            if(TerminateBackup(&C->Volumes.Data[VolID], Succeeded, path)){
                 return NarSaveBootState(C);
             }
             else{
@@ -455,7 +465,7 @@ namespace NarDIWrapper {
         BOOLEAN bResult = NarGetBackupsInDirectory(RootDir, BMList, MaxMetadataCount, &Found);
         if (bResult && Found <= MaxMetadataCount) {
             
-            
+
             for (int i = 0; i < Found; i++) {
                 std::wstring pth;
                 

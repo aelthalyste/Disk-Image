@@ -637,13 +637,13 @@ SetupFullOnlyStream(wchar_t Letter, DotNetStreamInf *SI, bool ShouldCompress, bo
 }
 
 void
-TerminateFullOnlyStream(full_only_backup_ctx *Ctx, bool ShouldSaveMetadata){
+TerminateFullOnlyStream(full_only_backup_ctx *Ctx, bool ShouldSaveMetadata, wchar_t *metadatadir){
     
     printf("Terminating full only stream for volume %c\n", Ctx->Letter);
     
     
     if(ShouldSaveMetadata){
-        SaveMetadata(Ctx->Letter, NAR_FULLBACKUP_VERSION, Ctx->Stream.ClusterSize, BackupType::Diff, Ctx->Stream.Records, Ctx->BackupID, Ctx->Stream.ShouldCompress, Ctx->Stream.Handle, Ctx->Stream.CompInf, Ctx->Stream.CBII);
+        SaveMetadata(Ctx->Letter, NAR_FULLBACKUP_VERSION, Ctx->Stream.ClusterSize, BackupType::Diff, Ctx->Stream.Records, Ctx->BackupID, Ctx->Stream.ShouldCompress, Ctx->Stream.Handle, Ctx->Stream.CompInf, Ctx->Stream.CBII, metadatadir);
     }
     
     CloseHandle(Ctx->Stream.Handle);
@@ -908,7 +908,7 @@ SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, DotNetStreamInf* SI, boo
 
 
 int32_t
-TerminateBackup(volume_backup_inf* V, int32_t Succeeded) {
+TerminateBackup(volume_backup_inf* V, int32_t Succeeded, wchar_t *metadatadir) {
     
     int32_t Result = TRUE;
     if (!V) return FALSE;
@@ -916,7 +916,7 @@ TerminateBackup(volume_backup_inf* V, int32_t Succeeded) {
     printf("Volume %c version %i backup operation will be terminated\n", V->Letter, V->Version);
     
     if(Succeeded){
-        if(!!SaveMetadata((char)V->Letter, V->Version, V->ClusterSize, V->BT, V->Stream.Records, V->BackupID, V->Stream.ShouldCompress, V->Stream.Handle, V->Stream.CompInf, V->Stream.CBII)){
+        if(!!SaveMetadata((char)V->Letter, V->Version, V->ClusterSize, V->BT, V->Stream.Records, V->BackupID, V->Stream.ShouldCompress, V->Stream.Handle, V->Stream.CompInf, V->Stream.CBII, metadatadir)){
             
             if(V->BT == BackupType::Inc){
                 V->IncLogMark.LastBackupRegionOffset = V->PossibleNewBackupRegionOffsetMark;
@@ -1909,7 +1909,7 @@ BackupRegions: Must have, this data determines how i must map binary data to the
 */
 int32_t
 SaveMetadata(char Letter, int Version, int ClusterSize, BackupType BT,
-             data_array<nar_record> BackupRegions, nar_backup_id ID, bool IsCompressed, HANDLE VSSHandle, nar_record *CompInfo, size_t CompInfoCount) {
+             data_array<nar_record> BackupRegions, nar_backup_id ID, bool IsCompressed, HANDLE VSSHandle, nar_record *CompInfo, size_t CompInfoCount, wchar_t *rootdir_arg) {
     
     // TODO(Batuhan): convert letter to uppercase
     //Letter += ('A' - 'a');
@@ -1939,6 +1939,9 @@ SaveMetadata(char Letter, int Version, int ClusterSize, BackupType BT,
     
     std::wstring MetadataFilePath;
     GenerateMetadataName(ID, Version, MetadataFilePath);
+    std::wstring RootDir(rootdir_arg);
+    
+    MetadataFilePath = RootDir + MetadataFilePath;
     
     HANDLE MetadataFile = CreateFileW(MetadataFilePath.c_str(), GENERIC_WRITE | GENERIC_READ, 0, 0, CREATE_ALWAYS, 0, 0);
     if (MetadataFile == INVALID_HANDLE_VALUE) {
