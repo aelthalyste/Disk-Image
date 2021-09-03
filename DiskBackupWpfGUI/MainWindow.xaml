@@ -13,9 +13,9 @@
         BorderBrush="#194771" BorderThickness="1"
         Height="730" Width="1294"
         ResizeMode="CanMinimize">
-    <!--<Window.Resources>
+    <Window.Resources>
         <ResourceDictionary Source="Resources\Lang\string_tr.xaml"/>
-    </Window.Resources>-->
+    </Window.Resources>
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="30"/>
@@ -125,6 +125,8 @@
                                             <TextBlock Text="{DynamicResource createTask}" VerticalAlignment="Center" Margin="2,2" Style="{StaticResource CreateTaskButtonText}"/>
                                         </StackPanel>
                                     </Button.Content>
+                                </Button>
+                                <Button Name="btnFullBackupTest" HorizontalAlignment="Left" Margin="10,4,15,4" Content="TEST" Width="110" Height="32" Click="btnFullBackupTest_Click" Cursor="Hand">
                                 </Button>
                                 <TextBlock Name="lblCreateTaskWarning" Text="{DynamicResource createTaskContent}" VerticalAlignment="Center" />
                                 <Button Name="btnTaskRefreshDisk" ToolTip="{DynamicResource refreshDisks}" Click="btnTaskRefreshDisk_Click" Width="32" Height="32" HorizontalAlignment="Right" Margin="5,4,10,4" Style="{StaticResource ImageButton}">
