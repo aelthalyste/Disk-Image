@@ -823,7 +823,7 @@ namespace DiskBackupWpfGUI
                 }
 
                 _backupStorageInfoList = GetBackupStorages(volumeList, _backupStorageService.BackupStorageInfoList());
-                //cbTargetBackupArea.ItemsSource = _backupStorageInfoList;
+                cbTargetBackupArea.ItemsSource = _backupStorageInfoList;
                 GetBackupStorageList(_backupStorageInfoList);
                 if (cbTargetBackupArea.Items.Count > 0)
                     cbTargetBackupArea.SelectedIndex = cbTargetBackupArea.Items.Count - 1;
@@ -1203,6 +1203,7 @@ namespace DiskBackupWpfGUI
         public List<BackupStorageInfo> GetBackupStorages(List<VolumeInfo> volumeList, List<BackupStorageInfo> backupStorageInfoList)
         {
             string backupStorageLetter;
+            var _backupStorageService = _scope.Resolve<IBackupStorageService>();
 
             foreach (var storageItem in backupStorageInfoList)
             {
@@ -1233,8 +1234,7 @@ namespace DiskBackupWpfGUI
 
                 if (storageItem.Type == BackupStorageType.NAS) //Nas boyut bilgisi hesaplama
                 {
-                    var _backupStorageService = _scope.Resolve<IBackupStorageService>();
-                    var nasConnection = _backupStorageService.GetNasCapacityAndSize((storageItem.Path.Substring(0, storageItem.Path.Length - 1)), storageItem.Username, storageItem.Password, storageItem.Domain);
+                    var nasConnection = _backupStorageService.GetNasCapacityAndSize(storageItem.Path.Substring(0, storageItem.Path.Length - 1), storageItem.Username, storageItem.Password, storageItem.Domain);
                     storageItem.Capacity = Convert.ToInt64(nasConnection[0]);
                     storageItem.UsedSize = Convert.ToInt64(nasConnection[0]) - Convert.ToInt64(nasConnection[1]);
                     storageItem.FreeSize = Convert.ToInt64(nasConnection[1]);
@@ -1243,7 +1243,6 @@ namespace DiskBackupWpfGUI
                     storageItem.StrFreeSize = FormatBytes(Convert.ToInt64(nasConnection[1]));
                 }
             }
-
             return backupStorageInfoList;
         }
 

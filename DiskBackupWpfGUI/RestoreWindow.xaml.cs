@@ -61,6 +61,8 @@ namespace DiskBackupWpfGUI
             _taskInfo.BackupStorageInfo = new BackupStorageInfo();
             _taskInfo.StatusInfo = new StatusInfo();
 
+            checkBootPartition.IsChecked = true;
+
             if (diskFlag)
             {
                 txtAppName.Text = Resources["restoreDiskAppName"].ToString();

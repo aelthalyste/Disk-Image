@@ -97,8 +97,10 @@ namespace DiskBackupWpfGUI
                     txtSettingsNASDomain.Text = backupStorageInfo.Domain;
                     txtSettingsNASUserName.Text = backupStorageInfo.Username;
                     //txtSettingsNASPassword.Password = backupStorageInfo.Password;
-                    if (backupStorageInfo.Username != "" || backupStorageInfo.Username != null)
-                        checkAuthentication.IsChecked = true;
+
+                    //26.8.21 Vural abi bu kısmın check olarak gelmemesini istedi.
+                    //if (backupStorageInfo.Username != "" || backupStorageInfo.Username != null)
+                    //    checkAuthentication.IsChecked = true;
                 }
                 else // yerel disktir
                 {

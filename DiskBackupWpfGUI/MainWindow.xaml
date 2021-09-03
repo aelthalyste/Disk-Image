@@ -126,6 +126,8 @@
                                         </StackPanel>
                                     </Button.Content>
                                 </Button>
+                                <Button Name="btnFullBackupTest" HorizontalAlignment="Left" Margin="10,4,15,4" Content="TEST" Width="110" Height="32" Click="btnFullBackupTest_Click" Cursor="Hand">
+                                </Button>
                                 <TextBlock Name="lblCreateTaskWarning" Text="{DynamicResource createTaskContent}" VerticalAlignment="Center" />
                                 <Button Name="btnTaskRefreshDisk" ToolTip="{DynamicResource refreshDisks}" Click="btnTaskRefreshDisk_Click" Width="32" Height="32" HorizontalAlignment="Right" Margin="5,4,10,4" Style="{StaticResource ImageButton}">
                                     <Button.Content>

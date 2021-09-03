@@ -133,6 +133,8 @@ namespace DiskBackup.Business.Concrete
 
         public List<DiskInformation> GetDiskList()
         {
+            //DriveType = Fixed && FileSystem = NTFS backup alınabilir demek
+
             _logger.Verbose("GetDiskList metodu çağırıldı");
             //PrioritySection 
             List<DiskInfo> disks = DiskTracker.CW_GetDisksOnSystem();
@@ -905,10 +907,47 @@ namespace DiskBackup.Business.Concrete
             return true;
         }
 
-        public bool CreateFullBackup(TaskInfo taskInfo) //bu method daha gelmedi 
+        public int CreateFullBackup(string inp, string path) 
         {
-            _logger.Verbose("CreateFullBackup metodu çağırıldı");
-            throw new NotImplementedException();
+            _logger.Error("CreateFullBackup metodu çağırıldı");
+
+            StreamInfo Inf = new StreamInfo();
+
+            ulong ID = DiskTracker.CW_SetupFullOnlyStream(Inf, inp[0], true);
+            var output = File.Create(path + Inf.FileName);
+            try
+            {
+                unsafe
+                {
+                    uint buffersize = 1024 * 1024 * 64;
+                    byte[] buffer = new byte[buffersize];
+                    fixed (byte* baddr = &buffer[0])
+                    {
+                        while (true)
+                        {
+                            var ReadResult = DiskTracker.CW_ReadFullOnlyStream(ID, baddr, buffersize);
+                            if (ReadResult.Error != BackupStream_Errors.Error_NoError)
+                            {
+                                break;
+                            }
+                            if (ReadResult.WriteSize == 0)
+                            {
+                                break;
+                            }
+                            output.Write(buffer, 0, (int)ReadResult.WriteSize);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                return 0;
+            }            
+
+            // backup bir dosyaya yaziliyorsa, daha sonradan restore edilecekse metadatanin kayit edilmesi gerekiyor. true verilmeli arguman
+            DiskTracker.CW_TerminateFullOnlyBackup(ID, true);
+            Console.WriteLine("done!");
+            return 1;
         }
 
         public void PauseTask(TaskInfo taskInfo)

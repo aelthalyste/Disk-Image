@@ -452,7 +452,12 @@ namespace DiskBackupWpfGUI
                 {
                     return backupService.GetBackupFileList(_backupStorageDal.GetList());
                 });
-
+                string versions = "";
+                foreach (var item in _backupsItems)
+                {
+                    versions += " " + item.Version.ToString(); 
+                }
+                MessageBox.Show(versions);
                 listViewBackups.ItemsSource = _backupsItems;
                 listViewRestore.ItemsSource = _backupsItems;
             }
@@ -2977,5 +2982,12 @@ namespace DiskBackupWpfGUI
 
         #endregion
 
+        private void btnFullBackupTest_Click(object sender, RoutedEventArgs e)
+        {
+            var backupService = _scope.Resolve<IBackupService>();
+
+            var result = backupService.CreateFullBackup("E", @"F:\E backups\");
+            MessageBox.Show(result.ToString());
+        }
     }
 }

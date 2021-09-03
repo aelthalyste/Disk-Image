@@ -58,7 +58,7 @@ namespace DiskBackup.TaskScheduler.Jobs
             {
                 //Örneğin 2 tane 'c' görevi aynı anda service'e yollanamaz burada kontrol edilip gönderilmeli... Sonradan gelen görev başarısız sayılıp 
                 //Refire kısmına gönderilmeli... ActivityLog'da bilgilendirilmeli
-                result = _backupService.CreateFullBackup(task);
+                //result = _backupService.CreateFullBackup(task);
             }
             catch (Exception e)
             {
