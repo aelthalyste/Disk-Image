@@ -891,7 +891,7 @@
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
-                                    <GridViewColumn Width="95">
+                                    <GridViewColumn Width="65">
                                         <GridViewColumn.Header>
                                             <GridViewColumnHeader Content="{DynamicResource type}" Tag="Type" Click="listviewBackupsColumnHeaderSort_Click"/>
                                         </GridViewColumn.Header>
@@ -911,7 +911,17 @@
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
-                                    <GridViewColumn Width="165" >
+                                    <GridViewColumn Width="85" >
+                                        <GridViewColumn.Header>
+                                            <GridViewColumnHeader Content="{DynamicResource version}" Tag="FileName" Click="listviewBackupsColumnHeaderSort_Click"/>
+                                        </GridViewColumn.Header>
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding Version}" TextAlignment="Center"/>
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                    <GridViewColumn Width="160" >
                                         <GridViewColumn.Header>
                                             <GridViewColumnHeader Content="{DynamicResource createdDate}" Tag="CreatedDate" Click="listviewBackupsColumnHeaderSort_Click"/>
                                         </GridViewColumn.Header>
@@ -921,7 +931,7 @@
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
-                                    <GridViewColumn Width="170" >
+                                    <GridViewColumn Width="135" >
                                         <GridViewColumn.Header>
                                             <GridViewColumnHeader Content="{DynamicResource taskName}" Tag="BackupTaskName" Click="listviewBackupsColumnHeaderSort_Click"/>
                                         </GridViewColumn.Header>

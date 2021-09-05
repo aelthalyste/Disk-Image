@@ -743,7 +743,7 @@ namespace DiskBackup.Business.Concrete
                                 if (cancellationToken.IsCancellationRequested)
                                 {
                                     //cleanup
-                                    _diskTracker.CW_TerminateBackup(false, letter);
+                                    _diskTracker.CW_TerminateBackup(false, letter,taskInfo.BackupStorageInfo.Path);
                                     _taskEventMap.Remove(taskInfo.Id);
                                     manualResetEvent.Dispose();
                                     _cancellationTokenSource[taskInfo.Id].Dispose();
@@ -787,7 +787,7 @@ namespace DiskBackup.Business.Concrete
                             }
                             result = _diskTracker.CW_CheckStreamStatus(letter);
                             _logger.Information($"_diskTracker.CW_CheckStreamStatus({letter}): {result}");
-                            _diskTracker.CW_TerminateBackup(result, letter); //işlemi başarılı olup olmadığı cancel gelmeden
+                            _diskTracker.CW_TerminateBackup(false, letter, taskInfo.BackupStorageInfo.Path); //işlemi başarılı olup olmadığı cancel gelmeden
                             bytesReadSoFar = 0;
 
                             CopyAndDeleteMetadataFile(taskInfo, str); //çalışılan dizine çıkartılan narmd dosyası kopyalanıp ilgili dizine silme işlemi yapılıyor
@@ -945,7 +945,7 @@ namespace DiskBackup.Business.Concrete
             }            
 
             // backup bir dosyaya yaziliyorsa, daha sonradan restore edilecekse metadatanin kayit edilmesi gerekiyor. true verilmeli arguman
-            DiskTracker.CW_TerminateFullOnlyBackup(ID, true);
+            DiskTracker.CW_TerminateFullOnlyBackup(ID, true, taskInfo.BackupStorageInfo.Path);
             Console.WriteLine("done!");
             return 1;
         }
