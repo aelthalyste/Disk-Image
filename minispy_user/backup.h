@@ -23,7 +23,6 @@ struct DotNetStreamInf {
 
 
 
-
 #if _MANAGED
 public
 #endif
@@ -247,11 +246,11 @@ SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, DotNetStreamInf* SI, boo
 
 
 void
-TerminateFullOnlyStream(full_only_backup_ctx *Ctx, bool ShouldSaveMetadata = true);
+TerminateFullOnlyStream(full_only_backup_ctx *Ctx, bool ShouldSaveMetadata, wchar_t *MetadataPath);
 
 
 int32_t
-TerminateBackup(volume_backup_inf* V, int32_t Succeeded);
+TerminateBackup(volume_backup_inf* V, int32_t Succeeded, wchar_t *metadatapath);
 
 
 
@@ -321,7 +320,7 @@ CopyData(HANDLE S, HANDLE D, ULONGLONG Len);
 
 
 int32_t
-SaveMetadata(char Letter, int Version, int ClusterSize, BackupType BT, data_array<nar_record> BackupRegions, nar_backup_id BackupID, bool IsCompressed, HANDLE VSSHandle, nar_record *, size_t);
+SaveMetadata(char Letter, int Version, int ClusterSize, BackupType BT, data_array<nar_record> BackupRegions, nar_backup_id BackupID, bool IsCompressed, HANDLE VSSHandle, nar_record *, size_t, wchar_t *);
 
 
 

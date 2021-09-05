@@ -20,7 +20,7 @@ Environment:
 
 #include "mspyKern.h"
 #include <Ntstrsafe.h>
-//#define DbgPrint
+#define DbgPrint
 
 //
 //  Global variables
@@ -1340,9 +1340,6 @@ Return Value:
     if (Data->Iopb->MajorFunction != IRP_MJ_WRITE && Data->Iopb->MajorFunction != IRP_MJ_SHUTDOWN) {
         return FLT_PREOP_SUCCESS_NO_CALLBACK;
     }
-    if (NarData.IsShutdownInitiated == TRUE) {
-        return FLT_PREOP_SUCCESS_NO_CALLBACK;
-    }
     
     if (!!NarData.IsShutdownInitiated) {
         return FLT_PREOP_SUCCESS_NO_CALLBACK;
@@ -1359,6 +1356,10 @@ Return Value:
         //else {
         //    return FLT_PREOP_SUCCESS_NO_CALLBACK;
         //}
+        if (NarData.IsShutdownInitiated) {
+            return FLT_PREOP_SUCCESS_NO_CALLBACK;
+        }
+        KeMemoryBarrier();
         InterlockedAdd(&NarData.IsShutdownInitiated, 1);
         
         for (int i = 0; i < NAR_MAX_VOLUME_COUNT; i++) {

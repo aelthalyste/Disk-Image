@@ -47,12 +47,12 @@ CONST FLT_OPERATION_REGISTRATION Callbacks[] = {
       SpyPreOperationCallback,
       NULL },                           //post operation callback not supported
 
-    {
-        IRP_MJ_DEVICE_CONTROL,
-        0,
-        SpyPreOperationCallback,
-        SpyPostOperationCallback
-    },
+    //{
+    //    IRP_MJ_DEVICE_CONTROL,
+    //    0,
+    //    SpyPreOperationCallback,
+    //    SpyPostOperationCallback
+    //},
 
     { IRP_MJ_OPERATION_END }
 };

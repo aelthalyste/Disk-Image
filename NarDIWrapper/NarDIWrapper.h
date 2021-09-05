@@ -558,10 +558,10 @@ namespace NarDIWrapper {
     };
     
     
-    static uint64_t CW_SetupFullOnlyStream(StreamInfo^ StrInf, wchar_t Letter, bool ShouldCompress, bool RegionLock);
-    static BackupReadResult^ CW_ReadFullOnlyStream(uint64_t BackupID, void* Data, uint32_t Size);
-    
-    static void CW_TerminateFullOnlyBackup(uint64_t BackupID, bool ShouldSaveMetadata);
+    //static uint64_t CW_SetupFullOnlyStream(StreamInfo^ StrInf, wchar_t Letter, bool ShouldCompress, bool RegionLock);
+    //static BackupReadResult^ CW_ReadFullOnlyStream(uint64_t BackupID, void* Data, uint32_t Size);
+    //
+    //static void CW_TerminateFullOnlyBackup(uint64_t BackupID, bool ShouldSaveMetadata, System::String^ MetadataPath);
     
     
     public ref class DiskTracker
@@ -586,7 +586,7 @@ namespace NarDIWrapper {
         BackupReadResult^ CW_ReadStream(void* Data, wchar_t VolumeLetter, int Size);
         bool CW_CheckStreamStatus(wchar_t Letter);
         
-        bool CW_TerminateBackup(bool Succeeded, wchar_t VolumeLetter);
+        bool CW_TerminateBackup(bool Succeeded, wchar_t VolumeLetter, System::String^ MetadataDirectory);
         
         unsigned long long CW_IsVolumeExists(wchar_t Letter);
         
@@ -602,11 +602,11 @@ namespace NarDIWrapper {
         
         static uint64_t CW_SetupDiskCloneStream(StreamInfo^ StrInf, wchar_t Letter);
         static BackupReadResult^ CW_ReadFullOnlyStream(uint64_t BackupID, void* Data, uint32_t Size);
-        static void CW_TerminateFullOnlyBackup(uint64_t BackupID, bool ShouldSaveMetadata);
+        static void CW_TerminateFullOnlyBackup(uint64_t BackupID, bool ShouldSaveMetadata, System::String^ MetadataPath);
         static List<CSLog^>^ CW_GetLogs();
         
         static wchar_t GetDiskType(int DiskID);
-        
+        static wchar_t GetVolumeType(wchar_t VolumeLetter);
         
         private:
         
