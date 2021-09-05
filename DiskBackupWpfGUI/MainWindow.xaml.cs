@@ -536,6 +536,7 @@ namespace DiskBackupWpfGUI
                 DragMove();
             }
         }
+
         #endregion
 
 
@@ -543,7 +544,7 @@ namespace DiskBackupWpfGUI
 
         private void btnCreateTask_Click(object sender, RoutedEventArgs e)
         {
-            _logger.Verbose("btnCreateTask_Click istekte bulunuldu");
+            _logger.Verbose("btnCreateTask_Click butonuna istekte bulunuldu");
 
             List<BackupStorageInfo> backupStorageInfoList = new List<BackupStorageInfo>();
             foreach (BackupStorageInfo item in listViewBackupStorage.Items)
@@ -551,8 +552,9 @@ namespace DiskBackupWpfGUI
                 backupStorageInfoList.Add(item);
             }
 
-            List<TaskInfo> overlappingTaskInfoList = new List<TaskInfo>(); // değişecek adı
+            List<TaskInfo> overlappingTaskInfoList = new List<TaskInfo>();
             List<VolumeInfo> volumeInfoList = new List<VolumeInfo>();
+           
             foreach (VolumeInfo item in listViewDisk.SelectedItems)
             {
                 volumeInfoList.Add(item);
@@ -2984,10 +2986,7 @@ namespace DiskBackupWpfGUI
 
         private void btnFullBackupTest_Click(object sender, RoutedEventArgs e)
         {
-            var backupService = _scope.Resolve<IBackupService>();
-
-            var result = backupService.CreateFullBackup("E", @"F:\E backups\");
-            MessageBox.Show(result.ToString());
+            
         }
     }
 }

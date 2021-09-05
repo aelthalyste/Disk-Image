@@ -16,9 +16,9 @@
         HorizontalAlignment="Center" 
         Height="450" 
         Width="800">
-    <!--<Window.Resources>
+    <Window.Resources>
         <ResourceDictionary Source="Resources\Lang\string_tr.xaml"/>
-    </Window.Resources>-->
+    </Window.Resources>
     <Grid Background="White">
         <Grid.RowDefinitions>
             <RowDefinition Height="30"/>
@@ -108,10 +108,9 @@
                         <TextBlock Text="{DynamicResource diffDescription}" Margin="40,10,0,20" />
                         <RadioButton Name="rbBTIncremental" GroupName="rbBackupType" Content="{DynamicResource inc}"/>
                         <TextBlock Text="{DynamicResource incDescription}" Margin="40,10,0,20" />
-                        <RadioButton Name="rbBTFull" GroupName="rbBackupType" Content="{DynamicResource full}" Visibility="Collapsed"/>
-                        <TextBlock Text="{DynamicResource fullDescription}" Margin="40,10,0,20" Visibility="Collapsed"/>
+                        <RadioButton Name="rbBTFull" GroupName="rbBackupType" Content="{DynamicResource full}"/>
+                        <TextBlock x:Name="txtFullDescription" Text="{DynamicResource fullDescription}" Margin="40,10,0,20"/>
                     </StackPanel>
-                    <!--Full backup radio button gelicek-->
                 </Grid>
             </TabItem>
 

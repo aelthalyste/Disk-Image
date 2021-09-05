@@ -87,6 +87,7 @@
     <system:String x:Key="full">Full</system:String>
     <system:String x:Key="Full">Full</system:String>
     <system:String x:Key="fullDescription">It takes a full backup of the file you selected</system:String>
+    <system:String x:Key="fullDescription2">It takes a full backup of the file you selected</system:String>
     <!--(Seçilen dosyanızı tam yedek alır)-->
     <system:String x:Key="back">Back</system:String>
     <system:String x:Key="next">Next</system:String>

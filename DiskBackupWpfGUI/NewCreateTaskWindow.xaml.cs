@@ -73,6 +73,12 @@ namespace DiskBackupWpfGUI
 
             txtTaskName.Focus();
 
+            if (volumeInfoList.Count() > 1)
+            {
+                rbBTFull.IsEnabled = false;
+                txtFullDescription.Text = Resources["fullDescription2"].ToString();
+            }
+
             _taskInfo.Obje = volumeInfoList.Count();
 
             foreach (var item in volumeInfoList)

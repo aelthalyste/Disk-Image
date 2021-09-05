@@ -1,16 +1,11 @@
 ﻿using DiskBackup.Business.Abstract;
-using DiskBackup.Business.Concrete;
 using DiskBackup.Communication;
 using DiskBackup.DataAccess.Abstract;
-using DiskBackup.DataAccess.Core;
 using DiskBackup.Entities.Concrete;
 using Quartz;
 using Serilog;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace DiskBackup.TaskScheduler.Jobs
@@ -61,7 +56,8 @@ namespace DiskBackup.TaskScheduler.Jobs
                 Type = (DetailedMissionType)task.BackupTaskInfo.Type,
             };
 
-            var taskList = _taskInfoDal.GetList(x => x.Status != TaskStatusType.Ready && x.Status != TaskStatusType.FirstMissionExpected);
+            //Task listesi kontrol edilir ve çalışan, durdurulmuş ya da bozulmuş görevler tespit edilir. Bu görevler hali hazırda Disk'te veya Volume'da işlem yaptıkları için tekrar işleme alınmaz.
+            var taskList = _taskInfoDal.GetList(x => x.Status != TaskStatusType.Ready && x.Status != TaskStatusType.FirstMissionExpected); 
             foreach (var item in taskList)
             {
                 foreach (var itemObje in task.StrObje)

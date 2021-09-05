@@ -35,7 +35,7 @@ namespace DiskBackup.Business.Abstract
         [OperationContract]
         int CreateIncDiffBackup(TaskInfo taskInfo);
         [OperationContract]
-        int CreateFullBackup(string inp, string path); //Bu daha hazır değil        
+        int CreateFullBackup(TaskInfo taskInfo); //Bu daha hazır değil        
 
         //Parametreler bu methodun içinde RestoreTask oluşturacak
         [OperationContract]

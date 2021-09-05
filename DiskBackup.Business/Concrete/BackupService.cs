@@ -907,14 +907,14 @@ namespace DiskBackup.Business.Concrete
             return true;
         }
 
-        public int CreateFullBackup(string inp, string path) 
+        public int CreateFullBackup(TaskInfo taskInfo)
         {
             _logger.Error("CreateFullBackup metodu çağırıldı");
 
             StreamInfo Inf = new StreamInfo();
 
-            ulong ID = DiskTracker.CW_SetupFullOnlyStream(Inf, inp[0], true);
-            var output = File.Create(path + Inf.FileName);
+            ulong ID = DiskTracker.CW_SetupFullOnlyStream(Inf, taskInfo.StrObje[0], true);
+            FileStream output = File.Create(taskInfo.BackupStorageInfo.Path + Inf.FileName);
             try
             {
                 unsafe
