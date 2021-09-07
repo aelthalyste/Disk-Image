@@ -1,4 +1,5 @@
 ﻿using DiskBackup.Business.Abstract;
+using DiskBackup.Communication;
 using DiskBackup.DataAccess.Abstract;
 using DiskBackup.Entities.Concrete;
 using Quartz;
@@ -19,9 +20,10 @@ namespace DiskBackup.TaskScheduler.Jobs
         private readonly IStatusInfoDal _statusInfoDal;
         private readonly IActivityLogDal _activityLogDal;
         private readonly IBackupTaskDal _backupTaskDal;
+        private IEMailOperations _emailOperations;
         private readonly ILogger _logger;
 
-        public BackupFullJob(ITaskInfoDal taskInfoDal, IBackupStorageDal backupStorageDal, IStatusInfoDal statusInfoDal, IBackupService backupService, IActivityLogDal activityLogDal, ILogger logger, IBackupTaskDal backupTaskDal)
+        public BackupFullJob(ITaskInfoDal taskInfoDal, IBackupStorageDal backupStorageDal, IStatusInfoDal statusInfoDal, IBackupService backupService, IActivityLogDal activityLogDal, ILogger logger, IBackupTaskDal backupTaskDal, IEMailOperations emailOperations)
         {
             _backupService = backupService;
             _taskInfoDal = taskInfoDal;
@@ -29,6 +31,7 @@ namespace DiskBackup.TaskScheduler.Jobs
             _statusInfoDal = statusInfoDal;
             _activityLogDal = activityLogDal;
             _backupTaskDal = backupTaskDal;
+            _emailOperations = emailOperations;
             _logger = logger.ForContext<BackupFullJob>();
         }
 
@@ -60,27 +63,27 @@ namespace DiskBackup.TaskScheduler.Jobs
             };
 
             //Task listesi kontrol edilir ve çalışan, durdurulmuş ya da bozulmuş görevler tespit edilir. Bu görevler hali hazırda Disk'te veya Volume'da işlem yaptıkları için tekrar işleme alınmaz.
-            List<TaskInfo> taskList = _taskInfoDal.GetList(x => x.Status != TaskStatusType.Ready && x.Status != TaskStatusType.FirstMissionExpected);
-            foreach (TaskInfo item in taskList)
-            {
-                foreach (char itemObje in task.StrObje)
-                {
-                    if (item.StrObje.Contains(itemObje))
-                    {
-                        // Okuma yapılan diskte işlem yapılamaz
-                        exception = new JobExecutionException();
-                        _logger.Information("{@task} için Full backup görevi çalıştırılamadı. {@letter} volumunde başka görev işliyor.", task, item.StrObje);
-                        if (item.Id == task.Id)
-                        {
-                            if (context.Trigger.GetNextFireTimeUtc() != null)
-                                task.NextDate = (context.Trigger.GetNextFireTimeUtc()).Value.LocalDateTime;
-                            _taskInfoDal.Update(task);
-                            _backupService.RefreshIncDiffTaskFlag(true);
-                            throw exception;
-                        }
-                    }
-                }
-            }
+            //List<TaskInfo> taskList = _taskInfoDal.GetList(x => x.Status != TaskStatusType.Ready && x.Status != TaskStatusType.FirstMissionExpected);
+            //foreach (TaskInfo item in taskList)
+            //{
+            //    foreach (char itemObje in task.StrObje)
+            //    {
+            //        if (item.StrObje.Contains(itemObje))
+            //        {
+            //            // Okuma yapılan diskte işlem yapılamaz
+            //            exception = new JobExecutionException();
+            //            _logger.Information("{@task} için Full backup görevi çalıştırılamadı. {@letter} volumunde başka görev işliyor.", task, item.StrObje);
+            //            if (item.Id == task.Id)
+            //            {
+            //                if (context.Trigger.GetNextFireTimeUtc() != null)
+            //                    task.NextDate = (context.Trigger.GetNextFireTimeUtc()).Value.LocalDateTime;
+            //                _taskInfoDal.Update(task);
+            //                _backupService.RefreshIncDiffTaskFlag(true);
+            //                throw exception;
+            //            }
+            //        }
+            //    }
+            //}
 
             try
             {
@@ -129,49 +132,81 @@ namespace DiskBackup.TaskScheduler.Jobs
 
             if (exception != null) //herhangi bir exception oluştuysa başarısız olmuştur.
             {
-                activityLog.EndDate = DateTime.Now;
-                activityLog.StatusInfo = _statusInfoDal.Get(x => x.Id == task.StatusInfoId);
-                activityLog.StatusInfo.Status = StatusType.Fail;
-                activityLog.StatusInfo.StrStatus = StatusType.Fail.ToString();
-                var resultStatusInfo = _statusInfoDal.Add(activityLog.StatusInfo);
-                activityLog.StatusInfoId = resultStatusInfo.Id;
-                _activityLogDal.Add(activityLog);
-                Console.WriteLine(exception.ToString());
-                task.Status = TaskStatusType.Error; // Resource eklenecek 
-                if (!context.JobDetail.Key.Name.Contains("Now"))
-                {
-                    task.NextDate = context.Trigger.GetNextFireTimeUtc().Value.LocalDateTime; // next date tekrar dene kısmında hatalı olmaması için test et / hatalıysa + fromMinutes
-                    if (!task.BackupTaskInfo.FailTryAgain || (context.RefireCount > task.BackupTaskInfo.FailNumberTryAgain)) // now silme
-                    {
-                        var res = task.ScheduleId.Split('*');
-                        task.ScheduleId = res[0];
-                    }
-                }
-                _taskInfoDal.Update(task);
+                UpdateActivityAndTask(activityLog, task, StatusType.Fail);
                 await Task.Delay(TimeSpan.FromMinutes(task.BackupTaskInfo.WaitNumberTryAgain));
                 throw exception;
             }
 
-            activityLog.EndDate = DateTime.Now;
-            activityLog.StatusInfo = _statusInfoDal.Get(x => x.Id == task.StatusInfoId);
-            activityLog.StatusInfo.Status = StatusType.Success;
-            activityLog.StatusInfo.StrStatus = StatusType.Success.ToString();
-            var resultStatusInfo2 = _statusInfoDal.Add(activityLog.StatusInfo);
-            activityLog.StatusInfoId = resultStatusInfo2.Id;
-            _activityLogDal.Add(activityLog);
-            task.Status = TaskStatusType.Ready; // Resource eklenecek 
-            Console.WriteLine(context.JobDetail.Key.Name);
-            if (!context.JobDetail.Key.Name.Contains("Now"))
+            if (result == 1) // başarılı
             {
-                task.NextDate = context.Trigger.GetNextFireTimeUtc().Value.LocalDateTime;
-                // now görevi sona erdi sil
-                var res = task.ScheduleId.Split('*');
-                task.ScheduleId = res[0];
+                _logger.Information("{@task} için Incremental-Differantial görevi bitirildi. Sonuç: Başarılı.", task);
+                UpdateActivityAndTask(activityLog, task, StatusType.Success);
             }
-            _taskInfoDal.Update(task);
+            else if (result == 2) // durduruldu
+            {
+                _logger.Information("{@task} için Incremental-Differantial görevi durduruldu.", task);
+                UpdateActivityAndTask(activityLog, task, StatusType.Cancel);
+            }
+            else if (result == 3)
+            {
+                _logger.Information("{@task} için Incremental-Differantial görevi yetersiz alandan dolayı başlatılamadı. Sonuç: Başarısız.", task);
+                UpdateActivityAndTask(activityLog, task, StatusType.NotEnoughDiskSpace);
+            }
+            else if (result == 4)
+            {
+                _logger.Information("{@task} için Incremental-Differantial görevi NAS'a bağlanılamadığı için başlatılamadı. Sonuç: Başarısız.", task);
+                UpdateActivityAndTask(activityLog, task, StatusType.ConnectionError);
+            }
+            else if (result == 5) // driver initialize edilemedi
+            {
+                _logger.Information("{@task} için Incremental-Differantial görevi driver initialize edilemediği için başlatılamadı. Sonuç: Başarısız.", task);
+                UpdateActivityAndTask(activityLog, task, StatusType.DriverNotInitialized);
+            }
+            else if (result == 6) // backup alınacak path yok
+            {
+                _logger.Information("{@task} için Incremental-Differantial görevi aranan disk bulunamadığı için başlatılamadı. Sonuç: Başarısız.", task);
+                UpdateActivityAndTask(activityLog, task, StatusType.PathNotFound);
+            }
+            else if (result == 8) // backup alınacak path yok
+            {
+                _logger.Information("{@task} için Incremental-Differantial görevi yeni zincir oluşturulamadığı için başlatılamadı. Sonuç: Başarısız.", task);
+                UpdateActivityAndTask(activityLog, task, StatusType.NewChainNotStarted);
+            }
         }
 
-        private void ResetStatusInfo(TaskInfo task)
+        private void UpdateActivityAndTask(ActivityLog activityLog, TaskInfo taskInfo, StatusType status)
+        {
+            taskInfo = _taskInfoDal.Get(x => x.Id == taskInfo.Id); // Aynı görev yeniden çalışmaya çalıştıysa next date değişmiş oluyor o zamanı aldığımızdan emin olmak için gerekli
+            activityLog.EndDate = DateTime.Now;
+            activityLog.StatusInfo = _statusInfoDal.Get(x => x.Id == taskInfo.StatusInfoId);
+            activityLog.StatusInfo.Status = status;
+            activityLog.StatusInfo.StrStatus = status.ToString();
+            var resultTaskStatusInfo = _statusInfoDal.Update(activityLog.StatusInfo);
+            var resultStatusInfo = _statusInfoDal.Add(activityLog.StatusInfo);
+            activityLog.StatusInfoId = resultStatusInfo.Id;
+            _activityLogDal.Add(activityLog);
+            taskInfo.Status = TaskStatusType.Ready; // Resource eklenecek 
+            _logger.Verbose("SchedulerId: {@schedulerId}.", taskInfo.ScheduleId);
+            taskInfo.ScheduleId = taskInfo.ScheduleId.Split('*')[0];
+            _logger.Verbose("Yeni SchedulerId: {@newscheduler}", taskInfo.ScheduleId);
+            taskInfo.BackupTaskInfo = _backupTaskDal.Get(x => x.Id == taskInfo.BackupTaskId);
+            _taskInfoDal.Update(taskInfo);
+            _backupService.RefreshIncDiffTaskFlag(true);
+            _backupService.RefreshIncDiffLogFlag(true);
+
+            _logger.Verbose("SendEmail çağırılıyor");
+            try
+            {
+                taskInfo.StatusInfo = resultTaskStatusInfo;
+                _emailOperations.SendTaskStatusEMail(taskInfo);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex + "Email gönderilemedi");
+            }
+        }
+
+            private void ResetStatusInfo(TaskInfo task)
         {
             task.StatusInfo.AverageDataRate = 0;
             task.StatusInfo.DataProcessed = 0;

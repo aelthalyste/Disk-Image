@@ -428,7 +428,6 @@ namespace DiskBackupWpfGUI
                             }
                         }
                     }
-
                     // güncelleme işlemi yapacaksın
                     resultTaskInfo = UpdateToDatabase();
                 }
@@ -474,7 +473,11 @@ namespace DiskBackupWpfGUI
                     }
                     else
                     {
-                        //full gelince buraya alıcaz paşayı
+                        if (resultTaskInfo.BackupTaskInfo.AutoRun)
+                        {
+
+                        }
+                        
                     }
 
                     Close();

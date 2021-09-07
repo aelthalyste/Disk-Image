@@ -457,7 +457,6 @@ namespace DiskBackupWpfGUI
                 {
                     versions += " " + item.Version.ToString(); 
                 }
-                MessageBox.Show(versions);
                 listViewBackups.ItemsSource = _backupsItems;
                 listViewRestore.ItemsSource = _backupsItems;
             }
@@ -889,7 +888,18 @@ namespace DiskBackupWpfGUI
                     }
                     else
                     {
-                        //full
+                        Console.WriteLine("Backup Inc-Diff başlatılıyor");
+                        var taskSchedulerManager = _scope.Resolve<ITaskSchedulerManager>();
+                        if (taskInfo.ScheduleId != null && !taskInfo.ScheduleId.Contains("Now") && taskInfo.ScheduleId != "")
+                        {
+                            taskSchedulerManager.RunNowTrigger(taskInfo.ScheduleId).Wait();
+                        }
+                        else
+                        {
+                            taskSchedulerManager.BackupFullNowJob(taskInfo).Wait();
+                        }
+                        StatusesWindow backupStatus = _scope.Resolve<StatusesWindow>(new NamedParameter("chooseFlag", 0), new NamedParameter("taskInfo", taskInfo));
+                        backupStatus.Show();
                     }
                 }
                 else

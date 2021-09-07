@@ -909,44 +909,159 @@ namespace DiskBackup.Business.Concrete
 
         public int CreateFullBackup(TaskInfo taskInfo)
         {
-            _logger.Error("CreateFullBackup metodu çağırıldı");
-
-            StreamInfo Inf = new StreamInfo();
-
-            ulong ID = DiskTracker.CW_SetupFullOnlyStream(Inf, taskInfo.StrObje[0], true);
-            FileStream output = File.Create(taskInfo.BackupStorageInfo.Path + Inf.FileName);
+            _logger.Information("CreateFullBackup metodu çağırıldı");
+            
+            if (!GetInitTracker())
+                return 5;
+            _logger.Information("1");
+            NetworkConnection nc = null;
             try
             {
-                unsafe
+                if (taskInfo.BackupStorageInfo.Type == BackupStorageType.NAS)
                 {
-                    uint buffersize = 1024 * 1024 * 64;
-                    byte[] buffer = new byte[buffersize];
-                    fixed (byte* baddr = &buffer[0])
-                    {
-                        while (true)
-                        {
-                            var ReadResult = DiskTracker.CW_ReadFullOnlyStream(ID, baddr, buffersize);
-                            if (ReadResult.Error != BackupStream_Errors.Error_NoError)
-                            {
-                                break;
-                            }
-                            if (ReadResult.WriteSize == 0)
-                            {
-                                break;
-                            }
-                            output.Write(buffer, 0, (int)ReadResult.WriteSize);
-                        }
-                    }
+                    nc = new NetworkConnection(taskInfo.BackupStorageInfo.Path.Substring(0, taskInfo.BackupStorageInfo.Path.Length - 1), taskInfo.BackupStorageInfo.Username, taskInfo.BackupStorageInfo.Password, taskInfo.BackupStorageInfo.Domain);
                 }
             }
             catch (Exception ex)
             {
-                return 0;
-            }            
+                _logger.Error(ex, "Uzak paylaşıma bağlanılamadığı için backup işlemine devam edilemiyor. {path}", taskInfo.BackupStorageInfo.Path);
+                return 4;
+            }
+            _logger.Information("2");
 
+            if (!Directory.Exists(taskInfo.BackupStorageInfo.Path))
+                return 6;
+            _logger.Information("3");
+
+            var statusInfo = _statusInfoDal.Get(si => si.Id == taskInfo.StatusInfoId); //her task için uygulanmalı
+            _logger.Information("4");
+            var manualResetEvent = new ManualResetEvent(true);
+            _taskEventMap[taskInfo.Id] = manualResetEvent;
+
+            var timeElapsed = new Stopwatch();
+            _timeElapsedMap[taskInfo.Id] = timeElapsed;
+            timeElapsed.Start();
+
+            _cancellationTokenSource[taskInfo.Id] = new CancellationTokenSource();
+            var cancellationToken = _cancellationTokenSource[taskInfo.Id].Token;
+            _logger.Information("5");
+            StreamInfo Inf = new StreamInfo();
+            ulong ID = DiskTracker.CW_SetupFullOnlyStream(Inf, taskInfo.StrObje[0], true);
+            FileStream output = File.Create(taskInfo.BackupStorageInfo.Path + Inf.FileName);
+            statusInfo.TotalDataProcessed = (long)Inf.CopySize;
+            try
+            {
+                _logger.Information("6");
+                Stopwatch passingTime = new Stopwatch();
+                long instantProcessData = 0;
+                passingTime.Start();
+                _logger.Information("7");
+                if (!CheckDiskSize(taskInfo, statusInfo, timeElapsed, Inf, (long)Inf.CopySize))
+                    return 3;
+                _logger.Information("8");
+                unsafe
+                {
+                    _logger.Information("9");
+                    uint buffersize = 1024 * 1024 * 64;
+                    byte[] buffer = new byte[buffersize];
+                    fixed (byte* baddr = &buffer[0])
+                    {
+                        _logger.Information("10");
+                        while (true)
+                        {
+                            _logger.Information("11");
+                            if (cancellationToken.IsCancellationRequested)
+                            { //clean
+                                _diskTracker.CW_TerminateBackup(false, taskInfo.StrObje[0]/*full backup görevi sadece 1 objeye uygulanacağı için*/, taskInfo.BackupStorageInfo.Path);
+                                _taskEventMap.Remove(taskInfo.Id);
+                                manualResetEvent.Dispose();
+                                _cancellationTokenSource[taskInfo.Id].Dispose();
+                                _cancellationTokenSource.Remove(taskInfo.Id);
+                                output.Close();
+                                _logger.Information("Görev iptal edildiği için {dizin} ve {metadataDizin} dizinleri siliniyor.", taskInfo.BackupStorageInfo.Path + Inf.FileName, (Directory.GetCurrentDirectory() + @"\" + Inf.MetadataFileName));
+                                DeleteBrokenBackupFiles(taskInfo, Inf);
+                                _logger.Information("12");
+                                return 2;
+                            }
+                            _logger.Information("13");
+                            manualResetEvent.WaitOne();
+                            var ReadResult = DiskTracker.CW_ReadFullOnlyStream(ID, baddr, buffersize);
+                            _logger.Information("15");
+                            if (passingTime.ElapsedMilliseconds > 500)
+                            {
+                                _logger.Information("16");
+                                statusInfo.FileName = taskInfo.BackupStorageInfo.Path + Inf.FileName;
+                                //if (statusInfo.TotalDataProcessed >= (long)bytesReadSoFar)
+                                //    statusInfo.DataProcessed = bytesReadSoFar;
+                                statusInfo.AverageDataRate = ((statusInfo.TotalDataProcessed / 1024.0) / 1024.0) / (timeElapsed.ElapsedMilliseconds / 1000.0); // MB/s
+                                if (instantProcessData != 0) // anlık veri için 0 gelmesin diye
+                                    statusInfo.InstantDataRate = ((instantProcessData / 1024.0) / 1024.0) / (passingTime.ElapsedMilliseconds / 1000.0); // MB/s
+                                statusInfo.TimeElapsed = timeElapsed.ElapsedMilliseconds;
+                                _statusInfoDal.Update(statusInfo);
+                                _logger.Information("17");
+                                if (passingTime.ElapsedMilliseconds > 1000) // anlık veri için her saniye güncellensin diye
+                                {
+                                    instantProcessData = 0;
+                                    passingTime.Restart();
+                                    _logger.Information("18");
+                                }
+                            }
+                            if (ReadResult.Error != BackupStream_Errors.Error_NoError)
+                            {
+                                _logger.Information("19");
+                                break;
+                            }
+                            if (ReadResult.WriteSize == 0)
+                            {
+                                _logger.Information("20");
+                                break;
+                            }
+                            _logger.Information("21");
+                            output.Write(buffer, 0, (int)ReadResult.WriteSize);
+                        }
+                        _logger.Information("22");
+                        output.Close();
+
+                        _logger.Information("23");
+                        if (Convert.ToBoolean(DiskTracker.CW_MetadataEditTaskandDescriptionField(taskInfo.BackupStorageInfo.Path + Inf.MetadataFileName, taskInfo.Name, taskInfo.Descripiton)))
+                            _logger.Information("Metadata'ya görev bilgilerini yazma işlemi başarılı.");
+                        else
+                            _logger.Information("Metadata'ya görev bilgilerini yazma işlemi başarısız.");
+                        _logger.Information("24");
+                    }
+                    _logger.Information("25");
+                }
+                _logger.Information("26");
+                statusInfo.TimeElapsed = timeElapsed.ElapsedMilliseconds;
+                _statusInfoDal.Update(statusInfo);
+                _logger.Information("27");
+                if (nc != null)
+                {
+                    nc.Dispose();
+                }
+                _logger.Information("28");
+                manualResetEvent.Dispose();
+                _taskEventMap.Remove(taskInfo.Id);
+
+                timeElapsed.Reset();
+                _timeElapsedMap.Remove(taskInfo.Id);
+
+                _cancellationTokenSource[taskInfo.Id].Dispose();
+                _cancellationTokenSource.Remove(taskInfo.Id);
+                _logger.Information("29");
+                //_logger.Information("Görev başarısız olduğu için {dizin} ve {metadataDizin} dizinleri siliniyor.", taskInfo.BackupStorageInfo.Path + Inf.FileName, (Directory.GetCurrentDirectory() + @"\" + str.MetadataFileName));
+                //DeleteBrokenBackupFiles(taskInfo, Inf);
+                //return 0;
+            }
+            catch (Exception ex)
+            {
+                return 1;
+            }
+            _logger.Information("30");
             // backup bir dosyaya yaziliyorsa, daha sonradan restore edilecekse metadatanin kayit edilmesi gerekiyor. true verilmeli arguman
             DiskTracker.CW_TerminateFullOnlyBackup(ID, true, taskInfo.BackupStorageInfo.Path);
-            Console.WriteLine("done!");
+            _logger.Information("done!");
+            _logger.Information("31");
             return 1;
         }
 

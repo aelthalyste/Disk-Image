@@ -29,8 +29,8 @@ namespace DiskBackup.TaskScheduler.Jobs
             _backupService = backupService;
             _activityLogDal = activityLogDal;
             _backupTaskDal = backupTaskDal;
-            _logger = logger.ForContext<BackupIncDiffJob>();
             _emailOperations = emailOperations;
+            _logger = logger.ForContext<BackupIncDiffJob>();
         }
 
         public async Task Execute(IJobExecutionContext context)
