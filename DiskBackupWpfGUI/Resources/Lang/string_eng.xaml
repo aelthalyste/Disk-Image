@@ -221,6 +221,7 @@
     <system:String x:Key="ABASummaryContent">Summary information of the backup area created</system:String>
     <system:String x:Key="restoreContent">Select the file to restore backup and the disk or volume to restore</system:String>
     <system:String x:Key="createTaskContent">Select disk or volume to create a task</system:String>
+    <system:String x:Key="createDiskCloneContent">Select disk or volume you want to clone</system:String>
     <system:String x:Key="forHelp">Please contact to</system:String>
     <system:String x:Key="plsContact">for help.</system:String>    
     <system:String x:Key="contactUs">Contact Us</system:String>

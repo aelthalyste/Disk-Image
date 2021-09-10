@@ -36,12 +36,22 @@ namespace DiskBackupWpfGUI
         private bool _tasksAllControl = false;
 
         private List<CheckBox> _expanderCheckBoxes = new List<CheckBox>();
+        private List<CheckBox> _restoreExpanderCheckBoxes = new List<CheckBox>();
+        private List<Expander> _expanderRestoreDiskList = new List<Expander>();
+        private List<CheckBox> _diskCloneCheckBoxes = new List<CheckBox>();
+        private List<CheckBox> _diskCloneDownCheckBoxes = new List<CheckBox>();
+        private List<Expander> _expanderDiskCloneDiskList = new List<Expander>();
+        private List<Expander> _expanderDiskCloneDownDiskList = new List<Expander>();
+        
         private List<int> _numberOfItems = new List<int>();
         private List<string> _groupName = new List<string>();
-        private List<CheckBox> _restoreExpanderCheckBoxes = new List<CheckBox>();
         private List<int> _restoreNumberOfItems = new List<int>();
         private List<string> _restoreGroupName = new List<string>();
-        private List<Expander> _expanderRestoreDiskList = new List<Expander>();
+        private List<int> _diskCloneNumberOfItems = new List<int>();
+        private List<string> _diskCloneGroupName = new List<string>();
+        private List<int> _diskCloneDownNumberOfItems = new List<int>();
+        private List<string> _diskCloneDownGroupName = new List<string>();
+
         private List<DiskInformation> _diskList = new List<DiskInformation>();
         private List<VolumeInfo> _volumeList = new List<VolumeInfo>();
         private List<TaskInfo> _taskInfoList = new List<TaskInfo>();
@@ -129,9 +139,12 @@ namespace DiskBackupWpfGUI
                         _volumeList.Add(volumeItem);
                     }
                 }
-
+                Console.WriteLine("List doldurma üst satır list count = " + _volumeList.Count);
                 listViewDisk.ItemsSource = _volumeList;
+                listViewDiskCloneSource.ItemsSource = _volumeList;
+                listViewDiskCloneTarget.ItemsSource = _volumeList;
                 listViewRestoreDisk.ItemsSource = _volumeList;
+                Console.WriteLine("List doldurma bitiş satırı diskDown = " + listViewDiskCloneSource.Items.Count);
 
                 _view = (CollectionView)CollectionViewSource.GetDefaultView(listViewDisk.ItemsSource);
                 PropertyGroupDescription groupDescription = new PropertyGroupDescription("DiskName");
@@ -757,7 +770,97 @@ namespace DiskBackupWpfGUI
         }
 
         #endregion
+
+        #endregion
+
+
+        #region Disk Clone
         
+       
+
+        private void chbDiskCloneSourceSelectDiskAll_Unchecked(object sender, RoutedEventArgs e)
+        {
+            if (listViewDiskCloneSource.SelectedIndex != -1)
+            {
+                if (listViewDiskCloneSource.SelectedIndex != -1)
+                    btnDiskCloneStart.IsEnabled = true;
+                //eyüp
+                //burada buton enable disable olacak hatayı engellemek için geçici olarak CreateTask'dan kopyaladım
+            }
+            else
+            {
+                btnDiskCloneStart.IsEnabled = false;
+            }
+        }
+
+        private void listViewDiskCloneTarget_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (listViewDiskCloneTarget.SelectedIndex != -1)
+            {
+                if (listViewDiskCloneTarget.SelectedIndex != -1)
+                    btnDiskCloneStart.IsEnabled = true;
+                //eyüp
+                //burada buton enable disable olacak hatayı engellemek için geçici olarak CreateTask'dan kopyaladım
+            }
+            else
+            {
+                btnDiskCloneStart.IsEnabled = false;
+            }
+        }
+
+        private void chbDiskCloneSourceSelectDiskAll_Checked(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void listViewDiskCloneSource_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            
+        }
+
+        
+        private void ExpanderDiskClone_Loaded(object sender, RoutedEventArgs e)
+        {
+            _logger.Verbose("ExpanderDiskClone_Loaded istekte bulunuldu");
+
+            var expander = sender as Expander;
+            _expanderDiskCloneDiskList.Add(expander);
+            var size = expander.FindName("txtDiskCloneTotalSize") as TextBlock;
+            var expanderCheck = expander.FindName("HeaderDiskCloneCheckBox") as CheckBox;
+            _diskCloneCheckBoxes.Add(expanderCheck);
+            var numberOfItems = expander.FindName("txtDiskCloneNumberOfItems") as TextBlock;
+            _diskCloneNumberOfItems.Add(Convert.ToInt32(numberOfItems.Text));
+            var groupName = expander.FindName("txtDiskCloneGroupName") as TextBlock;
+            _diskCloneGroupName.Add(groupName.Text);
+            if (_diskList.Count == _diskExpenderIndex)
+                _diskExpenderIndex = 0;
+            size.Text = FormatBytes(_diskList[_diskExpenderIndex++].Size);
+        }
+
+        private void ExpanderDiskCloneDown_Loaded(object sender, RoutedEventArgs e)
+        {
+            _logger.Verbose("ExpanderDiskCloneDown_Loaded istekte bulunuldu");
+
+            var expander = sender as Expander;
+            _expanderDiskCloneDownDiskList.Add(expander);
+            var size = expander.FindName("txtDiskCloneDownTotalSize") as TextBlock;
+            var expanderCheck = expander.FindName("HeaderDiskCloneDownCheckBox") as CheckBox;
+            _diskCloneDownCheckBoxes.Add(expanderCheck);
+            var numberOfItems = expander.FindName("txtDiskCloneDownNumberOfItems") as TextBlock;
+            _diskCloneDownNumberOfItems.Add(Convert.ToInt32(numberOfItems.Text));
+            var groupName = expander.FindName("txtDiskCloneDownGroupName") as TextBlock;
+            _diskCloneDownGroupName.Add(groupName.Text);
+            if (_diskList.Count == _diskExpenderIndex)
+                _diskExpenderIndex = 0;
+            size.Text = FormatBytes(_diskList[_diskExpenderIndex++].Size);
+        }
+
+
+        private void btnDiskCloneStart_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
+
         #endregion
 
 
@@ -1487,6 +1590,24 @@ namespace DiskBackupWpfGUI
             GetTasks();
         }
 
+        private void ExpanderRestore_Loaded(object sender, RoutedEventArgs e)
+        {
+            _logger.Verbose("ExpanderRestore_Loaded istekte bulunuldu");
+
+            var expander = sender as Expander;
+            _expanderRestoreDiskList.Add(expander);
+            var size = expander.FindName("txtRestoreTotalSize") as TextBlock;
+            var expanderCheck = expander.FindName("cbRestoreHeader") as CheckBox;
+            _restoreExpanderCheckBoxes.Add(expanderCheck);
+            var numberOfItems = expander.FindName("txtRestoreNumberOfItems") as TextBlock;
+            _restoreNumberOfItems.Add(Convert.ToInt32(numberOfItems.Text));
+            var groupName = expander.FindName("txtRestoreGroupName") as TextBlock;
+            _restoreGroupName.Add(groupName.Text);
+            if (_diskList.Count == _diskExpenderIndex)
+                _diskExpenderIndex = 0;
+            size.Text = FormatBytes(_diskList[_diskExpenderIndex++].Size);
+        }
+
         private void listViewRestore_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (listViewRestore.SelectedIndex != -1)
@@ -1515,9 +1636,6 @@ namespace DiskBackupWpfGUI
                     txtRBootablePartition.Text = Resources["yes"].ToString();
                 else
                     txtRBootablePartition.Text = Resources["no"].ToString();
-                //Console.WriteLine("dosya adı : " + backupInfo.FileName);
-                //MessageBox.Show("backupInfo.Bootable: " + backupInfo.Bootable + "\n" + 
-                //    "backupInfo.OSVolume: " + backupInfo.OSVolume);
             }
             else
             {
@@ -1536,25 +1654,7 @@ namespace DiskBackupWpfGUI
             {
                 btnRestore.IsEnabled = false;
             }
-        }
-
-        private void Expander_Loaded_1(object sender, RoutedEventArgs e)
-        {
-            _logger.Verbose("Expander_Loaded_1 istekte bulunuldu");
-
-            var expander = sender as Expander;
-            _expanderRestoreDiskList.Add(expander);
-            var size = expander.FindName("txtRestoreTotalSize") as TextBlock;
-            var expanderCheck = expander.FindName("cbRestoreHeader") as CheckBox;
-            _restoreExpanderCheckBoxes.Add(expanderCheck);
-            var numberOfItems = expander.FindName("txtRestoreNumberOfItems") as TextBlock;
-            _restoreNumberOfItems.Add(Convert.ToInt32(numberOfItems.Text));
-            var groupName = expander.FindName("txtRestoreGroupName") as TextBlock;
-            _restoreGroupName.Add(groupName.Text);
-            if (_diskList.Count == _diskExpenderIndex)
-                _diskExpenderIndex = 0;
-            size.Text = FormatBytes(_diskList[_diskExpenderIndex++].Size);
-        }
+        }       
 
         private void btnRestoreRefreshDisk_Click(object sender, RoutedEventArgs e)
         {
@@ -2992,11 +3092,9 @@ namespace DiskBackupWpfGUI
 
 
 
+
+
         #endregion
 
-        private void btnFullBackupTest_Click(object sender, RoutedEventArgs e)
-        {
-            
-        }
     }
 }
