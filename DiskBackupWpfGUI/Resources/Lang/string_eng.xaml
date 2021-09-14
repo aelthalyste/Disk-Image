@@ -24,6 +24,7 @@
     <system:String x:Key="taskName">Task Name</system:String>
     <system:String x:Key="object">Object</system:String>
     <system:String x:Key="lastStudy">Last Run</system:String>
+    <system:String x:Key="diskClone">Disk Clone</system:String>
     <!--(Son Çalışma) last study-->
     <system:String x:Key="nextStudy">Next Run</system:String>
     <system:String x:Key="target">Target</system:String>

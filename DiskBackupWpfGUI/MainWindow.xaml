@@ -853,7 +853,7 @@
                                 </Style>
                             </Image.Style>
                         </Image>
-                        <TextBlock Text="Disk Clone" Margin="15,0" VerticalAlignment="Center" Style="{StaticResource TabItemText}"/>
+                        <TextBlock Text="{DynamicResource diskClone}" Margin="15,0" VerticalAlignment="Center" Style="{StaticResource TabItemText}"/>
                     </StackPanel>
                 </TabItem.Header>
                 <Grid Background="White">
@@ -873,19 +873,16 @@
                             </DockPanel>
                             <ListView Name="listViewDiskCloneSource" Height="267" Margin="5" SelectionChanged="listViewDiskCloneSource_SelectionChanged">
                                     <ListView.View>
-                                        <GridView>
-                                            <GridViewColumn Width="70">
-                                                <GridViewColumn.Header>
-                                                <CheckBox Name="chbDiskCloneSourceSelectDiskAll" Checked="chbDiskCloneSourceSelectDiskAll_Checked" Unchecked="chbDiskCloneSourceSelectDiskAll_Unchecked" Cursor="Hand" Margin="12,0,0,0"/>
-                                                </GridViewColumn.Header>
-                                                <GridViewColumn.CellTemplate>
-                                                    <DataTemplate>
-                                                        <CheckBox IsChecked="{Binding Path=IsSelected, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ListViewItem}}}"
-                                                              Checked="chbDisk_Checked" Unchecked="chbDisk_Unchecked" Cursor="Hand" Margin="40,0,0,0"/>
-                                                    </DataTemplate>
-                                                </GridViewColumn.CellTemplate>
-                                            </GridViewColumn>
-                                            <GridViewColumn Header="{DynamicResource volume}" Width="220">
+                                    <GridView>
+                                        <GridViewColumn Width="70">
+                                            <GridViewColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <CheckBox IsChecked="{Binding Path=IsSelected, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ListViewItem}}}"
+                                                      Unchecked="chbRestoreDisk_Unchecked" Cursor="Hand" Margin="40,0,0,0"/>
+                                                </DataTemplate>
+                                            </GridViewColumn.CellTemplate>
+                                        </GridViewColumn>
+                                        <GridViewColumn Header="{DynamicResource volume}" Width="220">
                                                 <GridViewColumn.CellTemplate>
                                                     <DataTemplate>
                                                         <StackPanel Orientation="Horizontal">
@@ -947,13 +944,13 @@
                                                     <Setter Property="Template">
                                                         <Setter.Value>
                                                             <ControlTemplate>
-                                                                <Expander Name="ExpanderDiskClone" Tag="{Binding Name}" IsExpanded="True" Margin="5,0,0,0" Loaded="ExpanderDiskClone_Loaded">
+                                                            <Expander Name="ExpanderDiskCloneSource" Tag="{Binding Name}" IsExpanded="True" Margin="5,0,0,0" Loaded="ExpanderDiskCloneSource_Loaded">
                                                                     <Expander.Header>
                                                                         <WrapPanel Orientation="Horizontal" >
-                                                                            <CheckBox Name="HeaderDiskCloneCheckBox" Checked="HeaderCheckBox_Checked" Unchecked="HeaderCheckBox_Unchecked" Tag="{Binding Name}" Margin="5,3,5,0" Cursor="Hand"/>
-                                                                            <TextBlock Name="txtDiskCloneGroupName" Text="{Binding Name}" FontWeight="Bold" FontSize="15" VerticalAlignment="Center" Margin="20,0,0,0"/>
-                                                                            <TextBlock Name="txtDiskCloneTotalSize" FontWeight="Bold" FontSize="12" Margin="10,0,0,0" VerticalAlignment="Center"/>
-                                                                            <TextBlock Name="txtDiskCloneNumberOfItems" Text="{Binding ItemCount}" FontSize="12" Foreground="Silver" Margin="10,0,0,0" VerticalAlignment="Center" />
+                                                                        <CheckBox Name="HeaderDiskCloneSourceCheckBox" Checked="HeaderDiskCloneSourceCheckBox_Checked" Unchecked="HeaderDiskCloneSourceCheckBox_Unchecked" Tag="{Binding Name}" Margin="5,3,5,0" Cursor="Hand"/>
+                                                                        <TextBlock Name="txtDiskCloneSourceGroupName" Text="{Binding Name}" FontWeight="Bold" FontSize="15" VerticalAlignment="Center" Margin="20,0,0,0"/>
+                                                                        <TextBlock Name="txtDiskCloneSourceTotalSize" FontWeight="Bold" FontSize="12" Margin="10,0,0,0" VerticalAlignment="Center"/>
+                                                                        <TextBlock Name="txtDiskCloneSourceNumberOfItems" Text="{Binding ItemCount}" FontSize="12" Foreground="Silver" Margin="10,0,0,0" VerticalAlignment="Center" />
                                                                             <TextBlock Text="{DynamicResource items}" FontSize="12" Foreground="Silver" Margin="5,0,0,0" VerticalAlignment="Center" />
                                                                             <Rectangle Margin="10,0,0,0" Width="820" Stroke="Silver" StrokeThickness="1" VerticalAlignment="Center"/>
                                                                         </WrapPanel>
@@ -982,13 +979,10 @@
                                 <ListView.View>
                                     <GridView>
                                         <GridViewColumn Width="70">
-                                            <GridViewColumn.Header>
-                                                <CheckBox Name="chbDiskCloneDownDiskSelectDiskAll" Checked="chbDiskSelectDiskAll_Checked" Unchecked="chbDiskSelectDiskAll_Unchecked" Cursor="Hand" Margin="12,0,0,0"/>
-                                            </GridViewColumn.Header>
                                             <GridViewColumn.CellTemplate>
                                                 <DataTemplate>
                                                     <CheckBox IsChecked="{Binding Path=IsSelected, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ListViewItem}}}"
-                                                              Checked="chbDisk_Checked" Unchecked="chbDisk_Unchecked" Cursor="Hand" Margin="40,0,0,0"/>
+                                                      Unchecked="chbRestoreDisk_Unchecked" Cursor="Hand" Margin="40,0,0,0"/>
                                                 </DataTemplate>
                                             </GridViewColumn.CellTemplate>
                                         </GridViewColumn>
@@ -1054,13 +1048,13 @@
                                                 <Setter Property="Template">
                                                     <Setter.Value>
                                                         <ControlTemplate>
-                                                            <Expander Name="ExpanderDiskCloneDown" Tag="{Binding Name}" IsExpanded="True" Margin="5,0,0,0" Loaded="ExpanderDiskCloneDown_Loaded">
+                                                            <Expander Name="ExpanderDiskCloneTarget" Tag="{Binding Name}" IsExpanded="True" Margin="5,0,0,0" Loaded="ExpanderDiskCloneTarget_Loaded">
                                                                 <Expander.Header>
                                                                     <WrapPanel Orientation="Horizontal" >
-                                                                        <CheckBox Name="HeaderDiskCloneDownCheckBox" Checked="HeaderCheckBox_Checked" Unchecked="HeaderCheckBox_Unchecked" Tag="{Binding Name}" Margin="5,3,5,0" Cursor="Hand"/>
-                                                                        <TextBlock Name="txtDiskCloneDownGroupName" Text="{Binding Name}" FontWeight="Bold" FontSize="15" VerticalAlignment="Center" Margin="20,0,0,0"/>
-                                                                        <TextBlock Name="txtDiskCloneDownTotalSize" FontWeight="Bold" FontSize="12" Margin="10,0,0,0" VerticalAlignment="Center"/>
-                                                                        <TextBlock Name="txtDiskCloneDownNumberOfItems" Text="{Binding ItemCount}" FontSize="12" Foreground="Silver" Margin="10,0,0,0" VerticalAlignment="Center" />
+                                                                        <CheckBox Name="HeaderDiskCloneTargetCheckBox" Checked="HeaderDiskCloneTargetCheckBox_Checked" Unchecked="HeaderDiskCloneTargetCheckBox_Unchecked" Tag="{Binding Name}" Margin="5,3,5,0" Cursor="Hand"/>
+                                                                        <TextBlock Name="txtDiskCloneTargetGroupName" Text="{Binding Name}" FontWeight="Bold" FontSize="15" VerticalAlignment="Center" Margin="20,0,0,0"/>
+                                                                        <TextBlock Name="txtDiskCloneTargetTotalSize" FontWeight="Bold" FontSize="12" Margin="10,0,0,0" VerticalAlignment="Center"/>
+                                                                        <TextBlock Name="txtDiskCloneTargetNumberOfItems" Text="{Binding ItemCount}" FontSize="12" Foreground="Silver" Margin="10,0,0,0" VerticalAlignment="Center" />
                                                                         <TextBlock Text="{DynamicResource items}" FontSize="12" Foreground="Silver" Margin="5,0,0,0" VerticalAlignment="Center" />
                                                                         <Rectangle Margin="10,0,0,0" Width="820" Stroke="Silver" StrokeThickness="1" VerticalAlignment="Center"/>
                                                                     </WrapPanel>
