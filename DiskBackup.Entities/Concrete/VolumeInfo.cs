@@ -9,7 +9,6 @@ namespace DiskBackup.Entities.Concrete
 {
     public class VolumeInfo : IEntity
     {
-        //Bootable ekleyebiliriz Batu'da var
         //Görev Oluştur ekranında ve Geri Yükle Ekranında listviewDisk vew listviewRestoreDisk listelerinde
         //2 tabda da progress bar olarak geliyor
         public string DiskName { get; set; } //Disk 1
@@ -25,7 +24,6 @@ namespace DiskBackup.Entities.Concrete
         public char Letter { get; set; }
         public HealthSituation HealthStatu { get; set; }
         public string Status { get; set; } // Sağlıklı
-
     }
 
     public enum HealthSituation

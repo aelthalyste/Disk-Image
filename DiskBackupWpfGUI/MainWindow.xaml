@@ -871,14 +871,15 @@
                                 </Button>
                                 <TextBlock Name="lblC1reateTaskWarning" Text="{DynamicResource createDiskCloneContent}" VerticalAlignment="Center" />
                             </DockPanel>
-                            <ListView Name="listViewDiskCloneSource" Height="267" Margin="5" SelectionChanged="listViewDiskCloneSource_SelectionChanged">
+                            <!--SelectionChanged="listViewDiskCloneSource_SelectionChanged"-->
+                            <ListView Name="listViewDiskCloneSource" Height="267" Margin="5"  SelectionMode="Single">
                                     <ListView.View>
                                     <GridView>
                                         <GridViewColumn Width="70">
                                             <GridViewColumn.CellTemplate>
                                                 <DataTemplate>
-                                                    <CheckBox IsChecked="{Binding Path=IsSelected, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ListViewItem}}}"
-                                                      Unchecked="chbRestoreDisk_Unchecked" Cursor="Hand" Margin="40,0,0,0"/>
+                                                    <CheckBox Name="chbDiskCloneSource" IsChecked="{Binding Path=IsSelected, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ListViewItem}}}"
+                                                      Checked="chbDiskCloneSource_Checked" Unchecked="chbDiskCloneSource_Unchecked" Cursor="Hand" Margin="40,0,0,0"/>
                                                 </DataTemplate>
                                             </GridViewColumn.CellTemplate>
                                         </GridViewColumn>
@@ -964,25 +965,31 @@
                                             </GroupStyle.ContainerStyle>
                                         </GroupStyle>
                                     </ListView.GroupStyle>
-                                    <ListView.ItemContainerStyle>
-                                        <Style TargetType="ListViewItem">
-                                            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-                                        </Style>
-                                    </ListView.ItemContainerStyle>
-                                </ListView>
+                                <ListView.ItemContainerStyle>
+                                    <Style TargetType="ListViewItem">
+                                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                        <Style.Triggers>
+                                            <Trigger Property="IsSelected" Value="true" >
+                                                <Setter Property="Background" Value="LightGray" />
+                                                <Setter Property="BorderBrush" Value="LightSlateGray"/>
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ListView.ItemContainerStyle>
+                            </ListView>
                             </StackPanel>
                         </DockPanel>
                     <DockPanel Grid.Row="1">
                         <StackPanel>
-                            <TextBlock Text="{DynamicResource createTaskContent}" VerticalAlignment="Center" />
-                            <ListView Name="listViewDiskCloneTarget" Height="267" Margin="5" SelectionChanged="listViewDiskCloneTarget_SelectionChanged">
+                            <TextBlock Text="{DynamicResource createTaskContent}" Margin="5,0,0,0" VerticalAlignment="Center" />
+                            <ListView Name="listViewDiskCloneTarget" Height="267" Margin="5" SelectionChanged="listViewDiskCloneTarget_SelectionChanged" SelectionMode="Single">
                                 <ListView.View>
                                     <GridView>
                                         <GridViewColumn Width="70">
                                             <GridViewColumn.CellTemplate>
                                                 <DataTemplate>
                                                     <CheckBox IsChecked="{Binding Path=IsSelected, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ListViewItem}}}"
-                                                      Unchecked="chbRestoreDisk_Unchecked" Cursor="Hand" Margin="40,0,0,0"/>
+                                                      Unchecked="chbDiskCloneTarget_Unchecked" Cursor="Hand" Margin="40,0,0,0"/>
                                                 </DataTemplate>
                                             </GridViewColumn.CellTemplate>
                                         </GridViewColumn>
@@ -1041,7 +1048,7 @@
                                     </GridView>
                                 </ListView.View>
                                 <!-- Gruplama işlemi-->
-                                <ListView.GroupStyle>
+                                <!--<ListView.GroupStyle>
                                     <GroupStyle >
                                         <GroupStyle.ContainerStyle>
                                             <Style TargetType="{x:Type GroupItem}">
@@ -1067,10 +1074,16 @@
                                             </Style>
                                         </GroupStyle.ContainerStyle>
                                     </GroupStyle>
-                                </ListView.GroupStyle>
+                                </ListView.GroupStyle>-->
                                 <ListView.ItemContainerStyle>
                                     <Style TargetType="ListViewItem">
                                         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                        <Style.Triggers>
+                                            <Trigger Property="IsSelected" Value="true" >
+                                                <Setter Property="Background" Value="LightGray" />
+                                                <Setter Property="BorderBrush" Value="LightSlateGray"/>
+                                            </Trigger>
+                                        </Style.Triggers>
                                     </Style>
                                 </ListView.ItemContainerStyle>
                             </ListView>
@@ -1093,6 +1106,10 @@
                     </StackPanel>
                 </TabItem.Header>
                 <Grid Background="White">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="420"/>
+                        <RowDefinition/>
+                    </Grid.RowDefinitions>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition/>
                         <ColumnDefinition Width="45"/>
@@ -1263,6 +1280,59 @@
                             </Button>
                         </StackPanel>
                     </DockPanel>
+                    <StackPanel Grid.Row="1" Margin="5,0,5,0">
+                        <TextBlock Margin="0,0,0,15" Text="{DynamicResource fileInfo}" FontSize="18" HorizontalAlignment="Center" FontWeight="Bold"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="130"/>
+                                <ColumnDefinition Width="10"/>
+                                <ColumnDefinition/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition/>
+                            </Grid.RowDefinitions>
+                            <!--<Rectangle VerticalAlignment="Bottom" Stroke="#D7D7D7" StrokeThickness="1" Grid.ColumnSpan="3" HorizontalAlignment="Left" Width="400"/>-->
+                            <StackPanel Margin="10,0,0,0">
+                                <TextBlock Text="{DynamicResource volumeSize}" Margin="0,0,0,3" />
+                                <TextBlock Text="{DynamicResource usedSize}" Margin="0,0,0,3" />
+                                <TextBlock Text="{DynamicResource folderSize}" Margin="0,0,0,3" />
+                                <TextBlock Text="{DynamicResource createdDate}" Margin="0,0,0,3" />
+                                <TextBlock Text="{DynamicResource bootablePartition}" Margin="0,0,0,3" />
+                                <TextBlock Text="{DynamicResource zip}" Margin="0,0,0,3" Visibility="Collapsed"/>
+                                <TextBlock Text="{DynamicResource OS}" Margin="0,0,0,3" />
+                                <TextBlock Text="{DynamicResource pcName}" Margin="0,0,0,3" />
+                                <TextBlock Text="{DynamicResource ipAddress}" Margin="0,0,0,3" />
+                                <TextBlock Text="{DynamicResource driverLetter}" Margin="0,0,0,3" />
+                                <TextBlock Text="{DynamicResource bootPartition}" Margin="0,0,0,3" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="1">
+                                <TextBlock Text=":" Margin="0,0,0,3" />
+                                <TextBlock Text=":" Margin="0,0,0,3" />
+                                <TextBlock Text=":" Margin="0,0,0,3" />
+                                <TextBlock Text=":" Margin="0,0,0,3" />
+                                <TextBlock Text=":" Margin="0,0,0,3" />
+                                <TextBlock Text=":" Margin="0,0,0,3" Visibility="Collapsed"/>
+                                <TextBlock Text=":" Margin="0,0,0,3" />
+                                <TextBlock Text=":" Margin="0,0,0,3" />
+                                <TextBlock Text=":" Margin="0,0,0,3" />
+                                <TextBlock Text=":" Margin="0,0,0,3" />
+                                <TextBlock Text=":" Margin="0,0,0,3" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Name="txtFilesVolumeSize" Margin="0,0,0,3" />
+                                <TextBlock Name="txtFilesUsedSize" Margin="0,0,0,3" />
+                                <TextBlock Name="txtFilesFolderSize" Margin="0,0,0,3" />
+                                <TextBlock Name="txtFilesCreatedDate" Margin="0,0,0,3" />
+                                <TextBlock Name="txtFilesBootablePartition" Margin="0,0,0,3" />
+                                <TextBlock Name="txtFileszip" Text="--Evet (Standart)" Margin="0,0,0,3" Visibility="Collapsed"/>
+                                <TextBlock Name="txtFilesOS" Margin="0,0,0,3" />
+                                <TextBlock Name="txtFilesPcName" Margin="0,0,0,3" />
+                                <TextBlock Name="txtFilesIpAddress" Margin="0,0,0,3" />
+                                <TextBlock Name="txtFilesDriveLetter" Margin="0,0,0,3" />
+                                <TextBlock Name="txtFilesBootPartition" Margin="0,0,0,3" />
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
                 </Grid>
             </TabItem>
 
@@ -1593,7 +1663,10 @@
                         </StackPanel>
                     </DockPanel>
                     <DockPanel Grid.Row="1" Grid.ColumnSpan="2">
-                        <ListView Name="listViewLogDown" MinHeight="165" Margin="5,5,10,5" >
+                        <TextBox  Name="txtLogDown" Margin="5,5,10,5" MinHeight="165">
+                            
+                        </TextBox>
+                        <!--<ListView Name="listViewLogDown" MinHeight="165" Margin="5,5,10,5" >
                             <ListView.View>
                                 <GridView>
                                     <GridViewColumn Header="{DynamicResource time}" Width="170">
@@ -1623,7 +1696,7 @@
                                     <Setter Property="Padding" Value="5,0"/>
                                 </Style>
                             </ListView.Resources>
-                        </ListView>
+                        </ListView>-->
                     </DockPanel>
                 </Grid>
             </TabItem>

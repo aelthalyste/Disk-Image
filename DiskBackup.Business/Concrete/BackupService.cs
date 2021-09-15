@@ -743,7 +743,7 @@ namespace DiskBackup.Business.Concrete
                                 if (cancellationToken.IsCancellationRequested)
                                 {
                                     //cleanup
-                                    _diskTracker.CW_TerminateBackup(false, letter,taskInfo.BackupStorageInfo.Path);
+                                    _diskTracker.CW_TerminateBackup(false, letter, taskInfo.BackupStorageInfo.Path);
                                     _taskEventMap.Remove(taskInfo.Id);
                                     manualResetEvent.Dispose();
                                     _cancellationTokenSource[taskInfo.Id].Dispose();
@@ -790,7 +790,7 @@ namespace DiskBackup.Business.Concrete
                             _diskTracker.CW_TerminateBackup(false, letter, taskInfo.BackupStorageInfo.Path); //işlemi başarılı olup olmadığı cancel gelmeden
                             bytesReadSoFar = 0;
 
-                            CopyAndDeleteMetadataFile(taskInfo, str); //çalışılan dizine çıkartılan narmd dosyası kopyalanıp ilgili dizine silme işlemi yapılıyor
+                            //CopyAndDeleteMetadataFile(taskInfo, str); //çalışılan dizine çıkartılan narmd dosyası kopyalanıp ilgili dizine silme işlemi yapılıyor
 
                             file.Close();
 

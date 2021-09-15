@@ -31,8 +31,6 @@ namespace DiskBackupWpfGUI
 
         private bool _diskAllControl = false;
         private bool _diskAllHeaderControl = false;
-        private bool _diskCloneSourceDiskAllControl = false;
-        private bool _diskCloneTargetDiskAllControl = false;
         private bool _storegeAllControl = false;
         private bool _viewBackupsAllControl = false;
         private bool _tasksAllControl = false;
@@ -40,11 +38,11 @@ namespace DiskBackupWpfGUI
         private List<CheckBox> _expanderCheckBoxes = new List<CheckBox>();
         private List<CheckBox> _restoreExpanderCheckBoxes = new List<CheckBox>();
         private List<Expander> _expanderRestoreDiskList = new List<Expander>();
-        private List<CheckBox> _diskCloneSourceCheckBoxes = new List<CheckBox>();
-        private List<CheckBox> _diskCloneTargetCheckBoxes = new List<CheckBox>();
+        private List<CheckBox> _diskCloneSourceExpanderCheckBoxes = new List<CheckBox>();
+        private List<CheckBox> _diskCloneTargetExpanderCheckBoxes = new List<CheckBox>();
         private List<Expander> _expanderDiskCloneSourceDiskList = new List<Expander>();
         private List<Expander> _expanderDiskCloneTargetDiskList = new List<Expander>();
-        
+
         private List<int> _numberOfItems = new List<int>();
         private List<string> _groupName = new List<string>();
         private List<int> _restoreNumberOfItems = new List<int>();
@@ -144,7 +142,7 @@ namespace DiskBackupWpfGUI
                 Console.WriteLine("List doldurma üst satır list count = " + _volumeList.Count);
                 listViewDisk.ItemsSource = _volumeList;
                 listViewDiskCloneSource.ItemsSource = _volumeList;
-                listViewDiskCloneTarget.ItemsSource = _volumeList;
+                //listViewDiskCloneTarget.ItemsSource = _volumeList;
                 listViewRestoreDisk.ItemsSource = _volumeList;
                 Console.WriteLine("List doldurma bitiş satırı diskDown = " + listViewDiskCloneSource.Items.Count);
 
@@ -334,7 +332,7 @@ namespace DiskBackupWpfGUI
             await GetTasksAsync();
             Console.WriteLine("Activity: " + DateTime.Now);
             await ShowActivityLogAsync();
-            await ShowActivityLogDownAsync(backupService);
+            //ShowActivityLogDownAsync();
             Console.WriteLine("Backup Dosyaları getirilmeden önce: " + DateTime.Now);
             await ShowBackupsFilesAsync(backupService);
             Console.WriteLine("Email Ayarları getirilmeden önce: " + DateTime.Now);
@@ -441,16 +439,17 @@ namespace DiskBackupWpfGUI
             view.SortDescriptions.Add(new SortDescription("Id", ListSortDirection.Descending));
         }
 
-        private async Task ShowActivityLogDownAsync(IBackupService backupService)
+        private void ShowActivityLogDownAsync()
         {
             _logger.Verbose("ShowActivityLogDownAsync metoduna istekte bulunuldu");
             try
             {
-                _logList = await Task.Run(() =>
-                {
-                    return backupService.GetDownLogList();
-                });
-                listViewLogDown.ItemsSource = _logList;
+                txtLogDown.Text = File.ReadAllText(@"C:\ProgramData\NarDiskBackup\NAR_APP_LOG_FILE.txt");
+                //_logList = await Task.Run(() =>
+                //{
+                //    return backupService.GetDownLogList();
+                //});
+                //listViewLogDown.ItemsSource = _logList;
             }
             catch (Exception e)
             {
@@ -470,7 +469,7 @@ namespace DiskBackupWpfGUI
                 string versions = "";
                 foreach (var item in _backupsItems)
                 {
-                    versions += " " + item.Version.ToString(); 
+                    versions += " " + item.Version.ToString();
                 }
                 listViewBackups.ItemsSource = _backupsItems;
                 listViewRestore.ItemsSource = _backupsItems;
@@ -568,7 +567,7 @@ namespace DiskBackupWpfGUI
 
             List<TaskInfo> overlappingTaskInfoList = new List<TaskInfo>();
             List<VolumeInfo> volumeInfoList = new List<VolumeInfo>();
-           
+
             foreach (VolumeInfo item in listViewDisk.SelectedItems)
             {
                 volumeInfoList.Add(item);
@@ -608,7 +607,7 @@ namespace DiskBackupWpfGUI
                 }
                 MessageBoxResult result = MessageBox.Show(Resources["taskBackupOverlappingAffectedMB"].ToString() + message, Resources["MessageboxTitle"].ToString(), MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
                 if (result == MessageBoxResult.Yes)
-                { 
+                {
                     overlappingTaskInfoList.ForEach(x => BreakTheTask(x)); // sil ve devam et
                 }
                 else
@@ -790,28 +789,32 @@ namespace DiskBackupWpfGUI
             foreach (VolumeInfo item in listViewDiskCloneTarget.SelectedItems)
                 targetVolumes.Add(item);
 
-            bool sameVolume = false;
+            bool controlFlag = false;
             foreach (var sourceVolume in sourceVolumes)
             {
                 foreach (var targetVolume in targetVolumes)
                 {
-                    if (sourceVolume.Letter == targetVolume.Letter)
+                    //if (sourceVolume.Letter == targetVolume.Letter)
+                    //{
+                    //    controlFlag = true;
+                    //    MessageBox.Show(Resources["SameRootDirectory"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+                    //    break;
+                    //}
+                    if (sourceVolume.Size >= targetVolume.FreeSize)
                     {
-                        sameVolume = true;
+                        controlFlag = true;
+                        MessageBox.Show(Resources["sizeConflictMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
                         break;
                     }
                 }
             }
-            if (sameVolume)
-            {
-                MessageBox.Show(Resources["Aynı dizinde klonlama yapılamaz!"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
-            }
         }
 
+        #region Source
         private void HeaderDiskCloneSourceCheckBox_Checked(object sender, RoutedEventArgs e)
         {
             var headerCheckBox = sender as CheckBox;
-            _diskCloneSourceDiskAllControl = true;
+            listViewDiskCloneSource.SelectionMode = SelectionMode.Multiple;
 
             foreach (VolumeInfo item in listViewDiskCloneSource.Items)
             {
@@ -819,81 +822,95 @@ namespace DiskBackupWpfGUI
                 {
                     listViewDiskCloneSource.SelectedItems.Add(item);
                 }
+                else
+                {
+                    listViewDiskCloneSource.SelectedItems.Remove(item);
+                }
+            }
+
+            VolumeInfo selectedVolume = (VolumeInfo)listViewDiskCloneSource.SelectedItem;
+            var myList = new List<VolumeInfo>();
+            foreach (var disk in _diskList)
+            {
+                if (selectedVolume.DiskName != disk.VolumeInfos[0].DiskName)
+                {
+                    var volume = new VolumeInfo();
+                    foreach (var volumeInfoInDisk in disk.VolumeInfos)
+                    {
+                        volume.FreeSize += volumeInfoInDisk.FreeSize;
+                    }
+                    volume.Name = disk.VolumeInfos[0].DiskName;
+                    volume.DiskType = disk.VolumeInfos[0].DiskType;
+                    volume.FileSystem = disk.VolumeInfos[0].FileSystem;
+                    volume.StrFreeSize = FormatBytes(volume.FreeSize);
+                    volume.Size = disk.Size;
+                    volume.StrSize = disk.StrSize;
+                    volume.HealthStatu = HealthSituation.Healthy;
+                    volume.Status = Resources["healthy"].ToString();
+                    myList.Add(volume);
+                }
+            }
+            listViewDiskCloneTarget.ItemsSource = myList;
+
+            for (int i = 0; i < _expanderDiskCloneSourceDiskList.Count; i++)
+            {
+                if ((bool)!_diskCloneSourceExpanderCheckBoxes[i].IsChecked)
+                {
+                    _expanderDiskCloneSourceDiskList[i].IsExpanded = false;
+                    _expanderDiskCloneSourceDiskList[i].IsEnabled = false;
+                }
             }
         }
 
         private void HeaderDiskCloneSourceCheckBox_Unchecked(object sender, RoutedEventArgs e)
         {
-            if (_diskCloneSourceDiskAllControl)
-            {
-                var headerCheckBox = sender as CheckBox;
-                foreach (VolumeInfo item in listViewDiskCloneSource.Items)
-                {
-                    if (item.DiskName.Equals(headerCheckBox.Tag.ToString()))
-                    {
-                        listViewDiskCloneSource.SelectedItems.Remove(item);
-                    }
-                }
-                _diskAllHeaderControl = true;
-            }
-        }
-        private void HeaderDiskCloneTargetCheckBox_Checked(object sender, RoutedEventArgs e)
-        {
             var headerCheckBox = sender as CheckBox;
-            _diskCloneTargetDiskAllControl = true;
-
-            foreach (VolumeInfo item in listViewDiskCloneTarget.Items)
+            foreach (VolumeInfo item in listViewDiskCloneSource.Items)
             {
                 if (item.DiskName.Equals(headerCheckBox.Tag.ToString()))
                 {
-                    listViewDiskCloneTarget.SelectedItems.Add(item);
+                    listViewDiskCloneSource.SelectedItems.Remove(item);
                 }
             }
+            listViewDiskCloneTarget.ItemsSource = null;
+            _diskCloneSourceExpanderCheckBoxes.ForEach(cb => cb.IsEnabled = true);
+            foreach (var item in _expanderDiskCloneSourceDiskList)
+            {
+                item.IsExpanded = true;
+                item.IsEnabled = true;
+            }
+
+            listViewDiskCloneSource.SelectionMode = SelectionMode.Single;
         }
 
-        private void HeaderDiskCloneTargetCheckBox_Unchecked(object sender, RoutedEventArgs e)
+        private void chbDiskCloneSource_Checked(object sender, RoutedEventArgs e)
         {
-            if (_diskCloneTargetDiskAllControl)
+            if (FindParent<ListViewItem>(sender as DependencyObject) != null)
             {
-                var headerCheckBox = sender as CheckBox;
-                foreach (VolumeInfo item in listViewDiskCloneTarget.Items)
+                var myList = new List<VolumeInfo>();
+                VolumeInfo selectedVolume = (VolumeInfo)listViewDiskCloneSource.SelectedItem;
+                foreach (var volumes in _volumeList)
                 {
-                    if (item.DiskName.Equals(headerCheckBox.Tag.ToString()))
+                    if (selectedVolume.Letter != volumes.Letter)
                     {
-                        listViewDiskCloneTarget.SelectedItems.Remove(item);
+                        myList.Add(volumes);
                     }
                 }
-                _diskAllHeaderControl = true;
+                listViewDiskCloneTarget.ItemsSource = myList;
             }
         }
 
-        private void listViewDiskCloneTarget_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void chbDiskCloneSource_Unchecked(object sender, RoutedEventArgs e)
         {
-            if (listViewDiskCloneTarget.SelectedIndex != -1)
+            var dataItem = FindParent<ListViewItem>(sender as DependencyObject);
+            var data = dataItem.DataContext as VolumeInfo; //data seçilen değer
+            listViewDiskCloneTarget.ItemsSource = null;
+            for (int i = 0; i < _diskCloneSourceGroupName.Count; i++)
             {
-                if (listViewDiskCloneTarget.SelectedIndex != -1)
-                    btnDiskCloneStart.IsEnabled = true;
-                //eyüp
-                //burada buton enable disable olacak hatayı engellemek için geçici olarak CreateTask'dan kopyaladım
-            }
-            else
-            {
-                btnDiskCloneStart.IsEnabled = false;
-            }
-        }
-
-        private void listViewDiskCloneSource_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            if (listViewDiskCloneSource.SelectedIndex != -1)
-            {
-                if (listViewDiskCloneSource.SelectedIndex != -1)
-                    btnDiskCloneStart.IsEnabled = true;
-                //eyüp
-                //burada buton enable disable olacak hatayı engellemek için geçici olarak CreateTask'dan kopyaladım
-            }
-            else
-            {
-                btnDiskCloneStart.IsEnabled = false;
+                if (_diskCloneSourceGroupName[i].Equals(data.DiskName))
+                {
+                    _diskCloneSourceExpanderCheckBoxes[i].IsChecked = false;
+                }
             }
         }
 
@@ -905,7 +922,7 @@ namespace DiskBackupWpfGUI
             _expanderDiskCloneSourceDiskList.Add(expander);
             var size = expander.FindName("txtDiskCloneSourceTotalSize") as TextBlock;
             var expanderCheck = expander.FindName("HeaderDiskCloneSourceCheckBox") as CheckBox;
-            _diskCloneSourceCheckBoxes.Add(expanderCheck);
+            _diskCloneSourceExpanderCheckBoxes.Add(expanderCheck);
             var numberOfItems = expander.FindName("txtDiskCloneSourceNumberOfItems") as TextBlock;
             _diskCloneSourceNumberOfItems.Add(Convert.ToInt32(numberOfItems.Text));
             var groupName = expander.FindName("txtDiskCloneSourceGroupName") as TextBlock;
@@ -913,6 +930,87 @@ namespace DiskBackupWpfGUI
             if (_diskList.Count == _diskExpanderIndex)
                 _diskExpanderIndex = 0;
             size.Text = FormatBytes(_diskList[_diskExpanderIndex++].Size);
+        }
+        #endregion
+
+        #region Target
+
+        private void HeaderDiskCloneTargetCheckBox_Checked(object sender, RoutedEventArgs e)
+        {
+            var headerCheckBox = sender as CheckBox;
+            listViewDiskCloneTarget.SelectionMode = SelectionMode.Multiple;
+
+
+            foreach (VolumeInfo item in listViewDiskCloneTarget.Items)
+            {
+                if (item.DiskName.Equals(headerCheckBox.Tag.ToString()))
+                {
+                    listViewDiskCloneTarget.SelectedItems.Add(item);
+                }
+                else
+                {
+                    listViewDiskCloneTarget.SelectedItems.Remove(item);
+                }
+            }
+
+            for (int i = 0; i < _expanderDiskCloneTargetDiskList.Count; i++)
+            {
+
+                if ((bool)!(_diskCloneTargetExpanderCheckBoxes[i].IsChecked))
+                {
+                    _expanderDiskCloneTargetDiskList[i].IsExpanded = false;
+                    _expanderDiskCloneTargetDiskList[i].IsEnabled = false;
+                }
+            }
+        }
+
+        private void HeaderDiskCloneTargetCheckBox_Unchecked(object sender, RoutedEventArgs e)
+        {
+            var headerCheckBox = sender as CheckBox;
+            foreach (VolumeInfo item in listViewDiskCloneTarget.Items)
+            {
+                if (item.DiskName.Equals(headerCheckBox.Tag.ToString()))
+                {
+                    listViewDiskCloneTarget.SelectedItems.Remove(item);
+                }
+            }
+            _diskCloneTargetExpanderCheckBoxes.ForEach(cb => cb.IsEnabled = true);
+            foreach (var item in _expanderDiskCloneTargetDiskList)
+            {
+                item.IsExpanded = true;
+                item.IsEnabled = true;
+            }
+
+            listViewDiskCloneTarget.SelectionMode = SelectionMode.Single;
+
+        }
+
+        private void chbDiskCloneTarget_Unchecked(object sender, RoutedEventArgs e)
+        {
+            var dataItem = FindParent<ListViewItem>(sender as DependencyObject);
+            var data = dataItem.DataContext as VolumeInfo; //data seçilen değer
+
+            for (int i = 0; i < _diskCloneTargetGroupName.Count; i++)
+            {
+                if (_diskCloneTargetGroupName[i].Equals(data.DiskName))
+                {
+                    _diskCloneTargetExpanderCheckBoxes[i].IsChecked = false;
+                }
+            }
+        }
+
+        private void listViewDiskCloneTarget_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (listViewDiskCloneSource.SelectedIndex != -1 && listViewDiskCloneTarget.SelectedIndex != -1)
+            {
+                btnDiskCloneStart.IsEnabled = true;
+                //eyüp
+                //burada buton enable disable olacak hatayı engellemek için geçici olarak CreateTask'dan kopyaladım
+            }
+            else
+            {
+                btnDiskCloneStart.IsEnabled = false;
+            }
         }
 
         private void ExpanderDiskCloneTarget_Loaded(object sender, RoutedEventArgs e)
@@ -923,7 +1021,7 @@ namespace DiskBackupWpfGUI
             _expanderDiskCloneTargetDiskList.Add(expander);
             var size = expander.FindName("txtDiskCloneTargetTotalSize") as TextBlock;
             var expanderCheck = expander.FindName("HeaderDiskCloneTargetCheckBox") as CheckBox;
-            _diskCloneTargetCheckBoxes.Add(expanderCheck);
+            _diskCloneTargetExpanderCheckBoxes.Add(expanderCheck);
             var numberOfItems = expander.FindName("txtDiskCloneTargetNumberOfItems") as TextBlock;
             _diskCloneTargetNumberOfItems.Add(Convert.ToInt32(numberOfItems.Text));
             var groupName = expander.FindName("txtDiskCloneTargetGroupName") as TextBlock;
@@ -932,6 +1030,7 @@ namespace DiskBackupWpfGUI
                 _diskExpanderIndex = 0;
             size.Text = FormatBytes(_diskList[_diskExpanderIndex++].Size);
         }
+        #endregion
 
         #endregion
 
@@ -998,7 +1097,7 @@ namespace DiskBackupWpfGUI
                                     _logger.Error(ex, "Beklenmedik hatadan dolayı {harf} zincir temizleme işlemi gerçekleştirilemedi.", itemLetter);
                                 }
                             }
-                        }           
+                        }
                     }
                     else
                     {
@@ -1726,7 +1825,7 @@ namespace DiskBackupWpfGUI
             {
                 btnRestore.IsEnabled = false;
             }
-        }       
+        }
 
         private void btnRestoreRefreshDisk_Click(object sender, RoutedEventArgs e)
         {
@@ -1839,6 +1938,29 @@ namespace DiskBackupWpfGUI
             {
                 btnFilesDelete.IsEnabled = true;
                 btnFilesBrowse.IsEnabled = true;
+
+                /*BAKILACAK*/
+                BackupInfo backupInfo = (BackupInfo)listViewBackups.SelectedItem;
+
+                txtFilesDriveLetter.Text = backupInfo.Letter.ToString();
+                txtFilesOS.Text = backupInfo.OS;
+                if (backupInfo.DiskType.Equals('M'))
+                    txtFilesBootPartition.Text = "MBR";
+                else
+                    txtFilesBootPartition.Text = "GPT";
+
+                txtFilesVolumeSize.Text = backupInfo.StrVolumeSize;
+                txtFilesUsedSize.Text = backupInfo.StrUsedSize;
+
+                txtFilesDriveLetter.Text = backupInfo.Letter.ToString();
+                txtFilesCreatedDate.Text = backupInfo.CreatedDate.ToString();
+                txtFilesPcName.Text = backupInfo.PCName;
+                txtFilesIpAddress.Text = backupInfo.IpAddress;
+                txtFilesFolderSize.Text = backupInfo.StrFileSize;
+                if (Convert.ToBoolean(backupInfo.OSVolume))
+                    txtFilesBootablePartition.Text = Resources["yes"].ToString();
+                else
+                    txtFilesBootablePartition.Text = Resources["no"].ToString();
             }
             else
             {
@@ -2719,7 +2841,7 @@ namespace DiskBackupWpfGUI
                     //var backupService = _scope.Resolve<IBackupService>();
 
                     //log down
-                    RefreshActivityLogDownAsync(backupService);
+                    //RefreshActivityLogDownAsync();
 
                     // son yedekleme bilgisi
                     RefreshMiddleTaskDateAsync();
@@ -2756,32 +2878,35 @@ namespace DiskBackupWpfGUI
             }
         }
 
-        private async void RefreshActivityLogDownAsync(IBackupService backupService)
+        private void RefreshActivityLogDownAsync()
         {
             _logger.Verbose("RefreshActivityLogDownAsync istekte bulunuldu");
 
-            List<ActivityDownLog> logList = new List<ActivityDownLog>();
+            //List<ActivityDownLog> logList = new List<ActivityDownLog>();
             try
             {
-                logList = await Task.Run(() =>
-                {
-                    return backupService.GetDownLogList();
-                });
+                
+                //txtLogDown.Text = File.ReadAllText(@"C:\ProgramData\NarDiskBackup\NAR_APP_LOG_FILE.txt");
+                //logList = await Task.Run(() =>
+                //{
+                //    return backupService.GetDownLogList();
+                //});
             }
             catch
             {
             }
 
-            if (logList != null)
+            if (txtLogDown.Text != null)
             {
                 _logger.Verbose("RefreshTasks: ActivityLog down yenileniyor");
 
-                foreach (ActivityDownLog item in logList)
-                {
-                    _logList.Add(item);
-                }
+                txtLogDown.Text = File.ReadAllText(@"C:\ProgramData\NarDiskBackup\NAR_APP_LOG_FILE.txt");
+                //foreach (ActivityDownLog item in logList)
+                //{
+                //    _logList.Add(item);
+                //}
 
-                listViewLogDown.Items.Refresh();
+                //listViewLogDown.Items.Refresh();
             }
         }
 
@@ -3162,11 +3287,6 @@ namespace DiskBackupWpfGUI
             listViewTasks.Items.SortDescriptions.Add(new SortDescription(sortBy, newDir));
         }
 
-
-
-
-
         #endregion
-
     }
 }
