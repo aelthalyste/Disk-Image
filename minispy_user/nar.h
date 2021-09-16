@@ -108,7 +108,7 @@ struct nar_log_time{
     // 6 bytes
 };
 
-#if 0
+#if 1
 static HANDLE GlobalLogMutex = 0;
 static void
 NarLog(const char *str, ...){
@@ -137,17 +137,22 @@ NarLog(const char *str, ...){
     int WriteSize = snprintf(big_buffer, sizeof(big_buffer), "%s %s", time_buf, buf);
     
     static bool fileinit = false;
-    static FILE *File = 0;
+    static HANDLE File = INVALID_HANDLE_VALUE;
     if(fileinit == false){
-        File = fopen("C:\\ProgramData\\NarDiskBackup\\NAR_APP_LOG_FILE.txt", "a");
-        //File = fopen("NAR_APP_LOG_FILE.txt", "a");
+        File = CreateFileA("C:\\ProgramData\\NarDiskBackup\\NAR_APP_LOG_FILE.txt", GENERIC_WRITE|GENERIC_READ, FILE_SHARE_READ, 0, OPEN_ALWAYS, 0, 0);
+        
+        LARGE_INTEGER Start  = {};
+        LARGE_INTEGER Result = {};
+        SetFilePointerEx(File, Start, &Result, FILE_END);
+
         fileinit = true;
     }
     
-    if(File){
-        fwrite(big_buffer, 1, WriteSize, File);		
-        fflush(File);
-        OutputDebugStringA(buf);
+    if(File != INVALID_HANDLE_VALUE){
+        DWORD br = 0;
+        WriteFile(File, big_buffer, WriteSize, &br, 0);		
+        FlushFileBuffers(File);
+        //OutputDebugStringA(buf);
     }
     else{
         printf(buf);

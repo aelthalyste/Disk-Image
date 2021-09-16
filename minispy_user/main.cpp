@@ -448,6 +448,12 @@ TEST_MockSaveBootState(){
 int
 wmain(int argc, wchar_t* argv[]) {
     
+    printf("222  test1\n");
+    printf("222  test2\n");
+    printf("222  test3\n");
+    printf("222  test4\n");
+    printf("222  test5\n");
+return 0;
     //TEST_MockSaveBootState();
         
 #if 0    
