@@ -15,7 +15,7 @@ CXX = g++
 #CXX = clang++
 
 EXE = nar_linux
-SOURCES = main.cpp
+SOURCES = main.cpp linux_disk.cpp
 IMGUI_DIR = imgui
 SOURCES += $(IMGUI_DIR)/imgui.cpp $(IMGUI_DIR)/imgui_demo.cpp $(IMGUI_DIR)/imgui_draw.cpp $(IMGUI_DIR)/imgui_tables.cpp $(IMGUI_DIR)/imgui_widgets.cpp
 SOURCES += $(IMGUI_DIR)/backends/imgui_impl_glfw.cpp $(IMGUI_DIR)/backends/imgui_impl_opengl3.cpp
@@ -23,7 +23,7 @@ OBJS = $(addsuffix .o, $(basename $(notdir $(SOURCES))))
 UNAME_S := $(shell uname -s)
 
 CXXFLAGS = -I$(IMGUI_DIR) -I$(IMGUI_DIR)/backends
-CXXFLAGS += -g -Wall -pthread -lglfw libzstd.a -Wno-missing-field-initializers -Wno-unused-function 
+CXXFLAGS += -g -O0 -Wall -pthread -lglfw libzstd.a -Wno-missing-field-initializers -Wno-unused-function  -Wno-write-strings
 LIBS = 
 
 #lglfw3

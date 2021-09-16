@@ -4,7 +4,6 @@
 // Read online: https://github.com/ocornut/imgui/tree/master/docs
 
 
-
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
@@ -12,8 +11,7 @@
 #include <stdio.h>
 #include <vector>
 
-
-
+#include <pthread.h>
 
 // About Desktop OpenGL function loaders:
 //  Modern desktop OpenGL doesn't have a standard portable header file to load OpenGL function pointers.
@@ -90,14 +88,6 @@ app_state PrevState(app_state State){
 	}
 }
 
-struct linux_disks{
-	std::string DiskName; // sda, sdb etc..
-	struct vol_size_name{
-		std::string Name;
-		long int Size;
-	};
-	std::vector<vol_size_name> Volumes; // sda0, sda1, sda3 etc..
-};
 
 long int
 GetFileSize(const char *c){
@@ -114,39 +104,6 @@ GetFileSize(const char *c){
 	return Result;
 }
 
-std::vector<linux_disks>
-GetDisks(){
-	std::vector<linux_disks> Result;
-	
-	std::vector<std::string> SDList;
-	SDList.reserve(100);
-	
-	system("ls /dev > devls.txt");
-	file_read r = NarReadFile("devls.txt");
-	
-	if(r.Data != 0){
-		std::stringstream ss(std::string((char*)r.Data));	
-		FreeFileRead(r);
-
-		std::string temp;
-		while(ss >> temp)
-			if(temp.find("sd", 0) == 0)
-				SDList.push_back(temp);
-							
-	}
-	
-	if(SDList.size() > 0){
-		for(auto &it: SDList)
-			if(it.size() == 3)
-				Result.push_back({it, {}});
-			else
-				Result.back().Volumes.push_back({it,GetFileSize(("/dev/" + it).c_str())});
-	}
-	else{
-		// error unable to find disks in system
-	}
-	return Result;
-}
 
 
 inline uint8_t
@@ -205,22 +162,215 @@ NarGetBackupsInDirectory(const char *arg_dir){
 }
 
 
-std::string
-SelectPartition(){
+// NAME TYPE UUID SIZE FSTYPE MOUNTPOINT
 
-	static bool init = false;
-	static std::vector<linux_disks> disks;			
-	static std::string Result;
+enum LSBLKSlots{
+	LSBLKSlots_NAME   ,
+	LSBLKSlots_TYPE   ,
+	LSBLKSlots_PTTYPE ,
+	LSBLKSlots_SIZE   ,
+	LSBLKSlots_FSTYPE ,
+	LSBLKSlots_MOUNTPOINT ,
+	LSBLKSlots_Count
+};
+
+struct NarLSBLKPartition{
+	std::string Name;
+	std::string FileSystem;
+	std::string MountPoint;	
+	uint64_t Size;
+};
+
+struct NarLSBLKDisk{
+	std::string Name; // sda, sdb, sdc
+	std::string PType;
+	uint64_t Size;
+	std::vector<NarLSBLKPartition> Partitions;
+};
+
+char**
+SplitTokens(char *Input, size_t *OutRLen, nar_arena *Arena, size_t InitialCap);
+
+char**
+SplitToLines(char *Input, size_t ILen, size_t *OutRLen, nar_arena *Arena);
+
+
+std::vector<NarLSBLKDisk>
+NarGetDiskList(){
+
+	// example coommand output as shown below(without headings)
+	// cmd = lsblk -o NAME,TYPE,PTTYPE,SIZE,FSTYPE,MOUNTPOINT -b -r
+
+	/*
+		NAME   TYPE UUID                                          SIZE FSTYPE MOUNTPOINT
+		sda    disk                                       240057409536        
+		├─sda1 part 309869F69869BB4C                         554696704 ntfs   
+		├─sda2 part 866A-33B4                                104857600 vfat   /boot/efi
+		├─sda3 part                                           16777216        
+		└─sda4 part 40B06AEFB06AEB3C                      239379415040 ntfs   /media/bt/40B06AEFB06AEB3C
+		sdb    disk                                      1000204886016        
+		├─sdb1 part A458-06FD                               1073741824 vfat   
+		├─sdb2 part                                           16777216        
+		├─sdb3 part 40B06AEFB06AEB3C                      322122547200 ntfs   
+		└─sdb4 part 085CDDB45CDD9CAE                      676988977152 ntfs   /media/bt/New Volume
+		sdc    disk                                      1000203804160        
+		└─sdc1 part 0d676b96-c3de-41a7-8505-c3ccfcffd6ce 1000201224704 ext4   /
+	*/
+
+	system("lsblk -o NAME,TYPE,PTTYPE,SIZE,FSTYPE,MOUNTPOINT -b -r > slbk.txt");
+
+	std::vector<NarLSBLKDisk> Result;
+
+	file_read FR = NarReadFile("slbk.txt");
+	size_t LineCount = 0;
+	nar_arena Arena = ArenaInit(calloc(1024*32,1), 1024*32, 8);
+
+	char **Lines = SplitToLines((char*)FR.Data, FR.Len, &LineCount, &Arena);
+	for(size_t ILine = 0; ILine < LineCount; ILine++){
+		auto TokenRestore = ArenaGetRestorePoint(&Arena);
+		
+		size_t TokenCount = 0;
+		char **Tokens = SplitTokens(Lines[ILine], &TokenCount, &Arena, 64);
+		
+		if (strcmp(Tokens[LSBLKSlots_TYPE], "disk") == 0) {
+			NarLSBLKDisk Ins = {};
+			Ins.Name 	= Tokens[LSBLKSlots_NAME]   ? Tokens[LSBLKSlots_NAME]   : "";
+			Ins.PType   = Tokens[LSBLKSlots_PTTYPE] ? Tokens[LSBLKSlots_PTTYPE] : "";
+			Ins.Size 	= atoll(Tokens[LSBLKSlots_SIZE] ? Tokens[LSBLKSlots_SIZE] : "");
+			Result.emplace_back(Ins);
+		}
+		else if (strcmp(Tokens[LSBLKSlots_TYPE], "part") == 0) {
+			NarLSBLKDisk *Disk = &Result.back();
+			NarLSBLKPartition Vol = {};
+			Vol.Name       = (Tokens[LSBLKSlots_NAME])       ? Tokens[LSBLKSlots_NAME]       : "";
+			Vol.FileSystem = (Tokens[LSBLKSlots_FSTYPE])     ? Tokens[LSBLKSlots_FSTYPE]     : "";
+			Vol.MountPoint = (Tokens[LSBLKSlots_MOUNTPOINT]) ? Tokens[LSBLKSlots_MOUNTPOINT] : "";
+			Vol.Size       = atoll(Tokens[LSBLKSlots_SIZE] ? Tokens[LSBLKSlots_SIZE] : "");
+			Disk->Partitions.emplace_back(Vol);
+		}
+		else{
+			ASSERT(false);
+		}
+
+		ArenaRestoreToPoint(&Arena, TokenRestore);
+	}
+
+	FreeFileRead(FR);
+	free(Arena.Memory);
+	return Result;
+
+}
+
+
+char**
+SplitTokens(char *Input, size_t *OutRLen, nar_arena *Arena, size_t InitialCap){
 	
-	if(ImGui::Button("Update volume list!\n")) 
+	if(InitialCap == 0){
+		InitialCap = 128;
+	}
+
+	size_t RLen = 0;
+	size_t RCap = InitialCap;	
+	char **Result = (char**)ArenaAllocateZero(Arena, RCap*8);
+
+	for(;*Input == ' '; Input++); // skip first whitespace
+
+
+	char *Start = Input;
+	for(;; Input++){
+		if(*Input == ' ' || *Input == 0){
+			size_t LLen = Input - Start;
+			char *Ins = (char*)ArenaAllocateZero(Arena, LLen + 2);
+			memcpy(Ins, Start, LLen);
+			Result[RLen++] = Ins;
+			Start = (Input) + 1;
+		}
+		if(*Input == 0)
+			break;
+	}
+
+	*OutRLen = RLen;
+	return Result;
+}
+
+
+char**
+SplitToLines(char *Input, size_t ILen, size_t *OutRLen, nar_arena *Arena){
+
+	size_t RLen = 0;
+	size_t RCap = 1024;
+
+	char** Result = 0;
+	Result = (char**)ArenaAllocateZero(Arena, RCap * 8);
+	memset(Result, 0, RCap * 8);
+
+	char *Start = Input;
+	char *End   = Input + ILen;
+	
+	for(; Input != End; Input++){
+		if(*Input == '\n'){
+			size_t LLen = Input - Start;
+			char *Ins = (char*)ArenaAllocateZero(Arena, LLen + 5);//+1 for null termination
+			memcpy(Ins, Start, LLen);
+
+			Result[RLen++] = Ins;
+			ASSERT(RLen <= RCap);
+
+			Start = (Input) + 1;
+		}
+	}
+
+	*OutRLen = RLen;
+	return Result;
+}
+
+
+
+char*
+GetNextLine(char *Input, char *Out, size_t MaxBf, char* InpEnd){
+    size_t i = 0;
+    char *Result = 0;
+
+    for(i =0; Input[i] != '\n' && Input + i < InpEnd; Input++);
+
+    if(i<MaxBf){
+        memcpy(Out, Input, i);
+        Out[i] = 0;
+        if(Input + (i + 2) < InpEnd){
+            Result = &Input[i + 2];
+        }
+    }
+
+    return Result;
+}
+
+
+enum PartitionSelectOption{
+	PartitionSelectOption_DiskOnly,
+	PartitionSelectOption_Partition,
+};
+
+struct PartitionSelectResult{
+	std::string Selection;
+	std::vector<NarLSBLKDisk> Disks;
+};
+
+PartitionSelectResult
+SelectPartition(PartitionSelectOption SelectOption){
+
+	static PartitionSelectResult Result = {};
+	static bool init = false;
+	
+	if(ImGui::Button("Update volume list!\n")) {
 		init = false;
+	}
 	if(false == init){        	        		
-	    disks = GetDisks();
+	    Result.Disks = NarGetDiskList();
         init = true;       		
 	}
     
+
 	ImGui::Separator();
-    static int SelectedRadio = 0;
     static long int SizeGranularity[] = {
         (1024*1024*1024), (1024*1024), (1024), 1
     };
@@ -231,58 +381,151 @@ SelectPartition(){
     ImGui::SameLine();
     if(ImGui::RadioButton("KB", type == SizeGranularity[2])) type = SizeGranularity[2]; 
     ImGui::SameLine();
-    if(ImGui::RadioButton("Raw", type == SizeGranularity[3])) type = SizeGranularity[3]; 
+    if(ImGui::RadioButton("Unformatted", type == SizeGranularity[3])) type = SizeGranularity[3]; 
     
+
+    static int 	SelectedRadio = 0;
+    int ID = -1;
 	
-    if(ImGui::BeginTable("Volume table", 3)){
-    
-		ImGui::TableSetupColumn("##1");
-		ImGui::TableSetupColumn("Name");
-        ImGui::TableSetupColumn("Total size");
-        ImGui::TableHeadersRow();
-        
-        int ID = -1;
-        for(auto &d : disks){
-        	for(auto&v: d.Volumes){
-        		ID++;
-        		ImGui::TableNextRow();  				
-        		ImGui::PushID(ID);
-				
-				ImGui::TableNextColumn();
-				
-        		if(ImGui::RadioButton("##0", &SelectedRadio, ID)){
-        			Result = v.Name;
-        		}
-        		
-				ImGui::TableNextColumn();        					
-        		ImGui::Text(v.Name.c_str());
-        		
-        		ImGui::TableNextColumn();
-        		ImGui::Text("%.1f", (float)v.Size/type);
-        		
-        		ImGui::PopID();
-        	}
+	char HeaderBf[256];
+
+    for(auto &Disk : Result.Disks){
+        	
+      	snprintf(HeaderBf, sizeof(HeaderBf), "name : %s type : %s size : %llu", Disk.Name.c_str(), Disk.PType.c_str(), Disk.Size/type);
+
+       	if(SelectOption == PartitionSelectOption_DiskOnly){
+    		ID++;
+    		char b[32];
+    		sprintf(b, "##%dcheckbox", ID);
+       		if(ImGui::RadioButton(b, &SelectedRadio, ID)){
+       			Result.Selection = Disk.Name;
+       		}
+
+       		ImGui::SameLine();
+       	}
+
+       	if(ImGui::CollapsingHeader(HeaderBf)){
+
+		    if(ImGui::BeginTable("Volume table", 6, ImGuiTableFlags_Borders)){
+
+				ImGui::TableSetupColumn("##1");
+				ImGui::TableSetupColumn("Name");
+				ImGui::TableSetupColumn("Partition type");
+				ImGui::TableSetupColumn("Size");
+				ImGui::TableSetupColumn("File system");
+				ImGui::TableSetupColumn("Mount point");
+			    ImGui::TableHeadersRow();
+
+
+				for(auto&Partition: Disk.Partitions){
+					
+					if(SelectOption == PartitionSelectOption_Partition) ID++;
+					
+	        		ImGui::TableNextRow();
+	        		ImGui::PushID(ID);
+
+					ImGui::TableNextColumn();
+					if(SelectOption == PartitionSelectOption_Partition){
+		        		char b[32];
+		        		sprintf(b, "##%dcheckbox", ID);
+		        		if(ImGui::RadioButton(b, &SelectedRadio, ID)){
+		        			Result.Selection = Partition.Name;
+		        		}					
+					}
+					else{
+						ImGui::Text("--");
+					}
+
+					
+					ImGui::TableNextColumn();        					
+	        		ImGui::Text(Partition.Name.c_str());
+	        		
+	        		ImGui::TableNextColumn();        		
+	        		ImGui::Text(Disk.PType.c_str());
+	        		
+	        		ImGui::TableNextColumn();
+	        		ImGui::Text("%.1f", (float)Partition.Size/type);
+
+	        		ImGui::TableNextColumn();
+	        		ImGui::Text(Partition.FileSystem.c_str());
+	        		
+	        		ImGui::TableNextColumn();
+	        		ImGui::Text(Partition.MountPoint.c_str());
+
+	        		ImGui::PopID();
+	        		
+	        	}
+
+	  	        ImGui::EndTable();
+
+	        }
         }
-        
-        ImGui::EndTable();
+
     }
     
     ImGui::Separator();
+
 	return Result;
+
+}
+
+
+pthread_t Thread;
+volatile size_t RestoreBytesCopiedSoFar = 0;
+volatile int    CancelStream            = 0;
+
+void*
+StreamThread(void *param){
+	restore_stream *RestoreStream = (restore_stream*)param;
+	
+	while (RestoreStream->Error == RestoreStream_Errors::Error_NoError) {
+		size_t BytesProcessed = AdvanceStream(RestoreStream);
+		__sync_fetch_and_add(&RestoreBytesCopiedSoFar, BytesProcessed);		
+		if (CancelStream) {
+			CancelStream = 0;
+			break;
+		}
+	} 
+
+	return 0;
+}
+
+void
+TEST_TOKENIZER(){
+	nar_arena Arena = ArenaInit(calloc(1000000,1), 1000000);
+	char bf[] = "adsf-asf das dffd\n123 123 123 213\n8a-!sf -=2doia jsoq34ij\nak ufdhi a903 12847\n!#]oas dfas\n  5]#2345 ;#2]3;5#;] ]3#;4 5\n";
+	size_t LC = 0;
+	char **Lines = SplitToLines(bf, sizeof(bf), &LC, &Arena);	
+	for(size_t i = 0; i < LC; i++){
+		size_t TokenCount = 0;
+		char **Tokens = SplitTokens(Lines[i], &TokenCount, &Arena, 0);
+		for(int ti = 0; ti<TokenCount; ti++){
+			printf("%s\n",Tokens[ti]);
+		}
+	}
 }
 
 
 int main(int, char**)
 {
 
-	if(0){
-		const char fn[] = "/media/lubuntu/New Volume/Disk-Image/build/minispy_user/NAR_M_0-F19704356773431269.narmd";	
-		FILE *F = fopen(fn, "rb");
-		if(NULL!=F) std::cout<<"succ opened file"<<fn<<"\n";
-		else std::cout<<"unable to open file "<<fn<<"\n";
-		fclose(F);
+	#if 0
+	std::vector<NarLSBLKDisk> Disks = NarGetDiskList();
+	for(int i =0; i<Disks.size(); i++){
+		printf("%s %llu %s\n", Disks[i].Name.c_str(), Disks[i].Size, Disks[i].PType.c_str());
+		for(int j = 0; j<Disks[i].Partitions.size(); j++){
+			NarLSBLKPartition *P = &Disks[i].Partitions[j];
+			printf("-- #PNAME:%s #SIZE:%llu #FS:%s #MP:%s\n",
+				P->Name.c_str(), 
+				P->Size, 
+				P->FileSystem.c_str(), 
+				P->MountPoint.c_str()
+			);
+		}
 	}
-	//std::cout<<sizeof(backup_metadata)<<std::endl;
+	#endif
+
+
 	
     // Setup window
     glfwSetErrorCallback(glfw_error_callback);
@@ -379,7 +622,6 @@ int main(int, char**)
 	std::vector<backup_metadata> Backups;
 	int BackupButtonID = -1;
 	std::string SelectedVolume = "/dev/!";
-	size_t TargetSize;
 	nar_backup_id SelectedID;
 	int SelectedVersion;
 	std::string TargetPartition;
@@ -389,8 +631,6 @@ int main(int, char**)
 	void* ArenaMemory = malloc(ArenaSize);
 	ASSERT(ArenaSize);
 	Arena = ArenaInit(ArenaMemory, ArenaSize);
-
-	size_t RestoreBytesCopiedSoFar = 0;
 
 	restore_target *Target = NULL;
 	restore_stream *RestoreStream = NULL;
@@ -404,15 +644,15 @@ int main(int, char**)
         // - When io.WantCaptureKeyboard is true, do not dispatch keyboard input data to your main application.
         // Generally you may always pass all inputs to dear imgui, and hide them from your application based on those two flags.
         glfwPollEvents();
-
-        // Start the Dear ImGui frame
+		// Start the Dear ImGui frame
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
         // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
-        //if (show_demo_window)
-        //    ImGui::ShowDemoWindow(&show_demo_window);
+        bool show_demo_window = true;
+        if (show_demo_window)
+            ImGui::ShowDemoWindow(&show_demo_window);
 
         // 2. Show a simple window that we create ourselves. We use a Begin/End pair to created a named window.
         {
@@ -512,120 +752,222 @@ int main(int, char**)
 				
         	}
         	else if(AppState == app_state_select_restore_type){
-				
-				if(Backups[BackupButtonID].IsOSVolume){
-					
-					if(ImGui::Button("Restore as bootable partition")){
-						AppState = app_state_select_disk;					
-					}
-					if(ImGui::Button("Restore data only")){
-						AppState = app_state_select_volume;
-					}
-									
+				if(ImGui::Button("Restore without formatting the disk")){
+					AppState = app_state_select_disk;
 				}
-				else{
+				if(ImGui::Button("Fresh install (THIS OPTION CAUSE SELECTED DISK TO BE WIPED")){
 					AppState = app_state_select_volume;
-				}
-				
+				}				
         	}
         	else if(AppState == app_state_select_disk){
-				
-				TargetPartition = SelectPartition();
-				ImGui::Text("%s", TargetPartition.c_str());
-				long int PartitionSize = GetFileSize(("/dev/" + TargetPartition).c_str());
-				static bool popup = false;				
-						
+
+				auto SelectionResult = SelectPartition(PartitionSelectOption_Partition);
+				TargetPartition      = SelectionResult.Selection;
+				static bool SizePopup = false;
+
 				if(ImGui::Button("Restore")){
+
+					long int PartitionSize = 0;
+					for(auto &Disk : SelectionResult.Disks){
+						if(TargetPartition == Disk.Name){
+							PartitionSize = Disk.Size;
+						}
+					}
 					
+
 					if((long long unsigned int)PartitionSize < Backups[BackupButtonID].VolumeTotalSize){
 						ImGui::OpenPopup("Size error!##");
-						popup = true;	
+						SizePopup = true;	
 					}
 					else{
+						/*
+					
+						# parted -s /dev/sdb mklabel gpt
+						# parted -s /dev/sdb mkpart primary fat32 0% 512MiB
+						# parted -s /dev/sdb mkpart primary linux-swap 1048576s 16GiB
+						# parted -s /dev/sdb mkpart primary ext4 16GiB 40%
+						# parted -s /dev/sdb mkpart primary ext4 40% 60%
+						# parted -s /dev/sdb mkpart primary ext4 60% 100%
+						# parted -s /dev/sdb name 1 EFI-Boot
+						# parted -s /dev/sdb name 2 Swap
+						# parted -s /dev/sdb name 3 root
+						# parted -s /dev/sdb name 4 /opt
+						# parted -s /dev/sdb name 5 /home
+						# parted -s /dev/sdb set 1 esp on
+						
+						*/
+						// @TODO(Batuhan) format and create new partitions, then assign targetpartition to newly created one
 						AppState = app_state_restore_preview;
 					}
-            		
+                	
 				}
-				
-				static ImVec2 PopupSize = {350, 120}; 
-				ImGui::SetNextWindowSize(PopupSize);
-				if (ImGui::BeginPopupModal("Size error!##", &popup, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse)){
-        			ImGui::Text("Backup can't fit that partition!");
-        			ImGui::Text("Select partition with at least %I64llu bytes.", Backups[BackupButtonID].VolumeTotalSize);
-        			if(ImGui::Button("Close##Size error"))
-						popup = false;
-        			ImGui::EndPopup();
-    			}
-					
-				
+
         	}
         	else if(AppState == app_state_select_volume){
+
 				//ImGui::Text("%s", RestoreInf.TargetPartition.c_str());
-				TargetPartition 		= SelectPartition();
-				long int PartitionSize 	= GetFileSize(("/dev/" + TargetPartition).c_str());
-				static bool popup = false;				
-						
+				auto SelectionResult = SelectPartition(PartitionSelectOption_DiskOnly);
+				TargetPartition      = SelectionResult.Selection;
+				static bool SizePopup = false;				
+				static bool BootPopup = false;
+				static ImVec2 PopupSize = {350, 120};
+
 				if(ImGui::Button("Restore")){
-					
+
+					long int PartitionSize 	= 0;
+					NarLSBLKDisk SelectedDisk = {};
+					for(auto &Disk : SelectionResult.Disks){
+						for(auto &Partition : Disk.Partitions){
+							if(Partition.Name == TargetPartition){
+								PartitionSize = Partition.Size;
+								SelectedDisk = Disk;
+								goto R_CHECK;
+							}
+						}
+					}
+
+					R_CHECK:;
 					if((long long unsigned int)PartitionSize < Backups[BackupButtonID].VolumeTotalSize){
 						ImGui::OpenPopup("Size error!##");
-						popup = true;	
+						SizePopup = true;	
 					}
 					else{
+						bool ValidDisk = false;
+						for(auto &Parts : SelectedDisk.Partitions){
+							if(Parts.MountPoint == "/boot/efi" && Parts.FileSystem == "fat32"){
+								ValidDisk = true;
+								break;
+							}
+						}
+						
+						if(false == ValidDisk){
+
+						}
+
+
 						AppState = app_state_restore_preview;
 					}
                 	
 				}
 				
-				static ImVec2 PopupSize = {350, 120}; 
+
 				ImGui::SetNextWindowSize(PopupSize);
-				if (ImGui::BeginPopupModal("Size error!##", &popup, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse)){
+				if (ImGui::BeginPopupModal("Size error!##", &SizePopup, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse)){
             		ImGui::Text("Backup can't fit that partition!");
             		ImGui::Text("Select partition with at least %I64llu bytes.", Backups[BackupButtonID].VolumeTotalSize);
             		if(ImGui::Button("Close##Size error"))
-						popup = false;
+						SizePopup = false;
             		ImGui::EndPopup();
         		}
+
+				ImGui::SetNextWindowSize(PopupSize);
+				if (ImGui::BeginPopupModal("Boot partition error!##", &BootPopup, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse)){
+            		ImGui::Text("Could not detect appropriate boot partition to bind selected partition!");
+            		ImGui::Text("Select disk with appropriate configuration.", Backups[BackupButtonID].VolumeTotalSize);
+            		if(ImGui::Button("Close##boot part error"))
+						BootPopup = false;
+            		ImGui::EndPopup();
+        		}
+
         		
         	}
         	else if(AppState == app_state_restore_preview){
         		RestoreBytesCopiedSoFar = 0;
 
 				if(ImGui::Button("Start restore##go to restore in work")){
+
 					Arena 		= ArenaInit(ArenaMemory, ArenaSize);
 					Target 		= InitVolumeTarget("/dev/" + TargetPartition, &Arena);
 					AppState 	= app_state_restore_in_work;
 					std::string Path;
 					GenerateMetadataName(Backups[BackupButtonID].ID, Backups[BackupButtonID].Version, Path);
+					
+					RestoreBytesCopiedSoFar = 0;
+					CancelStream            = 0;
 
 					RestoreStream = InitFileRestoreStream(std::string(BackupDir) + "/" + Path, Target, &Arena, Megabyte(8));
+    				
+    				int evalue = pthread_create(&Thread,
+                          NULL,
+                          StreamThread,
+                          RestoreStream);
+    				
+    				if(evalue == EAGAIN){
+    					fprintf(stderr, "PTHREAD_CREATE EGAIN ERROR\n");
+    				}
+    				if(evalue == EINVAL){
+    					fprintf(stderr, "INVALID PARAMETER PASSED TO PTHREAD_CREATE\n");
+    				}
+    				if(evalue == EPERM){
+    					fprintf(stderr, "PTHREAD_CREATE EPERM ERROR\n");
+    				}
+
+
 				}
         	}
         	else if(AppState == app_state_restore_in_work){
  				
-
- 				if(RestoreStream->Error == RestoreStream_Errors::Error_NoError){
-	        		size_t BytesProcessed = AdvanceStream(RestoreStream);
-	        		RestoreBytesCopiedSoFar += BytesProcessed;
- 				}
- 				// error occured
- 				else{
+ 				if(RestoreStream->Error != RestoreStream_Errors::Error_NoError){
  					char msg_buffer[128];
  					snprintf(msg_buffer, sizeof(msg_buffer), "Error occured, error codes: %d, %d\n", RestoreStream->Error, RestoreStream->SrcError);
  					ImGui::Text(msg_buffer);
  					ImGui::Text("Please report situation to destek@narbulut.com");
  					if(ImGui::Button("Start over")){
+ 						FreeRestoreStream(RestoreStream);
  						AppState = app_state_select_backup;
- 					}
+ 					} 					
  				}
+
  				ImGui::Text("Bytes copied : %I64llu, left : %I64llu, percentage %.4f", 
  					RestoreBytesCopiedSoFar, 
- 					RestoreStream->BytesToBeCopied- RestoreBytesCopiedSoFar, 
+ 					RestoreStream->BytesToBeCopied - RestoreBytesCopiedSoFar, 
  					(double)RestoreBytesCopiedSoFar/(double)RestoreStream->BytesToBeCopied
  					);
+
+
+ 				if (ImGui::Button("Cancel")) {
+ 					CancelStream = 1;
+					int evalue = pthread_join(Thread, 0);
+
+					char *msg = 0;
+ 					if (EDEADLK == evalue) {
+ 						msg = "EDEADLK";
+ 					}
+ 					if (EINVAL == evalue){
+ 						msg = "EINVAL";
+ 					}
+ 					if(ESRCH == evalue){
+ 						msg = "ESRCH";
+ 					}
+
+ 					if(msg){
+ 						fprintf(stderr, "pthread_join failed with code %s\n", msg);
+ 					}
+
+ 					FreeRestoreStream(RestoreStream);
+ 					AppState = app_state_select_backup;
+ 				}
            		
         	}
         	else if(AppState == app_state_done){
+				FreeRestoreStream(RestoreStream);
+				int evalue = pthread_join(Thread, 0);
+				char *msg = 0;
+
+				if (EDEADLK == evalue) {
+					msg = "EDEADLK";
+				}
+				if (EINVAL == evalue){
+					msg = "EINVAL";
+				}
+				if(ESRCH == evalue){
+					msg = "ESRCH";
+				}
+
+				if(msg){
+					fprintf(stderr, "pthread_join failed with code %s\n", msg);
+				}
+
         		ImGui::Text("Done\n");
         	}
 			
