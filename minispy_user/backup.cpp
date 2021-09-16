@@ -1948,6 +1948,9 @@ SaveMetadata(char Letter, int Version, int ClusterSize, BackupType BT,
         printf("Couldn't create metadata file : %s\n", MetadataFilePath.c_str());
         goto Exit;
     }
+    else{
+        printf("Metadata save location %S\n", MetadataFilePath.c_str());
+    }
     
     printf("Metadata name generated %S\n", MetadataFilePath.c_str());
     

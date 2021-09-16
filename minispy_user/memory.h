@@ -118,7 +118,7 @@ NarInitPool(void *Memory, uint32_t MemorySize, uint32_t PoolSize){
     Result.PoolSize        = PoolSize;
     Result.EntryCount      = MemorySize / PoolSize;
     
-    for(size_t i = 0; i < Result.EntryCount - 1; i++){
+    for(size_t i = 0; i < (size_t)(Result.EntryCount - 1); i++){
         nar_pool_entry *entry = (nar_pool_entry*)((char*)Memory + (PoolSize * i));
         entry->Next           = (nar_pool_entry*)((char*)entry + PoolSize);
     }

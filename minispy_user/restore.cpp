@@ -506,6 +506,7 @@ NarWriteVolume(restore_target* Rt, const void* Mem, size_t MemSize) {
     ASSERT(Ret == 1);
     if(Ret == 0){
         NarErrDesc = strerror(NarErrorNo);
+        NAR_DEBUG("%s\n", NarErrDesc);
     }
     return MemSize;
 }

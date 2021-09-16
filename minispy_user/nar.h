@@ -99,15 +99,16 @@ struct nar_backup_id{
 
 
 struct nar_log_time{
-    BYTE YEAR; // 2000 + YEAR is the actual value
-    BYTE MONTH;
-    BYTE DAY;
-    BYTE HOUR;
-    BYTE MIN;
-    BYTE SEC;
+    uint8_t YEAR; // 2000 + YEAR is the actual value
+    uint8_t MONTH;
+    uint8_t DAY;
+    uint8_t HOUR;
+    uint8_t MIN;
+    uint8_t SEC;
     // 6 bytes
 };
 
+#if 0
 static HANDLE GlobalLogMutex = 0;
 static void
 NarLog(const char *str, ...){
@@ -154,12 +155,11 @@ NarLog(const char *str, ...){
     
     
     
-    
 }
 
 
 #define printf(fmt, ...) NarLog(fmt, __VA_ARGS__)
-
+#endif
 
 
 
@@ -423,8 +423,8 @@ GenerateMetadataNameUTF8(nar_backup_id ID, int32_t Version, NarUTF8 *Out){
     
     // 27
     int ChWritten = snprintf(Bf, sizeof(Bf), "NB_M_%s-%c%02d%02d%02d%02d.nbfsm", VersionBf, ID.Letter, ID.Month, ID.Day, ID.Hour, ID.Min);
-    ASSERT(ChWritten <= Out->Cap);
-    if(ChWritten <= Out->Cap){
+    ASSERT(ChWritten <= (int)Out->Cap);
+    if(ChWritten <= (int)Out->Cap){
         memset(Out->Str, 0, Out->Cap);
         memcpy(Out->Str, Bf, ChWritten);
         Out->Len = ChWritten;
@@ -457,8 +457,8 @@ GenerateBinaryFileNameUTF8(nar_backup_id ID, int32_t Version, NarUTF8 *Out){
     
     // 27
     int ChWritten = snprintf(Bf, sizeof(Bf), "NB_%s-%c%02d%02d%02d%02d.nbfsf", VersionBf, ID.Letter, ID.Month, ID.Day, ID.Hour, ID.Min);
-    ASSERT(ChWritten <= Out->Cap);
-    if(ChWritten <= Out->Cap){
+    ASSERT(ChWritten <= (int)Out->Cap);
+    if(ChWritten <= (int)Out->Cap){
         memset(Out->Str, 0, Out->Cap);
         memcpy(Out->Str, Bf, ChWritten);
         Out->Len = ChWritten;

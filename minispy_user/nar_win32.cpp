@@ -1342,7 +1342,7 @@ NarConsumeNextToken(char *Input, char *Out, size_t MaxBf, char* End){
     }
     
     while(Input < End){
-        if(*Input == ' ' && *Input != '\t' && *Input != '\n' && *Input != '\r') {
+        if(*Input != ' ' && *Input != '\t' && *Input != '\n' && *Input != '\r') {
             Input++;
         }
         else {

@@ -449,10 +449,7 @@ int
 wmain(int argc, wchar_t* argv[]) {
     
     //TEST_MockSaveBootState();
-    
-    return 0;
-    printf("hello world %s\n", "ajklsdfhakjsdf");
-    
+        
 #if 0    
     uint32_t s1, s2;
     auto vh = NarOpenVolume('C');
@@ -466,7 +463,7 @@ wmain(int argc, wchar_t* argv[]) {
     return 0;
 #endif
     
-    {
+    if(0){
         auto Ctx = SetupFullOnlyStream('C', new DotNetStreamInf, false, true);
         void *tb = malloc(Megabyte(32));
         size_t br = 0;
@@ -485,10 +482,6 @@ wmain(int argc, wchar_t* argv[]) {
     
     //TEST_MockSaveBootState();
     
-    return 0;
-    auto Ctx = NarLoadBootState();
-    return 0;
-    
 #if 0    
     {
         char Bf[1024];
@@ -503,8 +496,6 @@ wmain(int argc, wchar_t* argv[]) {
         FindVolumeClose(Iter); 
     }
 #endif
-    
-    return 0;
     
 #if 0    
     {
@@ -733,7 +724,7 @@ wmain(int argc, wchar_t* argv[]) {
                 if(file != INVALID_HANDLE_VALUE){
                     uint64_t ucs = 0;
                     printf("starting backup\n");
-#if 1                    
+#if 0                    
                     loop{
                         int Read = ReadStream(&v->Stream, MemBuf, bsize);
                         TotalRead += Read;
@@ -763,11 +754,11 @@ wmain(int argc, wchar_t* argv[]) {
                     
                     
                     if(CheckStreamCompletedSuccessfully(v)){
-                        TerminateBackup(v, NAR_SUCC, 0);
+                        TerminateBackup(v, NAR_SUCC, L"T:\\llvm\\");
                     }
                     else{
                         NAR_BREAK;
-                        TerminateBackup(v, NAR_FAILED, 0);
+                        TerminateBackup(v, NAR_FAILED, L"T:\\llvm\\");
                     }
                     
                     NarSaveBootState(&C);
