@@ -34,6 +34,7 @@ namespace DiskBackupWpfGUI
         private bool _storegeAllControl = false;
         private bool _viewBackupsAllControl = false;
         private bool _tasksAllControl = false;
+        private bool _diskCloneIsDiskSelected = false; //diskClone ekranında disk seçilip seçilmediğini kontrol ediyor. 
 
         private List<CheckBox> _expanderCheckBoxes = new List<CheckBox>();
         private List<CheckBox> _restoreExpanderCheckBoxes = new List<CheckBox>();
@@ -159,6 +160,8 @@ namespace DiskBackupWpfGUI
 
             Initilaze();
 
+            //StreamReader sr = new StreamReader(@"C:\ProgramData\NarDiskBackup\NAR_APP_LOG_FILE.txt");
+            //Console.WriteLine(sr.ReadToEnd());
             this.Closing += (sender, e) => _cancellationTokenSource.Cancel();
             Console.WriteLine("CTOR SON: " + DateTime.Now);
         }
@@ -342,9 +345,9 @@ namespace DiskBackupWpfGUI
             pbLoading.Visibility = Visibility.Collapsed;
             pbLoading.IsIndeterminate = false;
             RefreshTasks(_cancellationTokenSource.Token, backupService);
-            Console.WriteLine("Initilaze son: " + DateTime.Now);
             LicenseController();
             RefreshDemoDays(_cancellationTokenSource.Token);
+            Console.WriteLine("Initilaze son: " + DateTime.Now);
         }
 
         public async Task GetBackupStoragesAsync(List<VolumeInfo> volumeList)
@@ -444,12 +447,10 @@ namespace DiskBackupWpfGUI
             _logger.Verbose("ShowActivityLogDownAsync metoduna istekte bulunuldu");
             try
             {
-                txtLogDown.Text = File.ReadAllText(@"C:\ProgramData\NarDiskBackup\NAR_APP_LOG_FILE.txt");
-                //_logList = await Task.Run(() =>
-                //{
-                //    return backupService.GetDownLogList();
-                //});
-                //listViewLogDown.ItemsSource = _logList;
+                if (File.Exists(@"C:\ProgramData\NarDiskBackup\NAR_APP_LOG_FILE.txt"))
+                {
+                    txtLogDown.Text = File.ReadAllText(@"C:\ProgramData\NarDiskBackup\NAR_APP_LOG_FILE.txt");
+                }
             }
             catch (Exception e)
             {
@@ -814,8 +815,8 @@ namespace DiskBackupWpfGUI
         private void HeaderDiskCloneSourceCheckBox_Checked(object sender, RoutedEventArgs e)
         {
             var headerCheckBox = sender as CheckBox;
+            _diskCloneIsDiskSelected = true;
             listViewDiskCloneSource.SelectionMode = SelectionMode.Multiple;
-
             foreach (VolumeInfo item in listViewDiskCloneSource.Items)
             {
                 if (item.DiskName.Equals(headerCheckBox.Tag.ToString()))
@@ -827,7 +828,14 @@ namespace DiskBackupWpfGUI
                     listViewDiskCloneSource.SelectedItems.Remove(item);
                 }
             }
-
+            for (int i = 0; i < _expanderDiskCloneSourceDiskList.Count; i++)
+            {
+                if ((bool)!_diskCloneSourceExpanderCheckBoxes[i].IsChecked)
+                {
+                    _expanderDiskCloneSourceDiskList[i].IsExpanded = false;
+                    _expanderDiskCloneSourceDiskList[i].IsEnabled = false;
+                }
+            }
             VolumeInfo selectedVolume = (VolumeInfo)listViewDiskCloneSource.SelectedItem;
             var myList = new List<VolumeInfo>();
             foreach (var disk in _diskList)
@@ -851,19 +859,11 @@ namespace DiskBackupWpfGUI
                 }
             }
             listViewDiskCloneTarget.ItemsSource = myList;
-
-            for (int i = 0; i < _expanderDiskCloneSourceDiskList.Count; i++)
-            {
-                if ((bool)!_diskCloneSourceExpanderCheckBoxes[i].IsChecked)
-                {
-                    _expanderDiskCloneSourceDiskList[i].IsExpanded = false;
-                    _expanderDiskCloneSourceDiskList[i].IsEnabled = false;
-                }
-            }
         }
 
         private void HeaderDiskCloneSourceCheckBox_Unchecked(object sender, RoutedEventArgs e)
         {
+            _diskCloneIsDiskSelected = false;
             var headerCheckBox = sender as CheckBox;
             foreach (VolumeInfo item in listViewDiskCloneSource.Items)
             {
@@ -872,7 +872,6 @@ namespace DiskBackupWpfGUI
                     listViewDiskCloneSource.SelectedItems.Remove(item);
                 }
             }
-            listViewDiskCloneTarget.ItemsSource = null;
             _diskCloneSourceExpanderCheckBoxes.ForEach(cb => cb.IsEnabled = true);
             foreach (var item in _expanderDiskCloneSourceDiskList)
             {
@@ -881,22 +880,27 @@ namespace DiskBackupWpfGUI
             }
 
             listViewDiskCloneSource.SelectionMode = SelectionMode.Single;
+
+            listViewDiskCloneTarget.ItemsSource = null;
         }
 
         private void chbDiskCloneSource_Checked(object sender, RoutedEventArgs e)
         {
-            if (FindParent<ListViewItem>(sender as DependencyObject) != null)
+            if (!_diskCloneIsDiskSelected)
             {
-                var myList = new List<VolumeInfo>();
-                VolumeInfo selectedVolume = (VolumeInfo)listViewDiskCloneSource.SelectedItem;
-                foreach (var volumes in _volumeList)
+                if (FindParent<ListViewItem>(sender as DependencyObject) != null)
                 {
-                    if (selectedVolume.Letter != volumes.Letter)
+                    var myList = new List<VolumeInfo>();
+                    VolumeInfo selectedVolume = (VolumeInfo)listViewDiskCloneSource.SelectedItem;
+                    foreach (var volumes in _volumeList)
                     {
-                        myList.Add(volumes);
+                        if (selectedVolume.Letter != volumes.Letter)
+                        {
+                            myList.Add(volumes);
+                        }
                     }
+                    listViewDiskCloneTarget.ItemsSource = myList;
                 }
-                listViewDiskCloneTarget.ItemsSource = myList;
             }
         }
 
@@ -904,7 +908,6 @@ namespace DiskBackupWpfGUI
         {
             var dataItem = FindParent<ListViewItem>(sender as DependencyObject);
             var data = dataItem.DataContext as VolumeInfo; //data seçilen değer
-            listViewDiskCloneTarget.ItemsSource = null;
             for (int i = 0; i < _diskCloneSourceGroupName.Count; i++)
             {
                 if (_diskCloneSourceGroupName[i].Equals(data.DiskName))
@@ -912,6 +915,7 @@ namespace DiskBackupWpfGUI
                     _diskCloneSourceExpanderCheckBoxes[i].IsChecked = false;
                 }
             }
+            listViewDiskCloneTarget.ItemsSource = null;
         }
 
         private void ExpanderDiskCloneSource_Loaded(object sender, RoutedEventArgs e)
@@ -2881,11 +2885,12 @@ namespace DiskBackupWpfGUI
         private void RefreshActivityLogDownAsync()
         {
             _logger.Verbose("RefreshActivityLogDownAsync istekte bulunuldu");
-
+            StreamReader stream = new StreamReader(@"C:\ProgramData\NarDiskBackup\NAR_APP_LOG_FILE.txt");
             //List<ActivityDownLog> logList = new List<ActivityDownLog>();
             try
             {
-                
+                txtLogDown.Text = stream.ReadToEnd();
+
                 //txtLogDown.Text = File.ReadAllText(@"C:\ProgramData\NarDiskBackup\NAR_APP_LOG_FILE.txt");
                 //logList = await Task.Run(() =>
                 //{
@@ -2900,7 +2905,7 @@ namespace DiskBackupWpfGUI
             {
                 _logger.Verbose("RefreshTasks: ActivityLog down yenileniyor");
 
-                txtLogDown.Text = File.ReadAllText(@"C:\ProgramData\NarDiskBackup\NAR_APP_LOG_FILE.txt");
+                txtLogDown.Text += stream.ReadToEnd();
                 //foreach (ActivityDownLog item in logList)
                 //{
                 //    _logList.Add(item);
