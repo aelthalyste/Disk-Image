@@ -13,9 +13,9 @@
         BorderBrush="#194771" BorderThickness="1"
         Height="730" Width="1294"
         ResizeMode="CanMinimize">
-    <Window.Resources>
+    <!--<Window.Resources>
         <ResourceDictionary Source="Resources\Lang\string_tr.xaml"/>
-    </Window.Resources>
+    </Window.Resources>-->
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="30"/>
