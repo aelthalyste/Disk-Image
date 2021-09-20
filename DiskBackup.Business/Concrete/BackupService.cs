@@ -399,7 +399,6 @@ namespace DiskBackup.Business.Concrete
             return 3;
         }
 
-        // Tüm dosyalar aynı dizinde mi kontrolü yap
         private bool ChainInTheSameDirectory(List<BackupMetadata> backupMetadataList, BackupMetadata backupMetadata)
         {
             _logger.Verbose("ChainInTheSameDirectory metodu çağırıldı");
@@ -1036,6 +1035,48 @@ namespace DiskBackup.Business.Concrete
             // backup bir dosyaya yaziliyorsa, daha sonradan restore edilecekse metadatanin kayit edilmesi gerekiyor. true verilmeli arguman
             DiskTracker.CW_TerminateFullOnlyBackup(ID, true, taskInfo.BackupStorageInfo.Path);
             _logger.Information("Full backup işlemi tamamlandı.");
+            return 1;
+        }
+
+        public int DiskClone(char targetLetter)
+        {
+            StreamInfo Inf = new StreamInfo();
+            var id = DiskTracker.CW_SetupDiskCloneStream(Inf, targetLetter);
+
+            // Volume a yazmak icin acmaniz lazim, nasil olur bilmiyorum .NET de, gerekli kodu file.create ile degistirirsiniz.
+            var output = File.Open(@"\\.\H:", FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite);
+            unsafe
+            {
+                _logger.Error("DİSK CLONE 1. ADIM");
+                uint buffersize = 1024 * 1024 * 64;
+                byte[] buffer = new byte[buffersize];
+                fixed (byte* baddr = &buffer[0])
+                {
+                    _logger.Error("DİSK CLONE 2. ADIM WHİLE ÖNCESİ");
+                    while (true)
+                    {
+                        var ReadResult = DiskTracker.CW_ReadFullOnlyStream(id, baddr, buffersize);
+                        if (ReadResult.Error != BackupStream_Errors.Error_NoError)
+                        {
+                            _logger.Error("DİSK CLONE BREAK 1. ADIM");
+                            break;
+                        }
+                        if (ReadResult.WriteSize == 0)
+                        {
+                            _logger.Error("DİSK CLONE BREAK 2. ADIM");
+                            break;
+                        }
+
+                        output.Seek((long)ReadResult.ReadOffset, SeekOrigin.Begin);
+                        output.Write(buffer, 0, (int)ReadResult.WriteSize);
+                    }
+                    _logger.Error("DİSK CLONE 3. ADIM WHİLE SONU");
+                }
+            }
+
+            // disk klonlaniyorsa metadatanin kayit edilmesine gerek yok, false verilerek hizlica tamamlanabilir islem.
+            DiskTracker.CW_TerminateFullOnlyBackup(id, false, "path");
+            Console.WriteLine("done!");
             return 1;
         }
 

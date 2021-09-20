@@ -805,7 +805,7 @@ namespace DiskBackupWpfGUI
             {
                 foreach (var targetVolume in targetVolumes)
                 {
-                    if (sourceVolume.Size >= targetVolume.FreeSize)
+                    if (sourceVolume.Size >= targetVolume.Size)
                     {
                         controlFlag = true;
                         MessageBox.Show(Resources["sizeConflictMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
@@ -813,6 +813,8 @@ namespace DiskBackupWpfGUI
                     }
                 }
             }
+            var backupService = _scope.Resolve<IBackupService>();
+            backupService.DiskClone('F');
 
         }
 
@@ -2849,9 +2851,6 @@ namespace DiskBackupWpfGUI
                     _logger.Verbose("RefreshTasks istekte bulunuldu");
                     //var backupService = _scope.Resolve<IBackupService>();
 
-                    //log down
-                    RefreshActivityLogDown(fileStream);
-
                     // son yedekleme bilgisi
                     RefreshMiddleTaskDateAsync();
 
@@ -2886,41 +2885,7 @@ namespace DiskBackupWpfGUI
 
             }
         }
-
-        private async void RefreshActivityLogDown(FileStream fileStream)
-        {
-            //_logger.Verbose("RefreshActivityLogDown'a istekte bulunuldu");
-            //try
-            //{
-            //    if (fileStream != null)
-            //    {
-            //        StreamReader streamReader = new StreamReader(fileStream);
-            //        txtLogDown.Text = await streamReader.ReadToEndAsync();
-            //    }
-            //}
-            //catch (Exception ex)
-            //{
-            //    Console.WriteLine("RefreshTasks: ActivityLog down yenilenemedi!" + ex);
-            //    _logger.Error("RefreshTasks: ActivityLog down yenilenemedi!" + ex);
-            //}
-
-            //if (txtLogDown.Text != null)
-            //{
-            //    var time = DateTime.Now;
-            //    Console.WriteLine("----->Log Yenileme geldi : " + DateTime.Now.ToString());
-            //    _logger.Verbose("RefreshTasks: ActivityLog down yenileniyor");
-            //    if (fileStream != null)
-            //    {
-            //        Console.WriteLine("----->Log Yenileme 1 : " + DateTime.Now.ToString());
-            //        StreamReader streamReader = new StreamReader(fileStream);
-            //        txtLogDown.Text = await streamReader.ReadToEndAsync();
-            //        Console.WriteLine("----->Log Yenileme 2 : " + DateTime.Now.ToString());
-            //        var usedTime = DateTime.Now;
-            //        Console.WriteLine("----->Log Yenileme 3 : " + (usedTime - time).TotalMilliseconds.ToString());
-            //    }
-            //}
-        }
-
+      
         private async void RefreshMiddleTaskDateAsync()
         {
             _logger.Verbose("RefreshMiddleTaskDateAsync istekte bulunuldu");
