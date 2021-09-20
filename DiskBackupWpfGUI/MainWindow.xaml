@@ -1663,9 +1663,9 @@
                         </StackPanel>
                     </DockPanel>
                     <DockPanel Grid.Row="1" Grid.ColumnSpan="2">
-                        <TextBox  Name="txtLogDown" Margin="5,5,10,5" MinHeight="165">
-                            
-                        </TextBox>
+                        <TextBox Name="txtLogDown" ScrollViewer.HorizontalScrollBarVisibility="Disabled" TextWrapping="Wrap" ScrollViewer.VerticalScrollBarVisibility="Auto" Margin="5,5,10,5" MinHeight="165" IsReadOnly="True"/>
+
+
                         <!--<ListView Name="listViewLogDown" MinHeight="165" Margin="5,5,10,5" >
                             <ListView.View>
                                 <GridView>

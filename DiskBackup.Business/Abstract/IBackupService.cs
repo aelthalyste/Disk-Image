@@ -20,8 +20,6 @@ namespace DiskBackup.Business.Abstract
         [OperationContract]
         List<FilesInBackup> GetFileInfoList();
         [OperationContract]
-        List<ActivityDownLog> GetDownLogList(); //Böyle bir uç yapılacağı konuşuldu
-        [OperationContract]
         bool GetSelectedFileInfo(ulong filesInBackupId);
 
         [OperationContract]

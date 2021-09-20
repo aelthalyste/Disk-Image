@@ -718,6 +718,7 @@ namespace DiskBackup.Business.Concrete
                 long instantProcessData = 0;
                 passingTime.Start();
 
+                long myDecompressedSize = 0;
                 _logger.Information($"{letter} backup işlemi başlatılıyor...");
                 if (_diskTracker.CW_SetupStream(letter, (int)taskInfo.BackupTaskInfo.Type, str, true)) // 0 diff, 1 inc, full (2) ucu gelmediğinden ayrılabilir veya aynı devam edebilir
                 {
@@ -759,6 +760,7 @@ namespace DiskBackup.Business.Concrete
                                 var readStream = _diskTracker.CW_ReadStream(BAddr, letter, bufferSize);
                                 file.Write(buffer, 0, (int)readStream.WriteSize);
                                 bytesReadSoFar += readStream.DecompressedSize;
+                                myDecompressedSize += readStream.DecompressedSize;
 
                                 instantProcessData += readStream.DecompressedSize; // anlık veri için              
                                 if (passingTime.ElapsedMilliseconds > 500)
@@ -798,12 +800,13 @@ namespace DiskBackup.Business.Concrete
                                 _logger.Information("Metadata'ya görev bilgilerini yazma işlemi başarılı.");
                             else
                                 _logger.Information("Metadata'ya görev bilgilerini yazma işlemi başarısız.");
-
                         }
                     }
                     statusInfo.SourceObje = statusInfo.SourceObje.Substring(0, statusInfo.SourceObje.Length - 2);
                 }
                 statusInfo.TimeElapsed = timeElapsed.ElapsedMilliseconds;
+                _logger.Error("!!!!!!!!!!!!!!!!! DecompressedSize  : " + myDecompressedSize.ToString() + " !!!!!!!!!!!!!!!!!");
+                _logger.Error("!!!!!!!!!!!!!!!!! TotalDataProcessed: " + statusInfo.TotalDataProcessed.ToString() + " !!!!!!!!!!!!!!!!!");
                 _statusInfoDal.Update(statusInfo);
             }
 
@@ -1185,29 +1188,6 @@ namespace DiskBackup.Business.Concrete
                 _logger.Error(ex, "_cSNarFileExplorer.CW_GetCurrentDirectoryString() gerçekleştirilemedi.");
             }
             return "";
-        }
-
-        public List<ActivityDownLog> GetDownLogList() //bu method daha gelmedi
-        {
-            _logger.Verbose("GetDownLogList metodu çağırıldı");
-
-            List<ActivityDownLog> logList = new List<ActivityDownLog>();
-            foreach (var item in DiskTracker.CW_GetLogs())
-            {
-                string logDate = (item.Time.Day < 10) ? 0 + item.Time.Day.ToString() : item.Time.Day.ToString();
-                logDate += "." + ((item.Time.Month < 10) ? 0 + item.Time.Month.ToString() : item.Time.Month.ToString());
-                logDate += "." + item.Time.Year + " ";
-                logDate += ((item.Time.Hour < 10) ? 0 + item.Time.Hour.ToString() : item.Time.Hour.ToString());
-                logDate += ":" + ((item.Time.Minute < 10) ? 0 + item.Time.Minute.ToString() : item.Time.Minute.ToString());
-                logDate += ":" + ((item.Time.Second < 10) ? 0 + item.Time.Second.ToString() : item.Time.Second.ToString());
-
-                logList.Add(new ActivityDownLog
-                {
-                    Detail = item.LogStr.Trim(),
-                    Time = logDate
-                });
-            }
-            return logList;
         }
 
         public FileRestoreResult RestoreFilesInBackup(FilesInBackup filesInBackup, string targetDirectory) // batuhan hangi backup olduğunu nasıl anlayacak? backup directoryde backup ismi almıyor

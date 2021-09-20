@@ -34,7 +34,9 @@ namespace DiskBackupWpfGUI
         private bool _storegeAllControl = false;
         private bool _viewBackupsAllControl = false;
         private bool _tasksAllControl = false;
-        private bool _diskCloneIsDiskSelected = false; //diskClone ekranında disk seçilip seçilmediğini kontrol ediyor. 
+        private bool _diskCloneIsDiskSelected = false; //diskClone ekranında disk seçilip seçilmediğini kontrol ediyor. NAR_APP_LOG_FILE.txt
+
+        private string _logDownFilePath = @"C:\ProgramData\NarDiskBackup\NAR_APP_LOG_FILE.txt";
 
         private List<CheckBox> _expanderCheckBoxes = new List<CheckBox>();
         private List<CheckBox> _restoreExpanderCheckBoxes = new List<CheckBox>();
@@ -58,7 +60,6 @@ namespace DiskBackupWpfGUI
         private List<TaskInfo> _taskInfoList = new List<TaskInfo>();
         private List<ActivityLog> _activityLogList = new List<ActivityLog>();
         private List<BackupInfo> _backupsItems = new List<BackupInfo>();
-        private List<ActivityDownLog> _logList = new List<ActivityDownLog>();
 
         private CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         CollectionView _view;
@@ -140,12 +141,9 @@ namespace DiskBackupWpfGUI
                         _volumeList.Add(volumeItem);
                     }
                 }
-                Console.WriteLine("List doldurma üst satır list count = " + _volumeList.Count);
                 listViewDisk.ItemsSource = _volumeList;
                 listViewDiskCloneSource.ItemsSource = _volumeList;
-                //listViewDiskCloneTarget.ItemsSource = _volumeList;
                 listViewRestoreDisk.ItemsSource = _volumeList;
-                Console.WriteLine("List doldurma bitiş satırı diskDown = " + listViewDiskCloneSource.Items.Count);
 
                 _view = (CollectionView)CollectionViewSource.GetDefaultView(listViewDisk.ItemsSource);
                 PropertyGroupDescription groupDescription = new PropertyGroupDescription("DiskName");
@@ -160,8 +158,6 @@ namespace DiskBackupWpfGUI
 
             Initilaze();
 
-            //StreamReader sr = new StreamReader(@"C:\ProgramData\NarDiskBackup\NAR_APP_LOG_FILE.txt");
-            //Console.WriteLine(sr.ReadToEnd());
             this.Closing += (sender, e) => _cancellationTokenSource.Cancel();
             Console.WriteLine("CTOR SON: " + DateTime.Now);
         }
@@ -326,8 +322,20 @@ namespace DiskBackupWpfGUI
         private async void Initilaze()
         {
             mainTabControl.IsEnabled = false;
-            txtMakeABackup.Text = Resources["loading..."].ToString();
             Console.WriteLine("Initilaze Baş : " + DateTime.Now);
+            FileStream fileStream;
+            //StreamReader streamReader;
+            if (File.Exists(_logDownFilePath))
+            {
+                fileStream = File.Open(_logDownFilePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            }
+            else
+            {
+                fileStream = null;
+                Console.WriteLine(_logDownFilePath + "dizininde log dosyası bulunamadı.");
+                _logger.Warning(_logDownFilePath + "dizininde log dosyası bulunamadı.");
+            }
+            txtMakeABackup.Text = Resources["loading..."].ToString();
             var backupService = _scope.Resolve<IBackupService>();
             Console.WriteLine("Backup storage: " + DateTime.Now);
             await GetBackupStoragesAsync(_volumeList);
@@ -335,7 +343,7 @@ namespace DiskBackupWpfGUI
             await GetTasksAsync();
             Console.WriteLine("Activity: " + DateTime.Now);
             await ShowActivityLogAsync();
-            //ShowActivityLogDownAsync();
+            ShowActivityLogDownAsync(fileStream);
             Console.WriteLine("Backup Dosyaları getirilmeden önce: " + DateTime.Now);
             await ShowBackupsFilesAsync(backupService);
             Console.WriteLine("Email Ayarları getirilmeden önce: " + DateTime.Now);
@@ -344,7 +352,7 @@ namespace DiskBackupWpfGUI
             mainTabControl.IsEnabled = true;
             pbLoading.Visibility = Visibility.Collapsed;
             pbLoading.IsIndeterminate = false;
-            RefreshTasks(_cancellationTokenSource.Token, backupService);
+            RefreshTasks(_cancellationTokenSource.Token, backupService, fileStream);
             LicenseController();
             RefreshDemoDays(_cancellationTokenSource.Token);
             Console.WriteLine("Initilaze son: " + DateTime.Now);
@@ -442,19 +450,21 @@ namespace DiskBackupWpfGUI
             view.SortDescriptions.Add(new SortDescription("Id", ListSortDirection.Descending));
         }
 
-        private void ShowActivityLogDownAsync()
+        private async void ShowActivityLogDownAsync(FileStream fileStream)
         {
             _logger.Verbose("ShowActivityLogDownAsync metoduna istekte bulunuldu");
+            Console.WriteLine("ShowActivityLogDownAsync metoduna istekte bulunuldu" + DateTime.Now);
             try
             {
-                if (File.Exists(@"C:\ProgramData\NarDiskBackup\NAR_APP_LOG_FILE.txt"))
+                if (fileStream != null)
                 {
-                    txtLogDown.Text = File.ReadAllText(@"C:\ProgramData\NarDiskBackup\NAR_APP_LOG_FILE.txt");
+                    StreamReader streamReader = new StreamReader(fileStream);
+                    txtLogDown.Text = await streamReader.ReadToEndAsync();
                 }
             }
             catch (Exception e)
             {
-                _logger.Error(e, "BackupService'den NARDIWrapper logları getirilemedi!");
+                _logger.Error(e, _logDownFilePath + "'den NARDIWrapper logları getirilemedi!");
             }
         }
 
@@ -795,12 +805,6 @@ namespace DiskBackupWpfGUI
             {
                 foreach (var targetVolume in targetVolumes)
                 {
-                    //if (sourceVolume.Letter == targetVolume.Letter)
-                    //{
-                    //    controlFlag = true;
-                    //    MessageBox.Show(Resources["SameRootDirectory"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
-                    //    break;
-                    //}
                     if (sourceVolume.Size >= targetVolume.FreeSize)
                     {
                         controlFlag = true;
@@ -809,6 +813,7 @@ namespace DiskBackupWpfGUI
                     }
                 }
             }
+
         }
 
         #region Source
@@ -2834,18 +2839,18 @@ namespace DiskBackupWpfGUI
             }
         }
 
-        public async void RefreshTasks(CancellationToken cancellationToken, IBackupService backupService)
+        public async void RefreshTasks(CancellationToken cancellationToken, IBackupService backupService, FileStream fileStream)
         {
             while (!cancellationToken.IsCancellationRequested)
             {
                 try
                 {
-                    await Task.Delay(500, cancellationToken);
+                    await Task.Delay(5000, cancellationToken);
                     _logger.Verbose("RefreshTasks istekte bulunuldu");
                     //var backupService = _scope.Resolve<IBackupService>();
 
                     //log down
-                    //RefreshActivityLogDownAsync();
+                    RefreshActivityLogDown(fileStream);
 
                     // son yedekleme bilgisi
                     RefreshMiddleTaskDateAsync();
@@ -2882,37 +2887,38 @@ namespace DiskBackupWpfGUI
             }
         }
 
-        private void RefreshActivityLogDownAsync()
+        private async void RefreshActivityLogDown(FileStream fileStream)
         {
-            _logger.Verbose("RefreshActivityLogDownAsync istekte bulunuldu");
-            StreamReader stream = new StreamReader(@"C:\ProgramData\NarDiskBackup\NAR_APP_LOG_FILE.txt");
-            //List<ActivityDownLog> logList = new List<ActivityDownLog>();
-            try
-            {
-                txtLogDown.Text = stream.ReadToEnd();
+            //_logger.Verbose("RefreshActivityLogDown'a istekte bulunuldu");
+            //try
+            //{
+            //    if (fileStream != null)
+            //    {
+            //        StreamReader streamReader = new StreamReader(fileStream);
+            //        txtLogDown.Text = await streamReader.ReadToEndAsync();
+            //    }
+            //}
+            //catch (Exception ex)
+            //{
+            //    Console.WriteLine("RefreshTasks: ActivityLog down yenilenemedi!" + ex);
+            //    _logger.Error("RefreshTasks: ActivityLog down yenilenemedi!" + ex);
+            //}
 
-                //txtLogDown.Text = File.ReadAllText(@"C:\ProgramData\NarDiskBackup\NAR_APP_LOG_FILE.txt");
-                //logList = await Task.Run(() =>
-                //{
-                //    return backupService.GetDownLogList();
-                //});
-            }
-            catch
-            {
-            }
-
-            if (txtLogDown.Text != null)
-            {
-                _logger.Verbose("RefreshTasks: ActivityLog down yenileniyor");
-
-                txtLogDown.Text += stream.ReadToEnd();
-                //foreach (ActivityDownLog item in logList)
-                //{
-                //    _logList.Add(item);
-                //}
-
-                //listViewLogDown.Items.Refresh();
-            }
+            //if (txtLogDown.Text != null)
+            //{
+            //    var time = DateTime.Now;
+            //    Console.WriteLine("----->Log Yenileme geldi : " + DateTime.Now.ToString());
+            //    _logger.Verbose("RefreshTasks: ActivityLog down yenileniyor");
+            //    if (fileStream != null)
+            //    {
+            //        Console.WriteLine("----->Log Yenileme 1 : " + DateTime.Now.ToString());
+            //        StreamReader streamReader = new StreamReader(fileStream);
+            //        txtLogDown.Text = await streamReader.ReadToEndAsync();
+            //        Console.WriteLine("----->Log Yenileme 2 : " + DateTime.Now.ToString());
+            //        var usedTime = DateTime.Now;
+            //        Console.WriteLine("----->Log Yenileme 3 : " + (usedTime - time).TotalMilliseconds.ToString());
+            //    }
+            //}
         }
 
         private async void RefreshMiddleTaskDateAsync()
@@ -3117,6 +3123,18 @@ namespace DiskBackupWpfGUI
                 RefreshDisk();
             if (mainTabControl.SelectedIndex == 0 || mainTabControl.SelectedIndex == 1)
                 GetDiskPage();
+            //Log dosyasını 500ms 
+            FileStream fileStream;
+            if (File.Exists(_logDownFilePath))
+                fileStream = File.Open(_logDownFilePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            else
+            {
+                fileStream = null;
+                _logger.Warning(_logDownFilePath + "dizininde log dosyası bulunamadı.");
+            }
+
+            if (mainTabControl.SelectedIndex == 6)
+                ShowActivityLogDownAsync(fileStream);
         }
 
         private static T FindParent<T>(DependencyObject dependencyObject) where T : DependencyObject
@@ -3131,7 +3149,7 @@ namespace DiskBackupWpfGUI
 
         private string FormatBytes(long bytes)
         {
-            string[] Suffix = { "B", "KB", "MB", "GB", "TB" };
+            string[] Suffix = {"B", "KB", "MB", "GB", "TB"};
             int i;
             double dblSByte = bytes;
             for (i = 0; i < Suffix.Length && bytes >= 1024; i++, bytes /= 1024)
