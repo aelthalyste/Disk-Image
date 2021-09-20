@@ -1945,7 +1945,7 @@ SaveMetadata(char Letter, int Version, int ClusterSize, BackupType BT,
     
     HANDLE MetadataFile = CreateFileW(MetadataFilePath.c_str(), GENERIC_WRITE | GENERIC_READ, 0, 0, CREATE_ALWAYS, 0, 0);
     if (MetadataFile == INVALID_HANDLE_VALUE) {
-        printf("Couldn't create metadata file : %s\n", MetadataFilePath.c_str());
+        printf("Couldn't create metadata file : %S\n", MetadataFilePath.c_str());
         goto Exit;
     }
     else{
