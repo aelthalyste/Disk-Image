@@ -536,7 +536,6 @@ namespace DiskBackupWpfGUI
             checkEMailNotificationSuccess.IsChecked = Convert.ToBoolean(emailSuccessful.Value);
             checkEMailNotificationFail.IsChecked = Convert.ToBoolean(emailFail.Value);
             checkEMailNotificationCritical.IsChecked = Convert.ToBoolean(emailCritical.Value);
-
         }
 
         #endregion
@@ -814,8 +813,26 @@ namespace DiskBackupWpfGUI
                 }
             }
             var backupService = _scope.Resolve<IBackupService>();
-            backupService.DiskClone('F');
 
+            if (sourceVolumes.Count >= 1 && targetVolumes.Count >= 1) //Volume Clone
+            {
+                var source = sourceVolumes[0];
+                var target = targetVolumes[0];
+
+                var result =  backupService.DiskClone(target.Letter, source.Letter);
+                if (result == 2)
+                {
+                    MessageBox.Show("Error!!");
+                }
+                else
+                {
+                    MessageBox.Show("Volume Clone Tamamlandı");
+                }
+            }
+            else //Disk Clone
+            {
+                MessageBox.Show("Disk klon aktif değil");
+            }
         }
 
         #region Source

@@ -1038,13 +1038,13 @@ namespace DiskBackup.Business.Concrete
             return 1;
         }
 
-        public int DiskClone(char targetLetter)
+        public int DiskClone(char targetLetter, char sourceLetter)
         {
             StreamInfo Inf = new StreamInfo();
-            var id = DiskTracker.CW_SetupDiskCloneStream(Inf, targetLetter);
+            var id = DiskTracker.CW_SetupDiskCloneStream(Inf, sourceLetter);
 
             // Volume a yazmak icin acmaniz lazim, nasil olur bilmiyorum .NET de, gerekli kodu file.create ile degistirirsiniz.
-            var output = File.Open(@"\\.\H:", FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite);
+            var output = File.Open(@"\\.\" + targetLetter+ ":", FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite);
             unsafe
             {
                 _logger.Error("DİSK CLONE 1. ADIM");
@@ -1055,25 +1055,36 @@ namespace DiskBackup.Business.Concrete
                     _logger.Error("DİSK CLONE 2. ADIM WHİLE ÖNCESİ");
                     while (true)
                     {
+                        _logger.Error("DİSK CLONE WHILE 1");
                         var ReadResult = DiskTracker.CW_ReadFullOnlyStream(id, baddr, buffersize);
+                        _logger.Error("DİSK CLONE WHILE 2");
                         if (ReadResult.Error != BackupStream_Errors.Error_NoError)
                         {
-                            _logger.Error("DİSK CLONE BREAK 1. ADIM");
-                            break;
+                            _logger.Error("DİSK CLONE BREAK 1");
+                            return 2;
                         }
+                        _logger.Error("DİSK CLONE WHILE 3");
                         if (ReadResult.WriteSize == 0)
                         {
                             _logger.Error("DİSK CLONE BREAK 2. ADIM");
                             break;
                         }
-
-                        output.Seek((long)ReadResult.ReadOffset, SeekOrigin.Begin);
-                        output.Write(buffer, 0, (int)ReadResult.WriteSize);
+                        try
+                        {
+                            _logger.Error("DİSK CLONE WHILE 4");
+                            output.Seek((long)ReadResult.ReadOffset, SeekOrigin.Begin);
+                            _logger.Error("DİSK CLONE WHILE 5");
+                            output.Write(buffer, 0, (int)ReadResult.WriteSize);
+                            _logger.Error("DİSK CLONE WHILE 6");
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.Error(ex.Message + ex);
+                        }
                     }
                     _logger.Error("DİSK CLONE 3. ADIM WHİLE SONU");
                 }
             }
-
             // disk klonlaniyorsa metadatanin kayit edilmesine gerek yok, false verilerek hizlica tamamlanabilir islem.
             DiskTracker.CW_TerminateFullOnlyBackup(id, false, "path");
             Console.WriteLine("done!");

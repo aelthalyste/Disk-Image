@@ -13,9 +13,9 @@
         BorderBrush="#194771" BorderThickness="1"
         Height="730" Width="1294"
         ResizeMode="CanMinimize">
-    <!--<Window.Resources>
+    <Window.Resources>
         <ResourceDictionary Source="Resources\Lang\string_tr.xaml"/>
-    </Window.Resources>-->
+    </Window.Resources>
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="30"/>
@@ -870,6 +870,7 @@
                                     </Button.Content>
                                 </Button>
                                 <TextBlock Name="lblC1reateTaskWarning" Text="{DynamicResource createDiskCloneContent}" VerticalAlignment="Center" />
+                                <TextBlock Text="{DynamicResource source}" HorizontalAlignment="Right" Margin="15, 10" FontWeight="Bold" Padding="5" Background="Orange" Foreground="White"/>
                             </DockPanel>
                             <!--SelectionChanged="listViewDiskCloneSource_SelectionChanged"-->
                             <ListView Name="listViewDiskCloneSource" Height="267" Margin="5"  SelectionMode="Single">
@@ -981,7 +982,10 @@
                         </DockPanel>
                     <DockPanel Grid.Row="1">
                         <StackPanel>
-                            <TextBlock Text="{DynamicResource createTaskContent}" Margin="5,0,0,0" VerticalAlignment="Center" />
+                            <DockPanel>
+                                <TextBlock Text="{DynamicResource createTaskContent}" Margin="5,0,0,0" HorizontalAlignment="Left"/>
+                                <TextBlock Text="{DynamicResource target}" HorizontalAlignment="Right" Margin="0,0,10,0" FontWeight="Bold" Padding="5" Background="Orange" Foreground="White"/>
+                            </DockPanel>
                             <ListView Name="listViewDiskCloneTarget" Height="267" Margin="5" SelectionChanged="listViewDiskCloneTarget_SelectionChanged" SelectionMode="Single">
                                 <ListView.View>
                                     <GridView>
