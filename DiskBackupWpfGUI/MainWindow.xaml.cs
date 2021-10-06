@@ -841,6 +841,7 @@ namespace DiskBackupWpfGUI
             var headerCheckBox = sender as CheckBox;
             _diskCloneIsDiskSelected = true;
             listViewDiskCloneSource.SelectionMode = SelectionMode.Multiple;
+            txtDiskCloneSource.Background = Brushes.Green;
             foreach (VolumeInfo item in listViewDiskCloneSource.Items)
             {
                 if (item.DiskName.Equals(headerCheckBox.Tag.ToString()))
@@ -888,6 +889,7 @@ namespace DiskBackupWpfGUI
         private void HeaderDiskCloneSourceCheckBox_Unchecked(object sender, RoutedEventArgs e)
         {
             _diskCloneIsDiskSelected = false;
+            txtDiskCloneSource.Background = Brushes.Orange;
             var headerCheckBox = sender as CheckBox;
             foreach (VolumeInfo item in listViewDiskCloneSource.Items)
             {
@@ -910,6 +912,7 @@ namespace DiskBackupWpfGUI
 
         private void chbDiskCloneSource_Checked(object sender, RoutedEventArgs e)
         {
+            txtDiskCloneSource.Background = Brushes.Green;
             if (!_diskCloneIsDiskSelected)
             {
                 if (FindParent<ListViewItem>(sender as DependencyObject) != null)
@@ -930,6 +933,7 @@ namespace DiskBackupWpfGUI
 
         private void chbDiskCloneSource_Unchecked(object sender, RoutedEventArgs e)
         {
+            txtDiskCloneSource.Background = Brushes.Orange;
             var dataItem = FindParent<ListViewItem>(sender as DependencyObject);
             var data = dataItem.DataContext as VolumeInfo; //data seçilen değer
             for (int i = 0; i < _diskCloneSourceGroupName.Count; i++)
@@ -967,7 +971,7 @@ namespace DiskBackupWpfGUI
         {
             var headerCheckBox = sender as CheckBox;
             listViewDiskCloneTarget.SelectionMode = SelectionMode.Multiple;
-
+            txtDiskCloneTarget.Background = Brushes.Green;
 
             foreach (VolumeInfo item in listViewDiskCloneTarget.Items)
             {
@@ -992,8 +996,14 @@ namespace DiskBackupWpfGUI
             }
         }
 
+        private void chbDiskCloneTarget_Checked(object sender, RoutedEventArgs e)
+        {
+            txtDiskCloneTarget.Background = Brushes.Green;
+        }
+
         private void HeaderDiskCloneTargetCheckBox_Unchecked(object sender, RoutedEventArgs e)
         {
+            txtDiskCloneTarget.Background = Brushes.Orange;
             var headerCheckBox = sender as CheckBox;
             foreach (VolumeInfo item in listViewDiskCloneTarget.Items)
             {
@@ -1015,6 +1025,7 @@ namespace DiskBackupWpfGUI
 
         private void chbDiskCloneTarget_Unchecked(object sender, RoutedEventArgs e)
         {
+            txtDiskCloneTarget.Background = Brushes.Orange;
             var dataItem = FindParent<ListViewItem>(sender as DependencyObject);
             var data = dataItem.DataContext as VolumeInfo; //data seçilen değer
 
@@ -1032,8 +1043,6 @@ namespace DiskBackupWpfGUI
             if (listViewDiskCloneSource.SelectedIndex != -1 && listViewDiskCloneTarget.SelectedIndex != -1)
             {
                 btnDiskCloneStart.IsEnabled = true;
-                //eyüp
-                //burada buton enable disable olacak hatayı engellemek için geçici olarak CreateTask'dan kopyaladım
             }
             else
             {
@@ -3293,5 +3302,6 @@ namespace DiskBackupWpfGUI
         }
 
         #endregion
+
     }
 }
