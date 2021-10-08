@@ -849,7 +849,7 @@
                         <Image Width="30">
                             <Image.Style>
                                 <Style TargetType="Image">
-                                    <Setter Property="Source" Value="Resources\Icon\NarBulut_PNG_Icon_White_V3.png" />
+                                    <Setter Property="Source" Value="Resources\Icon\icons8_diskClone.ico" />
                                 </Style>
                             </Image.Style>
                         </Image>
