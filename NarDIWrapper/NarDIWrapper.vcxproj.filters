@@ -41,22 +41,22 @@
     <ClCompile Include="..\minispy_user\file_explorer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\minispy_user\backup.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\minispy_user\nar_win32.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\minispy_user\platform_io.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\minispy_user\restore.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\minispy_user\narstring.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\minispy_user\process_listener.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\minispy_user\restore.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\minispy_user\backup.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

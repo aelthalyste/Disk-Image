@@ -13,6 +13,7 @@
 #include "NarDIWrapper.h"
 #include "mspyLog.h"
 
+
 #if 0
 #include "nar.cpp"
 #include "platform_io.cpp"
@@ -529,7 +530,127 @@ namespace NarDIWrapper {
         
         return NarEditTaskNameAndDescription(wcMetadataFileName, wcTaskName, wcTaskDescription);
     }
-    
+
+
+     bool DiskTracker::CW_CopyDiskLayout(int SourceDiskID, int TargetDiskID) { 
+
+#if 0
+        std::vector<char *> CmdList;
+
+        nar_arena Arena = ArenaInit(calloc(Megabyte(1), Megabyte(1));
+
+        GUID GUIDMSRPartition = {}; // microsoft reserved partition guid
+        GUID GUIDSystemPartition = {}; // efi-system partition guid
+        GUID GUIDRecoveryPartition = {}; // recovery partition guid
+        
+        StrToGUID("{e3c9e316-0b5c-4db8-817d-f92df00215ae}", &GUIDMSRPartition);
+        StrToGUID("{c12a7328-f81f-11d2-ba4b-00a0c93ec93b}", &GUIDSystemPartition);
+        StrToGUID("{de94bba4-06d1-4d40-a16a-bfd50179d6ac}", &GUIDRecoveryPartition);
+
+        char DiskPath[128];
+        snprintf(DiskPath, sizeof(DiskPath), "\\\\?\\PhysicalDrive%i", SourceDiskID);
+        HANDLE SourceDiskHandle = CreateFileA(DiskPath, GENERIC_READ, FILE_SHARE_WRITE | FILE_SHARE_READ | FILE_SHARE_DELETE, 0, OPEN_EXISTING, 0, 0);
+        ASSERT(SourceDiskHandle != INVALID_HANDLE_VALUE);
+
+        DWORD DLSize = Kilobyte(1);
+        DRIVE_LAYOUT_INFORMATION_EX *DL = (DRIVE_LAYOUT_INFORMATION_EX*)ArenaAllocate(&Arena, DLSize);
+        ASSERT(DL);
+
+        if (SourceDiskHandle == INVALID_HANDLE_VALUE){
+            goto BAIL;
+        }
+
+        if (!DeviceIoControl(DiskHandle, IOCTL_DISK_GET_DRIVE_LAYOUT_EX, 0, 0, DL, DLSize, &Hell, 0)) {
+            goto BAIL;
+        }
+
+        if(DL->PartitionStyle == PARTITION_STYLE_GPT) {
+            char *ins = (char *)ArenaAllocate(&Arena, 512);
+            snprintf(ins, 512, "select disk %i\n"
+                                "clean\n"
+                                "convert gpt\n", TargetDiskID);
+            CmdList.push_back(ins);
+        }
+        if(DL->PartitionStyle == PARTITION_STYLE_MBR) {
+            char *ins = (char *)ArenaAllocate(&Arena, 512);
+            snprintf(ins, 512, "select disk %i\n"
+                                "clean\n"
+                                "convert mbr\n", TargetDiskID);
+            CmdList.push_back(ins);
+        }            
+
+        char SystemPartitionReservedLetter = 'B';
+        for (uint64_t PartitionIndex = 0; PartitionIndex < DL->PartitionCount; PartitionIndex++) {
+            char *ins = 0;
+            char AvailableLetter = 'C';
+            auto Partition = DL->PartitionEntry[PartitionIndex];
+            int64_t PartitionSizeMB = Partition.PartitionLength.QuadPart/(Megabyte(1));
+
+            if (DL->PartitionStyle == PARTITION_STYLE_GPT) {
+
+                if (IsEqualGUID(PI->Gpt.PartitionType, GUIDRecoveryPartition)) {
+                     ASSERT(ins == 0);
+                     ins = (char *)ArenaAllocate(&Arena, 512);
+                     snprintf(ins, 512,
+                        "create partition primary size = %i\n"
+                        "assign letter %c\n"
+                        "format fs = ntfs quick\n"
+                        "remove letter %c\n"
+                        "set id = \"de94bba4-06d1-4d40-a16a-bfd50179d6ac\"\n"
+                        "gpt attributes = 0x8000000000000001\n", 
+                        PartitionSizeMB, AvailableLetter, AvailableLetter);
+                }
+                else if(IsEqualGUID(PI->Gpt.PartitionType, GUIDSystemPartition)){
+                    ASSERT(ins == 0);        
+                    ins = (char *)ArenaAllocate(&Arena, 512);
+                    snprintf(ins, 512,
+                        "create partition efi size = %i\n"
+                        "format fs = fat32 quick\n"
+                        "assign letter %c\n"
+                        "create partition msr size = 16\n" // win10
+                        "format fs = \"ntfs\" quick\n", 
+                        PartitionSizeMB, 
+                        SystemPartitionReservedLetter);
+                }
+                else {
+                    // assume ntfs?
+                    ASSERT(ins == 0);
+                    ins = (char *)ArenaAllocate(&Arena, 512);
+                    snprintf(ins, 512, "create partition primary size = %i\n"
+                                        "assign letter %c\n"
+                                        "format fs = \"ntfs\" quick", PartitionSizeMB, AvailableLetter);
+                    AvailableLetter++;
+                }
+
+            }
+            if (DL->PartitionStyle == PARTITION_STYLE_MBR) {
+                if (Partition.Mbr.BootIndicator == TRUE) {
+                    ASSERT(ins == 0);
+                    snprintf(ins, 512, 
+                    "create partition primary size = %i\n"
+                    "assign letter %c\n"
+                    "format quick fs = ntfs label = System\n"
+                    "active\n", PartitionSizeMB);
+                } 
+
+            }
+
+            ASSERT(ins);
+            if (ins) CmdList.push_back(ins);
+
+        }
+
+
+
+
+        BAIL:
+
+        return false;
+#endif
+        return false;
+     }
+
+
     List<CSLog^>^ DiskTracker::CW_GetLogs(){
         
         List<CSLog^> ^Result = gcnew List<CSLog^>;

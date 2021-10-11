@@ -461,23 +461,25 @@ NarSetupExtensionFinderMemory(HANDLE VolumeHandle){
 }
 
 extension_search_result
-NarFindExtensions(char VolumeLetter, HANDLE VolumeHandle, wchar_t *Extension, extension_finder_memory *Memory) {
+NarFindExtensions(char VolumeLetter, HANDLE VolumeHandle, wchar_t **ExtensionList, size_t ExtensionListCount, extension_finder_memory *Memory) {
     
     extension_search_result Result = {0};
-    
     
     name_pid *DirectoryMapping  = (name_pid*)Memory->DirMappingMemory; 
     name_pid *PIDResultArr      = (name_pid*)Memory->PIDArrMemory; 
     uint64_t ArrLen             = 0;
     uint64_t FileRecordSize     = 1024; 
-    size_t ExtensionLen = wcslen(Extension);
     double ParserTotalTime    = 0;
     double TraverserTotalTime = 0;
     uint64_t ParserLoopCount  = 0;
     DWORD BR = 0;
     
-    uint64_t ClusterSize    = NarGetVolumeClusterSize(VolumeLetter);
-    
+    uint64_t ClusterSize     = NarGetVolumeClusterSize(VolumeLetter);
+    size_t *ExtensionLenList = (size_t*)ArenaAllocateZero(&Memory->Arena, ExtensionListCount * sizeof(size_t));
+
+    for (uint64_t i = 0; i < ExtensionListCount; i++) {
+        ExtensionLenList[i] = wcslen(ExtensionList[i]);
+    }
     
     for (uint64_t MFTOffsetIndex = 0; 
          MFTOffsetIndex < Memory->MFTRecordCount; 
@@ -575,27 +577,33 @@ NarFindExtensions(char VolumeLetter, HANDLE VolumeHandle, wchar_t *Extension, ex
                                 }
                                 
                                 
-                                // NOTE(Batuhan): if _pidi > 0, we know that file name matches, if it wouldn't be we wouldn't even see _pidi =1, check below for break condition. 
-                                if(ExtensionLen <= NamePID.NameLen){
+                                for (size_t ExtensionCompIndx = 0; ExtensionCompIndx < ExtensionListCount; ExtensionCompIndx++) {
                                     
-                                    wchar_t *LastChars = &NamePID.Name[NamePID.NameLen - ExtensionLen];
-                                    bool Add = true;
-                                    for(uint64_t wi = 0; wi < ExtensionLen; wi++){
-                                        if(towlower(LastChars[wi]) != towlower(Extension[wi])){
-                                            Add = false;
-                                            break;
+                                    size_t ExtensionLen = ExtensionLenList[ExtensionCompIndx];
+                                    wchar_t *Extension  = ExtensionList[ExtensionCompIndx];
+                                    // NOTE(Batuhan): if _pidi > 0, we know that file name matches, if it wouldn't be we wouldn't even see _pidi =1, check below for break condition. 
+                                    if(ExtensionLen <= NamePID.NameLen){
+                                        
+                                        wchar_t *LastChars = &NamePID.Name[NamePID.NameLen - ExtensionLen];
+                                        bool Add = true;
+                                        for(uint64_t wi = 0; wi < ExtensionLen; wi++){
+                                            if(towlower(LastChars[wi]) != towlower(Extension[wi])){
+                                                Add = false;
+                                                break;
+                                            }
                                         }
+                                        
+                                        if(Add){
+                                            PIDResultArr[ArrLen] = NamePID;
+                                            uint64_t NameSize = (NamePID.NameLen + 1) * 2;
+                                            PIDResultArr[ArrLen].Name = (wchar_t*)LinearAllocate(&Memory->StringAllocator, NameSize);
+                                            memcpy(PIDResultArr[ArrLen].Name, NamePID.Name, NameSize - 2);
+                                            PIDResultArr[ArrLen].NameLen = NamePID.NameLen + 1;
+                                            ArrLen++;
+                                        }
+                                        
                                     }
-                                    
-                                    if(Add){
-                                        PIDResultArr[ArrLen] = NamePID;
-                                        uint64_t NameSize = (NamePID.NameLen + 1) * 2;
-                                        PIDResultArr[ArrLen].Name = (wchar_t*)LinearAllocate(&Memory->StringAllocator, NameSize);
-                                        memcpy(PIDResultArr[ArrLen].Name, NamePID.Name, NameSize - 2);
-                                        PIDResultArr[ArrLen].NameLen = NamePID.NameLen + 1;
-                                        ArrLen++;
-                                    }
-                                    
+
                                 }
                                 
                             }
@@ -759,7 +767,7 @@ NarFindExtensions(char VolumeLetter, HANDLE VolumeHandle, wchar_t *Extension, ex
     
 #if 0
     for(size_t i =0; i<ArrLen; i++){
-        //printf("%S\n", FilenamesExtended[i]);
+        // printf("%S\n", FilenamesExtended[i]);
     }
 #endif
     
@@ -1304,10 +1312,10 @@ bool IsValidAttrEntry(attribute_list_entry Entry){
 
 
 /*
-AttrListDataStart MUST be first entry in the attribute list, not the 
-attribute start itself. NTFS sucks, you might not able to reach attribute
-data from normal file record, it might be stored somewhere else in the disk.
-It's better we isolate this layer so both codepaths can call this.
+	AttrListDataStart MUST be first entry in the attribute list, not the 
+	attribute start itself. NTFS sucks, you might not able to reach attribute
+	data from normal file record, it might be stored somewhere else in the disk.
+	It's better we isolate this layer so both codepaths can call this.
 */
 attribute_list_contents
 GetAttributeListContents(void* AttrListDataStart, uint64_t DataLen){
@@ -1487,9 +1495,10 @@ SolveAttributeListReferences(const void* MFTStart,
 }
 
 
+
 file_disk_layout
 NarFindFileLayout(file_explorer *FE, file_explorer_file *File, nar_arena *Arena){
-    
+#if 1
     file_disk_layout Result = {0};
     
     uint32_t FilesToVisit[80];
@@ -1697,7 +1706,10 @@ NarFindFileLayout(file_explorer *FE, file_explorer_file *File, nar_arena *Arena)
     
     G_FAIL:
     ArenaRestoreToPoint(Arena, FullRestorePoint);
+#endif
+
     return {0};
+
 }
 
 inline void
@@ -1861,10 +1873,11 @@ NarFreeFileRestoreCtx(file_restore_ctx *Ctx){
 
 file_restore_advance_result
 NarAdvanceFileRestore(file_restore_ctx *ctx, void* Out, size_t OutSize){
-    
+    file_restore_advance_result Result ={};
+
+#if 1    
     // FileRestore_Errors Result = FileRestore_Errors:Error_NoError;
     // fetch next region if this one is depleted
-    file_restore_advance_result Result = {};
     
     if(ctx->Layout.ResidentData != NULL){
         if(ctx->Layout.TotalSize){
@@ -1981,9 +1994,11 @@ NarAdvanceFileRestore(file_restore_ctx *ctx, void* Out, size_t OutSize){
     
     Result.Len      = BytesRead;
     Result.Offset   = VCNWrite * ctx->ClusterSize;
-    
-    return Result; 
-}
 
+#endif
+
+    return Result; 
+
+}
 
 

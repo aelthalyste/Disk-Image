@@ -334,7 +334,7 @@ void
 NarFreeExtensionFinderMemory(extension_finder_memory *Memory);
 
 extension_search_result
-NarFindExtensions(char VolumeLetter, HANDLE VolumeHandle, wchar_t *Extension, extension_finder_memory *Memory);
+NarFindExtensions(char VolumeLetter, HANDLE VolumeHandle, wchar_t **ExtensionList, size_t ExtensionListCount, extension_finder_memory *Memory);
 
 
 

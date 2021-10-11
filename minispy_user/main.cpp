@@ -418,7 +418,19 @@ void TEST_STRINGS(){
 void TEST_ExtensionFinder(){
     HANDLE Vol = NarOpenVolume('C');
     auto Mem = NarSetupExtensionFinderMemory(Vol);
-    NarFindExtensions('C', Vol, L".dll", &Mem);
+    wchar_t *_h0 = L".png";
+    wchar_t *_h1 = L".exe"; 
+    wchar_t *_h2 = L".lib"; 
+
+#if 0
+    wchar_t **list[3] = {};
+    list[0] = _h0;
+    list[1] = _h1;
+    list[2] = _h2;
+#endif
+    wchar_t *list[] = {_h0, _h1, _h2};
+
+    NarFindExtensions('C', Vol, list, 3, &Mem);
 }
 
 void
@@ -448,6 +460,10 @@ TEST_MockSaveBootState(){
 int
 wmain(int argc, wchar_t* argv[]) {
     
+    TEST_ExtensionFinder();
+    
+    return 0;
+
     printf("222  test1\n");
     printf("222  test2\n");
     printf("222  test3\n");

@@ -1,7 +1,7 @@
 @echo off
 
 set build_options= -DUNICODE -D_UNICODE -D_CRT_SECURE_NO_WARNINGS
-set compile_flags= -nologo /GS- /MT /EHsc /W0 /Od /F 16777216 /Zi /FC /FAs /std:c++17 /MP /fsanitize=address
+set compile_flags= -nologo /GS- /MT /EHsc /W0 /O2 /F 16777216 /FC /FAs /std:c++17 /MP
 rem /fsanitize=address /DEBUG:FULL /Zi /FC /Fa 
 rem /FAs
 rem /fsanitize=address
