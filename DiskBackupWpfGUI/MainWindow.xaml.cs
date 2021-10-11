@@ -536,7 +536,6 @@ namespace DiskBackupWpfGUI
             checkEMailNotificationSuccess.IsChecked = Convert.ToBoolean(emailSuccessful.Value);
             checkEMailNotificationFail.IsChecked = Convert.ToBoolean(emailFail.Value);
             checkEMailNotificationCritical.IsChecked = Convert.ToBoolean(emailCritical.Value);
-
         }
 
         #endregion
@@ -805,7 +804,7 @@ namespace DiskBackupWpfGUI
             {
                 foreach (var targetVolume in targetVolumes)
                 {
-                    if (sourceVolume.Size >= targetVolume.FreeSize)
+                    if (sourceVolume.Size >= targetVolume.Size)
                     {
                         controlFlag = true;
                         MessageBox.Show(Resources["sizeConflictMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
@@ -813,7 +812,27 @@ namespace DiskBackupWpfGUI
                     }
                 }
             }
+            var backupService = _scope.Resolve<IBackupService>();
 
+            if (sourceVolumes.Count >= 1 && targetVolumes.Count >= 1) //Volume Clone
+            {
+                var source = sourceVolumes[0];
+                var target = targetVolumes[0];
+
+                var result =  backupService.DiskClone(target.Letter, source.Letter);
+                if (result == 2)
+                {
+                    MessageBox.Show("Error!!");
+                }
+                else
+                {
+                    MessageBox.Show("Volume Clone Tamamlandı");
+                }
+            }
+            else //Disk Clone
+            {
+                MessageBox.Show("Disk klon aktif değil");
+            }
         }
 
         #region Source
@@ -822,6 +841,7 @@ namespace DiskBackupWpfGUI
             var headerCheckBox = sender as CheckBox;
             _diskCloneIsDiskSelected = true;
             listViewDiskCloneSource.SelectionMode = SelectionMode.Multiple;
+            txtDiskCloneSource.Background = Brushes.Green;
             foreach (VolumeInfo item in listViewDiskCloneSource.Items)
             {
                 if (item.DiskName.Equals(headerCheckBox.Tag.ToString()))
@@ -869,6 +889,7 @@ namespace DiskBackupWpfGUI
         private void HeaderDiskCloneSourceCheckBox_Unchecked(object sender, RoutedEventArgs e)
         {
             _diskCloneIsDiskSelected = false;
+            txtDiskCloneSource.Background = Brushes.Orange;
             var headerCheckBox = sender as CheckBox;
             foreach (VolumeInfo item in listViewDiskCloneSource.Items)
             {
@@ -891,6 +912,7 @@ namespace DiskBackupWpfGUI
 
         private void chbDiskCloneSource_Checked(object sender, RoutedEventArgs e)
         {
+            txtDiskCloneSource.Background = Brushes.Green;
             if (!_diskCloneIsDiskSelected)
             {
                 if (FindParent<ListViewItem>(sender as DependencyObject) != null)
@@ -911,6 +933,7 @@ namespace DiskBackupWpfGUI
 
         private void chbDiskCloneSource_Unchecked(object sender, RoutedEventArgs e)
         {
+            txtDiskCloneSource.Background = Brushes.Orange;
             var dataItem = FindParent<ListViewItem>(sender as DependencyObject);
             var data = dataItem.DataContext as VolumeInfo; //data seçilen değer
             for (int i = 0; i < _diskCloneSourceGroupName.Count; i++)
@@ -948,7 +971,7 @@ namespace DiskBackupWpfGUI
         {
             var headerCheckBox = sender as CheckBox;
             listViewDiskCloneTarget.SelectionMode = SelectionMode.Multiple;
-
+            txtDiskCloneTarget.Background = Brushes.Green;
 
             foreach (VolumeInfo item in listViewDiskCloneTarget.Items)
             {
@@ -973,8 +996,14 @@ namespace DiskBackupWpfGUI
             }
         }
 
+        private void chbDiskCloneTarget_Checked(object sender, RoutedEventArgs e)
+        {
+            txtDiskCloneTarget.Background = Brushes.Green;
+        }
+
         private void HeaderDiskCloneTargetCheckBox_Unchecked(object sender, RoutedEventArgs e)
         {
+            txtDiskCloneTarget.Background = Brushes.Orange;
             var headerCheckBox = sender as CheckBox;
             foreach (VolumeInfo item in listViewDiskCloneTarget.Items)
             {
@@ -996,6 +1025,7 @@ namespace DiskBackupWpfGUI
 
         private void chbDiskCloneTarget_Unchecked(object sender, RoutedEventArgs e)
         {
+            txtDiskCloneTarget.Background = Brushes.Orange;
             var dataItem = FindParent<ListViewItem>(sender as DependencyObject);
             var data = dataItem.DataContext as VolumeInfo; //data seçilen değer
 
@@ -1013,8 +1043,6 @@ namespace DiskBackupWpfGUI
             if (listViewDiskCloneSource.SelectedIndex != -1 && listViewDiskCloneTarget.SelectedIndex != -1)
             {
                 btnDiskCloneStart.IsEnabled = true;
-                //eyüp
-                //burada buton enable disable olacak hatayı engellemek için geçici olarak CreateTask'dan kopyaladım
             }
             else
             {
@@ -2849,9 +2877,6 @@ namespace DiskBackupWpfGUI
                     _logger.Verbose("RefreshTasks istekte bulunuldu");
                     //var backupService = _scope.Resolve<IBackupService>();
 
-                    //log down
-                    RefreshActivityLogDown(fileStream);
-
                     // son yedekleme bilgisi
                     RefreshMiddleTaskDateAsync();
 
@@ -2886,41 +2911,7 @@ namespace DiskBackupWpfGUI
 
             }
         }
-
-        private async void RefreshActivityLogDown(FileStream fileStream)
-        {
-            //_logger.Verbose("RefreshActivityLogDown'a istekte bulunuldu");
-            //try
-            //{
-            //    if (fileStream != null)
-            //    {
-            //        StreamReader streamReader = new StreamReader(fileStream);
-            //        txtLogDown.Text = await streamReader.ReadToEndAsync();
-            //    }
-            //}
-            //catch (Exception ex)
-            //{
-            //    Console.WriteLine("RefreshTasks: ActivityLog down yenilenemedi!" + ex);
-            //    _logger.Error("RefreshTasks: ActivityLog down yenilenemedi!" + ex);
-            //}
-
-            //if (txtLogDown.Text != null)
-            //{
-            //    var time = DateTime.Now;
-            //    Console.WriteLine("----->Log Yenileme geldi : " + DateTime.Now.ToString());
-            //    _logger.Verbose("RefreshTasks: ActivityLog down yenileniyor");
-            //    if (fileStream != null)
-            //    {
-            //        Console.WriteLine("----->Log Yenileme 1 : " + DateTime.Now.ToString());
-            //        StreamReader streamReader = new StreamReader(fileStream);
-            //        txtLogDown.Text = await streamReader.ReadToEndAsync();
-            //        Console.WriteLine("----->Log Yenileme 2 : " + DateTime.Now.ToString());
-            //        var usedTime = DateTime.Now;
-            //        Console.WriteLine("----->Log Yenileme 3 : " + (usedTime - time).TotalMilliseconds.ToString());
-            //    }
-            //}
-        }
-
+      
         private async void RefreshMiddleTaskDateAsync()
         {
             _logger.Verbose("RefreshMiddleTaskDateAsync istekte bulunuldu");
@@ -3311,5 +3302,6 @@ namespace DiskBackupWpfGUI
         }
 
         #endregion
+
     }
 }

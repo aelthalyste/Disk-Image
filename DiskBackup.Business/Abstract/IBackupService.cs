@@ -33,7 +33,9 @@ namespace DiskBackup.Business.Abstract
         [OperationContract]
         int CreateIncDiffBackup(TaskInfo taskInfo);
         [OperationContract]
-        int CreateFullBackup(TaskInfo taskInfo); //Bu daha hazır değil        
+        int CreateFullBackup(TaskInfo taskInfo);
+        [OperationContract]
+        int DiskClone(char targetLetter, char sourceLetter);
 
         //Parametreler bu methodun içinde RestoreTask oluşturacak
         [OperationContract]

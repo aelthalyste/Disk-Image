@@ -22,7 +22,7 @@ namespace DiskBackup.Business.Concrete
     [ServiceBehavior(InstanceContextMode = InstanceContextMode.Single)]
     public class BackupService : IBackupService
     {
-        private DiskTracker _diskTracker = new DiskTracker();
+        private DiskTracker _diskTracker;
         private CSNarFileExplorer _cSNarFileExplorer;
 
         private Dictionary<int, ManualResetEvent> _taskEventMap = new Dictionary<int, ManualResetEvent>(); // aynı işlem Stopwatch ve cancellationtoken source için de yapılacak ancak Quartz'ın pause, resume ve cancel işlemleri düzgün çalışıyorsa kullanılmayacak
@@ -42,6 +42,9 @@ namespace DiskBackup.Business.Concrete
 
         private NetworkConnection _nc;
 
+        public DiskTracker DiskTracker { get { _diskTracker = _diskTracker ?? new DiskTracker(); return _diskTracker; }}
+
+
         public BackupService(IStatusInfoDal statusInfoRepository, ITaskInfoDal taskInfoDal, ILogger logger, IBackupStorageDal backupStorageDal, IBackupTaskDal backupTaskDal, IConfigurationDataDal configurationDataDal)
         {
             _statusInfoDal = statusInfoRepository;
@@ -60,7 +63,7 @@ namespace DiskBackup.Business.Concrete
 
             try
             {
-                _initTrackerResult = _diskTracker.CW_InitTracker();
+                _initTrackerResult = DiskTracker.CW_InitTracker();
             }
             catch (Exception ex)
             {
@@ -399,7 +402,6 @@ namespace DiskBackup.Business.Concrete
             return 3;
         }
 
-        // Tüm dosyalar aynı dizinde mi kontrolü yap
         private bool ChainInTheSameDirectory(List<BackupMetadata> backupMetadataList, BackupMetadata backupMetadata)
         {
             _logger.Verbose("ChainInTheSameDirectory metodu çağırıldı");
@@ -617,7 +619,7 @@ namespace DiskBackup.Business.Concrete
             _logger.Information("{letter} zinciri temizleniyor.", letter);
             try
             {
-                return _diskTracker.CW_RemoveFromTrack(letter);
+                return DiskTracker.CW_RemoveFromTrack(letter);
             }
             catch (Exception ex)
             {
@@ -720,7 +722,7 @@ namespace DiskBackup.Business.Concrete
 
                 long myDecompressedSize = 0;
                 _logger.Information($"{letter} backup işlemi başlatılıyor...");
-                if (_diskTracker.CW_SetupStream(letter, (int)taskInfo.BackupTaskInfo.Type, str, true)) // 0 diff, 1 inc, full (2) ucu gelmediğinden ayrılabilir veya aynı devam edebilir
+                if (DiskTracker.CW_SetupStream(letter, (int)taskInfo.BackupTaskInfo.Type, str, true)) // 0 diff, 1 inc, full (2) ucu gelmediğinden ayrılabilir veya aynı devam edebilir
                 {
                     // yeterli alan kontrolü yap
                     if (!CheckDiskSize(taskInfo, statusInfo, timeElapsed, str, bytesReadSoFar))
@@ -744,7 +746,7 @@ namespace DiskBackup.Business.Concrete
                                 if (cancellationToken.IsCancellationRequested)
                                 {
                                     //cleanup
-                                    _diskTracker.CW_TerminateBackup(false, letter, taskInfo.BackupStorageInfo.Path);
+                                    DiskTracker.CW_TerminateBackup(false, letter, taskInfo.BackupStorageInfo.Path);
                                     _taskEventMap.Remove(taskInfo.Id);
                                     manualResetEvent.Dispose();
                                     _cancellationTokenSource[taskInfo.Id].Dispose();
@@ -757,7 +759,7 @@ namespace DiskBackup.Business.Concrete
                                 }
                                 manualResetEvent.WaitOne();
 
-                                var readStream = _diskTracker.CW_ReadStream(BAddr, letter, bufferSize);
+                                var readStream = DiskTracker.CW_ReadStream(BAddr, letter, bufferSize);
                                 file.Write(buffer, 0, (int)readStream.WriteSize);
                                 bytesReadSoFar += readStream.DecompressedSize;
                                 myDecompressedSize += readStream.DecompressedSize;
@@ -781,15 +783,15 @@ namespace DiskBackup.Business.Concrete
                                     }
                                 }
 
-                                if (readStream.WriteSize == 0 || !_diskTracker.CW_CheckStreamStatus(letter))
+                                if (readStream.WriteSize == 0 || !DiskTracker.CW_CheckStreamStatus(letter))
                                 {
-                                    _logger.Information($"readStream.WriteSize: {readStream.WriteSize} - readStream.Error: {readStream.Error} - _diskTracker.CW_CheckStreamStatus({letter}): {_diskTracker.CW_CheckStreamStatus(letter)}");
+                                    _logger.Information($"readStream.WriteSize: {readStream.WriteSize} - readStream.Error: {readStream.Error} - _diskTracker.CW_CheckStreamStatus({letter}): {DiskTracker.CW_CheckStreamStatus(letter)}");
                                     break;
                                 }
                             }
-                            result = _diskTracker.CW_CheckStreamStatus(letter);
+                            result = DiskTracker.CW_CheckStreamStatus(letter);
                             _logger.Information($"_diskTracker.CW_CheckStreamStatus({letter}): {result}");
-                            _diskTracker.CW_TerminateBackup(false, letter, taskInfo.BackupStorageInfo.Path); //işlemi başarılı olup olmadığı cancel gelmeden
+                            DiskTracker.CW_TerminateBackup(false, letter, taskInfo.BackupStorageInfo.Path); //işlemi başarılı olup olmadığı cancel gelmeden
                             bytesReadSoFar = 0;
 
                             //CopyAndDeleteMetadataFile(taskInfo, str); //çalışılan dizine çıkartılan narmd dosyası kopyalanıp ilgili dizine silme işlemi yapılıyor
@@ -966,7 +968,7 @@ namespace DiskBackup.Business.Concrete
                         {
                             if (cancellationToken.IsCancellationRequested)
                             { 
-                                _diskTracker.CW_TerminateBackup(false, taskInfo.StrObje[0]/*full backup görevi sadece 1 objeye uygulanacağı için*/, taskInfo.BackupStorageInfo.Path);
+                                DiskTracker.CW_TerminateBackup(false, taskInfo.StrObje[0]/*full backup görevi sadece 1 objeye uygulanacağı için*/, taskInfo.BackupStorageInfo.Path);
                                 _taskEventMap.Remove(taskInfo.Id);
                                 manualResetEvent.Dispose();
                                 _cancellationTokenSource[taskInfo.Id].Dispose();
@@ -1036,6 +1038,59 @@ namespace DiskBackup.Business.Concrete
             // backup bir dosyaya yaziliyorsa, daha sonradan restore edilecekse metadatanin kayit edilmesi gerekiyor. true verilmeli arguman
             DiskTracker.CW_TerminateFullOnlyBackup(ID, true, taskInfo.BackupStorageInfo.Path);
             _logger.Information("Full backup işlemi tamamlandı.");
+            return 1;
+        }
+
+        public int DiskClone(char targetLetter, char sourceLetter)
+        {
+            StreamInfo Inf = new StreamInfo();
+            var id = DiskTracker.CW_SetupDiskCloneStream(Inf, sourceLetter);
+
+            // Volume a yazmak icin acmaniz lazim, nasil olur bilmiyorum .NET de, gerekli kodu file.create ile degistirirsiniz.
+            var output = File.Open(@"\\.\" + targetLetter+ ":", FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite);
+            unsafe
+            {
+                _logger.Error("DİSK CLONE 1. ADIM");
+                uint buffersize = 1024 * 1024 * 64;
+                byte[] buffer = new byte[buffersize];
+                fixed (byte* baddr = &buffer[0])
+                {
+                    _logger.Error("DİSK CLONE 2. ADIM WHİLE ÖNCESİ");
+                    while (true)
+                    {
+                        _logger.Error("DİSK CLONE WHILE 1");
+                        var ReadResult = DiskTracker.CW_ReadFullOnlyStream(id, baddr, buffersize);
+                        _logger.Error("DİSK CLONE WHILE 2");
+                        if (ReadResult.Error != BackupStream_Errors.Error_NoError)
+                        {
+                            _logger.Error("DİSK CLONE BREAK 1");
+                            return 2;
+                        }
+                        _logger.Error("DİSK CLONE WHILE 3");
+                        if (ReadResult.WriteSize == 0)
+                        {
+                            _logger.Error("DİSK CLONE BREAK 2. ADIM");
+                            break;
+                        }
+                        try
+                        {
+                            _logger.Error("DİSK CLONE WHILE 4");
+                            output.Seek((long)ReadResult.ReadOffset, SeekOrigin.Begin);
+                            _logger.Error("DİSK CLONE WHILE 5");
+                            output.Write(buffer, 0, (int)ReadResult.WriteSize);
+                            _logger.Error("DİSK CLONE WHILE 6");
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.Error(ex.Message + ex);
+                        }
+                    }
+                    _logger.Error("DİSK CLONE 3. ADIM WHİLE SONU");
+                }
+            }
+            // disk klonlaniyorsa metadatanin kayit edilmesine gerek yok, false verilerek hizlica tamamlanabilir islem.
+            DiskTracker.CW_TerminateFullOnlyBackup(id, false, "path");
+            Console.WriteLine("done!");
             return 1;
         }
 
@@ -1369,7 +1424,7 @@ namespace DiskBackup.Business.Concrete
                                 return result;
                         }
 
-                        if (backupMetadata.IsSameChainID(_diskTracker.CW_IsVolumeExists(backupMetadata.Letter)))
+                        if (backupMetadata.IsSameChainID(DiskTracker.CW_IsVolumeExists(backupMetadata.Letter)))
                         {
                             CleanChain(backupMetadata.Letter);
                             _logger.Information($"{backupMetadata.Fullpath} silinirken '{backupMetadata.Letter}' volume'nde işleyen zincir olduğu için yeni zincir başlatıldı.");
@@ -1401,7 +1456,7 @@ namespace DiskBackup.Business.Concrete
                         index2++;
                     }
 
-                    if (backupMetadata.IsSameChainID(_diskTracker.CW_IsVolumeExists(backupMetadata.Letter)))
+                    if (backupMetadata.IsSameChainID(DiskTracker.CW_IsVolumeExists(backupMetadata.Letter)))
                     {
                         CleanChain(backupMetadata.Letter);
                         _logger.Information($"{backupMetadata.Fullpath} silinirken '{backupMetadata.Letter}' volume'nde işleyen zincir olduğu için yeni zincir başlatıldı.");

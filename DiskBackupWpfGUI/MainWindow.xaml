@@ -13,9 +13,9 @@
         BorderBrush="#194771" BorderThickness="1"
         Height="730" Width="1294"
         ResizeMode="CanMinimize">
-    <Window.Resources>
+    <!--<Window.Resources>
         <ResourceDictionary Source="Resources\Lang\string_tr.xaml"/>
-    </Window.Resources>
+    </Window.Resources>-->
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="30"/>
@@ -849,7 +849,7 @@
                         <Image Width="30">
                             <Image.Style>
                                 <Style TargetType="Image">
-                                    <Setter Property="Source" Value="Resources\Icon\NarBulut_PNG_Icon_White_V3.png" />
+                                    <Setter Property="Source" Value="Resources\Icon\icons8_diskClone.ico" />
                                 </Style>
                             </Image.Style>
                         </Image>
@@ -869,7 +869,8 @@
                                         <TextBlock Text="{DynamicResource start}" VerticalAlignment="Center" Margin="2,2" Style="{StaticResource CreateTaskButtonText}"/>
                                     </Button.Content>
                                 </Button>
-                                <TextBlock Name="lblC1reateTaskWarning" Text="{DynamicResource createDiskCloneContent}" VerticalAlignment="Center" />
+                                <TextBlock Text="{DynamicResource createDiskCloneContent}" VerticalAlignment="Center" />
+                                <TextBlock Name="txtDiskCloneSource" Text="{DynamicResource source}" HorizontalAlignment="Right" Margin="15, 10" FontWeight="Bold" Padding="5" Background="Orange" Foreground="White"/>
                             </DockPanel>
                             <!--SelectionChanged="listViewDiskCloneSource_SelectionChanged"-->
                             <ListView Name="listViewDiskCloneSource" Height="267" Margin="5"  SelectionMode="Single">
@@ -981,7 +982,10 @@
                         </DockPanel>
                     <DockPanel Grid.Row="1">
                         <StackPanel>
-                            <TextBlock Text="{DynamicResource createTaskContent}" Margin="5,0,0,0" VerticalAlignment="Center" />
+                            <DockPanel>
+                                <TextBlock Text="{DynamicResource createTaskContent}" Margin="5,0,0,0" HorizontalAlignment="Left"/>
+                                <TextBlock Name="txtDiskCloneTarget" Text="{DynamicResource target}" HorizontalAlignment="Right" Margin="0,0,10,0" FontWeight="Bold" Padding="5" Background="Orange" Foreground="White"/>
+                            </DockPanel>
                             <ListView Name="listViewDiskCloneTarget" Height="267" Margin="5" SelectionChanged="listViewDiskCloneTarget_SelectionChanged" SelectionMode="Single">
                                 <ListView.View>
                                     <GridView>
@@ -989,7 +993,7 @@
                                             <GridViewColumn.CellTemplate>
                                                 <DataTemplate>
                                                     <CheckBox IsChecked="{Binding Path=IsSelected, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ListViewItem}}}"
-                                                      Unchecked="chbDiskCloneTarget_Unchecked" Cursor="Hand" Margin="40,0,0,0"/>
+                                                      Checked="chbDiskCloneTarget_Checked" Unchecked="chbDiskCloneTarget_Unchecked" Cursor="Hand" Margin="40,0,0,0"/>
                                                 </DataTemplate>
                                             </GridViewColumn.CellTemplate>
                                         </GridViewColumn>

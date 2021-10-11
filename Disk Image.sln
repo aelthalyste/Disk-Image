@@ -82,6 +82,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DriveInformationOnDotNetFra
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FullBackupPoc", "FullBackupPoc\FullBackupPoc.csproj", "{FCB5EADC-7070-4848-B617-212EDFE00CEC}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DiskBackup.ConsoleApplication", "DiskBackup.ConsoleApplication\DiskBackup.ConsoleApplication.csproj", "{422771CE-F085-4B15-9CA2-FA3F1F727F2B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -758,6 +760,26 @@ Global
 		{FCB5EADC-7070-4848-B617-212EDFE00CEC}.Release|x64.Build.0 = Release|Any CPU
 		{FCB5EADC-7070-4848-B617-212EDFE00CEC}.Release|x86.ActiveCfg = Release|Any CPU
 		{FCB5EADC-7070-4848-B617-212EDFE00CEC}.Release|x86.Build.0 = Release|Any CPU
+		{422771CE-F085-4B15-9CA2-FA3F1F727F2B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{422771CE-F085-4B15-9CA2-FA3F1F727F2B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{422771CE-F085-4B15-9CA2-FA3F1F727F2B}.Debug|ARM.ActiveCfg = Debug|Any CPU
+		{422771CE-F085-4B15-9CA2-FA3F1F727F2B}.Debug|ARM.Build.0 = Debug|Any CPU
+		{422771CE-F085-4B15-9CA2-FA3F1F727F2B}.Debug|ARM64.ActiveCfg = Debug|Any CPU
+		{422771CE-F085-4B15-9CA2-FA3F1F727F2B}.Debug|ARM64.Build.0 = Debug|Any CPU
+		{422771CE-F085-4B15-9CA2-FA3F1F727F2B}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{422771CE-F085-4B15-9CA2-FA3F1F727F2B}.Debug|x64.Build.0 = Debug|Any CPU
+		{422771CE-F085-4B15-9CA2-FA3F1F727F2B}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{422771CE-F085-4B15-9CA2-FA3F1F727F2B}.Debug|x86.Build.0 = Debug|Any CPU
+		{422771CE-F085-4B15-9CA2-FA3F1F727F2B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{422771CE-F085-4B15-9CA2-FA3F1F727F2B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{422771CE-F085-4B15-9CA2-FA3F1F727F2B}.Release|ARM.ActiveCfg = Release|Any CPU
+		{422771CE-F085-4B15-9CA2-FA3F1F727F2B}.Release|ARM.Build.0 = Release|Any CPU
+		{422771CE-F085-4B15-9CA2-FA3F1F727F2B}.Release|ARM64.ActiveCfg = Release|Any CPU
+		{422771CE-F085-4B15-9CA2-FA3F1F727F2B}.Release|ARM64.Build.0 = Release|Any CPU
+		{422771CE-F085-4B15-9CA2-FA3F1F727F2B}.Release|x64.ActiveCfg = Release|Any CPU
+		{422771CE-F085-4B15-9CA2-FA3F1F727F2B}.Release|x64.Build.0 = Release|Any CPU
+		{422771CE-F085-4B15-9CA2-FA3F1F727F2B}.Release|x86.ActiveCfg = Release|Any CPU
+		{422771CE-F085-4B15-9CA2-FA3F1F727F2B}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

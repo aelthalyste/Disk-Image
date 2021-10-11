@@ -16,11 +16,11 @@ using System.IO;
 using System.Reflection;
 using System.Security.AccessControl;
 using System.ServiceModel;
-using System.ServiceProcess;
 
-namespace DiskBackup.Service
+
+namespace DiskBackup.ConsoleApplication
 {
-    public partial class DiskBackupService : ServiceBase
+    public class Data
     {
         private static IContainer _container;
         private ServiceHost _backupServiceHost;
@@ -28,10 +28,10 @@ namespace DiskBackup.Service
         private ServiceHost _logServiceHost;
         private ServiceHost _taskSchedulerHost;
 
-        public DiskBackupService()
-        {
-            InitializeComponent();
-        }
+        //public Data()
+        //{
+        //    InitializeComponent();
+        //}
 
         public void CreateContainer()
         {
@@ -67,7 +67,7 @@ namespace DiskBackup.Service
 
         }
 
-        protected override void OnStart(string[] args)
+        public void Start()
         {
             CreateContainer();
             CleanUp();
@@ -77,7 +77,7 @@ namespace DiskBackup.Service
             SetFileAcl(@"C:\ProgramData\NarDiskBackup\image_disk.db");
         }
 
-        private static void RegistryLastDateWriter()
+        public static void RegistryLastDateWriter()
         {
             var key = Registry.LocalMachine.OpenSubKey("SOFTWARE\\NarDiskBackup", true);
             if (key != null)
@@ -87,7 +87,7 @@ namespace DiskBackup.Service
             }
         }
 
-        private void CleanUp()
+        public void CleanUp()
         {
             var logger = _container.Resolve<ILogger>();
             var taskInfoDal = _container.Resolve<ITaskInfoDal>();
@@ -140,7 +140,7 @@ namespace DiskBackup.Service
             _taskSchedulerHost.Open();
         }
 
-        protected override void OnStop()
+        public void OnStop()
         {
             _backupServiceHost.Close();
             _backupStorageServiceHost.Close();
@@ -164,5 +164,6 @@ namespace DiskBackup.Service
                 logger.Error($"{path} erişim değiştirme işlemi başarısız!");
             }
         }
+
     }
 }

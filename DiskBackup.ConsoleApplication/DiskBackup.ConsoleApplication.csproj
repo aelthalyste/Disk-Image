@@ -5,19 +5,34 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{7EA107D9-1EDD-41BB-8F92-D5E4C3602384}</ProjectGuid>
-    <OutputType>WinExe</OutputType>
-    <RootNamespace>DiskBackup.Service</RootNamespace>
-    <AssemblyName>DiskBackup.Service</AssemblyName>
+    <ProjectGuid>{422771CE-F085-4B15-9CA2-FA3F1F727F2B}</ProjectGuid>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>DiskBackup.ConsoleApplication</RootNamespace>
+    <AssemblyName>DiskBackup.ConsoleApplication</AssemblyName>
     <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <Deterministic>true</Deterministic>
     <NuGetPackageImportStamp>
     </NuGetPackageImportStamp>
+    <PublishUrl>publish\</PublishUrl>
+    <Install>true</Install>
+    <InstallFrom>Disk</InstallFrom>
+    <UpdateEnabled>false</UpdateEnabled>
+    <UpdateMode>Foreground</UpdateMode>
+    <UpdateInterval>7</UpdateInterval>
+    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
+    <UpdatePeriodically>false</UpdatePeriodically>
+    <UpdateRequired>false</UpdateRequired>
+    <MapFileExtensions>true</MapFileExtensions>
+    <ApplicationRevision>0</ApplicationRevision>
+    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
+    <IsWebBootstrapper>false</IsWebBootstrapper>
+    <UseApplicationTrust>false</UseApplicationTrust>
+    <BootstrapperEnabled>true</BootstrapperEnabled>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
+    <PlatformTarget>x64</PlatformTarget>
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
@@ -27,7 +42,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
+    <PlatformTarget>x64</PlatformTarget>
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
@@ -39,7 +54,6 @@
   <ItemGroup>
     <Reference Include="Autofac, Version=6.2.0.0, Culture=neutral, PublicKeyToken=17863af14b0044da, processorArchitecture=MSIL">
       <HintPath>..\packages\Autofac.6.2.0\lib\netstandard2.0\Autofac.dll</HintPath>
-      <Private>True</Private>
     </Reference>
     <Reference Include="EntityFramework, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
       <HintPath>..\packages\EntityFramework.6.4.4\lib\net45\EntityFramework.dll</HintPath>
@@ -53,16 +67,18 @@
     <Reference Include="Microsoft.Extensions.Logging.Abstractions, Version=5.0.0.0, Culture=neutral, PublicKeyToken=adb9793829ddae60, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.Extensions.Logging.Abstractions.5.0.0\lib\net461\Microsoft.Extensions.Logging.Abstractions.dll</HintPath>
     </Reference>
+    <Reference Include="NarDIWrapper, Version=1.0.7863.21068, Culture=neutral, processorArchitecture=AMD64">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\DiskBackup.Business\bin\Release\NarDIWrapper.dll</HintPath>
+    </Reference>
     <Reference Include="Quartz, Version=3.3.3.0, Culture=neutral, PublicKeyToken=f6b8c98a402cc8a4, processorArchitecture=MSIL">
       <HintPath>..\packages\Quartz.3.3.3\lib\net472\Quartz.dll</HintPath>
-      <Private>True</Private>
     </Reference>
     <Reference Include="Serilog, Version=2.0.0.0, Culture=neutral, PublicKeyToken=24c2f752a8e58a10, processorArchitecture=MSIL">
       <HintPath>..\packages\Serilog.2.10.0\lib\net46\Serilog.dll</HintPath>
     </Reference>
     <Reference Include="Serilog.Sinks.File, Version=5.0.0.0, Culture=neutral, PublicKeyToken=24c2f752a8e58a10, processorArchitecture=MSIL">
       <HintPath>..\packages\Serilog.Sinks.File.5.0.0\lib\net45\Serilog.Sinks.File.dll</HintPath>
-      <Private>True</Private>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Buffers, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
@@ -73,19 +89,15 @@
     <Reference Include="System.Core" />
     <Reference Include="System.Data.SQLite, Version=1.0.115.0, Culture=neutral, PublicKeyToken=db937bc2d44ff139, processorArchitecture=MSIL">
       <HintPath>..\packages\Stub.System.Data.SQLite.Core.NetFramework.1.0.115.0\lib\net46\System.Data.SQLite.dll</HintPath>
-      <Private>True</Private>
     </Reference>
     <Reference Include="System.Data.SQLite.EF6, Version=1.0.115.0, Culture=neutral, PublicKeyToken=db937bc2d44ff139, processorArchitecture=MSIL">
       <HintPath>..\packages\System.Data.SQLite.EF6.1.0.115.0\lib\net46\System.Data.SQLite.EF6.dll</HintPath>
-      <Private>True</Private>
     </Reference>
     <Reference Include="System.Data.SQLite.Linq, Version=1.0.115.0, Culture=neutral, PublicKeyToken=db937bc2d44ff139, processorArchitecture=MSIL">
       <HintPath>..\packages\System.Data.SQLite.Linq.1.0.115.0\lib\net46\System.Data.SQLite.Linq.dll</HintPath>
-      <Private>True</Private>
     </Reference>
     <Reference Include="System.Diagnostics.DiagnosticSource, Version=5.0.0.1, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
       <HintPath>..\packages\System.Diagnostics.DiagnosticSource.5.0.1\lib\net46\System.Diagnostics.DiagnosticSource.dll</HintPath>
-      <Private>True</Private>
     </Reference>
     <Reference Include="System.Memory, Version=4.0.1.1, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
       <HintPath>..\packages\System.Memory.4.5.4\lib\net461\System.Memory.dll</HintPath>
@@ -107,51 +119,78 @@
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.Net.Http" />
-    <Reference Include="System.ServiceProcess" />
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="DiskBackupService.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="DiskBackupService.Designer.cs">
-      <DependentUpon>DiskBackupService.cs</DependentUpon>
-    </Compile>
+    <Compile Include="Data.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
     <None Include="packages.config" />
-    <None Include="quartz.config">
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\DiskBackup.Business\DiskBackup.Business.csproj">
+      <Project>{3F48E57C-71B2-4978-8361-345FA514E77A}</Project>
+      <Name>DiskBackup.Business</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\DiskBackup.Communication\DiskBackup.Communication.csproj">
+      <Project>{258921DE-2586-4E54-B545-D304615FB6B1}</Project>
+      <Name>DiskBackup.Communication</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\DiskBackup.Core\DiskBackup.Core.csproj">
+      <Project>{CA2A0627-7997-4B4E-8BE3-C1CA9E516F66}</Project>
+      <Name>DiskBackup.Core</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\DiskBackup.DataAccess\DiskBackup.DataAccess.csproj">
+      <Project>{D7B5EBAF-801C-48A9-B1A4-C21ED315FEA1}</Project>
+      <Name>DiskBackup.DataAccess</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\DiskBackup.Entities\DiskBackup.Entities.csproj">
+      <Project>{08189FEB-3E7A-4C10-8088-3732BC8AC883}</Project>
+      <Name>DiskBackup.Entities</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\DiskBackup.TaskScheduler\DiskBackup.TaskScheduler.csproj">
+      <Project>{3BFEB5E2-ADC2-4D43-9D70-86DC595E30B7}</Project>
+      <Name>DiskBackup.TaskScheduler</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="libzstd.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\DiskBackup.Business\DiskBackup.Business.csproj">
-      <Project>{3f48e57c-71b2-4978-8361-345fa514e77a}</Project>
-      <Name>DiskBackup.Business</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\DiskBackup.Communication\DiskBackup.Communication.csproj">
-      <Project>{258921de-2586-4e54-b545-d304615fb6b1}</Project>
-      <Name>DiskBackup.Communication</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\DiskBackup.Core\DiskBackup.Core.csproj">
-      <Project>{ca2a0627-7997-4b4e-8be3-c1ca9e516f66}</Project>
-      <Name>DiskBackup.Core</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\DiskBackup.DataAccess\DiskBackup.DataAccess.csproj">
-      <Project>{d7b5ebaf-801c-48a9-b1a4-c21ed315fea1}</Project>
-      <Name>DiskBackup.DataAccess</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\DiskBackup.Entities\DiskBackup.Entities.csproj">
-      <Project>{08189feb-3e7a-4c10-8088-3732bc8ac883}</Project>
-      <Name>DiskBackup.Entities</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\DiskBackup.TaskScheduler\DiskBackup.TaskScheduler.csproj">
-      <Project>{3bfeb5e2-adc2-4d43-9d70-86dc595e30b7}</Project>
-      <Name>DiskBackup.TaskScheduler</Name>
-    </ProjectReference>
+    <None Include="msvcp140.dll">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="vcruntime140.dll">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <BootstrapperPackage Include=".NETFramework,Version=v4.7.2">
+      <Visible>False</Visible>
+      <ProductName>Microsoft .NET Framework 4.7.2 %28x86 and x64%29</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
