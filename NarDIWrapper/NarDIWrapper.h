@@ -31,13 +31,25 @@ namespace NarNative{
     public ref class ExtensionSearcher{
         public:
         
-        static List<System::String^>^ FindExtensionAllVolumes(System::String^ Extension){
+        static List<System::String^>^ FindExtensionAllVolumes(List<System::String^> ^Extensions){
             
             List<System::String^>^ Result = gcnew List<System::String^>;
             
-            wchar_t wchExt[256];
-            SystemStringToWCharPtr(Extension, wchExt);
-            
+            wchar_t **ExtensionList = (wchar_t **)calloc(Extensions->Count, 8);
+            uint64_t ArenaSize = 0;
+            for (uint64_t i =0; i < Extensions->Count; i++) {
+                ArenaSize += Extensions[i]->Length;
+            }
+
+            ArenaSize += (Extensions->Count * 5);
+            ArenaSize *= 2; // sizeof(wchar_t)
+
+            nar_arena StringArena   = ArenaInit(calloc(ArenaSize, 1), ArenaSize);
+
+            for (uint64_t i =0; i < Extensions->Count; i++) {
+                ExtensionList[i] = (wchar_t *)ArenaAllocate(&StringArena, Extensions[i]->Length * 2 + 2);
+                SystemStringToWCharPtr(Extensions[i], ExtensionList[i]);
+            }
             
             
             DWORD Drives = GetLogicalDrives();
@@ -54,7 +66,8 @@ namespace NarNative{
                         if(ExMemory.MFTRecords != NULL){
                             extension_search_result NativeResult = NarFindExtensions(letter, 
                                                                                      VolumeHandle, 
-                                                                                     wchExt, 
+                                                                                     ExtensionList,
+                                                                                     Extensions->Count,
                                                                                      &ExMemory);
                             Result->Capacity += NativeResult.Len;
                             for(size_t i =0; i<NativeResult.Len; i++){
@@ -75,13 +88,25 @@ namespace NarNative{
             return Result;
         }
         
-        static List<System::String^>^ FindExtension(wchar_t VolumeLetter, System::String^ Extension){
+        static List<System::String^>^ FindExtension(wchar_t VolumeLetter, List<System::String^> ^Extensions){
             List<System::String^>^ Result = gcnew List<System::String^>;
             
-            wchar_t wchExt[256];
-            SystemStringToWCharPtr(Extension, wchExt);
-            
-            
+            wchar_t **ExtensionList = (wchar_t**)calloc(Extensions->Count, 8);
+            uint64_t ArenaSize = 0;
+            for (uint64_t i =0; i < Extensions->Count; i++) {
+                ArenaSize += Extensions[i]->Length;
+            }
+
+            ArenaSize += (Extensions->Count * 5);
+            ArenaSize *= 2; // sizeof(wchar_t)
+
+            nar_arena StringArena   = ArenaInit(calloc(ArenaSize, 1), ArenaSize);
+
+            for (uint64_t i =0; i < Extensions->Count; i++) {
+                ExtensionList[i] = (wchar_t*)ArenaAllocate(&StringArena, Extensions[i]->Length * 2 + 2);
+                SystemStringToWCharPtr(Extensions[i], ExtensionList[i]);
+            }
+
             HANDLE VolumeHandle = NarOpenVolume(VolumeLetter);
             if(VolumeHandle != INVALID_HANDLE_VALUE){
                 
@@ -90,7 +115,8 @@ namespace NarNative{
                 if(ExMemory.MFTRecords != NULL){
                     extension_search_result NativeResult = NarFindExtensions(VolumeLetter, 
                                                                              VolumeHandle, 
-                                                                             wchExt, 
+                                                                             ExtensionList, 
+                                                                             Extensions->Count,
                                                                              &ExMemory);
                     Result->Capacity += NativeResult.Len;
                     
@@ -102,6 +128,8 @@ namespace NarNative{
                 NarFreeExtensionFinderMemory(&ExMemory);
             }
             
+            free(ExtensionList);
+            free(StringArena.Memory);
             return Result;
         }
         
@@ -607,7 +635,8 @@ namespace NarDIWrapper {
         
         static wchar_t GetDiskType(int DiskID);
         static wchar_t GetVolumeType(wchar_t VolumeLetter);
-        
+        static bool CW_CopyDiskLayout(int SourceDiskID, int TargetDiskID);
+
         private:
         
         static volatile SHORT msInit    = 0;

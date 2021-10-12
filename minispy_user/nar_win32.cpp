@@ -861,7 +861,7 @@ NarWCHARToUTF8(wchar_t *Str, nar_arena *Arena){
 
 
 
-
+#if 1
 /*
 Doesn't fail if reads less than ReadSiz, instead returns how many bytes it read.
 ARGS:
@@ -1008,7 +1008,7 @@ NarReadBackup(nar_file_view *Backup, nar_file_view *Metadata,
     
     return ReadSizeInBytes;
 }
-
+#endif
 
 
 

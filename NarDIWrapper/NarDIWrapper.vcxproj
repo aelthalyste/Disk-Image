@@ -110,13 +110,16 @@
       </CallingConvention>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <AssemblerOutput>AssemblyAndSourceCode</AssemblerOutput>
+      <SDLCheck>false</SDLCheck>
+      <WholeProgramOptimization>true</WholeProgramOptimization>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>FltLib.lib;vssapi.lib;libzstd.lib;libzstd_static.lib</AdditionalDependencies>
+      <AdditionalDependencies>FltLib.lib;vssapi.lib;libzstd.lib;</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)\minispy_user\</AdditionalLibraryDirectories>
       <TreatLinkerWarningAsErrors>
       </TreatLinkerWarningAsErrors>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
