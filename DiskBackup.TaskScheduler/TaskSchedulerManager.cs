@@ -389,7 +389,7 @@ namespace DiskBackup.TaskScheduler
             ITrigger trigger = TriggerBuilder.Create()
                 .WithIdentity($"backupFullNowTrigger_{taskInfo.Id}", "Backup")
                 .ForJob($"backupFullNowJob_{taskInfo.Id}", "Backup")
-                .StartAt(taskInfo.NextDate) // now yollandığında hemen çalıştıracak
+                .StartNow() // now yollandığında hemen çalıştıracak
                 .Build();
 
             taskInfo.ScheduleId = taskInfo.ScheduleId + $"*backupFullNowJob_{taskInfo.Id}-Backup";

@@ -111,6 +111,7 @@ namespace DiskBackupWpfGUI
                 txtLocalPercentage.Text = "0%"; //TO DO NaN yakalandığında buraya 0 dışında bir şey girilmek istenir mi?
             else
                 txtLocalPercentage.Text = Math.Round((statusInfo.DataProcessed * 100.0) / (statusInfo.TotalDataProcessed), 2).ToString() + "%";
+            
             txtLocalSourceObje.Text = statusInfo.SourceObje;
             txtCloudSourceObje.Text = statusInfo.SourceObje;
             txtSourceSingle.Text = statusInfo.SourceObje;

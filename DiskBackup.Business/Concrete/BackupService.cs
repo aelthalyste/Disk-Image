@@ -22,7 +22,7 @@ namespace DiskBackup.Business.Concrete
     [ServiceBehavior(InstanceContextMode = InstanceContextMode.Single)]
     public class BackupService : IBackupService
     {
-        private DiskTracker _diskTracker;
+        private DiskTracker _diskTracker = new DiskTracker();
         private CSNarFileExplorer _cSNarFileExplorer;
 
         private Dictionary<int, ManualResetEvent> _taskEventMap = new Dictionary<int, ManualResetEvent>(); // aynı işlem Stopwatch ve cancellationtoken source için de yapılacak ancak Quartz'ın pause, resume ve cancel işlemleri düzgün çalışıyorsa kullanılmayacak
@@ -42,9 +42,6 @@ namespace DiskBackup.Business.Concrete
 
         private NetworkConnection _nc;
 
-        public DiskTracker DiskTracker { get { _diskTracker = _diskTracker ?? new DiskTracker(); return _diskTracker; }}
-
-
         public BackupService(IStatusInfoDal statusInfoRepository, ITaskInfoDal taskInfoDal, ILogger logger, IBackupStorageDal backupStorageDal, IBackupTaskDal backupTaskDal, IConfigurationDataDal configurationDataDal)
         {
             _statusInfoDal = statusInfoRepository;
@@ -63,7 +60,7 @@ namespace DiskBackup.Business.Concrete
 
             try
             {
-                _initTrackerResult = DiskTracker.CW_InitTracker();
+                _initTrackerResult = _diskTracker.CW_InitTracker();
             }
             catch (Exception ex)
             {
@@ -619,7 +616,7 @@ namespace DiskBackup.Business.Concrete
             _logger.Information("{letter} zinciri temizleniyor.", letter);
             try
             {
-                return DiskTracker.CW_RemoveFromTrack(letter);
+                return _diskTracker.CW_RemoveFromTrack(letter);
             }
             catch (Exception ex)
             {
@@ -720,9 +717,8 @@ namespace DiskBackup.Business.Concrete
                 long instantProcessData = 0;
                 passingTime.Start();
 
-                long myDecompressedSize = 0;
                 _logger.Information($"{letter} backup işlemi başlatılıyor...");
-                if (DiskTracker.CW_SetupStream(letter, (int)taskInfo.BackupTaskInfo.Type, str, true)) // 0 diff, 1 inc, full (2) ucu gelmediğinden ayrılabilir veya aynı devam edebilir
+                if (_diskTracker.CW_SetupStream(letter, (int)taskInfo.BackupTaskInfo.Type, str, true)) // 0 diff, 1 inc, full (2) ucu gelmediğinden ayrılabilir veya aynı devam edebilir
                 {
                     // yeterli alan kontrolü yap
                     if (!CheckDiskSize(taskInfo, statusInfo, timeElapsed, str, bytesReadSoFar))
@@ -746,7 +742,7 @@ namespace DiskBackup.Business.Concrete
                                 if (cancellationToken.IsCancellationRequested)
                                 {
                                     //cleanup
-                                    DiskTracker.CW_TerminateBackup(false, letter, taskInfo.BackupStorageInfo.Path);
+                                    _diskTracker.CW_TerminateBackup(false, letter, taskInfo.BackupStorageInfo.Path);
                                     _taskEventMap.Remove(taskInfo.Id);
                                     manualResetEvent.Dispose();
                                     _cancellationTokenSource[taskInfo.Id].Dispose();
@@ -759,10 +755,9 @@ namespace DiskBackup.Business.Concrete
                                 }
                                 manualResetEvent.WaitOne();
 
-                                var readStream = DiskTracker.CW_ReadStream(BAddr, letter, bufferSize);
+                                var readStream = _diskTracker.CW_ReadStream(BAddr, letter, bufferSize);
                                 file.Write(buffer, 0, (int)readStream.WriteSize);
                                 bytesReadSoFar += readStream.DecompressedSize;
-                                myDecompressedSize += readStream.DecompressedSize;
 
                                 instantProcessData += readStream.DecompressedSize; // anlık veri için              
                                 if (passingTime.ElapsedMilliseconds > 500)
@@ -771,7 +766,7 @@ namespace DiskBackup.Business.Concrete
                                     if (statusInfo.TotalDataProcessed >= (long)bytesReadSoFar)
                                         statusInfo.DataProcessed = bytesReadSoFar;
                                     statusInfo.AverageDataRate = ((statusInfo.TotalDataProcessed / 1024.0) / 1024.0) / (timeElapsed.ElapsedMilliseconds / 1000.0); // MB/s
-                                    if (instantProcessData != 0) // anlık veri için 0 gelmesin diye
+                                    if (instantProcessData != 0) // anlık veri 0 gelmesin diye
                                         statusInfo.InstantDataRate = ((instantProcessData / 1024.0) / 1024.0) / (passingTime.ElapsedMilliseconds / 1000.0); // MB/s
                                     statusInfo.TimeElapsed = timeElapsed.ElapsedMilliseconds;
                                     _statusInfoDal.Update(statusInfo);
@@ -783,15 +778,15 @@ namespace DiskBackup.Business.Concrete
                                     }
                                 }
 
-                                if (readStream.WriteSize == 0 || !DiskTracker.CW_CheckStreamStatus(letter))
+                                if (readStream.WriteSize == 0 || !_diskTracker.CW_CheckStreamStatus(letter))
                                 {
-                                    _logger.Information($"readStream.WriteSize: {readStream.WriteSize} - readStream.Error: {readStream.Error} - _diskTracker.CW_CheckStreamStatus({letter}): {DiskTracker.CW_CheckStreamStatus(letter)}");
+                                    _logger.Information($"readStream.WriteSize: {readStream.WriteSize} - readStream.Error: {readStream.Error} - _diskTracker.CW_CheckStreamStatus({letter}): {_diskTracker.CW_CheckStreamStatus(letter)}");
                                     break;
                                 }
                             }
-                            result = DiskTracker.CW_CheckStreamStatus(letter);
+                            result = _diskTracker.CW_CheckStreamStatus(letter);
                             _logger.Information($"_diskTracker.CW_CheckStreamStatus({letter}): {result}");
-                            DiskTracker.CW_TerminateBackup(false, letter, taskInfo.BackupStorageInfo.Path); //işlemi başarılı olup olmadığı cancel gelmeden
+                            _diskTracker.CW_TerminateBackup(false, letter, taskInfo.BackupStorageInfo.Path); //işlemi başarılı olup olmadığı cancel gelmeden
                             bytesReadSoFar = 0;
 
                             //CopyAndDeleteMetadataFile(taskInfo, str); //çalışılan dizine çıkartılan narmd dosyası kopyalanıp ilgili dizine silme işlemi yapılıyor
@@ -807,8 +802,6 @@ namespace DiskBackup.Business.Concrete
                     statusInfo.SourceObje = statusInfo.SourceObje.Substring(0, statusInfo.SourceObje.Length - 2);
                 }
                 statusInfo.TimeElapsed = timeElapsed.ElapsedMilliseconds;
-                _logger.Error("!!!!!!!!!!!!!!!!! DecompressedSize  : " + myDecompressedSize.ToString() + " !!!!!!!!!!!!!!!!!");
-                _logger.Error("!!!!!!!!!!!!!!!!! TotalDataProcessed: " + statusInfo.TotalDataProcessed.ToString() + " !!!!!!!!!!!!!!!!!");
                 _statusInfoDal.Update(statusInfo);
             }
 
@@ -968,7 +961,7 @@ namespace DiskBackup.Business.Concrete
                         {
                             if (cancellationToken.IsCancellationRequested)
                             { 
-                                DiskTracker.CW_TerminateBackup(false, taskInfo.StrObje[0]/*full backup görevi sadece 1 objeye uygulanacağı için*/, taskInfo.BackupStorageInfo.Path);
+                                _diskTracker.CW_TerminateBackup(false, taskInfo.StrObje[0]/*full backup görevi sadece 1 objeye uygulanacağı için*/, taskInfo.BackupStorageInfo.Path);
                                 _taskEventMap.Remove(taskInfo.Id);
                                 manualResetEvent.Dispose();
                                 _cancellationTokenSource[taskInfo.Id].Dispose();
@@ -980,10 +973,13 @@ namespace DiskBackup.Business.Concrete
                             }
                             manualResetEvent.WaitOne();
                             var readResult = DiskTracker.CW_ReadFullOnlyStream(ID, baddr, buffersize);
+                            bytesReadSoFar += readResult.DecompressedSize;
+
+                            instantProcessData += readResult.DecompressedSize; // anlık veri için        
                             if (passingTime.ElapsedMilliseconds > 500)
                             {
                                 statusInfo.FileName = taskInfo.BackupStorageInfo.Path + Inf.FileName;
-                                if (statusInfo.TotalDataProcessed >= (long)bytesReadSoFar)
+                                if (statusInfo.TotalDataProcessed >= bytesReadSoFar)
                                     statusInfo.DataProcessed = bytesReadSoFar;
                                 statusInfo.AverageDataRate = ((statusInfo.TotalDataProcessed / 1024.0) / 1024.0) / (timeElapsed.ElapsedMilliseconds / 1000.0); // MB/s
                                 if (instantProcessData != 0) // anlık veri için 0 gelmesin diye
@@ -1005,7 +1001,6 @@ namespace DiskBackup.Business.Concrete
                                 break;
                             }
                             output.Write(buffer, 0, (int)readResult.WriteSize);
-                            bytesReadSoFar += readResult.DecompressedSize;
                         }
                         output.Close();
 
@@ -1424,7 +1419,7 @@ namespace DiskBackup.Business.Concrete
                                 return result;
                         }
 
-                        if (backupMetadata.IsSameChainID(DiskTracker.CW_IsVolumeExists(backupMetadata.Letter)))
+                        if (backupMetadata.IsSameChainID(_diskTracker.CW_IsVolumeExists(backupMetadata.Letter)))
                         {
                             CleanChain(backupMetadata.Letter);
                             _logger.Information($"{backupMetadata.Fullpath} silinirken '{backupMetadata.Letter}' volume'nde işleyen zincir olduğu için yeni zincir başlatıldı.");
@@ -1456,7 +1451,7 @@ namespace DiskBackup.Business.Concrete
                         index2++;
                     }
 
-                    if (backupMetadata.IsSameChainID(DiskTracker.CW_IsVolumeExists(backupMetadata.Letter)))
+                    if (backupMetadata.IsSameChainID(_diskTracker.CW_IsVolumeExists(backupMetadata.Letter)))
                     {
                         CleanChain(backupMetadata.Letter);
                         _logger.Information($"{backupMetadata.Fullpath} silinirken '{backupMetadata.Letter}' volume'nde işleyen zincir olduğu için yeni zincir başlatıldı.");

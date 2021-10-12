@@ -110,19 +110,19 @@ namespace DiskBackupWpfGUI
             cbLang.SelectedValue = languageConfiguration.Value;
             cbLang.SelectionChanged += cbLang_SelectionChanged;
 
-            try
-            {
-                if (!backupService.GetInitTracker())
-                {
-                    _logger.Information("Driver intialize edilemedi.");
-                    MessageBox.Show(Resources["driverNotInitializedMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.Error(ex, "Driver intialize edilemedi.");
-                MessageBox.Show(Resources["driverNotInitializedMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
-            }
+            //try
+            //{
+            //    if (!backupService.GetInitTracker())
+            //    {
+            //        _logger.Information("Driver intialize edilemedi.");
+            //        MessageBox.Show(Resources["driverNotInitializedMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+            //    }
+            //}
+            //catch (Exception ex)
+            //{
+            //    _logger.Error(ex, "Driver intialize edilemedi.");
+            //    MessageBox.Show(Resources["driverNotInitializedMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+            //}
 
             try
             {
@@ -582,54 +582,53 @@ namespace DiskBackupWpfGUI
             {
                 volumeInfoList.Add(item);
 
-                string letter = item.Letter.ToString();
-                var taskInfo = _taskInfoDal.Get(x => x.StrObje.Contains(letter) && x.Type == TaskType.Backup && x.EnableDisable != TecnicalTaskStatusType.Broken);
-                if (taskInfo != null)
-                {
-                    if (overlappingTaskInfoList.Count == 0)
-                    {
-                        overlappingTaskInfoList.Add(taskInfo);
-                    }
-                    else
-                    {
-                        bool controlFlag = false;
-                        foreach (var itemTask in overlappingTaskInfoList)
-                        {
-                            if (itemTask.Id == taskInfo.Id)
-                            {
-                                controlFlag = false;
-                                break;
-                            }
-                            controlFlag = true;
-                        }
-                        if (controlFlag)
-                            overlappingTaskInfoList.Add(taskInfo);
-                    }
-                }
-            }
+            //    string letter = item.Letter.ToString();
+            //    var taskInfo = _taskInfoDal.Get(x => x.StrObje.Contains(letter) && x.Type == TaskType.Backup && x.EnableDisable != TecnicalTaskStatusType.Broken);
+            //    if (taskInfo != null)
+            //    {
+            //        if (overlappingTaskInfoList.Count == 0)
+            //        {
+            //            overlappingTaskInfoList.Add(taskInfo);
+            //        }
+            //        else
+            //        {
+            //            bool controlFlag = false;
+            //            foreach (var itemTask in overlappingTaskInfoList)
+            //            {
+            //                if (itemTask.Id == taskInfo.Id)
+            //                {
+            //                    controlFlag = false;
+            //                    break;
+            //                }
+            //                controlFlag = true;
+            //            }
+            //            if (controlFlag)
+            //                overlappingTaskInfoList.Add(taskInfo);
+            //        }
+            //    }
+            //}
 
-            if (overlappingTaskInfoList.Count >= 1)
-            {
-                string message = "";
-                foreach (var itemTask in overlappingTaskInfoList)
-                {
-                    message += "\n" + itemTask.Name;
-                }
-                MessageBoxResult result = MessageBox.Show(Resources["taskBackupOverlappingAffectedMB"].ToString() + message, Resources["MessageboxTitle"].ToString(), MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
-                if (result == MessageBoxResult.Yes)
-                {
-                    overlappingTaskInfoList.ForEach(x => BreakTheTask(x)); // sil ve devam et
-                }
-                else
-                {
-                    return;
-                }
+            //if (overlappingTaskInfoList.Count >= 1)
+            //{
+            //    string message = "";
+            //    foreach (var itemTask in overlappingTaskInfoList)
+            //    {
+            //        message += "\n" + itemTask.Name;
+            //    }
+            //    MessageBoxResult result = MessageBox.Show(Resources["taskBackupOverlappingAffectedMB"].ToString() + message, Resources["MessageboxTitle"].ToString(), MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
+            //    if (result == MessageBoxResult.Yes)
+            //    {
+            //        overlappingTaskInfoList.ForEach(x => BreakTheTask(x)); // sil ve devam et
+            //    }
+            //    else
+            //    {
+            //        return;
+            //    }
             }
 
             using (var scope = _scope.BeginLifetimeScope())
             {
-                NewCreateTaskWindow newCreateTask = scope.Resolve<NewCreateTaskWindow>(new TypedParameter(backupStorageInfoList.GetType(), backupStorageInfoList),
-                    new TypedParameter(volumeInfoList.GetType(), volumeInfoList));
+                NewCreateTaskWindow newCreateTask = scope.Resolve<NewCreateTaskWindow>(new TypedParameter(backupStorageInfoList.GetType(), backupStorageInfoList), new TypedParameter(volumeInfoList.GetType(), volumeInfoList));
                 newCreateTask.ShowDialog();
                 if (newCreateTask._showTaskTab)
                     mainTabControl.SelectedIndex = 1;

@@ -375,17 +375,9 @@ namespace DiskBackupWpfGUI
                     _taskInfo.BackupTaskInfo.WaitNumberTryAgain = Convert.ToInt32(txtTimeWait.Text);
                 }
 
-                // Zincir kontrolü
-                /* artık aynı volumede bir backup görevi olacağı için inc-diff kontrolleri yapılmasına gerek kalmadı
-                 * if (!ChainCheck())
-                {
-                    //Close(); // Kullanıcı reddettiğinde görev oluşturma ekranının tamamen kapanmasını engellemek için kaldır
-                    return;
-                }*/
-
                 // Restore kontrolü
-                var result = CheckAndBreakAffectedTask(_taskInfo);
-                if (!result)
+
+                if (!CheckAndBreakAffectedTasks(_taskInfo))
                 {
                     //Close(); // Kullanıcı reddettiğinde görev oluşturma ekranının tamamen kapanmasını engellemek için kaldır
                     return;
@@ -428,7 +420,6 @@ namespace DiskBackupWpfGUI
                             }
                         }
                     }
-                    // güncelleme işlemi yapacaksın
                     resultTaskInfo = UpdateToDatabase();
                 }
 
@@ -477,7 +468,6 @@ namespace DiskBackupWpfGUI
                         {
 
                         }
-                        
                     }
 
                     Close();
@@ -489,7 +479,6 @@ namespace DiskBackupWpfGUI
                         _showTaskTab = true;
                         //MessageBox.Show(Resources["addSuccessMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.OK, MessageBoxImage.Information);
                     }
-
                 }
                 else
                 {
@@ -502,7 +491,82 @@ namespace DiskBackupWpfGUI
 
         }
 
-        private bool CheckAndBreakAffectedTask(TaskInfo taskInfo)
+        private bool CheckAndBreakAffectedTasks(TaskInfo taskInfo)
+        {
+            Console.WriteLine("CheckAndBreakAffectedTasks çağırıldı.");
+            if (!CheckAndBreakAffectedRestoreTask(taskInfo))
+            {
+                Console.WriteLine("CheckAndBreakAffectedRestoreTask sonuç = false");
+                return false;
+            }                
+            var taskList = _taskInfoDal.GetList(x => x.EnableDisable != TecnicalTaskStatusType.Broken);
+            Console.WriteLine("task listesi getirildi count = " + taskList.Count);
+            List<TaskInfo> taskAffectedList = new List<TaskInfo>();
+
+            bool checkFlag = false;
+            Console.WriteLine("Backup tipi = " + taskInfo.BackupTaskInfo.Type.ToString());
+            if (taskInfo.BackupTaskInfo.Type != BackupTypes.Full)
+            {
+                Console.WriteLine("1");
+                foreach (var item in taskList)
+                {
+                    Console.WriteLine("2");
+                    item.BackupTaskInfo = _backupTaskDal.Get(x => x.Id == item.BackupTaskId);
+                    Console.WriteLine("3");
+                    if (item.BackupTaskInfo.Type == BackupTypes.Inc || item.BackupTaskInfo.Type == BackupTypes.Diff)
+                    {
+                        Console.WriteLine("4");
+                        Console.WriteLine("Backup Task Type = " + item.BackupTaskInfo.Type);
+                        //if (item.BackupTaskInfo.Type == BackupTypes.Diff || item.BackupTaskInfo.Type == BackupTypes.Inc)
+                        taskAffectedList.Add(item);
+                    }
+                }
+                Console.WriteLine("taskAffectedList Count = " + taskAffectedList.Count);
+
+                foreach (var itemTask in taskAffectedList)
+                {
+                    foreach (var itemObje in taskInfo.StrObje) // bozulacak backup volumeleri
+                    {
+                        if (itemTask.StrObje.Contains(itemObje))
+                        {
+                            checkFlag = true;
+                            break;
+                        }
+                    }
+                }
+            }
+            
+            Console.WriteLine("Check Flag = " + checkFlag);
+            MessageBoxResult result = MessageBoxResult.Yes;
+
+            if (checkFlag)
+                result = MessageBox.Show(Resources["taskAffectedMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
+            if (result == MessageBoxResult.No)
+                return false;
+
+            if (result == MessageBoxResult.Yes && checkFlag)
+            {
+                foreach (var itemTask in taskAffectedList)
+                {
+                    foreach (var itemObje in taskInfo.StrObje) // bozulacak backup volumeleri
+                    {
+                        Console.WriteLine("itemTask EnableDisable tipi = " + itemTask.EnableDisable.ToString());
+                        itemTask.EnableDisable = TecnicalTaskStatusType.Broken;
+
+                        if (itemTask.ScheduleId != null && itemTask.ScheduleId != "")
+                        {
+                            _schedulerManager.DeleteJob(itemTask.ScheduleId);
+                            itemTask.ScheduleId = "";
+                        }
+                        _taskInfoDal.Update(itemTask);
+                    }
+                }
+            }
+            Console.WriteLine("İşlem bitti return true");
+            return true;
+        }
+
+        private bool CheckAndBreakAffectedRestoreTask(TaskInfo taskInfo)
         {
             var taskList = _taskInfoDal.GetList(x => x.Type == TaskType.Restore && x.EnableDisable != TecnicalTaskStatusType.Broken);
             List<TaskInfo> taskAffectedList = new List<TaskInfo>();
