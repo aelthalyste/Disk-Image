@@ -493,31 +493,58 @@ namespace DiskBackupWpfGUI
 
         private bool CheckAndBreakAffectedTasks(TaskInfo taskInfo)
         {
+            bool messageBoxResult = false;
             Console.WriteLine("CheckAndBreakAffectedTasks çağırıldı.");
-            if (!CheckAndBreakAffectedRestoreTask(taskInfo))
+            var affectedRestoreTaskIsNull = CheckAndBreakAffectedRestoreTask(taskInfo);
+            Console.WriteLine(affectedRestoreTaskIsNull.Keys.First());
+            
+            if (affectedRestoreTaskIsNull.Keys.First()) //ilgili volume'de restore görevi var 
             {
-                Console.WriteLine("CheckAndBreakAffectedRestoreTask sonuç = false");
-                return false;
-            }                
-            var taskList = _taskInfoDal.GetList(x => x.EnableDisable != TecnicalTaskStatusType.Broken);
+                Console.WriteLine("CheckAndBreakAffectedRestoreTask sonuç = true");
+
+                MessageBoxResult restoreMBResult = MessageBox.Show(Resources["restoreTaskAffectedMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
+                
+                if (restoreMBResult == MessageBoxResult.No)
+                    return false; //bişi yapma
+
+                if (restoreMBResult == MessageBoxResult.Yes)
+                {
+                    messageBoxResult = true;
+                    foreach (var itemTask in affectedRestoreTaskIsNull.Values.First())
+                    {
+                        foreach (var itemObje in taskInfo.StrObje) // bozulacak backup volumeleri
+                        {
+                            if (itemTask.StrObje.Contains(itemObje))
+                            {
+                                itemTask.EnableDisable = TecnicalTaskStatusType.Broken;
+
+                                if (itemTask.ScheduleId != null && itemTask.ScheduleId != "")
+                                {
+                                    _schedulerManager.DeleteJob(itemTask.ScheduleId);
+                                    itemTask.ScheduleId = "";
+                                }
+
+                                _taskInfoDal.Update(itemTask);
+                            }
+                        }
+                    }
+                }
+            }
+
+            var taskList = _taskInfoDal.GetList(x => x.EnableDisable != TecnicalTaskStatusType.Broken && x.Type == TaskType.Backup);
             Console.WriteLine("task listesi getirildi count = " + taskList.Count);
             List<TaskInfo> taskAffectedList = new List<TaskInfo>();
 
             bool checkFlag = false;
             Console.WriteLine("Backup tipi = " + taskInfo.BackupTaskInfo.Type.ToString());
+
             if (taskInfo.BackupTaskInfo.Type != BackupTypes.Full)
             {
-                Console.WriteLine("1");
                 foreach (var item in taskList)
                 {
-                    Console.WriteLine("2");
                     item.BackupTaskInfo = _backupTaskDal.Get(x => x.Id == item.BackupTaskId);
-                    Console.WriteLine("3");
-                    if (item.BackupTaskInfo.Type == BackupTypes.Inc || item.BackupTaskInfo.Type == BackupTypes.Diff)
+                    if (item.BackupTaskInfo != null && item.BackupTaskInfo.Type == BackupTypes.Inc || item.BackupTaskInfo.Type == BackupTypes.Diff)
                     {
-                        Console.WriteLine("4");
-                        Console.WriteLine("Backup Task Type = " + item.BackupTaskInfo.Type);
-                        //if (item.BackupTaskInfo.Type == BackupTypes.Diff || item.BackupTaskInfo.Type == BackupTypes.Inc)
                         taskAffectedList.Add(item);
                     }
                 }
@@ -535,16 +562,18 @@ namespace DiskBackupWpfGUI
                     }
                 }
             }
-            
+
             Console.WriteLine("Check Flag = " + checkFlag);
             MessageBoxResult result = MessageBoxResult.Yes;
+            if (!messageBoxResult)
+            {
+                if (checkFlag)
+                    result = MessageBox.Show(Resources["taskAffectedMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
+                if (result == MessageBoxResult.No)
+                    return false;
+            }
 
-            if (checkFlag)
-                result = MessageBox.Show(Resources["taskAffectedMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
-            if (result == MessageBoxResult.No)
-                return false;
-
-            if (result == MessageBoxResult.Yes && checkFlag)
+            if (result == MessageBoxResult.Yes || messageBoxResult && checkFlag)
             {
                 foreach (var itemTask in taskAffectedList)
                 {
@@ -562,63 +591,35 @@ namespace DiskBackupWpfGUI
                     }
                 }
             }
-            Console.WriteLine("İşlem bitti return true");
             return true;
         }
 
-        private bool CheckAndBreakAffectedRestoreTask(TaskInfo taskInfo)
+        private Dictionary<bool, List<TaskInfo>> CheckAndBreakAffectedRestoreTask(TaskInfo taskInfo)
         {
             var taskList = _taskInfoDal.GetList(x => x.Type == TaskType.Restore && x.EnableDisable != TecnicalTaskStatusType.Broken);
             List<TaskInfo> taskAffectedList = new List<TaskInfo>();
-
-            foreach (var item in taskList)
-            {
-                item.RestoreTaskInfo = _restoreTaskDal.Get(x => x.Id == item.RestoreTaskId);
-                if (item.RestoreTaskInfo.Type == RestoreType.RestoreDisk)
-                    taskAffectedList.Add(item);
-            }
-
             bool checkFlag = false;
-            foreach (var itemTask in taskAffectedList)
+            Console.WriteLine("Restore Tasklist count" + taskList.Count);
+            if (taskInfo.BackupTaskInfo.Type != BackupTypes.Full)
             {
-                foreach (var itemObje in taskInfo.StrObje) // bozulacak backup volumeleri
+                foreach (var item in taskList)
                 {
-                    if (itemTask.StrObje.Contains(itemObje))
+                    item.RestoreTaskInfo = _restoreTaskDal.Get(x => x.Id == item.RestoreTaskId);
+                    foreach (var obje in taskInfo.StrObje)
                     {
-                        checkFlag = true;
-                    }
-                }
-            }
-
-            MessageBoxResult result = MessageBoxResult.Yes;
-
-            if (checkFlag)
-                result = MessageBox.Show(Resources["restoreTaskAffectedMB"].ToString(), Resources["MessageboxTitle"].ToString(), MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
-            if (result == MessageBoxResult.No)
-                return false;
-
-            if (result == MessageBoxResult.Yes && checkFlag)
-            {
-                foreach (var itemTask in taskAffectedList)
-                {
-                    foreach (var itemObje in taskInfo.StrObje) // bozulacak backup volumeleri
-                    {
-                        if (itemTask.StrObje.Contains(itemObje))
+                        if (item.StrObje.Contains(obje) || item.RestoreTaskInfo.TargetLetter.Contains(obje))
                         {
-                            itemTask.EnableDisable = TecnicalTaskStatusType.Broken;
-
-                            if (itemTask.ScheduleId != null && itemTask.ScheduleId != "")
-                            {
-                                _schedulerManager.DeleteJob(itemTask.ScheduleId);
-                                itemTask.ScheduleId = "";
-                            }
-
-                            _taskInfoDal.Update(itemTask);
+                            taskAffectedList.Add(item);
+                            checkFlag = true;
                         }
                     }
                 }
             }
-            return true;
+
+            Console.WriteLine("Restore CheckFlag " + checkFlag.ToString());
+            Dictionary<bool, List<TaskInfo>> dictionary = new Dictionary<bool, List<TaskInfo>>();
+            dictionary.Add(checkFlag, taskAffectedList);
+            return dictionary;
         }
 
         /*private bool ChainCheck()
