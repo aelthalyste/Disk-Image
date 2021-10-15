@@ -251,17 +251,23 @@ namespace DiskBackup.Business.Concrete
                             {
                                 var decryptLicenseKey = streamReader.ReadToEnd();
                                 if (!CheckMachine(decryptLicenseKey.Split('_')[5]))
+                                {
                                     return "failMachine";
+                                }
                                 if (CheckOSVersion(decryptLicenseKey.Split('_')[6]))
+                                {
                                     return decryptLicenseKey;
+                                }
                                 else
+                                {
                                     return "failOS";
+                                }
                             }
                         }
                     }
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 return "fail";
             }
@@ -271,7 +277,6 @@ namespace DiskBackup.Business.Concrete
         {
             RegistryKey registryKey = Registry.LocalMachine.OpenSubKey("Software\\Microsoft\\Windows NT\\CurrentVersion");
             var OSName = (string)registryKey.GetValue("ProductName");
-
             if (versionType.Equals("SBS") && OSName.Contains("Small Business Server"))
             {
                 return true;
@@ -284,7 +289,6 @@ namespace DiskBackup.Business.Concrete
             {
                 return true;
             }
-
             return false;
         }
 
@@ -292,79 +296,65 @@ namespace DiskBackup.Business.Concrete
         {
             RegistryKey registryKey = Registry.LocalMachine.OpenSubKey("HARDWARE\\DESCRIPTION\\System\\BIOS");
             RegistryKey registryKeyBackup = Registry.LocalMachine.OpenSubKey("SYSTEM\\CurrentControlSet\\Control\\SystemInformation");
-            var pathName = registryKey.GetValueNames();
-            var pathNameBackup = registryKeyBackup.GetValueNames();
+            List<string> allRegistryValues = new List<string>();
+
+            var registryValueNames = registryKey.GetValueNames();
+            var registryBackupValueNames = registryKeyBackup.GetValueNames();
+
+            allRegistryValues.AddRange(registryValueNames);
+            allRegistryValues.AddRange(registryBackupValueNames);
             if (machineType.Equals("VirtualMachine"))
             {
-                foreach (var item in pathName)
+                foreach (var item in allRegistryValues)
                 {
-                    if (registryKey.GetValue(item).ToString().Contains("VMware") || registryKey.GetValue(item).ToString().Contains("Hyper-V") || registryKey.GetValue(item).ToString().Contains("Virtual"))
+                    if (registryKey.GetValue(item) != null)
                     {
-                        return true;
-                    }
-                }
-                //return çalışmamışsa bir de burayı kontrol ediyor.
-                foreach (var value in pathNameBackup)
-                {
-                    if (registryKey.GetValue(value).ToString().Contains("VMware") || registryKey.GetValue(value).ToString().Contains("Hyper-V") || registryKey.GetValue(value).ToString().Contains("Virtual"))
-                    {
-                        return true;
+                        if (registryKey.GetValue(item).ToString().Contains("VMware") || registryKey.GetValue(item).ToString().Contains("Hyper-V") || registryKey.GetValue(item).ToString().Contains("Virtual"))
+                        {
+                            return true;
+                        }
                     }
                 }
             }
-            else //VirtualMachine olmamasına rağmen virtual machine gidilmişse
+            else //VirtualMachine makine lisansıyla Fiziksel Makine kullanılmasın diye
             {
-                foreach (var item in pathName)
+                foreach (var item in allRegistryValues)
                 {
-                    if (registryKey.GetValue(item).ToString().Contains("VMware") || registryKey.GetValue(item).ToString().Contains("Hyper-V") || registryKey.GetValue(item).ToString().Contains("Virtual"))
-                        return false;
-                }
-                //return çalışmamışsa bir de burayı kontrol ediyor.
-                foreach (var value in pathNameBackup)
-                {
-                    if (registryKey.GetValue(value).ToString().Contains("VMware") || registryKey.GetValue(value).ToString().Contains("Hyper-V") || registryKey.GetValue(value).ToString().Contains("Virtual"))
+                    if (registryKey.GetValue(item) != null)
                     {
-                        return false;
+                        if (registryKey.GetValue(item).ToString().Contains("VMware") || registryKey.GetValue(item).ToString().Contains("Hyper-V") || registryKey.GetValue(item).ToString().Contains("Virtual"))
+                        {
+                            return false;
+                        }
                     }
                 }
                 return true;
             }
-
             return false;
         }
 
         public MachineType GetMachineType()
         {
             RegistryKey registryKey = Registry.LocalMachine.OpenSubKey("HARDWARE\\DESCRIPTION\\System\\BIOS");
-            var pathName = registryKey.GetValueNames();
-
-            foreach (var item in pathName)
-            {
-                if (registryKey.GetValue(item).ToString().Contains("VMware") || registryKey.GetValue(item).ToString().Contains("Hyper-V") || registryKey.GetValue(item).ToString().Contains("Virtual"))
-                    return MachineType.VirtualMachine;
-            }
-
             RegistryKey registryKeyBackup = Registry.LocalMachine.OpenSubKey("SYSTEM\\CurrentControlSet\\Control\\SystemInformation");
-            var pathNameBackup = registryKeyBackup.GetValueNames();
+            List<string> allRegistryValues = new List<string>();
 
-            try
+            var registryValueNames = registryKey.GetValueNames();
+            var registryBackupValueNames = registryKeyBackup.GetValueNames();
+
+            allRegistryValues.AddRange(registryValueNames);
+            allRegistryValues.AddRange(registryBackupValueNames);
+
+            foreach (var item in allRegistryValues)
             {
-                foreach (var value in pathNameBackup)
+                if (registryKey.GetValue(item) != null)
                 {
-                    if (registryKey.GetValue(value) != null)
+                    if (registryKey.GetValue(item).ToString().Contains("VMware") || registryKey.GetValue(item).ToString().Contains("Hyper-V") || registryKey.GetValue(item).ToString().Contains("Virtual"))
                     {
-                        if (registryKey.GetValue(value).ToString().Contains("VMware") || registryKey.GetValue(value).ToString().Contains("Hyper-V") || registryKey.GetValue(value).ToString().Contains("Virtual"))
-                        {
-                            return MachineType.VirtualMachine;
-                        }
+                        return MachineType.VirtualMachine;
                     }
                 }
             }
-            catch (Exception e)
-            {
-                _logger.Error("License GetMachine Error = " + e);
-            }
-
             return MachineType.PhysicalMachine;
         }
     }
