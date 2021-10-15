@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
-  <!--xmlns:difxapp="http://schemas.microsoft.com/wix/DifxAppExtension">-->
   <?define Service_TargetDir=$(var.DiskBackup.Service.TargetDir)?>
   <?define UI_TargetDir=$(var.DiskBackupWpfGUI.TargetDir)?>
+  <?define Driver_TargetDir=$(var.DiskBackup.DriverInitializer.TargetDir)?>
   <?define NetFx472MinRelease = 461808 ?>
+
   <Product Id="*" Name="Narbulut Disk Backup" Language="1033" Version="1.0.0.0" Manufacturer="Narbulut Bilgi Teknolojileri San. ve Tic. A.Ş." UpgradeCode="b5acc323-9d6f-4beb-a666-8633cbff7a5b">
     <Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
     <UI>
@@ -12,32 +13,34 @@
     <WixVariable Id="WixUILicenseRtf" Value="$(var.ProjectDir)\son_kullanici_lisans_sozlesmesi.rtf" />
     <WixVariable Id="WixUIBannerBmp" Value="Images\narbulut_setup_mini.png" />
     <WixVariable Id="WixUIDialogBmp" Value="Images\Narbulut_v3_setup.png" />
+
     <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
     <MediaTemplate EmbedCab="yes"/>
-    <!--<PropertyRef Id="WIX_IS_NETFRAMEWORK_47_OR_LATER_INSTALLED" />
-		<Condition Message="Bu uygulama .NET Framework 4.7.2 ile çalışmaktadır.Lütfen uygun .NET sürümünü kurduktan sonra tekrar deneyin. Destek için destek@narbulut.com ile irtibata geçiniz.">
-			-->
-    <!--<Condition Message="Bu application requires .NET Framework 4.5.2. Please install .NET with proper version and try again. For support,contact destek@narbulut.com.">-->
-    <!--
-			<![CDATA[Installed OR WIX_IS_NETFRAMEWORK_47_OR_LATER_INSTALLED]]>
-		</Condition>-->
+    <Icon Id="favicon_mavi.ico" SourceFile="Images\favicon_mavi.ico"/>
+    <Property Id="ARPPRODUCTICON" Value="favicon_mavi.ico" />
+    <!--<Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Launch My Application Name" />-->
     <Binary Id="ReinstallCustomAction" SourceFile="..\DiskBackup.Reinstall\bin\Release\DiskBackup.Reinstall.CA.dll"/>
+
     <CustomAction Id="Uninstall" Directory="INSTALLFOLDER" ExeCommand="[SystemFolder]cmd.exe /c UninstallFile.bat" Execute="deferred" Impersonate="no" Return="ignore" />
+    <CustomAction Id="DriverInstall" Directory="INSTALLFOLDER" ExeCommand="[SystemFolder]cmd.exe /c DiskBackup.DriverInitializer.exe" Execute="immediate" Impersonate="no" Return="asyncNoWait" />
     <CustomAction Id="Reinstall" BinaryKey="ReinstallCustomAction" DllEntry="VerifyReinstall" Return="check"/>
+
     <InstallUISequence>
       <Custom Action='Reinstall' After='ProgressDlg' />
     </InstallUISequence>
+
     <InstallExecuteSequence>
       <Custom Action="Uninstall" Before="RemoveFiles">REMOVE~="ALL"</Custom>
+      <Custom Action="DriverInstall" After="InstallFinalize">NOT Installed</Custom>
     </InstallExecuteSequence>
+
     <Feature Id="ProductFeature" Title="DiskBackup.Setup" Level="1">
       <ComponentGroupRef Id="ProductComponents" />
       <ComponentRef Id="ApplicationShortcutDesktop" />
       <ComponentRef Id="ApplicationShortcut" />
     </Feature>
-    <Icon Id="favicon_mavi.ico" SourceFile="Images\favicon_mavi.ico"/>
-    <Property Id="ARPPRODUCTICON" Value="favicon_mavi.ico" />
   </Product>
+
   <Fragment>
     <PropertyRef Id="WIXNETFX4RELEASEINSTALLED" />
     <Property Id="WIX_IS_NETFRAMEWORK_472_OR_LATER_INSTALLED" Secure="yes" />
@@ -45,6 +48,7 @@
       WIXNETFX4RELEASEINSTALLED >= "#$(var.NetFx472MinRelease)"
     </SetProperty>
   </Fragment>
+
   <Fragment>
     <Directory Id="TARGETDIR" Name="SourceDir">
       <Directory Id="ProgramFiles64Folder">
@@ -56,6 +60,7 @@
       <Directory Id="CommonAppDataFolder">
         <Directory Id="ApplicationData" Name="NarDiskBackup"/>
       </Directory>
+
       <Directory Id="DesktopFolder" Name="Desktop">
         <Component Id="ApplicationShortcutDesktop" Guid="F6D7635F-0407-4186-B11C-A72ABE14F168">
           <Shortcut Id="NarbulutDesktopShortcut" Name="Narbulut Disk Backup" Description="Narbulut Disk Backup arayüz uygulaması kısayolu" Target="[INSTALLFOLDER]DiskBackupWpfGUI.exe" WorkingDirectory="INSTALLFOLDER" />
@@ -63,8 +68,10 @@
           <RegistryValue Root="HKCU" Key="Software/Narbulut" Name="installed" Type="integer" Value="1" KeyPath="yes" />
         </Component>
       </Directory>
+
       <Directory Id="ProgramMenuFolder"/>
     </Directory>
+
     <DirectoryRef Id="ProgramMenuFolder">
       <Component Id="ApplicationShortcut" Guid="F4C4BDD0-26F3-412A-B98E-AFAD74FBC902">
         <Shortcut Id="ApplicationStartMenuShortcut" Name="Narbulut Disk Backup" Description="Narbulut Disk Backup arayüz uygulaması kısayolu" Target="[INSTALLFOLDER]DiskBackupWpfGUI.exe" WorkingDirectory="INSTALLFOLDER" />
@@ -72,19 +79,23 @@
         <RegistryValue Root="HKCU" Key="Software/Narbulut" Name="installed" Type="integer" Value="1" KeyPath="yes" />
       </Component>
     </DirectoryRef>
+
     <DirectoryRef Id="TARGETDIR">
       <!--<Merge Id="VCRedist64" SourceFile="C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Redist\MSVC\14.16.27012\MergeModules\Microsoft_VC141_CRT_x64.msm" DiskId="1" Language="0" />-->
       <!--Ebru-->
       <Merge Id="VCRedist64" SourceFile="C:\Program Files (x86)\Microsoft Visual Studio\2019\Professional\VC\Redist\MSVC\14.16.27012\MergeModules\Microsoft_VC141_CRT_x64.msm" DiskId="1" Language="0" />
       <!--Eyüp-->
     </DirectoryRef>
+
     <Feature Id="VCRedist" Title="VS 2019 C++ Runtime" AllowAdvertise="no" Display="hidden" Level="1">
       <MergeRef Id="VCRedist64" />
     </Feature>
   </Fragment>
+
   <Fragment>
     <ComponentGroup Id="ProductComponents">
       <Component Id="Executables" Guid="E68E1012-777A-4106-B422-8846059657FF" Directory="INSTALLFOLDER">
+        <File Id="DiskBackup.DriverInitializer.exe" Name="DiskBackup.DriverInitializer.exe" Source="$(var.Driver_TargetDir)DiskBackup.DriverInitializer.exe"/>
         <File Id="DiskBackup.Service.exe" Name="DiskBackup.Service.exe" Source="$(var.Service_TargetDir)DiskBackup.Service.exe" KeyPath="yes" />
         <File Id="DiskBackup.Service.exe.config" Name="DiskBackup.Service.exe.config" Source="$(var.Service_TargetDir)DiskBackup.Service.exe.config"/>
         <File Id="quartz.config" Name="quartz.config" Source="$(var.Service_TargetDir)quartz.config"/>
@@ -123,10 +134,12 @@
         <ServiceInstall Id="ServiceInstaller" Type="ownProcess" Vital="yes" Name="NarDiskBackupService" Description="Narbulut Disk Yedekleme Uygulaması" DisplayName="NarDiskBackupService" Start="auto" ErrorControl="ignore" Account="LocalSystem" Interactive="no"></ServiceInstall>
         <ServiceControl Id="ServiceControl" Name="NarDiskBackupService" Start="install" Wait="yes" Stop="both" Remove="uninstall" />
         <File Id="UninstallFile.bat" Name="UninstallFile.bat" Source="$(var.ProjectDir)UninstallFile.bat"/>
+        <!--required files for NarDIWrapper -->
         <File Id="libzstd.dll" Name="libzstd.dll" Source="$(var.ProjectDir)libzstd.dll"/>
-        <!--libzstd.dll dışarıdan eklenen dll, NarDIWrapper için gerekli-->
         <File Id="standalone_vss.exe" Name="standalone_vss.exe" Source="$(var.ProjectDir)standalone_vss.exe"/>
-        <!--standalone_vss.exe dışarıdan eklenen exe, NarDIWrapper için gerekli-->
+        <File Id="minispy.sys" Name="minispy.sys" Source="$(var.ProjectDir)minispy.sys" />
+        <File Id="minispy.inf" Name="minispy.inf" Source="$(var.ProjectDir)minispy.inf"/>
+        <File Id="minispy.cat" Name="minispy.cat" Source="$(var.ProjectDir)minispy.cat"/>
       </Component>
       <Component Id="InteropDll" Guid="685A18FE-4C44-43DF-B6BF-EBDB3D6DA398" Directory="X_86">
         <File Id="SQLite.Interop.dll" Name="SQLite.Interop.dll" Source="$(var.Service_TargetDir)x86\SQLite.Interop.dll" KeyPath="yes" />
@@ -138,12 +151,6 @@
         <File Id="disk_image_quartz.db" Name="disk_image_quartz.db" Source="$(var.UI_TargetDir)disk_image_quartz.db" KeyPath="yes" />
         <File Id="image_disk.db" Name="image_disk.db" Source="$(var.UI_TargetDir)image_disk.db"/>
       </Component>
-      <!--<Component Id="Driver" Guid="D7CF9890-12EC-4577-98E2-B22BC802CF13" Directory="INSTALLFOLDER">
-				<File Id="minispy.sys" Name="minispy.sys" Source="minispy.sys" KeyPath="yes" />
-				<File Id="minispy.inf" Name="minispy.inf" Source="minispy.inf"/>
-				<difxapp:Driver ForceInstall="yes"/>
-			</Component>-->
     </ComponentGroup>
-    <!--<CustomAction Id="Install" Directory="INSTALLFOLDER" ExeCommand="[SystemFolder]cmd.exe /c UninstallFile.bat" Execute="deferred" Impersonate="no" Return="ignore" />-->
   </Fragment>
 </Wix>

@@ -84,6 +84,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FullBackupPoc", "FullBackup
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DiskBackup.ConsoleApplication", "DiskBackup.ConsoleApplication\DiskBackup.ConsoleApplication.csproj", "{422771CE-F085-4B15-9CA2-FA3F1F727F2B}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DiskBackup.DriverInitializer", "DiskBackup.DriverInitializer\DiskBackup.DriverInitializer.csproj", "{E1BD12FB-7889-4BDA-8009-5F4C2DF48CE1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -780,6 +782,26 @@ Global
 		{422771CE-F085-4B15-9CA2-FA3F1F727F2B}.Release|x64.Build.0 = Release|Any CPU
 		{422771CE-F085-4B15-9CA2-FA3F1F727F2B}.Release|x86.ActiveCfg = Release|Any CPU
 		{422771CE-F085-4B15-9CA2-FA3F1F727F2B}.Release|x86.Build.0 = Release|Any CPU
+		{E1BD12FB-7889-4BDA-8009-5F4C2DF48CE1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E1BD12FB-7889-4BDA-8009-5F4C2DF48CE1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E1BD12FB-7889-4BDA-8009-5F4C2DF48CE1}.Debug|ARM.ActiveCfg = Debug|Any CPU
+		{E1BD12FB-7889-4BDA-8009-5F4C2DF48CE1}.Debug|ARM.Build.0 = Debug|Any CPU
+		{E1BD12FB-7889-4BDA-8009-5F4C2DF48CE1}.Debug|ARM64.ActiveCfg = Debug|Any CPU
+		{E1BD12FB-7889-4BDA-8009-5F4C2DF48CE1}.Debug|ARM64.Build.0 = Debug|Any CPU
+		{E1BD12FB-7889-4BDA-8009-5F4C2DF48CE1}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{E1BD12FB-7889-4BDA-8009-5F4C2DF48CE1}.Debug|x64.Build.0 = Debug|Any CPU
+		{E1BD12FB-7889-4BDA-8009-5F4C2DF48CE1}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{E1BD12FB-7889-4BDA-8009-5F4C2DF48CE1}.Debug|x86.Build.0 = Debug|Any CPU
+		{E1BD12FB-7889-4BDA-8009-5F4C2DF48CE1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E1BD12FB-7889-4BDA-8009-5F4C2DF48CE1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E1BD12FB-7889-4BDA-8009-5F4C2DF48CE1}.Release|ARM.ActiveCfg = Release|Any CPU
+		{E1BD12FB-7889-4BDA-8009-5F4C2DF48CE1}.Release|ARM.Build.0 = Release|Any CPU
+		{E1BD12FB-7889-4BDA-8009-5F4C2DF48CE1}.Release|ARM64.ActiveCfg = Release|Any CPU
+		{E1BD12FB-7889-4BDA-8009-5F4C2DF48CE1}.Release|ARM64.Build.0 = Release|Any CPU
+		{E1BD12FB-7889-4BDA-8009-5F4C2DF48CE1}.Release|x64.ActiveCfg = Release|Any CPU
+		{E1BD12FB-7889-4BDA-8009-5F4C2DF48CE1}.Release|x64.Build.0 = Release|Any CPU
+		{E1BD12FB-7889-4BDA-8009-5F4C2DF48CE1}.Release|x86.ActiveCfg = Release|Any CPU
+		{E1BD12FB-7889-4BDA-8009-5F4C2DF48CE1}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

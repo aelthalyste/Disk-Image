@@ -43,6 +43,14 @@
     <Compile Include="Product.wxs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\DiskBackup.DriverInitializer\DiskBackup.DriverInitializer.csproj">
+      <Name>DiskBackup.DriverInitializer</Name>
+      <Project>{e1bd12fb-7889-4bda-8009-5f4c2df48ce1}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>True</DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>INSTALLFOLDER</RefTargetDir>
+    </ProjectReference>
     <ProjectReference Include="..\DiskBackup.Service\DiskBackup.Service.csproj">
       <Name>DiskBackup.Service</Name>
       <Project>{7ea107d9-1edd-41bb-8f92-d5e4c3602384}</Project>
@@ -89,6 +97,7 @@
     <Content Include="Images\narbulut_setup_mini.png" />
     <Content Include="Images\Narbulut_v3_setup.png" />
     <Content Include="libzstd.dll" />
+    <Content Include="minispy.cat" />
     <Content Include="minispy.inf" />
     <Content Include="minispy.sys" />
     <Content Include="son_kullanici_lisans_sozlesmesi.rtf" />
