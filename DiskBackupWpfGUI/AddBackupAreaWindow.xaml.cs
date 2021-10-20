@@ -435,6 +435,19 @@ namespace DiskBackupWpfGUI
 
         private void btnSettingsNASFolder_Click(object sender, RoutedEventArgs e)
         {
+
+            //using (var fbd = new System.Windows.Forms.FolderBrowserDialog())
+            //{
+            //    System.Windows.Forms.DialogResult result = fbd.ShowDialog();
+
+            //    if (DialogResult.Value.Equals(result) && !string.IsNullOrWhiteSpace(fbd.SelectedPath))
+            //    {
+            //        string[] files = System.IO.Directory.GetFiles(fbd.SelectedPath);
+
+            //        System.Windows.Forms.MessageBox.Show("Files found: " + files.Length.ToString(), "Message");
+            //    }
+            //}
+
             using (var dialog = new System.Windows.Forms.OpenFileDialog())
             {
                 dialog.Filter = "Folders|";

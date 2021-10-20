@@ -811,26 +811,37 @@ namespace DiskBackupWpfGUI
                     }
                 }
             }
-            var backupService = _scope.Resolve<IBackupService>();
 
-            if (sourceVolumes.Count >= 1 && targetVolumes.Count >= 1) //Volume Clone
-            {
-                var source = sourceVolumes[0];
-                var target = targetVolumes[0];
+            _ = DiskCloneAsync(sourceVolumes, targetVolumes, controlFlag);
+        }
 
-                var result =  backupService.DiskClone(target.Letter, source.Letter);
-                if (result == 2)
-                {
-                    MessageBox.Show("Error!!");
-                }
-                else
-                {
-                    MessageBox.Show("Volume Clone Tamamlandı");
-                }
-            }
-            else //Disk Clone
+        private async Task DiskCloneAsync(List<VolumeInfo> sourceVolumes, List<VolumeInfo> targetVolumes, bool controlFlag)
+        {
+            //LOGLA KONTROL YAP -eyüp
+            _logger.Error("DİSK 1");
+            if (!controlFlag)
             {
-                MessageBox.Show("Disk klon aktif değil");
+                var backupService = _scope.Resolve<IBackupService>();
+
+                if (sourceVolumes.Count >= 1 && targetVolumes.Count >= 1) //Volume Clone
+                {
+                    var source = sourceVolumes[0];
+                    var target = targetVolumes[0];
+
+                    var result = await backupService.DiskClone(target.Letter, source.Letter);
+                    if (!result)
+                    {
+                        MessageBox.Show("Error!!");
+                    }
+                    else
+                    {
+                        txtMakeABackup.Text = Resources["makeADiskClone"].ToString();
+                    }
+                }
+                else //Disk Clone
+                {
+                    MessageBox.Show("Disk klon aktif değil");
+                }
             }
         }
 
@@ -1179,11 +1190,11 @@ namespace DiskBackupWpfGUI
                 Console.WriteLine("Hemen çalıştırılıyor");
                 if (taskInfo.Type == TaskType.Backup)
                 {
-                    Console.WriteLine("Backup başlatılıyor");
+                    Console.WriteLine("Backup Görevi başlatılıyor");
                     taskInfo.BackupTaskInfo = _backupTaskDal.Get(x => x.Id == taskInfo.BackupTaskId);
                     if (taskInfo.BackupTaskInfo.Type == BackupTypes.Diff || taskInfo.BackupTaskInfo.Type == BackupTypes.Inc)
                     {
-                        Console.WriteLine("Backup Inc-Diff başlatılıyor");
+                        Console.WriteLine("Backup (Inc-Diff) başlatılıyor");
                         var taskSchedulerManager = _scope.Resolve<ITaskSchedulerManager>();
                         if (taskInfo.ScheduleId != null && !taskInfo.ScheduleId.Contains("Now") && taskInfo.ScheduleId != "")
                         {
@@ -1198,7 +1209,7 @@ namespace DiskBackupWpfGUI
                     }
                     else
                     {
-                        Console.WriteLine("Backup Inc-Diff başlatılıyor");
+                        Console.WriteLine("Backup (Full) başlatılıyor");
                         var taskSchedulerManager = _scope.Resolve<ITaskSchedulerManager>();
                         if (taskInfo.ScheduleId != null && !taskInfo.ScheduleId.Contains("Now") && taskInfo.ScheduleId != "")
                         {

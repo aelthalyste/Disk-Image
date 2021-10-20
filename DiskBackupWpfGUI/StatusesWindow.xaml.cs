@@ -40,7 +40,14 @@ namespace DiskBackupWpfGUI
             _taskInfoDal = taskInfoDal;
             _taskId = taskInfo.Id;
             _statusInfo = _statusInfoDal.Get(x => x.Id == taskInfo.StatusInfoId);
-            RefreshStatus(_cancellationTokenSource.Token);
+            if (taskInfo.Status == TaskStatusType.Working)
+            {
+                //RefreshStatusWithService(_cancellationTokenSource.Token);
+            }
+            else
+            {
+                RefreshStatus(_cancellationTokenSource.Token);
+            }
             this.Closing += (sender, e) => _cancellationTokenSource.Cancel();
             txtLastStatus.Text = taskInfo.StrStatus;
 
@@ -182,6 +189,58 @@ namespace DiskBackupWpfGUI
                     imgStatus.Source = new BitmapImage(new Uri("", UriKind.Relative));
                 }
             }
+        }
+
+        public async void RefreshStatusWithService(CancellationToken cancellationToken)
+        {
+            //backupService'ten gelen değerler burada ekrana yazdırılacak.
+            //while (!cancellationToken.IsCancellationRequested && _taskInfoDal.Get(x=> x.Id == _taskId).Status == TaskStatusType.Working) sağlıklı bir kontrol olabilir.
+
+
+            //while (!cancellationToken.IsCancellationRequested)
+            //{
+            //    await Task.Delay(500);
+            //    _statusInfo = _statusInfoDal.Get(x => x.Id == _statusInfo.Id);
+            //    pbTotalDataProcessed.Maximum = _statusInfo.TotalDataProcessed;
+            //    pbTotalDataProcessed.Value = _statusInfo.DataProcessed;
+            //    if (double.IsNaN(Math.Round((_statusInfo.DataProcessed * 100.0) / (_statusInfo.TotalDataProcessed), 2)))
+            //        txtLocalPercentage.Text = "0%"; //TO DO NaN yakalandığında buraya 0 dışında bir şey girilmek istenir mi?
+            //    else
+            //        txtLocalPercentage.Text = Math.Round((_statusInfo.DataProcessed * 100.0) / (_statusInfo.TotalDataProcessed), 2).ToString() + "%";
+            //    txtLocalFileName.Text = _statusInfo.FileName;
+            //    txtCloudFileName.Text = _statusInfo.FileName;
+            //    txtLocalTime.Text = FormatMilliseconds(TimeSpan.FromMilliseconds(_statusInfo.TimeElapsed)); // milisaniye
+            //    txtLocalAverageDataRate.Text = Math.Round(_statusInfo.AverageDataRate, 2).ToString() + " MB/s";
+            //    txtLocalDataProcessed.Text = FormatBytes(_statusInfo.DataProcessed).ToString(); //dönüş değerine bakılmalı byte, kb, mb, gb...
+            //    txtLocalInstantDataRate.Text = Math.Round(_statusInfo.InstantDataRate, 2).ToString() + " MB/s"; //dönüş değerine bakılmalı byte, kb, mb, gb...
+            //    if (_statusInfo.SourceObje.Contains("-"))
+            //    {
+            //        var source = _statusInfo.SourceObje.Split('-');
+            //        txtLocalSourceObje.Text = source[0];
+            //        txtCloudSourceObje.Text = source[0];
+            //        txtSourceSingle.Text = source[1];
+            //    }
+            //    else
+            //    {
+            //        txtLocalSourceObje.Text = _statusInfo.SourceObje;
+            //        txtCloudSourceObje.Text = _statusInfo.SourceObje;
+            //        txtSourceSingle.Text = _statusInfo.SourceObje;
+            //    }
+
+            //    var resultTask = _taskInfoDal.Get(x => x.Id == _taskId);
+            //    if (resultTask.Status == TaskStatusType.Ready)
+            //    {
+            //        //status infodan alınacak
+            //        var statusInfo = _statusInfoDal.Get(x => x.Id == resultTask.StatusInfoId);
+            //        txtLastStatus.Text = Resources[statusInfo.Status.ToString()].ToString();
+            //        ChangeStatusImage(_statusInfo.Status);
+            //    }
+            //    else
+            //    {
+            //        txtLastStatus.Text = Resources[resultTask.Status.ToString()].ToString();
+            //        imgStatus.Source = new BitmapImage(new Uri("", UriKind.Relative));
+            //    }
+            //}
         }
 
         public void ChangeStatusImage(StatusType status)

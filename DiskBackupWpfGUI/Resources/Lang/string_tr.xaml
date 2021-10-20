@@ -7,6 +7,7 @@
     <system:String x:Key="createNewTask">Yeni Görev Oluştur</system:String>
     <system:String x:Key="disks">Diskler</system:String>
     <system:String x:Key="makeABackup">Yedek Alınıyor</system:String>
+    <system:String x:Key="makeADiskClone">Disk Klon İşlemi Başladı</system:String>
     <system:String x:Key="backupRestore">Yedek Geri Yükleniyor</system:String>
     <system:String x:Key="backupStopped">Yedekleme Durduruldu</system:String>
     <system:String x:Key="volume">Volume</system:String>

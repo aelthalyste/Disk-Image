@@ -28,6 +28,7 @@ namespace DiskBackup.Business.Concrete
         private Dictionary<int, ManualResetEvent> _taskEventMap = new Dictionary<int, ManualResetEvent>(); // aynı işlem Stopwatch ve cancellationtoken source için de yapılacak ancak Quartz'ın pause, resume ve cancel işlemleri düzgün çalışıyorsa kullanılmayacak
         private Dictionary<int, CancellationTokenSource> _cancellationTokenSource = new Dictionary<int, CancellationTokenSource>();
         private Dictionary<int, Stopwatch> _timeElapsedMap = new Dictionary<int, Stopwatch>();
+        private List<StatusInfo> _statuses = new List<StatusInfo>();
 
         private bool _initTrackerResult = false;
         private bool _refreshIncDiffTaskFlag = false;
@@ -68,6 +69,13 @@ namespace DiskBackup.Business.Concrete
             }
 
             return _initTrackerResult;
+        }
+
+        public StatusInfo GetStatusInfo(long statusInfoId)
+        {
+            var statusInfo = _statuses.Where(x => x.Id == statusInfoId).FirstOrDefault();
+            _logger.Information("GetStatusInfo = " + statusInfo.TaskName + " getirildi");
+            return statusInfo;
         }
 
         public bool GetInitTracker()
@@ -343,6 +351,7 @@ namespace DiskBackup.Business.Concrete
                             bytesReadSoFar += read;
 
                             instantProcessData += (long)read; // anlık veri için
+                            //listeyi dolduran method gelecek -eyüp 
                             if (passingTime.ElapsedMilliseconds > 500)
                             {
                                 if (statusInfo.TotalDataProcessed >= (long)bytesReadSoFar)
@@ -786,7 +795,9 @@ namespace DiskBackup.Business.Concrete
                             }
                             result = _diskTracker.CW_CheckStreamStatus(letter);
                             _logger.Information($"_diskTracker.CW_CheckStreamStatus({letter}): {result}");
-                            _diskTracker.CW_TerminateBackup(false, letter, taskInfo.BackupStorageInfo.Path); //işlemi başarılı olup olmadığı cancel gelmeden
+                            _logger.Error("CW_TerminateBackup öncesi" + taskInfo.BackupStorageInfo.Path + "!!!!!!!!!");
+                            _diskTracker.CW_TerminateBackup(result, letter, taskInfo.BackupStorageInfo.Path); //işlemi başarılı olup olmadığı cancel gelmeden
+                            _logger.Error("!!!!!!!!!!!" + taskInfo.BackupStorageInfo.Path + "!!!!!!!!!");
                             bytesReadSoFar = 0;
 
                             //CopyAndDeleteMetadataFile(taskInfo, str); //çalışılan dizine çıkartılan narmd dosyası kopyalanıp ilgili dizine silme işlemi yapılıyor
@@ -908,7 +919,7 @@ namespace DiskBackup.Business.Concrete
         public int CreateFullBackup(TaskInfo taskInfo)
         {
             _logger.Information("CreateFullBackup metodu çağırıldı");
-            
+
             if (!GetInitTracker())
                 return 5;
             NetworkConnection nc = null;
@@ -941,7 +952,7 @@ namespace DiskBackup.Business.Concrete
             StreamInfo Inf = new StreamInfo();
             ulong ID = DiskTracker.CW_SetupFullOnlyStream(Inf, taskInfo.StrObje[0], true);
             long bytesReadSoFar = 0;
-            
+
             FileStream output = File.Create(taskInfo.BackupStorageInfo.Path + Inf.FileName);
             statusInfo.TotalDataProcessed = (long)Inf.CopySize;
             try
@@ -960,7 +971,7 @@ namespace DiskBackup.Business.Concrete
                         while (true)
                         {
                             if (cancellationToken.IsCancellationRequested)
-                            { 
+                            {
                                 _diskTracker.CW_TerminateBackup(false, taskInfo.StrObje[0]/*full backup görevi sadece 1 objeye uygulanacağı için*/, taskInfo.BackupStorageInfo.Path);
                                 _taskEventMap.Remove(taskInfo.Id);
                                 manualResetEvent.Dispose();
@@ -1024,7 +1035,7 @@ namespace DiskBackup.Business.Concrete
 
                 _cancellationTokenSource[taskInfo.Id].Dispose();
                 _cancellationTokenSource.Remove(taskInfo.Id);
-               
+
             }
             catch (Exception ex)
             {
@@ -1036,13 +1047,13 @@ namespace DiskBackup.Business.Concrete
             return 1;
         }
 
-        public int DiskClone(char targetLetter, char sourceLetter)
+        public async Task<bool> DiskClone(char targetLetter, char sourceLetter)
         {
             StreamInfo Inf = new StreamInfo();
             var id = DiskTracker.CW_SetupDiskCloneStream(Inf, sourceLetter);
 
             // Volume a yazmak icin acmaniz lazim, nasil olur bilmiyorum .NET de, gerekli kodu file.create ile degistirirsiniz.
-            var output = File.Open(@"\\.\" + targetLetter+ ":", FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite);
+            var output = File.Open(@"\\.\" + targetLetter + ":", FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite);
             unsafe
             {
                 _logger.Error("DİSK CLONE 1. ADIM");
@@ -1059,7 +1070,7 @@ namespace DiskBackup.Business.Concrete
                         if (ReadResult.Error != BackupStream_Errors.Error_NoError)
                         {
                             _logger.Error("DİSK CLONE BREAK 1");
-                            return 2;
+                            return false;
                         }
                         _logger.Error("DİSK CLONE WHILE 3");
                         if (ReadResult.WriteSize == 0)
@@ -1086,7 +1097,7 @@ namespace DiskBackup.Business.Concrete
             // disk klonlaniyorsa metadatanin kayit edilmesine gerek yok, false verilerek hizlica tamamlanabilir islem.
             DiskTracker.CW_TerminateFullOnlyBackup(id, false, "path");
             Console.WriteLine("done!");
-            return 1;
+            return await Task.FromResult(true);
         }
 
         public void PauseTask(TaskInfo taskInfo)
