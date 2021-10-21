@@ -648,7 +648,7 @@
                                             </GridViewColumn.Header>
                                             <GridViewColumn.CellTemplate>
                                                 <DataTemplate>
-                                                    <TextBlock Text="{Binding CreatedDate}" TextAlignment="Center"/>
+                                                    <TextBlock Text="{Binding CreatedDate}" TextAlignment="Left"/>
                                                 </DataTemplate>
                                             </GridViewColumn.CellTemplate>
                                         </GridViewColumn>
@@ -658,7 +658,7 @@
                                             </GridViewColumn.Header>
                                             <GridViewColumn.CellTemplate>
                                                 <DataTemplate>
-                                                    <TextBlock Text="{Binding StrVolumeSize}" TextAlignment="Center"/>
+                                                    <TextBlock Text="{Binding StrVolumeSize}" TextAlignment="Left"/>
                                                 </DataTemplate>
                                             </GridViewColumn.CellTemplate>
                                         </GridViewColumn >
@@ -668,7 +668,7 @@
                                             </GridViewColumn.Header>
                                             <GridViewColumn.CellTemplate>
                                                 <DataTemplate>
-                                                    <TextBlock Text="{Binding StrFileSize}" TextAlignment="Center"/>
+                                                    <TextBlock Text="{Binding StrFileSize}" TextAlignment="Left"/>
                                                 </DataTemplate>
                                             </GridViewColumn.CellTemplate>
                                         </GridViewColumn>
