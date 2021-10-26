@@ -6,6 +6,7 @@ using DiskBackup.Entities.Concrete;
 using NarDIWrapper;
 using Serilog;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
@@ -28,7 +29,7 @@ namespace DiskBackup.Business.Concrete
         private Dictionary<int, ManualResetEvent> _taskEventMap = new Dictionary<int, ManualResetEvent>(); // aynı işlem Stopwatch ve cancellationtoken source için de yapılacak ancak Quartz'ın pause, resume ve cancel işlemleri düzgün çalışıyorsa kullanılmayacak
         private Dictionary<int, CancellationTokenSource> _cancellationTokenSource = new Dictionary<int, CancellationTokenSource>();
         private Dictionary<int, Stopwatch> _timeElapsedMap = new Dictionary<int, Stopwatch>();
-        private List<StatusInfo> _statuses = new List<StatusInfo>();
+        private ConcurrentBag<StatusInfo> _statuses = new ConcurrentBag<StatusInfo>();
 
         private bool _initTrackerResult = false;
         private bool _refreshIncDiffTaskFlag = false;
@@ -71,11 +72,56 @@ namespace DiskBackup.Business.Concrete
             return _initTrackerResult;
         }
 
-        public StatusInfo GetStatusInfo(long statusInfoId)
+        public StatusInfo GetStatusInfo(long statusInfoId, int taskInfoId)
         {
             var statusInfo = _statuses.Where(x => x.Id == statusInfoId).FirstOrDefault();
-            _logger.Information("GetStatusInfo = " + statusInfo.TaskName + " getirildi");
-            return statusInfo;
+            try
+            {
+                _logger.Error("GetStatusInfo STATUS BİLGİLERİ;");
+                _logger.Error("_____________________________________");
+                _logger.Error("AverageDataRate : " + statusInfo.AverageDataRate.ToString());
+                _logger.Error("DataProcessed :" + statusInfo.DataProcessed.ToString());
+                _logger.Error("TimeElapsed :" + statusInfo.TimeElapsed.ToString());
+                _logger.Error("TotalDataProcessed :" + statusInfo.TotalDataProcessed.ToString());
+                _logger.Error("_____________________________________");
+                statusInfo.TimeElapsed = _timeElapsedMap[taskInfoId].ElapsedMilliseconds;
+                return statusInfo;
+            }
+            catch (Exception ex)
+            {
+                _logger.Error("BİR DEĞER NULL GELDİ" + ex.Message);
+                return default;
+            }
+        }
+
+        private void ChangeStatusList(StatusInfo statusInfo, Stopwatch timeElapsed, long bytesReadSoFar, Stopwatch passingTime, long instantProcessData)
+        {
+            try
+            {
+                if (statusInfo.TotalDataProcessed >= (long)bytesReadSoFar)
+                    statusInfo.DataProcessed = bytesReadSoFar;
+                statusInfo.AverageDataRate = ((statusInfo.TotalDataProcessed / 1024.0) / 1024.0) / (timeElapsed.ElapsedMilliseconds / 1000.0); // MB/s
+
+                if (instantProcessData != 0) // anlık veri 0 gelmesin diye
+                    statusInfo.InstantDataRate = ((instantProcessData / 1024.0) / 1024.0) / (passingTime.ElapsedMilliseconds / 1000.0); // MB/s
+
+                statusInfo.TimeElapsed = timeElapsed.ElapsedMilliseconds;
+                _logger.Error("ChangeStatusList STATUS BİLGİLERİ;");
+                _logger.Error("***************************************");
+                _logger.Error("AverageDataRate : " + statusInfo.AverageDataRate.ToString());
+                _logger.Error("DataProcessed :" + statusInfo.DataProcessed.ToString());
+                _logger.Error("InstantDataRate :" + statusInfo.InstantDataRate.ToString());
+                _logger.Error("SourceObje :" + statusInfo.SourceObje.ToString());
+                _logger.Error("Status : " + statusInfo.Status.ToString());
+                _logger.Error("TaskName : " + statusInfo.TaskName.ToString());
+                _logger.Error("TimeElapsed :" + statusInfo.TimeElapsed.ToString());
+                _logger.Error("TotalDataProcessed :" + statusInfo.TotalDataProcessed.ToString());
+                _logger.Error("***************************************");
+            }
+            catch (Exception ex)
+            {
+                _logger.Error("BİR DEĞER NULL GELDİ" + ex.Message);
+            }
         }
 
         public bool GetInitTracker()
@@ -696,8 +742,18 @@ namespace DiskBackup.Business.Concrete
 
             if (!Directory.Exists(taskInfo.BackupStorageInfo.Path))
                 return 6;
+            _logger.Error("Statuses List Count = " + _statuses.Count);
 
-            var statusInfo = _statusInfoDal.Get(si => si.Id == taskInfo.StatusInfoId); //her task için uygulanmalı
+
+            _logger.Error("Statuses List Count = " + _statuses.Count);
+            var statusInfo = _statusInfoDal.Get(x => x.Id == taskInfo.StatusInfoId);
+            var resultStatusInfo = _statuses.FirstOrDefault(z=> z.Id == statusInfo.Id);
+
+            if (resultStatusInfo == null)
+            {
+                _statuses.Add(_statusInfoDal.Get(si => si.Id == taskInfo.StatusInfoId)); //Şuanki task'ın status bilgileri burada geçici olarak _statuses listesine eklenir.
+                statusInfo = _statuses.Where(x => x.Id == taskInfo.StatusInfoId).FirstOrDefault(); 
+            }
 
             var manualResetEvent = new ManualResetEvent(true);
             _taskEventMap[taskInfo.Id] = manualResetEvent;
@@ -726,6 +782,9 @@ namespace DiskBackup.Business.Concrete
                 long instantProcessData = 0;
                 passingTime.Start();
 
+                Stopwatch updateStatusDal = new Stopwatch();
+                updateStatusDal.Start();
+
                 _logger.Information($"{letter} backup işlemi başlatılıyor...");
                 if (_diskTracker.CW_SetupStream(letter, (int)taskInfo.BackupTaskInfo.Type, str, true)) // 0 diff, 1 inc, full (2) ucu gelmediğinden ayrılabilir veya aynı devam edebilir
                 {
@@ -740,7 +799,7 @@ namespace DiskBackup.Business.Concrete
                         {
                             FileStream file = File.Create(taskInfo.BackupStorageInfo.Path + str.FileName); //backupStorageInfo path alınıcak
                             statusInfo.TotalDataProcessed = (long)str.CopySize;
-
+                            statusInfo.FileName = taskInfo.BackupStorageInfo.Path + str.FileName;
                             if (str.FileName.Contains("FULL")) // Süreli backup zinciri için ne zaman en son full backup'ın alındığı bu count ile belirleniyor return 1'den önce tarih güncelleniyor
                             {
                                 fullCount++;
@@ -748,6 +807,7 @@ namespace DiskBackup.Business.Concrete
 
                             while (true)
                             {
+                                _logger.Error("******CREATE INC DİFF WHİLE İLK SATIR*******");
                                 if (cancellationToken.IsCancellationRequested)
                                 {
                                     //cleanup
@@ -763,13 +823,16 @@ namespace DiskBackup.Business.Concrete
                                     return 2;
                                 }
                                 manualResetEvent.WaitOne();
-
+                                
                                 var readStream = _diskTracker.CW_ReadStream(BAddr, letter, bufferSize);
                                 file.Write(buffer, 0, (int)readStream.WriteSize);
+                                
                                 bytesReadSoFar += readStream.DecompressedSize;
 
                                 instantProcessData += readStream.DecompressedSize; // anlık veri için              
-                                if (passingTime.ElapsedMilliseconds > 500)
+                                ChangeStatusList(statusInfo, timeElapsed, bytesReadSoFar, passingTime, instantProcessData);
+
+                                if (updateStatusDal.ElapsedMilliseconds > 5000)
                                 {
                                     statusInfo.FileName = taskInfo.BackupStorageInfo.Path + str.FileName;
                                     if (statusInfo.TotalDataProcessed >= (long)bytesReadSoFar)
@@ -779,12 +842,13 @@ namespace DiskBackup.Business.Concrete
                                         statusInfo.InstantDataRate = ((instantProcessData / 1024.0) / 1024.0) / (passingTime.ElapsedMilliseconds / 1000.0); // MB/s
                                     statusInfo.TimeElapsed = timeElapsed.ElapsedMilliseconds;
                                     _statusInfoDal.Update(statusInfo);
+                                    updateStatusDal.Restart();
+                                }
 
-                                    if (passingTime.ElapsedMilliseconds > 1000) // anlık veri için her saniye güncellensin diye
-                                    {
-                                        instantProcessData = 0;
-                                        passingTime.Restart();
-                                    }
+                                if (passingTime.ElapsedMilliseconds > 1000) // anlık veri için her saniye güncellensin diye
+                                {
+                                    instantProcessData = 0;
+                                    passingTime.Restart();
                                 }
 
                                 if (readStream.WriteSize == 0 || !_diskTracker.CW_CheckStreamStatus(letter))
@@ -792,16 +856,16 @@ namespace DiskBackup.Business.Concrete
                                     _logger.Information($"readStream.WriteSize: {readStream.WriteSize} - readStream.Error: {readStream.Error} - _diskTracker.CW_CheckStreamStatus({letter}): {_diskTracker.CW_CheckStreamStatus(letter)}");
                                     break;
                                 }
+                                _logger.Error("******CREATE INC DİFF WHİLE SON SATIR*******");
+                                _logger.Error("******BYTESREADSOFAR = *******" + bytesReadSoFar);
                             }
                             result = _diskTracker.CW_CheckStreamStatus(letter);
                             _logger.Information($"_diskTracker.CW_CheckStreamStatus({letter}): {result}");
-                            _logger.Error("CW_TerminateBackup öncesi" + taskInfo.BackupStorageInfo.Path + "!!!!!!!!!");
                             _diskTracker.CW_TerminateBackup(result, letter, taskInfo.BackupStorageInfo.Path); //işlemi başarılı olup olmadığı cancel gelmeden
-                            _logger.Error("!!!!!!!!!!!" + taskInfo.BackupStorageInfo.Path + "!!!!!!!!!");
                             bytesReadSoFar = 0;
-
-                            //CopyAndDeleteMetadataFile(taskInfo, str); //çalışılan dizine çıkartılan narmd dosyası kopyalanıp ilgili dizine silme işlemi yapılıyor
-
+                            
+                            passingTime.Stop();
+                            updateStatusDal.Stop();
                             file.Close();
 
                             if (Convert.ToBoolean(DiskTracker.CW_MetadataEditTaskandDescriptionField(taskInfo.BackupStorageInfo.Path + str.MetadataFileName, taskInfo.Name, taskInfo.Descripiton)))
@@ -827,6 +891,7 @@ namespace DiskBackup.Business.Concrete
 
             timeElapsed.Reset();
             _timeElapsedMap.Remove(taskInfo.Id);
+
 
             _cancellationTokenSource[taskInfo.Id].Dispose();
             _cancellationTokenSource.Remove(taskInfo.Id);

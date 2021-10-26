@@ -1,6 +1,9 @@
-﻿using DiskBackup.DataAccess.Abstract;
+﻿using Autofac;
+using DiskBackup.Business.Abstract;
+using DiskBackup.DataAccess.Abstract;
 using DiskBackup.Entities.Concrete;
 using DiskBackupWpfGUI.Utils;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -30,30 +33,33 @@ namespace DiskBackupWpfGUI
         private readonly IStatusInfoDal _statusInfoDal;
         private readonly ITaskInfoDal _taskInfoDal;
         private readonly IConfigurationDataDal _configurationDataDal;
+        private readonly ILifetimeScope _scope;
+        private readonly ILogger _logger;
 
         private int _taskId = 0;
 
-        public StatusesWindow(int chooseFlag, TaskInfo taskInfo, IStatusInfoDal statusInfoDal, ITaskInfoDal taskInfoDal, IConfigurationDataDal configurationDataDal)
+        public StatusesWindow(int chooseFlag, TaskInfo taskInfo, IStatusInfoDal statusInfoDal, ITaskInfoDal taskInfoDal, IConfigurationDataDal configurationDataDal, ILifetimeScope scope, ILogger logger)
         {
             InitializeComponent();
             _statusInfoDal = statusInfoDal;
             _taskInfoDal = taskInfoDal;
             _taskId = taskInfo.Id;
             _statusInfo = _statusInfoDal.Get(x => x.Id == taskInfo.StatusInfoId);
-            if (taskInfo.Status == TaskStatusType.Working)
-            {
-                //RefreshStatusWithService(_cancellationTokenSource.Token);
-            }
-            else
-            {
-                RefreshStatus(_cancellationTokenSource.Token);
-            }
+            _scope = scope;
+            //if (taskInfo.Status == TaskStatusType.Working)
+            //{
+            //    RefreshStatusWithService(_cancellationTokenSource.Token, taskInfo);
+            //}
+            //else
+            //{
+            //    RefreshStatus(_cancellationTokenSource.Token);
+            //}
             this.Closing += (sender, e) => _cancellationTokenSource.Cancel();
             txtLastStatus.Text = taskInfo.StrStatus;
 
             _configurationDataDal = configurationDataDal;
             SetApplicationLanguage(_configurationDataDal.Get(x => x.Key == "lang").Value);
-
+            RefreshStatusWithService(_cancellationTokenSource.Token, taskInfo);
             // 0 yedekleme durumu, 1 geri yükleme
             if (chooseFlag == 0)
             {
@@ -92,15 +98,16 @@ namespace DiskBackupWpfGUI
                 //txtCloudZip.Visibility = Visibility.Collapsed;
                 txtTitleBar.Text = Resources["restoreStatus"].ToString();
             }
+            _logger = logger;
         }
 
-        public StatusesWindow(int chooseFlag, ActivityLog activityLog, IStatusInfoDal statusInfoDal, IConfigurationDataDal configurationDataDal)
+        public StatusesWindow(int chooseFlag, ActivityLog activityLog, IStatusInfoDal statusInfoDal, IConfigurationDataDal configurationDataDal, ILifetimeScope scope, ILogger logger)
         {
             InitializeComponent();
             _statusInfoDal = statusInfoDal;
             StatusInfo statusInfo = _statusInfoDal.Get(x => x.Id == activityLog.StatusInfoId);
             txtLastStatus.Text = activityLog.StatusInfo.StrStatus;
-
+            _scope = scope;
             _configurationDataDal = configurationDataDal;
             SetApplicationLanguage(_configurationDataDal.Get(x => x.Key == "lang").Value);
 
@@ -118,7 +125,7 @@ namespace DiskBackupWpfGUI
                 txtLocalPercentage.Text = "0%"; //TO DO NaN yakalandığında buraya 0 dışında bir şey girilmek istenir mi?
             else
                 txtLocalPercentage.Text = Math.Round((statusInfo.DataProcessed * 100.0) / (statusInfo.TotalDataProcessed), 2).ToString() + "%";
-            
+
             txtLocalSourceObje.Text = statusInfo.SourceObje;
             txtCloudSourceObje.Text = statusInfo.SourceObje;
             txtSourceSingle.Text = statusInfo.SourceObje;
@@ -141,6 +148,7 @@ namespace DiskBackupWpfGUI
                 //txtCloudZip.Visibility = Visibility.Collapsed;
                 txtTitleBar.Text = Resources["restoreStatus"].ToString();
             }
+            _logger = logger;
         }
 
         public async void RefreshStatus(CancellationToken cancellationToken)
@@ -191,56 +199,80 @@ namespace DiskBackupWpfGUI
             }
         }
 
-        public async void RefreshStatusWithService(CancellationToken cancellationToken)
+        public async void RefreshStatusWithService(CancellationToken cancellationToken, TaskInfo taskInfo)
         {
-            //backupService'ten gelen değerler burada ekrana yazdırılacak.
-            //while (!cancellationToken.IsCancellationRequested && _taskInfoDal.Get(x=> x.Id == _taskId).Status == TaskStatusType.Working) sağlıklı bir kontrol olabilir.
+            var backupService = _scope.Resolve<IBackupService>();
+            MessageBox.Show("REFRESH STATUS");
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                try
+                {
+                    await Task.Delay(500);
+                    var statusInfo = backupService.GetStatusInfo(taskInfo.StatusInfoId, _taskId);
+                    if (statusInfo == null)
+                    {
+                        var dbLastUpdatedStatusInfo = _statusInfoDal.Get(x => x.Id == _statusInfo.Id);
+                        DisplayStatusInfo(dbLastUpdatedStatusInfo);
+                        _cancellationTokenSource.Cancel();                        
+                        break;
+                    }
+                    _logger.Error("STATUS ALT= " + statusInfo.Id);
+                    _logger.Error("--------------------------------- ");
+                    _logger.Error("AverageDataRate : " + statusInfo.AverageDataRate.ToString());
+                    _logger.Error("DataProcessed :" + statusInfo.DataProcessed.ToString());
+                    _logger.Error("TotalDataProcessed :" + statusInfo.TotalDataProcessed.ToString());
+                    _logger.Error("TimeElapsed :" + statusInfo.TimeElapsed.ToString());
+                    _logger.Error("--------------------------------- ");
+                    DisplayStatusInfo(statusInfo);
+                }
+                catch (Exception e)
+                {
+                    MessageBox.Show("ex + " + e.Message);
+                }
+            }
+            MessageBox.Show("Refresh BİTTİ");
+        }
 
-
-            //while (!cancellationToken.IsCancellationRequested)
-            //{
-            //    await Task.Delay(500);
-            //    _statusInfo = _statusInfoDal.Get(x => x.Id == _statusInfo.Id);
-            //    pbTotalDataProcessed.Maximum = _statusInfo.TotalDataProcessed;
-            //    pbTotalDataProcessed.Value = _statusInfo.DataProcessed;
-            //    if (double.IsNaN(Math.Round((_statusInfo.DataProcessed * 100.0) / (_statusInfo.TotalDataProcessed), 2)))
-            //        txtLocalPercentage.Text = "0%"; //TO DO NaN yakalandığında buraya 0 dışında bir şey girilmek istenir mi?
-            //    else
-            //        txtLocalPercentage.Text = Math.Round((_statusInfo.DataProcessed * 100.0) / (_statusInfo.TotalDataProcessed), 2).ToString() + "%";
-            //    txtLocalFileName.Text = _statusInfo.FileName;
-            //    txtCloudFileName.Text = _statusInfo.FileName;
-            //    txtLocalTime.Text = FormatMilliseconds(TimeSpan.FromMilliseconds(_statusInfo.TimeElapsed)); // milisaniye
-            //    txtLocalAverageDataRate.Text = Math.Round(_statusInfo.AverageDataRate, 2).ToString() + " MB/s";
-            //    txtLocalDataProcessed.Text = FormatBytes(_statusInfo.DataProcessed).ToString(); //dönüş değerine bakılmalı byte, kb, mb, gb...
-            //    txtLocalInstantDataRate.Text = Math.Round(_statusInfo.InstantDataRate, 2).ToString() + " MB/s"; //dönüş değerine bakılmalı byte, kb, mb, gb...
-            //    if (_statusInfo.SourceObje.Contains("-"))
-            //    {
-            //        var source = _statusInfo.SourceObje.Split('-');
-            //        txtLocalSourceObje.Text = source[0];
-            //        txtCloudSourceObje.Text = source[0];
-            //        txtSourceSingle.Text = source[1];
-            //    }
-            //    else
-            //    {
-            //        txtLocalSourceObje.Text = _statusInfo.SourceObje;
-            //        txtCloudSourceObje.Text = _statusInfo.SourceObje;
-            //        txtSourceSingle.Text = _statusInfo.SourceObje;
-            //    }
-
-            //    var resultTask = _taskInfoDal.Get(x => x.Id == _taskId);
-            //    if (resultTask.Status == TaskStatusType.Ready)
-            //    {
-            //        //status infodan alınacak
-            //        var statusInfo = _statusInfoDal.Get(x => x.Id == resultTask.StatusInfoId);
-            //        txtLastStatus.Text = Resources[statusInfo.Status.ToString()].ToString();
-            //        ChangeStatusImage(_statusInfo.Status);
-            //    }
-            //    else
-            //    {
-            //        txtLastStatus.Text = Resources[resultTask.Status.ToString()].ToString();
-            //        imgStatus.Source = new BitmapImage(new Uri("", UriKind.Relative));
-            //    }
-            //}
+        private void DisplayStatusInfo(StatusInfo statusInfo)
+        {
+            pbTotalDataProcessed.Maximum = statusInfo.TotalDataProcessed;
+            pbTotalDataProcessed.Value = statusInfo.DataProcessed;
+            if (double.IsNaN(Math.Round((statusInfo.DataProcessed * 100.0) / (statusInfo.TotalDataProcessed), 2)))
+                txtLocalPercentage.Text = "0%"; //TO DO NaN yakalandığında buraya 0 dışında bir şey girilmek istenir mi?
+            else
+                txtLocalPercentage.Text = Math.Round((statusInfo.DataProcessed * 100.0) / (statusInfo.TotalDataProcessed), 2).ToString() + "%";
+            txtLocalFileName.Text = statusInfo.FileName;
+            txtCloudFileName.Text = statusInfo.FileName;
+            txtLocalTime.Text = FormatMilliseconds(TimeSpan.FromMilliseconds(statusInfo.TimeElapsed)); // milisaniye
+            txtLocalAverageDataRate.Text = Math.Round(statusInfo.AverageDataRate, 2).ToString() + " MB/s";
+            txtLocalDataProcessed.Text = FormatBytes(statusInfo.DataProcessed).ToString(); //dönüş değerine bakılmalı byte, kb, mb, gb...
+            txtLocalInstantDataRate.Text = Math.Round(statusInfo.InstantDataRate, 2).ToString() + " MB/s"; //dönüş değerine bakılmalı byte, kb, mb, gb...
+            if (_statusInfo.SourceObje.Contains("-"))
+            {
+                var source = statusInfo.SourceObje.Split('-');
+                txtLocalSourceObje.Text = source[0];
+                txtCloudSourceObje.Text = source[0];
+                txtSourceSingle.Text = source[1];
+            }
+            else
+            {
+                txtLocalSourceObje.Text = statusInfo.SourceObje;
+                txtCloudSourceObje.Text = statusInfo.SourceObje;
+                txtSourceSingle.Text = statusInfo.SourceObje;
+            }
+            var resultTask = _taskInfoDal.Get(x => x.Id == _taskId);
+            if (resultTask.Status == TaskStatusType.Ready)
+            {
+                //status infodan alınacak
+                var statusInformation = _statusInfoDal.Get(x => x.Id == resultTask.StatusInfoId);
+                txtLastStatus.Text = Resources[statusInformation.Status.ToString()].ToString();
+                ChangeStatusImage(_statusInfo.Status);
+            }
+            else
+            {
+                txtLastStatus.Text = Resources[resultTask.Status.ToString()].ToString();
+                imgStatus.Source = new BitmapImage(new Uri("", UriKind.Relative));
+            }
         }
 
         public void ChangeStatusImage(StatusType status)

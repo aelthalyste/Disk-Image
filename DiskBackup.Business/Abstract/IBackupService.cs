@@ -77,5 +77,8 @@ namespace DiskBackup.Business.Abstract
 
         [OperationContract]
         byte BackupFileDelete(BackupInfo backupInfo);
+
+        [OperationContract]
+        StatusInfo GetStatusInfo(long statusInfoId, int taskInfoId);
     }
 }
