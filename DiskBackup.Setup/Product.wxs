@@ -18,7 +18,7 @@
     <MediaTemplate EmbedCab="yes"/>
     <Icon Id="favicon_mavi.ico" SourceFile="Images\favicon_mavi.ico"/>
     <Property Id="ARPPRODUCTICON" Value="favicon_mavi.ico" />
-    <!--<Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Launch My Application Name" />-->
+    <!--<Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Launch My Application Name" />--> <!-- Setupdan sonra program açılsın mı checkbox ı -->
     <Binary Id="ReinstallCustomAction" SourceFile="..\DiskBackup.Reinstall\bin\Release\DiskBackup.Reinstall.CA.dll"/>
 
     <CustomAction Id="Uninstall" Directory="INSTALLFOLDER" ExeCommand="[SystemFolder]cmd.exe /c UninstallFile.bat" Execute="deferred" Impersonate="no" Return="ignore" />

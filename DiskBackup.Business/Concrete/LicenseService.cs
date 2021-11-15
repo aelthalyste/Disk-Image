@@ -347,12 +347,22 @@ namespace DiskBackup.Business.Concrete
             RegistryKey registryKeyBackup = Registry.LocalMachine.OpenSubKey("SYSTEM\\CurrentControlSet\\Control\\SystemInformation");
             var pathNameBackup = registryKeyBackup.GetValueNames();
 
-            foreach (var value in pathNameBackup)
+            try
             {
-                if (registryKey.GetValue(value).ToString().Contains("VMware") || registryKey.GetValue(value).ToString().Contains("Hyper-V") || registryKey.GetValue(value).ToString().Contains("Virtual"))
+                foreach (var value in pathNameBackup)
                 {
-                    return MachineType.VirtualMachine;
+                    if (registryKey.GetValue(value) != null)
+                    {
+                        if (registryKey.GetValue(value).ToString().Contains("VMware") || registryKey.GetValue(value).ToString().Contains("Hyper-V") || registryKey.GetValue(value).ToString().Contains("Virtual"))
+                        {
+                            return MachineType.VirtualMachine;
+                        }
+                    }
                 }
+            }
+            catch (Exception e)
+            {
+                _logger.Error("License GetMachine Error = " + e);
             }
 
             return MachineType.PhysicalMachine;
