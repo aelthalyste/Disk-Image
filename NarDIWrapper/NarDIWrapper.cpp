@@ -39,7 +39,7 @@ namespace NarDIWrapper {
         
         SystemStringToWCharPtr(MetadataFullPath, WSTR);
         
-        __DirStackMax = 1024;
+        __DirStackMax = 1024 * 4;
         __DirStack = (file_explorer_file**)ArenaAllocate(Arena, __DirStackMax);
         
         NarUTF8 MetadataPath = NarWCHARToUTF8(WSTR, Arena);

@@ -863,7 +863,7 @@ file_explorer_memory
 NarInitFileExplorerMemory(uint32_t TotalFC){
     file_explorer_memory Result = {0};
     
-    uint64_t StringAllocatorSize     = TotalFC*520 + Megabyte(500);
+    uint64_t StringAllocatorSize     = TotalFC*550 + Megabyte(600);
     Result.StringAllocator = NarCreateLinearAllocator(StringAllocatorSize, Megabyte(50));
     
     if(NULL != Result.StringAllocator.Memory){
@@ -954,7 +954,7 @@ NarInitFileExplorer(NarUTF8 MetadataPath){
         Result.DirectoryPath = (wchar_t*)ArenaAllocate(&Result.Memory.Arena, Kilobyte(32));
         Result.ParentIDs     = (uint32_t*)ArenaAllocateAligned(&Result.Memory.Arena, Result.TotalFC*sizeof(uint32_t)*2, 4);
         
-        Result.Files = (file_explorer_file*)ArenaAllocateAligned(&Result.Memory.Arena, Result.TotalFC*sizeof(file_explorer_file), 8);
+        Result.Files = (file_explorer_file*)ArenaAllocateAligned(&Result.Memory.Arena, (Result.TotalFC  + 1024 * 16)*sizeof(file_explorer_file), 8);
         
         ASSERT(Result.ParentIDs);
         ASSERT(Result.DirectoryPath);
@@ -1641,9 +1641,6 @@ NarFindFileLayout(file_explorer *FE, file_explorer_file *File, nar_arena *Arena)
                 data_attr_header *DAHeader = (data_attr_header*)FileAttribute;
                 
                 if(DAHeader->Sparse != 0){
-                    goto G_FAIL;
-                }
-                if(DAHeader->NameLen == 0){
                     goto G_FAIL;
                 }
                 

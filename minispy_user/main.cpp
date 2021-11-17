@@ -460,17 +460,6 @@ TEST_MockSaveBootState(){
 int
 wmain(int argc, wchar_t* argv[]) {
     
-    TEST_ExtensionFinder();
-    
-    return 0;
-
-    printf("222  test1\n");
-    printf("222  test2\n");
-    printf("222  test3\n");
-    printf("222  test4\n");
-    printf("222  test5\n");
-return 0;
-    //TEST_MockSaveBootState();
         
 #if 0    
     uint32_t s1, s2;
@@ -708,7 +697,7 @@ return 0;
     
     
     
-    size_t bsize = 64*1024*1024;
+    size_t bsize = 64 * 1024 * 1024;
     void *MemBuf = malloc(bsize);
     
     LOG_CONTEXT C = {0};
@@ -746,7 +735,7 @@ return 0;
                 if(file != INVALID_HANDLE_VALUE){
                     uint64_t ucs = 0;
                     printf("starting backup\n");
-#if 0                    
+#if 1                    
                     loop{
                         int Read = ReadStream(&v->Stream, MemBuf, bsize);
                         TotalRead += Read;
@@ -776,11 +765,11 @@ return 0;
                     
                     
                     if(CheckStreamCompletedSuccessfully(v)){
-                        TerminateBackup(v, NAR_SUCC, L"T:\\llvm\\");
+                        TerminateBackup(v, NAR_SUCC, L"D:\\");
                     }
                     else{
                         NAR_BREAK;
-                        TerminateBackup(v, NAR_FAILED, L"T:\\llvm\\");
+                        TerminateBackup(v, NAR_FAILED, L"D:\\");
                     }
                     
                     NarSaveBootState(&C);

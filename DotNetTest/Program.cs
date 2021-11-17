@@ -9,41 +9,74 @@ using NarDIWrapper;
 using System.Diagnostics;
 namespace DotNetTest
 {
+
+    class CsDirectoryExporter {
+        
+        public string SubDirectory;
+        public string FileName;
+        public ulong  FileID;
+
+        public FileStream PrepareStream(string TargetPath, CSNarFileExplorer explorer, out CSNarFileExportStream StreamOut) {
+            Directory.CreateDirectory(TargetPath + SubDirectory);
+            StreamOut = new CSNarFileExportStream(explorer, FileID);
+            return File.Create(TargetPath + SubDirectory + FileName);
+        }
+
+        public static List<CsDirectoryExporter> TraverseDirectory(CSNarFileExplorer FE, ulong UniqueDirectoryID)
+        {
+            List<CsDirectoryExporter> Result = new List<CsDirectoryExporter>();
+            Result.Capacity = 1024 * 1024 * 4;
+
+            FE.CW_SelectDirectory(UniqueDirectoryID);
+            string BaseDirectory = FE.CW_GetCurrentDirectoryString();
+
+            Stack<ulong> DirectoriesToVisit = new Stack<ulong>();
+            DirectoriesToVisit.Push(UniqueDirectoryID);
+
+            while (DirectoriesToVisit.Count > 0)
+            {
+                ulong CurrentDirUniqueID = DirectoriesToVisit.Pop();
+                if (FE.CW_SelectDirectory(CurrentDirUniqueID))
+                {
+                
+                    foreach (var file in FE.CW_GetFilesInCurrentDirectory())
+                    {
+                        if (file.IsDirectory)
+                        {
+                            DirectoriesToVisit.Push(file.UniqueID);
+                        }
+                        else
+                        {
+                            var element = new CsDirectoryExporter();
+
+                            element.SubDirectory = FE.CW_GetCurrentDirectoryString().Remove(0, BaseDirectory.Length);
+                            element.SubDirectory += @"\";
+                            element.FileName = file.Name;
+                            element.FileID = file.UniqueID;
+                            Result.Add(element);
+                        }
+                    }
+                    FE.CW_PopDirectory();
+                
+                }
+            }
+
+            return Result;
+        }
+
+    };
+
+
+
     class Program
     {
+
 
 
         static void Main(string[] args)
         {
 
 
-            CSNarFileExplorer FE = new CSNarFileExplorer(args[0]);
-
-            List<ulong> Result = new List<ulong>();
-            Result.Capacity = 1024 * 1024 * 4;
-
-            ulong CurrentDirectoryValidID = 44;
-
-            var files = FE.CW_GetFilesInCurrentDirectory();
-            Stack<ulong> DirectoriesToVisit = new Stack<ulong>();
-            DirectoriesToVisit.Push(CurrentDirectoryValidID);
-            
-            while (DirectoriesToVisit.Count > 0) {
-
-                ulong CurrentDir = DirectoriesToVisit.Pop();
-                FE.CW_SelectDirectory(CurrentDir);
-                foreach (var file in FE.CW_GetFilesInCurrentDirectory())
-                {
-                    if (file.IsDirectory)
-                    {
-                        DirectoriesToVisit.Push(file.UniqueID);
-                    }
-                    else { 
-                        Result.Add(file.UniqueID);
-                    }
-                }
-                
-            }
 
             //var disklist = DiskTracker.CW_GetDisksOnSystem();
             //foreach (var disk in disklist)
@@ -83,8 +116,29 @@ namespace DotNetTest
                 
                 CSNarFileEntry SelectedEntry = list[selection];
                 if(SelectedEntry.IsDirectory){
+                    
                     FE.CW_SelectDirectory(SelectedEntry.UniqueID);
+
+                    // var FilesToRestore = CsDirectoryExporter.TraverseDirectory(FE, SelectedEntry.UniqueID);
+                    // foreach (var item in FilesToRestore)
+                    // {
+                    // 
+                    //     CSNarFileExportStream CSStream;
+                    //     var OutputFile = item.PrepareStream("D:\\my_output_directory\\", FE, out CSStream);
+                    // 
+                    //     // usual stream operations
+                    //     // while (stream.AdvanceStream(...)) { 
+                    //     //    seek and write
+                    //     // }
+                    // 
+                    //     // cleanup as usual
+                    //     OutputFile.Close();
+                    //     CSStream.FreeStreamResources();
+                    // 
+                    // }
+
                 }
+
                 if (SelectedEntry.IsDirectory == false) {
 
                     // there are two ways to initiate restore. Both completely constructs identical outcomes.
