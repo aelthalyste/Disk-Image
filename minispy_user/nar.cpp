@@ -282,7 +282,7 @@ NarLCNToVCN(nar_record *LCN, size_t LCNCount, size_t Offset){
         
         if(Offset>= LCN[i].StartPos && Offset < LCN[i].StartPos + LCN[i].Len){
             ASSERT(Offset >= LCN[i].StartPos);
-            uint32_t DiffToStart =  Offset - LCN[i].StartPos;
+            uint64_t DiffToStart =  Offset - LCN[i].StartPos;
             Acc += DiffToStart;
             Found = true;
             break;
@@ -301,7 +301,7 @@ NarLCNToVCN(nar_record *LCN, size_t LCNCount, size_t Offset){
 
 /*
     ASSUMES RECORDS ARE SORTED
-THIS FUNCTION REALLOCATES MEMORY VIA realloc(), DO NOT PUT MEMORY OTHER THAN ALLOCATED BY MALLOC, OTHERWISE IT WILL CRASH THE PROGRAM
+    THIS FUNCTION REALLOCATES MEMORY VIA realloc(), DO NOT PUT MEMORY OTHER THAN ALLOCATED BY MALLOC, OTHERWISE IT WILL CRASH THE PROGRAM
 */
 void
 MergeRegions(data_array<nar_record>* R) {

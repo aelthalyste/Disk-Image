@@ -365,7 +365,7 @@ struct backup_metadata {
             unsigned int FrameSize;
             
             size_t   CompressionInfoOffset;
-            uint32_t CompressionInfoCount;
+            uint64_t CompressionInfoCount;
             
             
         };
@@ -705,6 +705,10 @@ IsNumeric(char val) {
 }
 
 
+#pragma warning(push)
+#pragma warning(disable:4244)
+#pragma warning(disable:4146)
+
 // *Really* minimal PCG32 code / (c) 2014 M.E. O'Neill / pcg-random.org
 // Licensed under Apache License 2.0 (NO WARRANTY, etc. see website)
 
@@ -722,6 +726,7 @@ pcg32_random_r(pcg32_random_t* rng)
     return (xorshifted >> rot) | (xorshifted << ((-rot) & 31));
 }
 
+#pragma warning(pop)
 
 
 static inline bool

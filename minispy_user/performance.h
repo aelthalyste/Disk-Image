@@ -81,7 +81,8 @@ static inline double NarTimeElapsed(int64_t start){
 }
 
 
-#endif
+// win32
+#endif 
 
 
 

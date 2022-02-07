@@ -169,12 +169,11 @@ NarFileReadNBytes(std::string path, void *mem, size_t N){
 bool
 NarFileReadNBytes(std::wstring path, void *mem, size_t N){
     bool Result = false;
+    ASSERT(N < Gigabyte(2));
     HANDLE File = CreateFileW(path.c_str(), GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
     if (File != INVALID_HANDLE_VALUE) {
         DWORD BytesRead = 0;
-        ReadFile(File, mem, N, &BytesRead, 0);
-        if (BytesRead == N) {
-            // NOTE success
+        if (ReadFile(File, mem, (DWORD)N, &BytesRead, 0) && BytesRead == N) {
             Result = true;
         }
         else {

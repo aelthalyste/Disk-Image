@@ -169,7 +169,7 @@ NarReadMetadata(StrType path, backup_metadata* bm) {
         Result = true;
     }
     else {
-        NAR_DEBUG("Unable to read file %s", path.c_str());
+        NAR_DEBUG("Unable to read file %S", path.c_str());
     }
     
     return Result;

@@ -49,7 +49,7 @@ struct volume_information {
     uint64_t FreeSize;
     int32_t Bootable; // Healthy && NTFS && !Boot
     char Letter;
-    unsigned char DiskID;
+    uint64_t DiskID;
     char DiskType;
     wchar_t VolumeName[MAX_PATH + 1];
 };
@@ -58,8 +58,8 @@ struct disk_information_ex{
     uint64_t TotalSize;
     uint64_t UnusedSize;
     
-    uint8_t DiskID;
-    uint8_t VolumeCount;
+    uint64_t DiskID;
+    uint64_t VolumeCount;
     char DiskType;
     
     volume_information *Volumes;
@@ -67,7 +67,7 @@ struct disk_information_ex{
 
 struct nar_partition_info{
     uint64_t PartitionInfo;
-    uint8_t DiskID;
+    uint64_t DiskID;
     char Letter;
     char DiskType;
 };

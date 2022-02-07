@@ -29,7 +29,7 @@
 #define NAR_FE_HAND_OPT_READ_MOUNTED_VOLUME 1
 #define NAR_FE_HAND_OPT_READ_BACKUP_VOLUME 2
 
-#define NAR_FEXP_INDX_ENTRY_SIZE(e) *(UINT16*)((char*)(e) + 8)
+#define NAR_FEXP_INDX_ENTRY_SIZE(e) *(uint16_t*)((char*)(e) + 8)
 #define NAR_FEXP_POSIX -1
 #define NAR_FEXP_END_MARK -2
 #define NAR_FEXP_SUCCEEDED 1
@@ -212,7 +212,7 @@ struct file_restore_source{
     nar_file_view Metadata;
     
     const nar_record *BackupLCN;
-    uint32_t   LCNCount;
+    uint64_t   LCNCount;
     
     BackupType    Type;
     int           Version;
@@ -302,7 +302,7 @@ NarIsFileLinked(void* FileRecord);
 inline uint32_t
 NarGetFileBaseID(void* FileRecord);
 
-inline INT32
+inline int32_t
 NarGetVolumeClusterSize(char Letter);
 
 
@@ -312,7 +312,7 @@ NarOpenVolume(char Letter);
 
 
 inline void*
-NarFindFileAttributeFromFileRecord(void *FileRecord, INT32 AttributeID);
+NarFindFileAttributeFromFileRecord(void *FileRecord, int32_t AttributeID);
 
 
 

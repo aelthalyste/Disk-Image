@@ -142,7 +142,7 @@ struct volume_backup_inf {
     ////Incremental change count of the volume, this value will be reseted after every SUCCESSFUL backup operation
     // this value times sizeof(nar_record) indicates how much data appended since last backup, useful when doing incremental backups
     // we dont need that actually, possiblenewbackupregionoffsetmark - lastbackupoffset is equal to that thing
-    //UINT32 IncRecordCount;  // IGNORED IF DIFF BACKUP
+    //uint32_t IncRecordCount;  // IGNORED IF DIFF BACKUP
     
     // Indicates where last backup regions end in local metadata. bytes after that offset is non-backed up parts of the volume.
     // this value + increcordcount*sizeof(nar_record) is PossibleNewBackupRegionOffsetMark
@@ -292,7 +292,7 @@ NarRemoveVolumeFromKernelList(wchar_t Letter, HANDLE CommPort);
 int32_t
 GetVolumesOnTrack(PLOG_CONTEXT C, volume_information* Out, unsigned int BufferSize, int* OutCount);
 
-INT32
+int32_t
 GetVolumeID(PLOG_CONTEXT C, wchar_t Letter);
 
 /*

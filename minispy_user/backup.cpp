@@ -57,7 +57,7 @@ SetIncRecords(HANDLE CommPort, volume_backup_inf* V) {
         return FALSE;
     }
     
-    V->PossibleNewBackupRegionOffsetMark = NarGetLogFileSizeFromKernel(CommPort, V->Letter);
+    V->PossibleNewBackupRegionOffsetMark = NarGetLogFileSizeFromKernel(CommPort, (char)V->Letter);
     
     printf("PNBRO : %I64u\n", V->PossibleNewBackupRegionOffsetMark);
     printf("SIR: Volume %c, lko %I64u\n", V->Letter, V->IncLogMark.LastBackupRegionOffset);
@@ -69,7 +69,7 @@ SetIncRecords(HANDLE CommPort, volume_backup_inf* V) {
     V->Stream.Records.Data = 0;
     V->Stream.Records.Count = 0;
     
-    std::wstring logfilepath = GenerateLogFilePath(V->Letter);
+    std::wstring logfilepath = GenerateLogFilePath((char)V->Letter);
     HANDLE LogHandle = CreateFileW(logfilepath.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, 0, OPEN_EXISTING, 0, 0);
     
     // calling malloc with 0 is implementation defined behaviour, but not having logs is possible thing that might happen and no need to worry about it since
@@ -163,8 +163,8 @@ SetDiffRecords(HANDLE CommPort ,volume_backup_inf* V) {
     printf("Entered SetDiffRecords\n");
     int32_t Result = FALSE;
     
-    V->PossibleNewBackupRegionOffsetMark = NarGetLogFileSizeFromKernel(CommPort, V->Letter);
-    std::wstring logfilepath = GenerateLogFilePath(V->Letter);
+    V->PossibleNewBackupRegionOffsetMark = NarGetLogFileSizeFromKernel(CommPort, (char)V->Letter);
+    std::wstring logfilepath = GenerateLogFilePath((char)V->Letter);
     HANDLE LogHandle = CreateFileW(logfilepath.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, 0, OPEN_EXISTING, 0, 0);
     
     
@@ -491,7 +491,7 @@ SetupFullOnlyStream(wchar_t Letter, DotNetStreamInf *SI, bool ShouldCompress, bo
     
     uint64_t LowerHalf = pcg32_random_r(&RandomSeed);
     uint64_t UpperHalf = pcg32_random_r(&RandomSeed);
-    Result.Letter = Letter;
+    Result.Letter = (char)Letter;
     
     Result.Stream.ShouldCompress = ShouldCompress;
     Result.Stream.RegionLock     = RegionLock;
@@ -507,7 +507,7 @@ SetupFullOnlyStream(wchar_t Letter, DotNetStreamInf *SI, bool ShouldCompress, bo
     }
     
     Result.BackupID.Q = (UpperHalf << 32ull) | LowerHalf;
-    Result.BackupID.Letter = Letter;
+    Result.BackupID.Letter = (char)Letter;
     Result.BackupID = NarSetAsFullOnlyBackup(Result.BackupID);
     
     
@@ -744,7 +744,7 @@ SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, DotNetStreamInf* SI, boo
     
     
     // no overheat for attaching volume again and again
-    if(FALSE == AttachVolume(VolInf->Letter)){
+    if(FALSE == AttachVolume((char)VolInf->Letter)){
         printf("Cant attach volume\n");
         Return = FALSE;
     }
@@ -822,7 +822,7 @@ SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, DotNetStreamInf* SI, boo
         SI->ClusterSize = V->ClusterSize;
         
         for(unsigned int RecordIndex = 0; RecordIndex < V->Stream.Records.Count; RecordIndex++){
-            if((INT64)V->Stream.Records.Data[RecordIndex].StartPos + (INT64)V->Stream.Records.Data[RecordIndex].Len > (INT64)V->VolumeTotalClusterCount){
+            if((int64_t)V->Stream.Records.Data[RecordIndex].StartPos + (int64_t)V->Stream.Records.Data[RecordIndex].Len > (int64_t)V->VolumeTotalClusterCount){
                 TruncateIndex = RecordIndex;
                 break;
             }
@@ -982,7 +982,7 @@ ReadStream(backup_stream *Stream, void* CallerBuffer, uint32_t CallerBufferSize)
     unsigned int TotalSize = CallerBufferSize;
     if(true == Stream->ShouldCompress){
         BufferToFill    = Stream->CompressionBuffer;
-        TotalSize       = Stream->BufferSize;
+        TotalSize       = (uint32_t)Stream->BufferSize;
     }
     
     if (TotalSize == 0) {
@@ -1097,7 +1097,7 @@ ReadStream(backup_stream *Stream, void* CallerBuffer, uint32_t CallerBufferSize)
         
         if(!ZSTD_isError(RetCode)){
             nar_record CompInfo;
-            CompInfo.CompressedSize   = RetCode;
+            CompInfo.CompressedSize   = (uint32_t)RetCode;
             CompInfo.DecompressedSize = Result;
             
             if(Stream->MaxCBI > Stream->CBII){
@@ -1107,7 +1107,7 @@ ReadStream(backup_stream *Stream, void* CallerBuffer, uint32_t CallerBufferSize)
             ASSERT(Stream->MaxCBI > Stream->CBII);
             
             Stream->BytesProcessed = Result;
-            Result = RetCode;
+            Result = (uint32_t)RetCode;
         }
         else{
             
@@ -1299,7 +1299,7 @@ GetVolumesOnTrack(PLOG_CONTEXT C, volume_information* Out, unsigned int BufferSi
     return Result;
 }
 
-INT32
+int32_t
 GetVolumeID(PLOG_CONTEXT C, wchar_t Letter) {
     
     INT ID = NAR_INVALID_VOLUME_TRACK_ID;
@@ -1339,12 +1339,12 @@ AddVolumeToTrack(PLOG_CONTEXT Context, wchar_t Letter, BackupType Type) {
     volume_backup_inf VolInf;
     int32_t FOUND = FALSE;
     
-    INT32 ID = GetVolumeID(Context, Letter);
+    int32_t ID = GetVolumeID(Context, Letter);
     
     if (ID == NAR_INVALID_VOLUME_TRACK_ID) {
         NAR_COMMAND Command;
         Command.Type    = NarCommandType_AddVolume;
-        Command.Letter  = Letter;
+        Command.Letter  = (char)Letter;
         
         if (NarGetVolumeGUIDKernelCompatible(Letter, Command.VolumeGUIDStr)) {
             
@@ -1434,9 +1434,9 @@ GetMFTandINDXLCN(char VolumeLetter, HANDLE VolumeHandle) {
         char VolumeName[64];
         snprintf(VolumeName,sizeof(VolumeName), "\\\\.\\%c:", VolumeLetter);
         
-        INT16 DirectoryFlag = 0x0002;
-        INT32 FileRecordSize = 1024;
-        INT16 FlagOffset = 22;
+        int16_t DirectoryFlag = 0x0002;
+        int32_t FileRecordSize = 1024;
+        int16_t FlagOffset = 22;
         
         
         if (VolumeHandle != INVALID_HANDLE_VALUE) {
@@ -1478,7 +1478,7 @@ GetMFTandINDXLCN(char VolumeLetter, HANDLE VolumeHandle) {
             for (unsigned int MFTOffsetIndex = 0; MFTOffsetIndex < MFTRegionCount; MFTOffsetIndex++) {
                 
                 ULONGLONG Offset = (ULONGLONG)ClustersExtracted[MFTOffsetIndex].StartPos * (uint64_t)ClusterSize;
-                INT32 FilePerCluster = ClusterSize / 1024;
+                int32_t FilePerCluster = ClusterSize / 1024;
                 ULONGLONG FileCount = (ULONGLONG)ClustersExtracted[MFTOffsetIndex].Len * (uint64_t)FilePerCluster;
                 
                 // set file pointer to actual records
@@ -1493,7 +1493,7 @@ GetMFTandINDXLCN(char VolumeLetter, HANDLE VolumeHandle) {
                         size_t TargetFileCount = MIN(FileBufferCount, FileRemaining);
                         FileRemaining -= TargetFileCount;
                         
-                        BOOL RFResult = ReadFile(VolumeHandle, FileBuffer, TargetFileCount * 1024ul, &BR, 0);
+                        BOOL RFResult = ReadFile(VolumeHandle, FileBuffer, (DWORD)TargetFileCount * 1024ul, &BR, 0);
                         
                         if (RFResult && BR == (TargetFileCount * 1024ul)) {
 #if 1                          
@@ -1935,7 +1935,6 @@ SaveMetadata(char Letter, int Version, int ClusterSize, BackupType BT,
     ULONGLONG BaseOffset = sizeof(BM);
     
     int32_t Result = FALSE;
-    char StringBuffer[1024];
     
     std::wstring MetadataFilePath;
     GenerateMetadataName(ID, Version, MetadataFilePath);
@@ -2008,7 +2007,7 @@ SaveMetadata(char Letter, int Version, int ClusterSize, BackupType BT,
     
     {
         // TODO(Batuhan): same problem mentioned in the codebase, we have to figure out reading more than 4gb at once(easy, but gotta replace lots of code probably)
-        WriteFile(MetadataFile, BackupRegions.Data, BM.Size.RegionsMetadata, &BytesWritten, 0);
+        WriteFile(MetadataFile, BackupRegions.Data, (DWORD)BM.Size.RegionsMetadata, &BytesWritten, 0);
         if (BytesWritten != BM.Size.RegionsMetadata) {
             printf("Couldn't save regionsmetata to file\n");
             BM.Errors.RegionsMetadata = TRUE;
@@ -2139,7 +2138,7 @@ SaveMetadata(char Letter, int Version, int ClusterSize, BackupType BT,
             SetFilePointerEx(MetadataFile, liOfs, &liNew, FILE_CURRENT);
             BM.CompressionInfoOffset = liNew.QuadPart;
             
-            if(!WriteFile(MetadataFile, CompInfo, CompInfoCount*8, &BW, 0)
+            if(!WriteFile(MetadataFile, CompInfo, (DWORD)CompInfoCount*8, &BW, 0)
                || BW != CompInfoCount*8){
                 ASSERT(FALSE);
                 printf("Error occured while saving compression information to backup metadata. Volume %c, version %d, id %I64u\n", BM.Letter, BM.Version, BM.ID.Q);
@@ -2269,12 +2268,12 @@ NarGenerateBackupID(char Letter){
     
     SYSTEMTIME T;
     GetLocalTime(&T);
-    Result.Year = T.wYear;
-    Result.Month = T.wMonth;
-    Result.Day = T.wDay;
-    Result.Hour = T.wHour;
-    Result.Min = T.wMinute;
-    Result.Letter = Letter;
+    Result.Year   = (unsigned short)T.wYear;
+    Result.Month  = (char)T.wMonth;
+    Result.Day    = (char)T.wDay;
+    Result.Hour   = (char)T.wHour;
+    Result.Min    = (char)T.wMinute;
+    Result.Letter = (unsigned char)Letter;
     
     return Result;
 }

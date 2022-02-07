@@ -210,7 +210,7 @@ NarCreateCleanGPTBootablePartition(int DiskID, int VolumeSizeMB, int EFISizeMB, 
     
     char InputFN[] = "NARDPINPUT";
     // NOTE(Batuhan): safe conversion
-    if (NarDumpToFile(InputFN, Buffer, (INT32)strlen(Buffer))) {
+    if (NarDumpToFile(InputFN, Buffer, (int32_t)strlen(Buffer))) {
         snprintf(Buffer, sizeof(Buffer), "diskpart /s %s > NARDPOUTPUT.txt", InputFN);
         system(Buffer);
         printf("%s\n", Buffer);
@@ -618,9 +618,10 @@ char NarVolumeNameGUIDToLetter(wchar_t* VolumeName, wchar_t *Out, size_t MaxOutC
     if (!Success) 
     {
         printf("GetVolumePathNamesForVolumeNameW failed for volume %s with error code %d\n", VolumeName, GetLastError());
-        return 0 ;
+        return 0;
     }
     
+    return 1;    
 }
 
 
@@ -695,7 +696,7 @@ NarGetPartitions(nar_arena *Arena, size_t* OutCount) {
             
             Insert->Volumes = (volume_information*)ArenaAllocateZero(Arena, DriveLayout->PartitionCount * sizeof(volume_information));
             
-            Insert->UnusedSize = Insert->TotalSize;
+            Insert->UnusedSize  = Insert->TotalSize;
             Insert->VolumeCount = DriveLayout->PartitionCount;
             
             for(size_t PartitionID = 0;
@@ -708,7 +709,7 @@ NarGetPartitions(nar_arena *Arena, size_t* OutCount) {
                 Insert->Volumes[PartitionID].TotalSize = PLayout.PartitionLength.QuadPart;
                 Insert->Volumes[PartitionID].DiskID    = Insert->DiskID;
                 Insert->Volumes[PartitionID].DiskType  = Insert->DiskType;
-                Insert->Volumes[PartitionID].Letter    = PLayout.PartitionNumber;
+                Insert->Volumes[PartitionID].Letter    = (char)PLayout.PartitionNumber;
                 
                 if(Insert->DiskType == NAR_DISKTYPE_GPT){
                     wcscpy(Insert->Volumes[PartitionID].VolumeName, PLayout.Gpt.Name);
@@ -848,13 +849,13 @@ NarWCHARToUTF8(wchar_t *Str, nar_arena *Arena){
     NarUTF8 Result = {};
     size_t StrLen = wcslen(Str);
     
-    Result.Len = WideCharToMultiByte(CP_UTF8, 0, Str, StrLen, NULL, 0, NULL, NULL) + 1;
+    Result.Len = WideCharToMultiByte(CP_UTF8, 0, Str, (int)StrLen, NULL, 0, NULL, NULL) + 1;
     
     Result.Str = (uint8_t*)ArenaAllocate(Arena, Result.Len);
     Result.Cap = Result.Len;
     memset(Result.Str, 0, Result.Cap);
     
-    WideCharToMultiByte(CP_UTF8, 0, Str, StrLen, (LPSTR)Result.Str, Result.Len, NULL, NULL);
+    WideCharToMultiByte(CP_UTF8, 0, Str, (int)StrLen, (LPSTR)Result.Str, Result.Len, NULL, NULL);
     
     return Result;
 }
@@ -1099,6 +1100,7 @@ NarSetupVSSListen(nar_backup_id ID){
     
     FAIL:
     NarFreeProcessListen(&Result);
+    return {0};
 }
 
 void
@@ -1305,7 +1307,7 @@ NarGetVolumeLetterFromGUID(GUID G){
     DWORD T;
     GetVolumePathNamesForVolumeNameW(TempVolumeName, Result, 64, &T);
     
-    return Result[0];
+    return (char)Result[0];
 }
 
 
@@ -1412,9 +1414,7 @@ NarGetDiskListFromDiskPart() {
             char *Start = (char*)Data;
             char *End   = (char*)Data + Read.Len;
             char *Needle = Start;
-            
-            char Line[128];
-            
+                        
             snprintf(Token, sizeof(Token), "Disk 0");
             Needle = strstr(Start, "Disk 0");
             

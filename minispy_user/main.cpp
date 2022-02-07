@@ -7,11 +7,6 @@
 */
 
 #include <DriverSpecs.h>
-_Analysis_mode_(_Analysis_code_type_user_code_)
-
-#ifndef _CRT_SECURE_NO_WARNINGS
-#define _CRT_SECURE_NO_WARNINGS
-#endif
 
 #if 1
 #ifndef UNICODE
@@ -102,7 +97,7 @@ struct{
     uint64_t WorkCycleCount;
     LARGE_INTEGER LastCounter;
     LARGE_INTEGER WorkCounter;
-    INT64 GlobalPerfCountFrequency;
+    int64_t GlobalPerfCountFrequency;
 }NarPerfCounter;
 
 
@@ -190,7 +185,7 @@ void DEBUG_Restore(){
     }
 #endif
     
-    restore_target *Target = InitVolumeTarget(TargetLetter, &Arena);
+    restore_target *Target = InitVolumeTarget((char)TargetLetter, &Arena);
     restore_stream *Stream = 0;
     if(Target){
         Stream = InitFileRestoreStream(MetadataPath, Target, &Arena, Megabyte(16));
@@ -301,7 +296,7 @@ TEST_ReadBackup(wchar_t *backup, wchar_t *metadata, pcg32_random_t *state){
     DWORD BR = 0;
     ReadFile(VolumeHandle, 
              RFBuffer,
-             SelectedLen*4096ull,
+             (DWORD)SelectedLen*4096ull,
              &BR,
              0);
     
@@ -737,7 +732,7 @@ wmain(int argc, wchar_t* argv[]) {
                     printf("starting backup\n");
 #if 1                    
                     loop{
-                        int Read = ReadStream(&v->Stream, MemBuf, bsize);
+                        int Read = ReadStream(&v->Stream, MemBuf, (uint32_t)bsize);
                         TotalRead += Read;
                         
                         ucs += v->Stream.BytesProcessed;

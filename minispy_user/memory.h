@@ -103,13 +103,13 @@ struct nar_pool_entry{
 struct nar_memory_pool{
     void *Memory;
     nar_pool_entry *Entries;
-    int PoolSize;
-    int EntryCount;
+    uint64_t PoolSize;
+    uint64_t EntryCount;
 };
 
 
 static inline nar_memory_pool
-NarInitPool(void *Memory, uint32_t MemorySize, uint32_t PoolSize){
+NarInitPool(void *Memory, uint64_t MemorySize, uint64_t PoolSize){
     
     if(Memory == NULL) return { 0 };
     

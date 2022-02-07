@@ -165,10 +165,8 @@ NarRestoreReadBackup(restore_source* Rs, size_t* AvailableBytes) {
     ASSERT(*AvailableBytes % 4096 == 0);
     ASSERT(DataOffset % 4096 == 0);
     
-    if((ClustersToRead*Rs->ClusterSize) % 4096 != 0)
-        NAR_BREAK;
-    if(*AvailableBytes % 4096 != 0)
-        NAR_BREAK;
+    ASSERT((ClustersToRead*Rs->ClusterSize) % 4096 == 0);
+    ASSERT((*AvailableBytes % 4096 == 0));
     
     Rs->AbsoluteNeedleInBytes = DataOffset;
     
@@ -259,7 +257,7 @@ AdvanceStream(restore_stream* Stream) {
             Stream->Error = RestoreStream_Errors::Error_Read;
         }
         else{
-            NAR_DBG_ERR("Source %lu is depleted, moving to next one\n", Stream->CSI);
+            NAR_DBG_ERR("Source %llu is depleted, moving to next one\n", (uint64_t)Stream->CSI);
             Stream->CSI++;
             return AdvanceStream(Stream);
         }
@@ -298,7 +296,7 @@ NarWriteVolume(restore_target* Rt, const void* Mem, size_t MemSize) {
         // success
     }
     else {
-        NAR_DEBUG("Unable to write %lu bytes to restore target\n", MemSize);
+        NAR_DEBUG("Unable to write %llu bytes to restore target\n", (uint64_t)MemSize);
     }
     
     return (size_t)BytesWritten;

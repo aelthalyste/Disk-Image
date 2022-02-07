@@ -41,7 +41,7 @@ NarGetFileSizeFromRecord(void *R){
     if(R == 0) return 0;
     void *D = NarFindFileAttributeFromFileRecord(R, NAR_DATA_FLAG);
     if(D != NULL){
-        return *(UINT64*)NAR_OFFSET(D, 0x30);
+        return *(uint64_t*)NAR_OFFSET(D, 0x30);
     }
     return 0;
 }
@@ -57,13 +57,13 @@ NarSetFilePointer(HANDLE File, ULONGLONG V) {
 }
 
 
-inline INT32
+inline int32_t
 NarGetVolumeClusterSize(char Letter){
     
     char V[] = "!:\\";
     V[0] = Letter;
     
-    INT32 Result = 0;
+    int32_t Result = 0;
     DWORD SectorsPerCluster = 0;
     DWORD BytesPerSector = 0;
     
@@ -136,16 +136,16 @@ For given MFT FileEntry, returns address AttributeID in given FileRecord. Caller
 Function returns NULL if attribute is not present 
 */
 inline void*
-NarFindFileAttributeFromFileRecord(void *FileRecord, INT32 AttributeID){
+NarFindFileAttributeFromFileRecord(void *FileRecord, int32_t AttributeID){
     
     if(NULL == FileRecord) return 0;
     
     TIMED_BLOCK();
     
-    INT16 FirstAttributeOffset = (*(int16_t*)((BYTE*)FileRecord + 20));
+    int16_t FirstAttributeOffset = (*(int16_t*)((BYTE*)FileRecord + 20));
     void* FileAttribute = (char*)FileRecord + FirstAttributeOffset;
     
-    INT32 RemainingLen = *(int32_t*)((BYTE*)FileRecord + 24); // Real size of the file record
+    int32_t RemainingLen = *(int32_t*)((BYTE*)FileRecord + 24); // Real size of the file record
     RemainingLen      -= (FirstAttributeOffset + 8); //8 byte for end of record mark, remaining len includes it too.
     
     while(RemainingLen > 0){
@@ -175,7 +175,7 @@ NarGetBitmapAttributeData(void *BitmapAttributeStart){
     void *Result = 0;
     if(BitmapAttributeStart == NULL) return Result;
     
-    UINT16 Aoffset =  *(UINT16*)NAR_OFFSET(BitmapAttributeStart, 0x14);
+    uint16_t Aoffset =  *(uint16_t*)NAR_OFFSET(BitmapAttributeStart, 0x14);
     Result = NAR_OFFSET(BitmapAttributeStart, Aoffset);
     
     return Result;
@@ -183,10 +183,10 @@ NarGetBitmapAttributeData(void *BitmapAttributeStart){
 
 int32_t
 NarGetBitmapAttributeDataLen(void *BitmapAttributeStart){
-    INT32 Result = 0;
+    int32_t Result = 0;
     if(BitmapAttributeStart == NULL) return Result;
     
-    Result = *(INT32*)NAR_OFFSET(BitmapAttributeStart, 0x10);
+    Result = *(int32_t*)NAR_OFFSET(BitmapAttributeStart, 0x10);
     
     return Result;
 }
@@ -308,7 +308,7 @@ NarParseIndexAllocationAttribute(void *IndexAttribute, nar_record *OutRegions, u
     
     TIMED_NAMED_BLOCK("Index singular");
     
-    int32_t DataRunsOffset = *(INT32*)NAR_OFFSET(IndexAttribute, 32);
+    int32_t DataRunsOffset = *(int32_t*)NAR_OFFSET(IndexAttribute, 32);
     void* D = NAR_OFFSET(IndexAttribute, DataRunsOffset);
     
     return NarParseDataRun(D, OutRegions, MaxRegionLen, OutRegionsFound, BitmapCompatibleInsert);
@@ -502,7 +502,7 @@ NarFindExtensions(char VolumeLetter, HANDLE VolumeHandle, wchar_t **ExtensionLis
                 
                 ReadFile(VolumeHandle, 
                          Memory->FileBuffer, 
-                         TargetFileCount*1024ull, 
+                         (DWORD)(TargetFileCount*1024ull), 
                          &BR, 0);
                 ASSERT(BR == TargetFileCount*1024);
                 
@@ -790,7 +790,7 @@ NarFindExtensions(char VolumeLetter, HANDLE VolumeHandle, wchar_t **ExtensionLis
 
 inline uint32_t
 NarGetFileID(void* FileRecord){
-    uint32_t Result = *(uint64_t*)NAR_OFFSET(FileRecord, 44);
+    uint32_t Result = *(uint32_t *)NAR_OFFSET(FileRecord, 44);
     return Result;
 }
 
@@ -918,7 +918,7 @@ NarInitFileExplorer(NarUTF8 MetadataPath){
         Result.MFTSize = BM->Size.MFT;
         Result.TotalFC = (Result.MFTSize / (1024))*3/2;
         
-        Result.Memory  = NarInitFileExplorerMemory(Result.TotalFC);
+        Result.Memory  = NarInitFileExplorerMemory((uint32_t)Result.TotalFC);
         Result.VolumeLetter = BM->Letter;
         Result.Version      = BM->Version;
         Result.ID           = BM->ID;
@@ -1154,7 +1154,7 @@ NarInitFileExplorer(NarUTF8 MetadataPath){
             ASSERT(FileSizeTuple[_idc].FileID > 0);
             
             uint64_t FileSize = FileSizeTuple[_idc].FileSize;
-            uint64_t BaseID   = FileSizeTuple[_idc].FileID;
+            uint32_t BaseID   = FileSizeTuple[_idc].FileID;
             
             file_explorer_file *File = FEFindFileWithID(&Result, BaseID);
             if(File){
@@ -1233,22 +1233,22 @@ FENextFileInDir(file_explorer *FE, file_explorer_file *CurrentFile){
 file_explorer_file*
 FEFindFileWithID(file_explorer* FE, uint32_t ID){
     
-    uint32_t Left  = 0;
-    uint32_t Right = FE->FileCount;
-    uint32_t Mid   = (Right - Left)/2;
+    uint64_t Left  = 0;
+    uint64_t Right = FE->FileCount;
+    uint64_t Mid   = (Right - Left)/2;
     
     while(Right > Left && Mid!=Left){
         
-        if(FE->FileIDs[Mid] == ID){
+        if(FE->FileIDs[Mid] == ID) {
             return &FE->Files[Mid];
         }
-        if(FE->FileIDs[Mid] > ID){
+        if(FE->FileIDs[Mid] > ID) {
             Right = Mid;
         }
-        if(FE->FileIDs[Mid] < ID){
+        if(FE->FileIDs[Mid] < ID) {
             Left = Mid;
         }
-        Mid = Left + (Right - Left)/2;
+        Mid = Left + (Right - Left) / 2;
     }
     
     return 0;
@@ -1323,7 +1323,7 @@ GetAttributeListContents(void* AttrListDataStart, uint64_t DataLen){
     attribute_list_contents Result = {};
     
     // skip first 24 bytes, header.
-    uint32_t LenRemaining      = DataLen;
+    uint64_t LenRemaining      = DataLen;
     uint8_t* CurrentAttrRecord = (uint8_t*)AttrListDataStart;
     uint64_t Indice            = 0;
     
@@ -1352,7 +1352,7 @@ GetAttributeListContents(void* AttrListDataStart, uint64_t DataLen){
 CAUTION : Assumes we can insert as much as we can into Files array.
 
 Args:
-MFTStart, start of MFT, assumes it's sequential all they way in the memory.
+MFTStart, start of MFT, assumes it's sequential all the way in the memory.
 BaseFileRecord : Record that attribute array belongs to.
 Files: Array to append found file(s). Since there might be hard links we may
 append more than one file to array.
@@ -1546,8 +1546,8 @@ NarFindFileLayout(file_explorer *FE, file_explorer_file *File, nar_arena *Arena)
             ASSERT(ParseResult);
             ASSERT(DataRunFound == 1);
             
-            uint32_t TargetCluster = Runs[0].StartPos;
-            uint32_t FEResult = NarReadBackup(&FE->FullbackupView, &FE->MetadataView, TargetCluster, 1, ATLDataBuffer, FE->ClusterSize, 0, 0);
+            uint64_t TargetCluster = Runs[0].StartPos;
+            uint64_t FEResult = NarReadBackup(&FE->FullbackupView, &FE->MetadataView, TargetCluster, 1, ATLDataBuffer, FE->ClusterSize, 0, 0);
             
             ATLData = &ATLDataBuffer[0];
             ATLLen  = *(uint32_t*)NAR_OFFSET(ATL, 48);
@@ -1559,7 +1559,7 @@ NarFindFileLayout(file_explorer *FE, file_explorer_file *File, nar_arena *Arena)
             ATLLen  = *(uint32_t*)NAR_OFFSET(ATL, 16);
         }
         
-        uint32_t RemainingLen = ATLLen;
+        uint64_t RemainingLen = ATLLen;
         void *CurrentRecord   = ATLData;
         uint32_t PrevID = 0;
         while(RemainingLen){
@@ -1629,7 +1629,7 @@ NarFindFileLayout(file_explorer *FE, file_explorer_file *File, nar_arena *Arena)
         }
     }
     else{
-        INT16 FirstAttributeOffset = (*(int16_t*)((BYTE*)FileRecord + 20));
+        int16_t FirstAttributeOffset = (*(int16_t*)((BYTE*)FileRecord + 20));
         void* FileAttribute = (char*)FileRecord + FirstAttributeOffset;
         
         for(void* FileAttribute = (uint8_t*)FileRecord + FirstAttributeOffset;
@@ -1987,7 +1987,7 @@ NarAdvanceFileRestore(file_restore_ctx *ctx, void* Out, size_t OutSize){
         Result.Offset = 0;
     }
     
-    //printf("%8u\t%8u\t%8u\n", ReadOffset, VCNWrite, ClustersToRead);
+    // printf("%8u\t%8u\t%8u\n", ReadOffset, VCNWrite, ClustersToRead);
     
     Result.Len      = BytesRead;
     Result.Offset   = VCNWrite * ctx->ClusterSize;
