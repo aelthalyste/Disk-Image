@@ -1,6 +1,5 @@
 #pragma once
 
-#include "package.h"
 
 #ifdef  __linux__
 #define NAR_LINUX   1
@@ -73,7 +72,7 @@ struct nar_backup_id{
 #define NAR_DISKTYPE_MBR 'M'
 #define NAR_DISKTYPE_RAW 'R'
 
-#define NAR_FULLBACKUP_VERSION     (-1)
+#define NAR_FULLBACKUP_VERSION     (0)
 #define NAR_INVALID_BACKUP_VERSION (-2)
 
 #define NAR_EFI_PARTITION_LETTER 'S'
@@ -84,156 +83,17 @@ struct nar_backup_id{
 #include "memory.h"
 #include "narstring.h"
 #include "memory.h"
-
-
-
-#if NAR_WINDOWS
-#define NAR_DEBUG(fmt, ...) fprintf(stderr, fmt, __VA_ARGS__)
-#define NAR_DBG_ERR(fmt, ...) fprintf(stderr, fmt, __VA_ARGS__)
-#else
-#define NAR_DEBUG(fmt, ...) printf(fmt, __VA_ARGS__)
-#define NAR_DBG_ERR(fmt, ...) printf(fmt, __VA_ARGS__)
-#endif
-
-
-struct nar_time {
-    uint16_t YEAR; // 2000 + YEAR is the actual value
-    uint8_t MONTH;
-    uint8_t DAY;
-    uint8_t HOUR;
-    uint8_t MIN;
-    uint8_t SEC;
-    // 7 bytes
-};
-
-
-// time-date for windows
-#if NAR_WINDOWS
-static inline nar_time SystemTimeToNarTime(SYSTEMTIME *w_time) {
-    nar_time result;
-    result.YEAR     = (uint16_t)w_time->wYear;
-    result.MONTH    = (uint8_t)w_time->wMonth;
-    result.DAY      = (uint8_t)w_time->wDay;
-    result.HOUR     = (uint8_t)w_time->wHour;
-    result.MIN      = (uint8_t)w_time->wMinute;
-    result.SEC      = (uint8_t)w_time->wSecond;
-    return result;
-}
-
-static inline nar_time NarGetLocalTime() {
-    SYSTEMTIME w_time;
-    GetLocalTime(&w_time);
-    return SystemTimeToNarTime(&w_time);
-}
-#endif
-
-
-
-// time-date for linux
-#if NAR_LINUX
-
-#include <time.h>
-static inline nar_time TmTimeToNarTime(struct tm * tm) {
-    Bg_Date result;
-    result.YEAR   = tm->tm_year + 1900;
-    result.MONTH  = tm->tm_mon;
-    result.DAY    = tm->tm_mday;
-    result.HOUR   = tm->tm_hour;
-    result.MIN    = tm->tm_min;
-    result.SEC    = tm->tm_sec;
-    return result;
-}
-
-static inline nar_time NarGetLocalTime() {
-    time_t t = time(NULL);
-    struct tm tm;
-    localtime_r(&t, &tm);
-    return TmTimeToNarTime(&tm); 
-}
-
-#endif
-
-
-
-
-#if 1
-static HANDLE GlobalLogMutex = 0;
-static void
-NarLog(const char *str, ...){
-    
-    char buf[1024];
-    
-    memset(buf, 0, sizeof(buf));
-    
-    
-    va_list args;
-    va_start(args, str);
-    vsnprintf(buf, sizeof(buf), str, args);
-    va_end(args);
-    
-    
-    char time_buf[128];
-    // time
-    {
-        SYSTEMTIME Time = { 0 };
-        GetLocalTime(&Time);
-        snprintf(time_buf, sizeof(time_buf), "[%02d/%02d/%04d | %02d:%02d:%02d] : ", Time.wDay, Time.wMonth, Time.wYear, Time.wHour, Time.wMinute, Time.wSecond);
-    }
-    
-    char big_buffer[2048];
-    memset(big_buffer, 0, sizeof(big_buffer));
-    int WriteSize = snprintf(big_buffer, sizeof(big_buffer), "%s %s", time_buf, buf);
-    
-    static bool fileinit = false;
-    static HANDLE File = INVALID_HANDLE_VALUE;
-    if(fileinit == false){
-        File = CreateFileA("C:\\ProgramData\\NarDiskBackup\\NAR_APP_LOG_FILE.txt", GENERIC_WRITE|GENERIC_READ, FILE_SHARE_READ, 0, OPEN_ALWAYS, 0, 0);
-        
-        LARGE_INTEGER Start  = {};
-        LARGE_INTEGER Result = {};
-        SetFilePointerEx(File, Start, &Result, FILE_END);
-
-        fileinit = true;
-    }
-    
-    if(File != INVALID_HANDLE_VALUE){
-        DWORD br = 0;
-        WriteFile(File, big_buffer, WriteSize, &br, 0);		
-        FlushFileBuffers(File);
-        //OutputDebugStringA(buf);
-    }
-    else{
-        printf(buf);
-    }
-    
-    
-    
-}
-
-
-#define printf(fmt, ...) NarLog(fmt, __VA_ARGS__)
-#endif
+#include "package.h"
+#include "bg.hpp"
 
 
 
 
 
-template <typename F>
-struct privDefer {
-    F f;
-    privDefer(F f) : f(f) {}
-    ~privDefer() { f(); }
-};
+#define printf(fmt, ...) do{BG_INTERNAL_LOG("INFO"   , fmt, ## __VA_ARGS__);} while (0);
 
-template <typename F>
-privDefer<F> defer_func(F f) {
-    return privDefer<F>(f);
-}
 
-#define DEFER_1(x, y) x##y
-#define DEFER_2(x, y) DEFER_1(x, y)
-#define DEFER_3(x)    DEFER_2(x, __COUNTER__)
-#define defer(code)   auto DEFER_3(_defer_) = defer_func([&](){code;})
+
 
 
 enum class BackupType : short {
@@ -272,7 +132,7 @@ struct backup_information {
     uint8_t CompressionType;
 
     nar_backup_id BackupID;
-    nar_time MetadataTimeStamp;
+    Bg_Date MetadataTimeStamp;
 };
 
 #pragma pack(pop)
@@ -312,7 +172,14 @@ union nar_record {
         uint32_t CompressedSize;
         uint32_t DecompressedSize;
     };
+    struct {
+        uint32_t off;
+        uint32_t len;
+    };
 };
+
+typedef nar_record USN_Extent;
+
 
 
 template<typename DATA_TYPE>
@@ -378,6 +245,9 @@ struct point_offset{
 };
 
 
+struct restore_ctx {
+    
+};
 
 
 static inline void
@@ -420,7 +290,7 @@ GenerateBinaryFileNameUTF8(nar_backup_id ID, int32_t Version, NarUTF8 *Out){
 
 static inline void 
 NarBackupIDToStr(nar_backup_id ID, char *Res, int MaxRes){
-    snprintf(Res, MaxRes, "-%c%02d%02d%02d%02d", ID.Letter, ID.Month, ID.Day, ID.Hour, ID.Min);
+    snprintf(Res, MaxRes, "%c%02d%02d%02d%02d", ID.Letter, ID.Month, ID.Day, ID.Hour, ID.Min);
 }
 
 
@@ -494,29 +364,6 @@ IsNumeric(char val) {
 }
 
 
-#pragma warning(push)
-#pragma warning(disable:4244)
-#pragma warning(disable:4146)
-
-// *Really* minimal PCG32 code / (c) 2014 M.E. O'Neill / pcg-random.org
-// Licensed under Apache License 2.0 (NO WARRANTY, etc. see website)
-
-typedef struct { uint64_t state;  uint64_t inc; } pcg32_random_t;
-
-static inline uint32_t 
-pcg32_random_r(pcg32_random_t* rng)
-{
-    uint64_t oldstate = rng->state;
-    // Advance internal state
-    rng->state = oldstate * 6364136223846793005ULL + (rng->inc|1);
-    // Calculate output function (XSH RR), uses old state for max ILP
-    uint32_t xorshifted = ((oldstate >> 18u) ^ oldstate) >> 27u;
-    uint32_t rot = oldstate >> 59u;
-    return (xorshifted >> rot) | (xorshifted << ((-rot) & 31));
-}
-
-#pragma warning(pop)
-
 
 static inline bool
 NarIsFullOnlyBackup(nar_backup_id ID){
@@ -531,9 +378,21 @@ NarSetAsFullOnlyBackup(nar_backup_id ID){
     return Result;
 }
 
+
+int32_t NarGetBackupsInDirectoryWithFilter(const UTF8 *Directory, backup_package *output, int MaxCount, nar_backup_id *FilteredID, int32_t MaxVersion);
+int32_t NarGetBackupsInDirectory(const UTF8 *Directory, backup_package *output, int MaxCount);
+
 UTF8 **GetFilesInDirectoryWithExtension(const UTF8 *DirectoryAsUTF8, uint64_t *OutCount, UTF8 *Extension);
 UTF8 **GetFilesInDirectory(const UTF8 *Directory, uint64_t *OutCount);
 void FreeDirectoryList(UTF8 **List, uint64_t Count);
+
+
+
+
+backup_package * LoadPackagesForRestore(const UTF8 *Directory, nar_backup_id BackupID, int32_t Version);
+void FreePackagesForRestore(backup_package *Packages, uint64_t Count);
+bool InitRestore(restore_ctx *output, const UTF8 *DirectoryToLook, nar_backup_id BackupID, int32_t Version);
+bool NarCompareBackupID(nar_backup_id id1, nar_backup_id id2);
 
 
 #if 0
@@ -567,3 +426,73 @@ struct file_table {
 300
 n_of_files * ( bytes) + 6mb per million file;
 #endif
+
+
+
+
+
+
+// USN_EXTENT CODEBASE START
+
+
+struct Extent_Exclusion_Iterator {
+    Slice<USN_Extent> base;
+    Slice<USN_Extent> to_be_excluded;
+    uint64_t base_indc;
+    uint64_t excl_indc;
+};
+
+enum Instruction_Type {
+    INVALID,
+    NORMAL,
+    ZERO
+};
+
+// Restore structs 
+struct Restore_Instruction {
+    uint8_t instruction_type;
+
+    USN_Extent where_to_read;
+
+    // @TODO : replace this with uint64_t write_size. All writes must be sequential.
+    USN_Extent where_to_write;
+
+    int32_t     version;
+};
+
+
+struct Restore_Ctx {
+    Array<Restore_Instruction>  instructions;
+    u64 target_file_size;
+    u64 cii = 0;
+};
+
+
+
+
+// functions!
+
+
+Extent_Exclusion_Iterator init_exclusion_iterator(Array<USN_Extent> base, Array<USN_Extent> to_be_excluded);
+
+void free_exclusion_iterator(Extent_Exclusion_Iterator *iter);
+
+int32_t qs_comp_restore_inst_fn(const void *p1, const void *p2);
+void    sort_restore_instructions(Array<Restore_Instruction> & arr);
+
+void    correctly_align_exclusion_extents(Extent_Exclusion_Iterator *iter);
+bool    iterate_next_extent(USN_Extent *result, Extent_Exclusion_Iterator *iter);
+
+bool nar_debug_check_if_we_touched_all_extent_scenarios(void);
+void nar_debug_reset_internal_branch_states(void);
+void nar_debug_reset_touch_states(void);
+
+
+int64_t  extent_offset_to_file_offset(Array<USN_Extent> & extents, int64_t extent_offset);
+void sort_and_merge_extents(Array<USN_Extent> & arr);
+
+void sort_extents(Array<USN_Extent> & arr);
+void merge_extents(Array<USN_Extent> & arr);
+
+bool     is_extents_collide(USN_Extent lhs, USN_Extent rhs);
+int32_t  qs_comp_extent_fn(const void *p1, const void *p2);

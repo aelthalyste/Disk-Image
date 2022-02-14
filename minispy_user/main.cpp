@@ -40,7 +40,7 @@
 #endif
 
 
-
+#include "performance.h"
 
 #define NAR_FAILED 0
 #define NAR_SUCC   1
@@ -51,6 +51,30 @@
 #include <conio.h>
 
 int main() {
+
+    {
+        file_read FR = NarReadFile("C:\\Users\\User\\Desktop\\NAR_LOG_FILE_C.nlfx");
+        nar_record *regs = (nar_record *)FR.Data;
+        int32_t RegCount = FR.Len/sizeof(nar_record);
+
+        int64_t qs = NarGetPerfCounter();
+        qsort(regs, RegCount, sizeof(nar_record), CompareNarRecords);
+        double qelapsed = NarTimeElapsed(qs);
+
+        data_array<nar_record> dr;
+        dr.Data = regs;
+        dr.Count = RegCount;
+
+        int64_t merges = NarGetPerfCounter();
+        MergeRegionsWithoutRealloc(&dr);
+        double mergeelapsed = NarTimeElapsed(merges);
+
+        fprintf(stdout, "Region count : %d", RegCount);
+        fprintf(stdout, "qsort elapsed : %.4f, merge elapsed %.4f", qelapsed, mergeelapsed);
+
+        return 0;
+    }
+
 
     backup_package Output[1024];
     {

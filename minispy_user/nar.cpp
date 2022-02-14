@@ -1,5 +1,23 @@
 #include "precompiled.h"
 #include "nar.h"
+#include "platform_io.h"
+
+
+static uint32_t debug_left = 0;
+static uint32_t debug_mid = 0;
+static uint32_t debug_right = 0;
+static uint32_t debug_overrun = 0;
+
+static uint32_t debug_overrun_c0 = 0;
+static uint32_t debug_overrun_c1 = 0;
+
+static uint32_t debug_left_c0 = 0;
+static uint32_t debug_left_c1 = 0;
+static uint32_t debug_left_c2 = 0;
+
+
+static uint32_t check_for_write_contiunity = 0;
+
 
 /*
 setups iter for finding intersections of two regions. 
@@ -593,3 +611,741 @@ void FreeDirectoryList(UTF8 **List, uint64_t Count) {
     free(List);
 }
 
+
+int BackupPackageComp(const void *v1, const void *v2) {
+    backup_package *p1 = (backup_package *)v1;
+    backup_package *p2 = (backup_package *)v2;
+
+    ASSERT(p1->BackupInformation.Version != p2->BackupInformation.Version);
+    if (p1->BackupInformation.Version < p2->BackupInformation.Version)
+        return -1;
+    else
+        return 1;
+
+}
+
+backup_package * LoadPackagesForRestore(const UTF8 *Directory, nar_backup_id BackupID, int32_t Version) {
+    
+
+    int32_t ResultCap = Version + 10;
+    backup_package *Result = (backup_package *)calloc(ResultCap, sizeof(*Result));
+    
+    int FoundCount = NarGetBackupsInDirectoryWithFilter(Directory, Result, ResultCap, &BackupID, Version);
+
+    if (FoundCount && FoundCount == Version + 1) {
+        bool Failed = false;
+
+        // sort packages
+        qsort(Result, FoundCount, sizeof(Result[0]), BackupPackageComp);
+
+        // validate chain integrity
+        for(int64_t i=0;i<FoundCount;++i) {
+            if (Result[i].BackupInformation.Version != i) {
+                Failed = true;
+                break;
+            }
+        }
+
+        if (Failed) {
+            printf("Error : Couldn't verify chain integrity. There is a hole in version array!\n");
+            free(Result);
+            Result = 0;
+        }
+
+    }
+    else {
+        free(Result);
+        Result = 0;
+    }
+
+
+    return Result;
+}
+
+
+void FreePackagesForRestore(backup_package *Packages, uint64_t Count) {
+    if (!Packages) return;
+    for(uint64_t i=0;i<Count;++i) 
+        free_package_reader(&Packages[i].Package);
+    free(Packages);
+}
+
+
+
+bool InitRestore(Restore_Ctx *ctx, const UTF8 *DirectoryToLook, nar_backup_id BackupID, int32_t Version) {
+
+    ASSERT(ctx);
+    ASSERT(DirectoryToLook);
+    ASSERT(Version >= -1);
+
+    uint64_t PackageCount = 0;
+    backup_package *Packages = LoadPackagesForRestore(DirectoryToLook, BackupID, Version);
+    defer({FreePackagesForRestore(Packages, Version + 1);});
+    
+    if (!Packages) {
+        printf("Unable to load packages for restore! InitRestore failed.\n");
+        return false;
+    }
+
+    Array<USN_Extent> written_extents;
+    defer({arrfree(&written_extents);});
+
+    int32_t VersionToApplyExcl = Version;
+    backup_package *P = &Packages[VersionToApplyExcl];
+    --VersionToApplyExcl;
+
+    uint64_t RegionCount = 0;
+    nar_record *Records = (nar_record *)P->Package.get_entry("regions", &RegionCount);
+    RegionCount /= sizeof(nar_record);
+
+    Extent_Exclusion_Iterator exclusion_iter;
+    defer({free_exclusion_iterator(&exclusion_iter);});
+
+    Array<USN_Extent> Extents;
+    // init exc iterator for the first time.
+    {
+        Extents.data = Records;
+        Extents.len  = RegionCount;
+        Extents.cap  = RegionCount;
+
+        exclusion_iter = init_exclusion_iterator(Extents, written_extents);
+        USN_Extent fsext;
+        fsext.off = P->BackupInformation.OriginalSizeOfVolume/P->BackupInformation.ClusterSize;
+        fsext.len = Gigabyte(3);
+        arrput(&written_extents, fsext);
+    }
+
+    arrreserve(&ctx->instructions, 1024);
+
+    Array<nar_record> backup_regions;
+
+    // @NOTE : pre-determine all reads-write locations and sort according to write extents to make better api for caller
+    // so they don't have to call file seek at target destination. 
+    for (;;) {
+        // addition loop
+
+        Restore_Instruction ri;
+        USN_Extent write_extent = {};
+
+        if (!iterate_next_extent(&write_extent, &exclusion_iter)) {
+            
+            if (VersionToApplyExcl >= 0) {
+                P = &Packages[VersionToApplyExcl];
+                --VersionToApplyExcl;
+
+                USN_Extent file_size_extent;
+                file_size_extent.off = P->BackupInformation.OriginalSizeOfVolume;
+                file_size_extent.len = Gigabyte(3);
+                arrput(&written_extents, file_size_extent);
+
+                sort_and_merge_extents(written_extents);
+                free_exclusion_iterator(&exclusion_iter);
+
+                
+                backup_regions.data = (nar_record *)P->Package.get_entry("regions", &backup_regions.len);
+                backup_regions.len /= sizeof(nar_record);
+                backup_regions.cap = backup_regions.len;
+
+                exclusion_iter = init_exclusion_iterator(backup_regions, written_extents);
+                
+                // retry with new backup block
+                continue;
+            }
+            else {
+                sort_restore_instructions(ctx->instructions);
+
+                // @NOTE(batuhan) : windows doesn't report file resizing as overwrite operation, it doesn't even report what file size has become. This may sound like 
+                // non-brained API behaviour, yes it is. In past, old days, it wasn't even problem for us, it's wasn't even condition we would have to handle carefully. 
+                // We were executing our instructions out of order, meaning our write operations weren't sequential, we were seeking file there and there. This  
+                // kind of restore was silently handling all extend-truncate operations(there is a big hidden assumption I haven't checked yet). So, extending file by 500mb  
+                // and writing nothing to it would be handled by the system, WITHOUT EVEN COPYING SINGLE BYTE. That's the kind of behaviour we want. 
+                // But sadly, exposing this knowledge to API users is hard. For every endpoint, this system has to be introduced to API user and hope they got it in
+                // first try and don't come up with weird bug reports that's completely due to their misunderstanding. It's just too many friction to what this simple system trying to achieve.
+                // So I just reordered instructions according to their write offsets, made them all sequential writes, so user can just read and write directly. 
+                // But if file change history has extend record, there would be gaps between write offsets, so I have to manually find those gaps and patch them with
+                // special instruction that costs 0 file IO(user still has to read that much bytes, 0 cost is for my backend), just zeroed memory and send it.
+                // 1/31/2022   
+                {
+                    s64 current_write_offset = 0;
+                    for_array(i, ctx->instructions){
+                        BG_ASSERT(ctx->instructions[i].where_to_write.len==ctx->instructions[i].where_to_read.len);
+
+                        // check for discontiunity.
+                        if(ctx->instructions[i].where_to_write.off != current_write_offset) {
+                            BG_ASSERT(ctx->instructions[i].where_to_write.off > current_write_offset);
+                            s64 patch_length = ctx->instructions[i].where_to_write.off - current_write_offset;
+
+                            Restore_Instruction patch;
+                            zero_memory(&patch, sizeof(patch));
+                            patch.instruction_type   = ZERO;
+                            patch.version            = -1;
+                            patch.where_to_read.len  = patch_length;
+                            patch.where_to_write.len = patch_length;
+                            
+                            arrins(&ctx->instructions, i, patch);
+                        }
+
+                        current_write_offset += ctx->instructions[i].where_to_write.len;
+                    }
+                }
+
+
+
+                if (check_for_write_contiunity) {
+                    
+                    s64 current_write_offset = 0;
+
+                    bool err_occured = false;
+                    for_array(i, ctx->instructions) {
+                        
+                        if (ctx->instructions[i].instruction_type == NORMAL) {
+                            if (ctx->instructions[i].where_to_write.len != ctx->instructions[i].where_to_read.len) {
+                                LOG_DEBUG("FATAL ERROR : %4d'th instruction's read and write lengths doesnt match!. read extent was : [%10lld][%10lld], write extent was [%10lld][%10lld]", i, ctx->instructions[i].where_to_read.off, ctx->instructions[i].where_to_read.len, ctx->instructions[i].where_to_write.off, ctx->instructions[i].where_to_write.len); 
+                                err_occured=true;
+                            }
+                            if (ctx->instructions[i].where_to_write.off != current_write_offset) {
+                                LOG_DEBUG("FATAL ERROR : %4d'th instruction's write offset doesn't match what we add up so far. Read sum was %lld, but write extent says to write %lld. We probably messed up in backup and missed up some extents, which happens a lot if the file is extended, USN_REASON_EXTEND", i, current_write_offset, ctx->instructions[i].where_to_write.off);
+                                LOG_DEBUG("Breaking this loop, since rest of the instructions will be failing with exact same reason. Once you enter this route, you can't roll back! So if there are additional errors or some weirdness, they wont be reported back");
+                                err_occured=true;
+                                break; 
+                            }
+                        }
+
+                        current_write_offset += ctx->instructions[i].where_to_write.len;
+                    }
+                    
+                    if (current_write_offset!=(s64)ctx->target_file_size) {
+                        LOG_DEBUG("FATAL ERROR : Extents summed up doesn't match target file size. This may indicate there is discontiunity in the instruction stream or something is really messed up at the backup stage. (version : %d)", P->BackupInformation.Version);
+                        err_occured=true;
+                    }
+                    if(err_occured) {
+                        LOG_DEBUG("Error detected when scanning for discontiunity, emitting instructions..[instruction_index][version][read_instruction][what_we_add_up_so_far_from_reading][write_instruction][if discontiunity detected!]");
+                        s64 what_we_add_up_so_far_from_reading = 0;
+                        for_array(i, ctx->instructions) {
+                            bool dc=false;
+                            if (ctx->instructions[i].where_to_write.len != ctx->instructions[i].where_to_read.len) {
+                                dc=true;
+                            }
+                            if (ctx->instructions[i].where_to_write.off != current_write_offset) {
+                                dc=true;
+                            }  
+                            const char *dc_string = dc?" ":"DC!";
+                            LOG_DEBUG("[%4d] - [%3d] -- [%10lld][%10lld] -- [%10lld] -- [%10lld][%10lld] %s", i, ctx->instructions[i].version, ctx->instructions[i].where_to_read.off, ctx->instructions[i].where_to_read.len, what_we_add_up_so_far_from_reading, ctx->instructions[i].where_to_write.off, ctx->instructions[i].where_to_write.len, dc_string);  
+                            what_we_add_up_so_far_from_reading += ctx->instructions[i].where_to_read.len;
+                        }
+                    }
+
+                }
+
+                return true;                    
+            }
+
+
+        }
+
+        // @TODO : if compression is enabled, some additional boring stuff needed has to be done!
+
+
+        ri.instruction_type   = NORMAL;
+        ri.where_to_write     = write_extent;
+        ri.where_to_read.off  = extent_offset_to_file_offset(backup_regions, write_extent.off);
+        ri.where_to_read.len  = ri.where_to_write.len;
+        ri.version            = P->BackupInformation.Version;
+
+        BG_ASSERT(ri.where_to_read.off >= 0);
+
+        arrput(&ctx->instructions, ri);
+        arrput(&written_extents, ri.where_to_write);
+    }
+
+
+
+
+
+    return false;
+}
+
+
+bool NarCompareBackupID(nar_backup_id id1, nar_backup_id id2) {
+    return 0 == memcmp(&id1, &id2, sizeof(id1));
+}
+
+
+
+int32_t NarGetBackupsInDirectoryWithFilter(const UTF8 *Directory, backup_package *output, int MaxCount, nar_backup_id *FilteredID, int32_t MaxVersion) {
+    int32_t Count = 0;
+    uint64_t FileCount = 0;
+    UTF8 **Files = GetFilesInDirectoryWithExtension(Directory, &FileCount, NAR_METADATA_EXTENSION);
+    ASSERT(Files);
+    if (Files) {
+        
+        for(int i=0;i<FileCount;++i) {
+
+            if (Count == MaxCount)
+                break;
+            
+            file_read fr = NarReadFile(Files[i]);
+            if (fr.Data) {
+                bool Added = false;
+
+                if (init_package_reader_from_memory(&(output[Count].Package), fr.Data, fr.Len)) {
+                    backup_package *p = &output[Count];
+                    uint64_t s;
+                    void *BInfPtr = p->Package.get_entry("backup_information", &s);
+                    if (BInfPtr) {
+                        
+                        backup_information *BInf = (backup_information *)BInfPtr;
+                        bool skip = false;
+
+                        if (FilteredID != NULL) {
+                            if (!NarCompareBackupID(*FilteredID, BInf->BackupID)) {
+                                skip = true;
+                            }
+                        }
+                        
+                        if (BInf->Version > MaxVersion) 
+                            skip = true;
+                        
+
+                        if (!skip) {
+                            memcpy(&p->BackupInformation, BInfPtr, sizeof(p->BackupInformation));
+                            ++Count;
+                            Added = true;
+                        }   
+
+                    }
+                    else {
+                        // package doesn't contain backup_information, while this is unlikely, we might encounter a file with extension that didn't build up by us, while magic number and other stuff matching.
+                    } 
+
+                }
+
+                if (!Added) {
+                    FreeFileRead(fr);
+                }
+            }
+
+
+        }
+    }
+
+    FreeDirectoryList(Files, FileCount);
+
+    return Count;    
+}
+
+
+int32_t NarGetBackupsInDirectory(const UTF8 *Directory, backup_package *output, int MaxCount) {
+    return NarGetBackupsInDirectoryWithFilter(Directory, output, MaxCount, NULL, 4 * 1024 * 1024);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+// REGION USN_BACKUP CODES!!!
+
+
+Extent_Exclusion_Iterator
+init_exclusion_iterator(Array<USN_Extent> base, Array<USN_Extent> to_be_excluded) {
+    Extent_Exclusion_Iterator result = {};
+
+    Array<USN_Extent> base_copy;
+    base_copy.data = (USN_Extent *)calloc(base.len, sizeof(base.data[0]));
+    base_copy.len  = base.len;
+    memcpy(base_copy.data, base.data, base.len * sizeof(base.data[0]));
+
+    slice_from_array(&result.base, base_copy);    
+    slice_from_array(&result.to_be_excluded, to_be_excluded);
+    correctly_align_exclusion_extents(&result);
+    return result;
+}
+
+void
+free_exclusion_iterator(Extent_Exclusion_Iterator *iter) {
+    free(iter->base.data);
+    *iter = {};
+}
+
+
+int32_t
+qs_comp_restore_inst_fn(const void *p1, const void *p2) {
+    Restore_Instruction inst1 = *(Restore_Instruction *)p1;
+    Restore_Instruction inst2 = *(Restore_Instruction *)p2;
+    return qs_comp_extent_fn(&inst1.where_to_write, &inst2.where_to_write);
+}
+
+void
+sort_restore_instructions(Array<Restore_Instruction> & arr) {
+    qsort(arr.data, arr.len, sizeof(arr[0]), qs_comp_restore_inst_fn);
+}
+
+
+
+void
+correctly_align_exclusion_extents(Extent_Exclusion_Iterator *iter) {
+    if (iter->to_be_excluded.len && iter->excl_indc < iter->to_be_excluded.len) {
+        USN_Extent be = iter->base[iter->base_indc];
+        USN_Extent ee = iter->to_be_excluded[iter->excl_indc];
+        while (false == is_extents_collide(ee, be)) {
+            if (ee.off > be.off) {
+                break;
+            }
+            if (iter->excl_indc + 1 != iter->to_be_excluded.len)
+                iter->excl_indc++;
+            else
+                break;
+
+            ee = iter->to_be_excluded[iter->excl_indc];
+        }
+    }
+}
+
+
+bool nar_debug_check_if_we_touched_all_extent_scenarios(void) {
+    #define CE(x) LOG_DEBUG("%-20s -> %s", #x, ((x) ? "PASS" : "ERROR"));
+
+    CE(debug_left);
+    CE(debug_mid);
+    CE(debug_right);
+    CE(debug_overrun);
+
+    CE(debug_overrun_c0);
+    CE(debug_overrun_c1);
+
+    CE(debug_left_c0);
+    CE(debug_left_c1);
+    CE(debug_left_c2);
+
+    #undef CE
+    return (debug_left && debug_mid && debug_right && debug_overrun && debug_overrun_c0 && debug_overrun_c1 && debug_left_c0 && debug_left_c1 && debug_left_c2);
+}
+
+void nar_debug_reset_internal_branch_states(void) {
+    debug_left_c0 = 0;
+    debug_left_c1 = 0;
+    debug_left_c2 = 0;
+
+    debug_overrun = 0;
+    debug_overrun_c0 = 0;
+    debug_overrun_c1 = 0;        
+}
+
+void nar_debug_reset_touch_states(void) {
+    debug_left = 0;
+    debug_mid = 0;
+    debug_right = 0;
+
+    debug_overrun = 0;
+}
+
+
+// returns false if unable to iterate next extent.
+bool
+iterate_next_extent(USN_Extent *result, Extent_Exclusion_Iterator *iter) {
+    
+    if (iter->base_indc == iter->base.len)
+        return false;
+
+    correctly_align_exclusion_extents(iter);
+
+    result->off = 0;
+    result->len = 0;
+
+    // to catch stupid bugs
+    defer({ASSERT(result->len != 0);});
+    
+    // no more extents to excluded, return base extents without filtering.
+    if (iter->excl_indc == iter->to_be_excluded.len) {
+        *result = iter->base[iter->base_indc];
+        iter->base_indc++;
+        return true;
+    }
+
+
+    if (false == is_extents_collide(iter->base[iter->base_indc], iter->to_be_excluded[iter->excl_indc])) {
+        *result = iter->base[iter->base_indc];
+
+        // iterate exclusion region if it falls behind the base slice.
+        if (iter->base[iter->base_indc].off > iter->to_be_excluded[iter->excl_indc].off) {
+            if (iter->excl_indc < iter->to_be_excluded.len) {
+                iter->excl_indc++;
+            }
+        }
+        
+        iter->base_indc++;
+
+        return true;
+    }
+
+
+
+    // else, do some region removal stuff.
+    // first, determine which region we are colligin from, and iterate until we collide from absolute right or end of collision
+
+    USN_Extent b = iter->base[iter->base_indc];
+    USN_Extent e = iter->to_be_excluded[iter->excl_indc];
+
+    uint32_t eoe = e.off + e.len;
+    uint32_t eob = b.off + b.len;
+
+    for (;;) {
+
+        // @NOTE : all of the collision-style checks are assuming that there is collision!. otherwise, this loop would be infinite loop.
+        // and all checks would be filled with very long conditions, more branches etc.
+
+        ASSERT(is_extents_collide(b, e));
+
+        // iterate next base region, this one is shadowed out by excl extent.
+        if (e.off <= b.off && eoe >= eob) {
+            debug_overrun = 1;
+            iter->base_indc++;
+
+            if (iter->base_indc == iter->base.len) {
+                result->len = -1;// to make defer above happy;
+                return false;
+            }
+
+            b   = iter->base[iter->base_indc];
+            eob = b.off + b.len;
+
+            correctly_align_exclusion_extents(iter);
+            // if new exclusion extent doesnt touch anything, just return it.
+            if (iter->excl_indc < iter->to_be_excluded.len && is_extents_collide(b, iter->to_be_excluded[iter->excl_indc])) {
+                // restart from start.
+                e   = iter->to_be_excluded[iter->excl_indc];
+                eoe = e.off + e.len;
+                continue;
+            }
+            else {
+                
+                if (iter->excl_indc < iter->to_be_excluded.len) {
+                    // @NOTE(batuhan): base and extent does not collide. do simple iterator
+
+                    if (iter->to_be_excluded[iter->excl_indc].off > b.off) {
+                        debug_overrun_c0 = 1;
+                        iter->base_indc++;
+                    }
+                    else {
+                        debug_overrun_c1 = 1;
+                        iter->excl_indc++;
+                    }
+
+                }
+
+                *result = b;
+                return true;
+            }
+
+        }
+
+
+        // remove collision region, iterate exclusion
+        // from left
+        else if (e.off <= b.off && eoe < eob) {
+            debug_left = 1;
+            // remove
+            ASSERT(eob >= eoe);
+            b.len = eob - eoe;
+            b.off = eoe;
+            // iterate excl
+            
+            iter->excl_indc++;
+
+            // try to iterate next excl ext, if it is depleted, freely iterate base extents.
+            if (iter->excl_indc < iter->to_be_excluded.len) {
+                if (is_extents_collide(b, iter->to_be_excluded[iter->excl_indc])) {
+                    debug_left_c0  = 1;
+                    e = iter->to_be_excluded[iter->excl_indc];
+                    eoe = e.off + e.len;
+                }
+                else {
+                    debug_left_c1 = 1;
+                    iter->base_indc++;
+                    *result = b;
+                    ASSERT(result->len);
+                    return true;
+                }
+            }
+            else {
+                debug_left_c2 = 1;
+                iter->base_indc++;
+                *result = b;
+                ASSERT(result->len);
+                return true;
+            }
+
+        }
+
+
+        // most annoying one, return left part of the collision, and edit base extent slice.
+        // middle
+        else if (e.off > b.off && eoe < eob) {
+            debug_mid = 1;
+            b.off = b.off;
+            b.len = e.off - b.off;
+            *result = b;
+
+            // address sanitizer + custom range checker is going to catch this anyway, but let just be sure.
+            ASSERT(iter->base_indc < iter->base.len);
+            ASSERT(eob >= eoe);
+            USN_Extent rr;
+            rr.off = eoe;
+            rr.len = eob - eoe;
+            iter->base[iter->base_indc] = rr;
+            iter->excl_indc++;
+            ASSERT(result->len);
+
+            return true;
+        }
+
+
+        // safe to return b, iterate base.
+        // right
+        else if (e.off > b.off && eoe >= eob) {
+            debug_right = 1;
+            b.off = b.off;
+            b.len = e.off - b.off;
+            *result = b;
+
+            iter->base_indc++;
+
+            ASSERT(result->len);
+            return true;
+        }
+
+
+    }
+
+    
+
+}
+
+
+int64_t 
+extent_offset_to_file_offset(Array<USN_Extent> & extents, int64_t extent_offset) {
+    int64_t result = 0;
+    for_array (i, extents) {
+        int64_t eoe = extents[i].off + extents[i].len;
+        if (eoe >= extent_offset) {
+            int64_t im = extent_offset - extents[i].off;
+            result += im;
+            break;
+        }
+        else {
+            result += extents[i].len;
+        }
+    }
+    return result;
+}
+
+void
+sort_and_merge_extents(Array<USN_Extent> & arr) {
+    sort_extents(arr);
+    merge_extents(arr);
+}
+
+
+void
+sort_extents(Array<USN_Extent> & arr) {
+    qsort(arr.data, arr.len, sizeof(arr[0]), qs_comp_extent_fn);
+}
+
+
+void
+merge_extents(Array<USN_Extent> & arr) {
+    
+    if (arr.len == 0) return;
+
+    int64_t merged_record_id = 0;
+    int64_t c_iter = 0;
+
+    for (;;) {
+
+        if ((uint64_t)c_iter >= arr.len) {
+            break;
+        }
+        
+        
+        if (is_extents_collide(arr[merged_record_id], arr[c_iter])) {            
+            int64_t ep1 = arr[c_iter].off           + arr[c_iter].len;
+            int64_t ep2 = arr[merged_record_id].off + arr[merged_record_id].len;
+            
+            int64_t end_point = BG_MAX(ep1, ep2);
+            ASSERT(end_point > arr[merged_record_id].off);
+            ASSERT(end_point - arr[merged_record_id].off <= 0xffffffff);
+
+            arr[merged_record_id].len = end_point - arr[merged_record_id].off;
+            
+            c_iter++;
+        }
+        else {
+            merged_record_id++;
+            arr[merged_record_id] = arr[c_iter];
+        }
+        
+        
+    }
+    
+    
+    ASSERT(merged_record_id >= 0);
+    ASSERT(merged_record_id <= 0xffffffffffff);
+
+    ASSERT((uint64_t)merged_record_id + 1 <= arr.len);
+    ASSERT((uint64_t)c_iter <= arr.len);
+
+
+    arr.len = merged_record_id + 1;
+
+}
+
+
+bool
+is_extents_collide(USN_Extent lhs, USN_Extent rhs) {
+    
+    auto lhsend = lhs.off + lhs.len;
+    auto rhsend = rhs.off + rhs.len;
+    
+    if (lhs.off > rhsend || rhs.off > lhsend) {
+        return false;
+    }
+
+    return true;
+}
+
+
+int32_t 
+qs_comp_extent_fn(const void *p1, const void *p2) {
+    
+    USN_Extent lhs = *(USN_Extent*)p1;
+    USN_Extent rhs = *(USN_Extent*)p2;
+
+    auto lhsend = lhs.off + lhs.len;
+    auto rhsend = rhs.off + rhs.len;
+    if (lhs.off > rhs.off) {
+        return +1;
+    }
+    if (rhs.off > lhs.off) {
+        return -1;
+    }
+    if (rhs.off == lhs.off) {
+        if (rhsend < lhsend) {
+            return -1;
+        }
+        return +1;
+    }
+
+    if (rhs.off == lhs.off && lhs.len == rhs.len) {
+        return 0;
+    }
+
+    ASSERT(false);
+    return 0;
+}

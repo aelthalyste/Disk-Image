@@ -3217,7 +3217,7 @@ InitVolumeInf(volume_backup_inf* VolInf, wchar_t Letter, BackupType Type) {
     
     VolInf->DiffLogMark.BackupStartOffset = 0;
     
-    VolInf->Version = -1;
+    VolInf->Version = NAR_FULLBACKUP_VERSION;
     VolInf->ClusterSize = 0;
     
     
@@ -3378,7 +3378,7 @@ SaveMetadata(char Letter, int Version, int ClusterSize, BackupType BT,
         
         binf.IsBinaryDataCompressed = IsCompressed;
         binf.CompressionType        = CompressionType;
-        binf.MetadataTimeStamp      = NarGetLocalTime();        
+        binf.MetadataTimeStamp      = get_local_date();        
 
         /*
               layout of disks (fundamental level, gpt might contain extra data partitions)
@@ -3576,51 +3576,6 @@ NarGenerateBackupID(char Letter){
     return Result;
 }
 
-int32_t NarGetBackupsInDirectory(const UTF8 *Directory, backup_package *output, int MaxCount) {
-    
-    int32_t Count = 0;
-    uint64_t FileCount = 0;
-    UTF8 **Files = GetFilesInDirectoryWithExtension(Directory, &FileCount, NAR_METADATA_EXTENSION);
-    ASSERT(Files);
-    if (Files) {
-        
-        for(int i=0;i<FileCount;++i) {
-
-            if (Count == MaxCount)
-                break;
-            
-            file_read fr = NarReadFile(Files[i]);
-            if (fr.Data) {
-                bool Added = false;
-
-                if (init_package_reader_from_memory(&(output[Count].Package), fr.Data, fr.Len)) {
-                    backup_package *p = &output[Count];
-                    uint64_t s;
-                    void *BInfPtr = p->Package.get_entry("backup_information", &s);
-                    if (BInfPtr) {
-                        memcpy(&p->BackupInformation, BInfPtr, sizeof(p->BackupInformation));
-                        ++Count;
-                        Added = true;              
-                    }
-                    else {
-                        // package doesn't contain backup_information, while this is unlikely, we might encounter a file with extension that didn't build up by us, while magic number and other stuff matching.
-                    } 
-
-                }
-
-                if (!Added) {
-                    FreeFileRead(fr);
-                }
-            }
-
-
-        }
-    }
-
-    FreeDirectoryList(Files, FileCount);
-
-    return Count;
-}
 
 
 /*

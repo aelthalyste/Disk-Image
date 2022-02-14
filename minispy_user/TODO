@@ -1,5 +1,5 @@
 TODO
-
+Extent nar_record structure to 16byte(so we can share lot's of stuff between USN-Extent codebase and this!)
 Redesign full only backup.
 delete bunch of stuff from .net code.
 linux compilation(with cmake probably)

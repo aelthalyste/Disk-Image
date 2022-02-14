@@ -598,9 +598,6 @@ inline nar_backup_id
 NarGenerateBackupID(char Letter);
 
 
-int32_t
-NarGetBackupsInDirectory(const UTF8* Directory, backup_package *output, int MaxCount);
-
 
 inline int32_t
 NarFileNameExtensionCheck(const wchar_t *Path, const wchar_t *Extension);
