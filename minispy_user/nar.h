@@ -1,5 +1,6 @@
 #pragma once
 
+#include "package.h"
 
 #ifdef  __linux__
 #define NAR_LINUX   1
@@ -51,8 +52,8 @@ struct nar_backup_id{
 
 
 
-#define BOOLEAN char
-
+#define NAR_METADATA_EXTENSION  ".nbfsm"
+#define NAR_BINARY_EXTENSION    ".nbfsf"
 
 #define Kilobyte(val) ((val)*1024ll)
 #define Megabyte(val) (Kilobyte(val)*1024ll)
@@ -95,18 +96,65 @@ struct nar_backup_id{
 #endif
 
 
-
-
-
-struct nar_log_time{
-    uint8_t YEAR; // 2000 + YEAR is the actual value
+struct nar_time {
+    uint16_t YEAR; // 2000 + YEAR is the actual value
     uint8_t MONTH;
     uint8_t DAY;
     uint8_t HOUR;
     uint8_t MIN;
     uint8_t SEC;
-    // 6 bytes
+    // 7 bytes
 };
+
+
+// time-date for windows
+#if NAR_WINDOWS
+static inline nar_time SystemTimeToNarTime(SYSTEMTIME *w_time) {
+    nar_time result;
+    result.YEAR     = (uint16_t)w_time->wYear;
+    result.MONTH    = (uint8_t)w_time->wMonth;
+    result.DAY      = (uint8_t)w_time->wDay;
+    result.HOUR     = (uint8_t)w_time->wHour;
+    result.MIN      = (uint8_t)w_time->wMinute;
+    result.SEC      = (uint8_t)w_time->wSecond;
+    return result;
+}
+
+static inline nar_time NarGetLocalTime() {
+    SYSTEMTIME w_time;
+    GetLocalTime(&w_time);
+    return SystemTimeToNarTime(&w_time);
+}
+#endif
+
+
+
+// time-date for linux
+#if NAR_LINUX
+
+#include <time.h>
+static inline nar_time TmTimeToNarTime(struct tm * tm) {
+    Bg_Date result;
+    result.YEAR   = tm->tm_year + 1900;
+    result.MONTH  = tm->tm_mon;
+    result.DAY    = tm->tm_mday;
+    result.HOUR   = tm->tm_hour;
+    result.MIN    = tm->tm_min;
+    result.SEC    = tm->tm_sec;
+    return result;
+}
+
+static inline nar_time NarGetLocalTime() {
+    time_t t = time(NULL);
+    struct tm tm;
+    localtime_r(&t, &tm);
+    return TmTimeToNarTime(&tm); 
+}
+
+#endif
+
+
+
 
 #if 1
 static HANDLE GlobalLogMutex = 0;
@@ -194,8 +242,68 @@ enum class BackupType : short {
 };
 
 
+const int32_t NAR_COMPRESSION_NONE = 0;
+const int32_t NAR_COMPRESSION_LZ4  = 1;
+const int32_t NAR_COMPRESSION_ZSTD = 2;
 
-union nar_record{
+
+#pragma pack(push ,1) // force 1 byte alignment
+struct backup_information {
+    uint64_t SizeOfBinaryData;
+    uint64_t VersionMaxWriteOffset;
+
+    uint64_t OriginalSizeOfVolume;
+
+    uint64_t EFIPartitionSize;       // gpt + os volume 
+    uint64_t SystemPartitionSize;    // mbr + os volume
+    uint64_t RecoveryPartitionSize;  // gpt + os volume? (probably, gotta look spec)    
+
+    uint32_t ClusterSize;
+
+    int32_t Version;
+    BackupType BT;
+
+    int8_t Letter;
+    int8_t DiskType;
+
+    uint8_t  IsOSVolume;
+
+    uint8_t IsBinaryDataCompressed;
+    uint8_t CompressionType;
+
+    nar_backup_id BackupID;
+    nar_time MetadataTimeStamp;
+};
+
+#pragma pack(pop)
+
+
+struct backup_package {
+    backup_information BackupInformation;
+    Package_Reader     Package;
+};
+
+
+struct nar_fs_table_header {
+    uint64_t data_size;
+    int32_t  DataCompressionType;
+};
+
+// 2 bytes for the size of the actual name, then the name itself, 
+// WITHOUT null termination
+struct nar_name_table : nar_fs_table_header {
+    uint8_t *names;
+};
+
+struct nar_layout_table : nar_fs_table_header {
+    uint8_t *layouts;
+};
+
+struct nar_file_table : nar_fs_table_header {
+    uint32_t *ids;
+};
+
+union nar_record {
     struct{
         uint32_t StartPos;
         uint32_t Len;
@@ -271,178 +379,12 @@ struct point_offset{
 
 
 
-#pragma pack(push ,1) // force 1 byte alignment
-/*
-// NOTE(Batuhan): file that contains this struct contains:
--- RegionMetadata:
--- MFTMetadata: (optional)
--- MFT: (optional)
--- Recovery: (optional)
-
-If any metadata error occurs, it's related binary data will be marked as corrupt too. If i cant copy mft metadata
-to file, mft itself will be marked as corrupt because i wont have anything to map it to volume  at restore state.
-*/
-
-// NOTE(Batuhan): nar binary file contains backup data, mft, and recovery
-
-// 0xfff1 - first draft
-// 
-static const int GlobalBackupMetadataMagicNumber = 0xfff1;
-struct backup_metadata {
-    
-    struct {
-        int Size = sizeof(backup_metadata); // Size of this struct
-        // NOTE(Batuhan): structure may change over time(hope it wont), this value hold which version it is so i can identify and cast accordingly
-        int MagicNumber = 0xfff1;
-    }MetadataInf;
-    
-    struct {
-        uint64_t RegionsMetadata;
-        uint64_t Regions;
-        
-        uint64_t MFTMetadata;
-        uint64_t MFT;
-        
-        uint64_t Recovery;
-    }Size; //In bytes!
-    
-    struct {
-        uint64_t RegionsMetadata;
-        uint64_t AlignmentReserved;
-        
-        uint64_t MFTMetadata;
-        uint64_t MFT;
-        
-        uint64_t Recovery;
-    }Offset; // offsets from beginning of the file
-    
-    // NOTE(Batuhan): error flags to indicate corrupted data, indicates file
-    // may not contain particular metadata or binary data.
-    struct {
-        BOOLEAN RegionsMetadata;
-        BOOLEAN Regions;
-        
-        BOOLEAN MFTMetadata;
-        BOOLEAN MFT;
-        
-        BOOLEAN Recovery;
-    }Errors;
-    
-    
-#define NAR_MAX_TASK_NAME_LEN        128
-#define NAR_MAX_TASK_DESCRIPTION_LEN 512
-#define NAR_MAX_PRODUCT_NAME         50
-#define NAR_MAX_COMPUTERNAME_LENGTH 15
-    
-    union {
-        uint8_t Reserved[2048]; // Reserved for future usage
-        struct {
-            //FOR MBR things
-            union{
-                int64_t GPT_EFIPartitionSize;
-                int64_t MBR_SystemPartitionSize;
-            };
-            
-#if NAR_LINUX
-            uint16_t BackupDate[8];
-#else // _MSC_VER
-            SYSTEMTIME BackupDate;
-#endif
-            char ProductName[NAR_MAX_PRODUCT_NAME];
-            char ComputerName[NAR_MAX_COMPUTERNAME_LENGTH  + 1];
-            
-#if NAR_LINUX
-            uint16_t TaskName[NAR_MAX_TASK_NAME_LEN];
-            uint16_t TaskDescription[NAR_MAX_TASK_DESCRIPTION_LEN];
-#else //_MSC_VER
-            wchar_t TaskName[NAR_MAX_TASK_NAME_LEN];
-            wchar_t TaskDescription[NAR_MAX_TASK_DESCRIPTION_LEN];
-#endif
-            
-            nar_backup_id ID;
-            
-            unsigned char IsCompressed;
-            unsigned int FrameSize;
-            
-            size_t   CompressionInfoOffset;
-            uint64_t CompressionInfoCount;
-            
-            
-        };
-    };
-    
-    uint64_t VolumeTotalSize;
-    uint64_t VolumeUsedSize;
-    
-    // NOTE(Batuhan): Last volume offset must be written to disk that if this specific version were to be restored, version itself can be 5 gb big, but last offset it indicates that changes were made can be 100gb'th offset.
-    uint64_t VersionMaxWriteOffset; 
-    
-    int Version; // -1 for full backup
-    int ClusterSize; // 4096 default
-    
-    
-    char Letter;
-    uint8_t DiskType;
-    unsigned char IsOSVolume;
-    
-    BackupType BT; // diff or inc
-};
-
-#pragma pack(pop)
 
 static inline void
-NarBackupIDToStr(nar_backup_id ID, std::wstring &Res);
-
-static inline void
-NarBackupIDToStr(nar_backup_id ID, std::string &Res);
+NarBackupIDToStr(nar_backup_id ID, char *Res, int ResMax);
 
 
-template<typename StrType>
-static inline void
-GenerateMetadataName(nar_backup_id ID, int Version, StrType &Res);
-
-template<typename StrType>
-static inline void
-GenerateBinaryFileName(nar_backup_id ID, int Version, StrType &Res);
-
-// If function is called with Result argument as NULL, it returns maximum bytes
-// needed to generate the name. Otherwise it returns how many bytes written to
-// Result.
-// Function silently overwrites Result string's length.
-static inline uint32_t
-GenerateMetadataNameUTF8(nar_backup_id ID, int32_t Version, NarUTF8 *Out){
-    
-    if(Out == NULL){
-        return 27;
-    }
-    uint32_t Result = 0;
-    
-    char Bf[1024];
-    char VersionBf[32];
-    if(Version == NAR_FULLBACKUP_VERSION){
-        snprintf(VersionBf, sizeof(VersionBf), "%s", "FULL");
-    }
-    else{
-        snprintf(VersionBf, sizeof(VersionBf), "%d", Version);
-    }
-    
-    // 27
-    int ChWritten = snprintf(Bf, sizeof(Bf), "NB_M_%s-%c%02d%02d%02d%02d.nbfsm", VersionBf, ID.Letter, ID.Month, ID.Day, ID.Hour, ID.Min);
-    ASSERT(ChWritten <= (int)Out->Cap);
-    if(ChWritten <= (int)Out->Cap){
-        memset(Out->Str, 0, Out->Cap);
-        memcpy(Out->Str, Bf, ChWritten);
-        Out->Len = ChWritten;
-        Result = ChWritten;
-    }
-    
-    return Result;
-}
-
-// If function is called with Result argument as NULL, it returns maximum bytes
-// needed to generate the name. Otherwise it returns how many bytes written to
-// Result.
-// Function silently overwrites Result string's length.
+#if 0
 static inline uint32_t
 GenerateBinaryFileNameUTF8(nar_backup_id ID, int32_t Version, NarUTF8 *Out){
     
@@ -462,7 +404,6 @@ GenerateBinaryFileNameUTF8(nar_backup_id ID, int32_t Version, NarUTF8 *Out){
     
     // 27
     int ChWritten = snprintf(Bf, sizeof(Bf), "NB_%s-%c%02d%02d%02d%02d.nbfsf", VersionBf, ID.Letter, ID.Month, ID.Day, ID.Hour, ID.Min);
-    ASSERT(ChWritten <= (int)Out->Cap);
     if(ChWritten <= (int)Out->Cap){
         memset(Out->Str, 0, Out->Cap);
         memcpy(Out->Str, Bf, ChWritten);
@@ -472,164 +413,17 @@ GenerateBinaryFileNameUTF8(nar_backup_id ID, int32_t Version, NarUTF8 *Out){
     
     return Result;
 }
+#endif
 
 
-// FUNDAMENTAL FILE NAME DRAFTS
-/////////////////////////////////////////////////////
-static inline void
-NarGetMetadataDraft(std::string &Res){
-    Res = std::string("NB_M_");
+
+
+static inline void 
+NarBackupIDToStr(nar_backup_id ID, char *Res, int MaxRes){
+    snprintf(Res, MaxRes, "-%c%02d%02d%02d%02d", ID.Letter, ID.Month, ID.Day, ID.Hour, ID.Min);
 }
 
-static inline void
-NarGetMetadataDraft(std::wstring &Res){
-    Res = std::wstring(L"NB_M_");
-}
-/////////////////////////////////////////////////////
 
-/////////////////////////////////////////////////////
-static inline void
-NarGetBinaryDraft(std::string &Res){
-    Res = std::string("NB_");
-}
-
-static inline void
-NarGetBinaryDraft(std::wstring &Res){
-    Res = std::wstring(L"NB_");
-}
-/////////////////////////////////////////////////////
-
-
-/////////////////////////////////////////////////////
-static inline void
-NarGetMetadataExtension(std::string &Res){
-    Res = std::string(".nbfsm");
-}
-
-static inline void
-NarGetMetadataExtension(std::wstring &Res){
-    Res = std::wstring(L".nbfsm");
-}
-/////////////////////////////////////////////////////
-
-
-/////////////////////////////////////////////////////
-static inline void
-NarGetBinaryExtension(std::string &Res){
-    Res = std::string(".nbfsf");
-}
-
-static inline void
-NarGetBinaryExtension(std::wstring &Res){
-    Res = std::wstring(L".nbfsf");
-}
-/////////////////////////////////////////////////////
-
-
-
-// VERSION MIDFIXES
-/////////////////////////////////////////////////////
-static inline void
-NarGetVersionMidFix(int Version, std::string &Res){
-    if(Version == NAR_FULLBACKUP_VERSION){
-        Res = "FULL";
-    }
-    else{
-        Res = std::to_string(Version);
-    }
-}
-
-static inline void
-NarGetVersionMidFix(int Version, std::wstring &Res){
-    if(Version == NAR_FULLBACKUP_VERSION){
-        Res = L"FULL";
-    }
-    else{
-        Res = std::to_wstring(Version);
-    }
-}
-/////////////////////////////////////////////////////
-
-
-
-/////////////////////////////////////////////////////
-static inline void
-NarBackupIDToStr(nar_backup_id ID, std::wstring &Res){
-    wchar_t bf[128];
-    memset(bf, 0, sizeof(bf));
-    swprintf(bf, 128, L"-%c%02d%02d%02d%02d", ID.Letter, ID.Month, ID.Day, ID.Hour, ID.Min);
-    Res = std::wstring(bf);
-}
-
-static inline void
-NarBackupIDToStr(nar_backup_id ID, std::string &Res){
-    char bf[64];
-    memset(bf, 0, sizeof(bf));
-    snprintf(bf, sizeof(bf), "-%c%02d%02d%02d%02d", ID.Letter, ID.Month, ID.Day, ID.Hour, ID.Min);
-    Res = std::string(bf);
-}
-/////////////////////////////////////////////////////
-
-
-template<typename StrType>
-static inline void
-GenerateMetadataName(nar_backup_id ID, int Version, StrType &Res){
-    NarGetMetadataDraft(Res);
-    
-    // VERSION NUMBER EMBEDDED AS STRING
-    {
-        StrType garbage;
-        NarGetVersionMidFix(Version, garbage);
-        Res += garbage;
-    }
-    
-    
-    // BACKUP ID
-    {
-        // LETTER IS BEING SILENTLY APPENDED HERE
-        StrType garbage;
-        NarBackupIDToStr(ID, garbage);
-        Res += garbage;
-    }
-    
-    // EXTENSION
-    {
-        StrType garbage;
-        NarGetMetadataExtension(garbage);
-        Res += garbage;
-    }
-    // done;
-}
-
-template<typename StrType>
-static inline void
-GenerateBinaryFileName(nar_backup_id ID, int Version, StrType &Res){
-    NarGetBinaryDraft(Res);
-    
-    // VERSION NUMBER EMBEDDED AS STRING
-    {
-        StrType garbage;
-        NarGetVersionMidFix(Version, garbage);
-        Res += garbage;
-    }
-    
-    // BACKUP ID
-    {
-        // LETTER IS BEING SILENTLY APPENDED HERE
-        StrType garbage;
-        NarBackupIDToStr(ID, garbage);
-        Res += garbage;
-    }
-    
-    // EXTENSION
-    {
-        StrType garbage;
-        NarGetBinaryExtension(garbage);
-        Res += garbage;
-    }
-}
-
-//mmap(0, length, PROT_READ|PROT_WRITE, MAP_ANON, 0, 0)
 
 
 bool
@@ -661,13 +455,8 @@ NarStartIntersectionIter(const  nar_record *R1, const nar_record *R2, size_t R1L
 void
 NarNextIntersectionIter(RegionCoupleIter *Iter);
 
-
 void
 NarGetPreviousBackupInfo(int32_t Version, BackupType Type, int32_t *OutVersion);
-
-void
-NarConvertBackupMetadataToUncompressed(NarUTF8 Metadata);
-
 
 size_t
 NarLCNToVCN(nar_record *LCN, size_t LCNCount, size_t Offset);
@@ -695,7 +484,7 @@ point_offset
 FindPointOffsetInRecords(nar_record *Records, uint64_t Len, int64_t Offset);
 
 
-int32_t
+int
 CompareNarRecords(const void* v1, const void* v2);
 
 
@@ -741,3 +530,40 @@ NarSetAsFullOnlyBackup(nar_backup_id ID){
     Result.Q |= (1<<15);
     return Result;
 }
+
+UTF8 **GetFilesInDirectoryWithExtension(const UTF8 *DirectoryAsUTF8, uint64_t *OutCount, UTF8 *Extension);
+UTF8 **GetFilesInDirectory(const UTF8 *Directory, uint64_t *OutCount);
+void FreeDirectoryList(UTF8 **List, uint64_t Count);
+
+
+#if 0
+
+nar_time {
+    uint8_t year   : 5;
+    uint8_t month  : 4;
+    uint8_t day    : 5;
+    uint8_t hour   : 5;
+    uint8_t minute : 6;
+    uint8_t second : 6;
+};
+
+typedef uint32_t layout_id;
+typedef uint32_t file_id;
+
+struct file_record {
+    uint64_t FileSize;
+    uint32_t CreationTime;
+    uint32_t ModifiedTime;
+    uint32_t FileNameSlot;
+    file_id ID;
+    file_id ParentID;
+    layout_id Layout;
+};
+
+struct file_table {
+
+};
+
+300
+n_of_files * ( bytes) + 6mb per million file;
+#endif

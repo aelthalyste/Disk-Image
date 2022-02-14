@@ -4,29 +4,11 @@
 #include <stdint.h>
 #include "performance.h"
 #include "nar_win32.h"
+#include "lz4.h"
+#include "zstd.h"
+
 
 #if 0
-void*
-ProfileAllocator(linear_allocator *a, size_t n){
-    AllocationCount++;
-    int64_t start = NarGetPerfCounter();
-    void* Result = LinearAllocate(a, n);
-    AllocatorTimeElapsed += NarTimeElapsed(start);
-    return Result;
-}
-
-void*
-ProfileAllocatorAligned(linear_allocator *a, size_t n, size_t al){
-    AllocationCount++;
-    int64_t start = NarGetPerfCounter();
-    void *Result = LinearAllocateAligned(a, n, al);
-    AllocatorTimeElapsed += NarTimeElapsed(start);
-    return Result;
-}
-
-#define LinearAllocate(Allocator, Size) ProfileAllocator(Allocator, Size)
-#define LinearAllocateAligned(Allocator, Size, Align) ProfileAllocatorAligned(Allocator, Size, Align)
-#endif
 
 inline int
 CompareWCharStrings(const void *v1, const void *v2){
@@ -44,16 +26,6 @@ NarGetFileSizeFromRecord(void *R){
         return *(uint64_t*)NAR_OFFSET(D, 0x30);
     }
     return 0;
-}
-
-
-inline BOOLEAN
-NarSetFilePointer(HANDLE File, ULONGLONG V) {
-    LARGE_INTEGER MoveTo = { 0 };
-    MoveTo.QuadPart = V;
-    LARGE_INTEGER NewFilePointer = { 0 };
-    SetFilePointerEx(File, MoveTo, &NewFilePointer, FILE_BEGIN);
-    return MoveTo.QuadPart == NewFilePointer.QuadPart;
 }
 
 
@@ -465,6 +437,13 @@ NarFindExtensions(char VolumeLetter, HANDLE VolumeHandle, wchar_t **ExtensionLis
     
     extension_search_result Result = {0};
     
+    uint64_t TotalNumberOfSizeUsedForDataRuns = 0;
+    uint64_t TotalNumberOfFilesUsingDataRuns = 0;    
+    uint64_t DataRunBufferCap = Megabyte(150);
+
+    uint8_t *DataRunBuffer = (uint8_t *)malloc(DataRunBufferCap);
+
+
     name_pid *DirectoryMapping  = (name_pid*)Memory->DirMappingMemory; 
     name_pid *PIDResultArr      = (name_pid*)Memory->PIDArrMemory; 
     uint64_t ArrLen             = 0;
@@ -536,8 +515,7 @@ NarFindExtensions(char VolumeLetter, HANDLE VolumeHandle, wchar_t **ExtensionLis
                         
                         multiple_pid MultPIDs = NarGetFileNameAndParentID(FileRecord);
                         
-                        void *AttributeList = NarFindFileAttributeFromFileRecord(FileRecord, NAR_ATTRIBUTE_LIST);
-                        
+                        void *AttributeList = NarFindFileAttributeFromFileRecord(FileRecord, NAR_ATTRIBUTE_LIST);                        
                         if(AttributeList){
                             
                             void*   ATLData = 0;
@@ -553,6 +531,24 @@ NarFindExtensions(char VolumeLetter, HANDLE VolumeHandle, wchar_t **ExtensionLis
                         }
                         if(!NarIsFileLinked(FileRecord)){
                             ASSERT(NarFindFileAttributeFromFileRecord(FileRecord, NAR_STANDART_FLAG));
+                        }
+
+                        void *DataAttribute = NarFindFileAttributeFromFileRecord(FileRecord, NAR_DATA_FLAG);;
+                        if (DataAttribute != NULL) {
+                            
+                            data_attr_header *DAHeader = (data_attr_header*)DataAttribute;
+                            if (DAHeader->NonResidentFlag) {
+                                uint32_t DataRunOffset = *(uint32_t *)NAR_OFFSET(DataAttribute, 32);
+                                void *DataRuns = NAR_OFFSET(DataAttribute, DataRunOffset);
+                                uint8_t t = *(uint8_t*)DataRuns;
+
+                                memcpy(DataRunBuffer + TotalNumberOfSizeUsedForDataRuns, NAR_OFFSET(DataRuns, 1), t);
+
+                                TotalNumberOfSizeUsedForDataRuns += t;
+                                TotalNumberOfFilesUsingDataRuns++;
+
+                            }
+
                         }
                         
                         for(size_t _pidi = 0; _pidi < MultPIDs.Len; _pidi++){
@@ -765,6 +761,13 @@ NarFindExtensions(char VolumeLetter, HANDLE VolumeHandle, wchar_t **ExtensionLis
     
     //qsort(FilenamesExtended, ArrLen, 8, CompareWCharStrings);
     
+    uint64_t DstCap = DataRunBufferCap + 256;
+    
+    void *CompressedBuffer = malloc(DstCap);
+    int LZ4CompressedSize = LZ4_compress_default((const char *)DataRunBuffer, (char *)CompressedBuffer, TotalNumberOfSizeUsedForDataRuns, DstCap);
+    size_t ZSTDCompressedSize = ZSTD_compress(CompressedBuffer, DstCap, DataRunBuffer, TotalNumberOfSizeUsedForDataRuns, 4);
+    ASSERT(!ZSTD_isError(ZSTDCompressedSize));
+
 #if 0
     for(size_t i =0; i<ArrLen; i++){
         // printf("%S\n", FilenamesExtended[i]);
@@ -1759,7 +1762,7 @@ NarInitFileRestoreSource(NarUTF8 RootDir, nar_backup_id ID, int32_t Version, nar
     
     bool StringResult = false;
     memory_restore_point Restore = ArenaGetRestorePoint(StringArena);
-    file_restore_source Result = {};
+    file_restore_source  Result = {};
     
     uint32_t BForMN = GenerateMetadataNameUTF8(ID, Version, 0);
     uint32_t BForBN = GenerateBinaryFileNameUTF8(ID, Version, 0);
@@ -1999,3 +2002,4 @@ NarAdvanceFileRestore(file_restore_ctx *ctx, void* Out, size_t OutSize){
 }
 
 
+#endif

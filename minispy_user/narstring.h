@@ -3,31 +3,68 @@
 
 //#include "memory.h"
 #include <stdint.h>
-struct nar_arena;
-
-struct NarUTF8{
-    uint8_t *Str;
-    uint32_t Len;
-    uint32_t Cap;
-};
+#include "utf8.h"
+typedef char UTF8;
 
 
-#define NARUTF8(ch) NarUTF8{(uint8_t*)ch, sizeof(ch) - 1, 0}
+// windows implementation
+
+#if _WIN32
+#include <Windows.h>
+
+
+static inline wchar_t * NarUTF8ToWCHAR(const UTF8 *s) {
+    auto CharactersNeeded = MultiByteToWideChar(CP_UTF8, 0, (LPCCH)s, -1, NULL, 0);
+    wchar_t *Result = (wchar_t *)calloc(CharactersNeeded, sizeof(Result[0]));    
+    
+    MultiByteToWideChar(CP_UTF8, 0, (LPCCH)s, -1, Result, CharactersNeeded);
+    return Result;
+}
+
+
+static inline UTF8* NarWCHARToUTF8(wchar_t *Str) {
+    
+    auto OutLen = WideCharToMultiByte(CP_UTF8, 0, Str, -1, NULL, 0, NULL, NULL);
+    OutLen += 1;
+
+    UTF8* Result = (UTF8 *)calloc(OutLen, 1);
+    
+    WideCharToMultiByte(CP_UTF8, 0, Str, -1, (LPSTR)Result, OutLen, NULL, NULL);
+    
+    return Result;
+}
 
 
 
-NarUTF8
-NarStringCopy(NarUTF8 Input, nar_arena *Arena);
-
-bool
-NarStringCopy(NarUTF8 *Destination, NarUTF8 Source);
-
-bool
-NarStringConcatenate(NarUTF8 *Destination, NarUTF8 Append);
-
-NarUTF8
-NarUTF8Init(void *Memory, uint32_t Len);
+static inline int NarGetWCHARToUTF8ConversionSize(const wchar_t *Input) {
+    int Result = WideCharToMultiByte(CP_UTF8, 0, Input, -1, NULL, 0, NULL, NULL); 
+    return Result;
+}
 
 
-NarUTF8
-NarGetRootPath(NarUTF8 FileName, nar_arena *Arena);
+static inline int NarGetUTF8ToWCHARConversionSize(const UTF8 *Input) {
+    int Result = MultiByteToWideChar(CP_UTF8, 0, (LPCCH)Input, -1, NULL, 0);
+    Result *= 2;
+    return Result;
+}
+
+
+// returns true if Input can fit Output buffer.
+static inline bool NarWCHARToUTF8WithoutAllocation(const wchar_t *Input, UTF8 *Output, int OutputSize){
+    auto OutputNeeded = WideCharToMultiByte(CP_UTF8, 0, Input, -1, NULL, 0, NULL, NULL);
+    if (OutputNeeded < OutputSize) 
+        WideCharToMultiByte(CP_UTF8, 0, Input, -1, (LPSTR)Output, OutputSize, NULL, NULL);
+    else                            
+        return false;
+
+    return true;
+}
+
+
+// _WIN32
+#else
+#error implement linux?
+#endif 
+
+
+

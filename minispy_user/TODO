@@ -1,0 +1,17 @@
+TODO
+
+Redesign full only backup.
+delete bunch of stuff from .net code.
+linux compilation(with cmake probably)
+find a way to shrink file system to lower than 50mb per million file. While existing compression algorithms (lz4, zstd) help doing that, it's not enough.
+region elimination algorithm for restore.
+compression supported random access + compatible with restore.
+make restore like in USN-Backup system, generate read-write instructions.
+
+
+@net : 
+	- rewrite api endpoints in .net. 
+
+
+
+

@@ -115,52 +115,6 @@ NarFileNameExtensionCheck(const char *Path, const char *Extension){
 }
 
 
-std::vector<backup_metadata>
-NarGetBackupsInDirectory(const char *arg_dir){
-    
-    std::string dir = std::string(arg_dir);
-    if(dir.back() != '/')
-        dir += std::string("/");
-    
-    
-    std::string cmdstr = "ls -p \"" + std::string(dir) + "\" > lsresult.txt";
-    std::vector<backup_metadata> Result;
-    std::vector<std::string>    files;
-    files.reserve(1000);
-    Result.reserve(1000);
-    
-    system(cmdstr.c_str());
-    file_read fr = NarReadFile("lsresult.txt");
-    if(fr.Data != 0){
-        std::stringstream ss((char*)fr.Data);
-        std::string fname;
-        FreeFileRead(fr);
-        
-        while(ss >> fname)
-            if(fname.back() != '/')
-                files.push_back(fname);
-    }
-    
-    std::string MDExtension;
-    NarGetMetadataExtension(MDExtension);
-
-    for(auto &fname: files){
-        if(NarFileNameExtensionCheck(fname.c_str(), MDExtension.c_str())){
-            
-            FILE *F = fopen((std::string(dir) + fname).c_str(), "rb");
-            backup_metadata M;
-            if(NULL != F && 1 == fread(&M, sizeof(M), 1, F))
-                Result.emplace_back(M);             
-            
-            if(NULL != F) 
-                fclose(F);
-            
-        }
-    }
-    
-    return Result;
-}
-
 
 // NAME TYPE UUID SIZE FSTYPE MOUNTPOINT
 

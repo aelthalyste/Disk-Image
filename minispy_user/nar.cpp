@@ -462,6 +462,11 @@ CompareNarRecords(const void* v1, const void* v2) {
     
 #if 1    
     // old version
+
+    // equality
+    if (n1->StartPos == n2->StartPos && n2->Len == n1->Len)
+        return 0;
+
     if (n1->StartPos == n2->StartPos && n2->Len < n1->Len) {
         return 1;
     }
@@ -475,4 +480,116 @@ CompareNarRecords(const void* v1, const void* v2) {
     
 }
 
+
+UTF8 **GetFilesInDirectoryWithExtension(const UTF8 *DirectoryAsUTF8, uint64_t *OutCount, UTF8 *Extension) {
+
+    wchar_t *Directory = NarUTF8ToWCHAR(DirectoryAsUTF8);
+    defer({free(Directory);});
+
+    uint64_t DirLen = wcslen(Directory);
+    DirLen++; // null termination
+    
+    wchar_t *WildcardDir = (wchar_t *)calloc(DirLen, sizeof(WildcardDir[0]));;
+    defer({free(WildcardDir);});
+
+    wcscat(WildcardDir, Directory);
+    wcscat(WildcardDir, L"\\*");
+
+    wchar_t *ExtensionAsWCHR = NULL;
+    defer({if (ExtensionAsWCHR) free(ExtensionAsWCHR);});
+
+    if (Extension) {
+        ExtensionAsWCHR = NarUTF8ToWCHAR(Extension);
+    }
+
+    WIN32_FIND_DATAW FDATA;
+    HANDLE FileIterator = FindFirstFileW(WildcardDir, &FDATA);
+    
+    uint64_t ResultCap = 1024;
+    UTF8 **Result = (UTF8 **)calloc(ResultCap, sizeof(Result[0]));
+    uint64_t Count = 0;
+
+    uint32_t TempBufferCap = 1024 * 1024 * 8;
+    wchar_t *TempBuffer    = (wchar_t *)calloc(TempBufferCap, 1);
+
+    if (FileIterator != INVALID_HANDLE_VALUE) {
+
+        while (FindNextFileW(FileIterator, &FDATA) != 0) {
+
+            //@NOTE(Batuhan): Do not search for sub-directories, skip folders.
+            if (FDATA.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
+                continue;
+            }
+
+            // extension check
+            if (ExtensionAsWCHR != NULL) {
+                wchar_t *DS = wcsrchr(FDATA.cFileName, L'.');
+                if (DS) {
+                    // ++DS;// skip dot
+                    if (wcscmp(DS, ExtensionAsWCHR) == 0) {
+                        // everything is ok
+                    } 
+                    else {
+                        continue;
+                    }
+                }
+                else {
+                    continue;
+                }
+            }
+
+            // @Stupid +5 just to be sure there is enough room for null termination
+            uint64_t FnLen = wcslen(FDATA.cFileName);
+            FnLen += DirLen + 5;
+
+            uint32_t fl = (uint32_t)FnLen;
+            fl+=1; // for //
+            fl+=(uint32_t)DirLen;
+            fl+=1; // for null termination
+
+            if (fl * 2 > TempBufferCap) {
+                TempBufferCap = fl * 2 * 2;// *2 for wchar_t size, *2 for growing
+                TempBuffer = (wchar_t *)realloc(TempBuffer, TempBufferCap);
+            }
+
+            TempBuffer[0] = 0;
+            wcscat(TempBuffer, Directory);
+            wcscat(TempBuffer, L"\\");
+            wcscat(TempBuffer, FDATA.cFileName);
+
+            uint32_t NewBufferSize = NarGetWCHARToUTF8ConversionSize(TempBuffer);
+            UTF8 *UTF8Path = NarWCHARToUTF8(TempBuffer);
+
+            Result[Count++] = UTF8Path;
+
+            if (Count == ResultCap) {
+                ResultCap *= 2;
+                Result = (UTF8 **)realloc(Result, ResultCap*sizeof(Result[0]));
+            }
+
+        }
+
+
+    }
+    else {
+        printf("Cant iterate directory\n");
+    }
+
+
+    FindClose(FileIterator);
+    *OutCount = Count;
+    
+    return Result;
+
+}
+
+UTF8 **GetFilesInDirectory(const UTF8 *Directory, uint64_t *OutCount) {
+    return GetFilesInDirectoryWithExtension(Directory, OutCount, NULL);
+}
+
+void FreeDirectoryList(UTF8 **List, uint64_t Count) {
+    for(uint64_t i=0;i<Count;++i)
+        free(List[i]);
+    free(List);
+}
 

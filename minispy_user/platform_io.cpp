@@ -2,34 +2,6 @@
 #include "platform_io.h"
 
 
-
-static std::string
-wstr2str(const std::wstring& s){
-	char *c = (char*)malloc(s.size() + 1);
-	memset(c, 0, s.size());
-	
-	size_t sr = wcstombs(c, s.c_str(), s.size() + 1);
-	if(sr == (size_t)-1)
-		memset(c, 0, s.size() + 1);
-	std::string Result(c);
-	free(c);
-	return Result;
-}
-
-static std::wstring
-str2wstr(const std::string& s){
-	wchar_t *w = (wchar_t*)malloc((s.size() + 1)*sizeof(wchar_t));
-	memset(w, 0, (s.size() + 1)*sizeof(wchar_t));
-	
-	size_t sr = mbstowcs(w, s.c_str(), s.size() + 1);
-	if(sr == (size_t)-1)
-		memset(w, 0, (s.size() + 1)*sizeof(wchar_t));
-	std::wstring Result(w);
-	free(w);
-	return Result;
-}
-
-
 // windows implementation
 #if _WIN32
 
@@ -43,14 +15,12 @@ struct imp_nar_file_view{
 };
 
 inline size_t
-NarGetFileSize(const std::string &Path){
-	return NarGetFileSize(str2wstr(Path));
-}
-
-inline size_t
-NarGetFileSize(const std::wstring& Path) {
+NarGetFileSize(const UTF8 *Path) {
+    wchar_t *FilePath = NarUTF8ToWCHAR(Path);
+    defer({free(FilePath);});
+    
     ULONGLONG Result = 0;
-    HANDLE F = CreateFileW(Path.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_DELETE | FILE_SHARE_WRITE, 0, OPEN_EXISTING, 0, 0);
+    HANDLE F = CreateFileW(FilePath, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_DELETE | FILE_SHARE_WRITE, 0, OPEN_EXISTING, 0, 0);
     if (F != INVALID_HANDLE_VALUE) {
         LARGE_INTEGER L = { 0 };
         GetFileSizeEx(F, &L);
@@ -60,27 +30,15 @@ NarGetFileSize(const std::wstring& Path) {
     return Result;
 }
 
-nar_file_view
-NarOpenFileView(const std::string &fn){
-	return NarOpenFileView(str2wstr(fn));
-}
 
 nar_file_view
-NarOpenFileView(NarUTF8 String){
-    ASSERT(String.Len <= Megabyte(1));
+NarOpenFileView(const UTF8 *Utf8Path){
     
-    void *ArenaMem = malloc(String.Len*4);
-    nar_arena Arena = ArenaInit(ArenaMem, String.Len*4);
-    memset(ArenaMem, 0, String.Len*4);
-    wchar_t *WSTR = NarUTF8ToWCHAR(String, &Arena);
-    nar_file_view Result = NarOpenFileView(WSTR);
-    free(ArenaMem);
-    return Result;
-}
+    wchar_t *FilePath = NarUTF8ToWCHAR(Utf8Path);
+    defer({free(FilePath);});
 
-nar_file_view
-NarOpenFileView(const std::wstring &fn){
-	HANDLE MappingHandle = 	INVALID_HANDLE_VALUE;
+
+    HANDLE MappingHandle = 	INVALID_HANDLE_VALUE;
 	HANDLE FileHandle    = 	INVALID_HANDLE_VALUE;
 	size_t FileSize      = 0;
 	void* FileView       = NULL;
@@ -92,10 +50,15 @@ NarOpenFileView(const std::wstring &fn){
 	if(NULL == Result.impl) 
 		goto FV_ERROR;
     
-	FileSize = NarGetFileSize(std::wstring(fn));
     MappingHandle = 0;
-	FileHandle = CreateFileW(fn.c_str(), GENERIC_READ, FILE_SHARE_READ, 0, OPEN_ALWAYS, 0, 0);    
+	FileHandle = CreateFileW(FilePath, GENERIC_READ, FILE_SHARE_READ, 0, OPEN_ALWAYS, 0, 0);    
 	if(FileHandle != INVALID_HANDLE_VALUE){
+        
+        LARGE_INTEGER FSLI;
+        FSLI.QuadPart = 0;
+        GetFileSizeEx(FileHandle, &FSLI);
+        FileSize = FSLI.QuadPart;
+
 		vs= {0};
 		vs.QuadPart = FileSize;
 		MappingHandle = CreateFileMappingW(FileHandle, NULL, PAGE_READONLY, 0, 0, 0);	
@@ -108,18 +71,18 @@ NarOpenFileView(const std::wstring &fn){
         		Result.impl->FHandle 	= FileHandle;
         	}
         	else{
-        		fprintf(stderr, "MapViewOfFile failed with code %X for file %S\n", GetLastError(), fn.c_str());
+        		fprintf(stderr, "MapViewOfFile failed with code %X for file %S\n", GetLastError(), FilePath);
         		goto FV_ERROR;
         	}		
 		}
 		else{
-			fprintf(stderr, "CreateFileMappingW failed with error code %X for file %S\n", GetLastError(), fn.c_str());
+			fprintf(stderr, "CreateFileMappingW failed with error code %X for file %S\n", GetLastError(), FilePath);
 			goto FV_ERROR;
 		}
         
 	}
 	else{
-		fprintf(stderr, "CreateFileW failed with code %X for file %S\n", GetLastError(), fn.c_str());
+		fprintf(stderr, "CreateFileW failed with code %X for file %S\n", GetLastError(), FilePath);
 		goto FV_ERROR;
 	}
     
@@ -144,33 +107,13 @@ NarFreeFileView(nar_file_view FV){
 	CloseHandle(FV.impl->FHandle);
 }
 
-std::string
-NarGetFileDirectory(const std::string& fn){
-    auto indice = fn.rfind("\\");
-    if(indice != std::string::npos)
-        return fn.substr(0, indice + 1);
-    return "";
-}
-
-std::wstring
-NarGetFileDirectory(const std::wstring& fn){
-    auto indice = fn.rfind(L"\\");
-    if(indice != std::wstring::npos)
-        return fn.substr(0, indice + 1);
-    return L"";
-}
-
-
-bool
-NarFileReadNBytes(std::string path, void *mem, size_t N){
-    return NarFileReadNBytes(str2wstr(path), mem, N);
-}
-
-bool
-NarFileReadNBytes(std::wstring path, void *mem, size_t N){
+bool NarFileReadNBytes(const UTF8 *Path, void *mem, size_t N){
     bool Result = false;
+    wchar_t *FilePath = NarUTF8ToWCHAR(Path);
+    defer({free(FilePath);});
+
     ASSERT(N < Gigabyte(2));
-    HANDLE File = CreateFileW(path.c_str(), GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
+    HANDLE File = CreateFileW(FilePath, GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
     if (File != INVALID_HANDLE_VALUE) {
         DWORD BytesRead = 0;
         if (ReadFile(File, mem, (DWORD)N, &BytesRead, 0) && BytesRead == N) {
@@ -191,9 +134,13 @@ NarFileReadNBytes(std::wstring path, void *mem, size_t N){
 
 
 file_read
-NarReadFile(const char* FileName) {
+NarReadFile(const UTF8* FileName) {
     file_read Result = { 0 };
-    HANDLE File = CreateFileA(FileName, GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
+
+    wchar_t *FilePath = NarUTF8ToWCHAR(FileName);
+    defer({free(FilePath);});
+
+    HANDLE File = CreateFileW(FilePath, GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
     if (File != INVALID_HANDLE_VALUE) {
         DWORD BytesRead = 0;
         Result.Len = (int)GetFileSize(File, 0); // safe to assume file size < 2 GB
@@ -206,45 +153,19 @@ NarReadFile(const char* FileName) {
             }
             else {
                 free(Result.Data);
-                printf("Read %i bytes instead of %i\n", BytesRead, Result.Len);
+                Result.Data = NULL;
+                Result.Len  = 0;
             }
         }
         CloseHandle(File);
     }
     else {
-        printf("Can't create file: %s\n", FileName);
+        // err!
     }
-    //CreateFileA(FNAME, GENERIC_WRITE, 0,0 ,CREATE_NEW, 0,0)
+
     return Result;
 }
 
-
-file_read
-NarReadFile(const wchar_t* FileName) {
-    file_read Result = { 0 };
-    HANDLE File = CreateFileW(FileName, GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
-    if (File != INVALID_HANDLE_VALUE) {
-        DWORD BytesRead = 0;
-        Result.Len = (DWORD)GetFileSize(File, 0); // safe conversion
-        if (Result.Len == 0) return Result;
-        Result.Data = malloc((size_t)Result.Len);
-        if (Result.Data) {
-            ReadFile(File, Result.Data, Result.Len, &BytesRead, 0);
-            if (BytesRead == (DWORD)Result.Len) {
-                // NOTE success
-            }
-            else {
-                free(Result.Data);
-                printf("Read %i bytes instead of %i\n", BytesRead, Result.Len);
-            }
-        }
-        CloseHandle(File);
-    }
-    else {
-        printf("Can't create file: %S\n", FileName);
-    }
-    return Result;
-}
 
 void
 FreeFileRead(file_read FR) {
@@ -253,9 +174,12 @@ FreeFileRead(file_read FR) {
 
 
 bool
-NarDumpToFile(const char* FileName, void* Data, unsigned int Size) {
+NarDumpToFile(const UTF8* FileName, void* Data, unsigned int Size) {
     BOOLEAN Result = FALSE;
-    HANDLE File = CreateFileA(FileName, GENERIC_WRITE, 0, 0, CREATE_ALWAYS, 0, 0);
+    wchar_t *FilePath = NarUTF8ToWCHAR(FileName);
+    defer({free(FilePath);});
+
+    HANDLE File = CreateFileW(FilePath, GENERIC_WRITE, 0, 0, CREATE_ALWAYS, 0, 0);
     if (File != INVALID_HANDLE_VALUE) {
         DWORD BytesWritten = 0;
         WriteFile(File, Data, Size, &BytesWritten, 0);
@@ -268,7 +192,7 @@ NarDumpToFile(const char* FileName, void* Data, unsigned int Size) {
         CloseHandle(File);
     }
     else {
-        printf("Can't create file: %s\n", FileName);
+        printf("Can't create file: %s\n", FilePath);
     }
     //CreateFileA(FNAME, GENERIC_WRITE, 0,0 ,CREATE_NEW, 0,0)
     return Result;
@@ -290,20 +214,15 @@ struct imp_nar_file_view{
 };
 
 nar_file_view
-NarOpenFileView(const std::wstring &fn){
-    return NarOpenFileView(wstr2str(fn));
-}
-
-nar_file_view
-NarOpenFileView(const std::string &fn){
+NarOpenFileView(const UTF8 *fn){
     nar_file_view Result = {};
-    FILE* File = fopen(fn.c_str(), "rb");
+    FILE* File = fopen(fn, "rb");
     ASSERT(File);
     if(File != 0){
         int FD = fileno(File);    
         size_t FileSize = NarGetFileSize(fn);
         ASSERT(FileSize != 0);
-        //MAP_HUGETLB | MAP_HUGE_2MB | 
+        // MAP_HUGETLB | MAP_HUGE_2MB | 
         void *FileMapMemory = mmap(0, FileSize, PROT_READ, MAP_SHARED_VALIDATE, FD, 0);
         ASSERT(MAP_FAILED != FileMapMemory);
         fclose(File);
@@ -327,8 +246,8 @@ NarFreeFileView(nar_file_view FV){
 #define _FILE_OFFSET_BITS 64
 
 inline size_t
-NarGetFileSize(const std::string &Path){
-    FILE *File = fopen(Path.c_str(), "rb");
+NarGetFileSize(const UTF8 *Path){
+    FILE *File = fopen(Path, "rb");
     off_t Result = 0;
     if(NULL!=File){
         fseek(File, 0L, SEEK_END);
@@ -338,29 +257,8 @@ NarGetFileSize(const std::string &Path){
     return Result;
 }
 
-inline size_t
-NarGetFileSize(const std::wstring& Path) {
-    return NarGetFileSize(wstr2str(Path));
-}
-
-
-std::string
-NarGetFileDirectory(const char *arg_fn){
-    std::string fn(arg_fn);
-    auto indice = fn.rfind("/");
-    if(indice != std::string::npos)
-        return fn.substr(0, indice + 1);
-    return "";
-}
-
-std::wstring
-NarGetFileDirectory(const wchar_t *arg_fn){
-    return str2wstr(NarGetFileDirectory(wstr2str(arg_fn)));
-}
-
-
 file_read
-NarReadFile(const char* FileName) {
+NarReadFile(const UTF8* FileName) {
     file_read Result = { 0 };
     size_t FileSize = NarGetFileSize(FileName);
     if(FileSize > 0){
@@ -389,11 +287,6 @@ NarReadFile(const char* FileName) {
     return Result;
 }
 
-file_read
-NarReadFile(const wchar_t* FileName){
-    return NarReadFile(wstr2str(FileName).c_str());
-}
-
 void
 FreeFileRead(file_read FR){
     free(FR.Data);
@@ -401,34 +294,11 @@ FreeFileRead(file_read FR){
 
 
 bool
-NarFileReadNBytes(std::string path, void *mem, size_t N){
-    FILE* File = fopen(path.c_str(), "rb");
+NarFileReadNBytes(UTF8 *path, void *mem, size_t N){
+    FILE* File = fopen(path, "rb");
     bool Result = (1 == fread(mem, N, 1, File));
     fclose(File);
     return Result;
 }
-
-bool
-NarFileReadNBytes(std::wstring path, void *mem, size_t N){
-	return NarFileReadNBytes(wstr2str(path), mem, N);
-}
-
-
-std::string
-NarGetFileDirectory(const std::string& fn){
-    auto indice = fn.rfind("/");
-    if(indice != std::string::npos)
-        return fn.substr(0, indice + 1);
-    return "";
-}
-
-std::wstring
-NarGetFileDirectory(const std::wstring& fn){
-    auto indice = fn.rfind(L"/");
-    if(indice != std::wstring::npos)
-        return fn.substr(0, indice + 1);
-    return L"";
-}
-
 
 #endif

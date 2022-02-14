@@ -168,7 +168,7 @@ struct file_explorer{
     file_explorer_memory Memory;
     char VolumeLetter;
     
-    NarUTF8 RootDir;
+    UTF8  *RootDir;
     
     int Version;
     nar_backup_id ID;
@@ -256,7 +256,7 @@ struct file_restore_ctx{
     void*           DecompBuffer;
     size_t          DecompBufferSize;
     nar_arena       StringAllocator;// less than 1mb 
-    NarUTF8         RootDir; // directory to look for backups
+    UTF8            *RootDir; // directory to look for backups
     
     nar_record *ActiveLCN;
     size_t      ActiveLCNCount;
@@ -273,7 +273,7 @@ struct file_restore_advance_result{
 };
 
 
-
+#if 1
 
 inline BOOLEAN
 NarSetFilePointer(HANDLE File, ULONGLONG V);
@@ -348,7 +348,7 @@ void
 NarFreeFileExplorerMemory(file_explorer_memory *Memory);
 
 file_explorer
-NarInitFileExplorer(NarUTF8 MetadataPath);
+NarInitFileExplorer(const UTF8 *MetadataPath);
 
 
 file_explorer_file*
@@ -377,7 +377,7 @@ SolveAttributeListReferences(const void* MFTStart,
 
 
 file_restore_ctx
-NarInitFileRestoreCtx(file_explorer *FE, file_explorer_file *Target, NarUTF8 RootDir, nar_backup_id ID, int Version, nar_arena *Arena);
+NarInitFileRestoreCtx(file_explorer *FE, file_explorer_file *Target, const UTF8 *RootDir, nar_backup_id ID, int Version, nar_arena *Arena);
 
 file_restore_ctx
 NarInitFileRestoreCtx(file_explorer *FE, file_explorer_file* Target, nar_arena *Arena);
@@ -407,8 +407,10 @@ FEGetFileFullPath(file_explorer* FE, file_explorer_file* BaseFile);
 
 
 file_restore_source
-NarInitFileRestoreSource(NarUTF8 MetadataName, NarUTF8 BinaryName);
+NarInitFileRestoreSource(const UTF8 *MetadataName, UTF8 *BinaryName);
 
 
 file_restore_source 
-NarInitFileRestoreSource(NarUTF8 RootDir, nar_backup_id ID, int32_t Version, nar_arena *StringArena);
+NarInitFileRestoreSource(const UTF8 *RootDir, nar_backup_id ID, int32_t Version, nar_arena *StringArena);
+
+#endif
