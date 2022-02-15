@@ -624,50 +624,108 @@ int BackupPackageComp(const void *v1, const void *v2) {
 
 }
 
-backup_package * LoadPackagesForRestore(const UTF8 *Directory, nar_backup_id BackupID, int32_t Version) {
+
+packages_for_restore LoadPackagesForRestore(const UTF8 *Directory, nar_backup_id BackupID, int32_t Version) {
     
 
-    int32_t ResultCap = Version + 10;
-    backup_package *Result = (backup_package *)calloc(ResultCap, sizeof(*Result));
-    
-    int FoundCount = NarGetBackupsInDirectoryWithFilter(Directory, Result, ResultCap, &BackupID, Version);
+    packages_for_restore Result;
 
-    if (FoundCount && FoundCount == Version + 1) {
+    Result.Count = Version + 1;
+    Result.Packages = (backup_package *)calloc(Result.Count, sizeof(Result.Packages[0]));
+    
+    int FoundCount = NarGetBackupsInDirectoryWithFilter(Directory, Result.Packages, Result.Count, &BackupID, Version);
+
+    if (FoundCount) {
         bool Failed = false;
 
         // sort packages
-        qsort(Result, FoundCount, sizeof(Result[0]), BackupPackageComp);
+        qsort(Result.Packages, FoundCount, sizeof(Result.Packages[0]), BackupPackageComp);
+
+        if (Result.Packages[0].BackupInformation.BT == BackupType::Inc) {
+            // @TODO : proper validation
+            // validate inc backup, scan all versions
+            
+            if (FoundCount == Result.Count) {
+                for(int64_t i=0;i<FoundCount;++i) {
+                    if (Result.Packages[i].BackupInformation.Version != i) {
+                        Failed = true;
+                        LOG_ERROR("Unable to load packages for restore. Versions are not ordered!"); 
+                        break;
+                    }
+                }
+            }
+            else {
+                LOG_ERROR("Unable to load packages for restore. Incremental backup chain expected %d packages, but got %d", Result.Count, FoundCount);
+                Failed = true;
+            }
+
+        }
+        else {
+
+            // @TODO : proper validation
+            // validate diff backup, skip mid versions
+            if (FoundCount == 2) {
+
+                if (Result.Packages[0].BackupInformation.Version == 0
+                    && Result.Packages[1].BackupInformation.Version == Version) {
+                    // everything is ok
+                }
+                else {
+                    LOG_ERROR("Unable to load packages for restore. Version numbers for diff restore is weird. First one is %d, second one is %d, expected 0-%d", Result.Packages[0].BackupInformation.Version, Result.Packages[1].BackupInformation.Version, Version);   
+                    Failed = true;
+                }
+
+            }
+            else {
+                LOG_ERROR("Unable to load packages for restore. Diff backups expected exactly 2 packages, but got %d\n", FoundCount); 
+                Failed = true;
+            }
+
+        }
+
 
         // validate chain integrity
-        for(int64_t i=0;i<FoundCount;++i) {
-            if (Result[i].BackupInformation.Version != i) {
-                Failed = true;
-                break;
-            }
-        }
 
         if (Failed) {
-            printf("Error : Couldn't verify chain integrity. There is a hole in version array!\n");
-            free(Result);
-            Result = 0;
+            LOG_ERROR("Error : Couldn't verify chain integrity.\n");
+            FreePackagesForRestore(&Result);
         }
 
     }
-    else {
-        free(Result);
-        Result = 0;
-    }
+    else 
+        FreePackagesForRestore(&Result);
+    
 
 
     return Result;
 }
 
 
-void FreePackagesForRestore(backup_package *Packages, uint64_t Count) {
+void FreePackagesForRestore(packages_for_restore *Packages) {
     if (!Packages) return;
-    for(uint64_t i=0;i<Count;++i) 
-        free_package_reader(&Packages[i].Package);
-    free(Packages);
+    NarFreeBackupPackages(Packages->Packages, Packages->Count);
+    free(Packages->Packages);
+    memset(Packages,0,sizeof(*Packages));
+}
+
+
+backup_package *GetLatestPackage(packages_for_restore *Packages) {
+    return &Packages->Packages[Packages->Count - 1];
+}
+
+backup_package *GetPreviousPackage(packages_for_restore *Packages, backup_package *Current) {
+
+    if (Current->BackupInformation.Version == NAR_FULLBACKUP_VERSION)
+        return NULL;
+
+    // inc backup 
+    if (Current->BackupInformation.BT == BackupType::Inc) 
+        return Packages->Packages + (Current->BackupInformation.Version - 1);
+    else if (Current->BackupInformation.BT == BackupType::Diff)
+        return &Packages->Packages[0];        
+
+
+    return reinterpret_cast<backup_package *>(0xdeaddeadull);
 }
 
 
@@ -679,10 +737,10 @@ bool InitRestore(Restore_Ctx *ctx, const UTF8 *DirectoryToLook, nar_backup_id Ba
     ASSERT(Version >= -1);
 
     uint64_t PackageCount = 0;
-    backup_package *Packages = LoadPackagesForRestore(DirectoryToLook, BackupID, Version);
-    defer({FreePackagesForRestore(Packages, Version + 1);});
+    packages_for_restore Packages = LoadPackagesForRestore(DirectoryToLook, BackupID, Version);
+    defer({FreePackagesForRestore(&Packages);});
     
-    if (!Packages) {
+    if (!Packages.Count) {
         printf("Unable to load packages for restore! InitRestore failed.\n");
         return false;
     }
@@ -690,9 +748,8 @@ bool InitRestore(Restore_Ctx *ctx, const UTF8 *DirectoryToLook, nar_backup_id Ba
     Array<USN_Extent> written_extents;
     defer({arrfree(&written_extents);});
 
-    int32_t VersionToApplyExcl = Version;
-    backup_package *P = &Packages[VersionToApplyExcl];
-    --VersionToApplyExcl;
+    backup_package *P = GetLatestPackage(&Packages);
+
 
     uint64_t RegionCount = 0;
     nar_record *Records = (nar_record *)P->Package.get_entry("regions", &RegionCount);
@@ -729,10 +786,10 @@ bool InitRestore(Restore_Ctx *ctx, const UTF8 *DirectoryToLook, nar_backup_id Ba
 
         if (!iterate_next_extent(&write_extent, &exclusion_iter)) {
             
-            if (VersionToApplyExcl >= 0) {
-                P = &Packages[VersionToApplyExcl];
-                --VersionToApplyExcl;
+            P = GetPreviousPackage(&Packages, P);
 
+            if (P != NULL) {
+                // there are still versions to apply!
                 USN_Extent file_size_extent;
                 file_size_extent.off = P->BackupInformation.OriginalSizeOfVolume;
                 file_size_extent.len = Gigabyte(3);
@@ -873,6 +930,7 @@ bool NarCompareBackupID(nar_backup_id id1, nar_backup_id id2) {
 
 
 int32_t NarGetBackupsInDirectoryWithFilter(const UTF8 *Directory, backup_package *output, int MaxCount, nar_backup_id *FilteredID, int32_t MaxVersion) {
+
     int32_t Count = 0;
     uint64_t FileCount = 0;
     UTF8 **Files = GetFilesInDirectoryWithExtension(Directory, &FileCount, NAR_METADATA_EXTENSION);
@@ -897,12 +955,30 @@ int32_t NarGetBackupsInDirectoryWithFilter(const UTF8 *Directory, backup_package
                         backup_information *BInf = (backup_information *)BInfPtr;
                         bool skip = false;
 
-                        if (FilteredID != NULL) {
-                            if (!NarCompareBackupID(*FilteredID, BInf->BackupID)) {
-                                skip = true;
+                        if (FilteredID != NULL && MaxVersion == NAR_NO_VERSION_FILTER) {
+                            ASSERT(false);
+                        }
+
+                        if (FilteredID != NULL && MaxVersion != NAR_NO_VERSION_FILTER) {
+                        
+                            if (!NarCompareBackupID(*FilteredID, BInf->BackupID))
+                                skip = true;    
+
+                            if (BInf->BT == Diff) {
+                                // diff backup only needs full + itself
+                                if (MaxVersion != BInf->Version && MaxVersion != 0)
+                                    skip = true;
                             }
+                            else if (BInf->BT == Inc) {
+                                // do nothing
+                            }
+                            else {
+                                ASSERT(false);
+                            }
+
                         }
                         
+
                         if (BInf->Version > MaxVersion) 
                             skip = true;
                         
@@ -937,6 +1013,11 @@ int32_t NarGetBackupsInDirectoryWithFilter(const UTF8 *Directory, backup_package
 
 int32_t NarGetBackupsInDirectory(const UTF8 *Directory, backup_package *output, int MaxCount) {
     return NarGetBackupsInDirectoryWithFilter(Directory, output, MaxCount, NULL, 4 * 1024 * 1024);
+}
+
+void NarFreeBackupPackages(backup_package *Packages, int32_t Count) {
+    for(int i=0;i<Count;++i)
+        free_package_reader(&Packages[i].Package);
 }
 
 

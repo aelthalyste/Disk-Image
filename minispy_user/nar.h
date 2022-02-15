@@ -95,12 +95,13 @@ struct nar_backup_id{
 
 
 
-
-enum class BackupType : short {
+enum BackupType {
     Diff,
     Inc
 };
 
+
+const int32_t NAR_NO_VERSION_FILTER = (1024 * 1024 * 1); // 1million version is sure big enough.
 
 const int32_t NAR_COMPRESSION_NONE = 0;
 const int32_t NAR_COMPRESSION_LZ4  = 1;
@@ -138,9 +139,16 @@ struct backup_information {
 #pragma pack(pop)
 
 
+
+
 struct backup_package {
     backup_information BackupInformation;
     Package_Reader     Package;
+};
+
+struct packages_for_restore {
+    backup_package *Packages;
+    int32_t Count;
 };
 
 
@@ -381,6 +389,7 @@ NarSetAsFullOnlyBackup(nar_backup_id ID){
 
 int32_t NarGetBackupsInDirectoryWithFilter(const UTF8 *Directory, backup_package *output, int MaxCount, nar_backup_id *FilteredID, int32_t MaxVersion);
 int32_t NarGetBackupsInDirectory(const UTF8 *Directory, backup_package *output, int MaxCount);
+void    NarFreeBackupPackages(backup_package *packages, int32_t Count);
 
 UTF8 **GetFilesInDirectoryWithExtension(const UTF8 *DirectoryAsUTF8, uint64_t *OutCount, UTF8 *Extension);
 UTF8 **GetFilesInDirectory(const UTF8 *Directory, uint64_t *OutCount);
@@ -389,10 +398,15 @@ void FreeDirectoryList(UTF8 **List, uint64_t Count);
 
 
 
-backup_package * LoadPackagesForRestore(const UTF8 *Directory, nar_backup_id BackupID, int32_t Version);
-void FreePackagesForRestore(backup_package *Packages, uint64_t Count);
+packages_for_restore LoadPackagesForRestore(const UTF8 *Directory, nar_backup_id BackupID, int32_t Version);
+void FreePackagesForRestore(packages_for_restore *Packages);
 bool InitRestore(restore_ctx *output, const UTF8 *DirectoryToLook, nar_backup_id BackupID, int32_t Version);
 bool NarCompareBackupID(nar_backup_id id1, nar_backup_id id2);
+
+
+
+backup_package *GetLatestPackage(packages_for_restore *Packages);
+backup_package *GetPreviousPackage(packages_for_restore *Packages, backup_package *Current);
 
 
 #if 0
