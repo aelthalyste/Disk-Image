@@ -32,6 +32,7 @@ namespace NarDIWrapper {
     
     
     CSNarFileExplorer::CSNarFileExplorer(System::String^ MetadataFullPath){
+#if NAR_ENABLE_DOTNET_FILE_EXPLORER
         Arena  = (nar_arena*)calloc(1, sizeof(*Arena));
         *Arena = ArenaInit(calloc(Kilobyte(64), 1), Kilobyte(64), 4);
         
@@ -47,22 +48,27 @@ namespace NarDIWrapper {
         *FE = NarInitFileExplorer(MetadataPath);
         __DSI = 0;
         __CurrentDir = (__DirStack[__DSI] = FEFindFileWithID(FE, 5));
+#endif
     }
     
     CSNarFileExplorer::~CSNarFileExplorer() {
+#if NAR_ENABLE_DOTNET_FILE_EXPLORER
         NarFreeFileExplorer(FE);
         free(Arena->Memory);
         free(Arena);
+#endif
     }
     
     bool CSNarFileExplorer::CW_IsInit(){
+#if NAR_ENABLE_DOTNET_FILE_EXPLORER
         return (FE->MetadataView.Data != 0);
+#endif
     }
     
     
     
     List<CSNarFileEntry^>^ CSNarFileExplorer::CW_GetFilesInCurrentDirectory(){
-        
+#if NAR_ENABLE_DOTNET_FILE_EXPLORER
         List<CSNarFileEntry^>^ Result = gcnew List<CSNarFileEntry^>;
         
         for(file_explorer_file *File = FEStartParentSearch(FE, __CurrentDir->FileID); 
@@ -74,39 +80,62 @@ namespace NarDIWrapper {
         }
         
         return Result;
+#else
+        return nullptr;
+#endif
     }
     
     bool CSNarFileExplorer::CW_SelectDirectory(uint64_t UniqueTargetID){
+#if NAR_ENABLE_DOTNET_FILE_EXPLORER
         __CurrentDir = (__DirStack[++__DSI] = (file_explorer_file*)reinterpret_cast<void*>(UniqueTargetID));
         return true;
+#else
+        return false;
+#endif
     }
     
     void CSNarFileExplorer::CW_PopDirectory(){
+#if NAR_ENABLE_DOTNET_FILE_EXPLORER
         if(__DSI != 0){
             __CurrentDir =  __DirStack[--__DSI];
         }
+#endif
     }
     
     void CSNarFileExplorer::CW_Free(){
+#if NAR_ENABLE_DOTNET_FILE_EXPLORER
         if (RestoreMemory) {
             free(RestoreMemory);
         }
+#endif
     }
     
     CSNarFileExportStream^ CSNarFileExplorer::CW_SetupFileRestore(uint64_t UniqueTargetID) {
+#if NAR_ENABLE_DOTNET_FILE_EXPLORER
         CSNarFileExportStream^ Result = gcnew CSNarFileExportStream(this, UniqueTargetID);
         return Result;
+#else
+        return nullptr;
+#endif
     }
     
     CSNarFileExportStream^ CSNarFileExplorer::CW_DEBUG_SetupFileRestore(int FileID) {
+#if NAR_ENABLE_DOTNET_FILE_EXPLORER
         file_explorer_file* File = FEFindFileWithID(FE, FileID);
         //CSNarFileEntry^ Entry = gcnew CSNarFileEntry(File);
         return gcnew CSNarFileExportStream(this, reinterpret_cast<uintptr_t>(File));
+#else
+        return nullptr;
+#endif
     }
     
     System::String^ CSNarFileExplorer::CW_GetCurrentDirectoryString() {
+#if NAR_ENABLE_DOTNET_FILE_EXPLORER
         wchar_t *WSTR = FEGetFileFullPath(FE, __CurrentDir);
         return gcnew System::String(WSTR);
+#else
+        return nullptr;
+#endif
     }
     
     wchar_t DiskTracker::GetDiskType(int DiskId){
@@ -120,6 +149,7 @@ namespace NarDIWrapper {
     
     
     CSNarFileExportStream::CSNarFileExportStream(CSNarFileExplorer^ FileExplorer, uint64_t UniqueTargetID) {
+#if NAR_ENABLE_DOTNET_FILE_EXPLORER
         MemorySize = Megabyte(40);
         Memory = VirtualAlloc(0, MemorySize, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
         
@@ -138,17 +168,25 @@ namespace NarDIWrapper {
             }
             
         }
+#endif
     }
     
     CSNarFileExportStream::~CSNarFileExportStream() {
+#if NAR_ENABLE_DOTNET_FILE_EXPLORER
         FreeStreamResources();
+#endif
     }
     
     bool CSNarFileExportStream::IsInit() {
+#if NAR_ENABLE_DOTNET_FILE_EXPLORER
         return (Memory != 0);
+#else
+        return false;
+#endif
     }
     
     bool CSNarFileExportStream::AdvanceStream(void* Buffer, size_t BufferSize) {
+#if NAR_ENABLE_DOTNET_FILE_EXPLORER
         if (Memory) {
             file_restore_advance_result Result = NarAdvanceFileRestore(Ctx, Buffer, BufferSize);
             TargetWriteOffset = Result.Offset;
@@ -157,15 +195,21 @@ namespace NarDIWrapper {
             return (Error == FileRestore_Errors::Error_NoError && TargetWriteSize != 0);
         }
         return false;
+#else
+        return false;
+#endif
+
     }
     
     void CSNarFileExportStream::FreeStreamResources() {
+#if NAR_ENABLE_DOTNET_FILE_EXPLORER
         if (Memory) {
             NarFreeFileRestoreCtx(Ctx);
             VirtualFree(Memory, MemorySize, MEM_RELEASE);
             Ctx = 0;
             Memory = 0;
         }
+#endif
     }
     
     

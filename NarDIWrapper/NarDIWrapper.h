@@ -10,6 +10,7 @@
 #include "restore.h"
 #include "nar.h"
 
+#define NAR_ENABLE_DOTNET_FILE_EXPLORER 0
 
 using namespace System;
 using namespace System::Text;

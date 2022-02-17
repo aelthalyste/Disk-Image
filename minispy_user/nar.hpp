@@ -253,9 +253,6 @@ struct point_offset{
 };
 
 
-struct restore_ctx {
-    
-};
 
 
 static inline void
@@ -386,10 +383,12 @@ NarSetAsFullOnlyBackup(nar_backup_id ID){
     return Result;
 }
 
+Array<Array<backup_package>> BG_API NarGetChainsInDirectory(const UTF8 *Directory);
+void                         BG_API NarFreeChainsInDirectoryArray(Array<Array<backup_package>> *Array);
 
-int32_t BG_API NarGetBackupsInDirectoryWithFilter(const UTF8 *Directory, backup_package *output, int MaxCount, nar_backup_id *FilteredID, int32_t MaxVersion);
-int32_t BG_API NarGetBackupsInDirectory(const UTF8 *Directory, backup_package *output, int MaxCount);
-void    BG_API NarFreeBackupPackages(backup_package *packages, int32_t Count);
+int32_t NarGetBackupsInDirectoryWithFilter(const UTF8 *Directory, backup_package *output, int MaxCount, nar_backup_id *FilteredID, int32_t MaxVersion);
+int32_t NarGetBackupsInDirectory(const UTF8 *Directory, backup_package *output, int MaxCount);
+void    NarFreeBackupPackages(backup_package *packages, int32_t Count);
 
 UTF8 **GetFilesInDirectoryWithExtension(const UTF8 *DirectoryAsUTF8, uint64_t *OutCount, UTF8 *Extension);
 UTF8 **GetFilesInDirectory(const UTF8 *Directory, uint64_t *OutCount);
@@ -400,7 +399,8 @@ void FreeDirectoryList(UTF8 **List, uint64_t Count);
 
 packages_for_restore LoadPackagesForRestore(const UTF8 *Directory, nar_backup_id BackupID, int32_t Version);
 void FreePackagesForRestore(packages_for_restore *Packages);
-bool InitRestore(restore_ctx *output, const UTF8 *DirectoryToLook, nar_backup_id BackupID, int32_t Version);
+bool BG_API InitRestore(struct Restore_Ctx *output, const UTF8 *DirectoryToLook, nar_backup_id BackupID, int32_t Version);
+void BG_API FreeRestoreCtx(struct Restore_Ctx *ctx);
 bool NarCompareBackupID(nar_backup_id id1, nar_backup_id id2);
 
 
@@ -510,3 +510,5 @@ void merge_extents(Array<USN_Extent> & arr);
 
 bool     is_extents_collide(USN_Extent lhs, USN_Extent rhs);
 int32_t  qs_comp_extent_fn(const void *p1, const void *p2);
+
+

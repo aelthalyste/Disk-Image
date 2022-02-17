@@ -3986,7 +3986,7 @@ bool
 NarGetMFTRegionsFromBootSector(HANDLE Volume, 
                                nar_record* Out, 
                                uint32_t* OutLen, 
-                               uint32_t Capacity){
+                               uint32_t Capacity) {
     
     BOOLEAN Result = false;
     char bf[4096];
@@ -4019,9 +4019,48 @@ NarGetMFTRegionsFromBootSector(HANDLE Volume,
                 
             }
             
-            
         }
     }
     
     return Result;
+}
+
+
+
+bool NarPrepareRestoreTargetVolume(restore_target *TargetOut, const UTF8 *MetadataPath, char Letter) {
+    // @TODO : 
+    // @Incomplete : 
+    //if (NarSetVolumeSize((char)Letter, BM->VolumeTotalSize/(1024ull*1024ull))) {
+    //    NarFormatVolume((char)Letter);
+    //    return true;
+    //}
+    return false;
+}
+
+bool BG_API NarPrepareRestoreTargetWithNewDisk(restore_target *TargetOut, const UTF8 *MetadataPath, int32_t Letter) {
+    // @TODO : 
+    // @Incomplete : 
+    ASSERT(false);
+    return false;
+} 
+
+
+bool NarFeedRestoreTarget(restore_target *Target, const void *Buffer, int32_t BufferSize) {
+    bool Result = false;
+    DWORD Written = 0;
+    if (WriteFile(Target->Handle, Buffer, BufferSize, &Written, NULL) && Written == BufferSize) {
+        Result = true;
+    }
+    else {
+        // @Log : 
+        // @Incomplete : 
+    }
+    Target->BytesWrittenSoFar += Written;
+    return Result;
+}
+
+
+void NarFreeRestoreTarget(restore_target *Target) {
+    CloseHandle(Target->Handle);
+    free(Target->FileName);
 }

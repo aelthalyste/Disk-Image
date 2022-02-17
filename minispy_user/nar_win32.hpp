@@ -24,6 +24,24 @@ enum class BackupStream_Errors: int{
 };
 
 
+
+struct restore_target {
+    HANDLE Handle;// to file, or volume
+    
+    // valid only if target is to a volume or disk!
+    int32_t DiskID;
+    char TargetLetter;
+
+
+    // valid only if target is to a file!
+    UTF8 *FileName;
+
+
+    uint64_t BytesWrittenSoFar;
+};
+
+
+
 struct process_listen_ctx{
     char *ReadBuffer;
     char *WriteBuffer;
@@ -296,8 +314,7 @@ NarGetVolumeTotalSize(char Letter);
 ULONGLONG
 NarGetVolumeUsedSize(char Letter);
 
-int
-NarGetVolumeDiskType(char Letter);
+int BG_API NarGetVolumeDiskType(char Letter);
 
 unsigned char
 NarGetVolumeDiskID(char Letter);
@@ -306,8 +323,7 @@ NarGetVolumeDiskID(char Letter);
 /*
 Expects Letter to be uppercase
 */
-BOOLEAN
-NarIsVolumeAvailable(char Letter);
+BOOLEAN BG_API NarIsVolumeAvailable(char Letter);
 
 
 /*
@@ -652,3 +668,8 @@ NarGetMFTRegionsFromBootSector(HANDLE Volume,
                                uint32_t* OutLen, 
                                uint32_t Capacity);
                                
+
+bool BG_API NarPrepareRestoreTargetVolume(restore_target *TargetOut, const UTF8 *MetadataPath, char Letter);
+bool BG_API NarPrepareRestoreTargetWithNewDisk(restore_target *TargetOut, const UTF8 *MetadataPath, int32_t Letter);
+bool BG_API NarFeedRestoreTarget(restore_target *Target, const void *Buffer, int32_t BufferSize);
+void BG_API NarFreeRestoreTarget(restore_target *Target);

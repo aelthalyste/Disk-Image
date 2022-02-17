@@ -3,6 +3,7 @@
 #include "platform_io.hpp"
 
 
+
 static uint32_t debug_left = 0;
 static uint32_t debug_mid = 0;
 static uint32_t debug_right = 0;
@@ -922,6 +923,9 @@ bool InitRestore(Restore_Ctx *ctx, const UTF8 *DirectoryToLook, nar_backup_id Ba
     return false;
 }
 
+void BG_API FreeRestoreCtx(Restore_Ctx *ctx) {
+    arrfree(&ctx->instructions);
+}
 
 bool NarCompareBackupID(nar_backup_id id1, nar_backup_id id2) {
     return 0 == memcmp(&id1, &id2, sizeof(id1));
