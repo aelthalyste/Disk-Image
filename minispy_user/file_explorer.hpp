@@ -10,10 +10,10 @@
 
 #define MIN(a,b) ((a)<(b) ? (a) : (b))
 
-#include "platform_io.h"
-#include "nar.h"
-#include "memory.h"
-#include "narstring.h"
+#include "platform_io.hpp"
+#include "nar.hpp"
+#include "memory.hpp"
+#include "narstring.hpp"
 
 #define NAR_POSIX                2
 #define NAR_ENTRY_SIZE_OFFSET    8

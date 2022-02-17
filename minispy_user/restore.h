@@ -1,7 +1,7 @@
 #pragma once
 
-#include "platform_io.h"
-#include "compression.h"
+#include "platform_io.hpp"
+#include "nar_compression.hpp"
 
 
 /*

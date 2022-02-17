@@ -2,8 +2,8 @@
 
 #include "precompiled.h"
 #include <string>
-#include "nar.h"
-#include "narstring.h"
+#include "nar.hpp"
+#include "narstring.hpp"
 #include "utf8.h"
 
 struct imp_nar_file_view;

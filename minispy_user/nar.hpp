@@ -80,10 +80,10 @@ struct nar_backup_id{
 
 
 #include "precompiled.h"
-#include "memory.h"
-#include "narstring.h"
-#include "memory.h"
-#include "package.h"
+#include "memory.hpp"
+#include "narstring.hpp"
+#include "memory.hpp"
+#include "package.hpp"
 #include "bg.hpp"
 
 
@@ -387,9 +387,9 @@ NarSetAsFullOnlyBackup(nar_backup_id ID){
 }
 
 
-int32_t NarGetBackupsInDirectoryWithFilter(const UTF8 *Directory, backup_package *output, int MaxCount, nar_backup_id *FilteredID, int32_t MaxVersion);
-int32_t NarGetBackupsInDirectory(const UTF8 *Directory, backup_package *output, int MaxCount);
-void    NarFreeBackupPackages(backup_package *packages, int32_t Count);
+int32_t BG_API NarGetBackupsInDirectoryWithFilter(const UTF8 *Directory, backup_package *output, int MaxCount, nar_backup_id *FilteredID, int32_t MaxVersion);
+int32_t BG_API NarGetBackupsInDirectory(const UTF8 *Directory, backup_package *output, int MaxCount);
+void    BG_API NarFreeBackupPackages(backup_package *packages, int32_t Count);
 
 UTF8 **GetFilesInDirectoryWithExtension(const UTF8 *DirectoryAsUTF8, uint64_t *OutCount, UTF8 *Extension);
 UTF8 **GetFilesInDirectory(const UTF8 *Directory, uint64_t *OutCount);

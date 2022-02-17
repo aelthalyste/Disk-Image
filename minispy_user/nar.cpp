@@ -1,6 +1,6 @@
 #include "precompiled.h"
-#include "nar.h"
-#include "platform_io.h"
+#include "nar.hpp"
+#include "platform_io.hpp"
 
 
 static uint32_t debug_left = 0;

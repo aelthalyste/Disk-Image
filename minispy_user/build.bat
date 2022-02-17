@@ -1,24 +1,27 @@
 @echo off
-rem  -D_DEBUG
-set build_options= -DUNICODE -D_UNICODE -D_CRT_SECURE_NO_WARNINGS
-set compile_flags= -nologo /I"../inc" /GS- /MTd /EHsc /W3 /wd4018 /Od /fsanitize=address /Zi /DEBUG:FULL /FC /F 16777216 /std:c++17 /MP 
+set build_options=-D_DEBUG -DUNICODE -D_UNICODE -D_CRT_SECURE_NO_WARNINGS
+set common_compile_flags= -nologo /I"../inc" /GS- /W3 /wd4018 /Od /fsanitize=address /Zi /DEBUG:FULL /FC /F 16777216 /std:c++17 /MP 
+set native_compile_flags=/LD -FeNarDiskImageNative.dll /MTd /EHsc -D"BG_BUILD_AS_DLL=1"
+set clr_compile_flags=/clr /LD /MDd NarDiskImageNative.lib -FeNarDiskImageCLR.dll
 rem /fsanitize=address /Zi /DEBUG:FULL /FC
 rem /d2cgsummary /showIncludes
 rem /Bt
 rem -ftime-trace
 
-set linker_flags=
-rem "liblz4_static.lib" "fltLib.lib" "vssapi.lib" "libzstd.lib"
-rem if not exist precompiled.obj cl %compile_flags% %build_options% /c /Yc"precompiled.h" "precompiled.cpp" 
-
 
 ctime.exe -begin DiskImageNative  
 
-cl main.cpp bg.cpp file_explorer.cpp platform_io.cpp restore.cpp nar_win32.cpp nar.cpp package.cpp %build_options% %compile_flags% /I"../inc" %linker_flags%
-rem /Yu"precompiled.h" "precompiled.obj"
-rem  file_explorer.cpp platform_io.cpp restore.cpp nar_win32.cpp nar.cpp
+REM BUILD NATIVE LIB
+cl main.cpp bg.cpp file_explorer.cpp platform_io.cpp restore.cpp nar_win32.cpp nar.cpp package.cpp %build_options% %common_compile_flags% %native_compile_flags%
+
+set build_options=%build_options% -D"MANAGED=1"
+cl clr_build.cpp %build_options% %common_compile_flags% %clr_compile_flags% /I"../inc"
+REM BUILD DOTNET
+
 
 ctime.exe -end DiskImageNative
+
+
 
 rem CLEANUP
 

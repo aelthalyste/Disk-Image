@@ -1,11 +1,10 @@
 #include "precompiled.h"
-#include "file_explorer.h"
+#include "file_explorer.hpp"
 #include <string.h>
 #include <stdint.h>
-#include "performance.h"
-#include "nar_win32.h"
-#include "lz4.h"
-#include "zstd.h"
+#include "performance.hpp"
+#include "nar_compression.hpp"
+#include "nar_win32.hpp"
 
 
 #if 0

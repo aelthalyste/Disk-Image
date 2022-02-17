@@ -1,15 +1,12 @@
 /* date = July 15th 2021 5:12 pm */
 #pragma once 
 
-#include "narstring.h"
 #include "precompiled.h"
-#include "compression.h"
-#include "nar_win32.h"
-
-#include "platform_io.h"
-
+#include "narstring.hpp"
+#include "nar_win32.hpp"
+#include "platform_io.hpp"
+#include "nar_compression.hpp"
 #define MINISPY_NAME  L"MiniSpy"
-
 
 
 

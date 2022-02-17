@@ -1,12 +1,11 @@
 #include "precompiled.h"
-#include "nar_win32.h"
-#include "performance.h"
-#include "compression.h"
-#include "narstring.h"
 
-#include "precompiled.h"
-#include "file_explorer.h"
-#include "performance.h"
+#include "nar_win32.hpp"
+#include "performance.hpp"
+#include "nar_compression.hpp"
+#include "narstring.hpp"
+#include "file_explorer.hpp"
+#include "performance.hpp"
 
 #pragma comment(lib, "fltLib.lib")
 #pragma comment(lib, "vssapi.lib")

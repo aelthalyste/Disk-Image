@@ -1,2 +1,2 @@
 #define PACKAGE_IMPLEMENTATION
-#include "package.h"
+#include "package.hpp"

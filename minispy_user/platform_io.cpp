@@ -1,5 +1,5 @@
 #include "precompiled.h"
-#include "platform_io.h"
+#include "platform_io.hpp"
 
 
 // windows implementation
@@ -7,7 +7,7 @@
 
 
 #include <windows.h>
-#include "nar_win32.h"
+#include "nar_win32.hpp"
 
 struct imp_nar_file_view{
 	HANDLE MHandle;

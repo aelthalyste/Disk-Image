@@ -30,17 +30,18 @@
 #include <stdlib.h>
 #include <cstdio>
 #include "restore.h"
-#include "zstd.h"
-#include "nar_win32.h"
-#include "platform_io.h"
-#include "nar.h"
-#include "file_explorer.h"
+ 
+#include "nar_compression.hpp"
+#include "nar_win32.hpp"
+#include "platform_io.hpp"
+#include "nar.hpp"
+#include "file_explorer.hpp"
 #else
 #include "nar_build_include.cpp"
 #endif
 
 
-#include "performance.h"
+#include "performance.hpp"
 
 #define NAR_FAILED 0
 #define NAR_SUCC   1

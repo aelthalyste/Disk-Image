@@ -1,6 +1,6 @@
 #include "precompiled.h"
 #include "restore.h"
-#include "nar.h"
+#include "nar.hpp"
 
 #if 0
 struct restore_cloud_read_result {
