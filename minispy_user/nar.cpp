@@ -950,8 +950,9 @@ int32_t NarGetBackupsInDirectoryWithFilter(const UTF8 *Directory, backup_package
             if (fr.Data) {
                 bool Added = false;
 
-                if (init_package_reader_from_memory(&(output[Count].Package), fr.Data, fr.Len)) {
+                if (init_package_reader_from_memory(&output[Count].Package, fr.Data, fr.Len)) {
                     backup_package *p = &output[Count];
+                    p->Package.do_i_own_data = true;
                     uint64_t s;
                     void *BInfPtr = p->Package.get_entry("backup_information", &s);
                     if (BInfPtr) {
@@ -959,25 +960,23 @@ int32_t NarGetBackupsInDirectoryWithFilter(const UTF8 *Directory, backup_package
                         backup_information *BInf = (backup_information *)BInfPtr;
                         bool skip = false;
 
-                        if (FilteredID != NULL && MaxVersion == NAR_NO_VERSION_FILTER) {
-                            ASSERT(false);
-                        }
-
-                        if (FilteredID != NULL && MaxVersion != NAR_NO_VERSION_FILTER) {
+                        if (FilteredID != NULL) {
                         
                             if (!NarCompareBackupID(*FilteredID, BInf->BackupID))
                                 skip = true;    
 
-                            if (BInf->BT == Diff) {
-                                // diff backup only needs full + itself
-                                if (MaxVersion != BInf->Version && MaxVersion != 0)
-                                    skip = true;
-                            }
-                            else if (BInf->BT == Inc) {
-                                // do nothing
-                            }
-                            else {
-                                ASSERT(false);
+                            if (MaxVersion != NAR_NO_VERSION_FILTER) {
+                                if (BInf->BT == Diff) {
+                                    // diff backup only needs full + itself
+                                    if (MaxVersion != BInf->Version && MaxVersion != 0)
+                                        skip = true;
+                                }
+                                else if (BInf->BT == Inc) {
+                                    // do nothing
+                                }
+                                else {
+                                    ASSERT(false);
+                                }
                             }
 
                         }
@@ -989,6 +988,7 @@ int32_t NarGetBackupsInDirectoryWithFilter(const UTF8 *Directory, backup_package
 
                         if (!skip) {
                             memcpy(&p->BackupInformation, BInfPtr, sizeof(p->BackupInformation));
+                            p->Path = (UTF8 *)utf8dup(Files[i]);
                             ++Count;
                             Added = true;
                         }   
@@ -1020,12 +1020,54 @@ int32_t NarGetBackupsInDirectory(const UTF8 *Directory, backup_package *output, 
 }
 
 void NarFreeBackupPackages(backup_package *Packages, int32_t Count) {
-    for(int i=0;i<Count;++i)
+    for(int i=0;i<Count;++i) {
         free_package_reader(&Packages[i].Package);
+        free(Packages[i].Path);
+    }
 }
 
 
+Array<Array<backup_information_ex>> NarGetChainsInDirectory(const UTF8 *Directory) {
 
+    Array<Array<backup_information_ex>> Result;
+
+    int32_t PackageCap = 1024 * 64 * 1;
+    backup_package *Packages = (backup_package *)calloc(sizeof(*Packages), PackageCap);
+    int32_t FoundCount = NarGetBackupsInDirectory(Directory, Packages, PackageCap);
+    
+    for (int pi=0;pi<FoundCount;++pi) {
+
+        int AddedToResult = 0;
+        for (int j=0;j<Result.len;++j) {
+            if (NarCompareBackupID(Result[j].BackupID, Packages[pi].BackupInformation.BackupID)) {
+                
+                // add to array
+                {
+                    backup_information_ex *P = arrputptr(&Result[j]);
+                    memcpy(P, Packages[pi].BackupInformation, sizeof(Packages[pi].BackupInformation));
+                    P->Path =  utf8dup(Packages[pi].Path);
+                }
+
+                AddedToResult=1;
+                break;
+            }
+        }
+
+
+        // create new entry for chain if we didn't encounter it in result array.
+        if (!AddedToResult) {
+            Array<backup_information_ex> t;
+            arrinit(&t, 16);
+            arrput(&Result, t);
+            arrput(&Result[Result.len - 1], Packages);
+        }
+
+    }
+    
+    NarFreeBackupPackages(Packages, FoundCount);
+
+    return Result;
+}
 
 
 

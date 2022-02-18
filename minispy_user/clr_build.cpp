@@ -1,7 +1,10 @@
-﻿#include "nar_win32.hpp"
+﻿#define BG_BUILD_AS_DLL 0
+#include "nar_win32.hpp"
 #include "nar.hpp"
 #include "platform_io.hpp"
 
+
+#define BG_IMPLEMENTATION
 #include "bg.hpp"
 
 
@@ -467,17 +470,95 @@ namespace NarDIWrapper {
     {
         public:
         
-        DiskTracker();
-        ~DiskTracker();
+        DiskTracker() {
+            if(msInit == 0){
+                msInit = true;
+                C = NarLoadBootState();
+                
+                // when loading, always check for old states, if one is not presented, create new one from scratch
+                if (C == NULL) {
+                    printf("Couldn't load from boot file, initializing new CONTEXT\n");
+                    C = new LOG_CONTEXT;
+                }
+                else {
+                    // found old state
+                    printf("Succ loaded boot state from file\n");
+                    for(int i =0; i<C->Volumes.Count; i++){
+                        printf("WR BOOT LOAD : Volume %c, version %d, type %d\n", C->Volumes.Data[i].Letter, C->Volumes.Data[i].Version, C->Volumes.Data[i].BT);
+                    }
+                }
+                
+                C->Port = INVALID_HANDLE_VALUE;
+                int32_t CDResult = ConnectDriver(C);
+                msIsDriverConnected = CDResult;
+                
+            }
+
+        }
+
+        ~DiskTracker() {
+            // We don't ever need to free anything, this class-object is supposed to be ALWAYS alive with program 
+        }
         
-        static List<VolumeInformation^>^ CW_GetVolumes();
         
-        bool CW_InitTracker();
-        bool DiskTracker::CW_RetryDriverConnection();
+        bool CW_InitTracker() {
+            return msIsDriverConnected;
+        }
+
+        static List<VolumeInformation^>^ CW_GetVolumes() {
+            data_array<volume_information> V = NarGetVolumes();
         
-        bool CW_AddToTrack(wchar_t Letter, int Type);
+            List<VolumeInformation^>^ Result = gcnew  List<VolumeInformation^>;
+            
+            for (int i = 0; i < V.Count; i++) {
+                
+                VolumeInformation^ BI = gcnew VolumeInformation;
+                BI->TotalSize  = V.Data[i].TotalSize;
+                BI->FreeSize   = V.Data[i].FreeSize;
+                BI->Bootable   = V.Data[i].Bootable;
+                BI->DiskID     = (int8_t)V.Data[i].DiskID;
+                BI->DiskType   = V.Data[i].DiskType;
+                BI->Letter     = V.Data[i].Letter;
+                BI->VolumeName = gcnew System::String(V.Data[i].VolumeName);
+                if (BI->VolumeName->Length == 0) {
+                    BI->VolumeName = L"Local Disk";
+                }
+                
+                Result->Add(BI);
+            }
+            
+            FreeDataArray(&V);
+            return Result;
+        }
         
-        bool CW_RemoveFromTrack(wchar_t Letter);
+
+        bool CW_RetryDriverConnection() {
+            if (C == 0) {
+                int32_t CDResult = ConnectDriver(C);
+                msIsDriverConnected = CDResult;
+            }
+            return msIsDriverConnected;
+        }
+        
+        bool CW_AddToTrack(wchar_t Letter, int Type) {
+            return AddVolumeToTrack(C, Letter, (BackupType)Type);
+        }
+        
+        bool CW_RemoveFromTrack(wchar_t Letter) {
+            BOOLEAN Result = FALSE;
+            if(RemoveVolumeFromTrack(C, Letter)){
+                if(NarSaveBootState(C)){
+                    Result = TRUE;
+                }
+                else{
+                    printf("WRAPPER : Failed to save state of the program\n");
+                }
+            }
+            else{
+                printf("WRAPPER : Failed to remove volume %c from track list\n", Letter);
+            }
+            return Result;
+        }
         
         bool CW_SetupStream(wchar_t L, int BT, StreamInfo^ StrInf, bool ShouldCompress) {
 
@@ -571,7 +652,7 @@ namespace NarDIWrapper {
 	        data_array<disk_information> CResult = NarGetDisks();
 	        if (CResult.Data == NULL || CResult.Count == 0) {
 	            if (CResult.Count == 0) printf("Found 0 disks on the system\n");
-	            if (CResult.Data == 0)  printf("GetDisksOnSystem returned NULL\n");
+	            if (CResult.Data  == 0) printf("GetDisksOnSystem returned NULL\n");
 	            return nullptr;
 	        }
 	        
@@ -594,10 +675,9 @@ namespace NarDIWrapper {
 	        wchar_t wcTaskDescription[512];
 	        wchar_t wcMetadataFileName[MAX_PATH];
 	        
-	        SystemStringToWCharPtr(TaskName, wcTaskName);
+	        SystemStringToWCharPtr(TaskName        , wcTaskName);
 	        SystemStringToWCharPtr(MetadataFileName, wcMetadataFileName);
-	        SystemStringToWCharPtr(TaskDescription, wcTaskDescription);
-	        
+	        SystemStringToWCharPtr(TaskDescription , wcTaskDescription);
 
 	        return NarEditTaskNameAndDescription(wcMetadataFileName, wcTaskName, wcTaskDescription);
         }

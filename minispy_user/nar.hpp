@@ -108,6 +108,7 @@ const int32_t NAR_COMPRESSION_LZ4  = 1;
 const int32_t NAR_COMPRESSION_ZSTD = 2;
 
 
+
 #pragma pack(push ,1) // force 1 byte alignment
 struct backup_information {
     uint64_t SizeOfBinaryData;
@@ -135,8 +136,12 @@ struct backup_information {
     nar_backup_id BackupID;
     Bg_Date MetadataTimeStamp;
 };
-
 #pragma pack(pop)
+
+
+struct backup_information_ex : backup_information {
+    UTF8 *Path;
+};
 
 
 
@@ -144,6 +149,7 @@ struct backup_information {
 struct backup_package {
     backup_information BackupInformation;
     Package_Reader     Package;
+    UTF8 *Path;
 };
 
 struct packages_for_restore {
@@ -383,8 +389,6 @@ NarSetAsFullOnlyBackup(nar_backup_id ID){
     return Result;
 }
 
-Array<Array<backup_package>> BG_API NarGetChainsInDirectory(const UTF8 *Directory);
-void                         BG_API NarFreeChainsInDirectoryArray(Array<Array<backup_package>> *Array);
 
 int32_t NarGetBackupsInDirectoryWithFilter(const UTF8 *Directory, backup_package *output, int MaxCount, nar_backup_id *FilteredID, int32_t MaxVersion);
 int32_t NarGetBackupsInDirectory(const UTF8 *Directory, backup_package *output, int MaxCount);
@@ -408,6 +412,10 @@ bool NarCompareBackupID(nar_backup_id id1, nar_backup_id id2);
 backup_package *GetLatestPackage(packages_for_restore *Packages);
 backup_package *GetPreviousPackage(packages_for_restore *Packages, backup_package *Current);
 
+
+
+BG_API Array<Array<backup_information_ex>> NarGetChainsInDirectory(const UTF8 *Directory); 
+BG_API void                                NarFreeChains(Array<Array<backup_information_ex>> & Chains);
 
 #if 0
 

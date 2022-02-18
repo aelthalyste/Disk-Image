@@ -329,13 +329,11 @@ BOOLEAN BG_API NarIsVolumeAvailable(char Letter);
 /*
     Returns first available volume letter that is not used by system
 */
-char
-NarGetAvailableVolumeLetter();
+char BG_API NarGetAvailableVolumeLetter();
 
 
 // returns # of disks, returns 0 if information doesnt fit in array
-data_array<disk_information>
-NarGetDisks();
+data_array<disk_information> BG_API NarGetDisks();
 
 
 /*
@@ -393,8 +391,7 @@ SetupVSS();
 
 
 //Returns # of volumes detected
-data_array<volume_information>
-NarGetVolumes();
+data_array<volume_information> BG_API NarGetVolumes();
 
 
 
@@ -429,8 +426,7 @@ CheckStreamCompletedSuccessfully(volume_backup_inf *V){
     }
 }
 
-int32_t
-ConnectDriver(PLOG_CONTEXT Ctx);
+int32_t BG_API ConnectDriver(PLOG_CONTEXT Ctx);
 
 
 int32_t
@@ -475,8 +471,7 @@ SetupFullOnlyStream(wchar_t Letter, DotNetStreamInf *SI, bool ShouldCompress, bo
 
 /*
 */
-int32_t
-SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, uint64_t *BytesToTransferOut, char *BinaryExtensionOut, int32_t CompressionType);
+int32_t BG_API SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, uint64_t *BytesToTransferOut, char *BinaryExtensionOut, int32_t CompressionType);
 
 
 
@@ -485,15 +480,13 @@ void
 TerminateFullOnlyStream(full_only_backup_ctx *Ctx, bool ShouldSaveMetadata, wchar_t *MetadataPath);
 
 
-int32_t
-TerminateBackup(volume_backup_inf* V, int32_t Succeeded, const char *DirectoryToEmitMetadata, char *OutputMetadataName);
+int32_t BG_API TerminateBackup(volume_backup_inf* V, int32_t Succeeded, const char *DirectoryToEmitMetadata, char *OutputMetadataName);
 
 
 
 
 // Assumes CallerBufferSize >= NAR_COMPRESSION_FRAME_SIZE
-uint32_t
-ReadStream(backup_stream* Stream, void* CallerBuffer, unsigned int CallerBufferSize);
+uint32_t BG_API ReadStream(backup_stream* Stream, void* CallerBuffer, unsigned int CallerBufferSize);
 
 
 
@@ -510,33 +503,28 @@ int32_t
 DetachVolume(volume_backup_inf* VolInf);
 
 
-int32_t
-RemoveVolumeFromTrack(PLOG_CONTEXT C, wchar_t L);
+int32_t BG_API RemoveVolumeFromTrack(PLOG_CONTEXT C, wchar_t L);
 
 
 
 /*
  Just removes volume entry from kernel memory, does not unattaches it.
 */
-inline int32_t
-NarRemoveVolumeFromKernelList(wchar_t Letter, HANDLE CommPort);
+inline int32_t NarRemoveVolumeFromKernelList(wchar_t Letter, HANDLE CommPort);
 
 
 
 
 
-int32_t
-GetVolumesOnTrack(PLOG_CONTEXT C, volume_information* Out, unsigned int BufferSize, int* OutCount);
+int32_t GetVolumesOnTrack(PLOG_CONTEXT C, volume_information* Out, unsigned int BufferSize, int* OutCount);
 
-int32_t
-GetVolumeID(PLOG_CONTEXT C, wchar_t Letter);
+int32_t BG_API GetVolumeID(PLOG_CONTEXT C, wchar_t Letter);
 
 /*
 This operation just adds volume to list, does not starts to filter it,
 until it's fullbackup is requested. After fullbackup, call AttachVolume to start filtering
 */
-int32_t
-AddVolumeToTrack(PLOG_CONTEXT Context, wchar_t Letter, BackupType Type);
+int32_t BG_API AddVolumeToTrack(PLOG_CONTEXT Context, wchar_t Letter, BackupType Type);
 
 
 data_array<nar_record>
@@ -578,8 +566,7 @@ NarIsOSVolume(char Letter) {
 /*
 Its not best way to initialize a struct
 */
-LOG_CONTEXT*
-NarLoadBootState();
+BG_API LOG_CONTEXT* NarLoadBootState();
 
 
 
@@ -594,16 +581,14 @@ NarLoadBootState();
         - LastBackupRegionOffset (user)
 */
 
-int32_t
-NarSaveBootState(LOG_CONTEXT* CTX);
+int32_t BG_API NarSaveBootState(LOG_CONTEXT* CTX);
 
 
 data_array<volume_information>
 NarGetVolumes();
 
 
-int32_t
-NarEditTaskNameAndDescription(const wchar_t* FileName, const wchar_t* TaskName, const wchar_t* TaskDescription);
+int32_t BG_API NarEditTaskNameAndDescription(const wchar_t* FileName, const wchar_t* TaskName, const wchar_t* TaskDescription);
 
 
 

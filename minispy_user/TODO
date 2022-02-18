@@ -1,12 +1,14 @@
-TODO
+@TODO
+Revisit logging system. Replace all printfs with LOG_* variants?(kinda crazy, but mustbe done)
+Implement task name and description support. This requires some changes and additions to simple package format.
+Implement GetDiskType
+Add logs to clr wrapper
+Implement volume-disk-file restore target!
 Extent nar_record structure to 16byte(so we can share lot's of stuff between USN-Extent codebase and this!)
 Redesign full only backup.
-delete bunch of stuff from .net code.
 linux compilation(with cmake probably)
 find a way to shrink file system to lower than 50mb per million file. While existing compression algorithms (lz4, zstd) help doing that, it's not enough.
-region elimination algorithm for restore.
 compression supported random access + compatible with restore.
-make restore like in USN-Backup system, generate read-write instructions.
 
 
 @net : 
@@ -15,3 +17,7 @@ make restore like in USN-Backup system, generate read-write instructions.
 
 
 
+@DONE
+delete bunch of stuff from .net code.
+region elimination algorithm for restore.
+make restore like in USN-Backup system, generate read-write instructions.
