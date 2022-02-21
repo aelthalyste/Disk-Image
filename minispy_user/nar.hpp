@@ -103,7 +103,13 @@ const int32_t NAR_COMPRESSION_NONE = 0;
 const int32_t NAR_COMPRESSION_LZ4  = 1;
 const int32_t NAR_COMPRESSION_ZSTD = 2;
 
-
+static inline bool NarIsCompressionTypeSupported(int32_t v) {
+    ASSERT(v != NAR_COMPRESSION_LZ4); // @NOTE : i am not sure whether we shoul support lz4 or not. its very experimental at this stage and i dont want anything to backed up with this assumption
+    if (v == NAR_COMPRESSION_NONE ||  
+        v == NAR_COMPRESSION_ZSTD)
+        return true;
+    return false;
+}
 
 #define NAR_BINARY_MAGIC_NUMBER    'NARB'
 #define NAR_BINARY_IDENTIFIER_SIZE (1024)
@@ -429,6 +435,15 @@ backup_package *GetPreviousPackage(packages_for_restore *Packages, backup_packag
 BG_API Array<Array<backup_information_ex>> NarGetChainsInDirectory(const UTF8 *Directory); 
 BG_API void                                NarFreeChains(Array<Array<backup_information_ex>> & Chains);
 
+
+
+struct nar_binary_files;
+BG_API nar_binary_files*    NarGetBinaryFilesInDirectory(const UTF8 *Directory, nar_backup_id BackupID, int32_t Version);
+BG_API void                 NarFreeBinaryFilesInDirectory(nar_binary_files *Files);
+BG_API bool                 NarReadVersion(nar_binary_files *Files, int32_t Version, void *Data, uint64_t Offset, uint64_t Size);
+bool NarValidateBinaryIdentifier(backup_binary_identifier *Output, void *Bf); 
+
+
 #if 0
 
 nar_time {
@@ -500,8 +515,6 @@ struct Restore_Ctx {
     u64 target_file_size;
     u64 cii = 0;
 };
-
-
 
 
 // functions!

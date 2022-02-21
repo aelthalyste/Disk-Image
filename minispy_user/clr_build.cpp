@@ -711,15 +711,24 @@ namespace NarDIWrapper {
         	uint64_t Result = 0;
         	nar_backup_id BackupID;
         	BackupID.Q = BackupIDAsUINT;
-        	Restore_Ctx *RestoreCtx = (Restore_Ctx *)calloc(sizeof(*RestoreCtx), 1);
+        	local_restore_ctx *RestoreCtx = (local_restore_ctx *)calloc(sizeof(*RestoreCtx), 1);
         	
         	wchar_t *Dir = (wchar_t *)calloc(Kilobyte(64), 2);
         	SystemStringToWCharPtr(MetadataDirectory, Dir);
         	UTF8 *DirUTF8 = NarWCHARToUTF8(Dir);
 
-        	if (InitRestore(RestoreCtx, DirUTF8, BackupID, Version)) {
-        		Result = reinterpret_cast<uint64_t>(RestoreCtx);
-        	}
+            RestoreCtx->BinaryFiles = NarGetBinaryFilesInDirectory(DirUTF8, BackupID, Version);
+            if (RestoreCtx->BinaryFiles) {
+                if (InitRestore(&RestoreCtx->rctx, DirUTF8, BackupID, Version)) {
+                    Result = reinterpret_cast<uint64_t>(RestoreCtx);
+                }
+            }
+
+            if (Result == 0) {
+                FreeRestoreCtx(&RestoreCtx->rctx);
+                if (RestoreCtx->BinaryFiles) 
+                    NarFreeBinaryFilesInDirectory(RestoreCtx->BinaryFiles);                
+            }
 
         	free(Dir);
         	free(DirUTF8);
@@ -728,11 +737,13 @@ namespace NarDIWrapper {
 
 
         static void CW_FreeRestoreLocalSource(uint64_t RestoreHandle) {
-        	Restore_Ctx *C = reinterpret_cast<Restore_Ctx *>(RestoreHandle);
-        	FreeRestoreCtx(C);
+        	local_restore_ctx *C = reinterpret_cast<local_restore_ctx *>(RestoreHandle);
+            NarFreeBinaryFilesInDirectory(C->BinaryFiles);
+            FreeRestoreCtx(&C->rctx);
+            free(C->Buffer);
         	free(C);
         }
-
+ 
         static uint64_t CW_GetRestoreSize(uint64_t RestoreHandle) {
         	Restore_Ctx *C = reinterpret_cast<Restore_Ctx *>(RestoreHandle);
         	return C->target_file_size;

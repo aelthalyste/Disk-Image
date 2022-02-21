@@ -30,11 +30,11 @@ NarFreeFileView(nar_file_view fv);
 
 bool NarFileReadNBytes(const UTF8 *FN, void *mem, size_t N);
 
-size_t
-NarGetFileSize(const UTF8 *FN);
+size_t NarGetFileSize(const UTF8 *FN);
 
-file_read
-NarReadFile(const UTF8 *FN);
+file_read NarReadFile(const UTF8 *FN);
+
+bool NarReadFileLast(const UTF8 *FN, void *Data, uint32_t N);
 
 void
 FreeFileRead(file_read FR);

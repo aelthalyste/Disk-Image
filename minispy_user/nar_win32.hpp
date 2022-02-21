@@ -32,12 +32,18 @@ struct restore_target {
     int32_t DiskID;
     char TargetLetter;
 
-
     // valid only if target is to a file!
     UTF8 *FileName;
 
-
     uint64_t BytesWrittenSoFar;
+};
+
+
+struct local_restore_ctx {
+    Restore_Ctx      rctx;
+    nar_binary_files *BinaryFiles;
+    void     *Buffer;
+    uint64_t BufferCap;
 };
 
 
@@ -89,8 +95,8 @@ struct backup_stream {
     nar_backup_id         BackupID;
     char                  Letter;
     int32_t               Version;
-    
-    
+
+
     bool DidWePushTheBinaryIdentifier; 
 
     const char* GetErrorDescription(){
@@ -666,3 +672,6 @@ bool BG_API NarPrepareRestoreTargetVolume(restore_target *TargetOut, const UTF8 
 bool BG_API NarPrepareRestoreTargetWithNewDisk(restore_target *TargetOut, const UTF8 *MetadataPath, int32_t Letter);
 bool BG_API NarFeedRestoreTarget(restore_target *Target, const void *Buffer, int32_t BufferSize);
 void BG_API NarFreeRestoreTarget(restore_target *Target);
+
+
+bool BG_API ReadLocalRestore(local_restore_ctx *ctx, void *Data, uint32_t N);

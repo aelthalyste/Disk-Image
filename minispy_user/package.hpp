@@ -67,7 +67,7 @@ struct Package_Reader {
 bool init_package_reader_from_memory(Package_Reader *reader, void *memory, uint64_t mem_len);
 bool init_package_reader_from_file(Package_Reader *reader, const char *fn);
 void free_package_reader(Package_Reader *reader);
-
+bool flush_reader_to_file(Package_Reader *reader, const char *FP);
 
 
 
@@ -211,7 +211,7 @@ bool Package_Creator::build_package_to_file(const char *fn) {
             builder_append(&builder, &entry->name_len                 , sizeof(entry->name_len));
             builder_append(&builder, entry->name                      , entry->name_len);
             builder_append(&builder, &entry->identifier               , sizeof(entry->identifier));
-            builder_append(&builder, &entry->user_tag         , sizeof(entry->user_tag));
+            builder_append(&builder, &entry->user_tag                 , sizeof(entry->user_tag));
             builder_append(&builder, &entry->offset_from_start_of_file, sizeof(entry->offset_from_start_of_file));
             builder_append(&builder, &entry->data_len                 , sizeof(entry->data_len));
         }   
@@ -414,5 +414,28 @@ bool init_package_reader_from_memory(Package_Reader *reader, void *memory, uint6
 }
 
 
+bool flush_reader_to_file(Package_Reader *reader, const char *FP) {
+    bool ret = false;
+    FILE *f = fopen(FP, "wb");
+    if (f) {
+        if (1 == fwrite(reader->data, reader->data_len, 1, f)) {
+            // ok!
+            ret = true;
+        }
+        else {
+            fprintf(stderr, "flush_reader_to_file failed, unable to write to file %s\n", FP); 
+        }
+
+        fclose(f);
+    }
+    else {
+        fprintf(stderr, "flush_reader_to_file failed, unable to create file %s\n", FP);
+    }
+    return ret;
+}
+
+
+
 #endif
+
 

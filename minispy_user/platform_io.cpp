@@ -198,6 +198,45 @@ NarDumpToFile(const UTF8* FileName, void* Data, unsigned int Size) {
     return Result;
 }
 
+#if 0
+bool NarReadFileLast(const UTF8 *FN, void *Data, uint64_t N) {
+    BOOLEAN Result = FALSE;
+    wchar_t *FilePath = NarUTF8ToWCHAR(FileName);
+    defer({free(FilePath);});
+
+    ASSERT(N<=1024ull*1024ull*1024ull*4ull);
+    HANDLE File = CreateFile(FilePath, GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, 0, 0);    
+    if (File != INVALID_HANDLE_VALUE) {
+        LARGE_INTEGER li;
+        GetFileSizeEx(File, &li);
+        uint64_t FileSize = li.QuadPart;
+        if (FileSize >= N) {
+
+            li.QuadPart = FileSize - N;
+            LARGE_INTEGER np;
+            if (SetFilePointerEx(File, &li, &np, FILE_BEGIN) && np.QuadPart == li.QuadPart) {
+                DWORD BytesRead = 0;
+                if (ReadFile(File, Data, (DWORD)N, &BytesRead, 0) && BytesRead == N){
+                    Result = true;
+                }
+                else {
+                    // @LOG :
+                }
+            }
+            else {
+                // @LOG :
+            }
+
+        }
+
+        CloseHandle(File);
+    }
+    else {
+        // @LOG : 
+    }
+
+}
+#endif
 
 
 #endif // MSVC DEF
@@ -286,6 +325,9 @@ NarReadFile(const UTF8* FileName) {
     }
     return Result;
 }
+
+
+
 
 void
 FreeFileRead(file_read FR){

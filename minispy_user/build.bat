@@ -15,7 +15,7 @@ REM BUILD NATIVE LIB
 cl main.cpp bg.cpp file_explorer.cpp platform_io.cpp nar_win32.cpp nar.cpp package.cpp %build_options% %common_compile_flags% %native_compile_flags%
 
 set build_options=%build_options% -D"MANAGED=1"
-rem cl clr_build.cpp %build_options% %common_compile_flags% %clr_compile_flags% /I"../inc"
+cl clr_build.cpp %build_options% %common_compile_flags% %clr_compile_flags% /I"../inc"
 REM BUILD DOTNET
 
 

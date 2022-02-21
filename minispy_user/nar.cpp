@@ -20,6 +20,14 @@ static uint32_t debug_left_c2 = 0;
 static uint32_t check_for_write_contiunity = 0;
 
 
+struct nar_binary_files {
+    File     *Files;
+    int32_t  *Versions;
+    int32_t   Count;
+};
+
+
+
 /*
 setups iter for finding intersections of two regions. 
 Assumes both regions are sorted.
@@ -932,7 +940,6 @@ bool NarCompareBackupID(nar_backup_id id1, nar_backup_id id2) {
 }
 
 
-
 int32_t NarGetBackupsInDirectoryWithFilter(const UTF8 *Directory, backup_package *output, int MaxCount, nar_backup_id *FilteredID, int32_t MaxVersion) {
 
     int32_t Count = 0;
@@ -968,7 +975,7 @@ int32_t NarGetBackupsInDirectoryWithFilter(const UTF8 *Directory, backup_package
                             if (MaxVersion != NAR_NO_VERSION_FILTER) {
                                 if (BInf->BT == Diff) {
                                     // diff backup only needs full + itself
-                                    if (MaxVersion != BInf->Version && MaxVersion != 0)
+                                    if (BInf->Version != MaxVersion && BInf->Version != 0)
                                         skip = true;
                                 }
                                 else if (BInf->BT == Inc) {
@@ -1024,6 +1031,106 @@ void NarFreeBackupPackages(backup_package *Packages, int32_t Count) {
         free_package_reader(&Packages[i].Package);
         free(Packages[i].Path);
     }
+}
+
+
+bool NarValidateBinaryIdentifier(backup_binary_identifier *Output, void *Bf, uint64_t BfCap) {
+    if (BfCap < NAR_BINARY_IDENTIFIER_SIZE)
+        return false;
+
+    *Output = *(backup_binary_identifier *)Bf;
+    if (Output->Magic == NAR_BINARY_MAGIC_NUMBER && 
+        is_alpha(Output->Letter) 
+        && Output->Version >= 0 
+        && NarIsCompressionTypeSupported(Output->CompressionType)) 
+    {
+        return true;
+    }
+
+    memset(Output, 0, sizeof(*Output));
+    return false;
+}
+
+nar_binary_files* NarGetBinaryFilesInDirectory(const UTF8 *Directory, nar_backup_id BackupID, int32_t Version) {
+    
+    uint64_t FC = 0;
+    UTF8 **Files = GetFilesInDirectoryWithExtension(Directory, &FC, NAR_BINARY_EXTENSION);
+    void *Bf = malloc(NAR_BINARY_IDENTIFIER_SIZE);
+
+    nar_binary_files *Result = (nar_binary_files *)calloc(sizeof(*Result), 1);
+    Result->Count    = Version;
+    Result->Files    = (File *)calloc(sizeof(Result->Files[0]),Result->Count);
+    Result->Versions = (int32_t *)calloc(sizeof(Result->Versions[0]),Result->Count);
+
+    for(uint64_t i=0;i<FC;++i){
+        wchar_t *FilePath = NarUTF8ToWCHAR(Files[i]);
+        File f = open_file(FilePath);
+
+        if (is_file_handle_valid(&f)) {
+            bool did_we_add_this = false;
+
+            s64 fs = get_file_size(&f); 
+            if (fs > NAR_BINARY_IDENTIFIER_SIZE) {
+                
+                if (set_fp(&f, fs - NAR_BINARY_IDENTIFIER_SIZE)) {
+                    if (read_file(&f, Bf, NAR_BINARY_IDENTIFIER_SIZE)) {
+                        backup_binary_identifier Id;
+                        if (NarValidateBinaryIdentifier(&Id, Bf, NAR_BINARY_IDENTIFIER_SIZE)) {
+                            if (NarCompareBackupID(Id.BackupID, BackupID)){
+                                Result->Files[Result->Count]    = f;
+                                Result->Versions[Result->Count] = Id.Version;
+                                Result->Count++;
+                                did_we_add_this = true;
+                            }
+                        }
+                    }
+
+                }
+
+            }
+
+            if (!did_we_add_this)
+                close_file(&f);                
+
+        }
+    
+        free(FilePath);
+    }
+
+
+    if (Result->Count==0) {
+        NarFreeBinaryFilesInDirectory(Result);
+        Result = 0;
+    }
+
+    return Result;
+}
+
+void NarFreeBinaryFilesInDirectory(nar_binary_files *Files) {
+    if (!Files)
+        return;
+    for(int i=0;i<Files->Count;++i)
+        close_file(&Files->Files[i]);
+    
+    free(Files->Files);
+    free(Files->Versions);
+    free(Files);
+}
+
+bool NarReadVersion(nar_binary_files *Files, int32_t Version, void *Data, uint64_t Offset, uint64_t Size) {
+    ASSERT(Files);
+
+    // @Incomplete : error checking + proper logging
+    // @LOG  : 
+    for(int i=0;i<Files->Count;++i)
+        if (Version == Files->Versions[i])
+            if (set_fp(&Files->Files[i], Offset))
+                if (read_file(&Files->Files[i], Data, Size))
+                    return true;
+    
+
+    ASSERT(false);
+    return false;
 }
 
 
