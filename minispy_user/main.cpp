@@ -22,14 +22,12 @@
 
 #include "precompiled.h"
 
-#include "mspyLog.h"
 #include "minispy.h"
 
 #if 1
 #include <strsafe.h>
 #include <stdlib.h>
 #include <cstdio>
-#include "restore.h"
  
 #include "nar_compression.hpp"
 #include "nar_win32.hpp"

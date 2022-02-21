@@ -88,10 +88,7 @@ struct nar_backup_id{
 
 
 
-
-
 #define printf(fmt, ...) do{BG_INTERNAL_LOG("INFO"   , fmt, ## __VA_ARGS__);} while (0);
-
 
 
 
@@ -102,11 +99,24 @@ enum BackupType {
 
 
 const int32_t NAR_NO_VERSION_FILTER = (1024 * 1024 * 1); // 1million version is sure big enough.
-
 const int32_t NAR_COMPRESSION_NONE = 0;
 const int32_t NAR_COMPRESSION_LZ4  = 1;
 const int32_t NAR_COMPRESSION_ZSTD = 2;
 
+
+
+#define NAR_BINARY_MAGIC_NUMBER    'NARB'
+#define NAR_BINARY_IDENTIFIER_SIZE (1024)
+
+#pragma pack(push ,1) // force 1 byte alignment
+struct backup_binary_identifier {
+    uint32_t      Magic;
+    nar_backup_id BackupID;
+    int32_t       Version;
+    int32_t       CompressionType;
+    char          Letter; 
+};
+#pragma pack(pop)
 
 
 #pragma pack(push ,1) // force 1 byte alignment
@@ -257,6 +267,8 @@ struct point_offset{
     uint64_t  Readable; // remaining region length
     uint64_t Indice;        // region indice we just found
 };
+
+
 
 
 

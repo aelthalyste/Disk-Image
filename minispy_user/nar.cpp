@@ -1039,12 +1039,12 @@ Array<Array<backup_information_ex>> NarGetChainsInDirectory(const UTF8 *Director
 
         int AddedToResult = 0;
         for (int j=0;j<Result.len;++j) {
-            if (NarCompareBackupID(Result[j].BackupID, Packages[pi].BackupInformation.BackupID)) {
+            if (NarCompareBackupID(Result[j][0].BackupID, Packages[pi].BackupInformation.BackupID)) {
                 
                 // add to array
                 {
                     backup_information_ex *P = arrputptr(&Result[j]);
-                    memcpy(P, Packages[pi].BackupInformation, sizeof(Packages[pi].BackupInformation));
+                    memcpy(P, &Packages[pi].BackupInformation, sizeof(Packages[pi].BackupInformation));
                     P->Path =  utf8dup(Packages[pi].Path);
                 }
 
@@ -1059,7 +1059,9 @@ Array<Array<backup_information_ex>> NarGetChainsInDirectory(const UTF8 *Director
             Array<backup_information_ex> t;
             arrinit(&t, 16);
             arrput(&Result, t);
-            arrput(&Result[Result.len - 1], Packages);
+            backup_information_ex *P = arrputptr(&Result[Result.len-1]);
+            memcpy(P, &Packages[pi].BackupInformation, sizeof(Packages[pi].BackupInformation));
+            P->Path = utf8dup(Packages[pi].Path);
         }
 
     }

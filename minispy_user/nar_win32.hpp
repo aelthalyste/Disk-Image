@@ -74,17 +74,25 @@ struct backup_stream {
     // if set, forbids ReadStream to add more than one region per call. Useful when cloning a disk-volume
     bool RegionLock;
     
-    int32_t CompressionType;
-    void *CompressionBuffer;
-    size_t BufferSize;
-    ZSTD_CCtx* CCtx;
-    uint32_t ClusterSize;
-    BackupStream_Errors Error;
+    int32_t               CompressionType;
+    void*                 CompressionBuffer;
+    size_t                BufferSize;
+    ZSTD_CCtx*            CCtx;
+    uint32_t              ClusterSize;
+    BackupStream_Errors   Error;
     
-    nar_record *CompInf;
-    size_t      CBII;
-    size_t      MaxCBI;
+    nar_record*           CompInf;
+    size_t                CBII;
+    size_t                MaxCBI;
     
+
+    nar_backup_id         BackupID;
+    char                  Letter;
+    int32_t               Version;
+    
+    
+    bool DidWePushTheBinaryIdentifier; 
+
     const char* GetErrorDescription(){
         
         static const struct {

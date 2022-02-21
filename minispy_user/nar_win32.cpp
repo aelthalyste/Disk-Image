@@ -2268,6 +2268,10 @@ SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, uint64_t *BytesToTransfe
         }
 
 
+        VolInf->Stream.Letter  = (char)VolInf->Letter;
+        memcpy(&VolInf->Stream.BackupID, &VolInf->BackupID, sizeof(VolInf->BackupID));
+        VolInf->Stream.Version = VolInf->Version;
+
         // NOTE(Batuhan): Compression stuff
         if (TruncateIndex != 0) {
             
@@ -2275,6 +2279,7 @@ SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, uint64_t *BytesToTransfe
                 printf("LZ4 compression not supported(yet!)\n");
             
             ASSERT(CompressionType != NAR_COMPRESSION_LZ4);
+
 
             if (CompressionType == NAR_COMPRESSION_ZSTD) {
                 VolInf->Stream.CompressionBuffer = malloc(NAR_COMPRESSION_FRAME_SIZE);
@@ -2428,9 +2433,20 @@ ReadStream(backup_stream *Stream, void* CallerBuffer, uint32_t CallerBufferSize)
     }
     
     unsigned int RemainingSize = TotalSize;
-    void* CurrentBufferOffset = BufferToFill;
+    void* CurrentBufferOffset  = BufferToFill;
     
     if ((uint32_t)Stream->RecIndex >= Stream->Records.Count) {
+        if (!Stream->DidWePushTheBinaryIdentifier) {
+            backup_binary_identifier ID;
+            ID.Magic           = NAR_BINARY_MAGIC_NUMBER;
+            memcpy(&ID.BackupID, &Stream->BackupID, sizeof(Stream->BackupID));
+            ID.CompressionType = NAR_COMPRESSION_ZSTD;  
+            ID.Letter          = Stream->Letter;
+            memset((char *)CallerBuffer + Result,0,NAR_BINARY_IDENTIFIER_SIZE);
+            
+            Result += NAR_BINARY_IDENTIFIER_SIZE;
+            Stream->DidWePushTheBinaryIdentifier = 1;
+        }
         printf("End of the stream\n", Stream->RecIndex, Stream->Records.Count);
         return Result;
     }
@@ -2566,6 +2582,25 @@ ReadStream(backup_stream *Stream, void* CallerBuffer, uint32_t CallerBufferSize)
         
     }
     
+
+
+    if (Stream->RecIndex >= Stream->Records.Count) {
+        if (!Stream->DidWePushTheBinaryIdentifier) {
+            ASSERT(CallerBufferSize > Result);
+            if (CallerBufferSize - Result >= NAR_BINARY_IDENTIFIER_SIZE) {
+                backup_binary_identifier ID;
+                ID.Magic           = NAR_BINARY_MAGIC_NUMBER;
+                memcpy(&ID.BackupID, &Stream->BackupID, sizeof(Stream->BackupID));
+                ID.CompressionType = NAR_COMPRESSION_ZSTD;  
+                ID.Letter          = Stream->Letter;
+                memset((char *)CallerBuffer + Result,0,NAR_BINARY_IDENTIFIER_SIZE);
+                
+                Result += NAR_BINARY_IDENTIFIER_SIZE;
+                Stream->DidWePushTheBinaryIdentifier = 1;
+            }
+        }
+    }
+
     return Result;
     
     ERR_BAIL_OUT:
