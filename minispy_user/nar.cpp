@@ -738,6 +738,18 @@ backup_package *GetPreviousPackage(packages_for_restore *Packages, backup_packag
 }
 
 
+bool AdvanceRestore(Restore_Ctx *ctx, Restore_Instruction *instruction) {
+    
+    if(ctx->cii<ctx->instructions.len) {
+        *instruction = ctx->instructions[ctx->cii];
+        ++ctx->cii;
+        return true;
+    } else {
+        return false;
+    } 
+
+}
+
 
 bool InitRestore(Restore_Ctx *ctx, const UTF8 *DirectoryToLook, nar_backup_id BackupID, int32_t Version) {
 
@@ -755,6 +767,7 @@ bool InitRestore(Restore_Ctx *ctx, const UTF8 *DirectoryToLook, nar_backup_id Ba
     }
 
     Array<USN_Extent> written_extents;
+    arrreserve(&written_extents, 1024 * 1024);
     defer({arrfree(&written_extents);});
 
     backup_package *P = GetLatestPackage(&Packages);
@@ -784,6 +797,11 @@ bool InitRestore(Restore_Ctx *ctx, const UTF8 *DirectoryToLook, nar_backup_id Ba
     arrreserve(&ctx->instructions, 1024);
 
     Array<nar_record> backup_regions;
+    {
+        backup_regions.data = (nar_record *)P->Package.get_entry("regions", &backup_regions.len);
+        backup_regions.len /= sizeof(nar_record);
+        backup_regions.cap = backup_regions.len;
+    }
 
     // @NOTE : pre-determine all reads-write locations and sort according to write extents to make better api for caller
     // so they don't have to call file seek at target destination. 
@@ -918,6 +936,7 @@ bool InitRestore(Restore_Ctx *ctx, const UTF8 *DirectoryToLook, nar_backup_id Ba
         ri.where_to_read.len  = ri.where_to_write.len;
         ri.version            = P->BackupInformation.Version;
 
+        BG_ASSERT(ri.version >= 0);
         BG_ASSERT(ri.where_to_read.off >= 0);
 
         arrput(&ctx->instructions, ri);
@@ -939,15 +958,24 @@ bool NarCompareBackupID(nar_backup_id id1, nar_backup_id id2) {
     return 0 == memcmp(&id1, &id2, sizeof(id1));
 }
 
-
+#include "performance.hpp"
 int32_t NarGetBackupsInDirectoryWithFilter(const UTF8 *Directory, backup_package *output, int MaxCount, nar_backup_id *FilteredID, int32_t MaxVersion) {
 
+    double PackageReader = 0.0;
+    double LoopElapsed   = 0.0;
+    double GetFiles      = 0.0;
     int32_t Count = 0;
     uint64_t FileCount = 0;
+
+    int64_t bfrw = NarGetPerfCounter();
     UTF8 **Files = GetFilesInDirectoryWithExtension(Directory, &FileCount, NAR_METADATA_EXTENSION);
+    GetFiles = NarTimeElapsed(bfrw);
+
     ASSERT(Files);
     if (Files) {
         
+        int64_t LoopStart = NarGetPerfCounter();
+
         for(int i=0;i<FileCount;++i) {
 
             if (Count == MaxCount)
@@ -957,11 +985,14 @@ int32_t NarGetBackupsInDirectoryWithFilter(const UTF8 *Directory, backup_package
             if (fr.Data) {
                 bool Added = false;
 
+                int64_t PRStart = NarGetPerfCounter(); 
                 if (init_package_reader_from_memory(&output[Count].Package, fr.Data, fr.Len)) {
                     backup_package *p = &output[Count];
                     p->Package.do_i_own_data = true;
                     uint64_t s;
                     void *BInfPtr = p->Package.get_entry("backup_information", &s);
+                    PackageReader += NarTimeElapsed(PRStart);
+
                     if (BInfPtr) {
                         
                         backup_information *BInf = (backup_information *)BInfPtr;
@@ -1012,9 +1043,12 @@ int32_t NarGetBackupsInDirectoryWithFilter(const UTF8 *Directory, backup_package
                 }
             }
 
-
         }
+
+        LoopElapsed = NarTimeElapsed(LoopStart);
+
     }
+
 
     FreeDirectoryList(Files, FileCount);
 
@@ -1058,9 +1092,9 @@ nar_binary_files* NarGetBinaryFilesInDirectory(const UTF8 *Directory, nar_backup
     void *Bf = malloc(NAR_BINARY_IDENTIFIER_SIZE);
 
     nar_binary_files *Result = (nar_binary_files *)calloc(sizeof(*Result), 1);
-    Result->Count    = Version;
-    Result->Files    = (File *)calloc(sizeof(Result->Files[0]),Result->Count);
-    Result->Versions = (int32_t *)calloc(sizeof(Result->Versions[0]),Result->Count);
+    Result->Count    = 0;
+    Result->Files    = (File *)calloc(sizeof(Result->Files[0]),Version + 2);
+    Result->Versions = (int32_t *)calloc(sizeof(Result->Versions[0]),Version + 2);
 
     for(uint64_t i=0;i<FC;++i){
         wchar_t *FilePath = NarUTF8ToWCHAR(Files[i]);
@@ -1071,16 +1105,19 @@ nar_binary_files* NarGetBinaryFilesInDirectory(const UTF8 *Directory, nar_backup
 
             s64 fs = get_file_size(&f); 
             if (fs > NAR_BINARY_IDENTIFIER_SIZE) {
-                
+                LOG_DEBUG("File : %S, fs %lld, fs - bid = %lld", FilePath, fs, fs - NAR_BINARY_IDENTIFIER_SIZE);
                 if (set_fp(&f, fs - NAR_BINARY_IDENTIFIER_SIZE)) {
                     if (read_file(&f, Bf, NAR_BINARY_IDENTIFIER_SIZE)) {
                         backup_binary_identifier Id;
                         if (NarValidateBinaryIdentifier(&Id, Bf, NAR_BINARY_IDENTIFIER_SIZE)) {
-                            if (NarCompareBackupID(Id.BackupID, BackupID)){
-                                Result->Files[Result->Count]    = f;
-                                Result->Versions[Result->Count] = Id.Version;
-                                Result->Count++;
-                                did_we_add_this = true;
+                            if (Id.Version <= Version) {
+                                if (NarCompareBackupID(Id.BackupID, BackupID)){
+                                    LOG_INFO("Id Version %d, pver : %d", Id.Version, Version);
+                                    Result->Files[Result->Count]    = f;
+                                    Result->Versions[Result->Count] = Id.Version;
+                                    Result->Count++;
+                                    did_we_add_this = true;
+                                }
                             }
                         }
                     }
@@ -1122,13 +1159,24 @@ bool NarReadVersion(nar_binary_files *Files, int32_t Version, void *Data, uint64
 
     // @Incomplete : error checking + proper logging
     // @LOG  : 
-    for(int i=0;i<Files->Count;++i)
-        if (Version == Files->Versions[i])
-            if (set_fp(&Files->Files[i], Offset))
-                if (read_file(&Files->Files[i], Data, Size))
+    for(int i=0;i<Files->Count;++i) {
+        if (Version == Files->Versions[i]) {
+            if (set_fp(&Files->Files[i], Offset)) {
+                if (read_file(&Files->Files[i], Data, Size)) {
                     return true;
-    
-
+                }
+                else {
+                    LOG_INFO("NarReadVersion failed, version requested was %d, offset : %lld, size : %lld", Version, Offset, Size);
+                    BG_ASSERT(false);
+                }
+            }
+            else {
+                LOG_INFO("NarReadVersion failed, version requested was %d, offset : %lld, size : %lld", Version, Offset, Size);
+                BG_ASSERT(false);
+            }
+        }
+    }
+    LOG_INFO("NarReadVersion failed, version requested was %d, offset : %lld, size : %lld", Version, Offset, Size);
     ASSERT(false);
     return false;
 }
@@ -1179,6 +1227,10 @@ Array<Array<backup_information_ex>> NarGetChainsInDirectory(const UTF8 *Director
 }
 
 
+void NarFreeChains(Array<Array<backup_information_ex>> & Chains) {
+    // @TODO : implement this!
+    // @Incomplete : 
+}
 
 
 
@@ -1221,6 +1273,9 @@ qs_comp_restore_inst_fn(const void *p1, const void *p2) {
 void
 sort_restore_instructions(Array<Restore_Instruction> & arr) {
     qsort(arr.data, arr.len, sizeof(arr[0]), qs_comp_restore_inst_fn);
+    for_array(i, arr) {
+        BG_ASSERT(arr[i].version >= 0);
+    }
 }
 
 

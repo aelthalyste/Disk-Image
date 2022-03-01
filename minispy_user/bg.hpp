@@ -1885,7 +1885,6 @@ get_fp(File *file) {
     LARGE_INTEGER start  ={};
     LARGE_INTEGER result ={};
     BOOL spresult = SetFilePointerEx(file->handle, start, &result, FILE_CURRENT);
-    BG_ASSERT(spresult);
     if (!spresult) {
         LOG_ERROR("Unable to get file pointer\n");
     }
@@ -1908,9 +1907,8 @@ set_fp(File *file, s64 offset) {
     start.QuadPart = offset;
     LARGE_INTEGER result ={};
     BOOL spresult = SetFilePointerEx(file->handle, start, &result, FILE_BEGIN);
-    BG_ASSERT(spresult);
     if (!spresult) {
-        LOG_ERROR("Unable to set file pointer\n");
+        LOG_ERROR("Unable to set file pointer, target : %lld, result  %lld\n", offset, result.QuadPart);
     }
     return result.QuadPart == offset;
 #else

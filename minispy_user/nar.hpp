@@ -97,13 +97,13 @@ enum BackupType {
     Inc
 };
 
+typedef int32_t compression_type;
+const compression_type NAR_NO_VERSION_FILTER = (1024 * 1024 * 1); // 1million version is sure big enough.
+const compression_type NAR_COMPRESSION_NONE = 0;
+const compression_type NAR_COMPRESSION_LZ4  = 1;
+const compression_type NAR_COMPRESSION_ZSTD = 2;
 
-const int32_t NAR_NO_VERSION_FILTER = (1024 * 1024 * 1); // 1million version is sure big enough.
-const int32_t NAR_COMPRESSION_NONE = 0;
-const int32_t NAR_COMPRESSION_LZ4  = 1;
-const int32_t NAR_COMPRESSION_ZSTD = 2;
-
-static inline bool NarIsCompressionTypeSupported(int32_t v) {
+static inline bool NarIsCompressionTypeSupported(compression_type v) {
     ASSERT(v != NAR_COMPRESSION_LZ4); // @NOTE : i am not sure whether we shoul support lz4 or not. its very experimental at this stage and i dont want anything to backed up with this assumption
     if (v == NAR_COMPRESSION_NONE ||  
         v == NAR_COMPRESSION_ZSTD)
@@ -112,15 +112,16 @@ static inline bool NarIsCompressionTypeSupported(int32_t v) {
 }
 
 #define NAR_BINARY_MAGIC_NUMBER    'NARB'
-#define NAR_BINARY_IDENTIFIER_SIZE (1024)
+#define NAR_BINARY_IDENTIFIER_SIZE (1024ll)
+#define NAR_COMPRESSION_HEADER_RESERVED_SIZE (1024ll)
 
 #pragma pack(push ,1) // force 1 byte alignment
 struct backup_binary_identifier {
-    uint32_t      Magic;
-    nar_backup_id BackupID;
-    int32_t       Version;
-    int32_t       CompressionType;
-    char          Letter; 
+    uint32_t               Magic;
+    nar_backup_id          BackupID;
+    int32_t                Version;
+    compression_type       CompressionType;
+    char                   Letter; 
 };
 #pragma pack(pop)
 
@@ -146,8 +147,8 @@ struct backup_information {
 
     uint8_t  IsOSVolume;
 
-    uint8_t IsBinaryDataCompressed;
-    uint8_t CompressionType;
+    uint8_t          IsBinaryDataCompressed;
+    compression_type CompressionType;
 
     nar_backup_id BackupID;
     Bg_Date MetadataTimeStamp;
@@ -421,6 +422,7 @@ void FreeDirectoryList(UTF8 **List, uint64_t Count);
 
 packages_for_restore LoadPackagesForRestore(const UTF8 *Directory, nar_backup_id BackupID, int32_t Version);
 void FreePackagesForRestore(packages_for_restore *Packages);
+bool BG_API AdvanceRestore(struct Restore_Ctx *ctx, struct Restore_Instruction *instruction);
 bool BG_API InitRestore(struct Restore_Ctx *output, const UTF8 *DirectoryToLook, nar_backup_id BackupID, int32_t Version);
 void BG_API FreeRestoreCtx(struct Restore_Ctx *ctx);
 bool NarCompareBackupID(nar_backup_id id1, nar_backup_id id2);

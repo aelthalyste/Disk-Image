@@ -49,9 +49,265 @@
 #include <unordered_map>
 #include <conio.h>
 
-int main() {
+
+HANDLE
+NarOpenVolume(char Letter) {
+    char VolumePath[64];
+    snprintf(VolumePath, 64, "\\\\.\\%c:", Letter);
+    
+    HANDLE Volume = CreateFileA(VolumePath, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_WRITE | FILE_SHARE_READ | FILE_SHARE_DELETE, 0, OPEN_EXISTING, 0, 0);
+    if (Volume != INVALID_HANDLE_VALUE) {
+        
+        
+#if 1  
+        if (DeviceIoControl(Volume, FSCTL_LOCK_VOLUME, 0, 0, 0, 0, 0, 0)) {
+            
+        }
+        else {
+            // NOTE(Batuhan): this isnt an error, tho prohibiting volume access for other processes would be great.
+            printf("Couldn't lock volume %c\n", Letter);
+        }
+        
+        
+        if (DeviceIoControl(Volume, FSCTL_DISMOUNT_VOLUME, 0, 0, 0, 0, 0, 0)) {
+            
+        }
+        else {
+            // printf("Couldnt dismount volume\n");
+        }
+        
+#endif
+        
+        
+    }
+    else {
+        printf("Couldn't open volume %c\n", Letter);
+    }
+    
+    return Volume;
+}
+
+
+void TestBackup(const char *OutputDirectory, char Volume, int Count) {
+    
+
+    // useful when calculating compression ratio
+    uint64_t g_TotalBytesTransferred = 0;
+    uint64_t g_ActualBytes           = 0; 
+
+    size_t bsize = 64 * 1024 * 1024;
+    void *MemBuf = malloc(bsize);
+    
+    LOG_CONTEXT C = {0};
+    C.Port = INVALID_HANDLE_VALUE;
+
+    if (SetupVSS() && ConnectDriver(&C)) {
+        BackupType bt = BackupType::Inc;
+        AddVolumeToTrack(&C, Volume, bt);
+
+        DotNetStreamInf inf = {0};
+
+        uint64_t BFCAP = Megabyte(4);
+        void *bf = malloc(BFCAP);
+
+        for(int _vi=0;_vi<Count;++_vi) {
+
+            uint64_t TotalRead    = 0;
+            uint64_t TotalWritten = 0;
+            uint64_t BytesToTransfer = 0;
+
+            char BinaryExtension[256];
+            memset(BinaryExtension, 0, sizeof(BinaryExtension));
+
+            char BackupIDAsStr[1024];
+            memset(BackupIDAsStr,0,sizeof(BackupIDAsStr));
+            
+            char fn[1024];
+            memset(fn,0,sizeof(fn));
+
+            auto r = SetupStream(&C, Volume, bt, &BytesToTransfer, BinaryExtension, NAR_COMPRESSION_NONE);
+            ASSERT(r);
+
+            int id = GetVolumeID(&C, (wchar_t)Volume);
+            volume_backup_inf *v = &C.Volumes.Data[id];
+            
+            NarBackupIDToStr(v->BackupID, BackupIDAsStr, sizeof(BackupIDAsStr));
+
+            snprintf(fn, sizeof(fn), "%s\\%s-%d.%s", OutputDirectory, BackupIDAsStr, _vi, BinaryExtension);
+
+            File binary_file = create_file(fn);
+            ASSERT(is_file_handle_valid(&binary_file));
+
+            for(;;) {
+                uint32_t BytesToWrite = ReadStream(&v->Stream, bf, BFCAP);
+                if (BytesToWrite==0)
+                    break;
+
+                TotalWritten += BytesToWrite;
+                r = write_file(&binary_file, bf, BytesToWrite);
+                ASSERT(r);
+            }
+
+            char MetadataName[1024];
+            memset(MetadataName,0,sizeof(MetadataName));
+            r = TerminateBackup(v, true, OutputDirectory, MetadataName);
+            ASSERT(r);
+
+            g_TotalBytesTransferred += TotalWritten;
+            LOG_INFO("Backup %d done, Binary Name %s, Metadata name is %s", fn, MetadataName);
+            close_file(&binary_file);
+        }
+
+    }
+
+}
+
+
+void ListChains(const char *Directory) {
+
+    Array<Array<backup_information_ex>> Chains = NarGetChainsInDirectory(Directory);
+    for_array (ci, Chains) {
+        fprintf(stdout, "####################\n");
+        for_array (vi, Chains[ci]) {
+            fprintf(stdout, "Metadata path : %s\n", Chains[ci][vi].Path);
+            fprintf(stdout, "Letter : %d\n" , Chains[ci][vi].Version);
+            fprintf(stdout, "Version : %d\n", Chains[ci][vi].Letter);
+            fprintf(stdout, "Binary size : %llu\n", Chains[ci][vi].SizeOfBinaryData);
+            fprintf(stdout, "\n");
+        }
+        fprintf(stdout, "####################\n");
+    }
+    NarFreeChains(Chains);
+}
+
+
+void DoRestore(const char *Directory, char OutputVolumeLetter) {
+    
+    Array<Array<backup_information_ex>> Chains = NarGetChainsInDirectory(Directory);
+    for_array (ci, Chains) {
+        fprintf(stdout, "####################\n");
+        fprintf(stdout, "%2llu -) Letter        : %c\n", ci, Chains[ci][0].Letter);
+        fprintf(stdout, "%2llu -) Version Count : %d\n", ci, Chains[ci].len);
+        fprintf(stdout, "%2llu -) Backup type   : %s\n", ci, Chains[ci][0].BT == BackupType::Inc ? "Inc" : "Diff");
+        fprintf(stdout, "####################\n");
+    }
+
+    int32_t ChainIndice;
+    int32_t VersionIndice;
+
+    fprintf(stdout, "Please select chain....");
+    scanf("%d", &ChainIndice);
+
+    
+    fprintf(stdout, "Please select version...");
+    scanf("%d", &VersionIndice);
+
+    Restore_Ctx ctx;
+    
+
+    bool r = InitRestore(&ctx, Directory, Chains[ChainIndice][VersionIndice].BackupID, VersionIndice);
+    nar_binary_files *BinaryFiles = NarGetBinaryFilesInDirectory(Directory, Chains[ChainIndice][VersionIndice].BackupID, VersionIndice);
+    ASSERT(BinaryFiles);
+
+    uint64_t BufferCap = 1024 * 1024 * 4;
+    void *Buffer = malloc(BufferCap);
+    
+    HANDLE OutputVolume = NarOpenVolume(OutputVolumeLetter);
+    ASSERT(OutputVolume != INVALID_HANDLE_VALUE);
 
     {
+        uint64_t ZeroCount = 0;
+        uint64_t NormalCount = 0;
+        for(int i=0;i<ctx.instructions.len;++i) {
+            if (ctx.instructions[i].instruction_type == NORMAL) {
+                BG_ASSERT(ctx.instructions[i].version >= 0);
+            }
+            if (ctx.instructions[i].instruction_type == ZERO)
+                ZeroCount += ctx.instructions[i].where_to_read.len;
+            if (ctx.instructions[i].instruction_type == NORMAL)
+                NormalCount += ctx.instructions[i].where_to_read.len;
+            
+            // if (ctx.instructions[i].instruction_type == NORMAL) {
+            //     LOG_DEBUG("write : %10lld-%10lld, read : %10lld-%10lld", (uint64_t)ctx.instructions[i].where_to_write.off*4096ull, (uint64_t)ctx.instructions[i].where_to_write.len*4096ull, (uint64_t)ctx.instructions[i].where_to_read.off*4096ull, (uint64_t)ctx.instructions[i].where_to_read.len*4096ull);
+            // }
+            
+        }
+
+        LOG_DEBUG("Zero : %10llu --- Normal : %10llu, per : %.3f", ZeroCount, NormalCount, (double)ZeroCount/(double)(ZeroCount + NormalCount));
+        // ASSERT(false);
+    }
+
+
+    for(int _ic=0;;++_ic){
+        Restore_Instruction instruction;
+        if (AdvanceRestore(&ctx, &instruction)) {
+            if (instruction.instruction_type == ZERO)
+                continue;
+
+            uint64_t rem=instruction.where_to_read.len;
+
+            {
+                LARGE_INTEGER Target;
+                LARGE_INTEGER SFPResult;
+                Target.QuadPart = (uint64_t)instruction.where_to_write.off*4096ll;
+
+                bool sfpr = SetFilePointerEx(OutputVolume, Target, &SFPResult, FILE_BEGIN);
+                BG_ASSERT(sfpr && SFPResult.QuadPart == Target.QuadPart);
+            }
+
+            while(instruction.where_to_read.len) {
+                uint64_t ReadSize = BG_MIN(BufferCap/4096, instruction.where_to_read.len); 
+                ReadSize *= 4096;
+                
+                if (instruction.instruction_type == NORMAL)  {
+                    bool RVR = NarReadVersion(BinaryFiles, instruction.version, Buffer, (uint64_t)instruction.where_to_read.off * 4096ll, ReadSize);
+                    BG_ASSERT(instruction.version >= 0);
+                    ASSERT(RVR);
+                    
+                    DWORD Written = 0;
+                    if (WriteFile(OutputVolume, Buffer, ReadSize, &Written, 0) && Written == ReadSize) {
+                        instruction.where_to_read.len -= ReadSize/4096;
+                        instruction.where_to_read.off += ReadSize/4096;
+
+                        // ok
+                    }
+                    else {
+                        LOG_INFO("Error code : %d", GetLastError());
+                        LOG_INFO("Written : %lld, ReadSize : %lld, Instruction Offset : %lld, Instruction Len : %lld", Written, ReadSize, instruction.where_to_read.off, instruction.where_to_read.len); 
+                        ASSERT(false);
+                    }
+                } 
+
+                
+
+                // else {
+                //     memset(Buffer, 0, ReadSize); 
+                // }
+                // if (instruction.instruction_type == ZERO) {
+                //     LOG_INFO("[%4d] -> Written : %10lld, Read Offset : %10lld, Write Offset : %10lld, Instruction Remaining Len : %10lld, Version : %2d", _ic, Written, (int64_t)instruction.where_to_read.off * 4096, instruction.where_to_write.off, instruction.where_to_read.len, instruction.version);
+                // }
+            }
+        }
+        else {break;}
+    }
+    LOG_INFO("DONE!");
+
+    CloseHandle(OutputVolume);
+    ASSERT(r);
+
+    NarFreeChains(Chains);
+
+}
+
+
+int main(int argc, char *argv[]) {
+
+    if      (0 == strcmp(argv[1], "list"))    ListChains(argv[2]);
+    else if (0 == strcmp(argv[1], "backup"))  TestBackup(argv[2], argv[3][0], atoi(argv[4]));
+    else if (0 == strcmp(argv[1], "restore")) DoRestore(argv[2], argv[3][0]);
+    return 0;
+
+    if (0) {
         file_read FR = NarReadFile("C:\\Users\\User\\Desktop\\NAR_LOG_FILE_C.nlfx");
         nar_record *regs = (nar_record *)FR.Data;
         int32_t RegCount = FR.Len/sizeof(nar_record);
@@ -76,7 +332,7 @@ int main() {
 
 
     backup_package Output[1024];
-    {
+    if (0) {
         int c = NarGetBackupsInDirectory("D:\\", Output, 1024);
         for(int i=0;i<c;++i) {
             fprintf(stdout, "Volume  %c\n", Output[i].BackupInformation.Letter);
@@ -85,6 +341,15 @@ int main() {
             fprintf(stdout, "Original size of volume  %10llu (gb -> %10llu)\n", Output[i].BackupInformation.OriginalSizeOfVolume, Output[i].BackupInformation.SizeOfBinaryData / (1024ull * 1024 * 1024));
             fprintf(stdout, "########\n");
         }
+    }
+
+    if (0) {
+        char Dir[] = "D:\\";
+        auto arr = NarGetChainsInDirectory(Dir);
+        NarFreeChains(arr);
+
+        nar_binary_files *arr2 = NarGetBinaryFilesInDirectory(Dir, arr[0][0].BackupID, 4);
+        NarFreeBinaryFilesInDirectory(arr2);        
     }
 
     size_t bsize = 64 * 1024 * 1024;
@@ -101,14 +366,15 @@ int main() {
         printf("ENTER LETTER TO DO BACKUP\n");
         std::cin>>Volume;
         
+        uint64_t BFCAP = Megabyte(16);
+        void *bf = malloc(BFCAP);
+
         for (int __i=0;
-            __i<2;
+            __i<5;
             ++__i) 
         {
             
             memset(&inf, 0, sizeof(inf));
-            
-            
             BackupType bt = BackupType::Inc;
 
             uint64_t TotalRead    = 0;
@@ -118,7 +384,7 @@ int main() {
             char BinaryExtension[256];
             memset(BinaryExtension,0, sizeof(BinaryExtension));
 
-            if(SetupStream(&C, (wchar_t)Volume, bt, &BytesToTransfer, BinaryExtension, NAR_COMPRESSION_ZSTD)){
+            if(SetupStream(&C, (wchar_t)Volume, bt, &BytesToTransfer, BinaryExtension, NAR_COMPRESSION_NONE)){
                 
                 int id = GetVolumeID(&C, (wchar_t)Volume);
                 volume_backup_inf *v = &C.Volumes.Data[id];
@@ -128,22 +394,35 @@ int main() {
                 snprintf(fn, sizeof(fn), "D:\\tempfile-%d.%s", __i, BinaryExtension);
 
 
-                HANDLE file = CreateFileA(fn, 
-                                  GENERIC_WRITE | GENERIC_READ, 
-                                  0, 0, 
-                                  CREATE_ALWAYS, 
-                                  0, 0);
+                File binary_file = create_file(fn);
+                BG_ASSERT(is_file_handle_valid(&binary_file));
+
+                v->Stream.RecIndex = v->Stream.RecordCount;
+                
+                {
+                    bool r = write_file(&binary_file, bf, BFCAP);
+                    BG_ASSERT(r);
+                }
+
+
+                {
+                    uint32_t btw = ReadStream(&v->Stream, bf, BFCAP);
+                    BG_ASSERT(btw);
+
+                    bool r = write_file(&binary_file, bf, btw);
+                    BG_ASSERT(r);
+                }
 
                 char MetadataOutput[1024];
                 if (TerminateBackup(v, 1, "D:\\", MetadataOutput)) {
                     printf("Metadata saved as %s", MetadataOutput);
                 }
                 else {
+                    BG_ASSERT(false);
                     printf("Unable to terminate backup!\n");
                 }
 
-                CloseHandle(file);
-
+                close_file(&binary_file);
             }
         }
 

@@ -1054,9 +1054,9 @@ NarSetupVSSListen(nar_backup_id ID){
         OVERLAPPED ov = {};
         OK = ConnectNamedPipe(Result.PipeHandle, &ov);
         bool Connected = false;
-        // poll for 2.5s
+        // poll for 5s
         DWORD Garbage = 0;
-        uint32_t WaitMs = 1000;
+        uint32_t WaitMs = 5000;
         if(!GetOverlappedResultEx(Result.PipeHandle, &ov, &Garbage, WaitMs, FALSE)){
             printf("Couldn't estabilish connection to process in %u ms, failed, error code : %d\n", WaitMs, GetLastError());
             goto FAIL;
@@ -1485,8 +1485,8 @@ SetIncRecords(HANDLE CommPort, volume_backup_inf* V) {
     
     DWORD TargetReadSize = (DWORD)(V->PossibleNewBackupRegionOffsetMark - V->IncLogMark.LastBackupRegionOffset);
     
-    V->Stream.Records.Data = 0;
-    V->Stream.Records.Count = 0;
+    V->Stream.Records       = NULL;
+    V->Stream.RecordCount   = 0;
     
     std::wstring logfilepath = GenerateLogFilePath((char)V->Letter);
     HANDLE LogHandle = CreateFileW(logfilepath.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, 0, OPEN_EXISTING, 0, 0);
@@ -1497,19 +1497,19 @@ SetIncRecords(HANDLE CommPort, volume_backup_inf* V) {
         
         if(NarSetFilePointer(LogHandle, (uint64_t)V->IncLogMark.LastBackupRegionOffset)){
             
-            V->Stream.Records.Data = (nar_record*)malloc(TargetReadSize);
-            V->Stream.Records.Count = TargetReadSize/sizeof(nar_record);
+            V->Stream.Records     = (nar_record *)malloc(TargetReadSize);
+            V->Stream.RecordCount = TargetReadSize/sizeof(nar_record);
             DWORD BytesRead = 0;
             
-            if(ReadFile(LogHandle, V->Stream.Records.Data, TargetReadSize, &BytesRead, 0) && BytesRead == TargetReadSize){
+            if(ReadFile(LogHandle, V->Stream.Records, TargetReadSize, &BytesRead, 0) && BytesRead == TargetReadSize){
                 Result = TRUE;
             }
             else{
                 
                 printf("SetIncRecords Couldnt read %lu, instead read %lu\n", TargetReadSize, BytesRead);
                 if(BytesRead == 0){
-                    free(V->Stream.Records.Data);
-                    V->Stream.Records.Count = 0;
+                    free(V->Stream.Records);
+                    V->Stream.RecordCount = 0;
                 }
                 
             }
@@ -1529,8 +1529,8 @@ SetIncRecords(HANDLE CommPort, volume_backup_inf* V) {
         
     }
     else{
-        V->Stream.Records.Data = 0;
-        V->Stream.Records.Count = 0;
+        V->Stream.Records     = NULL;
+        V->Stream.RecordCount = 0;
         Result = TRUE;
     }
     
@@ -1605,18 +1605,19 @@ SetDiffRecords(HANDLE CommPort ,volume_backup_inf* V) {
         
         if(NarSetFilePointer(LogHandle, V->DiffLogMark.BackupStartOffset)){
             
-            V->Stream.Records.Data = (nar_record*)malloc(TargetReadSize);
-            V->Stream.Records.Count = TargetReadSize / sizeof(nar_record);
+            V->Stream.Records     = (nar_record*)malloc(TargetReadSize);
+            V->Stream.RecordCount = TargetReadSize / sizeof(nar_record);
             DWORD BytesRead = 0;
-            if(ReadFile(LogHandle, V->Stream.Records.Data, TargetReadSize, &BytesRead,0) && BytesRead == TargetReadSize){
+            if(ReadFile(LogHandle, V->Stream.Records, TargetReadSize, &BytesRead,0) && BytesRead == TargetReadSize){
                 printf("Succ read diff records, will sort and merge regions to save in space\n");
                 Result = TRUE;
             }
             else{
                 printf("SetDiffRecords Couldnt read %lu, instead read %lu\n", TargetReadSize, BytesRead);
                 
-                free(V->Stream.Records.Data);
-                V->Stream.Records.Count = 0;
+                free(V->Stream.Records);
+                V->Stream.Records     = NULL;
+                V->Stream.RecordCount = 0;
             }
             
         }
@@ -1635,8 +1636,8 @@ SetDiffRecords(HANDLE CommPort ,volume_backup_inf* V) {
         
     }
     else{
-        V->Stream.Records.Data = 0;
-        V->Stream.Records.Count = 0;
+        V->Stream.Records     = NULL;
+        V->Stream.RecordCount = 0;
         Result = TRUE;
     }
     
@@ -1654,10 +1655,10 @@ SetFullRecords(volume_backup_inf* V) {
     //UINT* ClusterIndices = 0;
     
     uint32_t Count = 0;
-    V->Stream.Records.Data  = GetVolumeRegionsFromBitmap(V->Stream.Handle, &Count);
-    V->Stream.Records.Count = Count;
+    V->Stream.Records     = GetVolumeRegionsFromBitmap(V->Stream.Handle, &Count);
+    V->Stream.RecordCount = Count;
     
-    return (V->Stream.Records.Data != NULL);
+    return (V->Stream.Records != NULL);
 }
 
 
@@ -1937,8 +1938,10 @@ SetupFullOnlyStream(wchar_t Letter, DotNetStreamInf *SI, bool ShouldCompress, bo
             if(Result.Stream.Handle != INVALID_HANDLE_VALUE){
                 
                 // NOTE(Batuhan): Fetch backup indices
-                Result.Stream.Records.Data = GetVolumeRegionsFromBitmap(Result.Stream.Handle, &Result.Stream.Records.Count);
-                
+                uint32_t Ttt = 0;
+                Result.Stream.Records = GetVolumeRegionsFromBitmap(Result.Stream.Handle, &Ttt);
+                Result.Stream.RecordCount = Ttt;
+
 #if 0           // we dont need _that_     
                 data_array<nar_record> MFTandINDXRegions = GetMFTandINDXLCN((char)Letter, Result.Stream.Handle);
                 Result.Stream.Records.Data = (nar_record*)realloc(Result.Stream.Records.Data, (Result.Stream.Records.Count + MFTandINDXRegions.Count) * sizeof(nar_record));
@@ -1975,26 +1978,26 @@ SetupFullOnlyStream(wchar_t Letter, DotNetStreamInf *SI, bool ShouldCompress, bo
         SI->ClusterCount = 0;
         SI->ClusterSize = Result.Stream.ClusterSize;
         
-        for(unsigned int RecordIndex = 0; RecordIndex < Result.Stream.Records.Count; RecordIndex++){
-            if((int64_t)Result.Stream.Records.Data[RecordIndex].StartPos + (int64_t)Result.Stream.Records.Data[RecordIndex].Len > (int64_t)Result.VolumeTotalClusterCount){
+        for(unsigned int RecordIndex = 0; RecordIndex < Result.Stream.RecordCount; RecordIndex++){
+            if((int64_t)Result.Stream.Records[RecordIndex].StartPos + (int64_t)Result.Stream.Records[RecordIndex].Len > (int64_t)Result.VolumeTotalClusterCount){
                 TruncateIndex = RecordIndex;
                 break;
             }
             else{
-                SI->ClusterCount += Result.Stream.Records.Data[RecordIndex].Len;
+                SI->ClusterCount += Result.Stream.Records[RecordIndex].Len;
             }
         }
         
         
         if(TruncateIndex > 0){
-            printf("Found regions that exceeds volume size, truncating stream record array from %i to %i\n", Result.Stream.Records.Count, TruncateIndex);
+            printf("Found regions that exceeds volume size, truncating stream record array from %i to %i\n", Result.Stream.RecordCount, TruncateIndex);
             
             uint32_t NewEnd = Result.VolumeTotalClusterCount;
-            Result.Stream.Records.Data[TruncateIndex].Len = NewEnd - Result.Stream.Records.Data[TruncateIndex].StartPos;
+            Result.Stream.Records[TruncateIndex].Len = NewEnd - Result.Stream.Records[TruncateIndex].StartPos;
             
-            Result.Stream.Records.Data = 
-                (nar_record*)realloc(Result.Stream.Records.Data, (TruncateIndex + 1)*sizeof(nar_record));            
-            Result.Stream.Records.Count = TruncateIndex + 1;
+            Result.Stream.Records = 
+                (nar_record*)realloc(Result.Stream.Records, (TruncateIndex + 1)*sizeof(nar_record));            
+            Result.Stream.RecordCount = TruncateIndex + 1;
         }
         
         
@@ -2111,8 +2114,8 @@ SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, uint64_t *BytesToTransfe
     printf("Entered setup stream for volume %c, version %i\n", (char)L, VolInf->Version);
     
     VolInf->Stream.ClusterIndex = 0;
-    VolInf->Stream.RecIndex = 0;
-    VolInf->Stream.Records.Count = 0;
+    VolInf->Stream.RecIndex    = 0;
+    VolInf->Stream.RecordCount = 0;
     
     auto AppendINDXnMFTLCNToStream = [&]() {
         TIMED_NAMED_BLOCK("AppendINDXMFTLCN");
@@ -2121,14 +2124,22 @@ SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, uint64_t *BytesToTransfe
             
             printf("Parsed MFTLCN for volume %c for version %i\n", (wchar_t)VolInf->Letter, VolInf->Version);
             
-            VolInf->Stream.Records.Data = (nar_record*)realloc(VolInf->Stream.Records.Data, (VolInf->Stream.Records.Count + MFTandINDXRegions.Count) * sizeof(nar_record));
-            memcpy(&VolInf->Stream.Records.Data[VolInf->Stream.Records.Count], MFTandINDXRegions.Data, MFTandINDXRegions.Count * sizeof(nar_record));
             
-            VolInf->Stream.Records.Count += MFTandINDXRegions.Count;
+            VolInf->Stream.Records = (nar_record*)realloc(VolInf->Stream.Records, (VolInf->Stream.RecordCount + MFTandINDXRegions.Count) * sizeof(nar_record));
+            memcpy(&VolInf->Stream.Records[VolInf->Stream.RecordCount], MFTandINDXRegions.Data, MFTandINDXRegions.Count * sizeof(nar_record));
+            VolInf->Stream.RecordCount += MFTandINDXRegions.Count;
             
-            qsort(VolInf->Stream.Records.Data, VolInf->Stream.Records.Count, sizeof(nar_record), CompareNarRecords);
-            MergeRegions(&VolInf->Stream.Records);
             
+            qsort(VolInf->Stream.Records, VolInf->Stream.RecordCount, sizeof(nar_record), CompareNarRecords);
+            
+            data_array<nar_record> Temp;
+            Temp.Data  = VolInf->Stream.Records;
+            Temp.Count = VolInf->Stream.RecordCount;
+
+            MergeRegions(&Temp);
+            VolInf->Stream.Records = Temp.Data;
+            VolInf->Stream.RecordCount = Temp.Count;
+
 #if 0            
             for(size_t i =0; i<VolInf->Stream.Records.Count; i++){
                 printf("MERGED REGIONS OVERALL : %9u %9u\n", VolInf->Stream.Records.Data[i].StartPos, VolInf->Stream.Records.Data[i].Len);
@@ -2233,13 +2244,13 @@ SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, uint64_t *BytesToTransfe
         uint64_t ClusterCount = 0;
         uint64_t ClusterSize  = V->ClusterSize;
         
-        for(unsigned int RecordIndex = 0; RecordIndex < V->Stream.Records.Count; RecordIndex++){
-            if((int64_t)V->Stream.Records.Data[RecordIndex].StartPos + (int64_t)V->Stream.Records.Data[RecordIndex].Len > (int64_t)V->VolumeTotalClusterCount){
+        for(unsigned int RecordIndex = 0; RecordIndex < V->Stream.RecordCount; RecordIndex++){
+            if((int64_t)V->Stream.Records[RecordIndex].StartPos + (int64_t)V->Stream.Records[RecordIndex].Len > (int64_t)V->VolumeTotalClusterCount){
                 TruncateIndex = RecordIndex;
                 break;
             }
             else{
-                ClusterCount += V->Stream.Records.Data[RecordIndex].Len;
+                ClusterCount += V->Stream.Records[RecordIndex].Len;
             }
         }
         
@@ -2250,21 +2261,25 @@ SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, uint64_t *BytesToTransfe
 
         // @NOTE : truncate exceeding clusters
         if(TruncateIndex > 0){
-            printf("Found regions that exceeds volume size, truncating stream record array from %i to %i\n", V->Stream.Records.Count, TruncateIndex);
+            printf("Found regions that exceeds volume size, truncating stream record array from %i to %i\n", V->Stream.RecordCount, TruncateIndex);
             
             uint32_t NewEnd = V->VolumeTotalClusterCount;
-            V->Stream.Records.Data[TruncateIndex].Len = NewEnd - V->Stream.Records.Data[TruncateIndex].StartPos;
+            V->Stream.Records[TruncateIndex].Len = NewEnd - V->Stream.Records[TruncateIndex].StartPos;
             
-            ASSERT(V->Stream.Records.Data[TruncateIndex].StartPos + V->Stream.Records.Data[TruncateIndex].Len <= V->VolumeTotalClusterCount);
-            
-            V->Stream.Records.Data = 
-                (nar_record*)realloc(V->Stream.Records.Data, (TruncateIndex + 1)*sizeof(nar_record));            
-            V->Stream.Records.Count = TruncateIndex + 1;
+            ASSERT(V->Stream.Records[TruncateIndex].StartPos + V->Stream.Records[TruncateIndex].Len <= V->VolumeTotalClusterCount);
+            if (V->Stream.Records[TruncateIndex].Len == 0) {
+                --TruncateIndex;
+            }
+            ASSERT(TruncateIndex != 0);
+
+            V->Stream.Records = 
+                (nar_record*)realloc(V->Stream.Records, (TruncateIndex + 1)*sizeof(nar_record));            
+            V->Stream.RecordCount = TruncateIndex + 1;
         }
         else if (TruncateIndex == 0) {
             printf("Error occured, trimming all stream record information\n");
             Return = FALSE;
-            FreeDataArray(&V->Stream.Records);
+            free(V->Stream.Records);
         }
 
 
@@ -2349,7 +2364,11 @@ TerminateBackup(volume_backup_inf* V, int32_t Succeeded, const char *DirectoryTo
             strcat(FP, DirectoryToEmitMetadata);
             strcat(FP, "\\");
         }
+        char vstr[25];
+        snprintf(vstr, sizeof(vstr), "%d", V->Version);
         strcat(FP, BackupIDStr);
+        strcat(FP, "-");
+        strcat(FP, vstr); 
         strcat(FP, NAR_METADATA_EXTENSION);
         
 
@@ -2358,7 +2377,10 @@ TerminateBackup(volume_backup_inf* V, int32_t Succeeded, const char *DirectoryTo
             strcpy(OutputMetadataName, FP);
         }
 
-        if(!!SaveMetadata((char)V->Letter, V->Version, V->ClusterSize, V->BT, V->Stream.Records, V->BackupID, V->Stream.ShouldCompress, V->Stream.CompressionType, V->Stream.CompInf, V->Stream.CBII, FP)){
+        data_array<nar_record> Temp;
+        Temp.Data  = V->Stream.Records;
+        Temp.Count = V->Stream.RecordCount;
+        if(!!SaveMetadata((char)V->Letter, V->Version, V->ClusterSize, V->BT, Temp, V->BackupID, V->Stream.ShouldCompress, V->Stream.CompressionType, V->Stream.CompInf, V->Stream.CBII, FP)){
             
             if(V->BT == BackupType::Inc)
                 V->IncLogMark.LastBackupRegionOffset = V->PossibleNewBackupRegionOffsetMark;
@@ -2390,8 +2412,8 @@ TerminateBackup(volume_backup_inf* V, int32_t Succeeded, const char *DirectoryTo
         CloseHandle(V->Stream.Handle);
         V->Stream.Handle = INVALID_HANDLE_VALUE;
     }
-    if(V->Stream.Records.Data != NULL){
-        FreeDataArray(&V->Stream.Records);
+    if(V->Stream.Records != NULL){
+        free(V->Stream.Records);
     }
     if(V->Stream.CompInf != 0){
         free(V->Stream.CompInf);
@@ -2400,10 +2422,10 @@ TerminateBackup(volume_backup_inf* V, int32_t Succeeded, const char *DirectoryTo
         V->Stream.MaxCBI = 0;
     }
     
-    V->Stream.Records.Count = 0;
-    V->Stream.RecIndex = 0;
+    V->Stream.RecordCount  = 0;
+    V->Stream.RecIndex     = 0;
     V->Stream.ClusterIndex = 0;
-    
+
     NarTerminateVSS(&V->PLCtx, 1);
     NarFreeProcessListen(&V->PLCtx);
     
@@ -2411,22 +2433,14 @@ TerminateBackup(volume_backup_inf* V, int32_t Succeeded, const char *DirectoryTo
 }
 
 
+uint32_t ReadStreamRaw(backup_stream *Stream, void *CallerBuffer, uint32_t CallerBufferSize) {
 
-
-// Assumes CallerBufferSize >= NAR_COMPRESSION_FRAME_SIZE
-uint32_t
-ReadStream(backup_stream *Stream, void* CallerBuffer, uint32_t CallerBufferSize) {
-    
-    //TotalSize MUST be multiple of cluster size
+    // TotalSize MUST be multiple of cluster size
     uint32_t Result = 0;
     
     void* BufferToFill = CallerBuffer;
-    unsigned int TotalSize = CallerBufferSize;
-    if(true == Stream->ShouldCompress){
-        BufferToFill    = Stream->CompressionBuffer;
-        TotalSize       = (uint32_t)Stream->BufferSize;
-    }
-    
+    uint32_t TotalSize = CallerBufferSize;
+
     if (TotalSize == 0) {
         printf("Passed totalsize as 0, terminating now\n");
         return TRUE;
@@ -2435,52 +2449,31 @@ ReadStream(backup_stream *Stream, void* CallerBuffer, uint32_t CallerBufferSize)
     unsigned int RemainingSize = TotalSize;
     void* CurrentBufferOffset  = BufferToFill;
     
-    if ((uint32_t)Stream->RecIndex >= Stream->Records.Count) {
-        if (!Stream->DidWePushTheBinaryIdentifier) {
-            backup_binary_identifier ID;
-            ID.Magic           = NAR_BINARY_MAGIC_NUMBER;
-            memcpy(&ID.BackupID, &Stream->BackupID, sizeof(Stream->BackupID));
-            ID.CompressionType = NAR_COMPRESSION_ZSTD;  
-            ID.Letter          = Stream->Letter;
-            memset((char *)CallerBuffer + Result,0,NAR_BINARY_IDENTIFIER_SIZE);
-            
-            Result += NAR_BINARY_IDENTIFIER_SIZE;
-            Stream->DidWePushTheBinaryIdentifier = 1;
-        }
-        printf("End of the stream\n", Stream->RecIndex, Stream->Records.Count);
+    if ((uint32_t)Stream->RecIndex >= Stream->RecordCount) {
+        printf("End of the stream\n", Stream->RecIndex, Stream->RecordCount);
         return Result;
     }
     
     
     while (RemainingSize) {
         
-        if ((uint32_t)Stream->RecIndex >= Stream->Records.Count) {
-            printf("Rec index was higher than record's count, result %u, rec_index %i rec_count %i\n", Result, Stream->RecIndex, Stream->Records.Count);
+        if ((uint32_t)Stream->RecIndex >= Stream->RecordCount) {
+            printf("Rec index was higher than record's count, result %u, rec_index %i rec_count %i\n", Result, Stream->RecIndex, Stream->RecordCount);
             break;
         }
         
         DWORD BytesReadAfterOperation = 0;
         
-        uint64_t ClustersRemainingByteSize = (uint64_t)Stream->Records.Data[Stream->RecIndex].Len - (uint64_t)Stream->ClusterIndex;
+        uint64_t ClustersRemainingByteSize = (uint64_t)Stream->Records[Stream->RecIndex].Len - (uint64_t)Stream->ClusterIndex;
         ClustersRemainingByteSize *= Stream->ClusterSize;
         
         
         DWORD ReadSize = (DWORD)MIN((uint64_t)RemainingSize, ClustersRemainingByteSize); 
         
-        ULONGLONG FilePtrTarget = (ULONGLONG)Stream->ClusterSize * ((ULONGLONG)Stream->Records.Data[Stream->RecIndex].StartPos + (ULONGLONG)Stream->ClusterIndex);
+        ULONGLONG FilePtrTarget = (ULONGLONG)Stream->ClusterSize * ((ULONGLONG)Stream->Records[Stream->RecIndex].StartPos + (ULONGLONG)Stream->ClusterIndex);
         if (NarSetFilePointer(Stream->Handle, FilePtrTarget)) {
             
             Stream->BytesReadOffset = FilePtrTarget;
-            
-#if 0
-            ASSERT(ReadSize % 4096 == 0);
-            ASSERT(FilePtrTarget % 4096 == 0);
-            ASSERT(((char*)CurrentBufferOffset - (char*)BufferToFill) % 4096 == 0);
-            
-            if(VolInf->Version != NAR_FULLBACKUP_VERSION){
-                printf("BackupRead : Reading %9I64u clusters from volume offset %9I64u, writing it to buffer offset of %9I64u\n", ReadSize/4096ull, FilePtrTarget/4096, (char*)CurrentBufferOffset - (char*)BufferToFill);
-            }
-#endif
             
             BOOL OperationResult = ReadFile(Stream->Handle, CurrentBufferOffset, ReadSize, &BytesReadAfterOperation, 0);
             Result += BytesReadAfterOperation;
@@ -2489,10 +2482,10 @@ ReadStream(backup_stream *Stream, void* CallerBuffer, uint32_t CallerBufferSize)
             
             if (!OperationResult || BytesReadAfterOperation != ReadSize) {
                 printf("STREAM ERROR: Couldnt read %lu bytes, instead read %lu, error code %i\n", ReadSize, BytesReadAfterOperation, OperationResult);
-                printf("rec_index % i rec_count % i, remaining bytes %I64u, offset at disk %I64u\n", Stream->RecIndex, Stream->Records.Count, ClustersRemainingByteSize, FilePtrTarget);
+                printf("rec_index % i rec_count % i, remaining bytes %I64u, offset at disk %I64u\n", Stream->RecIndex, Stream->RecordCount, ClustersRemainingByteSize, FilePtrTarget);
                 printf("Total bytes read for buffer %u\n", Result);
                 
-                NarDumpToFile("STREAM_OVERFLOW_ERROR_LOGS", Stream->Records.Data, Stream->Records.Count*sizeof(nar_record));
+                NarDumpToFile("STREAM_OVERFLOW_ERROR_LOGS", Stream->Records, Stream->RecordCount*sizeof(nar_record));
                 Stream->Error = BackupStream_Errors::Error_Read;
                 
                 goto ERR_BAIL_OUT;
@@ -2509,12 +2502,12 @@ ReadStream(backup_stream *Stream, void* CallerBuffer, uint32_t CallerBufferSize)
         int32_t ClusterToIterate       = (int32_t)(BytesReadAfterOperation / Stream->ClusterSize);
         Stream->ClusterIndex += ClusterToIterate;
         
-        if ((uint32_t)Stream->ClusterIndex > Stream->Records.Data[Stream->RecIndex].Len) {
+        if ((uint32_t)Stream->ClusterIndex > Stream->Records[Stream->RecIndex].Len) {
             printf("ClusterIndex exceeded region len, that MUST NOT happen at any circumstance\n");
             Stream->Error = BackupStream_Errors::Error_SizeOvershoot;
             goto ERR_BAIL_OUT;
         }
-        if ((uint32_t)Stream->ClusterIndex == Stream->Records.Data[Stream->RecIndex].Len) {
+        if ((uint32_t)Stream->ClusterIndex == Stream->Records[Stream->RecIndex].Len) {
             Stream->ClusterIndex = 0;
             Stream->RecIndex++;
         }
@@ -2539,68 +2532,6 @@ ReadStream(backup_stream *Stream, void* CallerBuffer, uint32_t CallerBufferSize)
         
     }
     
-    if(true == Stream->ShouldCompress
-       && Result > 0){
-        
-        size_t RetCode = 0;
-        
-        RetCode = ZSTD_compress2(Stream->CCtx, CallerBuffer, CallerBufferSize, BufferToFill, Result);
-        
-        ASSERT(!ZSTD_isError(RetCode));
-        
-        if(!ZSTD_isError(RetCode)){
-            nar_record CompInfo;
-            CompInfo.CompressedSize   = (uint32_t)RetCode;
-            CompInfo.DecompressedSize = Result;
-            
-            if(Stream->MaxCBI > Stream->CBII){
-                Stream->CompInf[Stream->CBII++] = CompInfo;
-            }
-            
-            ASSERT(Stream->MaxCBI > Stream->CBII);
-            
-            Stream->BytesProcessed = Result;
-            Result = (uint32_t)RetCode;
-        }
-        else{
-            
-#if 0
-            if(input.pos != input.size){
-                printf("Input buffer size %u, input pos %u\n", input.size, input.pos);
-                printf("output buffer size %u, output pos %u\n", output.size, output.pos);
-            }
-#endif
-            
-            if (ZSTD_isError(RetCode)) {
-                printf("ZSTD Error description : %s\n", ZSTD_getErrorName(RetCode));
-            }
-            printf("ZSTD RetCode : %I64u\n", RetCode);
-            
-            Stream->Error = BackupStream_Errors::Error_Compression;
-            goto ERR_BAIL_OUT;
-        }
-        
-    }
-    
-
-
-    if (Stream->RecIndex >= Stream->Records.Count) {
-        if (!Stream->DidWePushTheBinaryIdentifier) {
-            ASSERT(CallerBufferSize > Result);
-            if (CallerBufferSize - Result >= NAR_BINARY_IDENTIFIER_SIZE) {
-                backup_binary_identifier ID;
-                ID.Magic           = NAR_BINARY_MAGIC_NUMBER;
-                memcpy(&ID.BackupID, &Stream->BackupID, sizeof(Stream->BackupID));
-                ID.CompressionType = NAR_COMPRESSION_ZSTD;  
-                ID.Letter          = Stream->Letter;
-                memset((char *)CallerBuffer + Result,0,NAR_BINARY_IDENTIFIER_SIZE);
-                
-                Result += NAR_BINARY_IDENTIFIER_SIZE;
-                Stream->DidWePushTheBinaryIdentifier = 1;
-            }
-        }
-    }
-
     return Result;
     
     ERR_BAIL_OUT:
@@ -2609,7 +2540,95 @@ ReadStream(backup_stream *Stream, void* CallerBuffer, uint32_t CallerBufferSize)
     
     Result = 0;
     return Result;
+}
+
+// Assumes CallerBufferSize >= 2048
+uint32_t
+ReadStream(backup_stream *Stream, void* CallerBuffer, uint32_t CallerBufferSize) {
     
+    ASSERT(CallerBufferSize >= 1024 * 2);
+
+    uint32_t Result = 0;
+
+    if (Stream->RecIndex == Stream->RecordCount)
+        return 0;
+
+    if (Stream->ShouldCompress) {
+        
+        if (Stream->BufferSize < CallerBufferSize) {
+            Stream->BufferSize = CallerBufferSize + Megabyte(1);
+            Stream->CompressionBuffer = realloc(Stream->CompressionBuffer, Stream->BufferSize);
+        }
+
+
+        // if data cant be compressed, its size might be bigger than actual data size(due to zstd headers and stuff)
+        // so pass 1kb lower than its actual size and give a space for headers 
+        uint32_t BytesToRead = CallerBufferSize - NAR_COMPRESSION_HEADER_RESERVED_SIZE; 
+        // round down to cluster size aligment
+        BytesToRead = (BytesToRead)/Stream->ClusterSize;
+        BytesToRead = BytesToRead * Stream->ClusterSize;
+
+        auto BytesRead = ReadStreamRaw(Stream, Stream->CompressionBuffer, BytesToRead);
+        ASSERT(Stream->CompressionType == NAR_COMPRESSION_ZSTD);
+
+        if (Stream->CompressionType == NAR_COMPRESSION_ZSTD) {
+            auto RetCode = ZSTD_compress2(Stream->CCtx, CallerBuffer, CallerBufferSize, Stream->CompressionBuffer, BytesRead);        
+            
+            ASSERT(!ZSTD_isError(RetCode));
+            if(!ZSTD_isError(RetCode)){
+                nar_record CompInfo;
+                CompInfo.CompressedSize   = (uint32_t)RetCode;
+                CompInfo.DecompressedSize = Result;
+                
+                ASSERT(Stream->CBII < Stream->MaxCBI);
+                Stream->CompInf[Stream->CBII++] = CompInfo;
+                
+                Stream->BytesProcessed = Result;
+                Result = RetCode;
+            }
+            else{
+                
+                if (ZSTD_isError(RetCode)) {
+                    printf("ZSTD Error description : %s\n", ZSTD_getErrorName(RetCode));
+                }
+                
+                printf("ZSTD RetCode : %zu\n", RetCode);
+                
+                Stream->Error = BackupStream_Errors::Error_Compression;
+                Result = 0;
+            }
+
+        }
+        else if (Stream->CompressionType == NAR_COMPRESSION_LZ4) {
+            // @TODO : implement
+        }
+
+    }
+    else {
+        uint32_t BytesToRead = CallerBufferSize - (NAR_BINARY_IDENTIFIER_SIZE + NAR_COMPRESSION_HEADER_RESERVED_SIZE);
+        // round down to cluster size aligment
+        BytesToRead = BytesToRead/Stream->ClusterSize;
+        BytesToRead = BytesToRead*Stream->ClusterSize;
+        Result = ReadStreamRaw(Stream, CallerBuffer, BytesToRead);
+    }
+
+    // end of stream, push binary identifier
+    ASSERT(CallerBufferSize - Result >= NAR_BINARY_IDENTIFIER_SIZE);
+    if (Stream->RecordCount == Stream->RecIndex) {
+        backup_binary_identifier ID;
+        ID.Magic           = NAR_BINARY_MAGIC_NUMBER;
+        memcpy(&ID.BackupID, &Stream->BackupID, sizeof(Stream->BackupID));
+        ID.CompressionType = NAR_COMPRESSION_ZSTD;  
+        ID.Letter          = Stream->Letter;
+        ID.Version         = Stream->Version;
+        memset((char *)CallerBuffer + Result,0,NAR_BINARY_IDENTIFIER_SIZE);
+        memcpy((char *)CallerBuffer + Result,&ID,sizeof(ID));            
+        
+        Result += NAR_BINARY_IDENTIFIER_SIZE;
+    }
+    ASSERT(Result <= CallerBufferSize);
+
+    return Result;
 }
 
 
@@ -2680,7 +2699,7 @@ RemoveVolumeFromTrack(LOG_CONTEXT *C, wchar_t L) {
             // TODO(Batuhan): 
         }
         
-        FreeDataArray(&V->Stream.Records);
+        free(V->Stream.Records);
         V->Stream.RecIndex = 0;
         V->Stream.ClusterIndex = 0;
         CloseHandle(V->Stream.Handle);
@@ -2875,7 +2894,7 @@ GetMFTandINDXLCN(char VolumeLetter, HANDLE VolumeHandle) {
             printf("Sort&Merge %u regions\n", ClusterExtractedCount);
             qsort(ClustersExtracted, ClusterExtractedCount, sizeof(nar_record), CompareNarRecords);
             data_array<nar_record> temp;
-            temp.Data = ClustersExtracted;
+            temp.Data  = ClustersExtracted;
             temp.Count = ClusterExtractedCount;
             MergeRegions(&temp);
                         
@@ -3255,8 +3274,8 @@ InitVolumeInf(volume_backup_inf* VolInf, wchar_t Letter, BackupType Type) {
     VolInf->ClusterSize = 0;
     
     
-    VolInf->Stream.Records = { 0,0 };
-    VolInf->Stream.Handle = 0;
+    VolInf->Stream.Records = NULL;
+    VolInf->Stream.Handle  = 0;
     VolInf->Stream.RecIndex = 0;
     VolInf->Stream.ClusterIndex = 0;
     
@@ -3395,7 +3414,8 @@ SaveMetadata(char Letter, int Version, int ClusterSize, BackupType BT,
 
         binf.Version = Version;
         binf.BT = BT;
-
+        binf.BackupID = ID;
+        
         binf.SizeOfBinaryData = 0;        
         for (size_t i = 0; i < BackupRegions.Count; i++) {
             binf.SizeOfBinaryData      += (uint64_t)BackupRegions.Data[i].Len; 

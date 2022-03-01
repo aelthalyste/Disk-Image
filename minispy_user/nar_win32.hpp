@@ -65,14 +65,16 @@ struct process_listen_ctx{
 
 struct backup_stream {
     
-    data_array<nar_record> Records;
-    int32_t RecIndex;
-    int32_t ClusterIndex;
+    nar_record *Records;
+    uint64_t   RecordCount;
+
+    uint64_t RecIndex;
+    uint64_t ClusterIndex;
     HANDLE Handle;
     
     // If compression enabled, this value is equal to uncompressed size of the resultant compression job
     // otherwise it's equal to readstream's return value
-    uint32_t BytesProcessed;
+    uint64_t BytesProcessed;
     uint64_t BytesReadOffset;
     
     bool ShouldCompress;
@@ -80,7 +82,7 @@ struct backup_stream {
     // if set, forbids ReadStream to add more than one region per call. Useful when cloning a disk-volume
     bool RegionLock;
     
-    int32_t               CompressionType;
+    compression_type      CompressionType;
     void*                 CompressionBuffer;
     size_t                BufferSize;
     ZSTD_CCtx*            CCtx;
@@ -91,16 +93,14 @@ struct backup_stream {
     size_t                CBII;
     size_t                MaxCBI;
     
-
     nar_backup_id         BackupID;
     char                  Letter;
     int32_t               Version;
 
-
-    bool DidWePushTheBinaryIdentifier; 
-
-    const char* GetErrorDescription(){
-        
+#if 1
+    const char* GetErrorDescription() {
+        return NULL;
+        #if 0   
         static const struct {
             BackupStream_Errors val;
             const char* desc;
@@ -142,7 +142,9 @@ struct backup_stream {
         }
         
         return "Couldn't find error code in table, you must not be able to see this message\n";
+        #endif
     }
+#endif
     
     
 };
@@ -156,6 +158,7 @@ struct full_only_backup_ctx{
     bool InitSuccess;
     int32_t VolumeTotalClusterCount;
 };
+
 
 
 struct volume_backup_inf {
@@ -568,8 +571,7 @@ NarGetVolumeDiskID(char Letter);
 
 
 
-static inline int32_t
-NarIsOSVolume(char Letter) {
+static inline int32_t NarIsOSVolume(char Letter) {
     char windir[256];
     GetWindowsDirectoryA(windir, 256);
     return windir[0] == Letter;
@@ -668,10 +670,10 @@ NarGetMFTRegionsFromBootSector(HANDLE Volume,
                                uint32_t Capacity);
                                
 
-bool BG_API NarPrepareRestoreTargetVolume(restore_target *TargetOut, const UTF8 *MetadataPath, char Letter);
-bool BG_API NarPrepareRestoreTargetWithNewDisk(restore_target *TargetOut, const UTF8 *MetadataPath, int32_t Letter);
-bool BG_API NarFeedRestoreTarget(restore_target *Target, const void *Buffer, int32_t BufferSize);
-void BG_API NarFreeRestoreTarget(restore_target *Target);
+BG_API bool NarPrepareRestoreTargetVolume(restore_target *TargetOut, const UTF8 *MetadataPath, char Letter);
+BG_API bool NarPrepareRestoreTargetWithNewDisk(restore_target *TargetOut, const UTF8 *MetadataPath, int32_t Letter);
+BG_API bool NarFeedRestoreTarget(restore_target *Target, const void *Buffer, int32_t BufferSize);
+BG_API void NarFreeRestoreTarget(restore_target *Target);
 
 
-bool BG_API ReadLocalRestore(local_restore_ctx *ctx, void *Data, uint32_t N);
+BG_API bool ReadLocalRestore(local_restore_ctx *ctx, void *Data, uint32_t N);

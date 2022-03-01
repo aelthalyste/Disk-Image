@@ -232,6 +232,8 @@ int AlternateMain(int argc, char *argv[]){
 
 int main(int argc, char *argv[]){
     Log = fopen("C:\\ProgramData\\NarDiskBackup\\standalonevss.txt", "wb");
+    fprintf(Log, "STARTED!\n");
     AlternateMain(argc, argv);
+    fprintf(Log, "DONE!\n");
     fclose(Log);
 }
