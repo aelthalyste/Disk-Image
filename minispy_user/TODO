@@ -1,4 +1,5 @@
 @TODO
+Remove data_array.
 Revisit logging system. Replace all printfs with LOG_* variants?(kinda crazy, but mustbe done)
 Implement task name and description support. This requires some changes and additions to simple package format.
 Implement GetDiskType

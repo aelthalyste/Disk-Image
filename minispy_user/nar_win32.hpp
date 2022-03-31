@@ -65,7 +65,7 @@ struct process_listen_ctx{
 
 struct backup_stream {
     
-    nar_record *Records;
+    nar_region *Records;
     uint64_t   RecordCount;
 
     uint64_t RecIndex;
@@ -89,7 +89,7 @@ struct backup_stream {
     uint32_t              ClusterSize;
     BackupStream_Errors   Error;
     
-    nar_record*           CompInf;
+    nar_region*           CompInf;
     size_t                CBII;
     size_t                MaxCBI;
     
@@ -178,12 +178,12 @@ struct volume_backup_inf {
     // HANDLE LogHandle; //Handle to file that is logging volume's changes.
     
     ////Incremental change count of the volume, this value will be reseted after every SUCCESSFUL backup operation
-    // this value times sizeof(nar_record) indicates how much data appended since last backup, useful when doing incremental backups
+    // this value times sizeof(nar_region) indicates how much data appended since last backup, useful when doing incremental backups
     // we dont need that actually, possiblenewbackupregionoffsetmark - lastbackupoffset is equal to that thing
     //uint32_t IncRecordCount;  // IGNORED IF DIFF BACKUP
     
     // Indicates where last backup regions end in local metadata. bytes after that offset is non-backed up parts of the volume.
-    // this value + increcordcount*sizeof(nar_record) is PossibleNewBackupRegionOffsetMark
+    // this value + increcordcount*sizeof(nar_region) is PossibleNewBackupRegionOffsetMark
     
     
     int64_t PossibleNewBackupRegionOffsetMark;
@@ -215,7 +215,9 @@ struct volume_backup_inf {
 
 struct LOG_CONTEXT {
     void* Port = INVALID_HANDLE_VALUE;
-    data_array<volume_backup_inf> Volumes = {};
+    volume_backup_inf *Volumes = {};
+    int64_t            VolumeCount = 0;
+    int64_t            VolumeCap = 8;
 };
 typedef LOG_CONTEXT* PLOG_CONTEXT;
 
@@ -350,8 +352,8 @@ char BG_API NarGetAvailableVolumeLetter();
 
 
 // returns # of disks, returns 0 if information doesnt fit in array
-data_array<disk_information> BG_API NarGetDisks();
-
+BG_API disk_information * NarGetDisks(int64_t *Count);
+BG_API void NarFreeDiskArray(disk_information *arr);
 
 /*
 Unlike generatemetadata, binary functions, this one generates absolute path of the log file. Which is 
@@ -408,8 +410,8 @@ SetupVSS();
 
 
 //Returns # of volumes detected
-data_array<volume_information> BG_API NarGetVolumes();
-
+BG_API volume_information * NarGetVolumes(int64_t *Count);
+void NarFreeVolumeArray(volume_information *arr);
 
 
 disk_information_ex*
@@ -470,7 +472,7 @@ SetFullRecords(volume_backup_inf* V);
   Handle can be VSS handle or normal volume handle. VSS is preferred since volume information might change over time
   returns NULL if any error occurs
 */
-nar_record*
+nar_kernel_record *
 GetVolumeRegionsFromBitmap(HANDLE VolumeHandle, uint32_t* OutRecordCount);
 
 
@@ -480,7 +482,7 @@ GetVolumeRegionsFromBitmap(HANDLE VolumeHandle, uint32_t* OutRecordCount);
   Handle can be VSS handle or normal volume handle. VSS is preferred since volume information might change over time
   returns NULL if any error occurs
 */
-nar_record*
+nar_kernel_record *
 OLD_GetVolumeRegionsFromBitmap(HANDLE VolumeHandle, uint32_t* OutRecordCount);
 
 full_only_backup_ctx
@@ -544,8 +546,8 @@ until it's fullbackup is requested. After fullbackup, call AttachVolume to start
 int32_t BG_API AddVolumeToTrack(PLOG_CONTEXT Context, wchar_t Letter, BackupType Type);
 
 
-data_array<nar_record>
-GetMFTandINDXLCN(char VolumeLetter, HANDLE VolumeHandle);
+nar_kernel_record * GetMFTandINDXLCN(char VolumeLetter, HANDLE VolumeHandle, int64_t *CountOut);
+void FreeMFTandINDXLCN(nar_kernel_record *arr);
 
 
 VSS_ID
@@ -561,7 +563,7 @@ CopyData(HANDLE S, HANDLE D, ULONGLONG Len);
 
 
 bool
-SaveMetadata(char Letter, int Version, int ClusterSize, BackupType BT, data_array<nar_record> BackupRegions, nar_backup_id BackupID, bool IsCompressed, int32_t CompressionType, nar_record *CompInfoArray, size_t CompInfoCOunt, char *OutputFileName);
+SaveMetadata(char Letter, int Version, int ClusterSize, BackupType BT, nar_region *BackupRegions, int64_t BackupRegionCount, nar_backup_id BackupID, bool IsCompressed, int32_t CompressionType, nar_region *CompInfoArray, size_t CompInfoCOunt, char *OutputFileName);
 
 
 
@@ -600,8 +602,6 @@ BG_API LOG_CONTEXT* NarLoadBootState();
 int32_t BG_API NarSaveBootState(LOG_CONTEXT* CTX);
 
 
-data_array<volume_information>
-NarGetVolumes();
 
 
 int32_t BG_API NarEditTaskNameAndDescription(const wchar_t* FileName, const wchar_t* TaskName, const wchar_t* TaskDescription);
@@ -616,16 +616,9 @@ NarGenerateBackupID(char Letter);
 inline int32_t
 NarFileNameExtensionCheck(const wchar_t *Path, const wchar_t *Extension);
 
-inline void
-MergeRegions(data_array<nar_record>* R);
-
-inline void
-MergeRegionsWithoutRealloc(data_array<nar_record>* R);
-
-
 
 inline bool
-IsRegionsCollide(nar_record R1, nar_record R2);
+IsRegionsCollide(nar_region R1, nar_region R2);
 
 
 
@@ -636,13 +629,13 @@ NarGetProductName(char* OutName);
 BOOLEAN
 NarSetFilePointer(HANDLE File, ULONGLONG V);
 
+#if 0
+bool
+NarParseDataRun(void* DatarunStart, nar_kernel_record *OutRegions, int64_t MaxRegionLen, int64_t *OutRegionsFound, bool BitmapCompatibleInsert);
 
 bool
-NarParseDataRun(void* DatarunStart, nar_record *OutRegions, uint32_t MaxRegionLen, uint32_t *OutRegionsFound, bool BitmapCompatibleInsert);
-
-bool
-NarParseIndexAllocationAttribute(void *IndexAttribute, nar_record *OutRegions, uint32_t MaxRegionLen, uint32_t *OutRegionsFound, bool BitmapCompatibleInsert);
-
+NarParseIndexAllocationAttribute(void *IndexAttribute, nar_kernel_record *OutRegions, int64_t MaxRegionLen, int64_t *OutRegionsFound, bool BitmapCompatibleInsert);
+#endif
 
 uint32_t
 NarGetFileID(void* FileRecord);
@@ -665,9 +658,9 @@ NarFindFileAttributeFromFileRecord(void *FileRecord, int32_t AttributeID);
 
 bool
 NarGetMFTRegionsFromBootSector(HANDLE Volume, 
-                               nar_record* Out, 
-                               uint32_t* OutLen, 
-                               uint32_t Capacity);
+                               nar_kernel_record* Out, 
+                               int64_t* OutLen, 
+                               int64_t Capacity);
                                
 
 BG_API bool NarPrepareRestoreTargetVolume(restore_target *TargetOut, const UTF8 *MetadataPath, char Letter);

@@ -98,7 +98,7 @@ void TestBackup(const char *OutputDirectory, char Volume, int Count) {
     size_t bsize = 64 * 1024 * 1024;
     void *MemBuf = malloc(bsize);
     
-    LOG_CONTEXT C = {0};
+    LOG_CONTEXT C;
     C.Port = INVALID_HANDLE_VALUE;
 
     if (SetupVSS() && ConnectDriver(&C)) {
@@ -129,7 +129,7 @@ void TestBackup(const char *OutputDirectory, char Volume, int Count) {
             ASSERT(r);
 
             int id = GetVolumeID(&C, (wchar_t)Volume);
-            volume_backup_inf *v = &C.Volumes.Data[id];
+            volume_backup_inf *v = &C.Volumes[id];
             
             NarBackupIDToStr(v->BackupID, BackupIDAsStr, sizeof(BackupIDAsStr));
 
@@ -187,7 +187,7 @@ void DoRestore(const char *Directory, char OutputVolumeLetter) {
     for_array (ci, Chains) {
         fprintf(stdout, "####################\n");
         fprintf(stdout, "%2llu -) Letter        : %c\n", ci, Chains[ci][0].Letter);
-        fprintf(stdout, "%2llu -) Version Count : %d\n", ci, Chains[ci].len);
+        fprintf(stdout, "%2llu -) Version Count : %lld\n", ci, Chains[ci].len);
         fprintf(stdout, "%2llu -) Backup type   : %s\n", ci, Chains[ci][0].BT == BackupType::Inc ? "Inc" : "Diff");
         fprintf(stdout, "####################\n");
     }
@@ -277,15 +277,7 @@ void DoRestore(const char *Directory, char OutputVolumeLetter) {
                         ASSERT(false);
                     }
                 } 
-
                 
-
-                // else {
-                //     memset(Buffer, 0, ReadSize); 
-                // }
-                // if (instruction.instruction_type == ZERO) {
-                //     LOG_INFO("[%4d] -> Written : %10lld, Read Offset : %10lld, Write Offset : %10lld, Instruction Remaining Len : %10lld, Version : %2d", _ic, Written, (int64_t)instruction.where_to_read.off * 4096, instruction.where_to_write.off, instruction.where_to_read.len, instruction.version);
-                // }
             }
         }
         else {break;}
@@ -307,17 +299,19 @@ int main(int argc, char *argv[]) {
     else if (0 == strcmp(argv[1], "restore")) DoRestore(argv[2], argv[3][0]);
     return 0;
 
+
+#if 0
     if (0) {
-        file_read FR = NarReadFile("C:\\Users\\User\\Desktop\\NAR_LOG_FILE_C.nlfx");
-        nar_record *regs = (nar_record *)FR.Data;
-        int32_t RegCount = FR.Len/sizeof(nar_record);
+        file_read FR     = NarReadFile("C:\\Users\\User\\Desktop\\NAR_LOG_FILE_C.nlfx");
+        nar_region *regs = (nar_region *)FR.Data;
+        int32_t RegCount = FR.Len / sizeof(regs[0]);
 
         int64_t qs = NarGetPerfCounter();
-        qsort(regs, RegCount, sizeof(nar_record), CompareNarRecords);
+        qsort(regs, RegCount, sizeof(regs[0]), CompareNarRecords);
         double qelapsed = NarTimeElapsed(qs);
 
-        data_array<nar_record> dr;
-        dr.Data = regs;
+        data_array<nar_region> dr;
+        dr.Data  = regs;
         dr.Count = RegCount;
 
         int64_t merges = NarGetPerfCounter();
@@ -329,6 +323,7 @@ int main(int argc, char *argv[]) {
 
         return 0;
     }
+#endif
 
 
     backup_package Output[1024];
@@ -387,7 +382,7 @@ int main(int argc, char *argv[]) {
             if(SetupStream(&C, (wchar_t)Volume, bt, &BytesToTransfer, BinaryExtension, NAR_COMPRESSION_NONE)){
                 
                 int id = GetVolumeID(&C, (wchar_t)Volume);
-                volume_backup_inf *v = &C.Volumes.Data[id];
+                volume_backup_inf *v = &C.Volumes[id];
 
                 char fn[1024];
                 fn[0] = 0;
@@ -485,28 +480,6 @@ TEST_ReadBackupCrossed(wchar_t *cb, wchar_t *cm, wchar_t* db, wchar_t* dm, pcg32
 }
 #endif
 
-void
-TEST_MockSaveBootState(){
-    
-    LOG_CONTEXT C = {0};
-    C.Port = INVALID_HANDLE_VALUE;
-    volume_backup_inf Temp = {};
-    Temp.Letter = 'C';
-    Temp.Version = 2;
-    Temp.BT  = BackupType::Inc;
-    Temp.IncLogMark.LastBackupRegionOffset = Kilobyte(30);
-    nar_backup_id ID;
-    
-    ID.Q = 2893749281;
-    ID.Letter = 'C';
-    
-    Temp.BackupID  = ID;
-    C.Volumes.Insert(Temp);
-    NarSaveBootState(&C);
-    
-    
-}
-
 
 #if 0
 int
@@ -528,7 +501,6 @@ wmain(int argc, wchar_t* argv[]) {
     
 
     
-    //TEST_MockSaveBootState();
     
 #if 0    
     {

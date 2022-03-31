@@ -33,7 +33,7 @@ setups iter for finding intersections of two regions.
 Assumes both regions are sorted.
 */
 RegionCoupleIter
-NarStartIntersectionIter(const nar_record *R1, const nar_record *R2, size_t R1Len, size_t R2Len){
+NarStartIntersectionIter(const nar_region *R1, const nar_region *R2, size_t R1Len, size_t R2Len){
     RegionCoupleIter Result = NarInitRegionCoupleIter(R1, R2, R1Len, R2Len);
     NarNextIntersectionIter(&Result);
     return Result;
@@ -44,12 +44,12 @@ NarNextIntersectionIter(RegionCoupleIter *Iter){
     
     Iter->It = {};
     if(NarIterateRegionCoupleUntilCollision(Iter)){
-        uint32_t R1REnd = Iter->R1Iter->StartPos + Iter->R1Iter->Len;
-        uint32_t R2REnd = Iter->R2Iter->StartPos + Iter->R2Iter->Len;
+        auto R1REnd = Iter->R1Iter->off + Iter->R1Iter->len;
+        auto R2REnd = Iter->R2Iter->off + Iter->R2Iter->len;
         
         // intersection
-        uint32_t IntersectionEnd   = MIN(R1REnd, R2REnd);
-        uint32_t IntersectionStart = MAX(Iter->R1Iter->StartPos, Iter->R2Iter->StartPos);
+        auto IntersectionEnd   = MIN(R1REnd, R2REnd);
+        auto IntersectionStart = MAX(Iter->R1Iter->off, Iter->R2Iter->off);
         
         Iter->It = {IntersectionStart, IntersectionEnd - IntersectionStart};
         
@@ -64,7 +64,7 @@ NarNextIntersectionIter(RegionCoupleIter *Iter){
 Setups Iter for finding exclusion of Ex from Base.
 */
 RegionCoupleIter
-NarStartExcludeIter(const nar_record *Base, const nar_record *Ex, size_t BaseN, size_t ExN){
+NarStartExcludeIter(const nar_region *Base, const nar_region *Ex, size_t BaseN, size_t ExN){
     RegionCoupleIter Result = NarInitRegionCoupleIter(Base, Ex, BaseN, ExN);
     Result.__CompRegion = *Result.R1Iter;
     NarNextExcludeIter(&Result);
@@ -90,16 +90,16 @@ NarNextExcludeIter(RegionCoupleIter *Iter){
             return;
         }
         
-        uint32_t R1REnd = Iter->__CompRegion.StartPos + Iter->__CompRegion.Len;
-        uint32_t R2REnd = Iter->R2Iter->StartPos + Iter->R2Iter->Len;
+        auto R1REnd = Iter->__CompRegion.off + Iter->__CompRegion.len;
+        auto R2REnd = Iter->R2Iter->off + Iter->R2Iter->len;
         
-        if(R1REnd < Iter->R2Iter->StartPos){
+        if(R1REnd < Iter->R2Iter->off){
             Iter->It = Iter->__CompRegion;
             Iter->R1Iter++;
-            Iter->__CompRegion = (Iter->R1Iter != Iter->R1End) ? *Iter->R1Iter : nar_record{};
+            Iter->__CompRegion = (Iter->R1Iter != Iter->R1End) ? *Iter->R1Iter : nar_region{};
             return;
         }
-        if(R2REnd < Iter->__CompRegion.StartPos){
+        if(R2REnd < Iter->__CompRegion.off){
             Iter->R2Iter++;
             continue;
         }
@@ -146,8 +146,8 @@ for overshadow  : loop till end of collision
     
     for(;;){
         
-        uint32_t BEnd = Iter->__CompRegion.StartPos + Iter->__CompRegion.Len;
-        uint32_t EEnd = Iter->R2Iter->StartPos + Iter->R2Iter->Len;
+        auto BEnd = Iter->__CompRegion.off + Iter->__CompRegion.len;
+        auto EEnd = Iter->R2Iter->off + Iter->R2Iter->len;
         
         if(Iter->R1Iter == Iter->R1End){
             break;
@@ -156,50 +156,50 @@ for overshadow  : loop till end of collision
             break;
         }
         
-        if((Iter->__CompRegion.StartPos < Iter->R2Iter->StartPos && BEnd < Iter->R2Iter->StartPos)
-           || (Iter->__CompRegion.StartPos > EEnd))
+        if((Iter->__CompRegion.off < Iter->R2Iter->off && BEnd < Iter->R2Iter->off)
+           || (Iter->__CompRegion.off > EEnd))
         {
             Iter->R1Iter++;
-            Iter->__CompRegion = Iter->R1Iter != Iter->R1End ? *Iter->R1Iter : nar_record{};
+            Iter->__CompRegion = Iter->R1Iter != Iter->R1End ? *Iter->R1Iter : nar_region{};
             // no collision
             return;
         }
         
         // collision from left
-        if(Iter->__CompRegion.StartPos >= Iter->R2Iter->StartPos &&
-           EEnd >= Iter->R2Iter->StartPos && EEnd < BEnd){
-            Iter->It.StartPos = EEnd;
-            Iter->It.Len      = BEnd -EEnd;
+        if(Iter->__CompRegion.off >= Iter->R2Iter->off &&
+           EEnd >= Iter->R2Iter->off && EEnd < BEnd){
+            Iter->It.off = EEnd;
+            Iter->It.len      = BEnd -EEnd;
             ASSERT(BEnd > EEnd);
             Iter->__CompRegion = {EEnd, BEnd - EEnd};
             Iter->R2Iter++;
         }
         // collision from right
-        else if(Iter->R2Iter->StartPos > Iter->__CompRegion.StartPos && 
-                Iter->R2Iter->StartPos <= BEnd && EEnd >= BEnd){
-            Iter->It.StartPos = Iter->__CompRegion.StartPos;
-            Iter->It.Len      = Iter->R2Iter->StartPos - Iter->__CompRegion.StartPos;
-            ASSERT(BEnd > Iter->R2Iter->StartPos);
+        else if(Iter->R2Iter->off > Iter->__CompRegion.off && 
+                Iter->R2Iter->off <= BEnd && EEnd >= BEnd){
+            Iter->It.off = Iter->__CompRegion.off;
+            Iter->It.len      = Iter->R2Iter->off - Iter->__CompRegion.off;
+            ASSERT(BEnd > Iter->R2Iter->off);
             Iter->R1Iter++;
-            Iter->__CompRegion = (Iter->R1Iter != Iter->R1End) ? *Iter->R1Iter : nar_record{};
+            Iter->__CompRegion = (Iter->R1Iter != Iter->R1End) ? *Iter->R1Iter : nar_region{};
             break;
         }
         // collision from middle
-        else if(Iter->R2Iter->StartPos > Iter->It.StartPos &&
+        else if(Iter->R2Iter->off > Iter->It.off &&
                 EEnd < BEnd){
-            Iter->It.StartPos = Iter->__CompRegion.StartPos;
-            Iter->It.Len      = Iter->R2Iter->StartPos - Iter->__CompRegion.StartPos;
-            ASSERT(Iter->R2Iter->StartPos > Iter->__CompRegion.StartPos);
+            Iter->It.off = Iter->__CompRegion.off;
+            Iter->It.len      = Iter->R2Iter->off - Iter->__CompRegion.off;
+            ASSERT(Iter->R2Iter->off > Iter->__CompRegion.off);
             Iter->__CompRegion = {EEnd, BEnd - EEnd};
             Iter->R2Iter++;
             break;
         }
         // r2 overshadows r1 completely
-        else if(Iter->R2Iter->StartPos <= Iter->__CompRegion.StartPos &&
+        else if(Iter->R2Iter->off <= Iter->__CompRegion.off &&
                 EEnd >= BEnd){
-            Iter->It.StartPos = Iter->__CompRegion.StartPos;
+            Iter->It.off = Iter->__CompRegion.off;
             Iter->R1Iter++;
-            Iter->__CompRegion = Iter->R1Iter != Iter->R1End ? *Iter->R1Iter : nar_record{};
+            Iter->__CompRegion = Iter->R1Iter != Iter->R1End ? *Iter->R1Iter : nar_region{};
             return NarNextExcludeIter(Iter);
         }
         else{
@@ -213,7 +213,7 @@ for overshadow  : loop till end of collision
 }
 
 inline RegionCoupleIter
-NarInitRegionCoupleIter(const nar_record *Base, const nar_record *Ex, size_t BaseN, size_t ExN){
+NarInitRegionCoupleIter(const nar_region *Base, const nar_region *Ex, size_t BaseN, size_t ExN){
     RegionCoupleIter Result = {};
     
     Result.R1     = Base;
@@ -244,13 +244,13 @@ NarIterateRegionCoupleUntilCollision(RegionCoupleIter *Iter){
             break;
         }
         
-        uint32_t R1REnd = Iter->R1Iter->StartPos + Iter->R1Iter->Len;
-        uint32_t R2REnd = Iter->R2Iter->StartPos + Iter->R2Iter->Len;
-        if(R1REnd < Iter->R2Iter->StartPos){
+        auto R1REnd = Iter->R1Iter->off + Iter->R1Iter->len;
+        auto R2REnd = Iter->R2Iter->off + Iter->R2Iter->len;
+        if(R1REnd < Iter->R2Iter->off){
             Iter->R1Iter++;
             continue;
         }
-        if(R2REnd < Iter->R1Iter->StartPos){
+        if(R2REnd < Iter->R1Iter->off){
             Iter->R2Iter++;
             continue;
         }
@@ -264,7 +264,7 @@ NarIterateRegionCoupleUntilCollision(RegionCoupleIter *Iter){
 
 bool
 NarIsRegionIterValid(RegionCoupleIter Iter){
-    return (Iter.It.Len != 0);
+    return (Iter.It.len != 0);
 }
 
 
@@ -301,22 +301,22 @@ NarGetPreviousBackupInfo(int32_t Version, BackupType Type, int32_t *OutVersion){
 }
 
 
-size_t
-NarLCNToVCN(nar_record *LCN, size_t LCNCount, size_t Offset){
+int64_t
+NarLCNToVCN(nar_region *LCN, int64_t LCNCount, int64_t Offset){
     bool Found = false;
-    size_t Acc = 0;
-    for(size_t i = 0; i<LCNCount; i++){
+    int64_t Acc = 0;
+    for(int64_t i = 0; i<LCNCount; i++){
         
-        if(Offset>= LCN[i].StartPos && Offset < LCN[i].StartPos + LCN[i].Len){
-            ASSERT(Offset >= LCN[i].StartPos);
-            uint64_t DiffToStart =  Offset - LCN[i].StartPos;
+        if(Offset>= LCN[i].off && Offset < LCN[i].off + LCN[i].len){
+            ASSERT(Offset >= LCN[i].off);
+            int64_t DiffToStart =  Offset - LCN[i].off;
             Acc += DiffToStart;
             Found = true;
             break;
         }
         
         ASSERT(i != LCNCount - 1);
-        Acc += LCN[i].Len;
+        Acc += LCN[i].len;
     }
     
     ASSERT(Found == true);
@@ -326,99 +326,56 @@ NarLCNToVCN(nar_record *LCN, size_t LCNCount, size_t Offset){
 
 
 
-/*
-    ASSUMES RECORDS ARE SORTED
-    THIS FUNCTION REALLOCATES MEMORY VIA realloc(), DO NOT PUT MEMORY OTHER THAN ALLOCATED BY MALLOC, OTHERWISE IT WILL CRASH THE PROGRAM
-*/
-void
-MergeRegions(data_array<nar_record>* R) {
+int64_t
+MergeRegions(nar_region *R, int64_t Count) {    
     
-    
-    uint32_t MergedRecordsIndex = 0;
-    uint32_t CurrentIter = 0;
+    int64_t MergedRecordsIndex = 0;
+    int64_t CurrentIter = 0;
     
     for (;;) {
-        if (CurrentIter >= R->Count) {
+        if (CurrentIter >= Count) {
             break;
         }
         
-        uint32_t EndPointTemp = R->Data[CurrentIter].StartPos + R->Data[CurrentIter].Len;
+        auto EndPointTemp = R[CurrentIter].off + R[CurrentIter].len;
         
-        if (IsRegionsCollide(R->Data[MergedRecordsIndex], R->Data[CurrentIter])) {
-            uint32_t EP1 = R->Data[CurrentIter].StartPos + R->Data[CurrentIter].Len;
-            uint32_t EP2 = R->Data[MergedRecordsIndex].StartPos + R->Data[MergedRecordsIndex].Len;
+        if (IsRegionsCollide(R[MergedRecordsIndex], R[CurrentIter])) {
+            auto EP1 = R[CurrentIter].off + R[CurrentIter].len;
+            auto EP2 = R[MergedRecordsIndex].off + R[MergedRecordsIndex].len;
             
             EndPointTemp = MAX(EP1, EP2);
-            R->Data[MergedRecordsIndex].Len = EndPointTemp - R->Data[MergedRecordsIndex].StartPos;
+            R[MergedRecordsIndex].len = EndPointTemp - R[MergedRecordsIndex].off;
             
             CurrentIter++;
         }
         else {
             MergedRecordsIndex++;
-            R->Data[MergedRecordsIndex] = R->Data[CurrentIter];
+            R[MergedRecordsIndex] = R[CurrentIter];
         }
         
         
     }
     
-    R->Count = MergedRecordsIndex + 1;
-    R->Data = (nar_record*)realloc(R->Data, sizeof(nar_record) * R->Count);
-}
+    return MergedRecordsIndex + 1;
 
-
-/*
-*/
-void
-MergeRegionsWithoutRealloc(data_array<nar_record>* R) {
-    
-    
-    uint32_t MergedRecordsIndex = 0;
-    uint32_t CurrentIter = 0;
-    
-    for (;;) {
-        if (CurrentIter >= R->Count) {
-            break;
-        }
-        
-        uint32_t EndPointTemp = R->Data[CurrentIter].StartPos + R->Data[CurrentIter].Len;
-        
-        if (IsRegionsCollide(R->Data[MergedRecordsIndex], R->Data[CurrentIter])) {
-            uint32_t EP1 = R->Data[CurrentIter].StartPos + R->Data[CurrentIter].Len;
-            uint32_t EP2 = R->Data[MergedRecordsIndex].StartPos + R->Data[MergedRecordsIndex].Len;
-            
-            EndPointTemp = MAX(EP1, EP2);
-            R->Data[MergedRecordsIndex].Len = EndPointTemp - R->Data[MergedRecordsIndex].StartPos;
-            
-            CurrentIter++;
-        }
-        else {
-            MergedRecordsIndex++;
-            R->Data[MergedRecordsIndex] = R->Data[CurrentIter];
-        }
-        
-        
-    }
-    
-    R->Count = MergedRecordsIndex + 1;
-    //R->Data = (nar_record*)realloc(R->Data, sizeof(nar_record) * R->Count);
 }
 
 
 inline bool
-IsRegionsCollide(nar_record R1, nar_record R2) {
+IsRegionsCollide(nar_region R1, nar_region R2) {
     
-    uint32_t R1EndPoint = R1.StartPos + R1.Len;
-    uint32_t R2EndPoint = R2.StartPos + R2.Len;
+    int64_t R1EndPoint = R1.off + R1.len;
+    int64_t R2EndPoint = R2.off + R2.len;
     
-    if (R1.StartPos == R2.StartPos && R1.Len == R2.Len) {
+    if (R1.off == R2.off && R1.len == R2.len) {
         return true;
     }
     
     
     if ((R1EndPoint <= R2EndPoint
-         && R1EndPoint >= R2.StartPos)
+         && R1EndPoint >= R2.off)
         || (R2EndPoint <= R1EndPoint
-            && R2EndPoint >= R1.StartPos)
+            && R2EndPoint >= R1.off)
         ) {
         return true;
     }
@@ -433,7 +390,7 @@ IsRegionsCollide(nar_record R1, nar_record R2) {
 // Finds point Offset in relative to Records structure, useful when converting absolue volume offsets to our binary backup data offsets.
 // returns NAR_POINT_OFFSET_FAILED if fails to find given offset, 
 point_offset 
-FindPointOffsetInRecords(nar_record *Records, uint64_t Len, int64_t Offset){
+FindPointOffsetInRecords(nar_region *Records, int64_t Len, int64_t Offset){
     
     if(!Records) return {0};
     
@@ -441,11 +398,11 @@ FindPointOffsetInRecords(nar_record *Records, uint64_t Len, int64_t Offset){
     
     bool Found = false;
     
-    for(uint64_t i = 0; i < Len; i++){
+    for(int64_t i = 0; i < Len; i++){
         
-        if(Offset <= (int64_t)Records[i].StartPos + (int64_t)Records[i].Len){
+        if(Offset <= (int64_t)Records[i].off + (int64_t)Records[i].len){
             
-            int64_t Diff = (Offset - (int64_t)Records[i].StartPos);
+            int64_t Diff = (Offset - (int64_t)Records[i].off);
             if (Diff < 0) {
                 // Exceeded offset, this means we cant relate our Offset and Records data, return failcode
                 Found = false;
@@ -454,7 +411,7 @@ FindPointOffsetInRecords(nar_record *Records, uint64_t Len, int64_t Offset){
                 Found = true;
                 Result.Offset        += Diff;
                 Result.Indice         = i;
-                Result.Readable       = (int64_t)Records[i].Len - Diff;
+                Result.Readable       = (int64_t)Records[i].len - Diff;
             }
             
             break;
@@ -462,7 +419,7 @@ FindPointOffsetInRecords(nar_record *Records, uint64_t Len, int64_t Offset){
         }
         
         
-        Result.Offset += Records[i].Len;
+        Result.Offset += Records[i].len;
         
     }
     
@@ -475,15 +432,15 @@ FindPointOffsetInRecords(nar_record *Records, uint64_t Len, int64_t Offset){
 int
 CompareNarRecords(const void* v1, const void* v2) {
     
-    nar_record* n1 = (nar_record*)v1;
-    nar_record* n2 = (nar_record*)v2;
+    nar_region* n1 = (nar_region*)v1;
+    nar_region* n2 = (nar_region*)v2;
     
 #if 0    
-    if(n1->StartPos == n2->StartPos){
-        return (int)((int64_t)n1->Len - (int64_t)n2->Len);
+    if(n1->off == n2->off){
+        return (int)((int64_t)n1->len - (int64_t)n2->len);
     }
     else{
-        return (int)((int64_t)n1->StartPos - (int64_t)n2->StartPos);
+        return (int)((int64_t)n1->off - (int64_t)n2->off);
     }
 #endif
     
@@ -491,14 +448,14 @@ CompareNarRecords(const void* v1, const void* v2) {
     // old version
 
     // equality
-    if (n1->StartPos == n2->StartPos && n2->Len == n1->Len)
+    if (n1->off == n2->off && n2->len == n1->len)
         return 0;
 
-    if (n1->StartPos == n2->StartPos && n2->Len < n1->Len) {
+    if (n1->off == n2->off && n2->len < n1->len) {
         return 1;
     }
     
-    if (n1->StartPos > n2->StartPos) {
+    if (n1->off > n2->off) {
         return 1;
     }
     
@@ -630,6 +587,29 @@ int BackupPackageComp(const void *v1, const void *v2) {
         return -1;
     else
         return 1;
+
+}
+
+void NarConvertTo8ByteRecords(nar_kernel_record *R1, nar_region *Out, int64_t Count, int64_t ClusterSize) {
+
+#if 0
+    int32_t i=0;
+    for(;i<count-4;++i) {
+        _mm_loadu_si128();
+        _mm_cvtepu32_epi64();
+
+    }
+
+    for(;i<count;++i) {
+        _mm_cvtepu32_epi64();
+    }
+#endif
+    // @TODO : SSE4.1 and AVX2
+    // @Optimization : SSE4.1 and AVX2
+    for(int64_t i=0;i<Count;++i) {
+        Out[i].off = (int64_t)R1[i].StartPos * ClusterSize;
+        Out[i].len = (int64_t)R1[i].Len * ClusterSize;
+    }
 
 }
 
@@ -774,8 +754,8 @@ bool InitRestore(Restore_Ctx *ctx, const UTF8 *DirectoryToLook, nar_backup_id Ba
 
 
     uint64_t RegionCount = 0;
-    nar_record *Records = (nar_record *)P->Package.get_entry("regions", &RegionCount);
-    RegionCount /= sizeof(nar_record);
+    nar_region *Records = (nar_region *)P->Package.get_entry("regions", &RegionCount);
+    RegionCount /= sizeof(Records[0]);
 
     Extent_Exclusion_Iterator exclusion_iter;
     defer({free_exclusion_iterator(&exclusion_iter);});
@@ -796,10 +776,10 @@ bool InitRestore(Restore_Ctx *ctx, const UTF8 *DirectoryToLook, nar_backup_id Ba
 
     arrreserve(&ctx->instructions, 1024);
 
-    Array<nar_record> backup_regions;
+    Array<nar_region> backup_regions;
     {
-        backup_regions.data = (nar_record *)P->Package.get_entry("regions", &backup_regions.len);
-        backup_regions.len /= sizeof(nar_record);
+        backup_regions.data = (nar_region *)P->Package.get_entry("regions", &backup_regions.len);
+        backup_regions.len /= sizeof(backup_regions.data[0]);
         backup_regions.cap = backup_regions.len;
     }
 
@@ -826,8 +806,8 @@ bool InitRestore(Restore_Ctx *ctx, const UTF8 *DirectoryToLook, nar_backup_id Ba
                 free_exclusion_iterator(&exclusion_iter);
 
                 
-                backup_regions.data = (nar_record *)P->Package.get_entry("regions", &backup_regions.len);
-                backup_regions.len /= sizeof(nar_record);
+                backup_regions.data = (nar_region *)P->Package.get_entry("regions", &backup_regions.len);
+                backup_regions.len /= sizeof(backup_regions.data[0]);
                 backup_regions.cap = backup_regions.len;
 
                 exclusion_iter = init_exclusion_iterator(backup_regions, written_extents);
@@ -1381,11 +1361,11 @@ iterate_next_extent(USN_Extent *result, Extent_Exclusion_Iterator *iter) {
     // else, do some region removal stuff.
     // first, determine which region we are colligin from, and iterate until we collide from absolute right or end of collision
 
-    USN_Extent b = iter->base[iter->base_indc];
-    USN_Extent e = iter->to_be_excluded[iter->excl_indc];
+    nar_region b = iter->base[iter->base_indc];
+    nar_region e = iter->to_be_excluded[iter->excl_indc];
 
-    uint32_t eoe = e.off + e.len;
-    uint32_t eob = b.off + b.len;
+    auto eoe = e.off + e.len;
+    auto eob = b.off + b.len;
 
     for (;;) {
 

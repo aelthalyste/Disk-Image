@@ -194,6 +194,26 @@ struct nar_file_table : nar_fs_table_header {
     uint32_t *ids;
 };
 
+
+struct nar_kernel_record {
+    uint32_t StartPos;
+    uint32_t Len;
+};
+
+union nar_region {
+    struct {
+        int64_t off;
+        int64_t len;
+    };
+    struct {
+        int64_t CompressedSize;
+        int64_t DecompressedSize;
+    };  
+};
+
+typedef nar_region USN_Extent;
+
+#if 0
 union nar_record {
     struct{
         uint32_t StartPos;
@@ -210,69 +230,31 @@ union nar_record {
 };
 
 typedef nar_record USN_Extent;
-
-
-
-template<typename DATA_TYPE>
-struct data_array {
-    DATA_TYPE* Data;
-    uint32_t Count;
-    uint32_t ReserveCount = 0;
-    
-    inline void Insert(DATA_TYPE Val) {
-        Data = (DATA_TYPE*)realloc(Data, sizeof(Val) * ((size_t)Count + 1));
-        memcpy(&Data[Count], &Val, sizeof(DATA_TYPE));
-        Count++;
-    }
-    
-};
-
-template<typename T> inline void
-FreeDataArray(data_array<T>* V) {
-    if (V != NULL) {
-        free(V->Data);
-        V->Data = 0;
-        V->Count = 0;
-    }
-}
-
-template<typename T>
-inline void Append(data_array<T> *Destination, data_array<T> App) {
-    
-    if (App.Data == 0) {
-        return;
-    }
-    
-    uint64_t NewSize = sizeof(T)* ((uint64_t)App.Count + (uint64_t)Destination->Count);
-    Destination->Data = (T*)realloc(Destination->Data, NewSize);
-    memcpy(&Destination->Data[Destination->Count], App.Data, App.Count * sizeof(T));
-    Destination->Count += App.Count;
-    
-}
+#endif
 
 
 struct RegionCoupleIter{
-    const nar_record *R1;
-    const nar_record *R2;
+    const nar_region *R1;
+    const nar_region *R2;
     
     size_t     R1Len;
     size_t     R2Len;
     
-    const nar_record *R1End;
-    const nar_record *R2End;
+    const nar_region *R1End;
+    const nar_region *R2End;
     
-    const nar_record *R1Iter;
-    const nar_record *R2Iter;
+    const nar_region *R1Iter;
+    const nar_region *R2Iter;
     
-    nar_record __CompRegion;
-    nar_record It;
+    nar_region __CompRegion;
+    nar_region It;
 };
 
 
 struct point_offset{
     int64_t  Offset;
-    uint64_t  Readable; // remaining region length
-    uint64_t Indice;        // region indice we just found
+    int64_t  Readable; // remaining region length
+    int64_t  Indice;        // region indice we just found
 };
 
 
@@ -336,7 +318,7 @@ __NarIsRegionIterExpired(RegionCoupleIter Iter);
 
 
 inline RegionCoupleIter
-NarInitRegionCoupleIter(const nar_record *Base, const nar_record *Ex, size_t BaseN, size_t ExN);
+NarInitRegionCoupleIter(const nar_region *Base, const nar_region *Ex, size_t BaseN, size_t ExN);
 
 inline bool
 NarIterateRegionCoupleUntilCollision(RegionCoupleIter *Iter);
@@ -346,11 +328,11 @@ inline void
 NarNextExcludeIter(RegionCoupleIter *Iter);
 
 RegionCoupleIter
-NarStartExcludeIter(const nar_record *Base, const nar_record *Ex, size_t BaseN, size_t ExN);
+NarStartExcludeIter(const nar_region *Base, const nar_region *Ex, size_t BaseN, size_t ExN);
 
 
 RegionCoupleIter
-NarStartIntersectionIter(const  nar_record *R1, const nar_record *R2, size_t R1Len, size_t R2Len);
+NarStartIntersectionIter(const  nar_region *R1, const nar_region *R2, size_t R1Len, size_t R2Len);
 
 void
 NarNextIntersectionIter(RegionCoupleIter *Iter);
@@ -358,30 +340,25 @@ NarNextIntersectionIter(RegionCoupleIter *Iter);
 void
 NarGetPreviousBackupInfo(int32_t Version, BackupType Type, int32_t *OutVersion);
 
-size_t
-NarLCNToVCN(nar_record *LCN, size_t LCNCount, size_t Offset);
+int64_t
+NarLCNToVCN(nar_region *LCN, int64_t LCNCount, int64_t Offset);
 
+
+void NarConvertTo8ByteRecords(nar_kernel_record *R1, nar_region *Out, int64_t Count, int64_t ClusterSize);
 
 /*
-    ASSUMES RECORDS ARE SORTED
-THIS FUNCTION REALLOCATES MEMORY VIA realloc(), DO NOT PUT MEMORY OTHER THAN ALLOCATED BY MALLOC, OTHERWISE IT WILL CRASH THE PROGRAM
+returns new size
 */
-void
-MergeRegions(data_array<nar_record>* R);
+int64_t MergeRegions(nar_region* R, int64_t Count);
 
-void
-MergeRegionsWithoutRealloc(data_array<nar_record>* R);
-
-
-bool
-IsRegionsCollide(nar_record R1, nar_record R2);
+bool IsRegionsCollide(nar_region R1, nar_region R2);
 
 
 // input MUST be sorted
 // Finds point Offset in relative to Records structure, useful when converting absolue volume offsets to our binary backup data offsets.
 // returns NAR_POINT_OFFSET_FAILED if fails to find given offset, 
 point_offset 
-FindPointOffsetInRecords(nar_record *Records, uint64_t Len, int64_t Offset);
+FindPointOffsetInRecords(nar_region *Records, int64_t Len, int64_t Offset);
 
 
 int
@@ -477,9 +454,6 @@ struct file_table {
 300
 n_of_files * ( bytes) + 6mb per million file;
 #endif
-
-
-
 
 
 

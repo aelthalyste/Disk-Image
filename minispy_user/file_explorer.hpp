@@ -46,12 +46,6 @@
 
 #define NAR_OFFSET(m, o) ((char*)(m) + (o))
 
-#if 0
-struct nar_record{
-    uint32_t StartPos;
-    uint32_t Len;
-};
-#endif
 
 struct FileRecordHeader {
 	uint32_t magic;
@@ -112,8 +106,8 @@ struct extension_finder_memory{
     void*       FileBuffer;
     uint64_t    FileBufferSize;
     
-    nar_record* MFTRecords;
-    uint64_t    MFTRecordCount;
+    nar_kernel_record* MFTRecords;
+    uint64_t           MFTRecordCount;
     
     void*       DirMappingMemory;
     void*       PIDArrMemory;
@@ -202,8 +196,8 @@ struct file_disk_layout{
     
     void        *ResidentData;
     
-    nar_record  *LCN;
-    nar_record  *SortedLCN;
+    nar_kernel_record  *LCN;
+    nar_kernel_record  *SortedLCN;
     uint32_t     LCNCount;
 };
 
@@ -211,7 +205,7 @@ struct file_restore_source{
     nar_file_view Backup;
     nar_file_view Metadata;
     
-    const nar_record *BackupLCN;
+    const nar_kernel_record *BackupLCN;
     uint64_t   LCNCount;
     
     BackupType    Type;
@@ -258,8 +252,8 @@ struct file_restore_ctx{
     nar_arena       StringAllocator;// less than 1mb 
     UTF8            *RootDir; // directory to look for backups
     
-    nar_record *ActiveLCN;
-    size_t      ActiveLCNCount;
+    nar_kernel_record *ActiveLCN;
+    size_t            ActiveLCNCount;
     
     FileRestore_Errors Error;
     
@@ -286,11 +280,11 @@ int32_t
 NarGetBitmapAttributeDataLen(void *BitmapAttributeStart);
 
 inline bool
-NarParseIndexAllocationAttribute(void *IndexAttribute, nar_record *OutRegions, uint32_t MaxRegionLen, uint32_t *OutRegionsFound, bool BitmapCompatibleInsert = false);
+NarParseIndexAllocationAttribute(void *IndexAttribute, nar_kernel_record *OutRegions, int64_t MaxRegionLen, int64_t *OutRegionsFound, bool BitmapCompatibleInsert = false);
 
 
 bool
-NarParseDataRun(void* DatarunStart, nar_record *OutRegions, uint32_t MaxRegionLen, uint32_t *OutRegionsFound, bool BitmapCompatibleInsert = false);
+NarParseDataRun(void* DatarunStart, nar_kernel_record *OutRegions, int64_t MaxRegionLen, int64_t *OutRegionsFound, bool BitmapCompatibleInsert = false);
 
 
 inline uint32_t
@@ -318,7 +312,7 @@ NarFindFileAttributeFromFileRecord(void *FileRecord, int32_t AttributeID);
 
 bool
 NarGetMFTRegionsFromBootSector(HANDLE Volume, 
-                               nar_record* Out, 
+                               nar_kernel_record* Out, 
                                uint32_t* OutLen, 
                                uint32_t Capacity);
 
