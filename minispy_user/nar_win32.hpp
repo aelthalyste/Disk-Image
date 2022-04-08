@@ -69,7 +69,7 @@ struct backup_stream {
     uint64_t   RecordCount;
 
     uint64_t RecIndex;
-    uint64_t ClusterIndex;
+    int64_t ClusterIndex;
     HANDLE Handle;
     
     // If compression enabled, this value is equal to uncompressed size of the resultant compression job

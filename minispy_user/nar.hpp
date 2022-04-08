@@ -31,7 +31,7 @@ struct nar_backup_id{
 #if _DEBUG && !_MANAGED 
 #if NAR_WINDOWS
 
-#define ASSERT(exp) do{if(!(exp)){printf("### !ASSERT! ###\nFILE : %s\nFUNCTION & LINE : %s %d\nDATE : [%s] : [%s]\n", __FILE__, __FUNCTION__, __LINE__, __DATE__, __TIME__); __debugbreak();}} while(0);
+#define ASSERT(exp) BG_ASSERT(exp); //do{if(!(exp)){printf("### !ASSERT! ###\nFILE : %s\nFUNCTION & LINE : %s %d\nDATE : [%s] : [%s]\n", __FILE__, __FUNCTION__, __LINE__, __DATE__, __TIME__); __debugbreak();}} while(0);
 #define NAR_BREAK do{__debugbreak();}while(0);
 
 #else // IF NAR WINDOWS

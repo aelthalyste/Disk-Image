@@ -1,6 +1,6 @@
 @echo off
 set build_options=-D_DEBUG -DUNICODE -D_UNICODE -D_CRT_SECURE_NO_WARNINGS
-set common_compile_flags=-D"BG_DEVELOPER=1" -nologo /I"../inc" /GS- /W3 /wd4018 /Od /Zi /DEBUG:FULL /FC /fsanitize=address /F 16777216 /std:c++17 /MP 
+set common_compile_flags=-D"BG_DEVELOPER=1" -nologo /I"../inc" /GS- /W3 /wd4018 /Od /fsanitize=address /Zi /DEBUG:FULL /FC /F 16777216 /std:c++17 /MP 
 set native_compile_flags=/MTd /EHsc -D"BG_BUILD_AS_DLL=1"
 set clr_compile_flags=/clr /LD /MDd NarDiskImageNative.lib -FeNarDiskImageCLR.dll
 rem /fsanitize=address /Zi /DEBUG:FULL /FC

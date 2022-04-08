@@ -107,7 +107,7 @@ void TestBackup(const char *OutputDirectory, char Volume, int Count) {
 
         DotNetStreamInf inf = {0};
 
-        uint64_t BFCAP = Megabyte(4);
+        uint64_t BFCAP = Megabyte(16);
         void *bf = malloc(BFCAP);
 
         for(int _vi=0;_vi<Count;++_vi) {
@@ -148,6 +148,11 @@ void TestBackup(const char *OutputDirectory, char Volume, int Count) {
                 ASSERT(r);
             }
 
+            if (TotalWritten==0) {
+                LOG_ERROR("FATAL ERROR !!!! Couldnt write binary file");
+                exit(0);
+            }
+            
             char MetadataName[1024];
             memset(MetadataName,0,sizeof(MetadataName));
             r = TerminateBackup(v, true, OutputDirectory, MetadataName);
@@ -249,25 +254,24 @@ void DoRestore(const char *Directory, char OutputVolumeLetter) {
             {
                 LARGE_INTEGER Target;
                 LARGE_INTEGER SFPResult;
-                Target.QuadPart = (uint64_t)instruction.where_to_write.off*4096ll;
+                Target.QuadPart = (uint64_t)instruction.where_to_write.off;
 
                 bool sfpr = SetFilePointerEx(OutputVolume, Target, &SFPResult, FILE_BEGIN);
                 BG_ASSERT(sfpr && SFPResult.QuadPart == Target.QuadPart);
             }
 
             while(instruction.where_to_read.len) {
-                uint64_t ReadSize = BG_MIN(BufferCap/4096, instruction.where_to_read.len); 
-                ReadSize *= 4096;
+                uint64_t ReadSize = BG_MIN(BufferCap, instruction.where_to_read.len); 
                 
                 if (instruction.instruction_type == NORMAL)  {
-                    bool RVR = NarReadVersion(BinaryFiles, instruction.version, Buffer, (uint64_t)instruction.where_to_read.off * 4096ll, ReadSize);
+                    bool RVR = NarReadVersion(BinaryFiles, instruction.version, Buffer, (uint64_t)instruction.where_to_read.off, ReadSize);
                     BG_ASSERT(instruction.version >= 0);
                     ASSERT(RVR);
                     
                     DWORD Written = 0;
                     if (WriteFile(OutputVolume, Buffer, ReadSize, &Written, 0) && Written == ReadSize) {
-                        instruction.where_to_read.len -= ReadSize/4096;
-                        instruction.where_to_read.off += ReadSize/4096;
+                        instruction.where_to_read.len -= ReadSize;
+                        instruction.where_to_read.off += ReadSize;
 
                         // ok
                     }
@@ -429,56 +433,6 @@ int main(int argc, char *argv[]) {
     return 0;
 }
 
-#if 0
-int
-TEST_ReadBackupCrossed(wchar_t *cb, wchar_t *cm, wchar_t* db, wchar_t* dm, pcg32_random_t *state){
-    
-    nar_file_view CompressedBackupView = NarOpenFileView(cb);
-    nar_file_view CompressedMetadataView = NarOpenFileView(cm);
-    
-    nar_file_view DecompressedBackupView = NarOpenFileView(db);
-    nar_file_view DecompressedMetadataView = NarOpenFileView(dm);
-    
-    ASSERT(CompressedMetadataView.Data);
-    ASSERT(DecompressedMetadataView.Data);
-    ASSERT(CompressedBackupView.Data);
-    ASSERT(DecompressedBackupView.Data);
-    
-    
-    backup_metadata *BM = (backup_metadata*)CompressedMetadataView.Data;
-    
-    nar_record* Records  = (nar_record*)((uint8_t*)CompressedMetadataView.Data + BM->Offset.RegionsMetadata);
-    uint64_t RecordCount = BM->Size.RegionsMetadata/sizeof(nar_record);
-    
-    uint64_t SelectedIndice  = 2;//pcg32_random_r(state) % RecordCount;
-    uint64_t ClusterReadSize = 310910;//pcg32_random_r(state) % Records[SelectedIndice].Len;
-    
-    nar_arena Arena = ArenaInit(malloc(ClusterReadSize*4096*4), ClusterReadSize*4096*4);
-    
-    void* CompressedBuffer   = ArenaAllocateAligned(&Arena, ClusterReadSize*4096, 16);
-    void* DecompressedBuffer = ArenaAllocateAligned(&Arena, ClusterReadSize*4096, 16);
-    
-    
-    int CReadSize = NarReadBackup(&CompressedBackupView, &CompressedMetadataView, 
-                                  Records[SelectedIndice].StartPos, ClusterReadSize, 
-                                  CompressedBuffer, ClusterReadSize*4096, 
-                                  0, 0);
-    
-    int DReadSize = NarReadBackup(&DecompressedBackupView, &DecompressedMetadataView, 
-                                  Records[SelectedIndice].StartPos, ClusterReadSize, DecompressedBuffer, ClusterReadSize*4096, 
-                                  0, 0);
-    
-    
-    ASSERT(DReadSize == ClusterReadSize*4096);
-    ASSERT(CReadSize == ClusterReadSize*4096);
-    ASSERT(CReadSize == DReadSize);
-    
-    ASSERT(memcmp(CompressedBuffer, DecompressedBuffer, ClusterReadSize*4096) == 0);
-    
-    free(Arena.Memory);
-    return 0;
-}
-#endif
 
 
 #if 0

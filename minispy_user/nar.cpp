@@ -769,8 +769,8 @@ bool InitRestore(Restore_Ctx *ctx, const UTF8 *DirectoryToLook, nar_backup_id Ba
 
         exclusion_iter = init_exclusion_iterator(Extents, written_extents);
         USN_Extent fsext;
-        fsext.off = P->BackupInformation.OriginalSizeOfVolume/P->BackupInformation.ClusterSize;
-        fsext.len = Gigabyte(3);
+        fsext.off = P->BackupInformation.OriginalSizeOfVolume;
+        fsext.len = Gigabyte(1024) * 128ull; // 
         arrput(&written_extents, fsext);
     }
 
@@ -1331,19 +1331,21 @@ iterate_next_extent(USN_Extent *result, Extent_Exclusion_Iterator *iter) {
     result->len = 0;
 
     // to catch stupid bugs
-    defer({ASSERT(result->len != 0);});
+    defer({ASSERT(result->len >= -1 && result->len != 0);});
     
     // no more extents to excluded, return base extents without filtering.
     if (iter->excl_indc == iter->to_be_excluded.len) {
         *result = iter->base[iter->base_indc];
         iter->base_indc++;
+        ASSERT(result->len > 0);
         return true;
     }
 
 
     if (false == is_extents_collide(iter->base[iter->base_indc], iter->to_be_excluded[iter->excl_indc])) {
         *result = iter->base[iter->base_indc];
-
+        ASSERT(result->len > 0);
+        
         // iterate exclusion region if it falls behind the base slice.
         if (iter->base[iter->base_indc].off > iter->to_be_excluded[iter->excl_indc].off) {
             if (iter->excl_indc < iter->to_be_excluded.len) {
@@ -1441,7 +1443,7 @@ iterate_next_extent(USN_Extent *result, Extent_Exclusion_Iterator *iter) {
                     debug_left_c1 = 1;
                     iter->base_indc++;
                     *result = b;
-                    ASSERT(result->len);
+                    ASSERT(result->len>0);
                     return true;
                 }
             }
@@ -1449,7 +1451,7 @@ iterate_next_extent(USN_Extent *result, Extent_Exclusion_Iterator *iter) {
                 debug_left_c2 = 1;
                 iter->base_indc++;
                 *result = b;
-                ASSERT(result->len);
+                ASSERT(result->len>0);
                 return true;
             }
 
@@ -1472,7 +1474,7 @@ iterate_next_extent(USN_Extent *result, Extent_Exclusion_Iterator *iter) {
             rr.len = eob - eoe;
             iter->base[iter->base_indc] = rr;
             iter->excl_indc++;
-            ASSERT(result->len);
+            ASSERT(result->len>0);
 
             return true;
         }
@@ -1488,7 +1490,7 @@ iterate_next_extent(USN_Extent *result, Extent_Exclusion_Iterator *iter) {
 
             iter->base_indc++;
 
-            ASSERT(result->len);
+            ASSERT(result->len>0);
             return true;
         }
 
@@ -1550,9 +1552,6 @@ merge_extents(Array<USN_Extent> & arr) {
             int64_t ep2 = arr[merged_record_id].off + arr[merged_record_id].len;
             
             int64_t end_point = BG_MAX(ep1, ep2);
-            ASSERT(end_point > arr[merged_record_id].off);
-            ASSERT(end_point - arr[merged_record_id].off <= 0xffffffff);
-
             arr[merged_record_id].len = end_point - arr[merged_record_id].off;
             
             c_iter++;

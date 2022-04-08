@@ -241,11 +241,11 @@ namespace NarDIWrapper {
         System::String^ IpAdress;
                 
         /*
-                            ComputerName
-                            IpAdress
-                            UsedSize
-                            VolumeSize
-                        */
+            ComputerName
+            IpAdress
+            UsedSize
+            VolumeSize
+        */
     };
     
     public ref class VolumeInformation {
@@ -259,121 +259,7 @@ namespace NarDIWrapper {
         char DiskType;
     };
     
-    
-    #if 0
-    public ref class CSNarFileEntry {
-        public:
-        CSNarFileEntry() {
-            
-        }
         
-        CSNarFileEntry(file_explorer_file *File) {
-            IsDirectory = File->IsDirectory;
-            Size        = File->Size;
-            ID          = File->FileID;
-            UniqueID    = reinterpret_cast<uintptr_t>(File);
-            Name        = gcnew System::String(File->Name);
-            Ref         = File;
-            CreationTime        = gcnew CSNarFileTime(File->CreationTime);
-            LastModifiedTime    = gcnew CSNarFileTime(File->LastModifiedTime);
-        }
-        
-        bool IsDirectory;
-        uint64_t Size;
-        uint64_t ID;
-        uint64_t UniqueID;
-        
-        CSNarFileTime^ CreationTime;
-        CSNarFileTime^ LastModifiedTime;
-        System::String^ Name;
-        file_explorer_file *Ref;
-    };
-    
-    
-    ref class CSNarFileExplorer;
-    public ref class CSNarFileExportStream {
-        private:
-        file_restore_ctx* Ctx;
-        void* Memory;
-        size_t MemorySize;
-        
-        
-        public:
-        
-        
-        CSNarFileExportStream(CSNarFileExplorer^ FileExplorer, uint64_t UniqueTargetID);
-        ~CSNarFileExportStream();        
-        
-        /*
-            Returns false is stream terminates. Caller must check Error enum to determine if restore completed successfully.
-            If it returns true, caller must set it's output stream's output position to TargetWriteOffset then must write exactly as 
-            TargetWriteSize.
-        */
-        bool AdvanceStream(void* Buffer, size_t BufferSize);
-        
-        void FreeStreamResources();
-        
-        
-        bool IsInit();
-        
-        size_t TargetWriteOffset;
-        size_t TargetWriteSize;
-        
-        size_t TargetFileSize;
-        
-        FileRestore_Errors Error;
-        
-    };
-    
-    public ref class CSNarFileExplorer {
-        private:
-        
-        file_explorer_file **__DirStack;
-        file_explorer_file *__CurrentDir;
-        uint32_t __DirStackMax;
-        uint32_t __DSI;
-        void* RestoreMemory;
-        size_t RestoreMemorySize;
-        
-        nar_arena *Arena;
-        
-        public:
-        
-        file_explorer* FE;
-        
-        
-        ~CSNarFileExplorer();
-        CSNarFileExplorer(System::String^ MetadataFullPath);
-        
-        bool CW_IsInit();
-        
-        // Returns list of files-directories in current directory. It doesn't follow any order, caller is free to sort them in any order
-        // they want.
-        List<CSNarFileEntry^>^ CW_GetFilesInCurrentDirectory();
-        
-        // Set's current directory as given file entry.
-        // Entry should be directory, otherwise function doesnt do anything and returns false
-        bool CW_SelectDirectory(uint64_t UniqueFileID);
-        
-        // Pops up to upper directory, if possible.
-        // Is equal to "up to" button in file explorer
-        void CW_PopDirectory();
-        
-        // deconstructor calls this, but in managed code object disposing may be delayed by GC. if caller want to release memory early, it can do by this utility function. 
-        void CW_Free();
-        
-        // Initiates export stream for given Target file entry.
-        CSNarFileExportStream^ CW_SetupFileRestore(uint64_t UniqueTargetID);
-        
-        // DEBUG function for specific usage areas.
-        CSNarFileExportStream^ CW_DEBUG_SetupFileRestore(int FileID);
-        
-        // Returns the current directory string
-        System::String^ CW_GetCurrentDirectoryString();
-        
-    };
-    #endif
-    
     public ref class ExistingBackupInfo {
         public:
         bool Exists;

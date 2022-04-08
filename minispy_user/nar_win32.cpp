@@ -2143,7 +2143,7 @@ SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, uint64_t *BytesToTransfe
             qsort(VolInf->Stream.Records, VolInf->Stream.RecordCount, sizeof(nar_region), CompareNarRecords);
             
             VolInf->Stream.RecordCount = MergeRegions(VolInf->Stream.Records, VolInf->Stream.RecordCount);            
-            VolInf->Stream.Records = (nar_region *)realloc(VolInf->Stream.Records, VolInf->Stream.RecordCount * sizeof(VolInf->Stream.Records));
+            VolInf->Stream.Records = (nar_region *)realloc(VolInf->Stream.Records, VolInf->Stream.RecordCount * sizeof(VolInf->Stream.Records[0]));
 
             FreeMFTandINDXLCN(MFTandINDXRegions);
             
@@ -2244,7 +2244,7 @@ SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, uint64_t *BytesToTransfe
         int64_t BytesToCopy = 0;
         
         for(unsigned int RecordIndex = 0; RecordIndex < V->Stream.RecordCount; RecordIndex++){
-            if((int64_t)V->Stream.Records[RecordIndex].off + (int64_t)V->Stream.Records[RecordIndex].len > (int64_t)V->VolumeTotalClusterCount * V->ClusterSize){
+            if(V->Stream.Records[RecordIndex].off + V->Stream.Records[RecordIndex].len > (int64_t)V->VolumeTotalClusterCount * (int64_t)V->ClusterSize){
                 TruncateIndex = RecordIndex;
                 break;
             }
@@ -2262,10 +2262,10 @@ SetupStream(PLOG_CONTEXT C, wchar_t L, BackupType Type, uint64_t *BytesToTransfe
         if(TruncateIndex > 0){
             printf("Found regions that exceeds volume size, truncating stream record array from %i to %i\n", V->Stream.RecordCount, TruncateIndex);
             
-            uint32_t NewEnd = V->VolumeTotalClusterCount;
+            int64_t NewEnd = (int64_t)V->VolumeTotalClusterCount * (int64_t)V->ClusterSize;
+            ASSERT(V->Stream.Records[TruncateIndex].off + V->Stream.Records[TruncateIndex].len > (int64_t)V->VolumeTotalClusterCount * (int64_t)V->ClusterSize);
             V->Stream.Records[TruncateIndex].len = NewEnd - V->Stream.Records[TruncateIndex].off;
             
-            ASSERT(V->Stream.Records[TruncateIndex].off + V->Stream.Records[TruncateIndex].len <= V->VolumeTotalClusterCount * V->ClusterSize);
             if (V->Stream.Records[TruncateIndex].len == 0) {
                 --TruncateIndex;
             }
@@ -2458,24 +2458,25 @@ uint32_t ReadStreamRaw(backup_stream *Stream, void *CallerBuffer, uint32_t Calle
         }
         
         DWORD BytesReadAfterOperation = 0;
-        int64_t ClustersRemainingByteSize = (uint64_t)Stream->Records[Stream->RecIndex].len - (uint64_t)Stream->ClusterIndex;        
+        int64_t ClustersRemainingByteSize = Stream->Records[Stream->RecIndex].len - Stream->ClusterIndex;        
         
         DWORD ReadSize = (DWORD)MIN((uint64_t)RemainingSize, ClustersRemainingByteSize); 
         
-        int64_t FilePtrTarget = ((int64_t)Stream->Records[Stream->RecIndex].off + (int64_t)Stream->ClusterIndex);
+        int64_t FilePtrTarget = (Stream->Records[Stream->RecIndex].off + Stream->ClusterIndex);
         
         if (NarSetFilePointer(Stream->Handle, FilePtrTarget)) {
             
             Stream->BytesReadOffset = FilePtrTarget;
-            
-            BOOL OperationResult = ReadFile(Stream->Handle, CurrentBufferOffset, ReadSize, &BytesReadAfterOperation, 0);
-            Result += BytesReadAfterOperation;
-            ASSERT(BytesReadAfterOperation == ReadSize);
-            
-            
-            if (!OperationResult || BytesReadAfterOperation != ReadSize) {
-                printf("STREAM ERROR: Couldnt read %lu bytes, instead read %lu, error code %i\n", ReadSize, BytesReadAfterOperation, OperationResult);
-                printf("rec_index % i rec_count % i, remaining bytes %I64u, offset at disk %I64u\n", Stream->RecIndex, Stream->RecordCount, ClustersRemainingByteSize, FilePtrTarget);
+            BOOL ReadFileResult = 0;
+            ReadFileResult = ReadFile(Stream->Handle, CurrentBufferOffset, ReadSize, &BytesReadAfterOperation, 0);
+
+            if (ReadFileResult && (BytesReadAfterOperation == ReadSize)) {
+                Result += BytesReadAfterOperation;
+                // success
+            }
+            else {
+                printf("STREAM ERROR: Couldnt read %lu bytes, instead read %lu, ReadFileResult : %lu, last error code %lu\n", ReadSize, BytesReadAfterOperation, ReadFileResult, GetLastError());
+                printf("rec_index % i rec_count % i, remaining bytes %lld, offset at disk %lld\n", Stream->RecIndex, Stream->RecordCount, ClustersRemainingByteSize, FilePtrTarget);
                 printf("Total bytes read for buffer %u\n", Result);
                 
                 NarDumpToFile("STREAM_OVERFLOW_ERROR_LOGS", Stream->Records, Stream->RecordCount * sizeof(Stream->Records[0]));
@@ -2492,8 +2493,7 @@ uint32_t ReadStreamRaw(backup_stream *Stream, void *CallerBuffer, uint32_t Calle
             goto ERR_BAIL_OUT;
         }
         
-        int32_t ClusterToIterate       = (int32_t)(BytesReadAfterOperation / Stream->ClusterSize);
-        Stream->ClusterIndex += ClusterToIterate;
+        Stream->ClusterIndex           += BytesReadAfterOperation;
         
         if (Stream->ClusterIndex > Stream->Records[Stream->RecIndex].len) {
             printf("ClusterIndex exceeded region len, that MUST NOT happen at any circumstance\n");
@@ -2819,7 +2819,7 @@ until it's fullbackup is requested. After fullbackup, call AttachVolume to start
 int32_t
 AddVolumeToTrack(PLOG_CONTEXT Context, wchar_t Letter, BackupType Type) {
     int32_t ErrorOccured = TRUE;
-    
+
     volume_backup_inf VolInf;
     int32_t FOUND = FALSE;
     
@@ -2839,6 +2839,12 @@ AddVolumeToTrack(PLOG_CONTEXT Context, wchar_t Letter, BackupType Type) {
             if (SUCCEEDED(hResult)) {
                 if (InitVolumeInf(&VolInf, Letter, Type)) {
                     ErrorOccured = FALSE;
+                    if (Context->Volumes == NULL) {
+                        Context->VolumeCount = 0;
+                        Context->VolumeCap   = 8;
+                        Context->Volumes = (volume_backup_inf *)calloc(sizeof(Context->Volumes[0]), Context->VolumeCap);
+                    }
+
                     if (Context->VolumeCount==Context->VolumeCap) {
                         Context->VolumeCap *= 2;
                         Context->Volumes = (volume_backup_inf *)realloc(Context->Volumes, Context->VolumeCap * sizeof(Context->Volumes[0]));
@@ -2896,7 +2902,7 @@ GetMFTandINDXLCN(char VolumeLetter, HANDLE VolumeHandle, int64_t *CountOut) {
     };
     
     void* FileBuffer = malloc(MEMORY_BUFFER_SIZE);
-    uint32_t FileBufferCount = MEMORY_BUFFER_SIZE / 1024LL;
+    int64_t FileBufferCount = MEMORY_BUFFER_SIZE / 1024LL;
     
     if(NULL == FileBuffer
        || NULL == ClustersExtracted){
