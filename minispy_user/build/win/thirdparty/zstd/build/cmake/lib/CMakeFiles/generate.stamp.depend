@@ -1,0 +1,8 @@
+# CMake generation dependency list for this directory.
+C:/Program Files/CMake/share/cmake-3.21/Modules/CMakeASMInformation.cmake
+C:/Program Files/CMake/share/cmake-3.21/Modules/Compiler/MSVC-ASM.cmake
+C:/W/Disk-Image/minispy_user/build/win/CMakeFiles/3.21.2/CMakeASMCompiler.cmake
+C:/W/Disk-Image/minispy_user/thirdparty/zstd/build/cmake/CMakeModules/JoinPaths.cmake
+C:/W/Disk-Image/minispy_user/thirdparty/zstd/build/cmake/lib/CMakeLists.txt
+C:/W/Disk-Image/minispy_user/thirdparty/zstd/build/cmake/lib/cmake_uninstall.cmake.in
+C:/W/Disk-Image/minispy_user/thirdparty/zstd/lib/libzstd.pc.in

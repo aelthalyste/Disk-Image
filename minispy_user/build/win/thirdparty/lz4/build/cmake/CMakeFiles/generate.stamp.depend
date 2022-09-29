@@ -1,0 +1,9 @@
+# CMake generation dependency list for this directory.
+C:/Program Files/CMake/share/cmake-3.21/Modules/CMakeCheckCompilerFlagCommonPatterns.cmake
+C:/Program Files/CMake/share/cmake-3.21/Modules/CMakeDependentOption.cmake
+C:/Program Files/CMake/share/cmake-3.21/Modules/CheckCCompilerFlag.cmake
+C:/Program Files/CMake/share/cmake-3.21/Modules/CheckCSourceCompiles.cmake
+C:/Program Files/CMake/share/cmake-3.21/Modules/Internal/CheckCompilerFlag.cmake
+C:/Program Files/CMake/share/cmake-3.21/Modules/Internal/CheckSourceCompiles.cmake
+C:/W/Disk-Image/minispy_user/thirdparty/lz4/build/cmake/CMakeLists.txt
+C:/W/Disk-Image/minispy_user/thirdparty/lz4/lib/liblz4.pc.in

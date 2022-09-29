@@ -1,0 +1,14 @@
+# CMake generation dependency list for this directory.
+C:/Program Files/CMake/share/cmake-3.21/Modules/BasicConfigVersion-SameMajorVersion.cmake.in
+C:/Program Files/CMake/share/cmake-3.21/Modules/CMakePackageConfigHelpers.cmake
+C:/Program Files/CMake/share/cmake-3.21/Modules/CheckCCompilerFlag.cmake
+C:/Program Files/CMake/share/cmake-3.21/Modules/CheckCXXCompilerFlag.cmake
+C:/Program Files/CMake/share/cmake-3.21/Modules/CheckCXXSourceCompiles.cmake
+C:/Program Files/CMake/share/cmake-3.21/Modules/GNUInstallDirs.cmake
+C:/Program Files/CMake/share/cmake-3.21/Modules/Internal/CheckCompilerFlag.cmake
+C:/Program Files/CMake/share/cmake-3.21/Modules/Internal/CheckSourceCompiles.cmake
+C:/Program Files/CMake/share/cmake-3.21/Modules/WriteBasicConfigVersionFile.cmake
+C:/W/Disk-Image/minispy_user/thirdparty/zstd/build/cmake/CMakeLists.txt
+C:/W/Disk-Image/minispy_user/thirdparty/zstd/build/cmake/CMakeModules/AddZstdCompilationFlags.cmake
+C:/W/Disk-Image/minispy_user/thirdparty/zstd/build/cmake/CMakeModules/GetZstdLibraryVersion.cmake
+C:/W/Disk-Image/minispy_user/thirdparty/zstd/build/cmake/zstdConfig.cmake

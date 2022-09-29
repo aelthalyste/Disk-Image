@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="C:\W\Disk-Image\minispy_user\build\win\CMakeFiles\b70a5e881d507016ddf9135068ca183d\INSTALL_force.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{659C25E3-5E0F-3C88-AA7F-ECD77E60D59A}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

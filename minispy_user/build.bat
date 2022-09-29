@@ -33,5 +33,3 @@ REM delete all .obj files except precompiled.obj one
 if exist precompiled.obj ren precompiled.obj precompiled.obj.keep
 if exist *.obj del *.obj
 if exist precompiled.obj.keep ren precompiled.obj.keep precompiled.obj
-
-

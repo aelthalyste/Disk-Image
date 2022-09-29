@@ -1,0 +1,375 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <PreferredToolArchitecture>x64</PreferredToolArchitecture>
+  </PropertyGroup>
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="MinSizeRel|x64">
+      <Configuration>MinSizeRel</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="RelWithDebInfo|x64">
+      <Configuration>RelWithDebInfo</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{CB298952-437B-3236-8D2D-A281AEC1C423}</ProjectGuid>
+    <WindowsTargetPlatformVersion>10.0.22000.0</WindowsTargetPlatformVersion>
+    <Keyword>Win32Proj</Keyword>
+    <Platform>x64</Platform>
+    <ProjectName>nar_disk_image_native</ProjectName>
+    <VCProjectUpgraderObjectName>NoUpgrade</VCProjectUpgraderObjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.20506.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\W\Disk-Image\minispy_user\build\win\Debug\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">nar_disk_image_native.dir\Debug\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">nar_disk_image_native</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.dll</TargetExt>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkIncremental>
+    <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</GenerateManifest>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\W\Disk-Image\minispy_user\build\win\Release\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">nar_disk_image_native.dir\Release\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">nar_disk_image_native</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.dll</TargetExt>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkIncremental>
+    <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</GenerateManifest>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\W\Disk-Image\minispy_user\build\win\MinSizeRel\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">nar_disk_image_native.dir\MinSizeRel\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">nar_disk_image_native</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">.dll</TargetExt>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkIncremental>
+    <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">true</GenerateManifest>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\W\Disk-Image\minispy_user\build\win\RelWithDebInfo\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">nar_disk_image_native.dir\RelWithDebInfo\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">nar_disk_image_native</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">.dll</TargetExt>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkIncremental>
+    <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">true</GenerateManifest>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>C:\W\Disk-Image\minispy_user\thirdparty;C:\W\Disk-Image\minispy_user\include;C:\W\Disk-Image\minispy_user\thirdparty\lz4\lib;C:\W\Disk-Image\minispy_user\thirdparty\zstd\lib;C:\W\Disk-Image\minispy_user\thirdparty\mimalloc\include;C:\W\Disk-Image\minispy_user\thirdparty\lz4\build\cmake\..\..\lib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /LD -EHa-</AdditionalOptions>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <DisableSpecificWarnings>4201;4505</DisableSpecificWarnings>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <InlineFunctionExpansion>Disabled</InlineFunctionExpansion>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <MinimalRebuild>false</MinimalRebuild>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <Optimization>Disabled</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <UseFullPaths>true</UseFullPaths>
+      <WarningLevel>Level4</WarningLevel>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;EBUG:FULL;_CRT_SECURE_NO_WARNINGS=1;BG_ENABLE_LEAKCHECK=1;BG_DEBUG_SETUP=1;DEBUG=1;BG_USE_MIMALLOC=0;BG_BUILD_AS_DLL=1;CMAKE_INTDIR="Debug";nar_disk_image_native_EXPORTS</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_DEBUG;_WINDOWS;EBUG:FULL;_CRT_SECURE_NO_WARNINGS=1;BG_ENABLE_LEAKCHECK=1;BG_DEBUG_SETUP=1;DEBUG=1;BG_USE_MIMALLOC=0;BG_BUILD_AS_DLL=1;CMAKE_INTDIR=\"Debug\";nar_disk_image_native_EXPORTS</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>C:\W\Disk-Image\minispy_user\thirdparty;C:\W\Disk-Image\minispy_user\include;C:\W\Disk-Image\minispy_user\thirdparty\lz4\lib;C:\W\Disk-Image\minispy_user\thirdparty\zstd\lib;C:\W\Disk-Image\minispy_user\thirdparty\mimalloc\include;C:\W\Disk-Image\minispy_user\thirdparty\lz4\build\cmake\..\..\lib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>C:\W\Disk-Image\minispy_user\thirdparty;C:\W\Disk-Image\minispy_user\include;C:\W\Disk-Image\minispy_user\thirdparty\lz4\lib;C:\W\Disk-Image\minispy_user\thirdparty\zstd\lib;C:\W\Disk-Image\minispy_user\thirdparty\mimalloc\include;C:\W\Disk-Image\minispy_user\thirdparty\lz4\build\cmake\..\..\lib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Link>
+      <AdditionalDependencies>user32.lib;kernel32.lib;vssapi.lib;Dbghelp.lib;thirdparty\zstd\build\cmake\lib\Debug\zstd_static.lib;thirdparty\lz4\build\cmake\Debug\lz4.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64 -incremental:no -opt:ref -machine:x64</AdditionalOptions>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <ImportLibrary>C:/W/Disk-Image/minispy_user/build/win/Debug/nar_disk_image_native.lib</ImportLibrary>
+      <ProgramDataBaseFile>C:/W/Disk-Image/minispy_user/build/win/Debug/nar_disk_image_native.pdb</ProgramDataBaseFile>
+      <SubSystem>Console</SubSystem>
+    </Link>
+    <ProjectReference>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+    </ProjectReference>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>C:\W\Disk-Image\minispy_user\thirdparty;C:\W\Disk-Image\minispy_user\include;C:\W\Disk-Image\minispy_user\thirdparty\lz4\lib;C:\W\Disk-Image\minispy_user\thirdparty\zstd\lib;C:\W\Disk-Image\minispy_user\thirdparty\mimalloc\include;C:\W\Disk-Image\minispy_user\thirdparty\lz4\build\cmake\..\..\lib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /LD -EHa-</AdditionalOptions>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <DisableSpecificWarnings>4201;4505</DisableSpecificWarnings>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <MinimalRebuild>false</MinimalRebuild>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <Optimization>MaxSpeed</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <UseFullPaths>false</UseFullPaths>
+      <WarningLevel>Level4</WarningLevel>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;_CRT_SECURE_NO_WARNINGS=1;BG_RELEASE_SETUP=1;BG_FLUSH_LOGS_TO_STDOUT=0;BG_USE_MIMALLOC=0;BG_BUILD_AS_DLL=1;CMAKE_INTDIR="Release";nar_disk_image_native_EXPORTS</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <DebugInformationFormat>
+      </DebugInformationFormat>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;_CRT_SECURE_NO_WARNINGS=1;BG_RELEASE_SETUP=1;BG_FLUSH_LOGS_TO_STDOUT=0;BG_USE_MIMALLOC=0;BG_BUILD_AS_DLL=1;CMAKE_INTDIR=\"Release\";nar_disk_image_native_EXPORTS</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>C:\W\Disk-Image\minispy_user\thirdparty;C:\W\Disk-Image\minispy_user\include;C:\W\Disk-Image\minispy_user\thirdparty\lz4\lib;C:\W\Disk-Image\minispy_user\thirdparty\zstd\lib;C:\W\Disk-Image\minispy_user\thirdparty\mimalloc\include;C:\W\Disk-Image\minispy_user\thirdparty\lz4\build\cmake\..\..\lib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>C:\W\Disk-Image\minispy_user\thirdparty;C:\W\Disk-Image\minispy_user\include;C:\W\Disk-Image\minispy_user\thirdparty\lz4\lib;C:\W\Disk-Image\minispy_user\thirdparty\zstd\lib;C:\W\Disk-Image\minispy_user\thirdparty\mimalloc\include;C:\W\Disk-Image\minispy_user\thirdparty\lz4\build\cmake\..\..\lib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Link>
+      <AdditionalDependencies>user32.lib;kernel32.lib;vssapi.lib;Dbghelp.lib;thirdparty\zstd\build\cmake\lib\Release\zstd_static.lib;thirdparty\lz4\build\cmake\Release\lz4.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64 -incremental:no -opt:ref -machine:x64 /GL</AdditionalOptions>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <ImportLibrary>C:/W/Disk-Image/minispy_user/build/win/Release/nar_disk_image_native.lib</ImportLibrary>
+      <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
+      <ProgramDataBaseFile>C:/W/Disk-Image/minispy_user/build/win/Release/nar_disk_image_native.pdb</ProgramDataBaseFile>
+      <SubSystem>Console</SubSystem>
+    </Link>
+    <ProjectReference>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+    </ProjectReference>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>C:\W\Disk-Image\minispy_user\thirdparty;C:\W\Disk-Image\minispy_user\include;C:\W\Disk-Image\minispy_user\thirdparty\lz4\lib;C:\W\Disk-Image\minispy_user\thirdparty\zstd\lib;C:\W\Disk-Image\minispy_user\thirdparty\mimalloc\include;C:\W\Disk-Image\minispy_user\thirdparty\lz4\build\cmake\..\..\lib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /LD -EHa-</AdditionalOptions>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <DisableSpecificWarnings>4201;4505</DisableSpecificWarnings>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <MinimalRebuild>false</MinimalRebuild>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <Optimization>MinSpace</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <UseFullPaths>false</UseFullPaths>
+      <WarningLevel>Level4</WarningLevel>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;_CRT_SECURE_NO_WARNINGS=1;BG_USE_MIMALLOC=0;BG_BUILD_AS_DLL=1;CMAKE_INTDIR="MinSizeRel";nar_disk_image_native_EXPORTS</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <DebugInformationFormat>
+      </DebugInformationFormat>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;_CRT_SECURE_NO_WARNINGS=1;BG_USE_MIMALLOC=0;BG_BUILD_AS_DLL=1;CMAKE_INTDIR=\"MinSizeRel\";nar_disk_image_native_EXPORTS</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>C:\W\Disk-Image\minispy_user\thirdparty;C:\W\Disk-Image\minispy_user\include;C:\W\Disk-Image\minispy_user\thirdparty\lz4\lib;C:\W\Disk-Image\minispy_user\thirdparty\zstd\lib;C:\W\Disk-Image\minispy_user\thirdparty\mimalloc\include;C:\W\Disk-Image\minispy_user\thirdparty\lz4\build\cmake\..\..\lib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>C:\W\Disk-Image\minispy_user\thirdparty;C:\W\Disk-Image\minispy_user\include;C:\W\Disk-Image\minispy_user\thirdparty\lz4\lib;C:\W\Disk-Image\minispy_user\thirdparty\zstd\lib;C:\W\Disk-Image\minispy_user\thirdparty\mimalloc\include;C:\W\Disk-Image\minispy_user\thirdparty\lz4\build\cmake\..\..\lib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Link>
+      <AdditionalDependencies>user32.lib;kernel32.lib;vssapi.lib;Dbghelp.lib;thirdparty\zstd\build\cmake\lib\MinSizeRel\zstd_static.lib;thirdparty\lz4\build\cmake\MinSizeRel\lz4.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64 -incremental:no -opt:ref -machine:x64</AdditionalOptions>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <ImportLibrary>C:/W/Disk-Image/minispy_user/build/win/MinSizeRel/nar_disk_image_native.lib</ImportLibrary>
+      <ProgramDataBaseFile>C:/W/Disk-Image/minispy_user/build/win/MinSizeRel/nar_disk_image_native.pdb</ProgramDataBaseFile>
+      <SubSystem>Console</SubSystem>
+    </Link>
+    <ProjectReference>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+    </ProjectReference>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>C:\W\Disk-Image\minispy_user\thirdparty;C:\W\Disk-Image\minispy_user\include;C:\W\Disk-Image\minispy_user\thirdparty\lz4\lib;C:\W\Disk-Image\minispy_user\thirdparty\zstd\lib;C:\W\Disk-Image\minispy_user\thirdparty\mimalloc\include;C:\W\Disk-Image\minispy_user\thirdparty\lz4\build\cmake\..\..\lib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /LD -EHa-</AdditionalOptions>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <DisableSpecificWarnings>4201;4505</DisableSpecificWarnings>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <MinimalRebuild>false</MinimalRebuild>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <Optimization>MaxSpeed</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <UseFullPaths>false</UseFullPaths>
+      <WarningLevel>Level4</WarningLevel>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;_CRT_SECURE_NO_WARNINGS=1;BG_USE_MIMALLOC=0;BG_BUILD_AS_DLL=1;CMAKE_INTDIR="RelWithDebInfo";nar_disk_image_native_EXPORTS</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;_CRT_SECURE_NO_WARNINGS=1;BG_USE_MIMALLOC=0;BG_BUILD_AS_DLL=1;CMAKE_INTDIR=\"RelWithDebInfo\";nar_disk_image_native_EXPORTS</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>C:\W\Disk-Image\minispy_user\thirdparty;C:\W\Disk-Image\minispy_user\include;C:\W\Disk-Image\minispy_user\thirdparty\lz4\lib;C:\W\Disk-Image\minispy_user\thirdparty\zstd\lib;C:\W\Disk-Image\minispy_user\thirdparty\mimalloc\include;C:\W\Disk-Image\minispy_user\thirdparty\lz4\build\cmake\..\..\lib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>C:\W\Disk-Image\minispy_user\thirdparty;C:\W\Disk-Image\minispy_user\include;C:\W\Disk-Image\minispy_user\thirdparty\lz4\lib;C:\W\Disk-Image\minispy_user\thirdparty\zstd\lib;C:\W\Disk-Image\minispy_user\thirdparty\mimalloc\include;C:\W\Disk-Image\minispy_user\thirdparty\lz4\build\cmake\..\..\lib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Link>
+      <AdditionalDependencies>user32.lib;kernel32.lib;vssapi.lib;Dbghelp.lib;thirdparty\zstd\build\cmake\lib\RelWithDebInfo\zstd_static.lib;thirdparty\lz4\build\cmake\RelWithDebInfo\lz4.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64 -incremental:no -opt:ref -machine:x64</AdditionalOptions>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <ImportLibrary>C:/W/Disk-Image/minispy_user/build/win/RelWithDebInfo/nar_disk_image_native.lib</ImportLibrary>
+      <ProgramDataBaseFile>C:/W/Disk-Image/minispy_user/build/win/RelWithDebInfo/nar_disk_image_native.pdb</ProgramDataBaseFile>
+      <SubSystem>Console</SubSystem>
+    </Link>
+    <ProjectReference>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+    </ProjectReference>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\W\Disk-Image\minispy_user\CMakeLists.txt">
+      <UseUtf8Encoding>Always</UseUtf8Encoding>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Building Custom Rule C:/W/Disk-Image/minispy_user/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/W/Disk-Image/minispy_user -BC:/W/Disk-Image/minispy_user/build/win --check-stamp-file C:/W/Disk-Image/minispy_user/build/win/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeCInformation.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeCXXInformation.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeCommonLanguageInclude.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeGenericSystem.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeInitializeConfigs.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeLanguageInformation.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeRCInformation.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeSystemSpecificInformation.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeSystemSpecificInitialize.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\Compiler\CMakeCommonCompilerMacros.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\Compiler\MSVC-C.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\Compiler\MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\Platform\Windows-MSVC-C.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\Platform\Windows-MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\Platform\Windows-MSVC.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\Platform\Windows.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\Platform\WindowsPaths.cmake;C:\W\Disk-Image\minispy_user\build\win\CMakeFiles\3.21.2\CMakeCCompiler.cmake;C:\W\Disk-Image\minispy_user\build\win\CMakeFiles\3.21.2\CMakeCXXCompiler.cmake;C:\W\Disk-Image\minispy_user\build\win\CMakeFiles\3.21.2\CMakeRCCompiler.cmake;C:\W\Disk-Image\minispy_user\build\win\CMakeFiles\3.21.2\CMakeSystem.cmake;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\W\Disk-Image\minispy_user\build\win\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Building Custom Rule C:/W/Disk-Image/minispy_user/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/W/Disk-Image/minispy_user -BC:/W/Disk-Image/minispy_user/build/win --check-stamp-file C:/W/Disk-Image/minispy_user/build/win/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeCInformation.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeCXXInformation.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeCommonLanguageInclude.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeGenericSystem.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeInitializeConfigs.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeLanguageInformation.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeRCInformation.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeSystemSpecificInformation.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeSystemSpecificInitialize.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\Compiler\CMakeCommonCompilerMacros.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\Compiler\MSVC-C.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\Compiler\MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\Platform\Windows-MSVC-C.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\Platform\Windows-MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\Platform\Windows-MSVC.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\Platform\Windows.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\Platform\WindowsPaths.cmake;C:\W\Disk-Image\minispy_user\build\win\CMakeFiles\3.21.2\CMakeCCompiler.cmake;C:\W\Disk-Image\minispy_user\build\win\CMakeFiles\3.21.2\CMakeCXXCompiler.cmake;C:\W\Disk-Image\minispy_user\build\win\CMakeFiles\3.21.2\CMakeRCCompiler.cmake;C:\W\Disk-Image\minispy_user\build\win\CMakeFiles\3.21.2\CMakeSystem.cmake;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\W\Disk-Image\minispy_user\build\win\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Building Custom Rule C:/W/Disk-Image/minispy_user/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/W/Disk-Image/minispy_user -BC:/W/Disk-Image/minispy_user/build/win --check-stamp-file C:/W/Disk-Image/minispy_user/build/win/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeCInformation.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeCXXInformation.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeCommonLanguageInclude.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeGenericSystem.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeInitializeConfigs.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeLanguageInformation.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeRCInformation.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeSystemSpecificInformation.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeSystemSpecificInitialize.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\Compiler\CMakeCommonCompilerMacros.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\Compiler\MSVC-C.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\Compiler\MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\Platform\Windows-MSVC-C.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\Platform\Windows-MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\Platform\Windows-MSVC.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\Platform\Windows.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\Platform\WindowsPaths.cmake;C:\W\Disk-Image\minispy_user\build\win\CMakeFiles\3.21.2\CMakeCCompiler.cmake;C:\W\Disk-Image\minispy_user\build\win\CMakeFiles\3.21.2\CMakeCXXCompiler.cmake;C:\W\Disk-Image\minispy_user\build\win\CMakeFiles\3.21.2\CMakeRCCompiler.cmake;C:\W\Disk-Image\minispy_user\build\win\CMakeFiles\3.21.2\CMakeSystem.cmake;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\W\Disk-Image\minispy_user\build\win\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Building Custom Rule C:/W/Disk-Image/minispy_user/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/W/Disk-Image/minispy_user -BC:/W/Disk-Image/minispy_user/build/win --check-stamp-file C:/W/Disk-Image/minispy_user/build/win/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeCInformation.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeCXXInformation.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeCommonLanguageInclude.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeGenericSystem.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeInitializeConfigs.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeLanguageInformation.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeRCInformation.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeSystemSpecificInformation.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeSystemSpecificInitialize.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\Compiler\CMakeCommonCompilerMacros.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\Compiler\MSVC-C.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\Compiler\MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\Platform\Windows-MSVC-C.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\Platform\Windows-MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\Platform\Windows-MSVC.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\Platform\Windows.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\Platform\WindowsPaths.cmake;C:\W\Disk-Image\minispy_user\build\win\CMakeFiles\3.21.2\CMakeCCompiler.cmake;C:\W\Disk-Image\minispy_user\build\win\CMakeFiles\3.21.2\CMakeCXXCompiler.cmake;C:\W\Disk-Image\minispy_user\build\win\CMakeFiles\3.21.2\CMakeRCCompiler.cmake;C:\W\Disk-Image\minispy_user\build\win\CMakeFiles\3.21.2\CMakeSystem.cmake;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\W\Disk-Image\minispy_user\build\win\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="C:\W\Disk-Image\minispy_user\src\bg.cpp" />
+    <ClCompile Include="C:\W\Disk-Image\minispy_user\src\nar.cpp" />
+    <ClCompile Include="C:\W\Disk-Image\minispy_user\src\nar_win32.cpp" />
+    <ClCompile Include="C:\W\Disk-Image\minispy_user\src\package.cpp" />
+    <ClCompile Include="C:\W\Disk-Image\minispy_user\src\platform_io.cpp" />
+    <ClCompile Include="C:\W\Disk-Image\minispy_user\src\file_explorer.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="C:\W\Disk-Image\minispy_user\build\win\ZERO_CHECK.vcxproj">
+      <Project>{798652C0-186F-34D4-BF9D-BE9EA6383B82}</Project>
+      <Name>ZERO_CHECK</Name>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </ProjectReference>
+    <ProjectReference Include="C:\W\Disk-Image\minispy_user\build\win\thirdparty\zstd\build\cmake\lib\libzstd_static.vcxproj">
+      <Project>{B690B1BD-C454-3419-A834-AD669C978485}</Project>
+      <Name>libzstd_static</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\W\Disk-Image\minispy_user\build\win\thirdparty\lz4\build\cmake\lz4_static.vcxproj">
+      <Project>{6C4A816F-93AF-397C-A642-206B2B564071}</Project>
+      <Name>lz4_static</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
