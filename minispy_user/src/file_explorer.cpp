@@ -7,7 +7,7 @@
 #include "nar_win32.hpp"
 
 
-#if 0
+#if 1
 
 inline int
 CompareWCharStrings(const void *v1, const void *v2){
@@ -169,7 +169,7 @@ NarGetBitmapAttributeDataLen(void *BitmapAttributeStart){
 BitmapCompatibleInsert = inserts cluster one by one, so caller can easily zero-out unused ones
 */
 bool
-NarParseDataRun(void* DatarunStart, nar_record *OutRegions, uint32_t MaxRegionLen, uint32_t *OutRegionsFound, bool BitmapCompatibleInsert){
+NarParseDataRun(void* DatarunStart, nar_kernel_record *OutRegions, uint32_t MaxRegionLen, uint32_t *OutRegionsFound, bool BitmapCompatibleInsert){
     
     // So it looks like dataruns doesnt actually tells you LCN, to save up space, they kinda use smt like 
     // winapi's deviceiocontrol routine, maybe the reason for fetching VCN-LCN maps from winapi is weird because 
@@ -270,7 +270,7 @@ NarParseDataRun(void* DatarunStart, nar_record *OutRegions, uint32_t MaxRegionLe
 This functions inserts clusters one-by-one, so region with 4 cluster length will be added 4 times as if they were representing 4 different consequent regions. Increases memory usage, but excluding regions via bitmap becomes so easy i think it's worth
 */
 bool
-NarParseIndexAllocationAttribute(void *IndexAttribute, nar_record *OutRegions, uint32_t MaxRegionLen, uint32_t *OutRegionsFound, bool BitmapCompatibleInsert){
+NarParseIndexAllocationAttribute(void *IndexAttribute, nar_kernel_record *OutRegions, uint32_t MaxRegionLen, uint32_t *OutRegionsFound, bool BitmapCompatibleInsert){
     
     if(IndexAttribute == NULL 
        || OutRegions == NULL 
@@ -293,7 +293,7 @@ NarParseIndexAllocationAttribute(void *IndexAttribute, nar_record *OutRegions, u
 
 bool
 NarGetMFTRegionsFromBootSector(HANDLE Volume, 
-                               nar_record* Out, 
+                               nar_kernel_record* Out, 
                                uint32_t* OutLen, 
                                uint32_t Capacity){
     
@@ -348,7 +348,7 @@ NarSetupExtensionFinderMemory(HANDLE VolumeHandle){
     
     uint32_t MFTRecordsCapacity = 256;
     uint64_t TotalFC            = 0;
-    nar_record* MFTRecords      = (nar_record*)calloc(1024, sizeof(nar_record));
+    nar_kernel_record* MFTRecords      = (nar_kernel_record*)calloc(1024, sizeof(nar_kernel_record));
     
     uint64_t FileBufferSize        = Megabyte(128);
     uint64_t ArenaSize             = 0;
@@ -396,9 +396,9 @@ NarSetupExtensionFinderMemory(HANDLE VolumeHandle){
         Result.FileBuffer     = ArenaAllocate(&Result.Arena, FileBufferSize);
         Result.FileBufferSize = FileBufferSize;
         
-        Result.MFTRecords     = (nar_record*)ArenaAllocate(&Result.Arena, MFTRecordsCount*sizeof(nar_record));
+        Result.MFTRecords     = (nar_kernel_record*)ArenaAllocate(&Result.Arena, MFTRecordsCount*sizeof(nar_kernel_record));
         Result.MFTRecordCount = MFTRecordsCount;
-        memcpy(Result.MFTRecords, MFTRecords, sizeof(nar_record)*MFTRecordsCount);
+        memcpy(Result.MFTRecords, MFTRecords, sizeof(nar_kernel_record)*MFTRecordsCount);
         
         Result.DirMappingMemory = ArenaAllocate(&Result.Arena, TotalFC*sizeof(name_pid));
         Result.PIDArrMemory = ArenaAllocate(&Result.Arena, TotalFC*sizeof(name_pid));
@@ -762,10 +762,10 @@ NarFindExtensions(char VolumeLetter, HANDLE VolumeHandle, wchar_t **ExtensionLis
     
     uint64_t DstCap = DataRunBufferCap + 256;
     
-    void *CompressedBuffer = malloc(DstCap);
-    int LZ4CompressedSize = LZ4_compress_default((const char *)DataRunBuffer, (char *)CompressedBuffer, TotalNumberOfSizeUsedForDataRuns, DstCap);
-    size_t ZSTDCompressedSize = ZSTD_compress(CompressedBuffer, DstCap, DataRunBuffer, TotalNumberOfSizeUsedForDataRuns, 4);
-    ASSERT(!ZSTD_isError(ZSTDCompressedSize));
+    // void *CompressedBuffer = malloc(DstCap);
+    // int LZ4CompressedSize = LZ4_compress_default((const char *)DataRunBuffer, (char *)CompressedBuffer, TotalNumberOfSizeUsedForDataRuns, DstCap);
+    // size_t ZSTDCompressedSize = ZSTD_compress(CompressedBuffer, DstCap, DataRunBuffer, TotalNumberOfSizeUsedForDataRuns, 4);
+    // ASSERT(!ZSTD_isError(ZSTDCompressedSize));
 
 #if 0
     for(size_t i =0; i<ArrLen; i++){
@@ -1520,7 +1520,7 @@ NarFindFileLayout(file_explorer *FE, file_explorer_file *File, nar_arena *Arena)
     ((uint8_t*)FileRecord)[511] = *(uint8_t*)NAR_OFFSET(FileRecord, 51);
     
     memory_restore_point RestorePoint = ArenaGetRestorePoint(Arena);
-    Result.LCN = (nar_record*)ArenaAllocateAligned(Arena, Result.MaxCount*sizeof(nar_record), 8);
+    Result.LCN = (nar_kernel_record*)ArenaAllocateAligned(Arena, Result.MaxCount*sizeof(nar_kernel_record), 8);
     
     void* ATL  = NarFindFileAttributeFromFileRecord(FileRecord, NAR_ATTRIBUTE_LIST);
     
@@ -1536,12 +1536,12 @@ NarFindFileLayout(file_explorer *FE, file_explorer_file *File, nar_arena *Arena)
         uint8_t ATLNonResident = *(uint8_t*)NAR_OFFSET(ATL, 8);
         if(ATLNonResident){
             void* DataRunStart = NAR_OFFSET(ATL, 64);;
-            nar_record Runs[64];
+            nar_kernel_record Runs[64];
             uint32_t DataRunFound = 0;
             
             bool ParseResult = NarParseDataRun(DataRunStart, 
                                                Runs, 
-                                               sizeof(Runs)/sizeof(nar_record), 
+                                               sizeof(Runs)/sizeof(nar_kernel_record), 
                                                &DataRunFound, 
                                                false);
             
@@ -1694,11 +1694,11 @@ NarFindFileLayout(file_explorer *FE, file_explorer_file *File, nar_arena *Arena)
         for(uint64_t i = 0; i<Result.LCNCount; i++){
             Result.TotalSize += Result.LCN[i].Len*FE->ClusterSize;
         }
-        Result.SortedLCN = (nar_record*)ArenaAllocateAligned(Arena, Result.LCNCount*sizeof(nar_record), 8);
+        Result.SortedLCN = (nar_kernel_record*)ArenaAllocateAligned(Arena, Result.LCNCount*sizeof(nar_kernel_record), 8);
         
         // it is guarenteed there wont be colliding blocks, no need to call mergeregionswithoutrealloc
-        memcpy(Result.SortedLCN, Result.LCN, Result.LCNCount*sizeof(nar_record));
-        qsort(Result.SortedLCN, Result.LCNCount, sizeof(nar_record), CompareNarRecords);
+        memcpy(Result.SortedLCN, Result.LCN, Result.LCNCount*sizeof(nar_kernel_record));
+        qsort(Result.SortedLCN, Result.LCNCount, sizeof(nar_kernel_record), CompareNarRecords);
     }
     
     return Result;
@@ -1744,8 +1744,8 @@ NarInitFileRestoreSource(NarUTF8 MetadataName, NarUTF8 BinaryName){
     
     backup_metadata *BM = (backup_metadata*)Result.Metadata.Data;
     
-    Result.BackupLCN = (nar_record*)((uint8_t*)Result.Metadata.Data + BM->Offset.RegionsMetadata);
-    Result.LCNCount  = BM->Size.RegionsMetadata/sizeof(nar_record);
+    Result.BackupLCN = (nar_kernel_record*)((uint8_t*)Result.Metadata.Data + BM->Offset.RegionsMetadata);
+    Result.LCNCount  = BM->Size.RegionsMetadata/sizeof(nar_kernel_record);
     Result.ID        = BM->ID;
     Result.Version   = BM->Version;
     Result.Type      = BM->BT;
@@ -1842,10 +1842,10 @@ NarInitFileRestoreCtx(file_disk_layout Layout, NarUTF8 RootDir, nar_backup_id ID
     Result.DecompBuffer      = ArenaAllocate(Arena, Result.DecompBufferSize);
     
     
-    Result.ActiveLCN      = (nar_record*)PoolAllocate(&Result.LCNPool);
+    Result.ActiveLCN      = (nar_kernel_record*)PoolAllocate(&Result.LCNPool);
     Result.ActiveLCNCount = Result.Layout.LCNCount;
     
-    memcpy(Result.ActiveLCN, Result.Layout.SortedLCN, Result.Layout.LCNCount*sizeof(nar_record));
+    memcpy(Result.ActiveLCN, Result.Layout.SortedLCN, Result.Layout.LCNCount*sizeof(nar_kernel_record));
     
     
     Result.RootDir = NarStringCopy(RootDir, &Result.StringAllocator);
@@ -1892,14 +1892,14 @@ NarAdvanceFileRestore(file_restore_ctx *ctx, void* Out, size_t OutSize){
         
         NarNextIntersectionIter(&ctx->IIter);
         
-        nar_record FetchRegion = ctx->IIter.It;
+        nar_kernel_record FetchRegion = ctx->IIter.It;
         
         // check if end of IIter
         if(!NarIsRegionIterValid(ctx->IIter)){
             
             // exclude found backups from layout.
             {
-                nar_record *ExcludedLCN = (nar_record*)PoolAllocate(&ctx->LCNPool);
+                nar_kernel_record *ExcludedLCN = (nar_kernel_record*)PoolAllocate(&ctx->LCNPool);
                 size_t i = 0;
                 
                 

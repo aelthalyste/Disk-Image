@@ -4,7 +4,6 @@
 #include "platform_io.hpp"
 
 
-#define BG_IMPLEMENTATION
 #include "bg.hpp"
 
 
@@ -20,14 +19,13 @@ using namespace System::Collections;
 
 using namespace System;
 using namespace System::Text;
-using namespace System::Collections::Generic;
+// using namespace System::Collections::Generic;
 using namespace System::Collections;
 
 void
 SystemStringToWCharPtr(System::String^ SystemStr, wchar_t* Destination) {
     
     pin_ptr<const wchar_t> wch = PtrToStringChars(SystemStr);
-    size_t ConvertedChars = 0;
     size_t SizeInBytes = (SystemStr->Length + 1) * 2;
     memcpy(Destination, wch, SizeInBytes);
     
@@ -39,7 +37,8 @@ namespace NarNative{
         public:
         
         static List<System::String^>^ FindExtensionAllVolumes(List<System::String^> ^Extensions){
-            
+            bg_unused(Extensions);
+            ASSERT(false);
             return nullptr;
 #if NAR_ENABLE_DOTNET_FILE_EXPLORER
             List<System::String^>^ Result = gcnew List<System::String^>;
@@ -99,6 +98,10 @@ namespace NarNative{
         }
         
         static List<System::String^>^ FindExtension(wchar_t VolumeLetter, List<System::String^> ^Extensions){
+            
+            bg_unused(VolumeLetter);
+            bg_unused(Extensions)
+            ASSERT(false);
 
         	return nullptr;
 #if NAR_ENABLE_DOTNET_FILE_EXPLORER
@@ -253,7 +256,7 @@ namespace NarDIWrapper {
         ULONGLONG TotalSize; //in bytes!
         ULONGLONG FreeSize;
         System::String^ VolumeName;
-        BOOLEAN Bootable; // Healthy && NTFS && !Boot
+        bool Bootable; // Healthy && NTFS && !Boot
         char Letter;
         INT8 DiskID;
         char DiskType;
@@ -285,6 +288,14 @@ namespace NarDIWrapper {
         
         bool SetDiskRestore(int DiskID, wchar_t Letter, bool arg_RepairBoot, bool OverrideDiskType, wchar_t AlternativeDiskType) {
             
+            bg_unused(DiskID);
+            bg_unused(Letter);
+            bg_unused(arg_RepairBoot);
+            bg_unused(OverrideDiskType);
+            bg_unused(AlternativeDiskType);
+
+            return false;
+
             #if 0
             char DiskType = (char)BM->DiskType;
             if (OverrideDiskType)
@@ -339,7 +350,6 @@ namespace NarDIWrapper {
             IsDiskRestore = true;
             return true;
             #endif
-            return false;
         }
         
         
@@ -369,14 +379,14 @@ namespace NarDIWrapper {
                 else {
                     // found old state
                     printf("Succ loaded boot state from file\n");
-                    for(int i =0; i<C->Volumes.Count; i++){
-                        printf("WR BOOT LOAD : Volume %c, version %d, type %d\n", C->Volumes.Data[i].Letter, C->Volumes.Data[i].Version, C->Volumes.Data[i].BT);
+                    for(int i =0; i<C->VolumeCount; i++){
+                        printf("WR BOOT LOAD : Volume %c, version %d, type %d\n", C->Volumes[i].Letter, C->Volumes[i].Version, C->Volumes[i].BT);
                     }
                 }
                 
                 C->Port = INVALID_HANDLE_VALUE;
                 int32_t CDResult = ConnectDriver(C);
-                msIsDriverConnected = CDResult;
+                msIsDriverConnected = (SHORT)CDResult;
                 
             }
 
@@ -392,28 +402,30 @@ namespace NarDIWrapper {
         }
 
         static List<VolumeInformation^>^ CW_GetVolumes() {
-            data_array<volume_information> V = NarGetVolumes();
-        
+            int64_t VCount = 0;
+            volume_information *V = NarGetVolumes(&VCount);
+            
+
             List<VolumeInformation^>^ Result = gcnew  List<VolumeInformation^>;
             
-            for (int i = 0; i < V.Count; i++) {
+            for (int i = 0; i < VCount; i++) {
                 
                 VolumeInformation^ BI = gcnew VolumeInformation;
-                BI->TotalSize  = V.Data[i].TotalSize;
-                BI->FreeSize   = V.Data[i].FreeSize;
-                BI->Bootable   = V.Data[i].Bootable;
-                BI->DiskID     = (int8_t)V.Data[i].DiskID;
-                BI->DiskType   = V.Data[i].DiskType;
-                BI->Letter     = V.Data[i].Letter;
-                BI->VolumeName = gcnew System::String(V.Data[i].VolumeName);
+                BI->TotalSize  = V[i].TotalSize;
+                BI->FreeSize   = V[i].FreeSize;
+                BI->Bootable   = V[i].Bootable;
+                BI->DiskID     = (int8_t)V[i].DiskID;
+                BI->DiskType   = V[i].DiskType;
+                BI->Letter     = V[i].Letter;
+                BI->VolumeName = gcnew System::String(V[i].VolumeName);
                 if (BI->VolumeName->Length == 0) {
                     BI->VolumeName = L"Local Disk";
                 }
                 
                 Result->Add(BI);
             }
-            
-            FreeDataArray(&V);
+                        
+            NarFreeVolumeArray(V);
             return Result;
         }
         
@@ -421,7 +433,7 @@ namespace NarDIWrapper {
         bool CW_RetryDriverConnection() {
             if (C == 0) {
                 int32_t CDResult = ConnectDriver(C);
-                msIsDriverConnected = CDResult;
+                msIsDriverConnected = (SHORT)CDResult;
             }
             return msIsDriverConnected;
         }
@@ -446,7 +458,7 @@ namespace NarDIWrapper {
             return Result;
         }
         
-        bool CW_SetupStream(wchar_t L, int BT, StreamInfo^ StrInf, bool ShouldCompress) {
+        bool CW_SetupStream(wchar_t L, int BT, StreamInfo^ StrInf) {
 
         	uint64_t BytesToTransfer = 0;
         	char BinaryExtension[256];
@@ -469,11 +481,12 @@ namespace NarDIWrapper {
 
         	int32_t ID = GetVolumeID(C, VolumeLetter);
         	if (ID!=NAR_INVALID_VOLUME_TRACK_ID) {
-        		auto Volume = &C->Volumes.Data[ID];
+        		auto Volume = &C->Volumes[ID];
         		uint32_t Readed = ReadStream(&Volume->Stream, Data, Size);
     			Result->Error = Volume->Stream.Error;
     			Result->WriteSize        = Readed;
-    			Result->DecompressedSize = Volume->Stream.BytesProcessed;
+                ASSERT(Volume->Stream.BytesProcessed < 0xffffffff);
+    			Result->DecompressedSize = (uint32_t)Volume->Stream.BytesProcessed;
         	}
         	else {
         		// fatal error! that shouldn't be possible
@@ -500,7 +513,7 @@ namespace NarDIWrapper {
 
 				char OutputMetadataName[256];
 				memset(OutputMetadataName, 0, sizeof(OutputMetadataName));
-				if (!!TerminateBackup(&C->Volumes.Data[ID], Succeeded, DirectoryToEmitMetadata, OutputMetadataName)) {
+				if (!!TerminateBackup(&C->Volumes[ID], Succeeded, DirectoryToEmitMetadata, OutputMetadataName)) {
 					Result = gcnew System::String(OutputMetadataName);
 				}
 				else {
@@ -520,7 +533,7 @@ namespace NarDIWrapper {
 	        unsigned long long Result = 0;
 	        INT32 bcid = GetVolumeID(C, Letter);
 	        if(bcid != NAR_INVALID_VOLUME_TRACK_ID){
-	            Result = C->Volumes.Data[bcid].BackupID.Q;
+	            Result = C->Volumes[bcid].BackupID.Q;
 	        }
 	        return Result;
 	    }
@@ -530,28 +543,29 @@ namespace NarDIWrapper {
         }
 
         static List<BackupMetadata^>^ CW_GetBackupsInDirectory(System::String^ RootDir) {
+            bg_unused(RootDir);
+            ASSERT(false);
         	return nullptr;
         }
 
         static List<DiskInfo^>^ CW_GetDisksOnSystem() {
-
-	        data_array<disk_information> CResult = NarGetDisks();
-	        if (CResult.Data == NULL || CResult.Count == 0) {
-	            if (CResult.Count == 0) printf("Found 0 disks on the system\n");
-	            if (CResult.Data  == 0) printf("GetDisksOnSystem returned NULL\n");
+            
+            int64_t CResultCount = 0;
+	        disk_information *CResult = NarGetDisks(&CResultCount);
+	        if (CResult == NULL || CResultCount == 0) {
+	            if (CResultCount == 0) printf("Found 0 disks on the system\n");
+	            if (CResult      == 0) printf("GetDisksOnSystem returned NULL\n");
 	            return nullptr;
 	        }
 	        
 	        List<DiskInfo^>^ Result = gcnew List<DiskInfo^>;
-	        printf("Found %i disks on the system\n", CResult.Count);
-	        for (int i = 0; i < CResult.Count; i++) {
+	        for (int i = 0; i < CResultCount; i++) {
 	            DiskInfo^ temp = gcnew DiskInfo;
-	            temp->ID   = CResult.Data[i].ID;
-	            temp->Size = CResult.Data[i].Size;
-	            temp->Type = CResult.Data[i].Type;
+	            temp->ID   = CResult[i].ID;
+	            temp->Size = CResult[i].Size;
+	            temp->Type = CResult[i].Type;
 	            Result->Add(temp);
 	        }
-	        FreeDataArray(&CResult);
 	        
 	        return Result;
         }
@@ -565,7 +579,7 @@ namespace NarDIWrapper {
 	        SystemStringToWCharPtr(MetadataFileName, wcMetadataFileName);
 	        SystemStringToWCharPtr(TaskDescription , wcTaskDescription);
 
-	        return NarEditTaskNameAndDescription(wcMetadataFileName, wcTaskName, wcTaskDescription);
+	        return (BOOLEAN)NarEditTaskNameAndDescription(wcMetadataFileName, wcTaskName, wcTaskDescription);
         }
         
         static bool CW_IsVolumeAvailable(wchar_t Letter) {
@@ -580,6 +594,8 @@ namespace NarDIWrapper {
         static wchar_t GetDiskType(int DiskID) {
 	        // @Incomplete :
 	        // @TODO : 
+            bg_unused(DiskID);
+            ASSERT(false);
 	        return L'R';
         }
 
@@ -588,7 +604,10 @@ namespace NarDIWrapper {
         }
 
         static bool CW_CopyDiskLayout(int SourceDiskID, int TargetDiskID) {
-        	ASSERT(false);
+            bg_unused(SourceDiskID);
+            bg_unused(TargetDiskID);
+            ASSERT(false);
+
         	return false;
         }
 
@@ -623,20 +642,21 @@ namespace NarDIWrapper {
 
 
         static void CW_FreeRestoreLocalSource(uint64_t RestoreHandle) {
-        	local_restore_ctx *C = reinterpret_cast<local_restore_ctx *>(RestoreHandle);
-            NarFreeBinaryFilesInDirectory(C->BinaryFiles);
-            FreeRestoreCtx(&C->rctx);
-            free(C->Buffer);
-        	free(C);
+        	local_restore_ctx *LocalRestoreCtx = reinterpret_cast<local_restore_ctx *>(RestoreHandle);
+            NarFreeBinaryFilesInDirectory(LocalRestoreCtx->BinaryFiles);
+            FreeRestoreCtx(&LocalRestoreCtx->rctx);
+            free(LocalRestoreCtx->Buffer);
+        	free(LocalRestoreCtx);
         }
  
         static uint64_t CW_GetRestoreSize(uint64_t RestoreHandle) {
-        	Restore_Ctx *C = reinterpret_cast<Restore_Ctx *>(RestoreHandle);
-        	return C->target_file_size;
+        	Restore_Ctx *RCtx = reinterpret_cast<Restore_Ctx *>(RestoreHandle);
+        	return RCtx->target_file_size;
         }
 
         static uint64_t CW_PrepareRestoreTargetNewDisk(System::String ^MetadataPath, int32_t TargetLetter, bool OverrideDiskType, wchar_t NewDiskType) {
-
+            bg_unused(OverrideDiskType);
+            bg_unused(NewDiskType);
         	wchar_t *Dir = (wchar_t *)calloc(Kilobyte(64), 2);
         	SystemStringToWCharPtr(MetadataPath, Dir);
         	UTF8 *PathUTF8 = NarWCHARToUTF8(Dir);        	
@@ -658,7 +678,7 @@ namespace NarDIWrapper {
         	return Result;
         }
 
-        static uint64_t CW_PrepareRestoreTargetVolume(System::String ^MetadataPath, int32_t TargetLetter) {
+        static uint64_t CW_PrepareRestoreTargetVolume(System::String ^MetadataPath, wchar_t TargetLetter) {
 
         	wchar_t *Dir = (wchar_t *)calloc(Kilobyte(64), 2);
         	SystemStringToWCharPtr(MetadataPath, Dir);
@@ -666,7 +686,7 @@ namespace NarDIWrapper {
             
             uint64_t Result = 0;
             restore_target *Target = (restore_target *)calloc(sizeof(*Target), 1);
-            if (NarPrepareRestoreTargetVolume(Target, PathUTF8, TargetLetter)) {
+            if (NarPrepareRestoreTargetVolume(Target, PathUTF8, (char)TargetLetter)) {
             	Result = reinterpret_cast<uint64_t>(Target);
             }
             else {
@@ -684,6 +704,8 @@ namespace NarDIWrapper {
         static uint64_t CW_PrepareRestoreTargetFile(System::String ^MetadataPath) {
         	// @TODO : 
         	// @Incomplete : 
+            bg_unused(MetadataPath);
+            ASSERT(false);
         	return 0;
         }
 

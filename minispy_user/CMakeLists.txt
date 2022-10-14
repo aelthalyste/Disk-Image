@@ -98,7 +98,7 @@ if (WIN32)
 		src/package.cpp	
 		src/platform_io.cpp
 		src/file_explorer.cpp
-		#src/nar_compression.cpp
+		src/nar_compression.cpp
 	)
 
 
@@ -125,6 +125,35 @@ if (WIN32)
 		libzstd_static
 		lz4_static
 	)
+
+
+
+	# CLR BUILD
+	add_library(nar_disk_image_clr SHARED)
+
+	target_compile_definitions(nar_disk_image_clr PRIVATE
+		_CRT_SECURE_NO_WARNINGS=1
+	)
+
+	set_target_properties(nar_disk_image_clr PROPERTIES 
+		COMMON_LANGUAGE_RUNTIME ""
+	)
+
+	target_compile_options(nar_disk_image_clr PRIVATE 
+		/clr
+    	/wd4714
+	)
+
+	target_link_libraries(nar_disk_image_clr PUBLIC nar_disk_image_native)	
+
+
+    target_sources(nar_disk_image_clr PRIVATE 
+    	${CMAKE_SOURCE_DIR}\\clr_build.cpp
+		src/bg.cpp
+    )
+
+
+
 
 endif ()
 
