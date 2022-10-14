@@ -405,8 +405,7 @@ NarGetVSSPath(process_listen_ctx *Ctx, wchar_t *Out);
 void 
 NarTerminateVSS(process_listen_ctx *Ctx, uint8_t Success);
 
-BOOLEAN
-SetupVSS();
+BG_API BOOLEAN SetupVSS();
 
 
 //Returns # of volumes detected
@@ -626,8 +625,7 @@ inline void
 NarGetProductName(char* OutName);
 
 
-BOOLEAN
-NarSetFilePointer(HANDLE File, ULONGLONG V);
+
 
 #if 0
 bool
@@ -637,31 +635,6 @@ bool
 NarParseIndexAllocationAttribute(void *IndexAttribute, nar_kernel_record *OutRegions, int64_t MaxRegionLen, int64_t *OutRegionsFound, bool BitmapCompatibleInsert);
 #endif
 
-uint32_t
-NarGetFileID(void* FileRecord);
-
-
-inline int32_t
-NarGetVolumeClusterSize(char Letter);
-
-/*
-CAUTION: This function does NOT lookup attributes from ATTRIBUTE LIST, so if attribute is not resident in original file entry, function wont return it
-
-// NOTE(Batuhan): Function early terminates in attribute iteration loop if it finds attribute with higher ID than given AttributeID parameter
-
-For given MFT FileEntry, returns address AttributeID in given FileRecord. Caller can use return value to directly access given AttributeID 
-Function returns NULL if attribute is not present 
-*/
-inline void*
-NarFindFileAttributeFromFileRecord(void *FileRecord, int32_t AttributeID);
-
-
-bool
-NarGetMFTRegionsFromBootSector(HANDLE Volume, 
-                               nar_kernel_record* Out, 
-                               int64_t* OutLen, 
-                               int64_t Capacity);
-                               
 
 BG_API bool NarPrepareRestoreTargetVolume(restore_target *TargetOut, const UTF8 *MetadataPath, char Letter);
 BG_API bool NarPrepareRestoreTargetWithNewDisk(restore_target *TargetOut, const UTF8 *MetadataPath, int32_t Letter);

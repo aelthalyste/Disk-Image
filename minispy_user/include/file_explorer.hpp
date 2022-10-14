@@ -7,24 +7,15 @@
 #define Gigabyte(val) (Megabyte(val)*1024ll)
 #endif
 
-
+#ifndef MIN
 #define MIN(a,b) ((a)<(b) ? (a) : (b))
+#endif
 
 #include "platform_io.hpp"
 #include "nar.hpp"
 #include "memory.hpp"
 #include "narstring.hpp"
-
-#define NAR_POSIX                2
-#define NAR_ENTRY_SIZE_OFFSET    8
-#define NAR_TIME_OFFSET         24
-#define NAR_SIZE_OFFSET         64
-#define NAR_ATTRIBUTE_OFFSET    72
-#define NAR_NAME_LEN_OFFSET     80 
-#define NAR_POSIX_OFFSET        81
-#define NAR_NAME_OFFSET         82
-
-#define NAR_ROOT_MFT_ID          5
+#include "nar_ntfs_utils.hpp"
 
 #define NAR_FE_HAND_OPT_READ_MOUNTED_VOLUME 1
 #define NAR_FE_HAND_OPT_READ_BACKUP_VOLUME 2
@@ -33,87 +24,7 @@
 #define NAR_FEXP_POSIX -1
 #define NAR_FEXP_END_MARK -2
 #define NAR_FEXP_SUCCEEDED 1
-
-#define NAR_STANDART_FLAG         0x10
-#define NAR_ATTRIBUTE_LIST        0x20
-#define NAR_FILENAME_FLAG         0x30
-#define NAR_DATA_FLAG             0x80
-#define NAR_INDEX_ROOT_FLAG       0x90
-#define NAR_INDEX_ALLOCATION_FLAG 0xA0
-#define NAR_BITMAP_FLAG           0xB0
-
 #define NAR_FE_DIRECTORY_FLAG     0x01
-
-#define NAR_OFFSET(m, o) ((char*)(m) + (o))
-
-
-struct FileRecordHeader {
-	uint32_t magic;
-	uint16_t updateSequenceOffset;
-	uint16_t updateSequenceSize;
-	uint64_t logSequence;
-	uint16_t sequenceNumber;
-	uint16_t hardLinkCount;
-	uint16_t firstAttributeOffset;
-	uint16_t inUse : 1;
-	uint16_t isDirectory : 1;
-	uint32_t usedSize;
-	uint32_t allocatedSize;
-	uint64_t fileReference;
-	uint16_t nextAttributeID;
-	uint16_t unused;
-	uint32_t recordNumber;
-};
-
-#pragma pack(push ,1)
-struct data_attr_header{
-    uint32_t Type;
-    uint32_t LenWithHeader;
-    uint8_t  NonResidentFlag;
-    uint8_t  NameLen;
-    uint16_t NameOffset;
-    uint16_t Compressed : 1;  //0th byte
-    uint16_t Empty      : 13; //
-    uint16_t Encrypted : 1;   //14th byte
-    uint16_t Sparse    : 1;   //15th byte
-};
-#pragma pack(pop)
-
-struct name_pid{
-    wchar_t *Name;
-    uint32_t FileID;
-    uint32_t ParentFileID;
-    uint8_t  NameLen; // 
-};
-
-
-struct multiple_pid{
-    name_pid PIDS[16];
-    uint8_t Len = 0;
-};
-
-
-struct extension_search_result {
-    wchar_t **Files;
-    uint64_t Len;
-};
-
-
-struct extension_finder_memory{
-    nar_arena Arena;
-    linear_allocator StringAllocator;
-    
-    void*       FileBuffer;
-    uint64_t    FileBufferSize;
-    
-    nar_kernel_record* MFTRecords;
-    uint64_t           MFTRecordCount;
-    
-    void*       DirMappingMemory;
-    void*       PIDArrMemory;
-    
-    uint64_t    TotalFC;
-};
 
 
 struct file_explorer_file{
@@ -171,21 +82,6 @@ struct file_explorer{
     uint32_t SearchID;
 };
 
-
-struct attribute_list_data{
-    void*    Data;
-    uint32_t Len;
-};
-
-struct attribute_list_entry{
-    uint32_t EntryType;
-    uint32_t EntryFileID;
-};
-
-// Each entry is 8 byte, its ok to store them in stack.
-struct attribute_list_contents{
-    attribute_list_entry Entries[32];
-};
 
 
 #define IS_FILE_LAYOUT_RESIDENT(fdl) (fdl.Data != 0)
@@ -269,69 +165,6 @@ struct file_restore_advance_result{
 
 #if 1
 
-inline BOOLEAN
-NarSetFilePointer(HANDLE File, ULONGLONG V);
-
-
-void*
-NarGetBitmapAttributeData(void *BitmapAttributeStart);
-
-int32_t
-NarGetBitmapAttributeDataLen(void *BitmapAttributeStart);
-
-inline bool
-NarParseIndexAllocationAttribute(void *IndexAttribute, nar_kernel_record *OutRegions, int64_t MaxRegionLen, int64_t *OutRegionsFound, bool BitmapCompatibleInsert = false);
-
-
-bool
-NarParseDataRun(void* DatarunStart, nar_kernel_record *OutRegions, int64_t MaxRegionLen, int64_t *OutRegionsFound, bool BitmapCompatibleInsert = false);
-
-
-inline uint32_t
-NarGetFileID(void* FileRecord);
-
-inline uint8_t
-NarIsFileLinked(void* FileRecord);
-
-inline uint32_t
-NarGetFileBaseID(void* FileRecord);
-
-inline int32_t
-NarGetVolumeClusterSize(char Letter);
-
-
-HANDLE
-NarOpenVolume(char Letter);
-
-
-
-inline void*
-NarFindFileAttributeFromFileRecord(void *FileRecord, int32_t AttributeID);
-
-
-
-bool
-NarGetMFTRegionsFromBootSector(HANDLE Volume, 
-                               nar_kernel_record* Out, 
-                               uint32_t* OutLen, 
-                               uint32_t Capacity);
-
-
-
-multiple_pid
-NarGetFileNameAndParentID(void *FileRecord);
-
-extension_finder_memory
-NarSetupExtensionFinderMemory(HANDLE VolumeHandle);
-
-void
-NarFreeExtensionFinderMemory(extension_finder_memory *Memory);
-
-extension_search_result
-NarFindExtensions(char VolumeLetter, HANDLE VolumeHandle, wchar_t **ExtensionList, size_t ExtensionListCount, extension_finder_memory *Memory);
-
-
-
 
 
 
@@ -351,14 +184,7 @@ FEStartParentSearch(file_explorer *FE, uint32_t ParentID);
 file_explorer_file*
 FENextParent(file_explorer *FE, file_explorer_file *CurrentFile);
 
-attribute_list_contents
-NarGetAttributeListContents(void* AttrListDataStart, uint64_t DataLen);
 
-
-bool IsValidAttrEntry(attribute_list_entry Entry);
-
-attribute_list_contents
-GetAttributeListContents(void* AttrListDataStart, uint64_t DataLen);
 
 
 uint64_t

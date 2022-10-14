@@ -97,7 +97,8 @@ if (WIN32)
 		src/nar_win32.cpp
 		src/package.cpp	
 		src/platform_io.cpp
-		src/file_explorer.cpp
+		# src/nar_win32_ntfs_parser.cpp
+		src/nar_extension_searcher.cpp
 		src/nar_compression.cpp
 	)
 
@@ -128,7 +129,7 @@ if (WIN32)
 
 
 
-	# CLR BUILD
+	### CLR BUILD
 	add_library(nar_disk_image_clr SHARED)
 
 	target_compile_definitions(nar_disk_image_clr PRIVATE
@@ -151,6 +152,22 @@ if (WIN32)
     	${CMAKE_SOURCE_DIR}\\clr_build.cpp
 		src/bg.cpp
     )
+
+	### test area
+	add_executable(test_area)
+	target_link_libraries(test_area PUBLIC nar_disk_image_native)
+	target_sources(test_area PUBLIC 
+		main.cpp
+		src/bg.cpp
+	)
+	
+	target_compile_options(test_area PRIVATE
+		/wd4189
+		/wd4244
+		/wd4018
+		/wd4100
+		/wd4702
+	)
 
 
 

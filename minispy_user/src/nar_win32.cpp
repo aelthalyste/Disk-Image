@@ -6,6 +6,7 @@
 #include "narstring.hpp"
 #include "file_explorer.hpp"
 #include "performance.hpp"
+#include "nar_ntfs_utils.hpp"
 
 #pragma comment(lib, "fltLib.lib")
 #pragma comment(lib, "vssapi.lib")
@@ -2889,7 +2890,7 @@ GetMFTandINDXLCN(char VolumeLetter, HANDLE VolumeHandle, int64_t *CountOut) {
     
     nar_kernel_record *ClustersExtracted      = (nar_kernel_record *)malloc(ClusterExtractedBufferSize);
     int64_t ClusterExtractedCount = 0;
-    int64_t MFTRegionCount       = 0;
+    uint32_t MFTRegionCount       = 0;
     
     if (ClustersExtracted != 0)
         memset(ClustersExtracted, 0, ClusterExtractedBufferSize);
@@ -2930,8 +2931,8 @@ GetMFTandINDXLCN(char VolumeLetter, HANDLE VolumeHandle, int64_t *CountOut) {
         if (VolumeHandle != INVALID_HANDLE_VALUE) {
             
             DWORD BR = 0;
-            
-            if(NarGetMFTRegionsFromBootSector(VolumeHandle, ClustersExtracted, &MFTRegionCount, MaxOutputLen)){
+            bg_static_assert(sizeof(nar_fs_region) == sizeof(nar_kernel_record));
+            if(NarGetMFTRegionsFromBootSector(VolumeHandle, (nar_fs_region *)ClustersExtracted, &MFTRegionCount, (uint32_t)MaxOutputLen)){
                 ClusterExtractedCount += MFTRegionCount;
             }
             else{
@@ -3013,8 +3014,13 @@ GetMFTandINDXLCN(char VolumeLetter, HANDLE VolumeHandle, int64_t *CountOut) {
                                         if(!!(*(uint8_t*)NAR_OFFSET(attr, 8))){
                                             int16_t DataRunOffset = *(int16_t*)NAR_OFFSET(attr, 32);
                                             void* DataRun = NAR_OFFSET(attr, DataRunOffset);
-                                            int64_t RegFound = 0;
-                                            if(false == NarParseDataRun(DataRun, &ClustersExtracted[ClusterExtractedCount], MaxOutputLen - ClusterExtractedCount, &RegFound, false)){
+                                            uint32_t RegFound = 0;
+                                            bg_static_assert(sizeof(nar_fs_region) == sizeof(nar_kernel_record));
+                                            if(false == NarParseDataRun(DataRun, 
+                                                (nar_fs_region *) &ClustersExtracted[ClusterExtractedCount], 
+                                                (uint32_t)(MaxOutputLen - ClusterExtractedCount), 
+                                                &RegFound,
+                                                false)) {
                                                 printf("Error occured while parsing data run of special file case\n");
                                             }
                                             ClusterExtractedCount += RegFound;
@@ -3036,9 +3042,14 @@ GetMFTandINDXLCN(char VolumeLetter, HANDLE VolumeHandle, int64_t *CountOut) {
                                 if(FileID == 0){
                                     void* MFTBitmap = NarFindFileAttributeFromFileRecord(FileRecord, 0xB0);
                                     if(NULL != MFTBitmap){
-                                        int64_t RegFound = 0;
+                                        uint32_t RegFound = 0;
                                         uint8_t *DataRun = (uint8_t*)NAR_OFFSET(MFTBitmap, 64);
-                                        if(false == NarParseDataRun(DataRun, &ClustersExtracted[ClusterExtractedCount], MaxOutputLen - ClusterExtractedCount, &RegFound, false)){
+                                        bg_static_assert(sizeof(nar_fs_region) == sizeof(nar_kernel_record));
+                                        if(false == NarParseDataRun(DataRun, 
+                                            (nar_fs_region *) & ClustersExtracted[ClusterExtractedCount], 
+                                            (uint32_t)(MaxOutputLen - ClusterExtractedCount), 
+                                            &RegFound, 
+                                            false)) {
                                             printf("Error occured while parsing data run of special file case\n");
                                         }
                                         ClusterExtractedCount += RegFound;
@@ -3057,9 +3068,13 @@ GetMFTandINDXLCN(char VolumeLetter, HANDLE VolumeHandle, int64_t *CountOut) {
                                     
                                     AutoCompressAndResizeOutput();
                                     
-                                    int64_t RegFound = 0;
-                                    NarParseIndexAllocationAttribute(IndxOffset, &ClustersExtracted[ClusterExtractedCount], MaxOutputLen - ClusterExtractedCount, &RegFound,
-                                                                     false);
+                                    uint32_t RegFound = 0;
+                                    bg_static_assert(sizeof(nar_fs_region) == sizeof(nar_kernel_record));
+                                    NarParseIndexAllocationAttribute(IndxOffset, 
+                                        (nar_fs_region *)&ClustersExtracted[ClusterExtractedCount], 
+                                        (uint32_t)(MaxOutputLen - ClusterExtractedCount), 
+                                        &RegFound,
+                                        false);
                                     ClusterExtractedCount += RegFound;
                                 }
                                 
@@ -3074,10 +3089,11 @@ GetMFTandINDXLCN(char VolumeLetter, HANDLE VolumeHandle, int64_t *CountOut) {
                                         TIMED_NAMED_BLOCK("Non resident attrlist!");
                                         void* DataRunStart     = NAR_OFFSET(ATL, 64);;
                                         
-                                        int64_t DataRunFound  = 0;
+                                        uint32_t DataRunFound  = 0;
+                                        bg_static_assert(sizeof(nar_fs_region) == sizeof(nar_kernel_record));
                                         bool ParseResult       = NarParseDataRun(DataRunStart, 
-                                                                                 &ClustersExtracted[ClusterExtractedCount], 
-                                                                                 MaxOutputLen - ClusterExtractedCount, 
+                                                                                 (nar_fs_region *) & ClustersExtracted[ClusterExtractedCount],
+                                                                                 (uint32_t) (MaxOutputLen - ClusterExtractedCount), 
                                                                                  &DataRunFound, 
                                                                                  false);
                                         ASSERT(ParseResult);
@@ -3829,250 +3845,7 @@ NarEditTaskNameAndDescription(const wchar_t* FileName, const wchar_t* TaskName, 
 }
 
 
-BOOLEAN
-NarSetFilePointer(HANDLE File, uint64_t V) {
-    LARGE_INTEGER MoveTo = { 0 };
-    MoveTo.QuadPart = V;
-    LARGE_INTEGER NewFilePointer = { 0 };
-    SetFilePointerEx(File, MoveTo, &NewFilePointer, FILE_BEGIN);
-    return MoveTo.QuadPart == NewFilePointer.QuadPart;
-}
 
-
-bool
-NarParseIndexAllocationAttribute(void *IndexAttribute, nar_kernel_record *OutRegions, int64_t MaxRegionLen, int64_t *OutRegionsFound, bool BitmapCompatibleInsert){
-    
-    if(IndexAttribute == NULL 
-       || OutRegions == NULL 
-       || OutRegionsFound == NULL) 
-        return FALSE;
-    
-    TIMED_NAMED_BLOCK("Index singular");
-    
-    int32_t DataRunsOffset = *(int32_t*)NAR_OFFSET(IndexAttribute, 32);
-    void* D = NAR_OFFSET(IndexAttribute, DataRunsOffset);
-    
-    return NarParseDataRun(D, OutRegions, MaxRegionLen, OutRegionsFound, BitmapCompatibleInsert);
-}
-
-
-/*
-BitmapCompatibleInsert = inserts cluster one by one, so caller can easily zero-out unused ones
-*/
-bool
-NarParseDataRun(void* DatarunStart, nar_kernel_record *OutRegions, int64_t MaxRegionLen, int64_t *OutRegionsFound, bool BitmapCompatibleInsert){
-    
-    // So it looks like dataruns doesnt actually tells you LCN, to save up space, they kinda use smt like 
-    // winapi's deviceiocontrol routine, maybe the reason for fetching VCN-LCN maps from winapi is weird because 
-    // thats how its implemented at ntfs at first place. who knows
-    // so thats how it looks
-    /*
-    first one is always absolute LCN in the volume. rest of it is addition to previous one. if file is fragmanted, value might be
-    negative. so we dont have to check some edge cases here.
-    second data run will be lets say 0x11 04 43
-    and first one                    0x11 10 10
-    starting lcn is 0x10, but second data run does not start from 0x43, it starts from 0x10 + 0x43
-  
-    LCN[n] = LCN[n-1] + datarun cluster
-    */
-    bool Result = true;
-    int64_t InternalRegionsFound = 0;
-    void* D = DatarunStart;
-    int64_t OldClusterStart = 0;
-    
-    while (*(BYTE*)D) {
-        
-        BYTE Size = *(BYTE*)D;
-        uint32_t ClusterCountSize = 0;
-        uint32_t FirstClusterSize = 0;
-        uint32_t ClusterCount     = 0;
-        uint32_t FirstCluster     = 0;
-        if (Size == 0) break;
-        
-        // extract 4bit nibbles from size
-        ClusterCountSize = (Size & 0x0F);
-        FirstClusterSize = (Size >> 4);
-        
-        
-        ClusterCount = *(uint32_t*)((BYTE*)D + 1);
-        ClusterCount = ClusterCount & ~(0xffffffffu << (ClusterCountSize * 8));
-        
-        FirstCluster = 0;
-        if(((char*)D + 1 + ClusterCountSize)[FirstClusterSize - 1] & 0x80){
-            FirstCluster = (uint32_t) - 1;
-        }
-        memcpy(&FirstCluster, (char*)D + 1 + ClusterCountSize, FirstClusterSize);
-        
-        
-        if (ClusterCountSize == 0 || FirstClusterSize == 0){
-            printf("ERROR case : case zero len\n");
-            break;
-        }
-        if (ClusterCountSize > 4  || FirstClusterSize > 4){
-            printf("ERROR case : 1704  ccs 0x%X fcs 0x%X\n", ClusterCountSize, FirstClusterSize);
-            break;
-        }
-        
-        
-        if(BitmapCompatibleInsert){
-            if((InternalRegionsFound + ClusterCount) < MaxRegionLen){
-                int64_t plcholder = (int64_t)FirstCluster + OldClusterStart;
-                for(size_t i =0; i<(size_t)ClusterCount; i++){
-                    // safe conversion
-                    OutRegions[InternalRegionsFound].StartPos = (uint32_t)(plcholder + i);
-                    OutRegions[InternalRegionsFound].Len      = 1;
-                    InternalRegionsFound++;
-                }
-            }
-            else{
-                printf("parser not enough memory %d\n", __LINE__);
-                goto NOT_ENOUGH_MEMORY;
-            }
-        }
-        else{
-            OutRegions[InternalRegionsFound].StartPos = (uint32_t)(OldClusterStart + (int64_t)FirstCluster);
-            OutRegions[InternalRegionsFound].Len = ClusterCount;
-            InternalRegionsFound++;
-        }
-        
-        
-        if(InternalRegionsFound > MaxRegionLen){
-            printf("attribute parser not enough memory[Line : %u]\n", __LINE__);
-            goto NOT_ENOUGH_MEMORY;
-        }
-        
-        OldClusterStart = OldClusterStart + (int64_t)FirstCluster;
-        D = (BYTE*)D + (FirstClusterSize + ClusterCountSize + 1);
-    }
-    
-    *OutRegionsFound = InternalRegionsFound;
-    return Result;
-    
-    NOT_ENOUGH_MEMORY:;
-    
-    Result = FALSE;
-    printf("No more memory left to insert index_allocation records to output array\n");
-    *OutRegionsFound = 0;
-    return Result;
-    
-}
-
-
-
-uint32_t
-NarGetFileID(void* FileRecord){
-    uint32_t Result = *(uint32_t *)NAR_OFFSET(FileRecord, 44);
-    return Result;
-}
-
-
-inline int32_t
-NarGetVolumeClusterSize(char Letter) {
-    char V[] = "!:\\";
-    V[0] = Letter;
-    
-    int32_t Result = 0;
-    DWORD SectorsPerCluster = 0;
-    DWORD BytesPerSector = 0;
-    
-    if (GetDiskFreeSpaceA(V, &SectorsPerCluster, &BytesPerSector, 0, 0)){
-        Result = SectorsPerCluster * BytesPerSector;
-    }
-    else{
-        printf("Couldnt get disk free space for volume %c\n", Letter);
-    }
-    
-    return Result;
-}
-
-
-
-/*
-CAUTION: This function does NOT lookup attributes from ATTRIBUTE LIST, so if attribute is not resident in original file entry, function wont return it
-
-// NOTE(Batuhan): Function early terminates in attribute iteration loop if it finds attribute with higher ID than given AttributeID parameter
-
-For given MFT FileEntry, returns address AttributeID in given FileRecord. Caller can use return value to directly access given AttributeID 
-Function returns NULL if attribute is not present 
-*/
-inline void*
-NarFindFileAttributeFromFileRecord(void *FileRecord, int32_t AttributeID){
-    
-    if(NULL == FileRecord) return 0;
-    
-    TIMED_BLOCK();
-    
-    int16_t FirstAttributeOffset = (*(int16_t*)((BYTE*)FileRecord + 20));
-    void* FileAttribute = (char*)FileRecord + FirstAttributeOffset;
-    
-    int32_t RemainingLen = *(int32_t*)((BYTE*)FileRecord + 24); // Real size of the file record
-    RemainingLen      -= (FirstAttributeOffset + 8); //8 byte for end of record mark, remaining len includes it too.
-    
-    while(RemainingLen > 0){
-        
-        if(*(int32_t*)FileAttribute == AttributeID){
-            return FileAttribute;
-        }
-        
-        // it's guarenteed that attributes are sorted by id's in ascending order
-        if(*(int32_t*)FileAttribute > AttributeID){
-            break;
-        }
-        
-        //Just substract attribute size from remaininglen to determine if we should keep iterating
-        int32_t AttrSize = (*(unsigned short*)((BYTE*)FileAttribute + 4));
-        RemainingLen -= AttrSize;
-        FileAttribute = (BYTE*)FileAttribute + AttrSize;
-        if (AttrSize == 0) break;
-        
-    }
-    
-    return NULL;
-}
-
-
-bool
-NarGetMFTRegionsFromBootSector(HANDLE Volume, 
-                               nar_kernel_record* Out, 
-                               int64_t* OutLen, 
-                               int64_t Capacity) {
-    
-    BOOLEAN Result = false;
-    char bf[4096];
-    
-    if(NarSetFilePointer(Volume, 0)){
-        DWORD br = 0;
-        static_assert(sizeof(bf) == 4096);
-        ReadFile(Volume, bf, 4096, &br, 0);
-        if(br == sizeof(bf)){
-            
-            uint32_t MftClusterOffset = *(uint32_t*)NAR_OFFSET(bf, 48);
-            uint64_t MFTVolOffset = MftClusterOffset*4096ull;
-            if(NarSetFilePointer(Volume, MFTVolOffset)){
-                static_assert(sizeof(bf) >= 1024);
-                memset(bf, 0, 1024);
-                ReadFile(Volume, bf, 1024, &br, 0);
-                if(br == 1024){
-                    
-                    uint8_t *FileRecord = (uint8_t*)&bf[0];
-                    // lsn, lsa swap to not confuse further parsing stages.
-                    FileRecord[510] = *(uint8_t*)NAR_OFFSET(FileRecord, 50);
-                    FileRecord[511] = *(uint8_t*)NAR_OFFSET(FileRecord, 51);
-                    void* Indx = NarFindFileAttributeFromFileRecord(FileRecord, NAR_DATA_FLAG);
-                    if(Indx != NULL){
-                        NarParseIndexAllocationAttribute(Indx, Out, Capacity, OutLen, false);
-                        Result = true;
-                    }
-                    
-                }
-                
-            }
-            
-        }
-    }
-    
-    return Result;
-}
 
 
 

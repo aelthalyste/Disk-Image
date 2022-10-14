@@ -46,46 +46,11 @@
 
 #define loop for(;;)
 
+#include "nar_extension_searcher.hpp"
 #include <unordered_map>
 #include <conio.h>
 
 
-HANDLE
-NarOpenVolume(char Letter) {
-    char VolumePath[64];
-    snprintf(VolumePath, 64, "\\\\.\\%c:", Letter);
-    
-    HANDLE Volume = CreateFileA(VolumePath, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_WRITE | FILE_SHARE_READ | FILE_SHARE_DELETE, 0, OPEN_EXISTING, 0, 0);
-    if (Volume != INVALID_HANDLE_VALUE) {
-        
-        
-#if 1  
-        if (DeviceIoControl(Volume, FSCTL_LOCK_VOLUME, 0, 0, 0, 0, 0, 0)) {
-            
-        }
-        else {
-            // NOTE(Batuhan): this isnt an error, tho prohibiting volume access for other processes would be great.
-            printf("Couldn't lock volume %c\n", Letter);
-        }
-        
-        
-        if (DeviceIoControl(Volume, FSCTL_DISMOUNT_VOLUME, 0, 0, 0, 0, 0, 0)) {
-            
-        }
-        else {
-            // printf("Couldnt dismount volume\n");
-        }
-        
-#endif
-        
-        
-    }
-    else {
-        printf("Couldn't open volume %c\n", Letter);
-    }
-    
-    return Volume;
-}
 
 
 void TestBackup(const char *OutputDirectory, char Volume, int Count) {
@@ -298,6 +263,22 @@ void DoRestore(const char *Directory, char OutputVolumeLetter) {
 
 int main(int argc, char *argv[]) {
 
+    char Letter = 'C';
+    HANDLE vh = NarOpenVolume('C');
+
+    extension_finder_memory Memory = NarSetupExtensionFinderMemory(vh);
+    wchar_t *ext[] = {
+        L".dll",
+        // L".exe"
+    };
+    extension_search_result Result = NarFindExtensions(Letter, vh, ext, sizeof(ext) / (sizeof(ext[0])), &Memory);
+    LOG_INFO("Found %d files : ", Result.Len);
+
+    // for (uint64_t i = 0; i < Result.Len; ++i) {
+    //     LOG_INFO("-> %S", Result.Files[i]);
+    // }
+    return 0;
+
     if      (0 == strcmp(argv[1], "list"))    ListChains(argv[2]);
     else if (0 == strcmp(argv[1], "backup"))  TestBackup(argv[2], argv[3][0], atoi(argv[4]));
     else if (0 == strcmp(argv[1], "restore")) DoRestore(argv[2], argv[3][0]);
@@ -305,31 +286,6 @@ int main(int argc, char *argv[]) {
 
 
 #if 0
-    if (0) {
-        file_read FR     = NarReadFile("C:\\Users\\User\\Desktop\\NAR_LOG_FILE_C.nlfx");
-        nar_region *regs = (nar_region *)FR.Data;
-        int32_t RegCount = FR.Len / sizeof(regs[0]);
-
-        int64_t qs = NarGetPerfCounter();
-        qsort(regs, RegCount, sizeof(regs[0]), CompareNarRecords);
-        double qelapsed = NarTimeElapsed(qs);
-
-        data_array<nar_region> dr;
-        dr.Data  = regs;
-        dr.Count = RegCount;
-
-        int64_t merges = NarGetPerfCounter();
-        MergeRegionsWithoutRealloc(&dr);
-        double mergeelapsed = NarTimeElapsed(merges);
-
-        fprintf(stdout, "Region count : %d", RegCount);
-        fprintf(stdout, "qsort elapsed : %.4f, merge elapsed %.4f", qelapsed, mergeelapsed);
-
-        return 0;
-    }
-#endif
-
-
     backup_package Output[1024];
     if (0) {
         int c = NarGetBackupsInDirectory("D:\\", Output, 1024);
@@ -431,6 +387,7 @@ int main(int argc, char *argv[]) {
     }
 
     return 0;
+#endif
 }
 
 
