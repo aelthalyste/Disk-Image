@@ -26,7 +26,7 @@
 
 #include <stdint.h>
 #include <string> //wcscmp
-#include <assert.h>
+#include <assert.h> //assert
 #include <Windows.h>
 #include "performance.hpp"
 
@@ -229,7 +229,7 @@ static inline int32_t NarGetBitmapAttributeDataLen(void *BitmapAttributeStart){
 
 
 /*
-BitmapCompatibleInsert = inserts cluster one by one, so caller can easily zero-out unused ones
+    BitmapCompatibleInsert = inserts cluster one by one, so caller can easily zero-out unused ones
 */
 static inline bool NarParseDataRun(void* DatarunStart, nar_fs_region *OutRegions, uint32_t MaxRegionLen, uint32_t *OutRegionsFound, bool BitmapCompatibleInsert){
     
@@ -274,18 +274,14 @@ static inline bool NarParseDataRun(void* DatarunStart, nar_fs_region *OutRegions
         }
         memcpy(&FirstCluster, (char*)D + 1 + ClusterCountSize, FirstClusterSize);
         
-        
-        if (ClusterCountSize == 0 || FirstClusterSize == 0){
-            printf("ERROR case : case zero len\n");
-            break;
-        }
-        if (ClusterCountSize > 4  || FirstClusterSize > 4){
-            printf("ERROR case : 1704  ccs 0x%X fcs 0x%X\n", ClusterCountSize, FirstClusterSize);
-            break;
-        }
-        
+
+        assert(ClusterCountSize != 0);
+        assert(FirstClusterSize != 0);
+        assert(ClusterCountSize <= 4);
+        assert(FirstClusterSize <= 4);
         
         if(BitmapCompatibleInsert){
+            assert((InternalRegionsFound + ClusterCount) < MaxRegionLen);
             if((InternalRegionsFound + ClusterCount) < MaxRegionLen){
                 int64_t plcholder = (int64_t)FirstCluster + OldClusterStart;
                 for(size_t i =0; i<(size_t)ClusterCount; i++){
@@ -307,6 +303,7 @@ static inline bool NarParseDataRun(void* DatarunStart, nar_fs_region *OutRegions
         }
         
         
+        assert(InternalRegionsFound < MaxRegionLen);
         if(InternalRegionsFound > MaxRegionLen){
             printf("attribute parser not enough memory[Line : %u]\n", __LINE__);
             goto NOT_ENOUGH_MEMORY;

@@ -163,13 +163,14 @@ extension_search_result NarFindExtensions(char VolumeLetter, HANDLE VolumeHandle
                 size_t TargetFileCount = MIN(FileRemaining, FBCount);
                 FileRemaining         -= TargetFileCount;
                 
-                ReadFile(VolumeHandle, 
+                auto ReadFileResult = ReadFile(VolumeHandle, 
                          Memory->FileBuffer, 
                          (DWORD)(TargetFileCount*1024ull), 
                          &BR, 0);
                 assert(BR == TargetFileCount*1024);
-                
-                if(BR == TargetFileCount*1024ull){
+                assert(ReadFileResult);
+
+                if(ReadFileResult && BR == TargetFileCount*1024ull){
                     
                     int64_t start = NarGetPerfCounter();
                     ParserLoopCount += TargetFileCount;
@@ -245,101 +246,84 @@ extension_search_result NarFindExtensions(char VolumeLetter, HANDLE VolumeHandle
                         for(size_t _pidi = 0; _pidi < MultPIDs.Len; _pidi++){
                             name_pid NamePID = MultPIDs.PIDS[_pidi];
                             
-                            if(NamePID.Name != 0){
+                            if(NamePID.Name == NULL)
+                                continue;
+
                                 
-                                // 
-                                if(IsDirectory){
-                                    DirectoryMapping[FileID] = NamePID;
-                                    uint32_t NameSize = (NamePID.NameLen + 1) * 2;
-                                    DirectoryMapping[FileID].Name = (wchar_t*)LinearAllocate(&Memory->StringAllocator, NameSize);
-                                    memcpy(DirectoryMapping[FileID].Name, NamePID.Name, NameSize - 2);
-                                    DirectoryMapping[FileID].NameLen = NamePID.NameLen + 1;
-                                }
-                                else{
-                                    /*
-    If it's not a directory, we don't need to save it for possible
-    future references, since we know no file has ever referenced to another file, but they rather reference their roots to  directories.
-    So we can skip at this phase, and check it at extension comparision stage. If it matches, then we add.
-                                   */
+                            // 
+                            if(IsDirectory){
+                                DirectoryMapping[FileID] = NamePID;
+                                uint32_t NameSize = (NamePID.NameLen + 1) * 2;
+                                DirectoryMapping[FileID].Name = (wchar_t*)LinearAllocate(&Memory->StringAllocator, NameSize);
+                                memcpy(DirectoryMapping[FileID].Name, NamePID.Name, NameSize - 2);
+                                DirectoryMapping[FileID].NameLen = NamePID.NameLen + 1;
+                            }
+                            else{
+                                /*
+                                    If it's not a directory, we don't need to save it for possible
+                                    future references, since we know no file has ever referenced to another file, but they rather reference their roots to  directories.
+                                    So we can skip at this phase, and check it at extension comparision stage. If it matches, then we add.
+                               */
 
-                                    for (size_t ExtensionCompIndx = 0; 
-                                        ExtensionCompIndx < ExtensionListCount; 
-                                        ExtensionCompIndx++) 
-                                    {
+                                for (size_t ExtensionCompIndx = 0; 
+                                    ExtensionCompIndx < ExtensionListCount; 
+                                    ExtensionCompIndx++) 
+                                {
+                                    
+                                    size_t ExtensionLen = ExtensionLenList[ExtensionCompIndx];
+                                    wchar_t *Extension  = ExtensionList[ExtensionCompIndx];
+                                    // NOTE(Batuhan): if _pidi > 0, we know that file name matches, if it wouldn't be we wouldn't even see _pidi =1, check below for break condition. 
+                                    if(ExtensionLen <= NamePID.NameLen){
                                         
-                                        size_t ExtensionLen = ExtensionLenList[ExtensionCompIndx];
-                                        wchar_t *Extension  = ExtensionList[ExtensionCompIndx];
-                                        // NOTE(Batuhan): if _pidi > 0, we know that file name matches, if it wouldn't be we wouldn't even see _pidi =1, check below for break condition. 
-                                        if(ExtensionLen <= NamePID.NameLen){
-                                            
-                                            wchar_t *LastChars = &NamePID.Name[NamePID.NameLen - ExtensionLen];
-                                            bool Add = true;
-                                            for(uint64_t wi = 0; wi < ExtensionLen; wi++){
-                                                if(towlower(LastChars[wi]) != towlower(Extension[wi])){
-                                                    Add = false;
-                                                    break;
-                                                }
+                                        wchar_t *LastChars = &NamePID.Name[NamePID.NameLen - ExtensionLen];
+                                        bool Add = true;
+                                        for(uint64_t wi = 0; wi < ExtensionLen; wi++){
+                                            // @TODO : convert all extensions to at beginning of the function. 
+                                            if(towlower(LastChars[wi]) != towlower(Extension[wi])){
+                                                Add = false;
+                                                break;
                                             }
-                                            
-                                            if(Add){
-                                                PIDResultArr[ArrLen] = NamePID;
-                                                uint64_t NameSize = (NamePID.NameLen + 1) * 2;
-                                                PIDResultArr[ArrLen].Name = (wchar_t*)LinearAllocate(&Memory->StringAllocator, NameSize);
-                                                memcpy(PIDResultArr[ArrLen].Name, NamePID.Name, NameSize - 2);
-                                                PIDResultArr[ArrLen].NameLen = NamePID.NameLen + 1;
-                                                ArrLen++;
-                                            }
-                                            
                                         }
-
+                                        
+                                        if(Add) {
+                                            PIDResultArr[ArrLen] = NamePID;
+                                            uint64_t NameSize = (NamePID.NameLen + 1) * 2;
+                                            PIDResultArr[ArrLen].Name = (wchar_t*)LinearAllocate(&Memory->StringAllocator, NameSize);
+                                            memcpy(PIDResultArr[ArrLen].Name, NamePID.Name, NameSize - 2);
+                                            PIDResultArr[ArrLen].NameLen = NamePID.NameLen + 1;
+                                            ArrLen++;
+                                        }
+                                        
                                     }
 
                                 }
 
-                                
+                            }
 
-                                
-                            }
-                            else{
-                                
-                            }
                             
                         }
                         
-#if 0                        
-                        if(AttributeList != NULL){
-                            
-                            uint32_t DiffFileIDCount = 0;
-                            
-                            // skip first 24 bytes, header.
-                            uint32_t AttrListLen       = *(uint32_t*)NAR_OFFSET(AttributeList, 16);
-                            uint32_t LenRemaining      = AttrListLen;
-                            uint8_t* CurrentAttrRecord = (uint8_t*)NAR_OFFSET(AttributeList, 24);
-                            
-                            for(uint64_t i =0; i<32; i++){
-                                attribute_list_entry Entry = Contents.Entries[i];
-                                if(false == IsValidAttrEntry(Entry)){
-                                    break;
-                                }
-                                if(Entry.EntryType == NAR_FILENAME_FLAG){
-                                    if(Entry.EntryFileID != FileID){
-                                        DiffFileIDCount++;
-                                    }
-                                }
-                                if(DiffFileIDCount > 1){
-                                    //NAR_BREAK;
-                                }
-                                
-                            }
-                        }
-#endif
+
+
                         
                         if(MultPIDs.Len == 0 
                            && NULL != AttributeList
                            && !!IsDirectory){
                             // resolve the attribute list and
                             // redirect this entry.
-                            
+
+                            /*
+                            // @NOTE : there is a case we are missing right now (17.10.2022). if a directory's attribute list is non resident and doesnt contain the name
+                            in the file record(which also means we wont be able to fetch parent file id) we miss everything about that directory!
+                            at traverser stage, this causes stack to miss and crash.
+
+                            one might say, hey if an attribute list is a non resident one, fetch it right now!.
+                            well, just no. Why bother initiating a IO operation randomly. skip the entry here.
+                            and at traverser stage, if we found a hole in a directory entry and we surely need to know it, then parse the atl and its entires.
+
+                            this is, for now, not implemented. 
+                            */
+
                             // skip first 24 bytes, header.
                             uint32_t AttrListLen       = *(uint32_t*)NAR_OFFSET(AttributeList, 16);
                             uint32_t LenRemaining      = AttrListLen;
@@ -424,7 +408,7 @@ extension_search_result NarFindExtensions(char VolumeLetter, HANDLE VolumeHandle
         FilenamesExtended[s] = (wchar_t*)LinearAllocate(&Memory->StringAllocator, TotalFileNameSize*2 + 200);
         uint64_t WriteIndex = 0;
         
-        
+                        
         {
             wchar_t tmp[] = L"!:\\";
             tmp[0] = (wchar_t)VolumeLetter;
@@ -442,7 +426,7 @@ extension_search_result NarFindExtensions(char VolumeLetter, HANDLE VolumeHandle
                        DirectoryMapping[stack[i]].Name, 
                        FLen*2);
                 WriteIndex += FLen;
-                
+                // @TODO : remove memcpy with simple decrement-replace
                 memcpy(&FilenamesExtended[s][WriteIndex], L"\\", 2);
                 WriteIndex += 1;
             }

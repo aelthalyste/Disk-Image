@@ -168,27 +168,17 @@ struct file_restore_advance_result{
 
 
 
-file_explorer_memory
-NarInitFileExplorerMemory(uint32_t TotalFC);
-
-void
-NarFreeFileExplorerMemory(file_explorer_memory *Memory);
-
-file_explorer
-NarInitFileExplorer(const UTF8 *MetadataPath);
+file_explorer_memory    NarInitFileExplorerMemory(uint32_t TotalFC);
+void                    NarFreeFileExplorerMemory(file_explorer_memory *Memory);
+file_explorer           NarInitFileExplorer(const UTF8 *MetadataPath);
 
 
-file_explorer_file*
-FEStartParentSearch(file_explorer *FE, uint32_t ParentID);
-
-file_explorer_file*
-FENextParent(file_explorer *FE, file_explorer_file *CurrentFile);
+file_explorer_file* FEStartParentSearch(file_explorer *FE, uint32_t ParentID);
+file_explorer_file* FENextParent(file_explorer *FE, file_explorer_file *CurrentFile);
 
 
 
-
-uint64_t
-SolveAttributeListReferences(const void* MFTStart,
+uint64_t SolveAttributeListReferences(const void* MFTStart,
                              void* BaseFileRecord,
                              attribute_list_contents Contents, file_explorer_file* Files,
                              linear_allocator* StringAllocator
@@ -196,41 +186,24 @@ SolveAttributeListReferences(const void* MFTStart,
 
 
 
-file_restore_ctx
-NarInitFileRestoreCtx(file_explorer *FE, file_explorer_file *Target, const UTF8 *RootDir, nar_backup_id ID, int Version, nar_arena *Arena);
-
-file_restore_ctx
-NarInitFileRestoreCtx(file_explorer *FE, file_explorer_file* Target, nar_arena *Arena);
-
-
-void
-NarFreeFileRestoreCtx(file_restore_ctx *Ctx);
+file_restore_ctx NarInitFileRestoreCtx(file_explorer *FE, file_explorer_file *Target, const UTF8 *RootDir, nar_backup_id ID, int Version, nar_arena *Arena);
+file_restore_ctx NarInitFileRestoreCtx(file_explorer *FE, file_explorer_file* Target, nar_arena *Arena);
+void             NarFreeFileRestoreCtx(file_restore_ctx *Ctx);
 
 
 
-file_restore_advance_result
-NarAdvanceFileRestore(file_restore_ctx *ctx, void* Out, size_t OutSize);
+file_restore_advance_result NarAdvanceFileRestore(file_restore_ctx *ctx, void* Out, size_t OutSize);
 
 
-file_explorer_file*
-FEFindFileWithID(file_explorer* FE, uint32_t ID);
-
-file_explorer_file*
-FENextFileInDir(file_explorer *FE, file_explorer_file *CurrentFile);
+file_explorer_file* FEFindFileWithID(file_explorer* FE, uint32_t ID);
+file_explorer_file* FENextFileInDir(file_explorer *FE, file_explorer_file *CurrentFile);
 
 
-void
-NarFreeFileExplorer(file_explorer* FileExplorer);
-
-wchar_t*
-FEGetFileFullPath(file_explorer* FE, file_explorer_file* BaseFile);
+void     NarFreeFileExplorer(file_explorer* FileExplorer);
+wchar_t* FEGetFileFullPath(file_explorer* FE, file_explorer_file* BaseFile);
 
 
-file_restore_source
-NarInitFileRestoreSource(const UTF8 *MetadataName, UTF8 *BinaryName);
-
-
-file_restore_source 
-NarInitFileRestoreSource(const UTF8 *RootDir, nar_backup_id ID, int32_t Version, nar_arena *StringArena);
+file_restore_source NarInitFileRestoreSource(const UTF8 *MetadataName, UTF8 *BinaryName);
+file_restore_source NarInitFileRestoreSource(const UTF8 *RootDir, nar_backup_id ID, int32_t Version, nar_arena *StringArena);
 
 #endif

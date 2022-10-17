@@ -230,6 +230,7 @@ NarInitFileExplorer(NarUTF8 MetadataPath){
                 uint64_t FileCreated  = *(uint64_t*)NAR_OFFSET(AttrData, 0);
                 uint64_t FileModified = *(uint64_t*)NAR_OFFSET(AttrData, 8);
                 
+                // TODO : we are wasting cycles here, consider removing memset since winfilecreated is already zeroed at initialization.
                 if(0 == FileTimeToSystemTime((const FILETIME*)(void*)&FileCreated, &WinFileCreated)){
                     memset(&WinFileCreated, 0, sizeof(SYSTEMTIME));
                 }
@@ -351,8 +352,7 @@ NarInitFileExplorer(NarUTF8 MetadataPath){
 }
 
 
-void
-NarFreeFileExplorer(file_explorer* FileExplorer){
+void NarFreeFileExplorer(file_explorer* FileExplorer){
     if(FileExplorer){
         NarFreeFileView(FileExplorer->MetadataView);
         NarFreeFileExplorerMemory(&FileExplorer->Memory);
@@ -362,18 +362,16 @@ NarFreeFileExplorer(file_explorer* FileExplorer){
 
 
 // BELOW MUST GO TO FILE EXPLORER.H
-file_explorer_file*
-FEStartParentSearch(file_explorer *FE, uint32_t ParentID){
+file_explorer_file* FEStartParentSearch(file_explorer *FE, uint32_t ParentID){
     for(uint64_t i = 0; i<FE->FileCount; i++){
         if(FE->ParentIDs[i] == ParentID){
             return &FE->Files[i];
         }
     }
-    return 0;
+    return NULL;
 }
 
-file_explorer_file*
-FENextFileInDir(file_explorer *FE, file_explorer_file *CurrentFile){
+file_explorer_file* FENextFileInDir(file_explorer *FE, file_explorer_file *CurrentFile){
     uint64_t StartIndice = (CurrentFile - &FE->Files[0]);
     StartIndice += 1;
     uint64_t ParentID    = CurrentFile->ParentFileID;
@@ -382,11 +380,10 @@ FENextFileInDir(file_explorer *FE, file_explorer_file *CurrentFile){
             return &FE->Files[i];
         }
     }
-    return 0;
+    return NULL;
 }
 
-file_explorer_file*
-FEFindFileWithID(file_explorer* FE, uint32_t ID){
+file_explorer_file* FEFindFileWithID(file_explorer* FE, uint32_t ID){
     
     uint64_t Left  = 0;
     uint64_t Right = FE->FileCount;
@@ -406,7 +403,7 @@ FEFindFileWithID(file_explorer* FE, uint32_t ID){
         Mid = Left + (Right - Left) / 2;
     }
     
-    return 0;
+    return NULL;
 }
 
 
