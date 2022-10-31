@@ -63,15 +63,15 @@ struct data_attr_header{
 };
 #pragma pack(pop)
 
-struct name_pid{
-    wchar_t *Name;
-    uint32_t FileID;
-    uint32_t ParentFileID;
-    uint8_t  NameLen; // 
+struct name_pid {
+    wchar_t *Name         = NULL;
+    uint32_t ATLCluster   = 0;
+    uint32_t ParentFileID = 0;
+    uint8_t  NameLen      = 0; // 
 };
 
 
-struct multiple_pid{
+struct multiple_pid {
     name_pid PIDS[16];
     uint8_t Len = 0;
 };

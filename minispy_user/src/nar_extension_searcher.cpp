@@ -200,16 +200,15 @@ extension_search_result NarFindExtensions(char VolumeLetter, HANDLE VolumeHandle
                         
                         multiple_pid MultPIDs = NarGetFileNameAndParentID(FileRecord);
                         
-                        uint32_t DEBUG_isATLNONRESIDENT = false;
+                        uint8_t ATLNonResident = 0;
 
                         void *AttributeList = NarFindFileAttributeFromFileRecord(FileRecord, NAR_ATTRIBUTE_LIST);                        
                         if(AttributeList){
                             
                             void*   ATLData = 0;
                             uint32_t ATLLen = 0;
-                            uint8_t ATLNonResident = *(uint8_t*)NAR_OFFSET(AttributeList, 8);
+                            ATLNonResident = *(uint8_t*)NAR_OFFSET(AttributeList, 8);
                                 
-                            DEBUG_isATLNONRESIDENT = ATLNonResident;                                                            
                             if(!ATLNonResident){
                                 ATLData = NAR_OFFSET(AttributeList, 24);
                                 ATLLen  = *(uint32_t*)NAR_OFFSET(AttributeList, 16);
@@ -221,6 +220,9 @@ extension_search_result NarFindExtensions(char VolumeLetter, HANDLE VolumeHandle
                             assert(NarFindFileAttributeFromFileRecord(FileRecord, NAR_STANDART_FLAG));
                         }
 
+                        // @NOTE : that was about gatherin some statistics and doing compression
+                        // benchmarks to see how much we can save.  
+                        #if 0
                         void *DataAttribute = NarFindFileAttributeFromFileRecord(FileRecord, NAR_DATA_FLAG);;
                         if (DataAttribute != NULL) {
                             
@@ -238,6 +240,7 @@ extension_search_result NarFindExtensions(char VolumeLetter, HANDLE VolumeHandle
                             }
 
                         }
+                        #endif
                         
                         // if(MultPIDs.Len == 0 && DEBUG_isATLNONRESIDENT && r->isDirectory) {
                         //     printf("HIT : %d\n", FileID);
@@ -249,11 +252,10 @@ extension_search_result NarFindExtensions(char VolumeLetter, HANDLE VolumeHandle
                             if(NamePID.Name == NULL)
                                 continue;
 
-                                
-                            // 
+                            
                             if(IsDirectory){
                                 DirectoryMapping[FileID] = NamePID;
-                                uint32_t NameSize = (NamePID.NameLen + 1) * 2;
+                                uint32_t NameSize        = (NamePID.NameLen + 1) * 2;
                                 DirectoryMapping[FileID].Name = (wchar_t*)LinearAllocate(&Memory->StringAllocator, NameSize);
                                 memcpy(DirectoryMapping[FileID].Name, NamePID.Name, NameSize - 2);
                                 DirectoryMapping[FileID].NameLen = NamePID.NameLen + 1;
@@ -308,7 +310,7 @@ extension_search_result NarFindExtensions(char VolumeLetter, HANDLE VolumeHandle
                         
                         if(MultPIDs.Len == 0 
                            && NULL != AttributeList
-                           && !!IsDirectory){
+                           && IsDirectory){
                             // resolve the attribute list and
                             // redirect this entry.
 
@@ -324,37 +326,49 @@ extension_search_result NarFindExtensions(char VolumeLetter, HANDLE VolumeHandle
                             this is, for now, not implemented. 
                             */
 
-                            // skip first 24 bytes, header.
-                            uint32_t AttrListLen       = *(uint32_t*)NAR_OFFSET(AttributeList, 16);
-                            uint32_t LenRemaining      = AttrListLen;
-                            uint8_t* CurrentAttrRecord = (uint8_t*)NAR_OFFSET(AttributeList, 24);
-                            
-                            while(LenRemaining){
-                                uint16_t RecordLen = *(uint16_t*)NAR_OFFSET(CurrentAttrRecord, 4);
-                                uint32_t Type      = *(uint32_t*)CurrentAttrRecord;
+                            assert(DirectoryMapping[FileID].Name == NULL);
+
+                            if (ATLNonResident) {
+                                // atl is non resident
+                                // @NOTE : save atl cluster in case we need it at traverser stage.
+                                DirectoryMapping[FileID].ATLCluster = 0;
+                                assert(false);
+                            }
+                            else {
+                                // atl is resident
+                                // skip first 24 bytes, header.
+                                uint32_t AttrListLen       = *(uint32_t*)NAR_OFFSET(AttributeList, 16);
+                                uint32_t LenRemaining      = AttrListLen;
+                                uint8_t* CurrentAttrRecord = (uint8_t*)NAR_OFFSET(AttributeList, 24);
                                 
-                                
-                                if(Type == NAR_FILENAME_FLAG){
-                                    // found the filename attribute, but it might be referencing itself, if so scan for other filename entries.
-                                    uint32_t AttrListFileID = *(uint32_t*)NAR_OFFSET(CurrentAttrRecord, 16);
-                                    if(AttrListFileID != FileID){
-                                        
-                                        // found it, rereference the map to this id.
-                                        assert(!!IsDirectory);
-                                        
-                                        DirectoryMapping[FileID] = {0};
-                                        DirectoryMapping[FileID].ParentFileID = AttrListFileID;
-                                        break;
-                                    }
-                                    else{
+                                while(LenRemaining){
+                                    uint16_t RecordLen = *(uint16_t*)NAR_OFFSET(CurrentAttrRecord, 4);
+                                    uint32_t Type      = *(uint32_t*)CurrentAttrRecord;                                
+                                    
+                                    if(Type == NAR_FILENAME_FLAG){
+                                        // found the filename attribute, but it might be referencing itself, if so scan for other filename entries.
+                                        uint32_t AttrListFileID = *(uint32_t*)NAR_OFFSET(CurrentAttrRecord, 16);
+                                        if(AttrListFileID != FileID){
+                                            
+                                            // found it, rereference the map to this id.
+                                            assert(IsDirectory);
+                                            
+                                            DirectoryMapping[FileID] = {};
+                                            DirectoryMapping[FileID].ParentFileID = AttrListFileID;
+                                            break;
+                                        }
+                                        else{
+                                            
+                                        }
                                         
                                     }
                                     
+                                    CurrentAttrRecord += RecordLen;
+                                    LenRemaining      -= RecordLen;
                                 }
-                                
-                                CurrentAttrRecord += RecordLen;
-                                LenRemaining      -= RecordLen;
+
                             }
+
                             
                         }
                         
@@ -394,13 +408,17 @@ extension_search_result NarFindExtensions(char VolumeLetter, HANDLE VolumeHandle
             ParentID > 5;
             ParentID = DirectoryMapping[ParentID].ParentFileID)
         {
-            if(DirectoryMapping[ParentID].Name == 0){
+            if(DirectoryMapping[ParentID].Name == 0) {
+                // unresolved external attribute list
+                if(DirectoryMapping[ParentID].ParentFileID == 0) {
+                                      
+                }
                 assert(DirectoryMapping[ParentID].ParentFileID != 0);
                 continue;
             }
             stack[si++]    = ParentID;
             TotalFileNameSize += DirectoryMapping[ParentID].NameLen;
-            assert(DirectoryMapping[ParentID].FileID != 0);
+            //assert(DirectoryMapping[ParentID].FileID != 0);
         }
         assert(si!=0);
         
