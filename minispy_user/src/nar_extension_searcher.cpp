@@ -120,13 +120,14 @@ extension_finder_memory NarSetupExtensionFinderMemory(HANDLE VolumeHandle){
 extension_search_result NarFindExtensions(char VolumeLetter, HANDLE VolumeHandle, wchar_t **ExtensionList, size_t ExtensionListCount, extension_finder_memory *Memory) {
     
     extension_search_result Result = {0};
-    
+#define ENABLE_DATARUN_STATISTIC_GATHERING 0
+#if ENABLE_DATARUN_STATISTIC_GATHERING
     uint64_t TotalNumberOfSizeUsedForDataRuns = 0;
     uint64_t TotalNumberOfFilesUsingDataRuns = 0;    
     uint64_t DataRunBufferCap = 150 * 1024 * 1024;
 
     uint8_t *DataRunBuffer = (uint8_t *)malloc(DataRunBufferCap);
-
+#endif
 
     name_pid *DirectoryMapping  = (name_pid*)Memory->DirMappingMemory; 
     name_pid *PIDResultArr      = (name_pid*)Memory->PIDArrMemory; 
@@ -139,6 +140,8 @@ extension_search_result NarFindExtensions(char VolumeLetter, HANDLE VolumeHandle
     
     uint64_t ClusterSize     = NarGetVolumeClusterSize(VolumeLetter);
     size_t *ExtensionLenList = (size_t*)ArenaAllocateZero(&Memory->Arena, ExtensionListCount * sizeof(size_t));
+
+    void *ClusterBuffer = ArenaAllocate(&Memory->Arena, ClusterSize);
 
     for (uint64_t i = 0; i < ExtensionListCount; i++) {
         ExtensionLenList[i] = wcslen(ExtensionList[i]);
@@ -222,7 +225,7 @@ extension_search_result NarFindExtensions(char VolumeLetter, HANDLE VolumeHandle
 
                         // @NOTE : that was about gatherin some statistics and doing compression
                         // benchmarks to see how much we can save.  
-                        #if 0
+                        #if ENABLE_DATARUN_STATISTIC_GATHERING
                         void *DataAttribute = NarFindFileAttributeFromFileRecord(FileRecord, NAR_DATA_FLAG);;
                         if (DataAttribute != NULL) {
                             
@@ -331,8 +334,14 @@ extension_search_result NarFindExtensions(char VolumeLetter, HANDLE VolumeHandle
                             if (ATLNonResident) {
                                 // atl is non resident
                                 // @NOTE : save atl cluster in case we need it at traverser stage.
-                                DirectoryMapping[FileID].ATLCluster = 0;
-                                assert(false);
+                                uint16_t DataRunOffset = *(uint16_t*)NAR_OFFSET(AttributeList, 32);
+                                void *DataRun = NAR_OFFSET(AttributeList, DataRunOffset);
+                                nar_fs_region Region = {};
+                                uint32_t OutReg = 0;
+                                bool DataRunParseResult = NarParseDataRun(DataRun, &Region, 1, &OutReg, false);
+                                bg_unused(DataRunParseResult);
+                                assert(DataRunParseResult);
+                                DirectoryMapping[FileID].ATLCluster = Region.StartPos;
                             }
                             else {
                                 // atl is resident
@@ -411,17 +420,57 @@ extension_search_result NarFindExtensions(char VolumeLetter, HANDLE VolumeHandle
             if(DirectoryMapping[ParentID].Name == 0) {
                 // unresolved external attribute list
                 if(DirectoryMapping[ParentID].ParentFileID == 0) {
-                                      
+                    assert(DirectoryMapping[ParentID].ATLCluster);
+                    uint64_t TargetFP = ClusterSize * DirectoryMapping[ParentID].ATLCluster;
+                    if (NarSetFilePointer(VolumeHandle, TargetFP)) {
+                        DWORD br2 = 0;
+                        if (ReadFile(VolumeHandle, ClusterBuffer, (DWORD)ClusterSize, &br2, NULL) && br2 == ClusterSize) {
+                            void *AttributeList = ClusterBuffer;
+                            uint32_t AttrListLen       = *(uint32_t*)NAR_OFFSET(AttributeList, 16);
+                            uint32_t LenRemaining      = AttrListLen;
+                            uint8_t* CurrentAttrRecord = (uint8_t*)NAR_OFFSET(AttributeList, 24);
+                            bool found = false;
+
+                            while(LenRemaining){
+                                uint16_t RecordLen = *(uint16_t*)NAR_OFFSET(CurrentAttrRecord, 4);
+                                uint32_t Type      = *(uint32_t*)CurrentAttrRecord;                                
+                                
+                                if(Type == NAR_FILENAME_FLAG){
+                                    // found the filename attribute, but it might be referencing itself, if so scan for other filename entries.
+                                    uint32_t AttrListFileID = *(uint32_t*)NAR_OFFSET(CurrentAttrRecord, 16);
+                                    if(AttrListFileID != ParentID){
+                                        found = true;
+                                        // found it, rereference the map to this id.
+                                        
+                                        DirectoryMapping[ParentID] = {};
+                                        DirectoryMapping[ParentID].ParentFileID = AttrListFileID;
+                                        break;
+                                    }                                    
+                                }
+                                
+                                CurrentAttrRecord += RecordLen;
+                                LenRemaining      -= RecordLen;
+                            }
+                            assert(found);
+
+                        }   
+                        else assert(false);                        
+
+                    }
+                    else assert(false);
+
                 }
                 assert(DirectoryMapping[ParentID].ParentFileID != 0);
                 continue;
             }
-            stack[si++]    = ParentID;
+            stack[si++] = ParentID;
             TotalFileNameSize += DirectoryMapping[ParentID].NameLen;
+            assert(DirectoryMapping[ParentID].NameLen != 0);
             //assert(DirectoryMapping[ParentID].FileID != 0);
         }
         assert(si!=0);
-        
+
+        TotalFileNameSize += TargetPID->NameLen;
         // additional memory for trailing backlashes
         FilenamesExtended[s] = (wchar_t*)LinearAllocate(&Memory->StringAllocator, TotalFileNameSize*2 + 200);
         uint64_t WriteIndex = 0;
@@ -460,15 +509,16 @@ extension_search_result NarFindExtensions(char VolumeLetter, HANDLE VolumeHandle
     TraverserTotalTime = NarTimeElapsed(TraverserStart);
     
     //qsort(FilenamesExtended, ArrLen, 8, CompareWCharStrings);
-    
-    // uint64_t DstCap = DataRunBufferCap + 256;
-    // void *CompressedBuffer = malloc(DstCap);
+#if ENABLE_DATARUN_STATISTIC_GATHERING
+    uint64_t DstCap = DataRunBufferCap + 256;
+    void *CompressedBuffer = malloc(DstCap);
 
-    // int LZ4CompressedSize = LZ4_compress_default((const char *)DataRunBuffer, (char *)CompressedBuffer, TotalNumberOfSizeUsedForDataRuns, DstCap);
-    // size_t ZSTDCompressedSize = ZSTD_compress(CompressedBuffer, DstCap, DataRunBuffer, TotalNumberOfSizeUsedForDataRuns, 4);
-    // fprintf("zstd compressed size : ");
+    int LZ4CompressedSize = LZ4_compress_default((const char *)DataRunBuffer, (char *)CompressedBuffer, TotalNumberOfSizeUsedForDataRuns, DstCap);
+    size_t ZSTDCompressedSize = ZSTD_compress(CompressedBuffer, DstCap, DataRunBuffer, TotalNumberOfSizeUsedForDataRuns, 4);
+    fprintf("zstd compressed size : ");
 
-    // ASSERT(!ZSTD_isError(ZSTDCompressedSize));
+    ASSERT(!ZSTD_isError(ZSTDCompressedSize));
+#endif
 
 #if 0
     for(size_t i =0; i<ArrLen; i++){

@@ -21,7 +21,7 @@
 #define NAR_BITMAP_FLAG           0xB0
 
 
-#define NAR_OFFSET(m, o) ((char*)(m) + (o))
+#define NAR_OFFSET(m, o) ((uint8_t*)(m) + (o))
 
 
 #include <stdint.h>
@@ -253,12 +253,18 @@ static inline bool NarParseDataRun(void* DatarunStart, nar_fs_region *OutRegions
     
     while (*(uint8_t *)D) {
         
+
+
         uint8_t Size = *(uint8_t *)D;
         int32_t ClusterCountSize = 0;
         int32_t FirstClusterSize = 0;
         int32_t ClusterCount     = 0;
         int32_t FirstCluster     = 0;
         if (Size == 0) break;
+
+        assert(InternalRegionsFound < MaxRegionLen);
+        if (InternalRegionsFound > MaxRegionLen) goto NOT_ENOUGH_MEMORY;
+        
         
         // extract 4bit nibbles from size
         ClusterCountSize = (Size & 0x0F);
@@ -269,7 +275,7 @@ static inline bool NarParseDataRun(void* DatarunStart, nar_fs_region *OutRegions
         ClusterCount = ClusterCount & ~(0xffffffffu << (ClusterCountSize * 8));
         
         FirstCluster = 0;
-        if(((char*)D + 1 + ClusterCountSize)[FirstClusterSize - 1] & 0x80){
+        if (((char*)D + 1 + ClusterCountSize)[FirstClusterSize - 1] & 0x80){
             FirstCluster = -1;
         }
         memcpy(&FirstCluster, (char*)D + 1 + ClusterCountSize, FirstClusterSize);
@@ -292,7 +298,6 @@ static inline bool NarParseDataRun(void* DatarunStart, nar_fs_region *OutRegions
                 }
             }
             else{
-                printf("parser not enough memory %d\n", __LINE__);
                 goto NOT_ENOUGH_MEMORY;
             }
         }
@@ -303,11 +308,6 @@ static inline bool NarParseDataRun(void* DatarunStart, nar_fs_region *OutRegions
         }
         
         
-        assert(InternalRegionsFound < MaxRegionLen);
-        if(InternalRegionsFound > MaxRegionLen){
-            printf("attribute parser not enough memory[Line : %u]\n", __LINE__);
-            goto NOT_ENOUGH_MEMORY;
-        }
         
         OldClusterStart = OldClusterStart + (int64_t)FirstCluster;
         D = (uint8_t*)D + (FirstClusterSize + ClusterCountSize + 1);
@@ -393,7 +393,7 @@ static inline bool NarGetMFTRegionsFromBootSector(HANDLE Volume,
 static inline multiple_pid NarGetFileNameAndParentID(void *FileRecord) {
     multiple_pid Result = {0};
     
-    uint32_t FileID = NarGetFileID(FileRecord);
+    // uint32_t FileID = NarGetFileID(FileRecord);
     
     // doesnt matter if it's posix or normal file name attribute
     void* FNAttribute = NarFindFileAttributeFromFileRecord(FileRecord, 0x30);
@@ -410,7 +410,6 @@ static inline multiple_pid NarGetFileNameAndParentID(void *FileRecord) {
                 
                 // if DOS file name, skip.
                 if(*(uint8_t*)NAR_OFFSET(FNAttribute, 89) != 2){
-                    Result.PIDS[Result.Len].FileID       = FileID;
                     Result.PIDS[Result.Len].Name         = (wchar_t*)NAR_OFFSET(FNAttribute, 90);
                     Result.PIDS[Result.Len].NameLen      = *(uint8_t*)NAR_OFFSET(FNAttribute, 88);
                     Result.PIDS[Result.Len].ParentFileID = *(uint32_t*)NAR_OFFSET(FNAttribute, 24);
@@ -447,7 +446,7 @@ static inline multiple_pid NarGetFileNameAndParentID(void *FileRecord) {
 	data from normal file record, it might be stored somewhere else in the disk.
 	It's better we isolate this layer so both codepaths can call this.
 */
-static inline attribute_list_contents GetAttributeListContents(void* AttrListDataStart, uint64_t DataLen){
+static inline attribute_list_contents GetAttributeListContents(void* AttrListDataStart, uint64_t DataLen) {
     
     attribute_list_contents Result = {};
     

@@ -36,9 +36,7 @@ file_read NarReadFile(const UTF8 *FN);
 
 bool NarReadFileLast(const UTF8 *FN, void *Data, uint32_t N);
 
-void
-FreeFileRead(file_read FR);
+void FreeFileRead(file_read FR);
 
-bool
-NarDumpToFile(const char* FileName, void* Data, unsigned int Size);
+bool NarDumpToFile(const char* FileName, void* Data, unsigned int Size);
 

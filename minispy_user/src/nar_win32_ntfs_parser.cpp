@@ -722,7 +722,8 @@ static inline uint64_t SolveAttributeListReferences(const void* MFTStart,
             UniqueFileID[UniqueFileIDCount++] = Entry.EntryFileID;
             continue;
         }
-
+        
+        // @NOTE :31.10.2022 what the fuck is this, i-1 is nonsense if i=0. 
         attribute_list_entry PrevEntry = Contents.Entries[i - 1];
 
         if (Entry.EntryType == NAR_FILENAME_FLAG) {

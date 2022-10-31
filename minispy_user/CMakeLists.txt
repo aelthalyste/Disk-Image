@@ -160,6 +160,7 @@ if (WIN32)
 	target_sources(test_area PUBLIC 
 		main.cpp
 		src/bg.cpp
+		src/platform_io.cpp
 	)
 	
 	target_compile_options(test_area PRIVATE

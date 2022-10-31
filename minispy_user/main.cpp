@@ -263,6 +263,30 @@ void DoRestore(const char *Directory, char OutputVolumeLetter) {
 
 int main(int argc, char *argv[]) {
 
+    char Letter = 'C';
+    HANDLE vh = NarOpenVolume('C');
+
+    extension_finder_memory Memory = NarSetupExtensionFinderMemory(vh);
+    wchar_t* ext[] = {
+        L".lib",
+        // L".exe"
+    };
+    extension_search_result Result = NarFindExtensions(Letter, vh, ext, sizeof(ext) / (sizeof(ext[0])), &Memory);
+    LOG_INFO("Found %d files : ", Result.Len);
+
+    uint64_t bfsize = Megabyte(64);
+    uint64_t n = 0;
+    wchar_t* bf = (wchar_t *)calloc(bfsize, 1);
+    wchar_t* bfroot = bf;
+    for (int i = 0; i < Result.Len; ++i) {
+        u64 sl = string_length(Result.Files[i]);
+        memcpy(bf, Result.Files[i], sl * 2);
+        bf[sl] = '\n';
+        bf += sl + 1;
+    }
+
+    NarDumpToFile("nar_dll_result.txt", bfroot, (bf - bfroot) * 2);
+    NarFreeExtensionFinderMemory(&Memory);
 
     return 0;
 
@@ -272,21 +296,6 @@ int main(int argc, char *argv[]) {
     return 0;
 
 
-#if 0
-    char Letter = 'C';
-    HANDLE vh = NarOpenVolume('C');
-
-    extension_finder_memory Memory = NarSetupExtensionFinderMemory(vh);
-    wchar_t* ext[] = {
-        L".dll",
-        // L".exe"
-    };
-    extension_search_result Result = NarFindExtensions(Letter, vh, ext, sizeof(ext) / (sizeof(ext[0])), &Memory);
-    LOG_INFO("Found %d files : ", Result.Len);
-    // for (uint64_t i = 0; i < Result.Len; ++i) {
-    //     LOG_INFO("-> %S", Result.Files[i]);
-    // }
-#endif
 
 }
 
