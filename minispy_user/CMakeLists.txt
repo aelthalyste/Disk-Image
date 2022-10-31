@@ -90,7 +90,7 @@ if (WIN32)
     target_include_directories(nar_disk_image_native PUBLIC thirdparty/lz4/lib)
     target_include_directories(nar_disk_image_native PUBLIC thirdparty/zstd/lib)
     target_include_directories(nar_disk_image_native PUBLIC thirdparty/mimalloc/include)
-	
+    
 	target_sources(nar_disk_image_native PRIVATE 
 		src/bg.cpp
 		src/nar.cpp
@@ -153,6 +153,7 @@ if (WIN32)
 		src/bg.cpp
     )
 
+
 	### test area
 	add_executable(test_area)
 	target_link_libraries(test_area PUBLIC nar_disk_image_native)
@@ -167,6 +168,22 @@ if (WIN32)
 		/wd4018
 		/wd4100
 		/wd4702
+	)
+
+	### webserver testing
+	add_executable(webserver_poc)
+    target_include_directories(webserver_poc PUBLIC 
+    	thirdparty/civetweb
+    	)
+
+	target_sources(webserver_poc 
+		PUBLIC
+		src/webserver_poc.cpp
+		thirdparty/civetweb/civetweb.c
+	)
+
+	target_compile_definitions(webserver_poc PRIVATE
+		NO_SSL=1
 	)
 
 
